@@ -108,8 +108,8 @@ outside of what is provided when executing from ``main()``.
 
 Executing one of the included sample tests can be performed as follows:
 ```
-    $ export REV_EXE=ex1.exe
-    $ sst rev-test-ex1.py
+$ export REV_EXE=ex1.exe
+$ sst rev-test-ex1.py
 ```
 
 ## Contributing
