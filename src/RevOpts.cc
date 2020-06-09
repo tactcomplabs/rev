@@ -1,0 +1,160 @@
+//
+// _RevOpts_cc_
+//
+// Copyright (C) 2017-2020 Tactical Computing Laboratories, LLC
+// All Rights Reserved
+// contact@tactcomplabs.com
+//
+// See LICENSE in the top level directory for licensing details
+//
+
+#include "RevOpts.h"
+
+RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
+  : numCores(NumCores), verbosity(Verbosity) {
+
+  std::pair<unsigned,unsigned> InitialPair;
+  InitialPair.first = 0;
+  InitialPair.second = 10;
+
+  // init all the standard options
+  // -- startAddr = 0x80000000
+  // -- machine = "G" aka, "IMAFD"
+  // -- pipeLine = 5
+  // -- table = internal
+  // -- memCosts[core] = 0:10
+  for( unsigned i=0; i<numCores; i++ ){
+    startAddr.insert( std::pair<unsigned,uint64_t>(i,(uint64_t)(0x80000000)) );
+    machine.insert( std::pair<unsigned,std::string>(i,"G") );
+    table.insert( std::pair<unsigned,std::string>(i,"_REV_INTERNAL_") );
+    memCosts.push_back(InitialPair);
+  }
+}
+
+RevOpts::~RevOpts(){
+}
+
+void RevOpts::splitStr(const std::string& s,
+                       char c,
+                       std::vector<std::string>& v){
+  std::string::size_type i = 0;
+  std::string::size_type j = s.find(c);
+
+  while (j != std::string::npos) {
+    v.push_back(s.substr(i, j-i));
+    i = ++j;
+    j = s.find(c, j);
+    if (j == std::string::npos)
+      v.push_back(s.substr(i, s.length()));
+  }
+}
+
+bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
+  std::vector<std::string> vstr;
+  for(unsigned i=0; i<StartAddrs.size(); i++ ){
+    std::string s = StartAddrs[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    if( Core > numCores )
+      return false;
+
+    std::string::size_type sz = 0;
+    uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
+
+    startAddr.find(Core)->second = Addr;
+  }
+  return true;
+}
+
+bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
+  std::vector<std::string> vstr;
+  for( unsigned i=0; i<Machines.size(); i++ ){
+    std::string s = Machines[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    if( Core > numCores )
+      return false;
+
+    machine.at(Core) = vstr[1];
+  }
+  return true;
+}
+
+bool RevOpts::InitInstTables( std::vector<std::string> InstTables ){
+  std::vector<std::string> vstr;
+  for( unsigned i=0; i<InstTables.size(); i++ ){
+    std::string s = InstTables[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    if( Core > numCores )
+      return false;
+
+    table.at(Core) = vstr[1];
+  }
+  return true;
+}
+
+bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
+  std::vector<std::string> vstr;
+
+  for( unsigned i=0; i<MemCosts.size(); i++ ){
+    std::string s = MemCosts[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 3 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    unsigned Min  = (unsigned)(std::stoi(vstr[1],nullptr,0));
+    unsigned Max  = (unsigned)(std::stoi(vstr[2],nullptr,0));
+    memCosts[Core].first  = Min;
+    memCosts[Core].second = Max;
+  }
+
+  return true;
+}
+
+bool RevOpts::GetStartAddr( unsigned Core, uint64_t &StartAddr ){
+  if( Core > numCores )
+    return false;
+
+  StartAddr = startAddr.at(Core);
+  return true;
+}
+
+bool RevOpts::GetMachineModel( unsigned Core, std::string &MachModel ){
+  if( Core > numCores )
+    return false;
+
+  MachModel = machine.at(Core);
+  return true;
+}
+
+bool RevOpts::GetInstTable( unsigned Core, std::string &Table ){
+  if( Core > numCores )
+    return false;
+
+  Table = table.at(Core);
+  return true;
+}
+
+bool RevOpts::GetMemCost( unsigned Core, unsigned &Min, unsigned &Max ){
+  std::pair<unsigned,unsigned> Tmp;
+  if( Core > numCores )
+    return false;
+
+  Min = memCosts[Core].first;
+  Max = memCosts[Core].second;
+
+  return true;
+}
+
+// EOF
