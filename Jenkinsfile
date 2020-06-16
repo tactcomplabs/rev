@@ -22,17 +22,6 @@ make
 make doc
 make install
 
-#-- run the SST 9.1.0 tests
-cd test/ex1
-make
-export REV_EXE=ex1.exe
-sst rev-test-ex1.py
-
-cd ../ex2
-make
-export REV_EXE=ex2.exe
-sst rev-test-ex2.py
-
 # --------------- DONE WITH SST 9.1.0
 # --------------- BEGIN SST 10.0.0
 export PATH=$OLD_PATH
