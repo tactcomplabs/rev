@@ -21,12 +21,12 @@ export PATH=$PATH:/rev/sst/sst-9.1.0/bin:/rev/riscv/bin
 make
 make doc
 make install
+make clean
 
 # --------------- DONE WITH SST 9.1.0
 # --------------- BEGIN SST 10.0.0
 export PATH=$OLD_PATH
 cd $WORKSPACE
-make clean 
 export PATH=$PATH:/rev/sst/sst-10.0.0/bin:/rev/riscv/bin
 
 #-- build & install the SST 10.0.0 version
