@@ -9,7 +9,7 @@ of an arbitrary RISC-V core or cores.  Rev utilizes the [Sandia Structural
 Simulation Toolkit](http://sst-simulator.org/) as the core parallel discrete 
 event simulation framework.  We utilize the standard SST "core" component libraries 
 to build the Rev component.  As a result, Rev can be attached to any other existing 
-SST component for full system and network simulations.  
+SST component for full system and network simulations.
 
 The Rev model is unique in the scope of other SST CPU models in that is provides 
 users the ability to load compiled binaries (ELF binaries).  Rather than requiring 
@@ -17,7 +17,7 @@ input in the form of textual assembly or hex dumps, SST contains a RISC-V compat
 loader function that generates all the necessary symbol tables and addressing modes 
 for the target RISC-V CPU.  Further, Rev permits users to generate simulation 
 configurations that contain heterogeneous RISC-V designs with support for disparate 
-extensions.  
+extensions.
 
 The Rev component infrastucture can also be extended to include custom instruction 
 extensions.  This provides users the ability to design new instruction templates 
@@ -38,6 +38,7 @@ Building the Rev SST component from source can be performed as follows:
     $ git clone
     $ cd rev
     $ make
+    $ make install
 
 Optionally, you can also build the integrated documentation using Doxygen:
 
@@ -50,11 +51,11 @@ As mentioned above, the Rev SST model supports standard ELF binary
 payloads as input to the model.  As a result, we need a cross compilation 
 framework to build source code into suitable binaries.
 We highly recommend building a suitable RISC-V compiler from source.
-This will permit you to tune the necessary options in order to support 
-a multitude of different standard, optional and custom extensions.  
+This will permit you to tune the necessary options in order to support
+a multitude of different standard, optional and custom extensions.
 
 We recommend compiling the [riscv-gnu-toolchain](https://github.com/riscv/riscv-gnu-toolchain) 
-using the ``multilib`` option.  This is analogous to the following: 
+using the ``multilib`` option.  This is analogous to the following:
 
     $ git clone https://github.com/riscv/riscv-gnu-toolchain
     $ cd riscv-gnu-toolchain
@@ -86,7 +87,7 @@ The Rev SST component contains the following options:
 Rev requires that the user specify the entry point address to begin the execution 
 of the binary.  The Rev model will perform an initial setup and reset of the target 
 core or cores in the same manner as prescribed by the RISC-V ABI.  Most users will expect to execute 
-their application starting at the ``main()`` function.  As a result, we must 
+their application starting at the ``main()`` function.  As a result, we must
 derive the address of the main function within the ELF binary.  Given an executable 
 that has been compiled (``example.exe``), we may derive the entry point address using 
 the tool chain's ``objdump`` tool.  An example of doing so is as follows:
