@@ -17,6 +17,7 @@
 // -- SST Headers
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
+#include <sst/core/interfaces/simpleNetwork.h>
 
 // -- Rev Headers
 #include "RevOpts.h"
@@ -24,7 +25,7 @@
 #include "RevLoader.h"
 #include "RevProc.h"
 
-
+using namespace SST::Interfaces;
 using namespace SST::RevCPU;
 
 namespace SST {
@@ -81,6 +82,13 @@ namespace SST {
                              )
 
       // -------------------------------------------------------
+      // RevCPU SubComponent Parameter Data
+      // -------------------------------------------------------
+      SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
+                                         {"networkIF", "Network interface", "SST::Interfaces::SimpleNetwork"}
+                                         )
+
+      // -------------------------------------------------------
       // RevCPU Component Statistics Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_STATISTICS(
@@ -98,6 +106,8 @@ namespace SST {
 
       TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
       SST::Output output;                 ///< RevCPU: SST output handler
+
+      SimpleNetwork *Nic;                 ///< RevCPU: SST network interface controller
 
     }; // class RevCPU
   } // namespace RevCPU
