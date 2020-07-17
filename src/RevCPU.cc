@@ -86,16 +86,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
                                                         ComponentInfo::SHARE_NONE,
                                                         1);
   if(!Nic){
-    output.verbose(CALL_INFO, 1, 0, "No network interface controller loaded.  Loading defaults.\n");
-    Params if_params;
-    if_params.insert("link_bw",params.find<std::string>("link_bw"));
-    if_params.insert("input_buf_size",params.find<std::string>("buffer_length","1kB"));
-    if_params.insert("output_buf_size",params.find<std::string>("buffer_length","1kB"));
-    if_params.insert("port_name","rtr");
-
-    Nic = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>
-            ("merlin.linkcontrol", "networkIF", 0,
-             ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS, if_params, 1/* vns */);
+    output.verbose(CALL_INFO, 1, 0, "No network interface controller loaded.\n");
   }
 
   // Load the binary into memory
