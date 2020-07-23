@@ -24,7 +24,7 @@ const char *splash_msg = "\
 ";
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id) {
+  : SST::Component(id), EnableNIC(false) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
@@ -75,34 +75,23 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   if( !Opts->InitMemCosts( memCosts ) )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
 
+  // See if we should load the network interface controller
+  EnableNIC = params.find<bool>("enable_nic", false);
+
+  if( EnableNIC ){
+    // Look up the network component
+    Nic = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("nic",
+                                                          ComponentInfo::SHARE_NONE,
+                                                          1);
+    if( !Nic)
+      output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
+  }
+
   // Create the memory object
   unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
   Mem = new RevMem( memSize, Opts,  &output );
   if( !Mem )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
-
-  // Look up the network component
-  Nic = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("networkIF",
-                                                        ComponentInfo::SHARE_NONE,
-                                                        1);
-  if(!Nic){
-    output.verbose(CALL_INFO, 1, 0, "No network interface controller loaded. Loading merlin.test_nic\n");
-    // load the anonymous sub component
-    Params if_params;
-    if_params.insert("id","0");
-    if_params.insert("num_peers", "1");
-    if_params.insert("num_vns", "1");
-    if_params.insert("link_bw", "96GB/s");
-    if_params.insert("message_size","8B");
-    if_params.insert("port","nic_link");
-
-    Nic = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>
-      ("merlin.test_nic", "networkIF", 0,
-       ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS, if_params, 1 );
-
-    if( Nic == nullptr )
-      output.fatal(CALL_INFO, -1, "Error: unable to load network interface.\n");
-  }
 
   // Load the binary into memory
   Loader = new RevLoader( Exe, Args, Mem, &output );

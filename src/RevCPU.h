@@ -85,14 +85,13 @@ namespace SST {
       // RevCPU Port Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_PORTS(
-                             { "nic_link", "Connects the Rev CPU to a network endpoint", {} }
                             )
 
       // -------------------------------------------------------
       // RevCPU SubComponent Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-                                         {"networkIF", "Network interface", "SST::Interfaces::SimpleNetwork"}
+                                         {"nic", "Network interface", "SST::Interfaces::SimpleNetwork"}
                                          )
 
       // -------------------------------------------------------
@@ -111,10 +110,12 @@ namespace SST {
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
       bool *Enabled;                      ///< RevCPU: Completion structure
 
+      bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
+
       TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
       SST::Output output;                 ///< RevCPU: SST output handler
 
-      SimpleNetwork *Nic;                 ///< RevCPU: SST network interface controller
+      SST::Interfaces::SimpleNetwork *Nic;///< RevCPU: Network interface controller
 
     }; // class RevCPU
   } // namespace RevCPU

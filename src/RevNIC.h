@@ -13,6 +13,7 @@
 
 // -- Standard Headers
 #include <vector>
+#include <unistd.h>
 
 // -- SST Headers
 #include <sst/core/component.h>
@@ -46,7 +47,7 @@ namespace SST {
       void finish();
 
       /// RevNIC: Rev network inteface controller SST component 'complete' function
-      void complete();
+      void complete(unsigned int phase);
 
       /// RevNIC: Rev network interface controller SST component 'init' function
       void init( unsigned int phase );
@@ -95,7 +96,7 @@ namespace SST {
                                  )
 
     private:
-      int Id;               ///< RevNIC: SST::Interfaces::SimpleNetwork::nid_t identifier
+      int id;               ///< RevNIC: SST::Interfaces::SimpleNetwork::nid_t identifier
       int NetId;            ///< RevNIC: network id
       int NumPeers;         ///< RevNIC: number of network peers
       int MsgSize;          ///< RevNIC: message size
@@ -120,7 +121,7 @@ namespace SST {
 
       SST::Output &output;  ///< RevNIC: SST output handler
 
-      SST::Interfaces::SimpleNetwork *link_control;   ///< RevNIC: SST link control object
+      SST::Interfaces::SimpleNetwork *LinkControl;   ///< RevNIC: SST link control object
 
       /// RevNIC: Clock handler
       bool ClockHandler(Cycle_t cycle);
