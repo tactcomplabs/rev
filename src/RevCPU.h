@@ -82,6 +82,13 @@ namespace SST {
                              )
 
       // -------------------------------------------------------
+      // RevCPU Port Parameter Data
+      // -------------------------------------------------------
+      SST_ELI_DOCUMENT_PORTS(
+                             { "nic_link", "Connects the Rev CPU to a network endpoint", {} }
+                            )
+
+      // -------------------------------------------------------
       // RevCPU SubComponent Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
