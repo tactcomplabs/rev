@@ -69,15 +69,16 @@ namespace SST {
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_PARAMS(
                               {"verbose",   "Sets the verbosity level of output",      "0" },
-                              {"clock",     "Clock for the CPU", "1GHz" },
-                              {"program",   "Sets the binary executable", "a.out" },
-                              {"args",      "Sets the argument list", ""},
+                              {"clock",     "Clock for the CPU",                       "1GHz" },
+                              {"program",   "Sets the binary executable",              "a.out" },
+                              {"args",      "Sets the argument list",                  ""},
                               {"numCores",  "Number of RISC-V cores to instantiate",   "1" },
                               {"memSize",   "Main memory size in bytes",               "1073741824"},
                               {"startAddr", "Starting PC of the target core",          "core:0x80000000"},
                               {"machine",   "RISC-V machine model of the target core", "core:G"},
                               {"memCost",   "Memory latency range in cycles min:max",  "core:0:10"},
                               {"table",     "Instruction cost table",                  "core:/path/to/table"},
+                              {"enable_nic","Enable the internal RevNIC",              "0"},
                               {"splash",    "Display the splash logo",                 "0"}
                              )
 

@@ -76,14 +76,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
 
   // See if we should load the network interface controller
-  EnableNIC = params.find<bool>("enable_nic", false);
+  EnableNIC = params.find<bool>("enable_nic", 0);
 
   if( EnableNIC ){
     // Look up the network component
+
     Nic = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("nic",
                                                           ComponentInfo::SHARE_NONE,
                                                           1);
-    if( !Nic)
+    if(!Nic)
       output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
   }
 
