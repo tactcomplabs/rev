@@ -24,9 +24,10 @@
 #include "RevMem.h"
 #include "RevLoader.h"
 #include "RevProc.h"
+#include "RevNIC.h"
 
-using namespace SST::Interfaces;
-using namespace SST::RevCPU;
+//using namespace SST::Interfaces;
+//using namespace SST::RevCPU;
 
 namespace SST {
   namespace RevCPU {
@@ -92,7 +93,7 @@ namespace SST {
       // RevCPU SubComponent Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-                                         {"nic", "Network interface", "SST::Interfaces::SimpleNetwork"}
+                                         {"nic", "Network interface", "SST::RevCPU::RevNIC"}
                                          )
 
       // -------------------------------------------------------
@@ -116,7 +117,10 @@ namespace SST {
       TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
       SST::Output output;                 ///< RevCPU: SST output handler
 
-      SST::Interfaces::SimpleNetwork *Nic;///< RevCPU: Network interface controller
+      nicAPI *Nic;                        ///< RevCPU: Network interface controller
+
+      /// RevCPU: RevNIC message handler
+      void handleMessage(SST::Event *ev);
 
     }; // class RevCPU
   } // namespace RevCPU

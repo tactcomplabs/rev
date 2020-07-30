@@ -13,124 +13,166 @@
 
 // -- Standard Headers
 #include <vector>
+#include <queue>
 #include <unistd.h>
 
 // -- SST Headers
+#include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/event.h>
 #include <sst/core/link.h>
 #include <sst/core/timeConverter.h>
 #include <sst/core/interfaces/simpleNetwork.h>
 
-namespace SST::RevNIC {
-  class RevNIC;
-}
-
-using namespace SST::Interfaces;
-using namespace SST::RevNIC;
-
 namespace SST {
-  namespace RevNIC {
-    class RevNIC : public SST::Component {
-
+  namespace RevCPU {
+    /**
+     * nicEvent : inherited class to handle the individual network events for RevNIC
+     */
+    class nicEvent : public SST::Event {
     public:
-      /// RevNIC: Rev network interface controller SST component constructor
-      RevNIC( SST::ComponentId_t id, SST::Params& params );
+      /// nicEvent: standard constructor
+      nicEvent(std::string name) : Event(), SrcName(name) { }
 
-      /// RevNIC: Rev network interface controller SST component destructor
-      ~RevNIC();
+      /// nicEvent: retrieve the source name
+      std::string getSource() { return SrcName; }
 
-      /// RevNIC: Rev network interface controller SST component 'setup' function
-      void setup();
-
-      /// RevNIC: Rev network interface controller SST component 'finish' function
-      void finish();
-
-      /// RevNIC: Rev network inteface controller SST component 'complete' function
-      void complete(unsigned int phase);
-
-      /// RevNIC: Rev network interface controller SST component 'init' function
-      void init( unsigned int phase );
-
-      // -------------------------------------------------------
-      // RevNIC Component Registration Data
-      // -------------------------------------------------------
-      /// RevNIC: Register the component with the SST core
-      SST_ELI_REGISTER_COMPONENT(
-                                  RevNIC,
-                                  "revcpu",
-                                  "RevNIC",
-                                  SST_ELI_ELEMENT_VERSION( 1, 0, 0 ),
-                                  "RISC-V Rev Network Interface Controller",
-                                  COMPONENT_CATEGORY_NETWORK
-                                )
-
-      // -------------------------------------------------------
-      // RevNIC Component Parameter Data
-      // -------------------------------------------------------
-      SST_ELI_DOCUMENT_PARAMS(
-                              {"id",           "Network ID of endpoint."},
-                              {"num_peers",    "Total number of endpoints in network."},
-                              {"num_messages", "Total number of messages to send to each endpoint."},
-                              {"message_size", "Size of each message to be sent specified in either b or B (can include SI prefix)."},
-                              {"send_untimed_broadcast",   "Controls whether data is sent in init and complete.","false"}
-                             )
-
-      // -------------------------------------------------------
-      // RevNIC Port Parameter Data
-      // -------------------------------------------------------
-      SST_ELI_DOCUMENT_PORTS(
-                            )
-
-      // -------------------------------------------------------
-      // RevNIC SubComponent Parameter Data
-      // -------------------------------------------------------
-      SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-        {"networkIF", "Network interface", "SST::Interfaces::SimpleNetwork" }
-      )
-
-      // -------------------------------------------------------
-      // RevNIC Component Statistics Data
-      // -------------------------------------------------------
-      SST_ELI_DOCUMENT_STATISTICS(
-                                 )
+      /// nicEvent: virtual function to clone an event
+      virtual Event* clone(void) override{
+        nicEvent* ev = new nicEvent(*this);
+        return ev;
+      }
 
     private:
-      int id;               ///< RevNIC: SST::Interfaces::SimpleNetwork::nid_t identifier
-      int NetId;            ///< RevNIC: network id
-      int NumPeers;         ///< RevNIC: number of network peers
-      int MsgSize;          ///< RevNIC: message size
-      int NumMsg;           ///< RevNIC: number of messages
-      int GroupOffset;      ///< RevNIC: Group offset
-      int GroupPeers;       ///< RevNIC: Group peers
+      std::string SrcName;      ///< nicEvent: Name of the sending device
 
-      int PacketsSent;      ///< RevNIC: Number of packets sent
-      int PacketsRecv;      ///< RevNIC: Number of packets received
-      int StalledCycles;    ///< RevNIC: Number of stalled cycles
-      int ExpRecvCount;     ///< RevNIC: Expected receive count
+    public:
+      /// nicEvent: secondary constructor
+      nicEvent() : Event() {}
 
-      bool Done;            ///< RevNIC: Completion signal
-      bool Init;            ///< RevNIC: Signals initialization complete
-      int InitState;        ///< RevNIC: State initialization
-      int InitCount;        ///< RevNIC: Count initialization
-      int InitBCastCount;   ///< RevNIC: Broadcast count initialization
-      bool SendUntimedBCast;///< RevNIC: Flags to enable untimed broadcast messages
+      /// nicEvent: event serializer
+      void serialize_order(SST::Core::Serialization::serializer &ser) override{
+        Event::serialize_order(ser);
+        ser & SrcName;
+      }
 
-      int LastTarget;       ///< RevNIC: Last target id
-      int *NextSeq;         ///< RevNIC: Next sequence pointer
+      /// nicEvent: implements the NIC serialization
+      ImplementSerializable(SST::RevCPU::nicEvent);
+    };  // end nicEvent
 
-      SST::Output &output;  ///< RevNIC: SST output handler
 
-      SST::Interfaces::SimpleNetwork *LinkControl;   ///< RevNIC: SST link control object
+    /**
+     * nicAPI : Handles the subcomponent NIC API
+     */
+    class nicAPI: public SST::SubComponent{
+    public:
+      SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::nicAPI)
 
-      /// RevNIC: Clock handler
-      bool ClockHandler(Cycle_t cycle);
+      /// nicEvent: default constructor
+        nicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
 
-      /// RevNIC: Initialization completion
-      void InitComplete(unsigned int phase);
+      /// nicEvent: default destructor
+      virtual ~nicAPI() { }
 
-    }; // class RevNIC
-  } // namespace RevNIC
+      /// nicEvent: registers the event handler with the core
+      virtual void setMsgHandler(Event::HandlerBase* handler) = 0;
+
+      /// nicEvent: initializations the network
+      virtual void init(unsigned int phase) = 0;
+
+      /// nicEvent: setup the network
+      virtual void setup() { }
+
+      /// nicEvent: send a message on the network
+      virtual void send(nicEvent *ev, int dest) = 0;
+
+      /// nicEvent: retrieve the number of potential destinations
+      virtual int getNumDestinations() = 0;
+
+      /// nicEvent: returns the NIC's network address
+      virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
+    }; /// end nicAPI
+
+    /**
+     * RevNIC: the Rev network interface controller subcomponent
+     */
+    class RevNIC : public nicAPI {
+    public:
+
+      // Register with the SST Core
+      SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+        RevNIC,
+        "revcpu",
+        "RevNIC",
+        SST_ELI_ELEMENT_VERSION(1,0,0),
+        "RISC-V SST NIC",
+        SST::RevCPU::nicAPI
+      )
+
+      // Register the parameters
+      SST_ELI_DOCUMENT_PARAMS(
+        {"port", "Port to use, if loaded as an anonymous subcomponent", "network"},
+        {"verbose", "Verbosity for output (0 = nothing)", "0"}
+      )
+
+      // Register the ports
+      SST_ELI_DOCUMENT_PORTS(
+        {"network", "Port to network", {"simpleNetworkExample.nicEvent"} }
+      )
+
+      // Register the subcomponent slots
+      SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
+        {"iface", "SimpleNetwork interface to a network", "SST::Interfaces::SimpleNetwork"}
+      )
+
+      /// RevNIC: default constructor
+      RevNIC(ComponentId_t id, Params& params);
+
+      /// RevNIC: default destructor
+      virtual ~RevNIC();
+
+      /// RevNIC: Callback to parent on received messages
+      virtual void setMsgHandler(Event::HandlerBase* handler);
+
+      /// RevNIC: initialization function
+      virtual void init(unsigned int phase);
+
+      /// RevNIC: setup function
+      virtual void setup();
+
+      /// RevNIC: send event to the destination id
+      virtual void send(nicEvent *ev, int dest);
+
+      /// RevNIC: retrieve the number of destinations
+      virtual int getNumDestinations();
+
+      /// RevNIC: get the endpoint's network address
+      virtual SST::Interfaces::SimpleNetwork::nid_t getAddress();
+
+      /// RevNIC: callback function for the SimpleNetwork interface
+      bool msgNotify(int virtualNetwork);
+
+      /// RevNIC: clock function
+      virtual bool clockTick(Cycle_t cycle);
+
+    protected:
+      SST::Output *output;                    ///< RevNIC: SST output object
+
+      SST::Interfaces::SimpleNetwork * iFace; ///< RevNIC: SST network interface
+
+      SST::Event::HandlerBase *msgHandler;    ///< RevNIC: SST message handler
+
+      bool initBroadcastSent;                 ///< RevNIC: has the init bcast been sent?
+
+      bool finiMsg;                           ///< RevNIC: have we received the completion message?
+
+      int numDest;                            ///< RevNIC: number of SST destinations
+
+      std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ; ///< RevNIC: buffered send queue
+
+    }; // end RevNIC
+
+  } // namespace RevCPU
 } // namespace SST
 
 #endif // _SST_REVNIC_H_

@@ -10,217 +10,130 @@
 
 #include "RevNIC.h"
 
-RevNIC::RevNIC( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id),
-    PacketsSent(0), PacketsRecv(0), StalledCycles(0), ExpRecvCount(0),
-    Done(false), Init(false), InitCount(0), InitBCastCount(0),
-    output(Simulation::getSimulation()->getSimulationOutput()) {
+using namespace SST;
+using namespace RevCPU;
 
-  // init all the standard parameters
-  NetId = params.find<int>("id",-1);
-  if( NetId == -1 )
-    output.fatal(CALL_INFO, -1, "RevNIC: failed to find 'id' parameter\n");
+RevNIC::RevNIC(ComponentId_t id, Params& params)
+  : nicAPI(id, params) {
+  // setup the initial logging functions
+  int verbosity = params.find<int>("verbose",0);
+  output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
 
-  NumPeers = params.find<int>("num_peers",-1);
-  if( NumPeers == -1 )
-    output.fatal(CALL_INFO, -1, "RevNIC: failed to find 'num_peers' parameter\n");
+  registerClock("1Ghz", new Clock::Handler<RevNIC>(this,&RevNIC::clockTick));
 
-  SendUntimedBCast = params.find<bool>("send_untimed_data","false");
+  // load the SimpleNetwork interfaces
+  iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1); 
+  if( !iFace ){
+    // load the anonymous nic
+    Params netparams;
+    netparams.insert("port_name", params.find<std::string>("port", "network"));
+    netparams.insert("in_buf_size", "256B");
+    netparams.insert("out_buf_size", "256B");
+    netparams.insert("link_bw", "40GiB/s");
+    iFace = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>("merlin.linkcontrol",
+                                                                      "iface",
+                                                                      0,
+                                                                      ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
+                                                                      netparams,
+                                                                      1);
+  }
 
-  UnitAlgebra TmpMsgSize = params.find<std::string>("message_size","64b");
-  if( TmpMsgSize.hasUnits("B") )
-    TmpMsgSize *= UnitAlgebra("8b/B");
-  MsgSize = TmpMsgSize.getRoundedValue();
+  iFace->setNotifyOnReceive(new SST::Interfaces::SimpleNetwork::Handler<RevNIC>(this, &RevNIC::msgNotify));
 
-  // Link Control
-  LinkControl = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("networkIF",
-                                                                     ComponentInfo::SHARE_NONE,
-                                                                     1);
-  if( !LinkControl )
-    output.fatal(CALL_INFO, -1, "RevNIC: no link_control object loaded into RevNIC\n");
+  initBroadcastSent = false;
 
-  LastTarget = NetId;
-  NextSeq = new int[NumPeers];
-  for( int i=0; i<NumPeers; i++ )
-    NextSeq[i] = 0;
+  numDest = 0;
 
-  // register the clock
-  registerClock( "1Ghz", new Clock::Handler<RevNIC>(this,&RevNIC::ClockHandler), false );
+  finiMsg = false;
 
-  // register the component
-  registerAsPrimaryComponent();
-  primaryComponentDoNotEndSim();
+  msgHandler = nullptr;
 }
 
 RevNIC::~RevNIC(){
-  delete LinkControl;
-  delete [] NextSeq;
 }
 
-void RevNIC::finish(){
-  if( InitCount != NumPeers )
-    output.output("RevNIC NIC %d didn't receive all complete p2p messages.  Received %d\n",
-                  NetId,
-                  InitCount);
-
-  if( SendUntimedBCast ){
-    if( InitBCastCount != (NumPeers-1) )
-      output.output("RevNIC NIC %d didn't receive all complete bcast messages. Received %d\n",
-                    NetId,
-                    InitBCastCount);
-  }
-
-  LinkControl->finish();
-  output.output("RevNIC NIC %d had %d stalled cycles.\n",
-                NetId,
-                StalledCycles);
-}
-
-void RevNIC::setup(){
-  LinkControl->setup();
-
-  if( LinkControl->getEndpointID() != NetId )
-    output.fatal(CALL_INFO, -1,
-                 "RevNIC: NIC ids don't match: param = %" PRIi64 ", LinkControl = %" PRIi64 "\n",
-                 (int64_t)(NetId), (int64_t)(LinkControl->getEndpointID()));
-
-  if( InitCount != NumPeers )
-    output.output("RevNIC: NIC %d didn't receive all p2p messages. Only received %d\n",
-                  NetId, InitCount);
-
-  if( !SendUntimedBCast )
-    return ;
-
-  if( InitBCastCount != (NumPeers-1) )
-    output.output("RevNIC: NIC %d didn't receive all init bcast messages. Only received %d\n",
-                  NetId,
-                  InitBCastCount);
-
-  LastTarget = id;
-}
-
-void RevNIC::complete(unsigned int phase){
-  LinkControl->complete(phase);
-
-  if( phase == 0 ){
-    InitCount = 0;
-    InitBCastCount = 0;
-    InitState = 0;
-  }
-
-  InitComplete(phase);
+void RevNIC::setMsgHandler(Event::HandlerBase* handler){
+  msgHandler = handler;
 }
 
 void RevNIC::init(unsigned int phase){
-  LinkControl->init(phase);
-  InitComplete(phase);
+  iFace->init(phase);
+
+  if( iFace->isNetworkInitialized() ){
+    if( !initBroadcastSent) {
+      initBroadcastSent = true;
+      nicEvent *ev = new nicEvent(getName());
+
+      SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
+      req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
+      req->src = iFace->getEndpointID();
+      req->givePayload(ev);
+      iFace->sendInitData(req);
+    }
+  }
+
+  while( SST::Interfaces::SimpleNetwork::Request * req = iFace->recvInitData() ) {
+    nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
+    numDest++;
+    output->verbose(CALL_INFO, 1, 0,
+                    "%s received init message from %s\n",
+                    getName().c_str(), ev->getSource().c_str());
+  }
+
+  finiMsg = true;
 }
 
-void RevNIC::InitComplete(unsigned int phase){
-  SimpleNetwork::Request *req = nullptr;
-  switch( InitState ){
-  case 0:
-    // wait until the network comes up
-    if( !LinkControl->isNetworkInitialized() )
-      break;
-    NetId = LinkControl->getEndpointID();
-    LastTarget = NetId;
-
-    if( NetId == 0 ){
-      if( SendUntimedBCast ){
-        SimpleNetwork::Request* req =
-          new SimpleNetwork::Request(SimpleNetwork::INIT_BROADCAST_ADDR, NetId,
-                                     0, true, true );
-        LinkControl->sendUntimedData(req);
-        InitState = 2;
-      }else{
-        for( int i = 0; i<NumPeers; ++i ){
-          SimpleNetwork::Request* req =
-            new SimpleNetwork::Request(i, NetId, 0, true, true );
-          LinkControl->sendUntimedData(req);
-        }
-        InitState = 4;
-      }
-    }else{
-      if( SendUntimedBCast ){
-        InitState = 1;
-      }else{
-        InitState = 3;
-      }
-    }
-    break;
-  case 1:
-    while( (req = LinkControl->recvUntimedData() ) != NULL ){
-      delete req;
-      InitBCastCount++;
-    }
-
-    if( InitBCastCount >= NetId ){
-      SimpleNetwork::Request* req =
-        new SimpleNetwork::Request(SimpleNetwork::INIT_BROADCAST_ADDR, NetId,
-                                   0, true, true);
-      LinkControl->sendUntimedData(req);
-      InitState = 2;
-    }
-    break;
-  case 2:
-    while ( (req = LinkControl->recvUntimedData() ) != NULL ) {
-      if( req->dest == SimpleNetwork::INIT_BROADCAST_ADDR ) {
-        InitBCastCount++;
-      }else{
-        if( req->dest != NetId )
-          output.output("%d: received event with dest %ld and src %ld\n",
-                        NetId,
-                        req->dest,
-                        req->src);
-        InitCount++;
-      }
-      delete req;
-    }
-
-    if( InitBCastCount == (NumPeers-1) ){
-      if( NetId == 0 ){
-        for( int i=0; i<NumPeers; ++i ){
-          req = new SimpleNetwork::Request(i, NetId, 0, true, true);
-          LinkControl->sendUntimedData(req);
-        }
-        InitState = 4;
-      }else{
-        InitState = 3;
-      }
-    }
-    break;
-  case 3:
-    while( (req = LinkControl->recvUntimedData()) != NULL ){
-      InitCount++;
-      delete req;
-    }
-
-    if( InitCount == NetId ){
-      for( int i = 0; i < NumPeers; ++i ){
-        req = new SimpleNetwork::Request(i,NetId,0,true,true);
-        LinkControl->sendUntimedData(req);
-      }
-      InitState = 4;
-    }
-    break;
-  case 4:
-    SimpleNetwork::Request *req;
-    while( (req = LinkControl->recvUntimedData()) != NULL ){
-      InitCount++;
-      delete req;
-    }
-    if( InitCount == NumPeers ){
-      InitState = 5;
-    }
-    break;
-  default:
-    break;
+void RevNIC::setup(){
+  if( msgHandler == nullptr ){
+    output->fatal(CALL_INFO, -1,
+                  "%s, Error: RevNIC implements a callback-based notification and parent has not registerd a callback function\n",
+                  getName().c_str());
   }
 }
 
-bool RevNIC::ClockHandler(Cycle_t cycle){
+bool RevNIC::msgNotify(int vn){
+  SST::Interfaces::SimpleNetwork::Request* req = iFace->recv(0);
+  if( req != nullptr ){
+    if( req != nullptr ){
+      nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
+      delete req;
+      (*msgHandler)(ev);
+    }
+  }
   return true;
 }
+
+void RevNIC::send(nicEvent* event, int destination){
+  SST::Interfaces::SimpleNetwork::Request *req = new SST::Interfaces::SimpleNetwork::Request();
+  req->dest = destination;
+  req->src = iFace->getEndpointID();
+  req->givePayload(event);
+  sendQ.push(req);
+}
+
+int RevNIC::getNumDestinations(){
+  return numDest;
+}
+
+SST::Interfaces::SimpleNetwork::nid_t RevNIC::getAddress(){
+  return iFace->getEndpointID();
+}
+
+bool RevNIC::clockTick(Cycle_t cycle){
+  while( !sendQ.empty() ){
+    if( iFace->spaceToSend(0,512) && iFace->send(sendQ.front(),0)) {
+      sendQ.pop();
+    }else{
+      break;
+    }
+  }
+
+  // determine if we've received the completion message
+  if( finiMsg )
+    return true;
+
+  return false;
+}
+
 
 // EOF

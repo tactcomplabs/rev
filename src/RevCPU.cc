@@ -81,11 +81,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   if( EnableNIC ){
     // Look up the network component
 
-    Nic = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("nic",
-                                                          ComponentInfo::SHARE_NONE,
-                                                          1);
+    Nic = loadUserSubComponent<nicAPI>("nic");
+
+    // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
     if(!Nic)
       output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
+
+    Nic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
   }
 
   // Create the memory object
@@ -141,12 +143,22 @@ RevCPU::~RevCPU(){
 }
 
 void RevCPU::setup(){
+  if( EnableNIC ){
+    Nic->setup();
+  }
 }
 
 void RevCPU::finish(){
 }
 
 void RevCPU::init( unsigned int phase ){
+  if( EnableNIC )
+    Nic->init(phase);
+}
+
+void RevCPU::handleMessage(Event *ev){
+  nicEvent *event = static_cast<nicEvent*>(ev);
+  delete event;
 }
 
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
