@@ -179,6 +179,9 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       rtn = false;
   }
 
+  if( rtn )
+    primaryComponentOKToEndSim();
+
   return rtn;
 }
 

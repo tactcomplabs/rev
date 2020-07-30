@@ -164,8 +164,6 @@ namespace SST {
 
       bool initBroadcastSent;                 ///< RevNIC: has the init bcast been sent?
 
-      bool finiMsg;                           ///< RevNIC: have we received the completion message?
-
       int numDest;                            ///< RevNIC: number of SST destinations
 
       std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ; ///< RevNIC: buffered send queue

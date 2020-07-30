@@ -44,8 +44,6 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
 
   numDest = 0;
 
-  finiMsg = false;
-
   msgHandler = nullptr;
 }
 
@@ -79,8 +77,6 @@ void RevNIC::init(unsigned int phase){
                     "%s received init message from %s\n",
                     getName().c_str(), ev->getSource().c_str());
   }
-
-  finiMsg = true;
 }
 
 void RevNIC::setup(){
@@ -127,10 +123,6 @@ bool RevNIC::clockTick(Cycle_t cycle){
       break;
     }
   }
-
-  // determine if we've received the completion message
-  if( finiMsg )
-    return true;
 
   return false;
 }
