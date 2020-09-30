@@ -25,6 +25,7 @@
 #include "RevLoader.h"
 #include "RevProc.h"
 #include "RevNIC.h"
+#include "PanNet.h"
 
 //using namespace SST::Interfaces;
 //using namespace SST::RevCPU;
@@ -80,6 +81,7 @@ namespace SST {
                               {"memCost",   "Memory latency range in cycles min:max",  "core:0:10"},
                               {"table",     "Instruction cost table",                  "core:/path/to/table"},
                               {"enable_nic","Enable the internal RevNIC",              "0"},
+                              {"enable_pan","Enable PAN network endpoint",             "0"},
                               {"splash",    "Display the splash logo",                 "0"}
                              )
 
@@ -113,6 +115,7 @@ namespace SST {
       bool *Enabled;                      ///< RevCPU: Completion structure
 
       bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
+      bool EnablePAN;                     ///< RevCPU  flag for enabling the PAN operations
 
       TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
       SST::Output output;                 ///< RevCPU: SST output handler

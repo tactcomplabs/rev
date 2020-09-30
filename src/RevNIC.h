@@ -69,7 +69,7 @@ namespace SST {
       SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::nicAPI)
 
       /// nicEvent: default constructor
-        nicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
+      nicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
 
       /// nicEvent: default destructor
       virtual ~nicAPI() { }
@@ -77,7 +77,7 @@ namespace SST {
       /// nicEvent: registers the event handler with the core
       virtual void setMsgHandler(Event::HandlerBase* handler) = 0;
 
-      /// nicEvent: initializations the network
+      /// nicEvent: initializes the network
       virtual void init(unsigned int phase) = 0;
 
       /// nicEvent: setup the network

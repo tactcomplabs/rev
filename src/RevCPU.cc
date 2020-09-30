@@ -90,6 +90,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     Nic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
   }
 
+  // See if we should enable PAN network transport module as a target device
+  EnablePAN = params.find<bool>("enable_pan",0);
+
   // Create the memory object
   unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
   Mem = new RevMem( memSize, Opts,  &output );
