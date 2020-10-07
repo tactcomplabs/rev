@@ -90,8 +90,20 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     Nic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
   }
 
-  // See if we should enable PAN network transport module as a target device
-  EnablePAN = params.find<bool>("enable_pan",0);
+  // See if we should the load PAN network interface controller
+  EnablePAN = params.find<bool>("enable_pan", 0);
+
+  if( EnablePAN ){
+    // Look up the network component
+
+    PNic = loadUserSubComponent<panNicAPI>("pan_nic");
+
+    // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
+    if(!Nic)
+      output.fatal(CALL_INFO, -1, "Error: no PAN NIC object loaded into RevCPU\n");
+
+    PNic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handlePANMessage));
+  }
 
   // Create the memory object
   unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
@@ -161,6 +173,14 @@ void RevCPU::init( unsigned int phase ){
 
 void RevCPU::handleMessage(Event *ev){
   nicEvent *event = static_cast<nicEvent*>(ev);
+  delete event;
+}
+
+//
+// This is the PAN Network Transport Module
+//
+void RevCPU::handlePANMessage(Event *ev){
+  panNicEvent *event = static_cast<panNicEvent*>(ev);
   delete event;
 }
 

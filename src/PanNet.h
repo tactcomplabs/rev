@@ -37,11 +37,180 @@ namespace SST {
      */
     class panNicEvent : public SST::Event {
     public:
+
+      typedef enum{
+        PanBase     = 0b00,               ///< PanPacket: base packet type
+        PanStream   = 0b01,               ///< PanPacket: streaming packet type
+        PanRsvd     = 0b10,               ///< PanPacket: reserved for future expansion
+        PanBOTW     = 0b11                ///< PanPacket: bump on the wire packet
+      }PanPacket;
+
+      typedef enum{
+        SyncGet         = 0b00000000,     ///< PanOpcode: Synchronous get
+        SyncPut         = 0b00000100,     ///< PanOpcode: Synchronous put
+        AsyncGet        = 0b00001000,     ///< PanOpcode: Asynchronous get
+        AsyncPut        = 0b00001100,     ///< PanOpcode: Asynchronous put
+        SyncStreamGet   = 0b0001,         ///< PanOpcode: Synchronous streaming get
+        SyncStreamPut   = 0b0101,         ///< PanOpcode: Synchronous streaming put
+        AsyncStreamGet  = 0b1001,         ///< PanOpcode: Asynchronous streaming get
+        AsyncStreamPut  = 0b1101,         ///< PanOpcode: Asynchronous streaming put
+        Exec            = 0b00010000,     ///< PanOpcode: Execute
+        Status          = 0b00100000,     ///< PanOpcode: Status
+        Cancel          = 0b00110000,     ///< PanOpcode: Cancel
+        Reserve         = 0b01000000,     ///< PanOpcode: Reserve
+        Revoke          = 0b01010000,     ///< PanOpcode: Revoke
+        Halt            = 0b01100000,     ///< PanOpcode: Halt
+        Resume          = 0b01110000,     ///< PanOpcode: Resume
+        ReadReg         = 0b10000000,     ///< PanOpcode: Read register
+        WriteReg        = 0b10010000,     ///< PanOpcode: Write register
+        SingleStep      = 0b10100000,     ///< PanOpcode: Single step
+        SetFuture       = 0b10110000,     ///< PanOpcode: Set future
+        RevokeFuture    = 0b11000000,     ///< PanOpcode: Revoke future
+        StatusFuture    = 0b11010000,     ///< PanOpcode: Status future
+        Success         = 0b11100000,     ///< PanOpcode: Command success
+        Failed          = 0b11110000,     ///< PanOpcode: Failed success
+        BOTW            = 0b11            ///< PanOpcode: Bump on the wire
+      }PanOpcode;
+
       /// panNicEvent: standard constructor
-      panNicEvent(std::string name) : Event(), SrcName(name) { }
+      panNicEvent(std::string name)
+        : Event(), SrcName(name),
+          Tag(0), Opcode(PanRsvd), VarArgs(0),
+          Size(0), Token(0), Offset(0), Addr(0), Data(nullptr) { }
 
       /// panNicEvent: rerieve the source name
       std::string getSource() { return SrcName; }
+
+      /// panNicEvent: retrieve the packet type
+      panNicEvent::PanPacket getType();
+
+      /// panNicEvent: retrieve the packet tag field
+      uint8_t getTag() { return Tag; }
+
+      /// panNicEvent: retrieve the packet opcode
+      uint8_t getOpcode() { return Opcode; }
+
+      /// panNicEvent: retrieve the packet varargs
+      uint8_t getVarArgs() { return VarArgs; }
+
+      /// panNicEvent: retrieve the packet size
+      uint32_t getSize() { return Size; }
+
+      /// panNicEvent: retrieve the packet token
+      uint32_t getToken() { return Token; }
+
+      /// panNicEvent: retrieve the packet offset
+      uint32_t getOffset() { return Offset; }
+
+      /// panNicEvent: retrieve the packet address
+      uint64_t getAddr() { return Addr; }
+
+      /// panNicEvent: retrieve the packet data
+      void getData(uint64_t *Out);
+
+      /// panNicEvent: set the packet data
+      bool setData(uint64_t *In, uint32_t Sz);
+
+      /// panNicEvent: set the tag field
+      bool setTag(uint8_t T);
+
+      /// panNicEvent: set the number of varargs
+      bool setVarArgs(uint8_t VA);
+
+      /// panNicEvent: set the size in the command packet
+      bool setSize(uint32_t Sz);
+
+      /// panNicEvent: set the token for the target packet
+      bool setToken(uint32_t T);
+
+      /// panNicEvent: set the offset for the target packet
+      bool setOffset(uint32_t O);
+
+      /// panNicEvent: set the address for the command packet
+      bool setAddr(uint64_t A);
+
+      /// panNicEvent: get the number of data blocks for the target size
+      unsigned getNumBlocks(uint32_t Size);
+
+      // ------------------------------------------------
+      // Packet Building Functions
+      // ------------------------------------------------
+
+      /// panNicEvent: build a synchronous get packet
+      bool buildSyncGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size);
+
+      /// panNicEvent: build a synchronous put packet
+      bool buildSyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data);
+
+      /// panNicEvent: build an asynchronous get packet
+      bool buildAsyncGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size);
+
+      /// panNicEvent: build an asynchronous put packet
+      bool buildAsyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data);
+
+      /// panNicEvent: build a synchronous streaming get packet
+      bool buildSyncStreamGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size);
+
+      /// panNicEvent: build a synchronous streaming put packet
+      bool buildSyncStreamPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data);
+
+      /// panNicEvent: build an asynchronous streaming get packet
+      bool buildAsyncStreamGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size);
+
+      /// panNicEvent: build an asynchronous streaming put packet
+      bool buildAsyncStreamPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data);
+
+      /// panNicEvent: build an execution packet
+      bool buildExec(uint32_t Token, uint8_t Tag, uint64_t Addr);
+
+      /// panNicEvent: build a status packet
+      bool buildStatus(uint32_t Token, uint8_t Tag, uint16_t Entry);
+
+      /// panNicEvent: build a cancel packet
+      bool buildCancel(uint32_t Token, uint8_t Tag, uint16_t Entry);
+
+      /// panNicEvent: build a reserve packet
+      bool buildReserve(uint32_t Token, uint8_t Tag);
+
+      /// panNicEvent: build a revoke packet
+      bool buildRevoke(uint32_t Token, uint8_t Tag);
+
+      /// panNicEvent: build a halt packet
+      bool buildHalt(uint32_t Token, uint8_t Tag, uint16_t Hart);
+
+      /// panNicEvent: build a resume packet
+      bool buildResume(uint32_t Token, uint8_t Tag);
+
+      /// panNicEvent: build a readreg packet
+      bool buildReadReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg);
+
+      /// panNicEvent: build a writereg packet
+      bool buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg, uint64_t *Data);
+
+      /// panNicEvent: build a singlestep packet
+      bool buildSingleStep(uint32_t Token, uint8_t Tag, uint16_t Hart);
+
+      /// panNicEvent: build a set future packet
+      bool buildSetFuture(uint32_t Token, uint8_t Tag, uint64_t Addr);
+
+      /// panNicEvent: build a revoke future packet
+      bool buildRevokeFuture(uint32_t Token, uint8_t Tag, uint64_t Addr);
+
+      /// panNicEvent: build a status future packet
+      bool buildStatusFuture(uint32_t Token, uint8_t Tag, uint64_t Addr);
+
+      /// panNicEvent: build a BOTW packet
+      bool buildBOTW(uint32_t Token, uint8_t Tag, uint8_t VarArgs, uint64_t *Args, uint32_t Offset);
+
+      /// panNicEvent: build a success packet
+      bool buildSuccess(uint32_t Token, uint8_t Tag);
+
+      /// panNicEvent: build a failed packet
+      bool buildFailed(uint32_t Token, uint8_t Tag);
+
+      // ------------------------------------------------
+      // Virtual Functions
+      // ------------------------------------------------
 
       /// panNicEvent: vritual function to clone an event
       virtual Event* clone(void) override{
@@ -51,6 +220,14 @@ namespace SST {
 
     private:
       std::string SrcName;            ///< panNicEvent: Name of the sending device
+      uint8_t Tag;                    ///< panNicEvent: Tag value of the command packet
+      uint8_t Opcode;                 ///< panNicEvent: Opcode value of the command packet
+      uint8_t VarArgs;                ///< panNicEvent: Variadic arguments for BOTW packet
+      uint32_t Size;                  ///< panNicEvent: Size value of the command packet
+      uint32_t Token;                 ///< panNicEvent: Token value of the command packet
+      uint32_t Offset;                ///< panNicEvent: Offset value for BOTW packet
+      uint64_t Addr;                  ///< panNicEvent: Addressing encoding field
+      uint64_t *Data;                 ///< panNicEvent: Data field
 
     public:
       /// panNicEvent: event serializer
@@ -117,7 +294,8 @@ namespace SST {
       // Register the parameters
       SST_ELI_DOCUMENT_PARAMS(
         {"port", "Port to use, if loaded as an anonymous subcomponent", "network"},
-        {"verbose", "Verbosity for output (0 = nothing)", "0"}
+        {"verbose", "Verbosity for output (0 = nothing)", "0"},
+        {"host_device", "Determines if this is a host device", "0"}
       )
 
       // Register the ports
@@ -174,6 +352,7 @@ namespace SST {
       std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ; ///< PanNet: buffered send queue
 
     private:
+      bool isHost;                            ///< PanNet: Determines if this is a host device
       uint32_t Token;                         ///< PanNet: Reservation token
 
     }; // end PanNet

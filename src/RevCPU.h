@@ -95,7 +95,8 @@ namespace SST {
       // RevCPU SubComponent Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-                                         {"nic", "Network interface", "SST::RevCPU::RevNIC"}
+                                         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
+                                         {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"}
                                          )
 
       // -------------------------------------------------------
@@ -121,9 +122,13 @@ namespace SST {
       SST::Output output;                 ///< RevCPU: SST output handler
 
       nicAPI *Nic;                        ///< RevCPU: Network interface controller
+      panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
 
       /// RevCPU: RevNIC message handler
       void handleMessage(SST::Event *ev);
+
+      /// RevCPU: PAN NIC message handler
+      void handlePANMessage(SST::Event *ev);
 
     }; // class RevCPU
   } // namespace RevCPU

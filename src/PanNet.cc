@@ -13,6 +13,413 @@
 using namespace SST;
 using namespace RevCPU;
 
+
+// -----------------------------------------------------------------------------
+// panNicEvent Class
+// -----------------------------------------------------------------------------
+
+panNicEvent::PanPacket panNicEvent::getType(){
+  uint8_t Type = Opcode & 0b11;
+  return (panNicEvent::PanPacket)(Type);
+}
+
+bool panNicEvent::setData(uint64_t *In, uint32_t Sz){
+  unsigned blocks = 0;
+
+  if( Sz == 0 )
+    return true;
+
+  blocks = getNumBlocks(Sz);
+  for( unsigned i=0; i<blocks; i++ ){
+    Data[i] = In[i];
+  }
+
+  return true;
+}
+
+void panNicEvent::getData(uint64_t *Out){
+  unsigned blocks = 0;
+
+  if( Size == 0 )
+    return ;
+
+  blocks = getNumBlocks(Size);
+
+  for( unsigned i=0; i<blocks; i++ ){
+    Out[i] = Data[i];
+  }
+}
+
+unsigned panNicEvent::getNumBlocks(uint32_t Sz){
+  unsigned blocks = 0;
+
+  if( Sz == 0 ){
+    blocks = 0;
+  }else if( Sz < 8 ){
+    blocks = 1;
+  }else{
+    blocks = Sz/8;
+    if( (Sz%8)>0 )
+      blocks += 1;
+  }
+
+  return blocks;
+}
+
+bool panNicEvent::setTag(uint8_t T){
+  Tag = T;
+  return true;
+}
+
+bool panNicEvent::setVarArgs(uint8_t VA){
+  VarArgs = (VA&0b1111);
+  return true;
+}
+
+bool panNicEvent::setSize(uint32_t Sz){
+  switch(getType()){
+  case PanBase:
+    Size = (Sz &0b1111111111111111);
+    break;
+  case PanStream:
+    Size = (Sz &0b11111111111111111111);
+    break;
+  case PanRsvd:
+  case PanBOTW:
+  default:
+    Size = 0;
+    return false;
+    break;
+  }
+}
+
+bool panNicEvent::setToken(uint32_t T){
+  Token = T;
+  return true;
+}
+
+bool panNicEvent::setOffset(uint32_t O){
+  Offset = (O&0b111111111111111111);
+  return true;
+}
+
+bool panNicEvent::setAddr(uint64_t A){
+  Addr = A;
+  return true;
+}
+
+bool panNicEvent::buildSyncGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size){
+  Opcode = SyncGet;
+
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildSyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data){
+  Opcode = SyncPut;
+  if( Data == nullptr )
+    return false;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+  if( !setData(Data,Size) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildAsyncGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size){
+  Opcode = AsyncGet;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildAsyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data){
+  Opcode = AsyncPut;
+  if( Data == nullptr )
+    return false;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+  if( !setData(Data,Size) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildSyncStreamGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size){
+  Opcode = SyncStreamGet;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildSyncStreamPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data){
+  Opcode = SyncStreamPut;
+  if( Data == nullptr )
+    return false;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+  if( !setData(Data,Size) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildAsyncStreamGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size){
+  Opcode = AsyncStreamGet;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildAsyncStreamPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data){
+  Opcode = AsyncStreamPut;
+  if( Data == nullptr )
+    return false;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+  if( !setData(Data,Size) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildExec(uint32_t Token, uint8_t Tag, uint64_t Addr){
+  Opcode = Exec;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize(Size) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+
+  return true;
+}
+
+bool panNicEvent::buildStatus(uint32_t Token, uint8_t Tag, uint16_t Entry){
+  Opcode = Status;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize((uint32_t)(Entry)) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildCancel(uint32_t Token, uint8_t Tag, uint16_t Entry){
+  Opcode = Cancel;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize((uint32_t)(Entry)) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildReserve(uint32_t Token, uint8_t Tag){
+  Opcode = Reserve;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildRevoke(uint32_t Token, uint8_t Tag){
+  Opcode = Revoke;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildHalt(uint32_t Token, uint8_t Tag, uint16_t Hart){
+  Opcode = Halt;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize((uint32_t)(Hart)) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildResume(uint32_t Token, uint8_t Tag){
+  Opcode = Resume;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildReadReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg){
+  Opcode = ReadReg;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize((uint32_t)(Hart)) )
+    return false;
+  if( !setAddr(Reg) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg, uint64_t *Data){
+  Opcode = WriteReg;
+  if( Data == nullptr )
+    return false;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize((uint32_t)(Hart)) )
+    return false;
+  if( !setAddr(Reg) )
+    return false;
+  if( !setData(Data,8) )      /// right now we only write 8 bytes
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildSingleStep(uint32_t Token, uint8_t Tag, uint16_t Hart){
+  Opcode = SingleStep;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setSize((uint32_t)(Hart)) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildSetFuture(uint32_t Token, uint8_t Tag, uint64_t Addr){
+  Opcode = SetFuture;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildRevokeFuture(uint32_t Token, uint8_t Tag, uint64_t Addr){
+  Opcode = RevokeFuture;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildStatusFuture(uint32_t Token, uint8_t Tag, uint64_t Addr){
+  Opcode = StatusFuture;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setAddr(Addr) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildBOTW(uint32_t Token, uint8_t Tag, uint8_t VarArgs, uint64_t *Args, uint32_t Offset){
+  Opcode = BOTW;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  if( !setOffset(Offset) )
+    return false;
+  if( !setData(Args,(uint32_t)(VarArgs)) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildSuccess(uint32_t Token, uint8_t Tag){
+  Opcode = Success;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  return true;
+}
+
+bool panNicEvent::buildFailed(uint32_t Token, uint8_t Tag){
+  Opcode = Failed;
+  if( !setToken(Token) )
+    return false;
+  if( !setTag(Tag) )
+    return false;
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+// PanNet Class
+// -----------------------------------------------------------------------------
+
 PanNet::PanNet(ComponentId_t id, Params& params)
   : panNicAPI(id, params) {
   // setup the initial logging functions
@@ -37,6 +444,9 @@ PanNet::PanNet(ComponentId_t id, Params& params)
                                                                       netparams,
                                                                       1);
   }
+
+  // determine if this is a host device
+  isHost = params.find<bool>("host_device",0);
 
   iFace->setNotifyOnReceive(new SST::Interfaces::SimpleNetwork::Handler<PanNet>(this, &PanNet::msgNotify));
 
