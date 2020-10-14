@@ -88,6 +88,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
       output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
 
     Nic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
+
+    // record the number of injected messages per cycle
+    msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
   }
 
   // See if we should the load PAN network interface controller
@@ -103,6 +106,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
       output.fatal(CALL_INFO, -1, "Error: no PAN NIC object loaded into RevCPU\n");
 
     PNic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handlePANMessage));
+
+    // record the number of injected messages per cycle
+    msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
   }
 
   // Create the memory object
@@ -158,9 +164,10 @@ RevCPU::~RevCPU(){
 }
 
 void RevCPU::setup(){
-  if( EnableNIC ){
+  if( EnableNIC )
     Nic->setup();
-  }
+  if( EnablePAN )
+    PNic->setup();
 }
 
 void RevCPU::finish(){
@@ -169,6 +176,8 @@ void RevCPU::finish(){
 void RevCPU::init( unsigned int phase ){
   if( EnableNIC )
     Nic->init(phase);
+  if( EnablePAN )
+    PNic->init(phase);
 }
 
 void RevCPU::handleMessage(Event *ev){
@@ -177,11 +186,132 @@ void RevCPU::handleMessage(Event *ev){
 }
 
 //
-// This is the PAN Network Transport Module
+// This is the PAN Network Transport Module Handler
 //
 void RevCPU::handlePANMessage(Event *ev){
   panNicEvent *event = static_cast<panNicEvent*>(ev);
+
+  if( PNic->IsHost() ){
+    // if we are a host device, only decode host-type messages
+    handleHostPANMessage(event);
+  }else{
+    // otherwise decode all the messages
+    handleNetPANMessage(event);
+  }
+
   delete event;
+}
+
+void RevCPU::handleHostPANMessage(panNicEvent *event){
+  switch( event->getOpcode() ){
+  case panNicEvent::Success:
+    break;
+  case panNicEvent::Failed:
+    break;
+  case panNicEvent::SyncGet:
+  case panNicEvent::SyncPut:
+  case panNicEvent::AsyncGet:
+  case panNicEvent::AsyncPut:
+  case panNicEvent::SyncStreamGet:
+  case panNicEvent::SyncStreamPut:
+  case panNicEvent::AsyncStreamGet:
+  case panNicEvent::AsyncStreamPut:
+  case panNicEvent::Exec:
+  case panNicEvent::Status:
+  case panNicEvent::Cancel:
+  case panNicEvent::Reserve:
+  case panNicEvent::Revoke:
+  case panNicEvent::Halt:
+  case panNicEvent::Resume:
+  case panNicEvent::ReadReg:
+  case panNicEvent::WriteReg:
+  case panNicEvent::SingleStep:
+  case panNicEvent::SetFuture:
+  case panNicEvent::RevokeFuture:
+  case panNicEvent::StatusFuture:
+  case panNicEvent::BOTW:
+  default:
+    // host devices should never receive these commands
+    output.fatal(CALL_INFO, -1,
+                 "Error: host devices cannot handle %s commands\n",
+                 event->getOpcodeStr().c_str() );
+    break;
+  }
+}
+
+void RevCPU::handleNetPANMessage(panNicEvent *event){
+  switch( event->getOpcode() ){
+  case panNicEvent::SyncGet:
+    break;
+  case panNicEvent::SyncPut:
+    break;
+  case panNicEvent::AsyncGet:
+    break;
+  case panNicEvent::AsyncPut:
+    break;
+  case panNicEvent::SyncStreamGet:
+    break;
+  case panNicEvent::SyncStreamPut:
+    break;
+  case panNicEvent::AsyncStreamGet:
+    break;
+  case panNicEvent::AsyncStreamPut:
+    break;
+  case panNicEvent::Exec:
+    break;
+  case panNicEvent::Status:
+    break;
+  case panNicEvent::Cancel:
+    break;
+  case panNicEvent::Reserve:
+    break;
+  case panNicEvent::Revoke:
+    break;
+  case panNicEvent::Halt:
+    break;
+  case panNicEvent::Resume:
+    break;
+  case panNicEvent::ReadReg:
+    break;
+  case panNicEvent::WriteReg:
+    break;
+  case panNicEvent::SingleStep:
+    break;
+  case panNicEvent::SetFuture:
+    break;
+  case panNicEvent::RevokeFuture:
+    break;
+  case panNicEvent::StatusFuture:
+    break;
+  case panNicEvent::BOTW:
+    break;
+  case panNicEvent::Success:
+  case panNicEvent::Failed:
+  default:
+    // network devices should never receive these commands
+    output.fatal(CALL_INFO, -1,
+                 "Error: network devices cannot handle %s commands\n",
+                 event->getOpcodeStr().c_str() );
+    break;
+  }
+}
+
+bool RevCPU::sendPANMessage(){
+  // check the mailbox for the next message
+  return true;
+}
+
+bool RevCPU::processPANMemRead(){
+  return true;
+}
+
+uint8_t RevCPU::createTag(){
+  if( PrivTag == 0b11111111 ){
+    return 0b00000000;
+  }else{
+    PrivTag +=1;
+    return PrivTag;
+  }
 }
 
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
@@ -197,10 +327,28 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     }
   }
 
+  // Clock the PAN network transport module
+  if( EnablePAN ){
+    for( unsigned i=0; i< msgPerCycle; i++ ){
+      // check the mailbox for messages to inject
+      if( !sendPANMessage() )
+        output.fatal(CALL_INFO, -1, "Error: could not send PAN command message\n" );
+    }
+
+    // process the read queue
+    if( !processPANMemRead() )
+      output.fatal(CALL_INFO, -1, "Error: failed to process the PAN memory read queue\n" );
+  }
+
+  // check to see if all the processors are completed
   for( unsigned i=0; i<Procs.size(); i++ ){
     if( Enabled[i] )
       rtn = false;
   }
+
+  // TODO: check to see if the network has any outstanding messages
+
+  // TODO: clear the memory write queue
 
   if( rtn )
     primaryComponentOKToEndSim();

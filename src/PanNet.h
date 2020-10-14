@@ -132,6 +132,9 @@ namespace SST {
       /// panNicEvent: get the number of data blocks for the target size
       unsigned getNumBlocks(uint32_t Size);
 
+      /// panNicEvent: return the opcode type as a string
+      std::string getOpcodeStr();
+
       // ------------------------------------------------
       // Packet Building Functions
       // ------------------------------------------------
@@ -248,11 +251,19 @@ namespace SST {
      * panNicAPI: Handles the subcomponent NIC API
      */
     class panNicAPI: public SST::SubComponent{
+    private:
+      bool isHost;      ///< Determines if this is a host device
     public:
       SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::panNicAPI)
 
       /// panNicAPI: default constructor
       panNicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
+
+      /// panNicAPI: set whether this device is a host
+      void SetHost(bool host){ isHost = host; }
+
+      /// panNicAPI: determine ehther this is a host device
+      bool IsHost() { return isHost; }
 
       /// panNicAPI: default destructor
       virtual ~panNicAPI() { }
@@ -273,7 +284,7 @@ namespace SST {
       virtual int getNumDestinations() = 0;
 
       /// panNicAPI: returns the NIC's network address
-       virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
+      virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
     }; // end panNicAPI
 
     /**
@@ -334,6 +345,9 @@ namespace SST {
 
       /// PanNet: callback function for the SimpleNetwork itnerface
       bool msgNotify(int virtualNetwork);
+
+      /// PanNet: determine if I am a host connected device
+      bool IsHost() { return isHost; }
 
       /// PanNet: clock function
       virtual bool clockTick(Cycle_t cycle);

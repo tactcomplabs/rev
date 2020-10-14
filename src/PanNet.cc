@@ -23,6 +23,83 @@ panNicEvent::PanPacket panNicEvent::getType(){
   return (panNicEvent::PanPacket)(Type);
 }
 
+std::string panNicEvent::getOpcodeStr(){
+  switch(Opcode){
+  case panNicEvent::Failed:
+    return "Failed";
+    break;
+  case panNicEvent::SyncGet:
+    return "SyncGet";
+    break;
+  case panNicEvent::SyncPut:
+    return "SyncPut";
+    break;
+  case panNicEvent::AsyncGet:
+    return "AsyncGet";
+    break;
+  case panNicEvent::AsyncPut:
+    return "AsyncPut";
+    break;
+  case panNicEvent::SyncStreamGet:
+    return "SyncStreamGet";
+    break;
+  case panNicEvent::SyncStreamPut:
+    return "SyncStreamPut";
+    break;
+  case panNicEvent::AsyncStreamGet:
+    return "AsyncStreamGet";
+    break;
+  case panNicEvent::AsyncStreamPut:
+    return "AsyncStreamPut";
+    break;
+  case panNicEvent::Exec:
+    return "Exec";
+    break;
+  case panNicEvent::Status:
+    return "Status";
+    break;
+  case panNicEvent::Cancel:
+    return "Cancel";
+    break;
+  case panNicEvent::Reserve:
+    return "Reserve";
+    break;
+  case panNicEvent::Revoke:
+    return "Revoke";
+    break;
+  case panNicEvent::Halt:
+    return "Halt";
+    break;
+  case panNicEvent::Resume:
+    return "Resume";
+    break;
+  case panNicEvent::ReadReg:
+    return "ReadReg";
+    break;
+  case panNicEvent::WriteReg:
+    return "WriteReg";
+    break;
+  case panNicEvent::SingleStep:
+    return "SingleStep";
+    break;
+  case panNicEvent::SetFuture:
+    return "SetFuture";
+    break;
+  case panNicEvent::RevokeFuture:
+    return "RevokeFuture";
+    break;
+  case panNicEvent::StatusFuture:
+    return "StatusFuture";
+    break;
+  case panNicEvent::BOTW:
+    return "BOTW";
+    break;
+  default:
+    return "UNKNOWN";
+    break;
+  }
+}
+
 bool panNicEvent::setData(uint64_t *In, uint32_t Sz){
   unsigned blocks = 0;
 
@@ -447,6 +524,7 @@ PanNet::PanNet(ComponentId_t id, Params& params)
 
   // determine if this is a host device
   isHost = params.find<bool>("host_device",0);
+  this->SetHost(isHost);
 
   iFace->setNotifyOnReceive(new SST::Interfaces::SimpleNetwork::Handler<PanNet>(this, &PanNet::msgNotify));
 

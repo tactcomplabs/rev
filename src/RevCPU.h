@@ -70,19 +70,20 @@ namespace SST {
       // RevCPU Component Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_PARAMS(
-                              {"verbose",   "Sets the verbosity level of output",      "0" },
-                              {"clock",     "Clock for the CPU",                       "1GHz" },
-                              {"program",   "Sets the binary executable",              "a.out" },
-                              {"args",      "Sets the argument list",                  ""},
-                              {"numCores",  "Number of RISC-V cores to instantiate",   "1" },
-                              {"memSize",   "Main memory size in bytes",               "1073741824"},
-                              {"startAddr", "Starting PC of the target core",          "core:0x80000000"},
-                              {"machine",   "RISC-V machine model of the target core", "core:G"},
-                              {"memCost",   "Memory latency range in cycles min:max",  "core:0:10"},
-                              {"table",     "Instruction cost table",                  "core:/path/to/table"},
-                              {"enable_nic","Enable the internal RevNIC",              "0"},
-                              {"enable_pan","Enable PAN network endpoint",             "0"},
-                              {"splash",    "Display the splash logo",                 "0"}
+                              {"verbose",    "Sets the verbosity level of output",      "0" },
+                              {"clock",      "Clock for the CPU",                       "1GHz" },
+                              {"program",    "Sets the binary executable",              "a.out" },
+                              {"args",       "Sets the argument list",                  ""},
+                              {"numCores",   "Number of RISC-V cores to instantiate",   "1" },
+                              {"memSize",    "Main memory size in bytes",               "1073741824"},
+                              {"startAddr",  "Starting PC of the target core",          "core:0x80000000"},
+                              {"machine",    "RISC-V machine model of the target core", "core:G"},
+                              {"memCost",    "Memory latency range in cycles min:max",  "core:0:10"},
+                              {"table",      "Instruction cost table",                  "core:/path/to/table"},
+                              {"enable_nic", "Enable the internal RevNIC",              "0"},
+                              {"enable_pan", "Enable PAN network endpoint",             "0"},
+                              {"msgPerCycle","Number of messages per cycle to inject",  "1"},
+                              {"splash",     "Display the splash logo",                 "0"}
                              )
 
       // -------------------------------------------------------
@@ -107,6 +108,7 @@ namespace SST {
 
     private:
       unsigned numCores;                  ///< RevCPU: number of RISC-V cores
+      unsigned msgPerCycle;               ///< RevCPU: number of messages to cycle to send
       std::string Exe;                    ///< RevCPU: binary executable
       std::string Args;                   ///< RevCPU: argument list
       RevOpts *Opts;                      ///< RevCPU: Simulation options object
@@ -114,6 +116,8 @@ namespace SST {
       RevLoader *Loader;                  ///< RevCPU: RISC-V loader
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
       bool *Enabled;                      ///< RevCPU: Completion structure
+
+      uint8_t PrivTag;                    ///< RevCPU: private tag locator
 
       bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
       bool EnablePAN;                     ///< RevCPU  flag for enabling the PAN operations
@@ -129,6 +133,21 @@ namespace SST {
 
       /// RevCPU: PAN NIC message handler
       void handlePANMessage(SST::Event *ev);
+
+      /// RevCPU: Handle PAN host-side message (host only)
+      void handleHostPANMessage(panNicEvent *event);
+
+      /// RevCPU: Handle PAN network-side messages (NIC's or switches)
+      void handleNetPANMessage(panNicEvent *event);
+
+      /// RevCPU: Sends a PAN message
+      bool sendPANMessage();
+
+      /// RevCPU: handles the memory write operations from incoming PAN messages
+      bool processPANMemRead();
+
+      /// RevCPU: Creates a unique tag for this message
+      uint8_t createTag();
 
     }; // class RevCPU
   } // namespace RevCPU
