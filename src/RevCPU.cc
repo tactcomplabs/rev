@@ -202,6 +202,72 @@ void RevCPU::handlePANMessage(Event *ev){
   delete event;
 }
 
+void RevCPU::PANHandleSyncGet(panNicEvent *event){
+}
+
+void RevCPU::PANHandleSyncPut(panNicEvent *event){
+}
+
+void RevCPU::PANHandleAsyncGet(panNicEvent *event){
+}
+
+void RevCPU::PANHandleAsyncPut(panNicEvent *event){
+}
+
+void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
+}
+
+void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
+}
+
+void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
+}
+
+void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
+}
+
+void RevCPU::PANHandleExec(panNicEvent *event){
+}
+
+void RevCPU::PANHandleStatus(panNicEvent *event){
+}
+
+void RevCPU::PANHandleCancel(panNicEvent *event){
+}
+
+void RevCPU::PANHandleReserve(panNicEvent *event){
+}
+
+void RevCPU::PANHandleRevoke(panNicEvent *event){
+}
+
+void RevCPU::PANHandleHalt(panNicEvent *event){
+}
+
+void RevCPU::PANHandleResume(panNicEvent *event){
+}
+
+void RevCPU::PANHandleReadReg(panNicEvent *event){
+}
+
+void RevCPU::PANHandleWriteReg(panNicEvent *event){
+}
+
+void RevCPU::PANHandleSingleStep(panNicEvent *event){
+}
+
+void RevCPU::PANHandleSetFuture(panNicEvent *event){
+}
+
+void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
+}
+
+void RevCPU::PANHandleStatusFuture(panNicEvent *event){
+}
+
+void RevCPU::PANHandleBOTW(panNicEvent *event){
+}
+
 void RevCPU::handleHostPANMessage(panNicEvent *event){
   switch( event->getOpcode() ){
   case panNicEvent::Success:
@@ -242,48 +308,70 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
 void RevCPU::handleNetPANMessage(panNicEvent *event){
   switch( event->getOpcode() ){
   case panNicEvent::SyncGet:
+    PANHandleSyncGet(event);
     break;
   case panNicEvent::SyncPut:
+    PANHandleSyncPut(event);
     break;
   case panNicEvent::AsyncGet:
+    PANHandleAsyncGet(event);
     break;
   case panNicEvent::AsyncPut:
+    PANHandleAsyncPut(event);
     break;
   case panNicEvent::SyncStreamGet:
+    PANHandleSyncStreamGet(event);
     break;
   case panNicEvent::SyncStreamPut:
+    PANHandleSyncStreamPut(event);
     break;
   case panNicEvent::AsyncStreamGet:
+    PANHandleAsyncStreamGet(event);
     break;
   case panNicEvent::AsyncStreamPut:
+    PANHandleAsyncStreamPut(event);
     break;
   case panNicEvent::Exec:
+    PANHandleExec(event);
     break;
   case panNicEvent::Status:
+    PANHandleStatus(event);
     break;
   case panNicEvent::Cancel:
+    PANHandleCancel(event);
     break;
   case panNicEvent::Reserve:
+    PANHandleReserve(event);
     break;
   case panNicEvent::Revoke:
+    PANHandleRevoke(event);
     break;
   case panNicEvent::Halt:
+    PANHandleHalt(event);
     break;
   case panNicEvent::Resume:
+    PANHandleResume(event);
     break;
   case panNicEvent::ReadReg:
+    PANHandleReadReg(event);
     break;
   case panNicEvent::WriteReg:
+    PANHandleWriteReg(event);
     break;
   case panNicEvent::SingleStep:
+    PANHandleSingleStep(event);
     break;
   case panNicEvent::SetFuture:
+    PANHandleSetFuture(event);
     break;
   case panNicEvent::RevokeFuture:
+    PANHandleRevokeFuture(event);
     break;
   case panNicEvent::StatusFuture:
+    PANHandleStatusFuture(event);
     break;
   case panNicEvent::BOTW:
+    PANHandleBOTW(event);
     break;
   case panNicEvent::Success:
   case panNicEvent::Failed:

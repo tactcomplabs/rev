@@ -149,6 +149,72 @@ namespace SST {
       /// RevCPU: Creates a unique tag for this message
       uint8_t createTag();
 
+      /// RevCPU: handle the SyncGet command
+      void PANHandleSyncGet(panNicEvent *event);
+
+      /// RevCPU: handle the SyncPut command
+      void PANHandleSyncPut(panNicEvent *event);
+
+      /// RevCPU: handle the AsyncGet command
+      void PANHandleAsyncGet(panNicEvent *event);
+
+      /// RevCPU: handle the AsyncPut command
+      void PANHandleAsyncPut(panNicEvent *event);
+
+      /// RevCPU: handle the SyncStreamGet commmand
+      void PANHandleSyncStreamGet(panNicEvent *event);
+
+      /// RevCPU: handle the SyncStreamPut command
+      void PANHandleSyncStreamPut(panNicEvent *event);
+
+      /// RevCPU: handle the AsyncStreamGet command
+      void PANHandleAsyncStreamGet(panNicEvent *event);
+
+      /// RevCPU: handle the AsyncStreamPut command
+      void PANHandleAsyncStreamPut(panNicEvent *event);
+
+      /// RevCPU: Exec command
+      void PANHandleExec(panNicEvent *event);
+
+      /// RevCPU: Status command
+      void PANHandleStatus(panNicEvent *event);
+
+      /// RevCPU: Cancel command
+      void PANHandleCancel(panNicEvent *event);
+
+      /// RevCPU: Reserve command
+      void PANHandleReserve(panNicEvent *event);
+
+      /// RevCPU: Revoke command
+      void PANHandleRevoke(panNicEvent *event);
+
+      /// RevCPU: Halt command
+      void PANHandleHalt(panNicEvent *event);
+
+      /// RevCPU: Resume command
+      void PANHandleResume(panNicEvent *event);
+
+      /// RevCPU: ReadReg command
+      void PANHandleReadReg(panNicEvent *event);
+
+      /// RevCPU: WriteReg command
+      void PANHandleWriteReg(panNicEvent *event);
+
+      /// RevCPU: SingleStep command
+      void PANHandleSingleStep(panNicEvent *event);
+
+      /// RevCPU: SetFuture command
+      void PANHandleSetFuture(panNicEvent *event);
+
+      /// RevCPU: RevokeFuture command
+      void PANHandleRevokeFuture(panNicEvent *event);
+
+      /// RevCPU: StatusFuture command
+      void PANHandleStatusFuture(panNicEvent *event);
+
+      /// RevCPU: BOTW command
+      void PANHandleBOTW(panNicEvent *event);
+
     }; // class RevCPU
   } // namespace RevCPU
 } // namespace SST

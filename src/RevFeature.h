@@ -36,6 +36,7 @@ namespace SST{
       RV_F          = 4,        ///< RevFeatureType: F-extension
       RV_D          = 5,        ///< RevFeatureType: D-extension
       RV_C          = 6,        ///< RevFeatureType: C-extension
+      RV_P          = 20        ///< RevFeatureType: PAN Extension
     }RevFeatureType;
 
     class RevFeature{

@@ -110,6 +110,15 @@ bool RevProc::SeedInstTable(){
     }
   }
 
+  // PAN Extension
+  if( feature->IsModeEnabled(RV_P) ){
+    if( feature->GetXlen() == 64 ){
+      EnableExt(static_cast<RevExt *>(new RV64P(feature,&RegFile,mem,output)));
+    }else{
+      output->fatal(CALL_INFO, -1, "Error: PAN can only be enabled on RV64");
+    }
+  }
+
   // C-Extension
   if( feature->IsModeEnabled(RV_C) ){
     output->fatal(CALL_INFO, -1, "Error: compressed encodings enabled for core=%d not currently supported\n", id);
