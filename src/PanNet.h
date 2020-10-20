@@ -275,10 +275,26 @@ namespace SST {
       /// panNicAPI: retrieve the host token
       uint32_t GetToken() { return Token; }
 
+      /// panNicAPI: check the target token against what is stored
+      bool CheckToken(uint32_t T){
+        if( !isReserved )
+          return false;
+        if( Token == T )
+          return true;
+        return false;
+      }
+
+      /// panNicAPI: revoke the token
+      void RevokeToken(){
+        isReserved = false;
+        Token = 0x00;
+      }
+
       /// panNicAPI: set the host token
       bool SetToken(uint32_t T){
         if( !isReserved ){
           Token = T;
+          isReserved = true;
           return true;
         }else{
           return false;

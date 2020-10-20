@@ -215,6 +215,12 @@ namespace SST {
       /// RevCPU: BOTW command
       void PANHandleBOTW(panNicEvent *event);
 
+      /// RevCPU: construct a failed PAN response command due to a token failure
+      void PANBuildFailedToken(panNicEvent *event);
+
+      /// RevCPU: construct a generic successful PAN response command
+      void PANBuildSuccess(panNicEvent *event);
+
     }; // class RevCPU
   } // namespace RevCPU
 } // namespace SST

@@ -202,70 +202,181 @@ void RevCPU::handlePANMessage(Event *ev){
   delete event;
 }
 
+void RevCPU::PANBuildFailedToken(panNicEvent *event){
+  panNicEvent *FEvent = new panNicEvent();
+  if( !FEvent->buildFailed(event->getToken(),event->getTag()) ){
+    output.fatal(CALL_INFO, -1,
+                 "Error: failed to construct token failure command for tag=%d\n",
+                 event->getTag());
+  }
+}
+
+void RevCPU::PANBuildSuccess(panNicEvent *event){
+  panNicEvent *SEvent = new panNicEvent();
+  if( !SEvent->buildSuccess(event->getToken(),event->getTag()) ){
+    output.fatal(CALL_INFO, -1,
+                 "Error: failed to construct token success command for tag=%d\n",
+                 event->getTag());
+  }
+}
+
 void RevCPU::PANHandleSyncGet(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleSyncPut(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleAsyncGet(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleAsyncPut(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleExec(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleStatus(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleCancel(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleReserve(panNicEvent *event){
+  if( PNic->IsReserved() ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
+
+  if( !PNic->SetToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleRevoke(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleHalt(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleResume(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleReadReg(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleWriteReg(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleSingleStep(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleSetFuture(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleStatusFuture(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::PANHandleBOTW(panNicEvent *event){
+  if( !PNic->CheckToken(event->getToken()) ){
+    // send failed response
+    PANBuildFailedToken(event);
+  }
 }
 
 void RevCPU::handleHostPANMessage(panNicEvent *event){
