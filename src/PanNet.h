@@ -253,17 +253,37 @@ namespace SST {
     class panNicAPI: public SST::SubComponent{
     private:
       bool isHost;      ///< Determines if this is a host device
+      bool isReserved;  ///< Determines if the token is reserved
+      uint32_t Token;   ///< Holds the reservation token
+
     public:
       SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::panNicAPI)
 
       /// panNicAPI: default constructor
-      panNicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
+      panNicAPI(ComponentId_t id, Params& params)
+        : SubComponent(id), isHost(false), isReserved(false), Token(0x00) { }
 
       /// panNicAPI: set whether this device is a host
       void SetHost(bool host){ isHost = host; }
 
       /// panNicAPI: determine ehther this is a host device
       bool IsHost() { return isHost; }
+
+      /// panNicAPI: determine if the device is reserved
+      bool IsReserved() { return isReserved; }
+
+      /// panNicAPI: retrieve the host token
+      uint32_t GetToken() { return Token; }
+
+      /// panNicAPI: set the host token
+      bool SetToken(uint32_t T){
+        if( !isReserved ){
+          Token = T;
+          return true;
+        }else{
+          return false;
+        }
+      }
 
       /// panNicAPI: default destructor
       virtual ~panNicAPI() { }
@@ -367,7 +387,6 @@ namespace SST {
 
     private:
       bool isHost;                            ///< PanNet: Determines if this is a host device
-      uint32_t Token;                         ///< PanNet: Reservation token
 
     }; // end PanNet
 
