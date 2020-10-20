@@ -30,6 +30,32 @@ RevMem::~RevMem(){
   delete[] mem;
 }
 
+bool RevMem::SetFuture(uint64_t Addr){
+  FutureRes.push_back(Addr);
+  std::sort( FutureRes.begin(), FutureRes.end() );
+  FutureRes.erase( std::unique( FutureRes.begin(), FutureRes.end() ), FutureRes.end() );
+  return true;
+}
+
+bool RevMem::RevokeFuture(uint64_t Addr){
+  for( unsigned i=0; i<FutureRes.size(); i++ ){
+    if( FutureRes[i] == Addr ){
+      FutureRes.erase( FutureRes.begin() + i );
+      return true;
+    }
+  }
+  // nothing found
+  return false;
+}
+
+bool RevMem::StatusFuture(uint64_t Addr){
+  for( unsigned i=0; i<FutureRes.size(); i++ ){
+    if( FutureRes[i] == Addr )
+      return true;
+  }
+  return false;
+}
+
 bool RevMem::LR(unsigned Hart, uint64_t Addr){
   std::pair<unsigned,uint64_t> Entry = std::make_pair(Hart,Addr);
   LRSC.push_back(Entry);
@@ -66,6 +92,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+  RevokeFuture(Addr); // revoke the future if it is present; ignore the return
   char *BaseMem = (char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&mem[0]));
   char *DataMem = (char *)(Data);
   for( unsigned i=0; i<Len; i++ ){
