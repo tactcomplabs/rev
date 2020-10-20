@@ -29,5 +29,6 @@
 #include "insns/RV64F.h"
 #include "insns/RV32D.h"
 #include "insns/RV64D.h"
+#include "insns/RV64P.h"
 
 #endif
