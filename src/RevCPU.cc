@@ -209,14 +209,29 @@ void RevCPU::PANBuildFailedToken(panNicEvent *event){
                  "Error: failed to construct token failure command for tag=%d\n",
                  event->getTag());
   }
+  SendMB.push(std::make_pair(FEvent,event->getSrc()));
 }
 
-void RevCPU::PANBuildSuccess(panNicEvent *event){
+void RevCPU::PANBuildRawSuccess(panNicEvent *event){
   panNicEvent *SEvent = new panNicEvent();
   if( !SEvent->buildSuccess(event->getToken(),event->getTag()) ){
     output.fatal(CALL_INFO, -1,
                  "Error: failed to construct token success command for tag=%d\n",
                  event->getTag());
+  }
+  SendMB.push(std::make_pair(SEvent,event->getSrc()));
+}
+
+void RevCPU::PANBuildBasicSuccess(panNicEvent *orig, panNicEvent *rtn){
+  if( !rtn ){
+    output.fatal(CALL_INFO, -1,
+                 "Error : new event command packet is null : %d\n",
+                 orig->getTag());
+  }
+  if( !rtn->buildSuccess(orig->getToken(),orig->getTag()) ){
+    output.fatal(CALL_INFO, -1,
+                 "Error: failed to construct token success command for tag=%d\n",
+                 orig->getTag());
   }
 }
 
@@ -307,6 +322,8 @@ void RevCPU::PANHandleReserve(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  PANBuildRawSuccess(event);
 }
 
 void RevCPU::PANHandleRevoke(panNicEvent *event){
@@ -356,6 +373,10 @@ void RevCPU::PANHandleSetFuture(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  if( Mem->SetFuture(event->getAddr()))
+    PANBuildRawSuccess(event);
+  else
+    PANBuildFailedToken(event);
 }
 
 void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
@@ -363,6 +384,10 @@ void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  if( Mem->RevokeFuture(event->getAddr()))
+    PANBuildRawSuccess(event);
+  else
+    PANBuildFailedToken(event);
 }
 
 void RevCPU::PANHandleStatusFuture(panNicEvent *event){
@@ -497,6 +522,13 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
 
 bool RevCPU::sendPANMessage(){
   // check the mailbox for the next message
+  if( SendMB.empty() )
+    return true;
+
+  PNic->send(SendMB.front().first,SendMB.front().second);
+
+  SendMB.pop();
+
   return true;
 }
 

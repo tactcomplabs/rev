@@ -108,6 +108,12 @@ namespace SST {
       /// panNicEvent: retrieve the packet data
       void getData(uint64_t *Out);
 
+      /// panNicEvent: retrieve the source ID
+      int getSrc() { return Src; }
+
+      /// panNicEvent: set the source ID
+      bool setSrc(int S) { Src = S; return true; }
+
       /// panNicEvent: set the packet data
       bool setData(uint64_t *In, uint32_t Sz);
 
@@ -223,6 +229,7 @@ namespace SST {
 
     private:
       std::string SrcName;            ///< panNicEvent: Name of the sending device
+      int Src;                        ///< panNicEvent: Source ID
       uint8_t Tag;                    ///< panNicEvent: Tag value of the command packet
       uint8_t Opcode;                 ///< panNicEvent: Opcode value of the command packet
       uint8_t VarArgs;                ///< panNicEvent: Variadic arguments for BOTW packet

@@ -13,6 +13,8 @@
 
 // -- Standard Headers
 #include <vector>
+#include <queue>
+#include <tuple>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -128,6 +130,8 @@ namespace SST {
       nicAPI *Nic;                        ///< RevCPU: Network interface controller
       panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
 
+      std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox
+
       /// RevCPU: RevNIC message handler
       void handleMessage(SST::Event *ev);
 
@@ -216,10 +220,16 @@ namespace SST {
       void PANHandleBOTW(panNicEvent *event);
 
       /// RevCPU: construct a failed PAN response command due to a token failure
+      ///         Implicitly pushes the failure command onto the send mailbox
       void PANBuildFailedToken(panNicEvent *event);
 
-      /// RevCPU: construct a generic successful PAN response command
-      void PANBuildSuccess(panNicEvent *event);
+      /// RevCPU: construct a generic successful PAN response command.
+      ///         Implicitly pushes the success command onto the send mailbox
+      void PANBuildRawSuccess(panNicEvent *event);
+
+      /// RevCPU: construct a generic success command response in the target rtn packet.
+      ///         Does not push onto the send mailbox
+      void PANBuildBasicSuccess(panNicEvent *event, panNicEvent *rtn);
 
     }; // class RevCPU
   } // namespace RevCPU
