@@ -49,7 +49,30 @@ namespace SST{
       /// RevProc: per-processor clock function
       bool ClockTick( SST::Cycle_t currentCycle );
 
+      /// RevProc: halt the CPU
+      bool Halt();
+
+      /// RevProc: resume the CPU
+      bool Resume();
+
+      /// RevProc: execute a single step
+      bool SingleStepHart();
+
+      /// RevProc: retrieve the local PC for the correct feature set
+      uint64_t GetPC();
+
+      /// RevProc: Debug mode read a register
+      bool DebugReadReg(unsigned Idx, uint64_t *Value);
+
+      /// RevProc: Debug mode write a register
+      bool DebugWriteReg(unsigned Idx, uint64_t Value);
+
+      /// RevProc: Is this an RV32 machine?
+      bool DebugIsRV32() { return feature->IsRV32(); }
+
     private:
+      bool Halted;              ///< RevProc: determines if the core is halted
+      bool SingleStep;          ///< RevProc: determines if we are in a single step
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
       RevOpts *opts;            ///< RevProc: options object
@@ -128,9 +151,6 @@ namespace SST{
 
       /// RevProc: determine if the instruction is an SP/FP float
       bool IsFloat(unsigned Entry);
-
-      /// RevProc: retrieve the local PC for the correct feature set
-      uint64_t GetPC();
 
       /// RevProc: reset the inst structure
       void ResetInst(RevInst *Inst);

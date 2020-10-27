@@ -15,7 +15,8 @@ RevProc::RevProc( unsigned Id,
                   RevMem *Mem,
                   RevLoader *Loader,
                   SST::Output *Output )
-  : id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output) {
+  : Halted(false), SingleStep(false),
+    id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -44,6 +45,36 @@ RevProc::~RevProc(){
   for( unsigned i=0; i<Extensions.size(); i++ )
     delete Extensions[i];
   delete feature;
+}
+
+bool RevProc::Halt(){
+  if( Halted )
+    return false;
+  Halted = true;
+  SingleStep = false;
+  return true;
+}
+
+bool RevProc::Resume(){
+  if( Halted ){
+    Halted = false;
+    SingleStep = false;
+    return true;
+  }
+  return false;
+}
+
+bool RevProc::SingleStepHart(){
+  if( SingleStep )
+    return true;
+  if( Halted ){
+    Halted = false;
+    SingleStep = true;
+    return true;
+  }else{
+    // must be halted to single step
+    return false;
+  }
 }
 
 bool RevProc::EnableExt(RevExt *Ext){
@@ -576,6 +607,36 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
+bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value){
+  if( !Halted )
+    return false;
+  if( Idx > (_REV_NUM_REGS_-1) ){
+    return false;
+  }
+  if( feature->GetXlen() == 32 ){
+    *Value = RegFile.RV32[Idx];
+    return true;
+  }else{
+    *Value = RegFile.RV64[Idx];
+    return true;
+  }
+}
+
+bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value){
+  if( !Halted )
+    return false;
+  if( Idx > (_REV_NUM_REGS_-1) ){
+    return false;
+  }
+  if( feature->GetXlen() == 32 ){
+    RegFile.RV32[Idx] = (uint32_t)(Value&0xFFFFFFFF);
+    return true;
+  }else{
+    RegFile.RV64[Idx] = Value;
+    return true;
+  }
+}
+
 uint64_t RevProc::GetPC(){
   if( feature->GetXlen() == 32 ){
     return (uint64_t)(RegFile.RV32_PC);
@@ -726,13 +787,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else if the the instruction has not yet been triggered, execute it
   // else, wait until the counter is decremented to zero to retire the instruction
   //
-  if( RegFile.cost == 0 ){
+  if( (RegFile.cost == 0) && (!Halted) ){
     // fetch the next instruction
     ResetInst(&Inst);
     Inst = DecodeInst();
     rtn = true;
     ExecPC = GetPC();
-  }else if( !RegFile.trigger ){
+  }else if( (!RegFile.trigger) && (!Halted) ){
     // trigger the next instruction
     RegFile.trigger = true;
 
@@ -760,9 +821,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
     }
 
+    // if this is a singlestep, clear the singlestep and halt
+    if( SingleStep ){
+      SingleStep = false;
+      Halted = true;
+    }
+
     rtn = true;
   }else{
     // wait until the counter has been decremented
+    // note that this will continue to occur until the counter is drained
+    // and the HART is halted
     RegFile.cost = RegFile.cost - 1;
 
     if( RegFile.cost == 0 ){

@@ -331,6 +331,9 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  PNic->RevokeToken();
+  PANBuildRawSuccess(event);
 }
 
 void RevCPU::PANHandleHalt(panNicEvent *event){
@@ -338,6 +341,12 @@ void RevCPU::PANHandleHalt(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  unsigned HART = event->getSize();
+  if( HART > (numCores-1) ){
+    PANBuildFailedToken(event);
+  }
+  Procs[HART]->Halt();
+  PANBuildRawSuccess(event);
 }
 
 void RevCPU::PANHandleResume(panNicEvent *event){
@@ -345,6 +354,15 @@ void RevCPU::PANHandleResume(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  bool error = false;
+  for( unsigned i=0; i<Procs.size(); i++ ){
+    if( !Procs[i]->Resume() )
+      error = true;
+  }
+  if( error )
+    PANBuildFailedToken(event);
+  else
+    PANBuildRawSuccess(event);
 }
 
 void RevCPU::PANHandleReadReg(panNicEvent *event){
@@ -352,6 +370,30 @@ void RevCPU::PANHandleReadReg(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  unsigned HART = event->getSize();
+  if( HART > (numCores-1) ){
+    PANBuildFailedToken(event);
+  }
+
+  unsigned Idx = (unsigned)(event->getAddr());
+  uint64_t Value = 0x00ull;
+
+  if( !Procs[HART]->DebugReadReg(Idx,&Value) )
+    PANBuildFailedToken(event);
+
+  panNicEvent *SCmd = new panNicEvent();
+
+  uint32_t Width = 0;
+  if( Procs[HART]->DebugIsRV32() )
+    Width = 4;
+  else
+    Width = 8;
+
+  SCmd->setData(&Value,Width);
+  SCmd->setSize(Width);
+
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleWriteReg(panNicEvent *event){
@@ -359,6 +401,19 @@ void RevCPU::PANHandleWriteReg(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  unsigned HART = event->getSize();
+  if( HART > (numCores-1) ){
+    PANBuildFailedToken(event);
+  }
+
+  unsigned Idx = (unsigned)(event->getAddr());
+  uint64_t Value = 0x00ull;
+  event->getData(&Value);
+
+  if( !Procs[HART]->DebugWriteReg(Idx,Value) )
+    PANBuildFailedToken(event);
+
+  PANBuildRawSuccess(event);
 }
 
 void RevCPU::PANHandleSingleStep(panNicEvent *event){
@@ -366,6 +421,19 @@ void RevCPU::PANHandleSingleStep(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  unsigned HART = event->getSize();
+  if( HART > (numCores-1) ){
+    PANBuildFailedToken(event);
+  }
+  uint64_t PC = Procs[HART]->GetPC();
+  if( !Procs[HART]->SingleStepHart() ){
+    PANBuildFailedToken(event);
+    return ;
+  }
+  panNicEvent *SCmd = new panNicEvent();
+  PANBuildBasicSuccess(event,SCmd);
+  SCmd->setAddr(PC);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleSetFuture(panNicEvent *event){
@@ -395,6 +463,15 @@ void RevCPU::PANHandleStatusFuture(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  bool IsFuture = Mem->StatusFuture(event->getAddr());
+  panNicEvent *SCmd = new panNicEvent();
+  PANBuildBasicSuccess(event,SCmd);
+  if( IsFuture )
+    SCmd->setSize(0x01);
+  else
+    SCmd->setSize(0x00);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleBOTW(panNicEvent *event){
