@@ -258,6 +258,24 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // retrieve the data
+  uint32_t Size = event->getSize();
+  uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
+  event->getData(Data);
+
+  // write it to memory
+  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+    delete[] Data;
+    PANBuildFailedToken(event);
+  }
+
+  // build response
+  delete[] Data;
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize(Size);
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleAsyncGet(panNicEvent *event){
@@ -272,6 +290,24 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // retrieve the data
+  uint32_t Size = event->getSize();
+  uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
+  event->getData(Data);
+
+  // write it to memory
+  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+    delete[] Data;
+    PANBuildFailedToken(event);
+  }
+
+  // build response
+  delete[] Data;
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize(Size);
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
@@ -286,6 +322,24 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // retrieve the data
+  uint32_t Size = event->getSize();
+  uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
+  event->getData(Data);
+
+  // write it to memory
+  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+    delete[] Data;
+    PANBuildFailedToken(event);
+  }
+
+  // build response
+  delete[] Data;
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize(Size);
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
@@ -300,6 +354,24 @@ void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // retrieve the data
+  uint32_t Size = event->getSize();
+  uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
+  event->getData(Data);
+
+  // write it to memory
+  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+    delete[] Data;
+    PANBuildFailedToken(event);
+  }
+
+  // build response
+  delete[] Data;
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize(Size);
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleExec(panNicEvent *event){
