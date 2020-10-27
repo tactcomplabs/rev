@@ -28,6 +28,7 @@
 #include "RevProc.h"
 #include "RevNIC.h"
 #include "PanNet.h"
+#include "PanExec.h"
 
 //using namespace SST::Interfaces;
 //using namespace SST::RevCPU;
@@ -129,6 +130,7 @@ namespace SST {
 
       nicAPI *Nic;                        ///< RevCPU: Network interface controller
       panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
+      PanExec *PExec;                     ///< RevCPU: PAN execution context
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox
 

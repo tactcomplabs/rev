@@ -107,6 +107,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
     PNic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handlePANMessage));
 
+    // setup the PAN target device execution context
+    if( !PNic->IsHost() ){
+      PExec = new PanExec();
+      for( unsigned i=0; i<Procs.size(); i++ ){
+        Procs[i]->SetExecCtx(PExec);
+      }
+    }
+
     // record the number of injected messages per cycle
     msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
   }
@@ -152,6 +160,9 @@ RevCPU::~RevCPU(){
   for( unsigned i=0; i<Procs.size(); i++ ){
     delete Procs[i];
   }
+
+  if( PExec )
+    delete PExec;
 
   // delete the memory object
   delete Mem;
@@ -296,6 +307,15 @@ void RevCPU::PANHandleExec(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  unsigned Idx = 0;
+  if( !PExec->AddEntry(event->getAddr(),&Idx) )
+    PANBuildFailedToken(event);
+
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize(Idx);
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleStatus(panNicEvent *event){
@@ -303,6 +323,15 @@ void RevCPU::PANHandleStatus(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+  unsigned Idx = (unsigned)(event->getSize());
+  PanExec::PanStatus Status = PExec->StatusEntry(Idx);
+  if( Status == PanExec::QNull )
+    PANBuildFailedToken(event);
+
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize((uint32_t)(Status));
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleCancel(panNicEvent *event){
@@ -310,6 +339,15 @@ void RevCPU::PANHandleCancel(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  unsigned Idx = (unsigned)(event->getSize());
+  if( !PExec->RemoveEntry(Idx) )
+    PANBuildFailedToken(event);
+
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize(Idx);
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::PANHandleReserve(panNicEvent *event){

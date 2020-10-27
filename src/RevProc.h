@@ -27,6 +27,7 @@
 #include "RevLoader.h"
 #include "RevInstTable.h"
 #include "RevInstTables.h"
+#include "PanExec.h"
 
 namespace SST::RevCPU {
   class RevProc;
@@ -70,6 +71,9 @@ namespace SST{
       /// RevProc: Is this an RV32 machine?
       bool DebugIsRV32() { return feature->IsRV32(); }
 
+      /// RevProc: Set the PAN execution context
+      void SetExecCtx(PanExec *P) { PExec = P; }
+
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
       bool SingleStep;          ///< RevProc: determines if we are in a single step
@@ -80,6 +84,7 @@ namespace SST{
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
       RevFeature *feature;      ///< RevProc: feature handler
+      PanExec *PExec;           ///< RevProc: PAN exeuction context
 
       RevRegFile RegFile;       ///< RevProc: register file
       RevInst Inst;             ///< RevProc: instruction payload
