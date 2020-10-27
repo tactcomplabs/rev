@@ -130,6 +130,9 @@ namespace SST{
       /// RevProc: reset the core and its associated features
       bool Reset();
 
+      /// RevProc: set the PC
+      void SetPC(uint64_t PC);
+
       /// RevProc: decode the instruction at the current PC
       RevInst DecodeInst();
 

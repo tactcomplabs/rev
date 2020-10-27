@@ -645,6 +645,14 @@ uint64_t RevProc::GetPC(){
   }
 }
 
+void RevProc::SetPC(uint64_t PC){
+  if( feature->GetXlen() == 32 ){
+    RegFile.RV32_PC = (uint32_t)(PC);
+  }else{
+    RegFile.RV64_PC = PC;
+  }
+}
+
 RevInst RevProc::DecodeInst(){
   uint32_t Enc  = 0x00ul;
   uint32_t Inst = 0x00ul;
@@ -843,10 +851,23 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     rtn = true;
   }
 
-  // check for end of program
   if( GetPC() == 0x00ull ){
-    output->verbose(CALL_INFO,2,0,"Program execution complete\n");
-    return false;
+    // look for more work on the execution queue
+    bool done = true;
+    if( PExec ){
+      uint64_t Addr = 0x00ull;
+      unsigned Idx = 0;
+      if( PExec->GetNextEntry(&Addr,&Idx) ){
+        SetPC(Addr);
+        done = false;
+      }
+    }
+
+    if( done ){
+      // we are really done, return
+      output->verbose(CALL_INFO,2,0,"Program execution complete\n");
+      return false;
+    }
   }
 
   return rtn;
