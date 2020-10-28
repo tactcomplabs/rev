@@ -251,6 +251,15 @@ void RevCPU::PANHandleSyncGet(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // push an event entry back onto the ReadQueue
+  ReadQueue.push_back(std::make_tuple(event->getTag(),
+                                      event->getSize(),
+                                      Procs[0]->RandCost(),
+                                      event->getSrc(),
+                                      event->getAddr()));
+
+  // we do not create a message here, it will be created later
 }
 
 void RevCPU::PANHandleSyncPut(panNicEvent *event){
@@ -283,6 +292,15 @@ void RevCPU::PANHandleAsyncGet(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // push an event entry back onto the ReadQueue
+  ReadQueue.push_back(std::make_tuple(event->getTag(),
+                                      event->getSize(),
+                                      Procs[0]->RandCost(),
+                                      event->getSrc(),
+                                      event->getAddr()));
+
+  // we do not create a message here, it will be created later
 }
 
 void RevCPU::PANHandleAsyncPut(panNicEvent *event){
@@ -315,6 +333,15 @@ void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // push an event entry back onto the ReadQueue
+  ReadQueue.push_back(std::make_tuple(event->getTag(),
+                                      event->getSize(),
+                                      Procs[0]->RandCost(),
+                                      event->getSrc(),
+                                      event->getAddr()));
+
+  // we do not create a message here, it will be created later
 }
 
 void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
@@ -347,6 +374,15 @@ void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  // push an event entry back onto the ReadQueue
+  ReadQueue.push_back(std::make_tuple(event->getTag(),
+                                      event->getSize(),
+                                      Procs[0]->RandCost(),
+                                      event->getSrc(),
+                                      event->getAddr()));
+
+  // we do not create a message here, it will be created later
 }
 
 void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
@@ -720,6 +756,39 @@ bool RevCPU::sendPANMessage(){
 }
 
 bool RevCPU::processPANMemRead(){
+  // walk the entire vector and decrement all the counters
+  // if we have a counter decrement to '0', then process the read request
+  // send responses as necessary
+  std::vector<std::tuple<uint8_t,uint32_t,unsigned,int,uint64_t>>::iterator it;
+
+  for( it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
+    std::get<2>(*it) = std::get<2>(*it)-1;
+    if( std::get<2>(*it) == 0 ){
+      // process this read request
+
+      // -- setup the respone
+      panNicEvent *SCmd = new panNicEvent();
+      uint64_t *Data = new uint64_t [SCmd->getNumBlocks(std::get<1>(*it))];
+      if( !Mem->ReadMem( std::get<4>(*it),
+                         (size_t)(std::get<1>(*it)),
+                         (void *)(Data) ) ){
+        // build a failed response
+        SCmd->buildFailed(PNic->GetToken(),std::get<0>(*it));
+        SendMB.push(std::make_pair(SCmd,std::get<3>(*it)));
+      }else{
+        // build a successful response
+        SCmd->buildSuccess(PNic->GetToken(),std::get<0>(*it));
+        SCmd->setSize(std::get<1>(*it));
+        SCmd->setData(Data,std::get<1>(*it));
+        SendMB.push(std::make_pair(SCmd,std::get<3>(*it)));
+      }
+      delete[] Data;
+
+      // erase it
+      ReadQueue.erase(it);
+    }
+  }
+
   return true;
 }
 
@@ -765,8 +834,6 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   // TODO: check to see if the network has any outstanding messages
-
-  // TODO: clear the memory write queue
 
   if( rtn )
     primaryComponentOKToEndSim();

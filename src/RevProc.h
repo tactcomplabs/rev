@@ -74,6 +74,9 @@ namespace SST{
       /// RevProc: Set the PAN execution context
       void SetExecCtx(PanExec *P) { PExec = P; }
 
+      /// RevProc: Retrieve a random memory cost value
+      unsigned RandCost() { return mem->RandCost(feature->GetMinCost(),feature->GetMaxCost()); }
+
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
       bool SingleStep;          ///< RevProc: determines if we are in a single step

@@ -133,6 +133,16 @@ namespace SST {
       PanExec *PExec;                     ///< RevCPU: PAN execution context
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox
+      std::vector<std::tuple<uint8_t,
+                             uint32_t,
+                             unsigned,
+                             int,
+                             uint64_t>> ReadQueue;      ///< RevCPU: outgoing memory read queue
+                                                        ///<         - Tag
+                                                        ///<         - Size
+                                                        ///<         - Cost
+                                                        ///<         - Src
+                                                        ///<         - Addr
 
       /// RevCPU: RevNIC message handler
       void handleMessage(SST::Event *ev);
