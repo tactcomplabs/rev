@@ -625,6 +625,21 @@ void RevCPU::PANHandleBOTW(panNicEvent *event){
     // send failed response
     PANBuildFailedToken(event);
   }
+
+  uint8_t VarArgs = event->getVarArgs();
+  uint64_t Entry  = (uint64_t)(event->getOffset()) + Loader->GetSymbolAddr("_start");
+  unsigned Idx    = 0;
+
+  // marshall the varargs to the device
+  // TODO
+
+  if( !PExec->AddEntry(Entry,&Idx) )
+    PANBuildFailedToken(event);
+
+  panNicEvent *SCmd = new panNicEvent();
+  SCmd->setSize(Idx);
+  PANBuildBasicSuccess(event,SCmd);
+  SendMB.push(std::make_pair(SCmd,event->getSrc()));
 }
 
 void RevCPU::handleHostPANMessage(panNicEvent *event){

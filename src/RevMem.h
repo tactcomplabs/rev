@@ -24,7 +24,6 @@
 #include "RevOpts.h"
 
 #ifndef _REVMEM_BASE_
-//#define _REVMEM_BASE_ 0x80000000
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
