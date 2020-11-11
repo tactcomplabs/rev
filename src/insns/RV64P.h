@@ -52,9 +52,9 @@ namespace SST{
       //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
       // ----------------------------------------------------------------------
       std::vector<RevInstEntry> RV64PTable = {
-      {"future %rd, $imm(%rs1)",   1, 0b0000011, 0b111, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &future},
-      {"rfuture %rd, $imm(%rs1)",  1, 0b0000011, 0b101, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &rfuture},
-      {"sfuture %rd, $imm(%rs1)",  1, 0b0000011, 0b100, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &sfuture},
+      {"future %rd, $imm(%rs1)",   1, 0b1110111, 0b111, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &future},
+      {"rfuture %rd, $imm(%rs1)",  1, 0b1110111, 0b101, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &rfuture},
+      {"sfuture %rd, $imm(%rs1)",  1, 0b1110111, 0b100, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &sfuture},
       };
 
     public:
