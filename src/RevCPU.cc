@@ -23,17 +23,33 @@ const char *splash_msg = "\
 \n\
 ";
 
+const char *pan_splash_msg = "\
+\n\
+       __|__\n\
+--@--@--(_)--@--@--\n\
+\n\
+    PAN PAN PAN!\n\
+";
+
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id), EnableNIC(false) {
+  : SST::Component(id), testStage(0), EnableNIC(false) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
   // Initialize the output handler
   output.init("RevCPU[" + getName() + ":@p:@t]: ", Verbosity, 0, SST::Output::STDOUT);
 
+  // Determine whether we're running the test harness
+  EnablePANTest = params.find<bool>("enable_test", 0);
+
   // Register a new clock handler
   std::string cpuClock = params.find<std::string>("clock", "1GHz");
-  timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+  if( EnablePANTest ){
+    timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
+    testIters = params.find<unsigned>("testIters", 255);
+  }else{
+    timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+  }
 
   // Inform SST to wait unti we authorize it to exit
   registerAsPrimaryComponent();
@@ -41,7 +57,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
   // Derive the simulation parameters
   // We must always derive the number of cores before initializing the options
+  // If the PAN tests are enabled, override the number cores and force them to '0'
   numCores = params.find<unsigned>("numCores", "0");
+  if( EnablePANTest )
+    numCores = 0;
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");
@@ -119,6 +138,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
   }
 
+  // See if we should load the test harness as opposed to a binary payload
+  if( EnablePANTest && (!EnablePAN) ){
+    output.fatal(CALL_INFO, -1, "Error: enabling PAN tests requires a pan_nic");
+  }
+
   // Create the memory object
   unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
   Mem = new RevMem( memSize, Opts,  &output );
@@ -126,9 +150,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
 
   // Load the binary into memory
-  Loader = new RevLoader( Exe, Args, Mem, &output );
-  if( !Loader )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
+  if( !EnablePANTest ){
+    // If we're running the PAN tests, don't load anything
+    Loader = new RevLoader( Exe, Args, Mem, &output );
+    if( !Loader )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
+  }
 
   // Create the processor objects
   for( unsigned i=0; i<numCores; i++ ){
@@ -144,11 +171,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   unsigned Splash = params.find<bool>("splash",0);
 
   if( Splash > 0 ){
-    output.verbose(CALL_INFO,1,0,splash_msg);
+    if( EnablePANTest )
+      output.verbose(CALL_INFO,1,0,pan_splash_msg);
+    else
+      output.verbose(CALL_INFO,1,0,splash_msg);
   }
 
   // Done with initialization
-  output.verbose(CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n");
+  if( EnablePANTest )
+    output.verbose(CALL_INFO, 1, 0, "Initialization of PANTest harness complete.\n");
+  else
+    output.verbose(CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n");
 }
 
 RevCPU::~RevCPU(){
@@ -168,7 +201,8 @@ RevCPU::~RevCPU(){
   delete Mem;
 
   // delete the loader object
-  delete Loader;
+  if( Loader )
+    delete Loader;
 
   // delete the options object
   delete Opts;
@@ -211,6 +245,52 @@ void RevCPU::handlePANMessage(Event *ev){
   }
 
   delete event;
+}
+
+void RevCPU::PANHandleSuccess(panNicEvent *event){
+  // search for the tag in the tag list
+  std::pair<uint8_t,int> Entry = std::make_pair(event->getTag(),
+                                                event->getSrc());
+  auto it = std::find(TrackTags.begin(),TrackTags.end(),Entry);
+  if( it == TrackTags.end() ){
+    // nothing found, raise an error
+    output.fatal(CALL_INFO, -1,
+                 "Error: failed to find matching tag and source identifier for incoming message: tag=%d; src=%d\n",
+                 event->getTag(),
+                 event->getSrc());
+    return ;  // should not reach this
+  }
+
+  output.verbose(CALL_INFO, 8, 0,
+                 "SUCCESS RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
+                 event->getTag(),
+                 event->getSrc());
+
+  // remove the entry
+  TrackTags.erase(it);
+}
+
+void RevCPU::PANHandleFailed(panNicEvent *event){
+  // search for the tag in the tag list
+  std::pair<uint8_t,int> Entry = std::make_pair(event->getTag(),
+                                                event->getSrc());
+  auto it = std::find(TrackTags.begin(),TrackTags.end(),Entry);
+  if( it == TrackTags.end() ){
+    // nothing found, raise an error
+    output.fatal(CALL_INFO, -1,
+                 "Error: failed to find matching tag and source identifier for incoming message: tag=%d; src=%d\n",
+                 event->getTag(),
+                 event->getSrc());
+    return ;  // should not reach this
+  }
+
+  output.verbose(CALL_INFO, 8, 0,
+                 "FAILED RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
+                 event->getTag(),
+                 event->getSrc());
+
+  // remove the entry
+  TrackTags.erase(it);
 }
 
 void RevCPU::PANBuildFailedToken(panNicEvent *event){
@@ -645,8 +725,10 @@ void RevCPU::PANHandleBOTW(panNicEvent *event){
 void RevCPU::handleHostPANMessage(panNicEvent *event){
   switch( event->getOpcode() ){
   case panNicEvent::Success:
+    PANHandleSuccess(event);
     break;
   case panNicEvent::Failed:
+    PANHandleFailed(event);
     break;
   case panNicEvent::SyncGet:
   case panNicEvent::SyncPut:
@@ -764,7 +846,13 @@ bool RevCPU::sendPANMessage(){
     return true;
 
   PNic->send(SendMB.front().first,SendMB.front().second);
+  if( PNic->IsHost() ){
+    // save the message to track the response
+    TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
+                                       SendMB.front().second));
+  }
 
+  // pop the message off the queue
   SendMB.pop();
 
   return true;
@@ -816,6 +904,247 @@ uint8_t RevCPU::createTag(){
   }
 }
 
+void RevCPU::ExecPANTest(){
+
+  // wait for the previous test to finish
+  if( !TrackTags.empty() )
+    return ;
+
+  int dest = 1;
+  uint64_t BASE = 0x00000080ull;
+  uint64_t Buf = 0x00ull;
+  panNicEvent *TEvent = nullptr;
+
+  switch( testStage ){
+  case 0:
+    // Token reservation
+    output.verbose(CALL_INFO, 8, 0, "Executing RESERVE test\n");
+    TEvent = new panNicEvent();
+    LToken = 0xfeedbeef;
+    if( !TEvent->buildReserve(LToken,createTag()) )
+      output.fatal(CALL_INFO, -1, "Error: could not create PAN RESERVE command\n");
+    SendMB.push(std::make_pair(TEvent,dest));
+    testStage++;
+    break;
+  case 1:
+    // Sync_Put test
+    output.verbose(CALL_INFO, 8, 0, "Executing SYNC_PUT test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildSyncPut(LToken,
+                                createTag(),
+                                BASE+(uint64_t)(i*8),
+                                8,
+                                &Buf) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN SYNC_PUT command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 2:
+    // Sync_Get test
+    output.verbose(CALL_INFO, 8, 0, "Executing SYNC_GET test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildSyncGet(LToken,
+                                createTag(),
+                                BASE+(uint64_t)(i*8),
+                                8 ) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN SYNC_GET command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 3:
+    // Async_Put test
+    output.verbose(CALL_INFO, 8, 0, "Executing ASYNC_PUT test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildAsyncPut(LToken,
+                                 createTag(),
+                                 BASE+(uint64_t)(i*8),
+                                 8,
+                                 &Buf) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN ASYNC_PUT command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 4:
+    // Async_Get test
+    output.verbose(CALL_INFO, 8, 0, "Executing ASYNC_GET test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildAsyncGet(LToken,
+                                createTag(),
+                                BASE+(uint64_t)(i*8),
+                                8 ) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN ASYNC_GET command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 5:
+    // Sync_Stream_Put test
+    output.verbose(CALL_INFO, 8, 0, "Executing SYNC_STREAM_PUT test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildSyncStreamPut(LToken,
+                                      createTag(),
+                                      BASE+(uint64_t)(i*8),
+                                      8,
+                                      &Buf) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN SYNC_STREAM_PUT command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 6:
+    // Sync_Stream_Get test
+    output.verbose(CALL_INFO, 8, 0, "Executing SYNC_STREAM_GET test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildSyncStreamGet(LToken,
+                                createTag(),
+                                BASE+(uint64_t)(i*8),
+                                8 ) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN SYNC_STREAM_GET command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 7:
+    // ASync_Stream_Put test
+    output.verbose(CALL_INFO, 8, 0, "Executing ASYNC_STREAM_PUT test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildAsyncStreamPut(LToken,
+                                       createTag(),
+                                       BASE+(uint64_t)(i*8),
+                                       8,
+                                       &Buf) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN ASYNC_STREAM_PUT command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 8:
+    // ASync_Stream_Get test
+    output.verbose(CALL_INFO, 8, 0, "Executing ASYNC_STREAM_GET test\n");
+    for( unsigned i=0; i<testIters; i++ ){
+      // create a new event
+      TEvent = new panNicEvent();  // new event to send
+      Buf = 0xdeadbeef;            // buffer to send
+
+      // populate it
+      if( !TEvent->buildAsyncStreamGet(LToken,
+                                createTag(),
+                                BASE+(uint64_t)(i*8),
+                                8 ) )
+        output.fatal(CALL_INFO, -1, "Error: could not create PAN ASYNC_STREAM_GET command\n" );
+
+      // send it
+      SendMB.push(std::make_pair(TEvent,dest));
+    }
+    testStage++;
+    break;
+  case 9:
+    // write the completion command
+    testStage++;
+    output.verbose(CALL_INFO, 8, 0, "Sending destination completion command\n");
+    TEvent = new panNicEvent();
+    Buf = 0x01ull;
+    if( !TEvent->buildSyncPut(LToken,
+                              createTag(),
+                              (uint64_t)(_PAN_COMPLETION_ADDR_),
+                              8,
+                              &Buf) )
+      output.fatal(CALL_INFO, -1, "Error: could not send completion command to destination\n" );
+    SendMB.push(std::make_pair(TEvent,dest));
+    break;
+  case 10:
+    // revoke reservation
+    output.verbose(CALL_INFO, 8, 0, "Executing REVOKE test\n");
+    TEvent = new panNicEvent();
+    if( !TEvent->buildRevoke(LToken,createTag()) )
+      output.fatal(CALL_INFO, -1, "Error: could not create PAN REVOKE command\n");
+    SendMB.push(std::make_pair(TEvent,dest));
+    testStage++;
+    break;
+  default:
+    // do nothing
+    break;
+  }
+}
+
+bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
+  bool rtn = true;
+  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+
+  // run test harness
+  ExecPANTest();
+
+  // inject messages
+  for( unsigned i=0; i< msgPerCycle; i++ ){
+    // check the mailbox for messages to inject
+    if( !sendPANMessage() )
+      output.fatal(CALL_INFO, -1, "Error: could not send PAN command message\n" );
+  }
+
+  // check to see if we have outstanding network messages and whether the tests are complete
+  if( (!SendMB.empty() || !TrackTags.empty()) &&
+      (testStage < _MAX_PAN_TEST_) )
+    rtn = false;
+
+  // if its time to return, end the sim
+  if( rtn )
+    primaryComponentOKToEndSim();
+
+  return rtn;
+}
+
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
@@ -848,7 +1177,9 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       rtn = false;
   }
 
-  // TODO: check to see if the network has any outstanding messages
+  // check to see if the network has any outstanding messages
+  if( !SendMB.empty() || !TrackTags.empty() )
+    rtn = false;
 
   if( rtn )
     primaryComponentOKToEndSim();

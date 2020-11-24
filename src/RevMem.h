@@ -122,8 +122,6 @@ namespace SST {
 
       std::vector<std::pair<unsigned,uint64_t>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
-      /// RevMem: Virtual to physical address translation
-
     }; // class RevMem
   } // namespace RevCPU
 } // namespace SST

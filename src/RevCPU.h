@@ -15,6 +15,7 @@
 #include <vector>
 #include <queue>
 #include <tuple>
+#include <list>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -30,8 +31,8 @@
 #include "PanNet.h"
 #include "PanExec.h"
 
-//using namespace SST::Interfaces;
-//using namespace SST::RevCPU;
+#define _MAX_PAN_TEST_ 11
+#define _PAN_COMPLETION_ADDR_ 0x50000000
 
 namespace SST {
   namespace RevCPU {
@@ -55,6 +56,9 @@ namespace SST {
 
       /// RevCPU: standard SST component clock function
       bool clockTick( SST::Cycle_t currentCycle );
+
+      /// RevCPU: test harness clock tick function
+      bool clockTickPANTest( SST::Cycle_t currentCycle );
 
       // -------------------------------------------------------
       // RevCPU Component Registration Data
@@ -85,7 +89,9 @@ namespace SST {
                               {"table",      "Instruction cost table",                  "core:/path/to/table"},
                               {"enable_nic", "Enable the internal RevNIC",              "0"},
                               {"enable_pan", "Enable PAN network endpoint",             "0"},
+                              {"enable_test","Enable PAN network endpoint test",        "0"},
                               {"msgPerCycle","Number of messages per cycle to inject",  "1"},
+                              {"testIters",  "Number of PAN test messages to send",     "1024"}, 
                               {"splash",     "Display the splash logo",                 "0"}
                              )
 
@@ -111,7 +117,9 @@ namespace SST {
 
     private:
       unsigned numCores;                  ///< RevCPU: number of RISC-V cores
-      unsigned msgPerCycle;               ///< RevCPU: number of messages to cycle to send
+      unsigned msgPerCycle;               ///< RevCPU: number of messages to send per cycle
+      unsigned testStage;                 ///< RevCPU: controls the PAN Test harness staging
+      unsigned testIters;                 ///< RevCPU: the number of message iters for each PAN Test
       std::string Exe;                    ///< RevCPU: binary executable
       std::string Args;                   ///< RevCPU: argument list
       RevOpts *Opts;                      ///< RevCPU: Simulation options object
@@ -121,9 +129,11 @@ namespace SST {
       bool *Enabled;                      ///< RevCPU: Completion structure
 
       uint8_t PrivTag;                    ///< RevCPU: private tag locator
+      uint64_t LToken;                    ///< RevCPU: token identifier for PAN Test
 
       bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
-      bool EnablePAN;                     ///< RevCPU  flag for enabling the PAN operations
+      bool EnablePAN;                     ///< RevCPU: Flag for enabling the PAN operations
+      bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations
 
       TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
       SST::Output output;                 ///< RevCPU: SST output handler
@@ -132,7 +142,9 @@ namespace SST {
       panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
       PanExec *PExec;                     ///< RevCPU: PAN execution context
 
-      std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox
+
+      std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
+      std::list<std::pair<uint8_t,int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag,Dest>
       std::vector<std::tuple<uint8_t,
                              uint32_t,
                              unsigned,
@@ -143,6 +155,10 @@ namespace SST {
                                                         ///<         - Cost
                                                         ///<         - Src
                                                         ///<         - Addr
+
+
+      /// RevCPU: executes the PAN test harness
+      void ExecPANTest();
 
       /// RevCPU: RevNIC message handler
       void handleMessage(SST::Event *ev);
@@ -230,6 +246,12 @@ namespace SST {
 
       /// RevCPU: BOTW command
       void PANHandleBOTW(panNicEvent *event);
+
+      /// RevCPU: Handle successful response
+      void PANHandleSuccess(panNicEvent *event);
+
+      /// RevCPU: Handle failed response
+      void PANHandleFailed(panNicEvent *event);
 
       /// RevCPU: construct a failed PAN response command due to a token failure
       ///         Implicitly pushes the failure command onto the send mailbox
