@@ -32,7 +32,9 @@ const char *pan_splash_msg = "\
 ";
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id), testStage(0), EnableNIC(false) {
+  : SST::Component(id), testStage(0),
+    EnableNIC(false), EnablePAN(false),
+    Nic(nullptr), PNic(nullptr), PExec(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
