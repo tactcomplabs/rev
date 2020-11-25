@@ -1179,7 +1179,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   // check to see if the network has any outstanding messages
   if( !SendMB.empty() || !TrackTags.empty() )
-    rtn = false;
+      rtn = false;
 
   if( rtn )
     primaryComponentOKToEndSim();

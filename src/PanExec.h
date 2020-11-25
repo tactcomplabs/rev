@@ -47,7 +47,7 @@ namespace SST {
       PanStatus StatusEntry(unsigned Idx);
 
       /// PanExec: get execution entry
-      bool GetNextEntry(uint64_t *Addr, unsigned *Idx);
+      PanStatus GetNextEntry(uint64_t *Addr, unsigned *Idx);
 
     private:
       // private data members

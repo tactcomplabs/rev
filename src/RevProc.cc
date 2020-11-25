@@ -857,10 +857,22 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( PExec ){
       uint64_t Addr = 0x00ull;
       unsigned Idx = 0;
-      if( PExec->GetNextEntry(&Addr,&Idx) ){
+      PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
+      switch( Status ){
+      case PanExec::QExec:
         SetPC(Addr);
         done = false;
+        break;
+      case PanExec::QValid:
+      case PanExec::QNull:
+      case PanExec::QError:
+      default:
+        break;
+        done = true;
       }
+    }else{
+      // PAN execution contexts not enabled, this is our last PC
+      done = true;
     }
 
     if( done ){

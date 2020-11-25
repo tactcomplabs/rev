@@ -57,7 +57,7 @@ PanExec::PanStatus PanExec::StatusEntry(unsigned Idx){
   return PanExec::QError;
 }
 
-bool PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx){
+PanExec::PanStatus PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx){
   std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
   for( it=ExecQueue.begin(); it != ExecQueue.end(); ++it ){
     if( std::get<1>(*it) == PanExec::QValid ){
@@ -65,6 +65,7 @@ bool PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx){
       *Idx  = std::get<0>(*it);
       *Addr = std::get<2>(*it);
       std::get<1>(*it) = PanExec::QExec;
+      return PanExec::QExec;
     }
   }
 
