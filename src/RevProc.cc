@@ -111,10 +111,8 @@ bool RevProc::SeedInstTable(){
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
-    output->verbose(CALL_INFO, 6, 0, "Core %d ; Enabling RV32I\n", id );
     EnableExt(static_cast<RevExt *>(new RV32I(feature,&RegFile,mem,output)));
     if( feature->GetXlen() == 64 ){
-      output->verbose(CALL_INFO, 6, 0, "Core %d ; Enabling RV64I\n", id );
       EnableExt(static_cast<RevExt *>(new RV64I(feature,&RegFile,mem,output)));
     }
   }
@@ -153,11 +151,12 @@ bool RevProc::SeedInstTable(){
 
   // PAN Extension
   if( feature->IsModeEnabled(RV_P) ){
-    if( feature->GetXlen() == 64 ){
+    //if( feature->GetXlen() == 64 ){
       EnableExt(static_cast<RevExt *>(new RV64P(feature,&RegFile,mem,output)));
-    }else{
-      output->fatal(CALL_INFO, -1, "Error: PAN can only be enabled on RV64");
-    }
+    //}else{
+      // FIXME
+      //output->fatal(CALL_INFO, -1, "Error: PAN can only be enabled on RV64");
+    //}
   }
 
   // C-Extension

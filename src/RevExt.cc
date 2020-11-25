@@ -36,9 +36,11 @@ bool RevExt::Execute(unsigned Inst, RevInst payload){
                   name.c_str());
   }
 
+#if 0
   std::cout << "EXECUTING INSTRUCTION: " << table[Inst].mnemonic
             << " @ 0x" << std::hex << regFile->RV32_PC << std::dec
             << "; instSize = " << payload.instSize << std::endl;
+#endif
 
   // retrieve the function pointer for this instruction
   bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst) = table[Inst].func;
@@ -47,8 +49,10 @@ bool RevExt::Execute(unsigned Inst, RevInst payload){
   if( !(*func)(feature,regFile,mem,payload) )
     return false;
 
+#if 0
   std::cout << "COMPLETING INSTRUCTION: " << table[Inst].mnemonic
             << " @ 0x" << std::hex << regFile->RV32_PC << std::dec << std::endl;
+#endif
 
   return true;
 }

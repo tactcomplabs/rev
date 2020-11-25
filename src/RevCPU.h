@@ -131,6 +131,8 @@ namespace SST {
       uint8_t PrivTag;                    ///< RevCPU: private tag locator
       uint64_t LToken;                    ///< RevCPU: token identifier for PAN Test
 
+      int address;                        ///< RevCPU: local network address
+
       bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
       bool EnablePAN;                     ///< RevCPU: Flag for enabling the PAN operations
       bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations
