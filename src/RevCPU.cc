@@ -1191,7 +1191,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Sending destination completion command\n");
     TEvent = new panNicEvent();
     TEvent->setSrc(address);
-    Buf = 0x01ull;
+    Buf = 0xdeadbeef;
     if( !TEvent->buildSyncPut(LToken,
                               createTag(),
                               (uint64_t)(_PAN_COMPLETION_ADDR_),
@@ -1201,7 +1201,7 @@ void RevCPU::ExecPANTest(){
     SendMB.push(std::make_pair(TEvent,dest));
 
     // write the completion command to our local CPU
-    Mem->WriteU64((uint64_t)(_PAN_COMPLETION_ADDR_),0x01ull);
+    Mem->WriteU64((uint64_t)(_PAN_COMPLETION_ADDR_),0xdeadbeef);
     break;
   case 10:
     // revoke reservation
@@ -1229,8 +1229,9 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
   // Execute each enabled core
   for( unsigned i=0; i<Procs.size(); i++ ){
     if( Enabled[i] ){
-      if( !Procs[i]->ClockTick(currentCycle) )
+      if( !Procs[i]->ClockTick(currentCycle) ){
         Enabled[i] = false;
+      }
     }
   }
 
@@ -1239,6 +1240,12 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
     // check the mailbox for messages to inject
     if( !sendPANMessage() )
       output.fatal(CALL_INFO, -1, "Error: could not send PAN command message\n" );
+  }
+
+  // check to see if all the processors are completed
+  for( unsigned i=0; i<Procs.size(); i++ ){
+    if( Enabled[i] )
+      rtn = false;
   }
 
   // check to see if we have outstanding network messages and whether the tests are complete

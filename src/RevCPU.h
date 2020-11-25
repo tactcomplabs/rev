@@ -32,7 +32,7 @@
 #include "PanExec.h"
 
 #define _MAX_PAN_TEST_ 11
-#define _PAN_COMPLETION_ADDR_ 0x50000000
+#define _PAN_COMPLETION_ADDR_ 0x30000000
 
 namespace SST {
   namespace RevCPU {
