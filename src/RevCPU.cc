@@ -60,9 +60,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   // Derive the simulation parameters
   // We must always derive the number of cores before initializing the options
   // If the PAN tests are enabled, override the number cores and force them to '0'
-  numCores = params.find<unsigned>("numCores", "0");
+  numCores = params.find<unsigned>("numCores", "1");
   if( EnablePANTest )
-    numCores = 0;
+    numCores = 1; // force the PAN test to use a single core
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");
@@ -123,7 +123,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     PNic = loadUserSubComponent<panNicAPI>("pan_nic");
 
     // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
-    if(!Nic)
+    if(!PNic)
       output.fatal(CALL_INFO, -1, "Error: no PAN NIC object loaded into RevCPU\n");
 
     PNic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handlePANMessage));
@@ -152,11 +152,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
 
   // Load the binary into memory
-  if( !EnablePANTest ){
-    // If we're running the PAN tests, don't load anything
-    Loader = new RevLoader( Exe, Args, Mem, &output );
-    if( !Loader )
-      output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
+  Loader = new RevLoader( Exe, Args, Mem, &output );
+  if( !Loader ){
+    output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
   }
 
   // Create the processor objects
@@ -1105,6 +1103,9 @@ void RevCPU::ExecPANTest(){
                               &Buf) )
       output.fatal(CALL_INFO, -1, "Error: could not send completion command to destination\n" );
     SendMB.push(std::make_pair(TEvent,dest));
+
+    // write the completion command to our local CPU
+    Mem->WriteU64((uint64_t)(_PAN_COMPLETION_ADDR_),0x01ull);
     break;
   case 10:
     // revoke reservation

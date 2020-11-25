@@ -562,7 +562,7 @@ void PanNet::init(unsigned int phase){
     panNicEvent *ev = static_cast<panNicEvent*>(req->takePayload());
     numDest++;
     output->verbose(CALL_INFO, 1, 0,
-                    "%s received init message from %s\n",
+                    "%s received PAN init message from %s\n",
                     getName().c_str(), ev->getSource().c_str());
   }
 }

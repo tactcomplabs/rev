@@ -18,6 +18,10 @@ RevFeature::RevFeature( std::string Machine,
   : machine(Machine), output(Output),
     MinCost(Min), MaxCost(Max), Hart(Id),
     features(0x00ull), xlen(64) {
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Initializing feature set from machine string=%s\n",
+                    Hart,
+                    machine.c_str());
   if( !ParseMachineModel() )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to parse the machine model: %s\n", Machine.c_str());
@@ -69,19 +73,27 @@ bool RevFeature::ParseMachineModel(){
   // walk the feature string
 
   // -- step 1: parse the memory model
-  std::size_t found = machine.find("RV32");
+  std::size_t found = machine.find("RV32",0);
   if( found != std::string::npos)
     xlen = 32;
 
-  found = machine.find("RV64");
+  found = machine.find("RV64",0);
   if( found != std::string::npos )
     xlen = 64;
 
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Setting XLEN to %d\n",
+                    Hart,
+                    xlen);
+
   found += 5;
+  std::string arch = machine.substr(4,std::string::npos);
+  output->verbose(CALL_INFO,6,0,"Core %d ; Architecture string=%s\n", Hart, arch.c_str());
+  found = 0;
 
   // -- step 2: parse all the features
-  while( found < machine.length() ){
-    switch( machine[found] ){
+  while( found < arch.length() ){
+    switch( arch[found] ){
     case 'I':
       SetMachineEntry(RV_I);
       break;
@@ -108,6 +120,9 @@ bool RevFeature::ParseMachineModel(){
     case 'C':
       SetMachineEntry(RV_C);
       break;
+    case 'P':
+      SetMachineEntry(RV_P);
+      break;
     default:
     case 'E':
     case 'Q':
@@ -115,7 +130,6 @@ bool RevFeature::ParseMachineModel(){
     case 'B':
     case 'J':
     case 'T':
-    case 'P':
     case 'V':
     case 'N':
     case 'H':

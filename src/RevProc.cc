@@ -81,6 +81,10 @@ bool RevProc::EnableExt(RevExt *Ext){
   if( !Ext )
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
 
+  output->verbose(CALL_INFO, 6, 0,
+                  "Core %d ; Enabling extension=%s\n",
+                  id, Ext->GetName().c_str());
+
   // add the extension to our vector of enabled objects
   Extensions.push_back(Ext);
 
@@ -101,10 +105,16 @@ bool RevProc::EnableExt(RevExt *Ext){
 }
 
 bool RevProc::SeedInstTable(){
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Seeding instruction table for machine model=%s\n",
+                    id, feature->GetMachineModel().c_str());
+
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
+    output->verbose(CALL_INFO, 6, 0, "Core %d ; Enabling RV32I\n", id );
     EnableExt(static_cast<RevExt *>(new RV32I(feature,&RegFile,mem,output)));
     if( feature->GetXlen() == 64 ){
+      output->verbose(CALL_INFO, 6, 0, "Core %d ; Enabling RV64I\n", id );
       EnableExt(static_cast<RevExt *>(new RV64I(feature,&RegFile,mem,output)));
     }
   }
@@ -199,6 +209,10 @@ std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
 }
 
 bool RevProc::InitTableMapping(){
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Initializing table mapping for machine model=%s\n",
+                    id, feature->GetMachineModel().c_str());
+
   for( unsigned i=0; i<InstTable.size(); i++ ){
     NameToEntry.insert(
       std::pair<std::string,unsigned>(ExtractMnemonic(InstTable[i]),i) );
@@ -214,6 +228,10 @@ bool RevProc::InitTableMapping(){
 }
 
 bool RevProc::ReadOverrideTables(){
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Reading override tables for machine model=%s\n",
+                    id, feature->GetMachineModel().c_str());
+
   std::string Table;
   if( !opts->GetInstTable(id, Table) )
     return false;
