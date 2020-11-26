@@ -71,16 +71,21 @@ The Rev SST component contains the following options:
 
 | Parameter  | Required?  | Type  | Description  |
 |---|---|---|---|
-| verbose   |   | unsigned integer  |   Values of 0-8.  Increasing values increase the verbosity of output |
-| numCores  | X | unsigned integer  |   Values of 1-N.  Sets the number of cores in the simulation |
-| clock     | X | Hertz  | "xGHz", "xKHz".  Sets the clock frequency of the device.  |
-| memSize   | X | unsigned integer  | Sets the size of physical memory in bytes  |
-| machine   | X | "[Core:Arch]" |   "[0:RV32I],[1:RV64G]". Sets the RISC-V architecture for the target core |
-| startAddr | X | "[Core:StartAddr]" | "[0:0x00010144],[1:0x123456]".  Sets the entry point for each core  |
-| memCost   |   | "[Core:Min:Max]" | "[0:1:10],[1:50:100]", Sets the minimum and maximum latency (in cycles) for each core's memory load  |
-| program   | X | string  | "example.exe". Sets the target ELF executable  |
-| table     |   | string  | "/path/to/table.txt".  Sets the path the instruction cost table |
-| splash    |   | 0/1 | Default=0.  Setting to 1 displays the Rev bootsplash  |
+| verbose      |   | unsigned integer  |   Values of 0-8.  Increasing values increase the verbosity of output |
+| numCores     | X | unsigned integer  |   Values of 1-N.  Sets the number of cores in the simulation |
+| clock        | X | Hertz  | "xGHz", "xKHz".  Sets the clock frequency of the device.  |
+| memSize      | X | unsigned integer  | Sets the size of physical memory in bytes  |
+| machine      | X | "[Core:Arch]" |   "[0:RV32I],[1:RV64G]". Sets the RISC-V architecture for the target core |
+| startAddr    | X | "[Core:StartAddr]" | "[0:0x00010144],[1:0x123456]".  Sets the entry point for each core  |
+| memCost      |   | "[Core:Min:Max]" | "[0:1:10],[1:50:100]", Sets the minimum and maximum latency (in cycles) for each core's memory load  |
+| program      | X | string  | "example.exe". Sets the target ELF executable  |
+| table        |   | string  | "/path/to/table.txt".  Sets the path the instruction cost table |
+| splash       |   | 0/1 | Default=0.  Setting to 1 displays the Rev bootsplash  |
+| enable\_nic  |   | 0/1 | Default=0.  Setting to 1 enables a standard NIC |
+| enable\_pan  |   | 0/1 | Default=0.  Setting to 1 enables a PAN NIC |
+| enable\_test |   | 0/1 | Default=0.  Setting to 1 enables the internal PAN test harness |
+| msgPerCycle  |   | unsigned integer | Default=1.  Sets the number of messages to inject per cycle |
+| testIters    |   | unsigned integer | Default=255.  Sets the number of iterations for each PAN test loop |
 
 ### Deriving the ELF Entry Point
 

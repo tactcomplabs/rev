@@ -91,7 +91,7 @@ namespace SST {
                               {"enable_pan", "Enable PAN network endpoint",             "0"},
                               {"enable_test","Enable PAN network endpoint test",        "0"},
                               {"msgPerCycle","Number of messages per cycle to inject",  "1"},
-                              {"testIters",  "Number of PAN test messages to send",     "1024"}, 
+                              {"testIters",  "Number of PAN test messages to send",     "255"}, 
                               {"splash",     "Display the splash logo",                 "0"}
                              )
 
