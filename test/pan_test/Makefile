@@ -14,12 +14,12 @@
 
 EXAMPLE=pan_test
 CC=riscv64-unknown-elf-gcc
-ARCH=rv32i
-ABI=ilp32
+#ARCH=rv32i
+ARCH=rv64g
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

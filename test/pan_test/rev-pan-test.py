@@ -41,7 +41,7 @@ host_cpu0.addParams({
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
-        "machine" : "[0:RV32I]",                      # Core:Config; RV32I for core 0
+        "machine" : "[0:RV64G]",                      # Core:Config; RV64G for core 0
         "startAddr" : "[0:0x00010144]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "pan_test.exe"),  # Target executable
@@ -60,7 +60,7 @@ pan_cpu1.addParams({
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
-        "machine" : "[0:RV32IP]",                     # Core:Config; RV32I for core 0
+        "machine" : "[0:RV64GP]",                     # Core:Config; RV64GP for core 0
         "startAddr" : "[0:0x00010144]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "pan_test.exe"),  # Target executable
