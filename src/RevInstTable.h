@@ -104,12 +104,17 @@ static uint32_t td_u32(uint32_t binary, unsigned bits){
 /// td_u64: convert u64 in two's complement to decimal
 static uint64_t td_u64(uint64_t binary, unsigned bits){
   uint64_t tmp = binary;
+  uint64_t sext = 0x00ull;
   uint64_t i = 0;
+
   if( (binary & (1<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<64; i++ ){
-      tmp |= (1<<i);
+    // sign extend to 64 bits
+    for( i=0; i<bits; i++ ){
+      sext |= (1<<i);
     }
+    sext = ~sext;
+
+    tmp = tmp | sext;
 
     // invert all the bits
     tmp = ~tmp;

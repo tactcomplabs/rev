@@ -14,12 +14,11 @@
 
 EXAMPLE=ex2
 CC=riscv64-unknown-elf-gcc
-ARCH=rv64imac
-ABI=lp64
+ARCH=rv64g
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

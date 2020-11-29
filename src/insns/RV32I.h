@@ -90,6 +90,7 @@ namespace SST{
       }
 
       static bool bne(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+	int64_t tmp;
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] != R->RV32[Inst.rs2] ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
@@ -98,7 +99,8 @@ namespace SST{
           }
         }else{
           if( R->RV64[Inst.rs1] != R->RV64[Inst.rs2] ){
-            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
+            tmp = td_u64(Inst.imm,12);
+            R->RV64_PC = R->RV64_PC + tmp;
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
