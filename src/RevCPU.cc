@@ -33,7 +33,7 @@ const char *pan_splash_msg = "\
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id), testStage(0), address(-1),
-    EnableNIC(false), EnablePAN(false),
+    EnableNIC(false), EnablePAN(false), EnablePANStats(false),
     Nic(nullptr), PNic(nullptr), PExec(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
@@ -116,6 +116,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
   // See if we should the load PAN network interface controller
   EnablePAN = params.find<bool>("enable_pan", 0);
+  EnablePANStats = params.find<bool>("enable_pan_stats", 0);
 
   if( EnablePAN ){
     // Look up the network component
@@ -138,6 +139,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
     // record the number of injected messages per cycle
     msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
+
+    if( EnablePANStats )
+      registerStatistics();
   }
 
   // See if we should load the test harness as opposed to a binary payload
@@ -206,6 +210,57 @@ RevCPU::~RevCPU(){
 
   // delete the options object
   delete Opts;
+}
+
+void RevCPU::registerStatistics(){
+  SyncGetSend = registerStatistic<uint64_t>("SyncGetSend");
+  SyncPutSend = registerStatistic<uint64_t>("SyncPutSend");
+  AsyncGetSend = registerStatistic<uint64_t>("AsyncGetSend");
+  AsyncPutSend = registerStatistic<uint64_t>("AsyncPutSend");
+  SyncStreamGetSend = registerStatistic<uint64_t>("SyncStreamGetSend");
+  SyncStreamPutSend = registerStatistic<uint64_t>("SyncStreamPutSend");
+  AsyncStreamGetSend = registerStatistic<uint64_t>("AsyncStreamGetSend");
+  AsyncStreamPutSend = registerStatistic<uint64_t>("AsyncStreamPutSend");
+  ExecSend = registerStatistic<uint64_t>("ExecSend");
+  StatusSend = registerStatistic<uint64_t>("StatusSend");
+  CancelSend = registerStatistic<uint64_t>("CancelSend");
+  ReserveSend = registerStatistic<uint64_t>("ReserveSend");
+  RevokeSend = registerStatistic<uint64_t>("RevokeSend");
+  HaltSend = registerStatistic<uint64_t>("HaltSend");
+  ResumeSend = registerStatistic<uint64_t>("ResumeSend");
+  ReadRegSend = registerStatistic<uint64_t>("ReadRegSend");
+  WriteRegSend = registerStatistic<uint64_t>("WriteRegSend");
+  SingleStepSend = registerStatistic<uint64_t>("SingleStepSend");
+  SetFutureSend = registerStatistic<uint64_t>("SetFutureSend");
+  RevokeFutureSend = registerStatistic<uint64_t>("RevokeFutureSend");
+  StatusFutureSend = registerStatistic<uint64_t>("StatusFutureSend");
+  SuccessSend = registerStatistic<uint64_t>("SuccessSend");
+  FailedSend = registerStatistic<uint64_t>("FailedSend");
+  BOTWSend = registerStatistic<uint64_t>("BOTWSend");
+  SyncGetRecv = registerStatistic<uint64_t>("SyncGetRecv");
+  SyncPutRecv = registerStatistic<uint64_t>("SyncPutRecv");
+  AsyncGetRecv = registerStatistic<uint64_t>("AsyncGetRecv");
+  AsyncPutRecv = registerStatistic<uint64_t>("AsyncPutRecv");
+  SyncStreamGetRecv = registerStatistic<uint64_t>("SyncStreamGetRecv");
+  SyncStreamPutRecv = registerStatistic<uint64_t>("SyncStreamPutRecv");
+  AsyncStreamGetRecv = registerStatistic<uint64_t>("AsyncStreamGetRecv");
+  AsyncStreamPutRecv = registerStatistic<uint64_t>("AsyncStreamPutRecv");
+  ExecRecv = registerStatistic<uint64_t>("ExecRecv");
+  StatusRecv = registerStatistic<uint64_t>("StatusRecv");
+  CancelRecv = registerStatistic<uint64_t>("CancelRecv");
+  ReserveRecv = registerStatistic<uint64_t>("ReserveRecv");
+  RevokeRecv = registerStatistic<uint64_t>("RevokeRecv");
+  HaltRecv = registerStatistic<uint64_t>("HaltRecv");
+  ResumeRecv = registerStatistic<uint64_t>("ResumeRecv");
+  ReadRegRecv = registerStatistic<uint64_t>("ReadRegRecv");
+  WriteRegRecv = registerStatistic<uint64_t>("WriteRegRecv");
+  SingleStepRecv = registerStatistic<uint64_t>("SingleStepRecv");
+  SetFutureRecv = registerStatistic<uint64_t>("SetFutureRecv");
+  RevokeFutureRecv = registerStatistic<uint64_t>("RevokeFutureRecv");
+  StatusFutureRecv = registerStatistic<uint64_t>("StatusFutureRecv");
+  SuccessRecv = registerStatistic<uint64_t>("SuccessRecv");
+  FailedRecv = registerStatistic<uint64_t>("FailedRecv");
+  BOTWRecv = registerStatistic<uint64_t>("BOTWRecv");
 }
 
 void RevCPU::setup(){
@@ -799,9 +854,11 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
   switch( event->getOpcode() ){
   case panNicEvent::Success:
     PANHandleSuccess(event);
+    SuccessRecv->addData(1);
     break;
   case panNicEvent::Failed:
     PANHandleFailed(event);
+    FailedRecv->addData(1);
     break;
   case panNicEvent::SyncGet:
   case panNicEvent::SyncPut:
@@ -839,69 +896,91 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
   switch( event->getOpcode() ){
   case panNicEvent::SyncGet:
     PANHandleSyncGet(event);
+    SyncGetRecv->addData(1);
     break;
   case panNicEvent::SyncPut:
     PANHandleSyncPut(event);
+    SyncPutRecv->addData(1);
     break;
   case panNicEvent::AsyncGet:
     PANHandleAsyncGet(event);
+    AsyncGetRecv->addData(1);
     break;
   case panNicEvent::AsyncPut:
     PANHandleAsyncPut(event);
+    AsyncPutRecv->addData(1);
     break;
   case panNicEvent::SyncStreamGet:
     PANHandleSyncStreamGet(event);
+    SyncStreamGetRecv->addData(1);
     break;
   case panNicEvent::SyncStreamPut:
     PANHandleSyncStreamPut(event);
+    SyncStreamPutRecv->addData(1);
     break;
   case panNicEvent::AsyncStreamGet:
     PANHandleAsyncStreamGet(event);
+    AsyncStreamGetRecv->addData(1);
     break;
   case panNicEvent::AsyncStreamPut:
     PANHandleAsyncStreamPut(event);
+    AsyncStreamPutRecv->addData(1);
     break;
   case panNicEvent::Exec:
     PANHandleExec(event);
+    ExecRecv->addData(1);
     break;
   case panNicEvent::Status:
     PANHandleStatus(event);
+    StatusRecv->addData(1);
     break;
   case panNicEvent::Cancel:
     PANHandleCancel(event);
+    CancelRecv->addData(1);
     break;
   case panNicEvent::Reserve:
     PANHandleReserve(event);
+    ReserveRecv->addData(1);
     break;
   case panNicEvent::Revoke:
     PANHandleRevoke(event);
+    RevokeRecv->addData(1);
     break;
   case panNicEvent::Halt:
     PANHandleHalt(event);
+    HaltRecv->addData(1);
     break;
   case panNicEvent::Resume:
     PANHandleResume(event);
+    ResumeRecv->addData(1);
     break;
   case panNicEvent::ReadReg:
     PANHandleReadReg(event);
+    ReadRegRecv->addData(1);
     break;
   case panNicEvent::WriteReg:
     PANHandleWriteReg(event);
+    WriteRegRecv->addData(1);
     break;
   case panNicEvent::SingleStep:
     PANHandleSingleStep(event);
+    SingleStepRecv->addData(1);
     break;
   case panNicEvent::SetFuture:
     PANHandleSetFuture(event);
+    SingleStepRecv->addData(1);
     break;
   case panNicEvent::RevokeFuture:
     PANHandleRevokeFuture(event);
+    SetFutureRecv->addData(1);
     break;
   case panNicEvent::StatusFuture:
     PANHandleStatusFuture(event);
+    StatusFutureRecv->addData(1);
     break;
   case panNicEvent::BOTW:
     PANHandleBOTW(event);
+    BOTWRecv->addData(1);
     break;
   case panNicEvent::Success:
   case panNicEvent::Failed:
@@ -910,6 +989,89 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
     output.fatal(CALL_INFO, -1,
                  "Error: network devices cannot handle %s commands\n",
                  event->getOpcodeStr().c_str() );
+    break;
+  }
+}
+
+void RevCPU::registerSendCmd(panNicEvent *event){
+  switch( event->getOpcode() ){
+  case panNicEvent::SyncGet:
+    SyncGetSend->addData(1);
+    break;
+  case panNicEvent::SyncPut:
+    SyncPutSend->addData(1);
+    break;
+  case panNicEvent::AsyncGet:
+    AsyncGetSend->addData(1);
+    break;
+  case panNicEvent::AsyncPut:
+    AsyncPutSend->addData(1);
+    break;
+  case panNicEvent::SyncStreamGet:
+    SyncStreamGetSend->addData(1);
+    break;
+  case panNicEvent::SyncStreamPut:
+    SyncStreamPutSend->addData(1);
+    break;
+  case panNicEvent::AsyncStreamGet:
+    AsyncStreamGetSend->addData(1);
+    break;
+  case panNicEvent::AsyncStreamPut:
+    AsyncStreamPutSend->addData(1);
+    break;
+  case panNicEvent::Exec:
+    ExecSend->addData(1);
+    break;
+  case panNicEvent::Status:
+    StatusSend->addData(1);
+    break;
+  case panNicEvent::Cancel:
+    CancelSend->addData(1);
+    break;
+  case panNicEvent::Reserve:
+    ReserveSend->addData(1);
+    break;
+  case panNicEvent::Revoke:
+    RevokeSend->addData(1);
+    break;
+  case panNicEvent::Halt:
+    HaltSend->addData(1);
+    break;
+  case panNicEvent::Resume:
+    ResumeSend->addData(1);
+    break;
+  case panNicEvent::ReadReg:
+    ReadRegSend->addData(1);
+    break;
+  case panNicEvent::WriteReg:
+    WriteRegSend->addData(1);
+    break;
+  case panNicEvent::SingleStep:
+    SingleStepSend->addData(1);
+    break;
+  case panNicEvent::SetFuture:
+    SingleStepSend->addData(1);
+    break;
+  case panNicEvent::RevokeFuture:
+    SetFutureSend->addData(1);
+    break;
+  case panNicEvent::StatusFuture:
+    StatusFutureSend->addData(1);
+    break;
+  case panNicEvent::BOTW:
+    BOTWSend->addData(1);
+    break;
+  case panNicEvent::Success:
+    SuccessSend->addData(1);
+    break;
+  case panNicEvent::Failed:
+    FailedSend->addData(1);
+    break;
+  default:
+    // network devices should never receive these commands
+    output.fatal(CALL_INFO, -1,
+                 "Error: no statistic for command; opcode =%d\n",
+                 event->getOpcode() );
     break;
   }
 }
@@ -927,6 +1089,9 @@ bool RevCPU::sendPANMessage(){
     TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
                                        SendMB.front().second));
   }
+
+  if( EnablePANStats )
+    registerSendCmd(SendMB.front().first);
 
   // pop the message off the queue
   SendMB.pop();

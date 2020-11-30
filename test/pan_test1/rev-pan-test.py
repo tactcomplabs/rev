@@ -48,6 +48,7 @@ host_cpu0.addParams({
         "pan_nic" : "revcpu.PanNet",                  # Use the PAN NIC
         "enable_pan" : 1,                             # Enable the internal RevNIC
         "enable_test" : 1,                            # Enable the PAN test harness
+        "enable_pan_stats" : 1,                       # Enable the PAN statistics
         "testIters" : 10,                             # Number of command packets for each test
         "msgPerCycle" : 5,                            # Number of messages per cycle
         "splash" : 1                                  # Display the splash message
@@ -67,6 +68,7 @@ pan_cpu1.addParams({
         "pan_nic" : "revcpu.PanNet",                  # Use the PAN NIC
         "enable_pan" : 1,                             # Enable the internal RevNIC
         "enable_test" : 0,                            # Disable the PAN test harness
+        "enable_pan_stats" : 1,                       # Enable the PAN statistics
         "msgPerCycle" : 5,                            # Number of messages per cycle
         "splash" : 1                                  # Display the splash message
 })
