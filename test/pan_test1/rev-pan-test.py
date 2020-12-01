@@ -5,7 +5,7 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-# rev-test-ex3.py
+# rev-pan-test.py
 #
 # ---------------------------------------------------------------
 #
