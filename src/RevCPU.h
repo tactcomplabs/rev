@@ -94,7 +94,8 @@ namespace SST {
         {"enable_test",     "Enable PAN network endpoint test",        "0"},
         {"enable_pan_stats","Enable PAN network statistics",      "1"},
         {"msgPerCycle",     "Number of messages per cycle to inject",  "1"},
-        {"testIters",       "Number of PAN test messages to send",     "255"}, 
+        {"RDMAPerCycle",    "Number of RDMA messages per cycle to ibject", "1"},
+        {"testIters",       "Number of PAN test messages to send",     "255"},
         {"splash",          "Display the splash logo",                 "0"}
       )
 
@@ -169,6 +170,7 @@ namespace SST {
     private:
       unsigned numCores;                  ///< RevCPU: number of RISC-V cores
       unsigned msgPerCycle;               ///< RevCPU: number of messages to send per cycle
+      unsigned RDMAPerCycle;              ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
       unsigned testStage;                 ///< RevCPU: controls the PAN Test harness staging
       unsigned testIters;                 ///< RevCPU: the number of message iters for each PAN Test
       std::string Exe;                    ///< RevCPU: binary executable
@@ -286,6 +288,12 @@ namespace SST {
       /// RevCPU: handles the memory write operations from incoming PAN messages
       bool processPANMemRead();
 
+      /// RevCPU: handles the PAN RDMA mailbox
+      bool PANProcessRDMAMailbox();
+
+      /// RevCPU: converts an RDMA payload to a panNicEvent command
+      bool PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event);
+
       /// RevCPU: Creates a unique tag for this message
       uint8_t createTag();
 
@@ -294,6 +302,8 @@ namespace SST {
 
       // RevCPU: Register send message statistics
       void registerSendCmd(panNicEvent *event);
+
+      /// RevCPU: Retrieve the expected size of the event command from the mailbox entry
 
       /// RevCPU: handle the SyncGet command
       void PANHandleSyncGet(panNicEvent *event);

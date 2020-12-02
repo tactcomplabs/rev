@@ -139,6 +139,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
     // record the number of injected messages per cycle
     msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
+    RDMAPerCycle = params.find<unsigned>("RDMAPerCycle", 1);
 
     if( EnablePANStats )
       registerStatistics();
@@ -1146,6 +1147,292 @@ bool RevCPU::processPANMemRead(){
   return true;
 }
 
+bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
+
+  // Stage 1: read the first 64 bits and decode it
+  uint64_t Payload  = Mem->ReadU64(Addr);
+  uint8_t Tag       = 0x0;
+  uint8_t Opcode    = 0x0;
+  uint8_t VarArgs   = 0x0;
+  uint32_t Size     = 0x0;
+  uint32_t Token    = 0x0;
+  uint32_t Offset   = 0x0;
+  uint64_t CmdAddr  = 0x00ull;
+  uint64_t TmpData  = 0x00ull;
+  uint64_t *Data    = nullptr;
+
+  Token  = (uint32_t)( Payload & 0xffffffff );
+  Tag    = (uint8_t)( (Payload >> 32) & 0b11111111 );
+  Opcode = (uint8_t)( (Payload >> 40) & 0b11);
+  if( Opcode != 0b11 ){
+    // read a streaming opcode
+    Opcode = (uint8_t)( (Payload >> 40) & 0b1111);
+    Size   = (uint32_t)((Payload >> 44) & 0b11111111111111111111);
+  }else if( Opcode == 0x00 ){
+    // read a full opcode
+    Opcode = (uint8_t)( (Payload >> 40) & 0b11111111);
+    Size   = (uint32_t)((Payload >> 48) & 0b1111111111111111);
+  }else{
+    // BOTW packet, read the varargs and offset
+    VarArgs = (uint8_t)((Payload >> 42) & 0b1111);
+    Offset  = (uint32_t)((Payload >> 46) & 0b111111111111111111);
+  }
+
+  // Stage 2: use the opcode the read and encode the remainder of the data
+  switch(Opcode){
+  case panNicEvent::SyncGet:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !event->buildSyncGet(Token,Tag,CmdAddr,Size) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA SyncGet; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::SyncPut:
+    Data = new uint64_t [event->getNumBlocks(Size)];
+    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                   "Error: could not retrieve data for RDMA SyncPut; Tag=%d\n",Tag);
+    }
+    if( !event->buildSyncPut(Token,Tag,CmdAddr,Size,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA SyncPut; Tag=%d\n",Tag);
+    }
+    delete[] Data;
+    break;
+  case panNicEvent::AsyncGet:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !event->buildAsyncGet(Token,Tag,CmdAddr,Size) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA AsyncGet; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::AsyncPut:
+    Data = new uint64_t [event->getNumBlocks(Size)];
+    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                   "Error: could not retrieve data for RDMA AsyncPut; Tag=%d\n",Tag);
+    }
+    if( !event->buildAsyncPut(Token,Tag,CmdAddr,Size,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA AsyncPut; Tag=%d\n",Tag);
+    }
+    delete[] Data;
+    break;
+  case panNicEvent::SyncStreamGet:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !event->buildSyncStreamGet(Token,Tag,CmdAddr,Size) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA SyncStreamGet; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::SyncStreamPut:
+    Data = new uint64_t [event->getNumBlocks(Size)];
+    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                   "Error: could not retrieve data for RDMA SyncStreamPut; Tag=%d\n",Tag);
+    }
+    if( !event->buildSyncStreamPut(Token,Tag,CmdAddr,Size,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA SyncStreamPut; Tag=%d\n",Tag);
+    }
+    delete[] Data;
+    break;
+  case panNicEvent::AsyncStreamGet:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !event->buildAsyncStreamGet(Token,Tag,CmdAddr,Size) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA AsyncStreamGet; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::AsyncStreamPut:
+    Data = new uint64_t [event->getNumBlocks(Size)];
+    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                   "Error: could not retrieve data for RDMA AsyncStreamPut; Tag=%d\n",Tag);
+    }
+    if( !event->buildAsyncStreamPut(Token,Tag,CmdAddr,Size,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA AsyncStreamPut; Tag=%d\n",Tag);
+    }
+    delete[] Data;
+    break;
+  case panNicEvent::Exec:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !event->buildExec(Token,Tag,CmdAddr) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Exec; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Status:
+    if( !event->buildStatus(Token,Tag, (uint16_t)(Size)) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Status; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Cancel:
+    if( !event->buildCancel(Token,Tag, (uint16_t)(Size)) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Cancel; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Reserve:
+    if( !event->buildReserve(Token,Tag) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Reserve; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Revoke:
+    if( !event->buildRevoke(Token,Tag) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Revoke; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Halt:
+    if( !event->buildHalt(Token,Tag,(uint16_t)(Size)) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Halt; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Resume:
+    if( !event->buildResume(Token,Tag) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Resume; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::ReadReg:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !event->buildReadReg(Token,Tag,Size,CmdAddr) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA ReadReg; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::WriteReg:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    TmpData = Mem->ReadU64(Addr+16);
+    if( !event->buildWriteReg(Token,Tag,Size,CmdAddr,&TmpData) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA WriteReg; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::SingleStep:
+    if( !event->buildSingleStep(Token,Tag,(uint16_t)(Size)) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA SingleStep; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::SetFuture:
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !event->buildSetFuture(Token,Tag,CmdAddr) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA SetFuture; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::RevokeFuture:
+    if( !event->buildRevokeFuture(Token,Tag,CmdAddr) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA RevokeFuture; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::StatusFuture:
+    if( !event->buildStatusFuture(Token,Tag,CmdAddr) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA StatusFuture; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Success:
+    if( !event->buildSuccess(Token,Tag) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Success; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::Failed:
+    if( !event->buildFailed(Token,Tag) )
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA Failed; Tag=%d\n",Tag);
+    break;
+  case panNicEvent::BOTW:
+    Data = new uint64_t [VarArgs];
+    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                   "Error: could not retrieve VarArgs data for RDMA BOTW; Tag=%d\n",Tag);
+    }
+    if( !event->buildBOTW(Token,Tag,VarArgs,Data,Offset) ){
+      delete[] Data;
+      output.fatal(CALL_INFO, -1,
+                  "Error: could not build RDMA BOTW; Tag=%d\n",Tag);
+    }
+    delete[] Data;
+    break;
+  default:
+    output.fatal(CALL_INFO, -1,
+                 "Error: could not encode RDMA opcode=%d\n",Opcode);
+    break;
+  }
+
+  // Stage n: set the src
+  event->setSrc(address);
+
+  return true;
+}
+
+bool RevCPU::PANProcessRDMAMailbox(){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN RDMA Mailbox\n");
+  // check to see if there is space in the outgoing message queue
+  if( SendMB.size() == 255 )
+    return true;
+
+  // there is space in the outgoing message queue, walk the messages
+  bool done = false;
+  unsigned sent = 0;
+  unsigned iter = 0;
+  uint64_t Addr = _PAN_RDMA_MAILBOX_;
+  uint64_t Payload[3];
+  while( !done ){
+
+    //
+    // retriver the 'iter' 24-byte mailbox payload
+    // each payload is configured as follows:
+    //      ADDR + 16          ADDR + 8             ADDR
+    // [  EVENT POINTER  ][      DEST       ][      VALID      ]
+    //
+    // If `Valid` != 0; The entry is valid, consume it
+    // Else, continue
+    //
+
+    // Stage 1: Read the memory
+    Mem->ReadMem(Addr,24,&Payload[0]);
+
+    // Stage 2: Interrogate the payload
+    if( Payload[0] != 0x00ull ){
+      // found a valid payload, process it
+
+      // Stage 2.a: Convert the buffer into an event
+      panNicEvent *FEvent = new panNicEvent();
+
+      if( !PANConvertRDMAtoEvent(Payload[2],FEvent) )
+        output.fatal(CALL_INFO, -1,
+                     "Error: could not convert RDMA command to event from address=0x%llx\n",
+                     (long long unsigned int)(Payload[1]));
+
+      // Stage 2.b: Insert the event into the send queue
+      SendMB.push(std::make_pair(FEvent,(int)(Payload[1])));
+
+      // Stage 2.c: mark the payload as being completed
+      Payload[0] = _PAN_ENTRY_VALID_;
+      Mem->WriteMem(Addr,8,&Payload[0]);
+    }
+
+    // Stage 3: Update the counters & the Address
+    iter++;
+    sent++;
+    Addr += 16;
+    Payload[0] = 0x00ull;
+    Payload[1] = 0x00ull;
+    Payload[2] = 0x00ull;
+
+    if( iter == _PAN_RDMA_MAX_ENTRIES_ ){
+      done = true;
+    }else if( sent == RDMAPerCycle ){
+      done = true;
+    }else if( SendMB.size() == 255 ){
+      done = true;
+    }
+  }
+
+  return true;
+}
+
 uint8_t RevCPU::createTag(){
   if( PrivTag == 0b11111111 ){
     return 0b00000000;
@@ -1440,6 +1727,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   // Clock the PAN network transport module
   if( EnablePAN ){
+
+    // process the incoming mailbox messages
+    if( !PANProcessRDMAMailbox() )
+      output.fatal(CALL_INFO, -1, "Error: failed to process the PAN RDMA mailbox\n");
+
     for( unsigned i=0; i< msgPerCycle; i++ ){
       // check the mailbox for messages to inject
       if( !sendPANMessage() )
@@ -1459,7 +1751,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   // check to see if the network has any outstanding messages
   if( !SendMB.empty() || !TrackTags.empty() )
-      rtn = false;
+    rtn = false;
 
   if( rtn )
     primaryComponentOKToEndSim();

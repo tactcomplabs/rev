@@ -11,12 +11,16 @@
 #ifndef _PANADDR_H_
 #define _PANADDR_H_
 
-#define _PAN_COMPLETION_ADDR_ 0x30000000
-#define _PAN_RDMA_MAILBOX_    0x30000008
-#define _PAN_RDMA_MAX_ENTRIES 1024
+#define _PAN_COMPLETION_ADDR_   0x30000000
+#define _PAN_RDMA_MAILBOX_      0x30000008
+#define _PAN_RDMA_MAX_ENTRIES_  255
+
+#define _PAN_ENTRY_INVALID_     0
+#define _PAN_ENTRY_VALID_       0xffffffff
 
 typedef struct{
   uint64_t Valid;   ///< MBoxEntry: Valid field
+  uint64_t Dest;    ///< MBoxEntry: Destination field
   uint64_t Addr;    ///< MBoxEntry: Address field
 }MBoxEntry;
 
