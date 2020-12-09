@@ -102,6 +102,9 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 }
 
 bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
+#ifdef _REV_DEBUG_
+  std::cout << "Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+#endif
   char *BaseMem = (char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&mem[0]));
   char *DataMem = (char *)(Data);
   for( unsigned i=0; i<Len; i++ ){

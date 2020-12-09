@@ -1082,8 +1082,10 @@ bool RevCPU::sendPANMessage(){
   if( SendMB.empty() )
     return true;
 
-  output.verbose(CALL_INFO, 4, 0, "Sending PAN message from %d to %d\n",
-                 address, SendMB.front().second);
+  output.verbose(CALL_INFO, 4, 0, "Sending PAN message from %d to %d; Opc=%s; Tag=%d\n",
+                 address, SendMB.front().second,
+                 SendMB.front().first->getOpcodeStr().c_str(),
+                 SendMB.front().first->getTag());
   PNic->send(SendMB.front().first,SendMB.front().second);
   if( PNic->IsHost() ){
     // save the message to track the response
@@ -1161,22 +1163,37 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   uint64_t TmpData  = 0x00ull;
   uint64_t *Data    = nullptr;
 
+
   Token  = (uint32_t)( Payload & 0xffffffff );
   Tag    = (uint8_t)( (Payload >> 32) & 0b11111111 );
   Opcode = (uint8_t)( (Payload >> 40) & 0b11);
-  if( Opcode != 0b11 ){
-    // read a streaming opcode
-    Opcode = (uint8_t)( (Payload >> 40) & 0b1111);
-    Size   = (uint32_t)((Payload >> 44) & 0b11111111111111111111);
-  }else if( Opcode == 0x00 ){
-    // read a full opcode
+
+  switch( Opcode ){
+  case 0b00:
+    // Base packet
     Opcode = (uint8_t)( (Payload >> 40) & 0b11111111);
     Size   = (uint32_t)((Payload >> 48) & 0b1111111111111111);
-  }else{
-    // BOTW packet, read the varargs and offset
+    break;
+  case 0b01:
+    // Streaming packet
+    Opcode = (uint8_t)( (Payload >> 40) & 0b1111);
+    Size   = (uint32_t)((Payload >> 44) & 0b11111111111111111111);
+    break;
+  case 0b11:
+    // BOTW packet
     VarArgs = (uint8_t)((Payload >> 42) & 0b1111);
     Offset  = (uint32_t)((Payload >> 46) & 0b111111111111111111);
+    break;
+  case 0b10:
+  default:
+    output.fatal(CALL_INFO, -1,
+                "Error: Bad opcode type from RDMA Mailbox Command: Opc=%d\n", Opcode);
+    break;
   }
+
+  output.verbose(CALL_INFO, 5, 0,
+                 "Coverting RDMA Mailbox Entry to Event: Payload = %llu; Opcode=%d\n",
+                 Payload, Opcode);
 
   // Stage 2: use the opcode the read and encode the remainder of the data
   switch(Opcode){
@@ -1188,7 +1205,8 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::SyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
-    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !Mem->ReadMem(Addr+16,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA SyncPut; Tag=%d\n",Tag);
@@ -1208,7 +1226,8 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::AsyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
-    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !Mem->ReadMem(Addr+16,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA AsyncPut; Tag=%d\n",Tag);
@@ -1228,7 +1247,8 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::SyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
-    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !Mem->ReadMem(Addr+8,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA SyncStreamPut; Tag=%d\n",Tag);
@@ -1248,7 +1268,8 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::AsyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
-    if( !Mem->ReadMem(Addr+8,VarArgs*8,Data) ){
+    CmdAddr = Mem->ReadU64(Addr+8);
+    if( !Mem->ReadMem(Addr+8,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA AsyncStreamPut; Tag=%d\n",Tag);
@@ -1367,7 +1388,7 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
 }
 
 bool RevCPU::PANProcessRDMAMailbox(){
-  output.verbose(CALL_INFO, 5, 0, "Handling PAN RDMA Mailbox\n");
+  output.verbose(CALL_INFO, 8, 0, "Handling PAN RDMA Mailbox\n");
   // check to see if there is space in the outgoing message queue
   if( SendMB.size() == 255 )
     return true;
@@ -1378,6 +1399,10 @@ bool RevCPU::PANProcessRDMAMailbox(){
   unsigned iter = 0;
   uint64_t Addr = _PAN_RDMA_MAILBOX_;
   uint64_t Payload[3];
+  uint64_t CmdBuf;
+  uint64_t Buf = 0x00ull;
+  panNicEvent *TEvent = nullptr;
+
   while( !done ){
 
     //
@@ -1394,8 +1419,9 @@ bool RevCPU::PANProcessRDMAMailbox(){
     Mem->ReadMem(Addr,24,&Payload[0]);
 
     // Stage 2: Interrogate the payload
-    if( Payload[0] != 0x00ull ){
+    if( Payload[0] == _PAN_ENTRY_VALID_ ){
       // found a valid payload, process it
+      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command\n");
 
       // Stage 2.a: Convert the buffer into an event
       panNicEvent *FEvent = new panNicEvent();
@@ -1409,14 +1435,16 @@ bool RevCPU::PANProcessRDMAMailbox(){
       SendMB.push(std::make_pair(FEvent,(int)(Payload[1])));
 
       // Stage 2.c: mark the payload as being completed
-      Payload[0] = _PAN_ENTRY_VALID_;
+      Payload[0] = _PAN_ENTRY_INJECTED_;
       Mem->WriteMem(Addr,8,&Payload[0]);
-    }
+
+      // Stage 2.d: increment the message counter
+      sent++;
+    }// else invalid or injected
 
     // Stage 3: Update the counters & the Address
     iter++;
-    sent++;
-    Addr += 16;
+    Addr += 24;
     Payload[0] = 0x00ull;
     Payload[1] = 0x00ull;
     Payload[2] = 0x00ull;

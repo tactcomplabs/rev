@@ -25,6 +25,9 @@ panNicEvent::PanPacket panNicEvent::getType(){
 
 std::string panNicEvent::getOpcodeStr(){
   switch(Opcode){
+  case panNicEvent::Success:
+    return "Success";
+    break;
   case panNicEvent::Failed:
     return "Failed";
     break;
