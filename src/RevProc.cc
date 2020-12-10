@@ -15,7 +15,8 @@ RevProc::RevProc( unsigned Id,
                   RevMem *Mem,
                   RevLoader *Loader,
                   SST::Output *Output )
-  : id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output) {
+  : Halted(false), SingleStep(false),
+    id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -46,9 +47,43 @@ RevProc::~RevProc(){
   delete feature;
 }
 
+bool RevProc::Halt(){
+  if( Halted )
+    return false;
+  Halted = true;
+  SingleStep = false;
+  return true;
+}
+
+bool RevProc::Resume(){
+  if( Halted ){
+    Halted = false;
+    SingleStep = false;
+    return true;
+  }
+  return false;
+}
+
+bool RevProc::SingleStepHart(){
+  if( SingleStep )
+    return true;
+  if( Halted ){
+    Halted = false;
+    SingleStep = true;
+    return true;
+  }else{
+    // must be halted to single step
+    return false;
+  }
+}
+
 bool RevProc::EnableExt(RevExt *Ext){
   if( !Ext )
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
+
+  output->verbose(CALL_INFO, 6, 0,
+                  "Core %d ; Enabling extension=%s\n",
+                  id, Ext->GetName().c_str());
 
   // add the extension to our vector of enabled objects
   Extensions.push_back(Ext);
@@ -70,6 +105,10 @@ bool RevProc::EnableExt(RevExt *Ext){
 }
 
 bool RevProc::SeedInstTable(){
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Seeding instruction table for machine model=%s\n",
+                    id, feature->GetMachineModel().c_str());
+
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
     EnableExt(static_cast<RevExt *>(new RV32I(feature,&RegFile,mem,output)));
@@ -108,6 +147,16 @@ bool RevProc::SeedInstTable(){
     if( feature->GetXlen() == 64 ){
       EnableExt(static_cast<RevExt *>(new RV64D(feature,&RegFile,mem,output)));
     }
+  }
+
+  // PAN Extension
+  if( feature->IsModeEnabled(RV_P) ){
+    //if( feature->GetXlen() == 64 ){
+      EnableExt(static_cast<RevExt *>(new RV64P(feature,&RegFile,mem,output)));
+    //}else{
+      // FIXME
+      //output->fatal(CALL_INFO, -1, "Error: PAN can only be enabled on RV64");
+    //}
   }
 
   // C-Extension
@@ -159,6 +208,10 @@ std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
 }
 
 bool RevProc::InitTableMapping(){
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Initializing table mapping for machine model=%s\n",
+                    id, feature->GetMachineModel().c_str());
+
   for( unsigned i=0; i<InstTable.size(); i++ ){
     NameToEntry.insert(
       std::pair<std::string,unsigned>(ExtractMnemonic(InstTable[i]),i) );
@@ -174,6 +227,10 @@ bool RevProc::InitTableMapping(){
 }
 
 bool RevProc::ReadOverrideTables(){
+  output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Reading override tables for machine model=%s\n",
+                    id, feature->GetMachineModel().c_str());
+
   std::string Table;
   if( !opts->GetInstTable(id, Table) )
     return false;
@@ -567,11 +624,49 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
+bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value){
+  if( !Halted )
+    return false;
+  if( Idx > (_REV_NUM_REGS_-1) ){
+    return false;
+  }
+  if( feature->GetXlen() == 32 ){
+    *Value = RegFile.RV32[Idx];
+    return true;
+  }else{
+    *Value = RegFile.RV64[Idx];
+    return true;
+  }
+}
+
+bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value){
+  if( !Halted )
+    return false;
+  if( Idx > (_REV_NUM_REGS_-1) ){
+    return false;
+  }
+  if( feature->GetXlen() == 32 ){
+    RegFile.RV32[Idx] = (uint32_t)(Value&0xFFFFFFFF);
+    return true;
+  }else{
+    RegFile.RV64[Idx] = Value;
+    return true;
+  }
+}
+
 uint64_t RevProc::GetPC(){
   if( feature->GetXlen() == 32 ){
     return (uint64_t)(RegFile.RV32_PC);
   }else{
     return RegFile.RV64_PC;
+  }
+}
+
+void RevProc::SetPC(uint64_t PC){
+  if( feature->GetXlen() == 32 ){
+    RegFile.RV32_PC = (uint32_t)(PC);
+  }else{
+    RegFile.RV64_PC = PC;
   }
 }
 
@@ -717,13 +812,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else if the the instruction has not yet been triggered, execute it
   // else, wait until the counter is decremented to zero to retire the instruction
   //
-  if( RegFile.cost == 0 ){
+  if( (RegFile.cost == 0) && (!Halted) ){
     // fetch the next instruction
     ResetInst(&Inst);
     Inst = DecodeInst();
     rtn = true;
     ExecPC = GetPC();
-  }else if( !RegFile.trigger ){
+  }else if( (!RegFile.trigger) && (!Halted) ){
     // trigger the next instruction
     RegFile.trigger = true;
 
@@ -751,9 +846,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
     }
 
+    // if this is a singlestep, clear the singlestep and halt
+    if( SingleStep ){
+      SingleStep = false;
+      Halted = true;
+    }
+
     rtn = true;
   }else{
     // wait until the counter has been decremented
+    // note that this will continue to occur until the counter is drained
+    // and the HART is halted
     RegFile.cost = RegFile.cost - 1;
 
     if( RegFile.cost == 0 ){
@@ -765,10 +868,35 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     rtn = true;
   }
 
-  // check for end of program
   if( GetPC() == 0x00ull ){
-    output->verbose(CALL_INFO,2,0,"Program execution complete\n");
-    return false;
+    // look for more work on the execution queue
+    bool done = true;
+    if( PExec ){
+      uint64_t Addr = 0x00ull;
+      unsigned Idx = 0;
+      PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
+      switch( Status ){
+      case PanExec::QExec:
+        SetPC(Addr);
+        done = false;
+        break;
+      case PanExec::QValid:
+      case PanExec::QNull:
+      case PanExec::QError:
+      default:
+        break;
+        done = true;
+      }
+    }else{
+      // PAN execution contexts not enabled, this is our last PC
+      done = true;
+    }
+
+    if( done ){
+      // we are really done, return
+      output->verbose(CALL_INFO,2,0,"Program execution complete\n");
+      return false;
+    }
   }
 
   return rtn;

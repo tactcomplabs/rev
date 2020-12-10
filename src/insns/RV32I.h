@@ -47,13 +47,15 @@ namespace SST{
       }
 
       static bool jal(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        int64_t tmp;
         if( F->IsRV32() ){
           R->RV32[Inst.rd] = R->RV32_PC + Inst.instSize;  // PC following return
           R->RV32_PC = (int32_t)(R->RV32_PC) + (int32_t)(td_u32(Inst.imm,20));
           R->RV32[0] = 0x00;  // ensure that x0 = 0
         }else{
+          tmp = td_u64(Inst.imm,20);
           R->RV64[Inst.rd] = R->RV64_PC + Inst.instSize;  // PC following return
-          R->RV64_PC = (int64_t)(R->RV64_PC) + (int64_t)(td_u32(Inst.imm,20));
+          R->RV64_PC = (int64_t)(R->RV64_PC) + tmp;
           R->RV64[0] = 0x00ull;  // ensure that x0 = 0
         }
         return true;
@@ -90,6 +92,7 @@ namespace SST{
       }
 
       static bool bne(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+	int64_t tmp;
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] != R->RV32[Inst.rs2] ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
@@ -98,7 +101,8 @@ namespace SST{
           }
         }else{
           if( R->RV64[Inst.rs1] != R->RV64[Inst.rs2] ){
-            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
+            tmp = td_u64(Inst.imm,12);
+            R->RV64_PC = R->RV64_PC + tmp;
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }

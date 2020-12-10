@@ -14,6 +14,7 @@
 // -- C++ Headers
 #include <ctime>
 #include <vector>
+#include <algorithm>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -23,7 +24,6 @@
 #include "RevOpts.h"
 
 #ifndef _REVMEM_BASE_
-//#define _REVMEM_BASE_ 0x80000000
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
@@ -100,6 +100,15 @@ namespace SST {
       /// RevMem: Clear a memory reservation for the target address
       bool SC(unsigned Hart, uint64_t Addr);
 
+      /// RevMem: Initiates a future operation [RV64P only]
+      bool SetFuture( uint64_t Addr );
+
+      /// RevMem: Revokes a future operation [RV64P only]
+      bool RevokeFuture( uint64_t Addr );
+
+      /// RevMem: Interrogates the target address and returns 'true' if a future reservation is present [RV64P only]
+      bool StatusFuture( uint64_t Addr );
+
     private:
       unsigned long memSize;    ///< RevMem: size of the target memory
       RevOpts *opts;            ///< RevMem: options object
@@ -109,9 +118,9 @@ namespace SST {
 
       uint64_t stacktop;        ///< RevMem: top of the stack
 
-      std::vector<std::pair<unsigned,uint64_t>> LRSC;   ///< RevMem: load reserve/store conditional vector
+      std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 
-      /// RevMem: Virtual to physical address translation
+      std::vector<std::pair<unsigned,uint64_t>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
     }; // class RevMem
   } // namespace RevCPU

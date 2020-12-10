@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: ex2
+# makefile: pan_test
 #
 # Copyright (C) 2017-2020 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,8 +12,9 @@
 
 .PHONY: src
 
-EXAMPLE=ex2
+EXAMPLE=pan_test
 CC=riscv64-unknown-elf-gcc
+#ARCH=rv32i
 ARCH=rv64g
 
 all: $(EXAMPLE).exe

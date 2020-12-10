@@ -27,6 +27,7 @@
 #include "RevLoader.h"
 #include "RevInstTable.h"
 #include "RevInstTables.h"
+#include "PanExec.h"
 
 namespace SST::RevCPU {
   class RevProc;
@@ -49,7 +50,36 @@ namespace SST{
       /// RevProc: per-processor clock function
       bool ClockTick( SST::Cycle_t currentCycle );
 
+      /// RevProc: halt the CPU
+      bool Halt();
+
+      /// RevProc: resume the CPU
+      bool Resume();
+
+      /// RevProc: execute a single step
+      bool SingleStepHart();
+
+      /// RevProc: retrieve the local PC for the correct feature set
+      uint64_t GetPC();
+
+      /// RevProc: Debug mode read a register
+      bool DebugReadReg(unsigned Idx, uint64_t *Value);
+
+      /// RevProc: Debug mode write a register
+      bool DebugWriteReg(unsigned Idx, uint64_t Value);
+
+      /// RevProc: Is this an RV32 machine?
+      bool DebugIsRV32() { return feature->IsRV32(); }
+
+      /// RevProc: Set the PAN execution context
+      void SetExecCtx(PanExec *P) { PExec = P; }
+
+      /// RevProc: Retrieve a random memory cost value
+      unsigned RandCost() { return mem->RandCost(feature->GetMinCost(),feature->GetMaxCost()); }
+
     private:
+      bool Halted;              ///< RevProc: determines if the core is halted
+      bool SingleStep;          ///< RevProc: determines if we are in a single step
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
       RevOpts *opts;            ///< RevProc: options object
@@ -57,6 +87,7 @@ namespace SST{
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
       RevFeature *feature;      ///< RevProc: feature handler
+      PanExec *PExec;           ///< RevProc: PAN exeuction context
 
       RevRegFile RegFile;       ///< RevProc: register file
       RevInst Inst;             ///< RevProc: instruction payload
@@ -102,6 +133,9 @@ namespace SST{
       /// RevProc: reset the core and its associated features
       bool Reset();
 
+      /// RevProc: set the PC
+      void SetPC(uint64_t PC);
+
       /// RevProc: decode the instruction at the current PC
       RevInst DecodeInst();
 
@@ -128,9 +162,6 @@ namespace SST{
 
       /// RevProc: determine if the instruction is an SP/FP float
       bool IsFloat(unsigned Entry);
-
-      /// RevProc: retrieve the local PC for the correct feature set
-      uint64_t GetPC();
 
       /// RevProc: reset the inst structure
       void ResetInst(RevInst *Inst);

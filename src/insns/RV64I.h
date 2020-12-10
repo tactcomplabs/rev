@@ -34,7 +34,8 @@ namespace SST{
       }
 
       static bool sd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint64_t)(R->RV64[Inst.rs2]));
+        int64_t tmp = td_u64(Inst.imm,12);
+        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]+tmp), (uint64_t)(R->RV64[Inst.rs2]));
         R->RV64_PC += Inst.instSize;
         return true;
       }
