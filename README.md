@@ -85,6 +85,7 @@ The Rev SST component contains the following options:
 | enable\_pan         |   | 0/1 | Default=0.  Setting to 1 enables a PAN NIC |
 | enable\_test        |   | 0/1 | Default=0.  Setting to 1 enables the internal PAN test harness |
 | enable\_pan\_stats  |   | 0/1 | Default=0.  Setting to 1 enables internal statistics for PAN commands |
+| enableRDMAMbox      |   | 0/1 | Default=1.  Setting to 1 enables the internal RDMA Mailbox for applications to initiate messages |
 | msgPerCycle         |   | unsigned integer | Default=1.  Sets the number of messages to inject per cycle |
 | testIters           |   | unsigned integer | Default=255.  Sets the number of iterations for each PAN test loop |
 

@@ -37,7 +37,7 @@ max_addr_gb = 1
 #-- HOST CPU
 host_cpu0 = sst.Component("cpu0", "revcpu.RevCPU")
 host_cpu0.addParams({
-	"verbose" : 1,                                # Verbosity
+	"verbose" : 5,                                # Verbosity
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
@@ -57,7 +57,7 @@ host_cpu0.addParams({
 #-- PAN CPU
 pan_cpu1 = sst.Component("cpu1", "revcpu.RevCPU")
 pan_cpu1.addParams({
-	"verbose" : 1,                                # Verbosity
+	"verbose" : 5,                                # Verbosity
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
@@ -69,6 +69,7 @@ pan_cpu1.addParams({
         "enable_pan" : 1,                             # Enable the internal RevNIC
         "enable_test" : 0,                            # Disable the PAN test harness
         "enable_pan_stats" : 1,                       # Enable the PAN statistics
+        "enableRDMAMbox" : 0,                         # Disable the RDMA Mailbox
         "msgPerCycle" : 5,                            # Number of messages per cycle
         "splash" : 1                                  # Display the splash message
 })

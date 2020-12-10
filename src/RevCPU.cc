@@ -140,6 +140,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     // record the number of injected messages per cycle
     msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
     RDMAPerCycle = params.find<unsigned>("RDMAPerCycle", 1);
+    EnableRDMAMBox = params.find<bool>("enableRDMAMbox",1);
 
     if( EnablePANStats )
       registerStatistics();
@@ -1756,9 +1757,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   // Clock the PAN network transport module
   if( EnablePAN ){
 
-    // process the incoming mailbox messages
-    if( !PANProcessRDMAMailbox() )
-      output.fatal(CALL_INFO, -1, "Error: failed to process the PAN RDMA mailbox\n");
+    if( EnableRDMAMBox ){
+      // process the incoming mailbox messages from our local cores
+      if( !PANProcessRDMAMailbox() )
+        output.fatal(CALL_INFO, -1, "Error: failed to process the PAN RDMA mailbox\n");
+    }
 
     for( unsigned i=0; i< msgPerCycle; i++ ){
       // check the mailbox for messages to inject

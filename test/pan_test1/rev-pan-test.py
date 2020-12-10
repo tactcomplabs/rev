@@ -69,6 +69,7 @@ pan_cpu1.addParams({
         "enable_pan" : 1,                             # Enable the internal RevNIC
         "enable_test" : 0,                            # Disable the PAN test harness
         "enable_pan_stats" : 1,                       # Enable the PAN statistics
+        "enableRDMAMbox" : 0,                         # Disable the RDMA Mailbox
         "msgPerCycle" : 5,                            # Number of messages per cycle
         "splash" : 1                                  # Display the splash message
 })

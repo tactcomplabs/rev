@@ -93,8 +93,9 @@ namespace SST {
         {"enable_pan",      "Enable PAN network endpoint",             "0"},
         {"enable_test",     "Enable PAN network endpoint test",        "0"},
         {"enable_pan_stats","Enable PAN network statistics",      "1"},
+        {"enableRDMAMbox",  "Enable the RDMA mailbox", "1"},
         {"msgPerCycle",     "Number of messages per cycle to inject",  "1"},
-        {"RDMAPerCycle",    "Number of RDMA messages per cycle to ibject", "1"},
+        {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject", "1"},
         {"testIters",       "Number of PAN test messages to send",     "255"},
         {"splash",          "Display the splash logo",                 "0"}
       )
@@ -190,6 +191,7 @@ namespace SST {
       bool EnablePAN;                     ///< RevCPU: Flag for enabling the PAN operations
       bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations
       bool EnablePANStats;                ///< RevCPU: Flag for enabling PAN statistics
+      bool EnableRDMAMBox;                ///< RevCPU: Enable the RDMA Mailbox
 
       TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
       SST::Output output;                 ///< RevCPU: SST output handler
