@@ -566,6 +566,7 @@ void PanNet::init(unsigned int phase){
     if( !initBroadcastSent) {
       initBroadcastSent = true;
       panNicEvent *ev = new panNicEvent(getName());
+      ev->setTag((uint8_t)(this->IsHost()));    // send a boolean on whether we are a host device
 
       SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
@@ -578,10 +579,22 @@ void PanNet::init(unsigned int phase){
   while( SST::Interfaces::SimpleNetwork::Request * req = iFace->recvInitData() ) {
     panNicEvent *ev = static_cast<panNicEvent*>(req->takePayload());
     numDest++;
+    SST::Interfaces::SimpleNetwork::nid_t srcID = req->src;
+    hostMap[srcID] = ev->getTag();
     output->verbose(CALL_INFO, 1, 0,
                     "%s received PAN init message from %s\n",
                     getName().c_str(), ev->getSource().c_str());
+    if( (bool)(ev->getTag()) ){
+      output->verbose(CALL_INFO, 1, 0,
+                      "%s identified %s as a HOST device\n",
+                      getName().c_str(), ev->getSource().c_str());
+    }else{
+      output->verbose(CALL_INFO, 1, 0,
+                      "%s identified %s as a PAN device\n",
+                      getName().c_str(), ev->getSource().c_str());
+    }
   }
+
 }
 
 void PanNet::setup(){
@@ -618,6 +631,24 @@ int PanNet::getNumDestinations(){
 
 SST::Interfaces::SimpleNetwork::nid_t PanNet::getAddress(){
   return iFace->getEndpointID();
+}
+
+int64_t PanNet::getHostFromIdx(unsigned Idx){
+  if( Idx > (hostMap.size()-1) ){
+    return -1;
+  }
+
+  unsigned i = 0;
+  for( std::map<SST::Interfaces::SimpleNetwork::nid_t,bool>::iterator it = hostMap.begin();
+       it != hostMap.end();
+       ++it ){
+    if( i == Idx ){
+      return it->first;
+    }
+    i++;
+  }
+
+  return -1;
 }
 
 bool PanNet::clockTick(Cycle_t cycle){

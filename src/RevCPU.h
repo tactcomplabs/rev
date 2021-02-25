@@ -269,6 +269,10 @@ namespace SST {
       //-------------------------------------------------------
       // -- FUNCTIONS
       //-------------------------------------------------------
+
+      /// RevCPU: initializes the PAN NIC tables
+      void initNICMem();
+
       /// RevCPU: executes the PAN test harness
       void ExecPANTest();
 

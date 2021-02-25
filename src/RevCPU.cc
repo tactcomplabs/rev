@@ -157,6 +157,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   if( !Mem )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
 
+  // Iniitalize the memory map arrays from the PAN NIC
+  if( EnablePAN ){
+    initNICMem();
+  }
+
   // Load the binary into memory
   Loader = new RevLoader( Exe, Args, Mem, &output );
   if( !Loader ){
@@ -212,6 +217,44 @@ RevCPU::~RevCPU(){
 
   // delete the options object
   delete Opts;
+}
+
+void RevCPU::initNICMem(){
+  // init all the entries to -1
+  uint64_t ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+  uint8_t host = 0;
+  int64_t id = -1;
+  for( unsigned i=0; i<_PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
+    Mem->WriteMem(ptr,sizeof(int64_t),(void *)(&id));
+    ptr += sizeof(PEMap);
+  }
+  ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+
+  // the first entry in the table is our own, then its
+  // all the other nodes sequentially
+  id = (int64_t)(PNic->getAddress());
+  Mem->WriteMem(ptr,sizeof(int64_t),(void *)(&id));
+  ptr += 8;
+  if( PNic->IsHost() ){
+    host = 1;
+  }else{
+    host = 0;
+  }
+  Mem->WriteMem(ptr,sizeof(int8_t),(void *)(&host));
+  ptr += sizeof(uint8_t);
+
+  for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
+    id = PNic->getHostFromIdx(i);
+    Mem->WriteMem(ptr,sizeof(int64_t),(void *)(&id));
+    ptr += 8;
+    if( PNic->IsRemoteHost((SST::Interfaces::SimpleNetwork::nid_t)(id)) ){
+      host = 1;
+    }else{
+      host = 0;
+    }
+    Mem->WriteMem(ptr,sizeof(int8_t),(void *)(&host));
+    ptr += sizeof(uint8_t);
+  }
 }
 
 void RevCPU::registerStatistics(){

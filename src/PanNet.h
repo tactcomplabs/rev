@@ -14,6 +14,7 @@
 // -- Standard Headers
 #include <vector>
 #include <queue>
+#include <map>
 #include <unistd.h>
 
 // -- SST Headers
@@ -328,6 +329,16 @@ namespace SST {
 
       /// panNicAPI: returns the NIC's network address
       virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
+
+      /// panNicAPI: determine if the remote ID is a host
+      virtual bool IsRemoteHost(SST::Interfaces::SimpleNetwork::nid_t NID) = 0;
+
+      /// panNicAPI: retrieve the number of hosts
+      virtual unsigned getNumPEs()  = 0;
+
+      /// panNicAPI: retrieve the endpoint ID of the target map index
+      virtual int64_t getHostFromIdx(unsigned Idx) = 0;
+
     }; // end panNicAPI
 
     /**
@@ -386,14 +397,23 @@ namespace SST {
       /// PanNet: get the endpoint's network address
       virtual SST::Interfaces::SimpleNetwork::nid_t getAddress();
 
+      /// PanNet: clock function
+      virtual bool clockTick(Cycle_t cycle);
+
       /// PanNet: callback function for the SimpleNetwork itnerface
       bool msgNotify(int virtualNetwork);
 
       /// PanNet: determine if I am a host connected device
       bool IsHost() { return isHost; }
 
-      /// PanNet: clock function
-      virtual bool clockTick(Cycle_t cycle);
+      /// PanNet: determine if the remote ID is a host
+      virtual bool IsRemoteHost(SST::Interfaces::SimpleNetwork::nid_t NID){ return hostMap[NID]; }
+
+      /// PanNet: retrieve the number of hosts
+      virtual unsigned getNumPEs() { return (unsigned)(hostMap.size()); }
+
+      /// PanNet: retrieve the endpoint ID of the target map index
+      virtual int64_t getHostFromIdx(unsigned Idx);
 
     protected:
       SST::Output *output;                    ///< PanNet: SST output object
@@ -410,6 +430,8 @@ namespace SST {
 
     private:
       bool isHost;                            ///< PanNet: Determines if this is a host device
+
+      std::map<SST::Interfaces::SimpleNetwork::nid_t,bool> hostMap;///< PanNet: Maps an endpoint ID to whether it is a host device
 
     }; // end PanNet
 
