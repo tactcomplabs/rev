@@ -440,6 +440,7 @@ void RevCPU::PANBuildBasicSuccess(panNicEvent *orig, panNicEvent *rtn){
 }
 
 void RevCPU::PANHandleSyncGet(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCGET Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -456,6 +457,7 @@ void RevCPU::PANHandleSyncGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSyncPut(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCPUT Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -483,6 +485,7 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncGet(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCGET Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -500,6 +503,7 @@ void RevCPU::PANHandleAsyncGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncPut(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCPUT Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -527,6 +531,7 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCSTREAMGET Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -544,6 +549,7 @@ void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCSTREAMPUT Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -572,6 +578,7 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCSTREAMGET Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -589,6 +596,7 @@ void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCSTREAMPUT Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -617,6 +625,7 @@ void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleExec(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN EXEC Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -637,6 +646,7 @@ void RevCPU::PANHandleExec(panNicEvent *event){
 }
 
 void RevCPU::PANHandleStatus(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN STATUS Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -707,6 +717,7 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
 }
 
 void RevCPU::PANHandleHalt(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN HALT Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -723,6 +734,7 @@ void RevCPU::PANHandleHalt(panNicEvent *event){
 }
 
 void RevCPU::PANHandleResume(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN RESUME Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -741,6 +753,7 @@ void RevCPU::PANHandleResume(panNicEvent *event){
 }
 
 void RevCPU::PANHandleReadReg(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN READREG Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -778,6 +791,7 @@ void RevCPU::PANHandleReadReg(panNicEvent *event){
 }
 
 void RevCPU::PANHandleWriteReg(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN WRITEREG Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -803,6 +817,7 @@ void RevCPU::PANHandleWriteReg(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSingleStep(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SINGLESTEP Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -829,6 +844,7 @@ void RevCPU::PANHandleSingleStep(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSetFuture(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SETFUTURE Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -842,6 +858,7 @@ void RevCPU::PANHandleSetFuture(panNicEvent *event){
 }
 
 void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN REVOKEFUTURE Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -855,6 +872,7 @@ void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
 }
 
 void RevCPU::PANHandleStatusFuture(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN STATUSFUTURE Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -873,6 +891,7 @@ void RevCPU::PANHandleStatusFuture(panNicEvent *event){
 }
 
 void RevCPU::PANHandleBOTW(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN BOTW Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -1456,7 +1475,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
   while( !done ){
 
     //
-    // retriver the 'iter' 24-byte mailbox payload
+    // retrive the 'iter' 24-byte mailbox payload
     // each payload is configured as follows:
     //      ADDR + 16          ADDR + 8             ADDR
     // [  EVENT POINTER  ][      DEST       ][      VALID      ]

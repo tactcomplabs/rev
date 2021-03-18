@@ -307,7 +307,16 @@ bool RevProc::Reset(){
   // set the pc
   uint64_t StartAddr = 0x00ull;
   if( !opts->GetStartAddr( id, StartAddr ) )
-    output->fatal(CALL_INFO, -1, "Error: failed to init the start address for core=%d\n", id);
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to init the start address for core=%d\n", id);
+  if( StartAddr == 0x00ull ){
+    // load "main" symbol
+    StartAddr = loader->GetSymbolAddr("main");
+    if( StartAddr == 0x00ull ){
+      output->fatal(CALL_INFO, -1,
+                    "Error: failed to auto discover address for <main> for core=%d\n", id);
+    }
+  }
   RegFile.RV32_PC = (uint32_t)(StartAddr);
   RegFile.RV64_PC = StartAddr;
 
