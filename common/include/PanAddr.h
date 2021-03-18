@@ -29,7 +29,7 @@ typedef struct{
 
 typedef struct{
   int64_t ID;       ///< PEMap: Endpoint ID
-  uint8_t host;     ///< PEMap: 1 = host; 0 = PAN
+  uint64_t host;    ///< PEMap: 1 = host; 0 = PAN
 }PEMap;
 
 #endif

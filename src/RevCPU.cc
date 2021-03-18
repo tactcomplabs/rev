@@ -219,10 +219,11 @@ void RevCPU::initNICMem(){
 
   // init all the entries to -1
   uint64_t ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
-  uint8_t host = 0;
+  uint64_t host = 2;
   int64_t id = -1;
   for( unsigned i=0; i<_PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
     Mem->WriteU64(ptr,(uint64_t)(id));
+    Mem->WriteU64(ptr+8,(uint64_t)(host));
     ptr += sizeof(PEMap);
   }
   ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
@@ -237,8 +238,11 @@ void RevCPU::initNICMem(){
   }else{
     host = 0;
   }
-  Mem->WriteU64(ptr,(uint64_t)(host));
-  ptr += sizeof(uint8_t);
+  Mem->WriteU64(ptr,host);
+  ptr += 8;
+
+  output.verbose(CALL_INFO, 4, 0, "MY_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+                 id, host );
 
   for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
     id = PNic->getHostFromIdx(i);
@@ -249,8 +253,10 @@ void RevCPU::initNICMem(){
     }else{
       host = 0;
     }
-    Mem->WriteU64(ptr,(uint64_t)(host));
-    ptr += sizeof(uint8_t);
+    output.verbose(CALL_INFO, 4, 0, "REMOTE_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+                  id, host);
+    Mem->WriteU64(ptr,host);
+    ptr += 8;
   }
 }
 
@@ -1124,10 +1130,12 @@ bool RevCPU::sendPANMessage(){
   if( SendMB.empty() )
     return true;
 
-  output.verbose(CALL_INFO, 4, 0, "Sending PAN message from %d to %d; Opc=%s; Tag=%d\n",
+  output.verbose(CALL_INFO, 4, 0, "Sending PAN message from %d to %d; Opc=%s; Tag=%d; Token=%" PRIu32 "; Size=%" PRIu32 "\n",
                  address, SendMB.front().second,
                  SendMB.front().first->getOpcodeStr().c_str(),
-                 SendMB.front().first->getTag());
+                 SendMB.front().first->getTag(),
+                 SendMB.front().first->getToken(),
+                 SendMB.front().first->getSize());
   PNic->send(SendMB.front().first,SendMB.front().second);
   if( PNic->IsHost() ){
     // save the message to track the response
@@ -1234,7 +1242,7 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   }
 
   output.verbose(CALL_INFO, 5, 0,
-                 "Coverting RDMA Mailbox Entry to Event: Payload = %llu; Opcode=%d\n",
+                 "Coverting RDMA Mailbox Entry to Event: Payload = %" PRIu64 "; Opcode=%d\n",
                  Payload, Opcode);
 
   // Stage 2: use the opcode the read and encode the remainder of the data
@@ -1463,7 +1471,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
     // Stage 2: Interrogate the payload
     if( Payload[0] == _PAN_ENTRY_VALID_ ){
       // found a valid payload, process it
-      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command\n");
+      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command; Entry=%d\n", iter);
 
       // Stage 2.a: Convert the buffer into an event
       panNicEvent *FEvent = new panNicEvent();
