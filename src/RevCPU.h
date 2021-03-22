@@ -187,6 +187,8 @@ namespace SST {
 
       int address;                        ///< RevCPU: local network address
 
+      uint64_t PrevAddr;                  ///< RevCPU: previous address for handling PAN messages
+
       bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
       bool EnablePAN;                     ///< RevCPU: Flag for enabling the PAN operations
       bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations

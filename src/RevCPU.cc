@@ -32,7 +32,7 @@ const char *pan_splash_msg = "\
 ";
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id), testStage(0), address(-1),
+  : SST::Component(id), testStage(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false),
     Nic(nullptr), PNic(nullptr), PExec(nullptr) {
 
@@ -369,6 +369,8 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
     return ;  // should not reach this
   }
 
+  // TODO: write a completion message to the message address
+
   output.verbose(CALL_INFO, 8, 0,
                  "SUCCESS RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
                  event->getTag(),
@@ -391,6 +393,8 @@ void RevCPU::PANHandleFailed(panNicEvent *event){
                  event->getSrc());
     return ;  // should not reach this
   }
+
+  // TODO: write a completion message to the message address
 
   output.verbose(CALL_INFO, 8, 0,
                  "FAILED RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
@@ -1466,7 +1470,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
   bool done = false;
   unsigned sent = 0;
   unsigned iter = 0;
-  uint64_t Addr = _PAN_RDMA_MAILBOX_;
+  uint64_t Addr = PrevAddr;
   uint64_t Payload[3];
   uint64_t CmdBuf;
   uint64_t Buf = 0x00ull;
@@ -1518,11 +1522,18 @@ bool RevCPU::PANProcessRDMAMailbox(){
     Payload[1] = 0x00ull;
     Payload[2] = 0x00ull;
 
+    if( Addr == (_PAN_RDMA_MAILBOX_ + (24*_PAN_RDMA_MAX_ENTRIES_)) ){
+      Addr = _PAN_RDMA_MAILBOX_;
+    }
+
     if( iter == _PAN_RDMA_MAX_ENTRIES_ ){
+      PrevAddr = Addr;
       done = true;
     }else if( sent == RDMAPerCycle ){
+      PrevAddr = Addr;
       done = true;
     }else if( SendMB.size() == 255 ){
+      PrevAddr = Addr;
       done = true;
     }
   }

@@ -17,9 +17,11 @@
 #define _PAN_PE_TABLE_ADDR_         0x30001F48
 #define _PAN_PE_TABLE_MAX_ENTRIES_  1025
 
-#define _PAN_ENTRY_INVALID_     0
-#define _PAN_ENTRY_INJECTED_    1
-#define _PAN_ENTRY_VALID_       2
+#define _PAN_ENTRY_INVALID_       0
+#define _PAN_ENTRY_INJECTED_      1
+#define _PAN_ENTRY_VALID_         2
+#define _PAN_ENTRY_DONE_SUCCESS_  3
+#define _PAN_ENTRY_DONE_FAILED_   4
 
 typedef struct{
   uint64_t Valid;   ///< MBoxEntry: Valid field
