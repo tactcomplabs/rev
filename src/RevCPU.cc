@@ -355,6 +355,52 @@ void RevCPU::handlePANMessage(Event *ev){
   delete event;
 }
 
+void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
+  unsigned iter = 0;
+  uint64_t Addr = _PAN_RDMA_MAILBOX_;
+  uint64_t Payload[3];
+  uint64_t TagPayload  = 0x00ull;
+  uint8_t TmpTag = 0x0;
+  bool done = false;
+
+  while( !done ){
+    //
+    // retrive the 'iter' 24-byte mailbox payload
+    // each payload is configured as follows:
+    //      ADDR + 16          ADDR + 8             ADDR
+    // [  EVENT POINTER  ][      DEST       ][      VALID      ]
+    //
+    //
+
+    // Stage 1: Read the memory
+    Mem->ReadMem(Addr,24,&Payload[0]);
+
+    // Stage 2: Check to see if the tag matches
+    TagPayload = Mem->ReadU64(Payload[2]);
+    TmpTag     = (uint8_t)( (TagPayload >> 32) & 0b11111111 );
+
+    // Stage 3: If the tag matches and the mailbox is in an
+    //          "injected" state, write the value
+    if( (TmpTag == tag) && (Payload[0] == _PAN_ENTRY_INJECTED_) ){
+      Payload[0] = sig;
+      Mem->WriteMem(Addr,8,&Payload[0]);
+      done = true;
+    }
+
+    Payload[0] = 0x00ull;
+    Payload[1] = 0x00ull;
+    Payload[2] = 0x00ull;
+    TagPayload = 0x00ull;
+    iter++;
+    Addr+=24;
+
+    if( iter == _PAN_RDMA_MAX_ENTRIES_ ){
+      done = true;
+    }
+
+  }
+}
+
 void RevCPU::PANHandleSuccess(panNicEvent *event){
   // search for the tag in the tag list
   std::pair<uint8_t,int> Entry = std::make_pair(event->getTag(),
@@ -369,7 +415,8 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
     return ;  // should not reach this
   }
 
-  // TODO: write a completion message to the message address
+  // Signal the host thread of the message completion
+  PANSignalMsgRecv(event->getTag(),_PAN_ENTRY_DONE_SUCCESS_);
 
   output.verbose(CALL_INFO, 8, 0,
                  "SUCCESS RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
@@ -394,7 +441,8 @@ void RevCPU::PANHandleFailed(panNicEvent *event){
     return ;  // should not reach this
   }
 
-  // TODO: write a completion message to the message address
+  // Signal the host thread of the message completion
+  PANSignalMsgRecv(event->getTag(),_PAN_ENTRY_DONE_FAILED_);
 
   output.verbose(CALL_INFO, 8, 0,
                  "FAILED RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
@@ -1484,7 +1532,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
     //      ADDR + 16          ADDR + 8             ADDR
     // [  EVENT POINTER  ][      DEST       ][      VALID      ]
     //
-    // If `Valid` != 0; The entry is valid, consume it
+    // If `Valid` == _PAN_ENTRY_VALID_; The entry is valid, consume it
     // Else, continue
     //
 

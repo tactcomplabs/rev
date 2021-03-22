@@ -379,6 +379,9 @@ namespace SST {
       /// RevCPU: BOTW command
       void PANHandleBOTW(panNicEvent *event);
 
+      /// RevCPU: Signal the host thread of a completed round trip message
+      void PANSignalMsgRecv(uint8_t tag, uint64_t sig);
+
       /// RevCPU: Handle successful response
       void PANHandleSuccess(panNicEvent *event);
 
