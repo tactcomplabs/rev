@@ -241,7 +241,7 @@ void RevCPU::initNICMem(){
   Mem->WriteU64(ptr,host);
   ptr += 8;
 
-  output.verbose(CALL_INFO, 4, 0, "MY_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+  output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
                  id, host );
 
   for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
@@ -253,7 +253,7 @@ void RevCPU::initNICMem(){
     }else{
       host = 0;
     }
-    output.verbose(CALL_INFO, 4, 0, "REMOTE_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+    output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
                   id, host);
     Mem->WriteU64(ptr,host);
     ptr += 8;
@@ -397,8 +397,7 @@ void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
     if( iter == _PAN_RDMA_MAX_ENTRIES_ ){
       done = true;
     }
-
-  }
+  } // end while
 }
 
 void RevCPU::PANHandleSuccess(panNicEvent *event){
@@ -763,6 +762,11 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
     PANBuildFailedToken(event);
     return ;
   }
+
+  // write the completion
+  uint64_t Addr = _PAN_COMPLETION_ADDR_;
+  uint64_t Payload = 0x01ull;
+  Mem->WriteMem(Addr,8,&Payload);
 
   PNic->RevokeToken();
   PANBuildRawSuccess(event);
@@ -1427,6 +1431,9 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     if( !event->buildRevoke(Token,Tag) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA Revoke; Tag=%d\n",Tag);
+    CmdAddr = _PAN_COMPLETION_ADDR_;
+    TmpData = 0x01;
+    Mem->WriteMem(CmdAddr,8,&TmpData);
     break;
   case panNicEvent::Halt:
     if( !event->buildHalt(Token,Tag,(uint16_t)(Size)) )

@@ -498,6 +498,8 @@ bool panNicEvent::buildSuccess(uint32_t Token, uint8_t Tag){
     return false;
   if( !setTag(Tag) )
     return false;
+  if( !setSize(0x00) )
+    return false;
   return true;
 }
 
@@ -506,6 +508,8 @@ bool panNicEvent::buildFailed(uint32_t Token, uint8_t Tag){
   if( !setToken(Token) )
     return false;
   if( !setTag(Tag) )
+    return false;
+  if( !setSize(0x00) )
     return false;
   return true;
 }
