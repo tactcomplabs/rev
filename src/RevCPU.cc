@@ -492,9 +492,11 @@ void RevCPU::PANBuildBasicSuccess(panNicEvent *orig, panNicEvent *rtn){
 
 void RevCPU::PANHandleSyncGet(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCGET Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -509,10 +511,12 @@ void RevCPU::PANHandleSyncGet(panNicEvent *event){
 
 void RevCPU::PANHandleSyncPut(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCPUT Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -537,10 +541,12 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
 
 void RevCPU::PANHandleAsyncGet(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCGET Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -555,10 +561,12 @@ void RevCPU::PANHandleAsyncGet(panNicEvent *event){
 
 void RevCPU::PANHandleAsyncPut(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCPUT Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -583,10 +591,12 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
 
 void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCSTREAMGET Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -601,10 +611,12 @@ void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
 
 void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCSTREAMPUT Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -630,10 +642,12 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
 
 void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCSTREAMGET Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -648,10 +662,12 @@ void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
 
 void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCSTREAMPUT Request\n");
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -985,13 +1001,37 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
     FailedRecv->addData(1);
     break;
   case panNicEvent::SyncGet:
+    PANHandleSyncGet(event);
+    SyncGetRecv->addData(1);
+    break;
   case panNicEvent::SyncPut:
+    PANHandleSyncPut(event);
+    SyncPutRecv->addData(1);
+    break;
   case panNicEvent::AsyncGet:
+    PANHandleAsyncGet(event);
+    AsyncGetRecv->addData(1);
+    break;
   case panNicEvent::AsyncPut:
+    PANHandleAsyncPut(event);
+    AsyncPutRecv->addData(1);
+    break;
   case panNicEvent::SyncStreamGet:
+    PANHandleSyncStreamGet(event);
+    SyncStreamGetRecv->addData(1);
+    break;
   case panNicEvent::SyncStreamPut:
+    PANHandleSyncStreamPut(event);
+    SyncStreamPutRecv->addData(1);
+    break;
   case panNicEvent::AsyncStreamGet:
+    PANHandleAsyncStreamGet(event);
+    AsyncStreamGetRecv->addData(1);
+    break;
   case panNicEvent::AsyncStreamPut:
+    PANHandleAsyncStreamPut(event);
+    AsyncStreamPutRecv->addData(1);
+    break;
   case panNicEvent::Exec:
   case panNicEvent::Status:
   case panNicEvent::Cancel:
@@ -1009,8 +1049,8 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
   default:
     // host devices should never receive these commands
     output.fatal(CALL_INFO, -1,
-                 "Error: host devices cannot handle %s commands\n",
-                 event->getOpcodeStr().c_str() );
+                 "Error: host devices cannot handle %s commands; Opcode = %d\n",
+                 event->getOpcodeStr().c_str(), event->getOpcode() );
     break;
   }
 }
@@ -1107,7 +1147,13 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
     BOTWRecv->addData(1);
     break;
   case panNicEvent::Success:
+    PANHandleSuccess(event);
+    SuccessRecv->addData(1);
+    break;
   case panNicEvent::Failed:
+    PANHandleFailed(event);
+    FailedRecv->addData(1);
+    break;
   default:
     // network devices should never receive these commands
     output.fatal(CALL_INFO, -1,
