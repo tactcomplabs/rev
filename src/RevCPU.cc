@@ -1366,7 +1366,6 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0,
                  "Coverting RDMA Mailbox Entry to Event: Payload = %" PRIu64 "; Opcode=%d\n",
                  Payload, Opcode);
-  std::cout << "HERE" << std::endl;
 
   // Stage 2: use the opcode the read and encode the remainder of the data
   switch(Opcode){
