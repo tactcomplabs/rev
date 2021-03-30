@@ -1331,6 +1331,7 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   uint32_t Token    = 0x0;
   uint32_t Offset   = 0x0;
   uint64_t CmdAddr  = 0x00ull;
+  uint64_t DataAddr = 0x00ull;
   uint64_t TmpData  = 0x00ull;
   uint64_t *Data    = nullptr;
 
@@ -1365,6 +1366,7 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0,
                  "Coverting RDMA Mailbox Entry to Event: Payload = %" PRIu64 "; Opcode=%d\n",
                  Payload, Opcode);
+  std::cout << "HERE" << std::endl;
 
   // Stage 2: use the opcode the read and encode the remainder of the data
   switch(Opcode){
@@ -1377,7 +1379,9 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   case panNicEvent::SyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA SyncPut; Tag=%d\n",Tag);
@@ -1398,7 +1402,9 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   case panNicEvent::AsyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA AsyncPut; Tag=%d\n",Tag);
@@ -1419,7 +1425,9 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   case panNicEvent::SyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA SyncStreamPut; Tag=%d\n",Tag);
@@ -1440,7 +1448,9 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   case panNicEvent::AsyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA AsyncStreamPut; Tag=%d\n",Tag);

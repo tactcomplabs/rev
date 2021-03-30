@@ -29,6 +29,7 @@ MBoxEntry *Mailbox = (MBoxEntry *)(_PAN_RDMA_MAILBOX_);
 
 uint32_t Token      = 0xfeedbeef;
 uint32_t Tag        = 0x1;
+uint64_t Input      = 0x1;
 
 void cmd_wait(){
   // this function blocks until the command is cleared from the mailbox
@@ -42,7 +43,8 @@ void cmd_wait(){
 void send_completion(){
   complete_cmd.Base = 0x80403feedbeef;
   complete_cmd.Addr = _PAN_COMPLETION_ADDR_;
-  complete_cmd.Data  = 0xdeadbeef;
+  //complete_cmd.Data  = 0xdeadbeef;
+  complete_cmd.Data  = (uint64_t)(&Input);  // updated to include buffer
   Mailbox[0].Addr  = (uint64_t)(&complete_cmd);
   Mailbox[0].Dest  = 1;
   Mailbox[0].Valid = _PAN_ENTRY_VALID_;
