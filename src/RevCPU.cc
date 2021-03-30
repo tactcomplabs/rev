@@ -1260,8 +1260,11 @@ bool RevCPU::sendPANMessage(){
   PNic->send(SendMB.front().first,SendMB.front().second);
   if( PNic->IsHost() ){
     // save the message to track the response
-    TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
-                                       SendMB.front().second));
+    uint8_t Opc = SendMB.front().first->getOpcode();
+    if( (Opc != panNicEvent::Success) && (Opc != panNicEvent::Failed) ){
+      TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
+                                         SendMB.front().second));
+    }
   }
 
   if( EnablePANStats )
