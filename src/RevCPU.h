@@ -206,6 +206,9 @@ namespace SST {
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
       std::list<std::pair<uint8_t,int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag,Dest>
       std::vector<std::tuple<uint8_t,
+                             uint64_t,
+                             uint32_t>> TrackGets;      ///< RevCPU: tracks the outstanding get messages; tuple<Tag,Addr,Sz>
+      std::vector<std::tuple<uint8_t,
                              uint32_t,
                              unsigned,
                              int,

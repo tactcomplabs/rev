@@ -414,6 +414,22 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
     return ;  // should not reach this
   }
 
+  // search for the tag in the outstanding get list
+  std::vector<std::tuple<uint8_t,uint64_t,uint32_t>>::iterator GetIter;
+  for( GetIter = TrackGets.begin(); GetIter != TrackGets.end(); ++GetIter ){
+    if( std::get<0>(*GetIter) = event->getTag() ){
+      // found a valid entry; setup the memory write
+      uint64_t *Data = new uint64_t [event->getNumBlocks(std::get<2>(*GetIter))];
+      Mem->WriteMem(std::get<1>(*GetIter),
+                    std::get<2>(*GetIter),
+                    (void *)(Data));
+      delete[] Data;
+
+      // erase the entry
+      TrackGets.erase(GetIter);
+    }
+  }
+
   // Signal the host thread of the message completion
   PANSignalMsgRecv(event->getTag(),_PAN_ENTRY_DONE_SUCCESS_);
 
@@ -1374,9 +1390,11 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   switch(Opcode){
   case panNicEvent::SyncGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildSyncGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA SyncGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::SyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
@@ -1397,9 +1415,11 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::AsyncGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildAsyncGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA AsyncGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::AsyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
@@ -1420,9 +1440,11 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::SyncStreamGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildSyncStreamGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA SyncStreamGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::SyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
@@ -1443,9 +1465,11 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::AsyncStreamGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildAsyncStreamGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA AsyncStreamGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::AsyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
