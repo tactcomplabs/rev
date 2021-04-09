@@ -27,6 +27,10 @@ REV_HEADERS := $(wildcard *.h)
 REV_OBJS := $(patsubst %.cc,%.o,$(wildcard *.cc))
 
 all: librevcpu.so
+
+debug: CXXFLAGS += -DDEBUG -g
+debug: librevcpu.so 
+
 librevcpu.so: $(REV_OBJS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ *.o
 %.o:%.cc $(REV_HEADERS)
