@@ -427,6 +427,8 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
 
       // erase the entry
       TrackGets.erase(GetIter);
+      if( TrackGets.size() == 0 )
+        break;
     }
   }
 
@@ -1326,26 +1328,17 @@ bool RevCPU::processPANMemRead(){
         SendMB.push(std::make_pair(SCmd,tmp_src));
       }else{
         // build a successful response
-        std::cout << "ReadMem was successful" << std::endl;
         SCmd->buildSuccess(PNic->GetToken(),tmp_tag);
         SCmd->setSize(tmp_size);
         SCmd->setData(Data,tmp_size);
         SCmd->setSrc(address);
-        std::cout << "Pushing to SendMB" << std::endl;
         SendMB.push(std::make_pair(SCmd,tmp_src));
       }
       delete[] Data;
       ReadQueue.erase(it);  // remove me?
-      std::cout << "Data is deleted" << std::endl;
-    }
-  }
-
-  // process all the deletions separately
-  for( it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
-    if( std::get<2>(*it) == 0 ){
-      std::cout << "erasing data" << std::endl;
-      ReadQueue.erase(it);
-    }
+      if( ReadQueue.size() == 0 )
+        break;
+    }// else do nothing
   }
 
   return true;
