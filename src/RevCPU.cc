@@ -515,6 +515,9 @@ void RevCPU::PANHandleSyncGet(panNicEvent *event){
     }
   }
 
+
+  output.verbose(CALL_INFO, 4, 0, "SYNCGET Request@Addr = 0x%" PRIu64 "\n", event->getAddr() );
+
   // push an event entry back onto the ReadQueue
   ReadQueue.push_back(std::make_tuple(event->getTag(),
                                       event->getSize(),
@@ -1273,6 +1276,7 @@ bool RevCPU::sendPANMessage(){
                  SendMB.front().first->getTag(),
                  SendMB.front().first->getToken(),
                  SendMB.front().first->getSize());
+  output.verbose(CALL_INFO, 4, 0, "Sending PAN Addr = 0x%" PRIu64 "\n", SendMB.front().first->getAddr() );
   PNic->send(SendMB.front().first,SendMB.front().second);
   if( PNic->IsHost() ){
     // save the message to track the response
@@ -1310,6 +1314,9 @@ bool RevCPU::processPANMemRead(){
       // -- setup the response
       panNicEvent *SCmd = new panNicEvent();
       uint64_t *Data = new uint64_t [SCmd->getNumBlocks(tmp_size)];
+      output.verbose(CALL_INFO, 4, 0,
+                 "Processing PANMemRead; Addr = 0x%" PRIu64 "; Size=%d\n",
+                 tmp_addr, tmp_size );
       if( !Mem->ReadMem( tmp_addr,
                          (size_t)(tmp_size),
                          (void *)(Data))){
@@ -1319,19 +1326,24 @@ bool RevCPU::processPANMemRead(){
         SendMB.push(std::make_pair(SCmd,tmp_src));
       }else{
         // build a successful response
+        std::cout << "ReadMem was successful" << std::endl;
         SCmd->buildSuccess(PNic->GetToken(),tmp_tag);
         SCmd->setSize(tmp_size);
         SCmd->setData(Data,tmp_size);
         SCmd->setSrc(address);
+        std::cout << "Pushing to SendMB" << std::endl;
         SendMB.push(std::make_pair(SCmd,tmp_src));
       }
       delete[] Data;
+      ReadQueue.erase(it);  // remove me?
+      std::cout << "Data is deleted" << std::endl;
     }
   }
 
   // process all the deletions separately
   for( it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
     if( std::get<2>(*it) == 0 ){
+      std::cout << "erasing data" << std::endl;
       ReadQueue.erase(it);
     }
   }
