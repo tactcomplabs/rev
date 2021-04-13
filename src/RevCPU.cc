@@ -517,9 +517,6 @@ void RevCPU::PANHandleSyncGet(panNicEvent *event){
     }
   }
 
-
-  output.verbose(CALL_INFO, 4, 0, "SYNCGET Request@Addr = 0x%" PRIu64 "\n", event->getAddr() );
-
   // push an event entry back onto the ReadQueue
   ReadQueue.push_back(std::make_tuple(event->getTag(),
                                       event->getSize(),
@@ -1272,13 +1269,13 @@ bool RevCPU::sendPANMessage(){
   if( SendMB.empty() )
     return true;
 
-  output.verbose(CALL_INFO, 4, 0, "Sending PAN message from %d to %d; Opc=%s; Tag=%d; Token=%" PRIu32 "; Size=%" PRIu32 "\n",
+  output.verbose(CALL_INFO, 4, 0,
+                 "Sending PAN message from %d to %d; Opc=%s; Tag=%d; Token=%" PRIu32 "; Size=%" PRIu32 "\n",
                  address, SendMB.front().second,
                  SendMB.front().first->getOpcodeStr().c_str(),
                  SendMB.front().first->getTag(),
                  SendMB.front().first->getToken(),
                  SendMB.front().first->getSize());
-  output.verbose(CALL_INFO, 4, 0, "Sending PAN Addr = 0x%" PRIu64 "\n", SendMB.front().first->getAddr() );
   PNic->send(SendMB.front().first,SendMB.front().second);
   if( PNic->IsHost() ){
     // save the message to track the response
@@ -1316,9 +1313,6 @@ bool RevCPU::processPANMemRead(){
       // -- setup the response
       panNicEvent *SCmd = new panNicEvent();
       uint64_t *Data = new uint64_t [SCmd->getNumBlocks(tmp_size)];
-      output.verbose(CALL_INFO, 4, 0,
-                 "Processing PANMemRead; Addr = 0x%" PRIu64 "; Size=%d\n",
-                 tmp_addr, tmp_size );
       if( !Mem->ReadMem( tmp_addr,
                          (size_t)(tmp_size),
                          (void *)(Data))){
