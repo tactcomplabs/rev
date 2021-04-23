@@ -16,6 +16,8 @@
 #define _PAN_RDMA_MAX_ENTRIES_      255
 #define _PAN_PE_TABLE_ADDR_         0x30001F48
 #define _PAN_PE_TABLE_MAX_ENTRIES_  1025
+#define _PAN_XFER_BUF_              1024
+#define _PAN_XFER_BUF_ADDR_         0x30005F68
 
 #define _PAN_ENTRY_INVALID_       0
 #define _PAN_ENTRY_INJECTED_      1
@@ -33,6 +35,11 @@ typedef struct{
   int64_t ID;       ///< PEMap: Endpoint ID
   uint64_t host;    ///< PEMap: 1 = host; 0 = PAN
 }PEMap;
+
+typedef struct{
+  uint8_t Valid;                      ///< PRTIME_XFER: Valid bit
+  char Buffer[_PAN_XFER_BUF_];        ///< PRTIME_XFER: Bounce buffers for base packets
+}PRTIME_XFER;
 
 #endif
 

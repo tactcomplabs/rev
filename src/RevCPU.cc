@@ -32,7 +32,7 @@ const char *pan_splash_msg = "\
 ";
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id), testStage(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
+  : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false),
     Nic(nullptr), PNic(nullptr), PExec(nullptr) {
 
@@ -470,6 +470,17 @@ void RevCPU::PANHandleFailed(panNicEvent *event){
   TrackTags.erase(it);
 }
 
+bool RevCPU::PANHandleZeroAddrPut(uint32_t Size, void *Data){
+  output.verbose(CALL_INFO, 5, 0, "Handling Zero Address Put Commands\n");
+  char *tmp = (char *)(Data);
+  char *NewData = new char [Size];
+  for( uint32_t i=0; i<Size; i++ ){
+    NewData[i] = tmp[i];
+  }
+  ZeroRqst.push(std::make_pair(Size,NewData));
+  return true;
+}
+
 void RevCPU::PANBuildFailedToken(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Building failed return packet\n");
   panNicEvent *FEvent = new panNicEvent();
@@ -542,8 +553,14 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
   uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
   event->getData(Data);
 
-  // write it to memory
-  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  // check for zero address
+  if( event->getAddr() == 0x00ull ){
+    // handle the special zero put messages
+    if( !PANHandleZeroAddrPut(Size,(void *)(Data)) ){
+      delete[] Data;
+      PANBuildFailedToken(event);
+    }
+  }else if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -592,8 +609,14 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
   uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
   event->getData(Data);
 
-  // write it to memory
-  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  // check for zero address
+  if( event->getAddr() == 0x00ull ){
+    // handle the special zero put messages
+    if( !PANHandleZeroAddrPut(Size,(void *)(Data)) ){
+      delete[] Data;
+      PANBuildFailedToken(event);
+    }
+  }else if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -1074,7 +1097,9 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
 }
 
 void RevCPU::handleNetPANMessage(panNicEvent *event){
-  output.verbose(CALL_INFO, 5, 0, "Handling PAN Message opcode=%d\n", (int)(event->getOpcode()));
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN Message opcode=%d; tag=%d\n",
+                 (int)(event->getOpcode()),
+                 (int)(event->getTag()));
   switch( event->getOpcode() ){
   case panNicEvent::SyncGet:
     PANHandleSyncGet(event);
@@ -1270,7 +1295,7 @@ bool RevCPU::sendPANMessage(){
     return true;
 
   output.verbose(CALL_INFO, 4, 0,
-                 "Sending PAN message from %d to %d; Opc=%s; Tag=%d; Token=%" PRIu32 "; Size=%" PRIu32 "\n",
+                 "Sending PAN message from %d to %d; Opc=%s; Tag=%u; Token=%" PRIu32 "; Size=%" PRIu32 "\n",
                  address, SendMB.front().second,
                  SendMB.front().first->getOpcodeStr().c_str(),
                  SendMB.front().first->getTag(),
@@ -1295,14 +1320,88 @@ bool RevCPU::sendPANMessage(){
   return true;
 }
 
+bool RevCPU::processPANZeroAddr(){
+  if( ZeroRqst.empty() ){
+    // nothing to do
+    return true;
+  }
+
+  bool done = false;
+  size_t XferSize = sizeof(PRTIME_XFER);
+  uint64_t XferPtr = (uint64_t)(_PAN_XFER_BUF_ADDR_);
+
+  while( !done ){
+    bool found = false;
+    int count = 0;
+    char *TmpPtr = nullptr;
+    uint32_t TmpSize = 0;
+    uint8_t TmpValid = _PAN_ENTRY_INVALID_;
+
+    // find a _PAN_ENTRY_INVALID_ slot
+    while( !found ){
+      if( !Mem->ReadMem(XferPtr,
+                        8,
+                        (void *)(&TmpValid)) ){
+        output.fatal(CALL_INFO, -1,
+                    "Error: Could not read valid bit for zero address data insertion; Addr=0x%" PRIx64 "\n",
+                    XferPtr );
+      }
+
+      if( TmpValid == _PAN_ENTRY_INVALID_ ){
+        // found an entry, write the data and set the bit
+        found = true;
+      }else{
+        XferPtr += (uint64_t)(XferSize);
+      }
+
+      count++;
+      if( (count >= _PAN_RDMA_MAX_ENTRIES_) && (!found) ){
+        // we didn't find anything available
+        XferPtr = 0x00ull;
+        found = true;
+        done = true;
+      }
+    }// end while !found
+
+    if( XferPtr != 0x00ull ){
+      // we found a valid entry
+      TmpValid = _PAN_ENTRY_VALID_;
+      TmpSize = ZeroRqst.front().first;
+      TmpPtr  = ZeroRqst.front().second;
+
+      Mem->WriteU8(XferPtr,TmpValid);
+      XferPtr += 8;
+      Mem->WriteMem(XferPtr, TmpSize, (void *)(TmpPtr));
+
+      delete[] TmpPtr;
+      ZeroRqst.pop();
+    }
+
+    // if there are no more available slots, signal completion
+    // if there are no more requests, signal completion
+    if( ZeroRqst.empty() ){
+      done = true;
+    }
+  }// end while !done
+
+  return true;
+}
+
 bool RevCPU::processPANMemRead(){
   // walk the entire vector and decrement all the counters
   // if we have a counter decrement to '0', then process the read request
   // send responses as necessary
-  std::vector<std::tuple<uint8_t,uint32_t,unsigned,int,uint64_t>>::iterator it;
 
-  for( it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
-    std::get<2>(*it) = std::get<2>(*it)-1;
+  // decrement all the counts
+  int i = 0;
+  for( auto &it : ReadQueue ){
+    if( std::get<2>(it) != 0 )
+      std::get<2>(it)--;
+    i++;
+  }
+
+  // walk all the nodes and see which requests need to be flushed
+  for( auto it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
     if( std::get<2>(*it) == 0 ){
       // process this read request
       uint8_t tmp_tag = std::get<0>(*it);
@@ -1329,10 +1428,18 @@ bool RevCPU::processPANMemRead(){
         SendMB.push(std::make_pair(SCmd,tmp_src));
       }
       delete[] Data;
-      ReadQueue.erase(it);  // remove me?
-      if( ReadQueue.size() == 0 )
-        break;
     }// else do nothing
+  }
+
+  // delete the completed nodes
+  unsigned count = ReadQueue.size();
+  for( unsigned i=0; i<count;){
+    if( std::get<2>(ReadQueue[i]) == 0 ){
+      ReadQueue.erase(ReadQueue.begin()+i);
+      --count;
+    }else{
+      ++i;
+    }
   }
 
   return true;
@@ -1678,12 +1785,16 @@ bool RevCPU::PANProcessRDMAMailbox(){
 }
 
 uint8_t RevCPU::createTag(){
+  uint8_t rtn = 0;
   if( PrivTag == 0b11111111 ){
+    rtn = 0b00000000;
+    PrivTag = 0b00000001;
     return 0b00000000;
   }else{
+    rtn = PrivTag;
     PrivTag +=1;
-    return PrivTag;
   }
+  return rtn;
 }
 
 void RevCPU::ExecPANTest(){
@@ -1987,6 +2098,10 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     // process the read queue
     if( !processPANMemRead() )
       output.fatal(CALL_INFO, -1, "Error: failed to process the PAN memory read queue\n" );
+
+    // process the zero address put queue
+    if( !processPANZeroAddr() )
+      output.fatal(CALL_INFO, -1, "Error: failed to process the PAN zero address put queue\n" );
   }
 
   // check to see if all the processors are completed

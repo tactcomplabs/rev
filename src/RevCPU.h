@@ -204,6 +204,7 @@ namespace SST {
 
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
+      std::queue<std::pair<uint32_t,char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size,Data>
       std::list<std::pair<uint8_t,int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag,Dest>
       std::vector<std::tuple<uint8_t,
                              uint64_t,
@@ -302,6 +303,9 @@ namespace SST {
       /// RevCPU: handles the PAN RDMA mailbox
       bool PANProcessRDMAMailbox();
 
+      /// RevCPU: handles the PAN zero address put requests
+      bool processPANZeroAddr();
+
       /// RevCPU: converts an RDMA payload to a panNicEvent command
       bool PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event);
 
@@ -315,6 +319,9 @@ namespace SST {
       void registerSendCmd(panNicEvent *event);
 
       /// RevCPU: Retrieve the expected size of the event command from the mailbox entry
+
+      /// RevCPU: handle a zero address Put command where the NIC chooses the destination buffer
+      bool PANHandleZeroAddrPut(uint32_t Size, void *Data);
 
       /// RevCPU: handle the SyncGet command
       void PANHandleSyncGet(panNicEvent *event);
