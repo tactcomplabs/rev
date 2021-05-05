@@ -1326,63 +1326,41 @@ bool RevCPU::processPANZeroAddr(){
     return true;
   }
 
+  output.verbose(CALL_INFO, 5, 0, "Processing Zero Address Put Commands\n");
+
   bool done = false;
   size_t XferSize = sizeof(PRTIME_XFER);
-  uint64_t XferPtr = (uint64_t)(_PAN_XFER_BUF_ADDR_);
+  PRTIME_XFER *XferPtr = (PRTIME_XFER *)(_PAN_XFER_BUF_ADDR_);
+  uint8_t TmpValid = _PAN_ENTRY_INVALID_;
+  char *TmpPtr = nullptr;
+  uint32_t TmpSize = 0;
 
-  while( !done ){
-    bool found = false;
-    int count = 0;
-    char *TmpPtr = nullptr;
-    uint32_t TmpSize = 0;
-    uint8_t TmpValid = _PAN_ENTRY_INVALID_;
+  for( unsigned i=0; i<_PAN_RDMA_MAX_ENTRIES_; i++ ){
+    if( ZeroRqst.empty() ){
+      break;
+    }
 
-    // find a _PAN_ENTRY_INVALID_ slot
-    while( !found ){
-      if( !Mem->ReadMem(XferPtr,
-                        8,
-                        (void *)(&TmpValid)) ){
-        output.fatal(CALL_INFO, -1,
-                    "Error: Could not read valid bit for zero address data insertion; Addr=0x%" PRIx64 "\n",
-                    XferPtr );
-      }
+    if( !Mem->ReadMem((uint64_t)(&XferPtr[i].Valid),
+                      8,
+                      (void *)(&TmpValid)) ){
+      output.fatal(CALL_INFO, -1,
+                   "Error: Could not read valid bit for zero address data insertion; Addr=0x%" PRIx64 "\n",
+                   (uint64_t)(&XferPtr[i].Valid));
+    }
 
-      if( TmpValid == _PAN_ENTRY_INVALID_ ){
-        // found an entry, write the data and set the bit
-        found = true;
-      }else{
-        XferPtr += (uint64_t)(XferSize);
-      }
-
-      count++;
-      if( (count >= _PAN_RDMA_MAX_ENTRIES_) && (!found) ){
-        // we didn't find anything available
-        XferPtr = 0x00ull;
-        found = true;
-        done = true;
-      }
-    }// end while !found
-
-    if( XferPtr != 0x00ull ){
-      // we found a valid entry
+    if( TmpValid == _PAN_ENTRY_INVALID_ ){
+      // found an open slot
       TmpValid = _PAN_ENTRY_VALID_;
       TmpSize = ZeroRqst.front().first;
       TmpPtr  = ZeroRqst.front().second;
 
-      Mem->WriteU8(XferPtr,TmpValid);
-      XferPtr += 8;
-      Mem->WriteMem(XferPtr, TmpSize, (void *)(TmpPtr));
+      Mem->WriteU8((uint64_t)(&XferPtr[i].Valid),TmpValid);
+      Mem->WriteMem((uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, (void *)(TmpPtr));
 
-      delete[] TmpPtr;
       ZeroRqst.pop();
+      delete[] TmpPtr;
     }
-
-    // if there are no more available slots, signal completion
-    // if there are no more requests, signal completion
-    if( ZeroRqst.empty() ){
-      done = true;
-    }
-  }// end while !done
+  }
 
   return true;
 }
