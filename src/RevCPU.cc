@@ -2089,7 +2089,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   // check to see if the network has any outstanding messages
-  if( !SendMB.empty() || !TrackTags.empty() )
+  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() )
     rtn = false;
 
   if( rtn )
