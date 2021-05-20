@@ -32,7 +32,7 @@ const char *pan_splash_msg = "\
 ";
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id), testStage(0), address(-1),
+  : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false),
     Nic(nullptr), PNic(nullptr), PExec(nullptr) {
 
@@ -214,6 +214,52 @@ RevCPU::~RevCPU(){
   delete Opts;
 }
 
+void RevCPU::initNICMem(){
+  output.verbose(CALL_INFO,1,0,"Initializing NIC memory.\n");
+
+  // init all the entries to -1
+  uint64_t ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+  uint64_t host = 2;
+  int64_t id = -1;
+  for( unsigned i=0; i<_PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
+    Mem->WriteU64(ptr,(uint64_t)(id));
+    Mem->WriteU64(ptr+8,(uint64_t)(host));
+    ptr += sizeof(PEMap);
+  }
+  ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+
+  // the first entry in the table is our own, then its
+  // all the other nodes sequentially
+  id = (int64_t)(PNic->getAddress());
+  Mem->WriteU64(ptr,(uint64_t)(id));
+  ptr += 8;
+  if( PNic->IsHost() ){
+    host = 1;
+  }else{
+    host = 0;
+  }
+  Mem->WriteU64(ptr,host);
+  ptr += 8;
+
+  output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+                 id, host );
+
+  for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
+    id = PNic->getHostFromIdx(i);
+    Mem->WriteU64(ptr,(uint64_t)(id));
+    ptr += 8;
+    if( PNic->IsRemoteHost((SST::Interfaces::SimpleNetwork::nid_t)(id)) ){
+      host = 1;
+    }else{
+      host = 0;
+    }
+    output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+                  id, host);
+    Mem->WriteU64(ptr,host);
+    ptr += 8;
+  }
+}
+
 void RevCPU::registerStatistics(){
   SyncGetSend = registerStatistic<uint64_t>("SyncGetSend");
   SyncPutSend = registerStatistic<uint64_t>("SyncPutSend");
@@ -273,6 +319,7 @@ void RevCPU::setup(){
   if( EnablePAN ){
     PNic->setup();
     address = PNic->getAddress();
+    initNICMem();
   }
 }
 
@@ -308,6 +355,51 @@ void RevCPU::handlePANMessage(Event *ev){
   delete event;
 }
 
+void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
+  unsigned iter = 0;
+  uint64_t Addr = _PAN_RDMA_MAILBOX_;
+  uint64_t Payload[3];
+  uint64_t TagPayload  = 0x00ull;
+  uint8_t TmpTag = 0x0;
+  bool done = false;
+
+  while( !done ){
+    //
+    // retrive the 'iter' 24-byte mailbox payload
+    // each payload is configured as follows:
+    //      ADDR + 16          ADDR + 8             ADDR
+    // [  EVENT POINTER  ][      DEST       ][      VALID      ]
+    //
+    //
+
+    // Stage 1: Read the memory
+    Mem->ReadMem(Addr,24,&Payload[0]);
+
+    // Stage 2: Check to see if the tag matches
+    TagPayload = Mem->ReadU64(Payload[2]);
+    TmpTag     = (uint8_t)( (TagPayload >> 32) & 0b11111111 );
+
+    // Stage 3: If the tag matches and the mailbox is in an
+    //          "injected" state, write the value
+    if( (TmpTag == tag) && (Payload[0] == _PAN_ENTRY_INJECTED_) ){
+      Payload[0] = sig;
+      Mem->WriteMem(Addr,8,&Payload[0]);
+      done = true;
+    }
+
+    Payload[0] = 0x00ull;
+    Payload[1] = 0x00ull;
+    Payload[2] = 0x00ull;
+    TagPayload = 0x00ull;
+    iter++;
+    Addr+=24;
+
+    if( iter == _PAN_RDMA_MAX_ENTRIES_ ){
+      done = true;
+    }
+  } // end while
+}
+
 void RevCPU::PANHandleSuccess(panNicEvent *event){
   // search for the tag in the tag list
   std::pair<uint8_t,int> Entry = std::make_pair(event->getTag(),
@@ -321,6 +413,27 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
                  event->getSrc());
     return ;  // should not reach this
   }
+
+  // search for the tag in the outstanding get list
+  std::vector<std::tuple<uint8_t,uint64_t,uint32_t>>::iterator GetIter;
+  for( GetIter = TrackGets.begin(); GetIter != TrackGets.end(); ++GetIter ){
+    if( std::get<0>(*GetIter) = event->getTag() ){
+      // found a valid entry; setup the memory write
+      uint64_t *Data = new uint64_t [event->getNumBlocks(std::get<2>(*GetIter))];
+      Mem->WriteMem(std::get<1>(*GetIter),
+                    std::get<2>(*GetIter),
+                    (void *)(Data));
+      delete[] Data;
+
+      // erase the entry
+      TrackGets.erase(GetIter);
+      if( TrackGets.size() == 0 )
+        break;
+    }
+  }
+
+  // Signal the host thread of the message completion
+  PANSignalMsgRecv(event->getTag(),_PAN_ENTRY_DONE_SUCCESS_);
 
   output.verbose(CALL_INFO, 8, 0,
                  "SUCCESS RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
@@ -345,6 +458,9 @@ void RevCPU::PANHandleFailed(panNicEvent *event){
     return ;  // should not reach this
   }
 
+  // Signal the host thread of the message completion
+  PANSignalMsgRecv(event->getTag(),_PAN_ENTRY_DONE_FAILED_);
+
   output.verbose(CALL_INFO, 8, 0,
                  "FAILED RESPONSE: Found matching tag and source identifier for incoming message: tag=%d; src=%d\n",
                  event->getTag(),
@@ -352,6 +468,17 @@ void RevCPU::PANHandleFailed(panNicEvent *event){
 
   // remove the entry
   TrackTags.erase(it);
+}
+
+bool RevCPU::PANHandleZeroAddrPut(uint32_t Size, void *Data){
+  output.verbose(CALL_INFO, 5, 0, "Handling Zero Address Put Commands\n");
+  char *tmp = (char *)(Data);
+  char *NewData = new char [Size];
+  for( uint32_t i=0; i<Size; i++ ){
+    NewData[i] = tmp[i];
+  }
+  ZeroRqst.push(std::make_pair(Size,NewData));
+  return true;
 }
 
 void RevCPU::PANBuildFailedToken(panNicEvent *event){
@@ -393,9 +520,12 @@ void RevCPU::PANBuildBasicSuccess(panNicEvent *orig, panNicEvent *rtn){
 }
 
 void RevCPU::PANHandleSyncGet(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCGET Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -409,10 +539,13 @@ void RevCPU::PANHandleSyncGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSyncPut(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCPUT Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -420,8 +553,14 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
   uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
   event->getData(Data);
 
-  // write it to memory
-  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  // check for zero address
+  if( event->getAddr() == 0x00ull ){
+    // handle the special zero put messages
+    if( !PANHandleZeroAddrPut(Size,(void *)(Data)) ){
+      delete[] Data;
+      PANBuildFailedToken(event);
+    }
+  }else if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -436,10 +575,13 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncGet(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCGET Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -453,10 +595,13 @@ void RevCPU::PANHandleAsyncGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncPut(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCPUT Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -464,8 +609,14 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
   uint64_t *Data = new uint64_t [event->getNumBlocks(Size)];
   event->getData(Data);
 
-  // write it to memory
-  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  // check for zero address
+  if( event->getAddr() == 0x00ull ){
+    // handle the special zero put messages
+    if( !PANHandleZeroAddrPut(Size,(void *)(Data)) ){
+      delete[] Data;
+      PANBuildFailedToken(event);
+    }
+  }else if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -480,10 +631,13 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCSTREAMGET Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -497,10 +651,13 @@ void RevCPU::PANHandleSyncStreamGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SYNCSTREAMPUT Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -525,10 +682,13 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCSTREAMGET Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // push an event entry back onto the ReadQueue
@@ -542,10 +702,13 @@ void RevCPU::PANHandleAsyncStreamGet(panNicEvent *event){
 }
 
 void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
-  if( !PNic->CheckToken(event->getToken()) ){
-    // send failed response
-    PANBuildFailedToken(event);
-    return ;
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN ASYNCSTREAMPUT Request\n");
+  if( !PNic->IsHost() ){
+    if( !PNic->CheckToken(event->getToken()) ){
+      // send failed response
+      PANBuildFailedToken(event);
+      return ;
+    }
   }
 
   // retrieve the data
@@ -570,6 +733,7 @@ void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
 }
 
 void RevCPU::PANHandleExec(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN EXEC Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -590,6 +754,7 @@ void RevCPU::PANHandleExec(panNicEvent *event){
 }
 
 void RevCPU::PANHandleStatus(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN STATUS Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -655,11 +820,17 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
     return ;
   }
 
+  // write the completion
+  uint64_t Addr = _PAN_COMPLETION_ADDR_;
+  uint64_t Payload = 0x01ull;
+  Mem->WriteMem(Addr,8,&Payload);
+
   PNic->RevokeToken();
   PANBuildRawSuccess(event);
 }
 
 void RevCPU::PANHandleHalt(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN HALT Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -676,6 +847,7 @@ void RevCPU::PANHandleHalt(panNicEvent *event){
 }
 
 void RevCPU::PANHandleResume(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN RESUME Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -694,6 +866,7 @@ void RevCPU::PANHandleResume(panNicEvent *event){
 }
 
 void RevCPU::PANHandleReadReg(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN READREG Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -731,6 +904,7 @@ void RevCPU::PANHandleReadReg(panNicEvent *event){
 }
 
 void RevCPU::PANHandleWriteReg(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN WRITEREG Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -756,6 +930,7 @@ void RevCPU::PANHandleWriteReg(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSingleStep(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SINGLESTEP Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -782,6 +957,7 @@ void RevCPU::PANHandleSingleStep(panNicEvent *event){
 }
 
 void RevCPU::PANHandleSetFuture(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN SETFUTURE Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -795,6 +971,7 @@ void RevCPU::PANHandleSetFuture(panNicEvent *event){
 }
 
 void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN REVOKEFUTURE Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -808,6 +985,7 @@ void RevCPU::PANHandleRevokeFuture(panNicEvent *event){
 }
 
 void RevCPU::PANHandleStatusFuture(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN STATUSFUTURE Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -826,6 +1004,7 @@ void RevCPU::PANHandleStatusFuture(panNicEvent *event){
 }
 
 void RevCPU::PANHandleBOTW(panNicEvent *event){
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN BOTW Request\n");
   if( !PNic->CheckToken(event->getToken()) ){
     // send failed response
     PANBuildFailedToken(event);
@@ -863,13 +1042,37 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
     FailedRecv->addData(1);
     break;
   case panNicEvent::SyncGet:
+    PANHandleSyncGet(event);
+    SyncGetRecv->addData(1);
+    break;
   case panNicEvent::SyncPut:
+    PANHandleSyncPut(event);
+    SyncPutRecv->addData(1);
+    break;
   case panNicEvent::AsyncGet:
+    PANHandleAsyncGet(event);
+    AsyncGetRecv->addData(1);
+    break;
   case panNicEvent::AsyncPut:
+    PANHandleAsyncPut(event);
+    AsyncPutRecv->addData(1);
+    break;
   case panNicEvent::SyncStreamGet:
+    PANHandleSyncStreamGet(event);
+    SyncStreamGetRecv->addData(1);
+    break;
   case panNicEvent::SyncStreamPut:
+    PANHandleSyncStreamPut(event);
+    SyncStreamPutRecv->addData(1);
+    break;
   case panNicEvent::AsyncStreamGet:
+    PANHandleAsyncStreamGet(event);
+    AsyncStreamGetRecv->addData(1);
+    break;
   case panNicEvent::AsyncStreamPut:
+    PANHandleAsyncStreamPut(event);
+    AsyncStreamPutRecv->addData(1);
+    break;
   case panNicEvent::Exec:
   case panNicEvent::Status:
   case panNicEvent::Cancel:
@@ -887,14 +1090,16 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
   default:
     // host devices should never receive these commands
     output.fatal(CALL_INFO, -1,
-                 "Error: host devices cannot handle %s commands\n",
-                 event->getOpcodeStr().c_str() );
+                 "Error: host devices cannot handle %s commands; Opcode = %d\n",
+                 event->getOpcodeStr().c_str(), event->getOpcode() );
     break;
   }
 }
 
 void RevCPU::handleNetPANMessage(panNicEvent *event){
-  output.verbose(CALL_INFO, 5, 0, "Handling PAN Message opcode=%d\n", (int)(event->getOpcode()));
+  output.verbose(CALL_INFO, 5, 0, "Handling PAN Message opcode=%d; tag=%d\n",
+                 (int)(event->getOpcode()),
+                 (int)(event->getTag()));
   switch( event->getOpcode() ){
   case panNicEvent::SyncGet:
     PANHandleSyncGet(event);
@@ -985,7 +1190,13 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
     BOTWRecv->addData(1);
     break;
   case panNicEvent::Success:
+    PANHandleSuccess(event);
+    SuccessRecv->addData(1);
+    break;
   case panNicEvent::Failed:
+    PANHandleFailed(event);
+    FailedRecv->addData(1);
+    break;
   default:
     // network devices should never receive these commands
     output.fatal(CALL_INFO, -1,
@@ -1083,15 +1294,21 @@ bool RevCPU::sendPANMessage(){
   if( SendMB.empty() )
     return true;
 
-  output.verbose(CALL_INFO, 4, 0, "Sending PAN message from %d to %d; Opc=%s; Tag=%d\n",
+  output.verbose(CALL_INFO, 4, 0,
+                 "Sending PAN message from %d to %d; Opc=%s; Tag=%u; Token=%" PRIu32 "; Size=%" PRIu32 "\n",
                  address, SendMB.front().second,
                  SendMB.front().first->getOpcodeStr().c_str(),
-                 SendMB.front().first->getTag());
+                 SendMB.front().first->getTag(),
+                 SendMB.front().first->getToken(),
+                 SendMB.front().first->getSize());
   PNic->send(SendMB.front().first,SendMB.front().second);
   if( PNic->IsHost() ){
     // save the message to track the response
-    TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
-                                       SendMB.front().second));
+    uint8_t Opc = SendMB.front().first->getOpcode();
+    if( (Opc != panNicEvent::Success) && (Opc != panNicEvent::Failed) ){
+      TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
+                                         SendMB.front().second));
+    }
   }
 
   if( EnablePANStats )
@@ -1103,14 +1320,66 @@ bool RevCPU::sendPANMessage(){
   return true;
 }
 
+bool RevCPU::processPANZeroAddr(){
+  if( ZeroRqst.empty() ){
+    // nothing to do
+    return true;
+  }
+
+  output.verbose(CALL_INFO, 5, 0, "Processing Zero Address Put Commands\n");
+
+  bool done = false;
+  size_t XferSize = sizeof(PRTIME_XFER);
+  PRTIME_XFER *XferPtr = (PRTIME_XFER *)(_PAN_XFER_BUF_ADDR_);
+  uint8_t TmpValid = _PAN_ENTRY_INVALID_;
+  char *TmpPtr = nullptr;
+  uint32_t TmpSize = 0;
+
+  for( unsigned i=0; i<_PAN_RDMA_MAX_ENTRIES_; i++ ){
+    if( ZeroRqst.empty() ){
+      break;
+    }
+
+    if( !Mem->ReadMem((uint64_t)(&XferPtr[i].Valid),
+                      8,
+                      (void *)(&TmpValid)) ){
+      output.fatal(CALL_INFO, -1,
+                   "Error: Could not read valid bit for zero address data insertion; Addr=0x%" PRIx64 "\n",
+                   (uint64_t)(&XferPtr[i].Valid));
+    }
+
+    if( TmpValid == _PAN_ENTRY_INVALID_ ){
+      // found an open slot
+      TmpValid = _PAN_ENTRY_VALID_;
+      TmpSize = ZeroRqst.front().first;
+      TmpPtr  = ZeroRqst.front().second;
+
+      Mem->WriteU8((uint64_t)(&XferPtr[i].Valid),TmpValid);
+      Mem->WriteMem((uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, (void *)(TmpPtr));
+
+      ZeroRqst.pop();
+      delete[] TmpPtr;
+    }
+  }
+
+  return true;
+}
+
 bool RevCPU::processPANMemRead(){
   // walk the entire vector and decrement all the counters
   // if we have a counter decrement to '0', then process the read request
   // send responses as necessary
-  std::vector<std::tuple<uint8_t,uint32_t,unsigned,int,uint64_t>>::iterator it;
 
-  for( it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
-    std::get<2>(*it) = std::get<2>(*it)-1;
+  // decrement all the counts
+  int i = 0;
+  for( auto &it : ReadQueue ){
+    if( std::get<2>(it) != 0 )
+      std::get<2>(it)--;
+    i++;
+  }
+
+  // walk all the nodes and see which requests need to be flushed
+  for( auto it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
     if( std::get<2>(*it) == 0 ){
       // process this read request
       uint8_t tmp_tag = std::get<0>(*it);
@@ -1137,13 +1406,17 @@ bool RevCPU::processPANMemRead(){
         SendMB.push(std::make_pair(SCmd,tmp_src));
       }
       delete[] Data;
-    }
+    }// else do nothing
   }
 
-  // process all the deletions separately
-  for( it=ReadQueue.begin(); it != ReadQueue.end(); ++it ){
-    if( std::get<2>(*it) == 0 ){
-      ReadQueue.erase(it);
+  // delete the completed nodes
+  unsigned count = ReadQueue.size();
+  for( unsigned i=0; i<count;){
+    if( std::get<2>(ReadQueue[i]) == 0 ){
+      ReadQueue.erase(ReadQueue.begin()+i);
+      --count;
+    }else{
+      ++i;
     }
   }
 
@@ -1161,6 +1434,7 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   uint32_t Token    = 0x0;
   uint32_t Offset   = 0x0;
   uint64_t CmdAddr  = 0x00ull;
+  uint64_t DataAddr = 0x00ull;
   uint64_t TmpData  = 0x00ull;
   uint64_t *Data    = nullptr;
 
@@ -1193,21 +1467,25 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
   }
 
   output.verbose(CALL_INFO, 5, 0,
-                 "Coverting RDMA Mailbox Entry to Event: Payload = %llu; Opcode=%d\n",
+                 "Coverting RDMA Mailbox Entry to Event: Payload = %" PRIu64 "; Opcode=%d\n",
                  Payload, Opcode);
 
   // Stage 2: use the opcode the read and encode the remainder of the data
   switch(Opcode){
   case panNicEvent::SyncGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildSyncGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA SyncGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::SyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA SyncPut; Tag=%d\n",Tag);
@@ -1221,14 +1499,18 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::AsyncGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildAsyncGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA AsyncGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::AsyncPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+16,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA AsyncPut; Tag=%d\n",Tag);
@@ -1242,14 +1524,18 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::SyncStreamGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildSyncStreamGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA SyncStreamGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::SyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA SyncStreamPut; Tag=%d\n",Tag);
@@ -1263,14 +1549,18 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     break;
   case panNicEvent::AsyncStreamGet:
     CmdAddr = Mem->ReadU64(Addr+8);
+    DataAddr = Mem->ReadU64(Addr+16);
     if( !event->buildAsyncStreamGet(Token,Tag,CmdAddr,Size) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA AsyncStreamGet; Tag=%d\n",Tag);
+    TrackGets.push_back(std::make_tuple(Tag,DataAddr,Size));
     break;
   case panNicEvent::AsyncStreamPut:
     Data = new uint64_t [event->getNumBlocks(Size)];
     CmdAddr = Mem->ReadU64(Addr+8);
-    if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    DataAddr = Mem->ReadU64(Addr+16);
+    //if( !Mem->ReadMem(Addr+8,Size,Data) ){
+    if( !Mem->ReadMem(DataAddr,Size,Data) ){
       delete[] Data;
       output.fatal(CALL_INFO, -1,
                    "Error: could not retrieve data for RDMA AsyncStreamPut; Tag=%d\n",Tag);
@@ -1307,6 +1597,9 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
     if( !event->buildRevoke(Token,Tag) )
       output.fatal(CALL_INFO, -1,
                   "Error: could not build RDMA Revoke; Tag=%d\n",Tag);
+    CmdAddr = _PAN_COMPLETION_ADDR_;
+    TmpData = 0x01;
+    Mem->WriteMem(CmdAddr,8,&TmpData);
     break;
   case panNicEvent::Halt:
     if( !event->buildHalt(Token,Tag,(uint16_t)(Size)) )
@@ -1398,7 +1691,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
   bool done = false;
   unsigned sent = 0;
   unsigned iter = 0;
-  uint64_t Addr = _PAN_RDMA_MAILBOX_;
+  uint64_t Addr = PrevAddr;
   uint64_t Payload[3];
   uint64_t CmdBuf;
   uint64_t Buf = 0x00ull;
@@ -1407,12 +1700,12 @@ bool RevCPU::PANProcessRDMAMailbox(){
   while( !done ){
 
     //
-    // retriver the 'iter' 24-byte mailbox payload
+    // retrive the 'iter' 24-byte mailbox payload
     // each payload is configured as follows:
     //      ADDR + 16          ADDR + 8             ADDR
     // [  EVENT POINTER  ][      DEST       ][      VALID      ]
     //
-    // If `Valid` != 0; The entry is valid, consume it
+    // If `Valid` == _PAN_ENTRY_VALID_; The entry is valid, consume it
     // Else, continue
     //
 
@@ -1422,7 +1715,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
     // Stage 2: Interrogate the payload
     if( Payload[0] == _PAN_ENTRY_VALID_ ){
       // found a valid payload, process it
-      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command\n");
+      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command; Entry=%d\n", iter);
 
       // Stage 2.a: Convert the buffer into an event
       panNicEvent *FEvent = new panNicEvent();
@@ -1450,11 +1743,18 @@ bool RevCPU::PANProcessRDMAMailbox(){
     Payload[1] = 0x00ull;
     Payload[2] = 0x00ull;
 
+    if( Addr == (_PAN_RDMA_MAILBOX_ + (24*_PAN_RDMA_MAX_ENTRIES_)) ){
+      Addr = _PAN_RDMA_MAILBOX_;
+    }
+
     if( iter == _PAN_RDMA_MAX_ENTRIES_ ){
+      PrevAddr = Addr;
       done = true;
     }else if( sent == RDMAPerCycle ){
+      PrevAddr = Addr;
       done = true;
     }else if( SendMB.size() == 255 ){
+      PrevAddr = Addr;
       done = true;
     }
   }
@@ -1463,12 +1763,16 @@ bool RevCPU::PANProcessRDMAMailbox(){
 }
 
 uint8_t RevCPU::createTag(){
+  uint8_t rtn = 0;
   if( PrivTag == 0b11111111 ){
+    rtn = 0b00000000;
+    PrivTag = 0b00000001;
     return 0b00000000;
   }else{
+    rtn = PrivTag;
     PrivTag +=1;
-    return PrivTag;
   }
+  return rtn;
 }
 
 void RevCPU::ExecPANTest(){
@@ -1772,6 +2076,10 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     // process the read queue
     if( !processPANMemRead() )
       output.fatal(CALL_INFO, -1, "Error: failed to process the PAN memory read queue\n" );
+
+    // process the zero address put queue
+    if( !processPANZeroAddr() )
+      output.fatal(CALL_INFO, -1, "Error: failed to process the PAN zero address put queue\n" );
   }
 
   // check to see if all the processors are completed
@@ -1781,7 +2089,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   // check to see if the network has any outstanding messages
-  if( !SendMB.empty() || !TrackTags.empty() )
+  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() )
     rtn = false;
 
   if( rtn )

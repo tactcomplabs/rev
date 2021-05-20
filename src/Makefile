@@ -15,8 +15,8 @@ ifeq (, $(shell which sst-config))
 endif
 
 CXX=$(shell sst-config --CXX)
-CXXFLAGS=$(shell sst-config --ELEMENT_CXXFLAGS)
-LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS)
+CXXFLAGS=$(shell sst-config --ELEMENT_CXXFLAGS) -fno-stack-protector
+LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS) -fno-stack-protector
 CPPFLAGS=-I./
 OPTIMIZE_FLAGS=-O3
 
@@ -27,6 +27,10 @@ REV_HEADERS := $(wildcard *.h)
 REV_OBJS := $(patsubst %.cc,%.o,$(wildcard *.cc))
 
 all: librevcpu.so
+
+debug: CXXFLAGS += -DDEBUG -g
+debug: librevcpu.so 
+
 librevcpu.so: $(REV_OBJS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ *.o
 %.o:%.cc $(REV_HEADERS)

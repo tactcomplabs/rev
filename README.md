@@ -91,11 +91,15 @@ The Rev SST component contains the following options:
 
 ### Deriving the ELF Entry Point
 
-Rev requires that the user specify the entry point address to begin the execution 
-of the binary.  The Rev model will perform an initial setup and reset of the target 
+The latest version of Rev no longer requires the user to manually derive the starting 
+address for binaries that contain a ``main()`` function.  If the user specifies 
+the starting address as ``0x00``, then the Rev loader will automatically derive the 
+``main()`` symbol address and use it as the starting address.  From here, the 
+Rev model will perform an initial setup and reset of the target 
 core or cores in the same manner as prescribed by the RISC-V ABI.  Most users will expect to execute 
-their application starting at the ``main()`` function.  As a result, we must
-derive the address of the main function within the ELF binary.  Given an executable 
+their application starting at the ``main()`` function.  If the user requires a different 
+starting address or the target payload does not contain a ``main()`` function, then the 
+user must manually derive the address.  Given an executable 
 that has been compiled (``example.exe``), we may derive the entry point address using 
 the tool chain's ``objdump`` tool.  An example of doing so is as follows:
 

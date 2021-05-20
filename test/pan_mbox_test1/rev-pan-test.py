@@ -42,7 +42,7 @@ host_cpu0.addParams({
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV64G]",                      # Core:Config; RV64G for core 0
-        "startAddr" : "[0:0x0001032c]",               # Starting address for core 0
+        "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "pan_test.exe"),  # Target executable
         "pan_nic" : "revcpu.PanNet",                  # Use the PAN NIC
@@ -63,7 +63,7 @@ pan_cpu1.addParams({
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV64GP]",                     # Core:Config; RV64GP for core 0
-        "startAddr" : "[0:0x0001014c]",               # Starting address for core 0
+        "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "pan_spin.exe"),  # Target executable
         "pan_nic" : "revcpu.PanNet",                  # Use the PAN NIC

@@ -187,6 +187,8 @@ namespace SST {
 
       int address;                        ///< RevCPU: local network address
 
+      uint64_t PrevAddr;                  ///< RevCPU: previous address for handling PAN messages
+
       bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
       bool EnablePAN;                     ///< RevCPU: Flag for enabling the PAN operations
       bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations
@@ -202,7 +204,11 @@ namespace SST {
 
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
+      std::queue<std::pair<uint32_t,char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size,Data>
       std::list<std::pair<uint8_t,int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag,Dest>
+      std::vector<std::tuple<uint8_t,
+                             uint64_t,
+                             uint32_t>> TrackGets;      ///< RevCPU: tracks the outstanding get messages; tuple<Tag,Addr,Sz>
       std::vector<std::tuple<uint8_t,
                              uint32_t,
                              unsigned,
@@ -269,6 +275,10 @@ namespace SST {
       //-------------------------------------------------------
       // -- FUNCTIONS
       //-------------------------------------------------------
+
+      /// RevCPU: initializes the PAN NIC tables
+      void initNICMem();
+
       /// RevCPU: executes the PAN test harness
       void ExecPANTest();
 
@@ -293,6 +303,9 @@ namespace SST {
       /// RevCPU: handles the PAN RDMA mailbox
       bool PANProcessRDMAMailbox();
 
+      /// RevCPU: handles the PAN zero address put requests
+      bool processPANZeroAddr();
+
       /// RevCPU: converts an RDMA payload to a panNicEvent command
       bool PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event);
 
@@ -306,6 +319,9 @@ namespace SST {
       void registerSendCmd(panNicEvent *event);
 
       /// RevCPU: Retrieve the expected size of the event command from the mailbox entry
+
+      /// RevCPU: handle a zero address Put command where the NIC chooses the destination buffer
+      bool PANHandleZeroAddrPut(uint32_t Size, void *Data);
 
       /// RevCPU: handle the SyncGet command
       void PANHandleSyncGet(panNicEvent *event);
@@ -372,6 +388,9 @@ namespace SST {
 
       /// RevCPU: BOTW command
       void PANHandleBOTW(panNicEvent *event);
+
+      /// RevCPU: Signal the host thread of a completed round trip message
+      void PANSignalMsgRecv(uint8_t tag, uint64_t sig);
 
       /// RevCPU: Handle successful response
       void PANHandleSuccess(panNicEvent *event);

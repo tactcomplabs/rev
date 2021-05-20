@@ -18,13 +18,13 @@ RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   InitialPair.second = 10;
 
   // init all the standard options
-  // -- startAddr = 0x80000000
+  // -- startAddr = 0x00000000
   // -- machine = "G" aka, "IMAFD"
   // -- pipeLine = 5
   // -- table = internal
   // -- memCosts[core] = 0:10
   for( unsigned i=0; i<numCores; i++ ){
-    startAddr.insert( std::pair<unsigned,uint64_t>(i,(uint64_t)(0x80000000)) );
+    startAddr.insert( std::pair<unsigned,uint64_t>(i,(uint64_t)(0x00000000)) );
     machine.insert( std::pair<unsigned,std::string>(i,"G") );
     table.insert( std::pair<unsigned,std::string>(i,"_REV_INTERNAL_") );
     memCosts.push_back(InitialPair);
