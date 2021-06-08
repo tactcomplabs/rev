@@ -18,6 +18,7 @@
 #define _PAN_PE_TABLE_MAX_ENTRIES_  1025
 #define _PAN_XFER_BUF_              1024
 #define _PAN_XFER_BUF_ADDR_         0x30005F68
+#define _PAN_FWARE_JUMP_            0x0000000000010000
 
 #define _PAN_ENTRY_INVALID_       0
 #define _PAN_ENTRY_INJECTED_      1
