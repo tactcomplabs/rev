@@ -824,7 +824,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   if( (RegFile.cost == 0) && (!Halted) ){
     // fetch the next instruction
     ResetInst(&Inst);
-    Inst = DecodeInst();
+
+    // If the next instruction is our special bounce address
+    // DO NOT decode it.  It will decode to a bogus instruction.
+    // We do not want to retire this instruction until we're ready
+    if( GetPC() != _PAN_FWARE_JUMP_ ){
+      Inst = DecodeInst();
+    }
     rtn = true;
     ExecPC = GetPC();
   }else if( (!RegFile.trigger) && (!Halted) ){
