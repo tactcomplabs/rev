@@ -824,7 +824,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   if( (RegFile.cost == 0) && (!Halted) ){
     // fetch the next instruction
     ResetInst(&Inst);
-    Inst = DecodeInst();
+
+    // If the next instruction is our special bounce address
+    // DO NOT decode it.  It will decode to a bogus instruction.
+    // We do not want to retire this instruction until we're ready
+    if( GetPC() != _PAN_FWARE_JUMP_ ){
+      Inst = DecodeInst();
+    }
     rtn = true;
     ExecPC = GetPC();
   }else if( (!RegFile.trigger) && (!Halted) ){
@@ -877,26 +883,31 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     rtn = true;
   }
 
-  if( GetPC() == 0x00ull ){
+  // Check for completion states and new tasks
+  if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
     // look for more work on the execution queue
+    // if no work is found, don't update the PC
+    // just wait and spin
     bool done = true;
-    if( PExec ){
-      uint64_t Addr = 0x00ull;
-      unsigned Idx = 0;
-      PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
-      switch( Status ){
-      case PanExec::QExec:
-        SetPC(Addr);
-        done = false;
-        break;
-      case PanExec::QValid:
-      case PanExec::QNull:
-      case PanExec::QError:
-      default:
-        break;
-        done = true;
+    if( GetPC() == _PAN_FWARE_JUMP_ ){
+      if( PExec ){
+        uint64_t Addr = 0x00ull;
+        unsigned Idx = 0;
+        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
+        switch( Status ){
+        case PanExec::QExec:
+          SetPC(Addr);
+          done = false;
+          break;
+        case PanExec::QValid:
+        case PanExec::QNull:
+        case PanExec::QError:
+        default:
+          break;
+          done = true;
+        }
       }
-    }else{
+    }else if( GetPC() == 0x00ull ) {
       // PAN execution contexts not enabled, this is our last PC
       done = true;
     }
