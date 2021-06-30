@@ -842,23 +842,28 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     "Core %d ; Executing PC= 0x%" PRIx64 "\n",
                     id, ExecPC);
 
-    // Find the instruction extension
-    std::map<unsigned,std::pair<unsigned,unsigned>>::iterator it;
-    it = EntryToExt.find(RegFile.Entry);
-    if( it == EntryToExt.end() ){
-      // failed to find the extension
-      output->fatal(CALL_INFO, -1,
-                  "Error: failed to find the instruction extension at PC=%" PRIx64 ".", ExecPC );
-    }
+    // attempt to execute the instruction as long as it is NOT
+    // the firmware jump PC
+    if( ExecPC != _PAN_FWARE_JUMP_ ){
 
-    // found the instruction extension
-    std::pair<unsigned,unsigned> EToE = it->second;
-    RevExt *Ext = Extensions[EToE.first];
+      // Find the instruction extension
+      std::map<unsigned,std::pair<unsigned,unsigned>>::iterator it;
+      it = EntryToExt.find(RegFile.Entry);
+      if( it == EntryToExt.end() ){
+        // failed to find the extension
+        output->fatal(CALL_INFO, -1,
+                    "Error: failed to find the instruction extension at PC=%" PRIx64 ".", ExecPC );
+      }
 
-    // execute the instruction
-    if( !Ext->Execute(EToE.second,Inst) ){
-      output->fatal(CALL_INFO, -1,
-                  "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
+      // found the instruction extension
+      std::pair<unsigned,unsigned> EToE = it->second;
+      RevExt *Ext = Extensions[EToE.first];
+
+      // execute the instruction
+      if( !Ext->Execute(EToE.second,Inst) ){
+        output->fatal(CALL_INFO, -1,
+                    "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
+      }
     }
 
     // if this is a singlestep, clear the singlestep and halt
@@ -890,21 +895,31 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // just wait and spin
     bool done = true;
     if( GetPC() == _PAN_FWARE_JUMP_ ){
-      if( PExec ){
+      if( PExec != nullptr){
         uint64_t Addr = 0x00ull;
         unsigned Idx = 0;
         PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
         switch( Status ){
         case PanExec::QExec:
+          output->verbose(CALL_INFO, 5, 0,
+                      "Core %d ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
+                      id, ExecPC);
           SetPC(Addr);
           done = false;
           break;
-        case PanExec::QValid:
         case PanExec::QNull:
+          // no work to do; spin on the firmware jump PC
+          output->verbose(CALL_INFO, 5, 0,
+                      "Core %d ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
+                      id, ExecPC);
+          done = false;
+          SetPC(_PAN_FWARE_JUMP_);
+          break;
+        case PanExec::QValid:
         case PanExec::QError:
+          done = true;
         default:
           break;
-          done = true;
         }
       }
     }else if( GetPC() == 0x00ull ) {

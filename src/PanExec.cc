@@ -59,6 +59,11 @@ PanExec::PanStatus PanExec::StatusEntry(unsigned Idx){
 
 PanExec::PanStatus PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx){
   std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
+
+  // if no work to do, return null
+  if( ExecQueue.size() == 0 )
+    return PanExec::QNull;
+
   for( it=ExecQueue.begin(); it != ExecQueue.end(); ++it ){
     if( std::get<1>(*it) == PanExec::QValid ){
       // use this entry

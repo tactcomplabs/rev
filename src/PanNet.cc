@@ -208,27 +208,21 @@ bool panNicEvent::buildSyncGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint3
 bool panNicEvent::buildSyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data){
   Opcode = SyncPut;
   if( Data == nullptr ){
-    std::cout << "Error: data is null" << std::endl;
     return false;
   }
   if( !setToken(Token) ){
-    std::cout << "Error: failed to set the token" << std::endl;
     return false;
   }
   if( !setTag(Tag) ){
-    std::cout << "Error: failed to set the tag" << std::endl;
     return false;
   }
   if( !setSize(Size) ){
-    std::cout << "Error: failed to set the size" << std::endl;
     return false;
   }
   if( !setAddr(Addr) ){
-    std::cout << "Error: failed to set the addr" << std::endl;
     return false;
   }
   if( !setData(Data,Size) ){
-    std::cout << "Error: failed to set the data" << std::endl;
     return false;
   }
 

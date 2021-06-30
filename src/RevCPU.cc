@@ -132,6 +132,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     // setup the PAN target device execution context
     if( !PNic->IsHost() ){
       PExec = new PanExec();
+      if( PExec == nullptr )
       for( unsigned i=0; i<Procs.size(); i++ ){
         Procs[i]->SetExecCtx(PExec);
       }
@@ -166,6 +167,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   // Create the processor objects
   for( unsigned i=0; i<numCores; i++ ){
     Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
+  }
+
+  // setup the PAN execution contexts
+  if( EnablePAN ){
+    // setup the PAN target device execution context
+    if( !PNic->IsHost() ){
+      PExec = new PanExec();
+      for( unsigned i=0; i<Procs.size(); i++ ){
+        Procs[i]->SetExecCtx(PExec);
+      }
+    }
   }
 
   // Create the completion array
