@@ -68,11 +68,20 @@ namespace SST{
       // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
       //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
       // ----------------------------------------------------------------------
-      std::vector<RevInstEntry> RV64FTable = {
-      {"fcvt.l.s  %rd, %rs1", 1, 0b1010011, 0b0,   0b1100000, RegFLOAT, RegFLOAT, RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &fcvtls },
-      {"fcvt.lu.s %rd, %rs1", 1, 0b1010011, 0b0,   0b1100000, RegFLOAT, RegFLOAT, RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &fcvtlus },
-      {"fcvt.s.l %rd, %rs1",  1, 0b1010011, 0b0,   0b1101000, RegFLOAT, RegFLOAT, RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &fcvtsl },
-      {"fcvt.s.lu %rd, %rs1", 1, 0b1010011, 0b0,   0b1101000, RegFLOAT, RegFLOAT, RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &fcvtslu }
+      class Rev64FInstDefaults : public RevInstDefaults {
+        public:
+        uint8_t opcode = 0b1010011;
+        RevRegClass rdClass = RegFLOAT;
+        RevRegClass rs1Class = RegFLOAT;
+        RevRegClass rs2Class = RegUNKNOWN;
+        RevRegClass rs3Class = RegUNKNOWN;
+      };
+
+      std::vector<RevInstEntry > RV64FTable = {
+      {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.l.s  %rd, %rs1").SetFunct7( 0b1100000).SetImplFunc(&fcvtls ).InstEntry},
+      {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.lu.s %rd, %rs1").SetFunct7( 0b1100000).SetImplFunc(&fcvtlus ).InstEntry},
+      {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.l %rd, %rs1" ).SetFunct7( 0b1101000).SetImplFunc(&fcvtsl ).InstEntry},
+      {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct7( 0b1101000).SetImplFunc(&fcvtslu ) .InstEntry}
       };
 
 
