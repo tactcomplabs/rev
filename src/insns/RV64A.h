@@ -164,18 +164,24 @@ namespace SST{
       // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
       //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
       // ----------------------------------------------------------------------
+      class Rev64AInstDefaults : public RevInstDefaults {
+        public:
+        uint8_t     opcode = 0b0101111;
+        uint8_t     funct3 = 0b011;
+        RevRegClass rs2Class = RegUNKNOWN;
+      };
       std::vector<RevInstEntry> RV64ATable = {
-      {"lr.d %rd, (%rs1)",          1, 0b0101111, 0b011, 0b00010, RegGPR, RegUNKNOWN, RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &lrd },
-      {"sc.d %rd, %rs1, %rs2",      1, 0b0101111, 0b011, 0b00011, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &scd },
-      {"amoswap.d %rd, %rs1, %rs2", 1, 0b0101111, 0b011, 0b00001, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amoswapd },
-      {"amoadd.d %rd, %rs1, %rs2",  1, 0b0101111, 0b011, 0b00000, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amoaddd },
-      {"amoxor.d %rd, %rs1, %rs2",  1, 0b0101111, 0b011, 0b00100, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amoxord },
-      {"amoand.d %rd, %rs1, %rs2",  1, 0b0101111, 0b011, 0b01100, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amoandd },
-      {"amoor.d %rd, %rs1, %rs2",   1, 0b0101111, 0b011, 0b01000, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amoord },
-      {"amomin.d %rd, %rs1, %rs2",  1, 0b0101111, 0b011, 0b10000, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amomind },
-      {"amomax.d %rd, %rs1, %rs2",  1, 0b0101111, 0b011, 0b10100, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amomaxd },
-      {"amominu.d %rd, %rs1, %rs2", 1, 0b0101111, 0b011, 0b11000, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amominud },
-      {"amomaxu.d %rd, %rs1, %rs2", 1, 0b0101111, 0b011, 0b11100, RegGPR, RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FUnk, RVTypeR, &amomaxud }
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("lr.d %rd, (%rs1)"          ).SetFunct7(0b00010).Setrs1Class(RegUNKNOWN).Setrs2Class(RegUNKNOWN).SetImplFunc(&lrd ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("sc.d %rd, %rs1, %rs2"      ).SetFunct7(0b00011                        ).Setrs2Class(RegUNKNOWN).SetImplFunc(&scd ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoswap.d %rd, %rs1, %rs2" ).SetFunct7(0b00001                        ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amoswapd ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoadd.d %rd, %rs1, %rs2"  ).SetFunct7(0b00000												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amoaddd ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoxor.d %rd, %rs1, %rs2"  ).SetFunct7(0b00100												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amoxord ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoand.d %rd, %rs1, %rs2"  ).SetFunct7(0b01100												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amoandd ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoor.d %rd, %rs1, %rs2"   ).SetFunct7(0b01000												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amoord ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomin.d %rd, %rs1, %rs2"  ).SetFunct7(0b10000												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amomind ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomax.d %rd, %rs1, %rs2"  ).SetFunct7(0b10100												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amomaxd ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amominu.d %rd, %rs1, %rs2" ).SetFunct7(0b11000												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amominud ).InstEntry},
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomaxu.d %rd, %rs1, %rs2" ).SetFunct7(0b11100												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amomaxud ).InstEntry}
       };
 
 

@@ -185,14 +185,21 @@ namespace SST{
 
 There are a few important things we need to point out before we move on.  First, notice how the new implementation class resides inside the `SST::RevCPU` namespace and inherits functions from the base `RevExt` class.  This is very important in order to correctly load your new instructions into the simulator.  Second, notice how we instantiate the constructor for the new extension.  The constructor **MUST** contain a call to `this->SetTable(RV32ZTable)`.  Given that this is a header-only implementation, the order of which the class constructors and associated data members must be preserved.  This method forces the child constructor to create its private data members before registering them with the base class.  
 
-Now that we have our basic skeleton in place, we can start creating our instruction table.  The table is actually a C++ vector of struct entries where each entry corresponds to a single instruction entry.  This needs to be done in the private section of the class (see the comment above for RV32Z Instruction Table).  First, lets create a few basic entries in our table, then we'll explain what each entry is used for.
+Now that we have our basic skeleton in place, we can start creating our instruction table.  The table is actually a C++ vector of struct entries where each entry corresponds to a single instruction entry.  This needs to be done in the private section of the class (see the comment above for RV32Z Instruction Table).  The stuct for each entry is created by an in-line creation of a `RevInstEntryBuilder< >` object. This object will utilize the class declared in the template parameter for the default values.  The base default values can be found in the `RevInstDefaults` class and can be overriden through inheritence (shown in the example below).  The individual elements of the `RevInstEntry` struct are initialized using named arguments so they can be initialized in any order. It is important to end the argument initialization chain with `.InstEntry` as this is the actual struct that will be added to the `std::vector`.First, lets create a few basic entries in our table, then we'll explain what each entry is used for.
 
 ```c++
+class Rev32ZInstDefaults : public RevInstDefaults {
+  RevRegF format = RVTypeR; 
+}
 std::vector<RevInstEntry> RV32ZTable = {
-{"zadd %rd, %rs1, %rs2",   1, 0b0110011, 0b000,  0b0000000, RegGPR,     RegGPR,     RegGPR,     RegUNKNOWN, 0b0, FUnk, RVTypeR, &zadd },
-{"zsub %rd, %rs1, %rs2",   1, 0b0110011, 0b000,  0b0100000, RegGPR,     RegGPR,     RegGPR,     RegUNKNOWN, 0b0, FUnk, RVTypeR, &zsub },
-{"zlb %rd, $imm(%rs1)",    1, 0b0000011, 0b000,  0b0,       RegGPR,     RegGPR,     RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &zlb },
-{"zsb %rs2, $imm(%rs1)",   1, 0b0100011, 0b000,  0b0,       RegIMM,     RegGPR,     RegGPR,     RegUNKNOWN, 0b0, FUnk, RVTypeS, &zsb }
+{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zadd %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0000000).
+   SetrdClass(RegGPR).Setrs1Class(RegGPR)Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zadd).InstEntry },
+{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsub %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0100000).
+   SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zsub).InstEntry },
+{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zlb %rd, $imm(%rs1)").SetCost(1).SetOpcode(0b0000011).SetFunct3(0b000).SetFunct7(0b0).
+   SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&zlb).InstEntry },
+{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsb %rs2, $imm(%rs1)").SetCost(1).SetOpcode(0b0100011).SetFunct3(0b000).SetFunct7(0b0).
+   SetrdClass(RegIMM).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeS).SetImplFunc(&zsub).InstEntry },
 };
 ```
 

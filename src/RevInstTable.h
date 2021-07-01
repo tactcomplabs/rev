@@ -273,33 +273,105 @@ namespace SST{
      * a target instruction as well as its cost function
      *
      */
-    typedef struct{
-      // disassembly
-      std::string mnemonic; ///< RevInstEntry: instruction mnemonic
-      uint32_t cost;        ///< RevInstEntry: instruction code in cycles
+    class RevInstDefaults {
+      public:
+      uint8_t     opcode;
+      uint32_t    cost;
+      uint8_t     funct3;
+      uint8_t     funct7;
+      RevRegClass rdClass;
+      RevRegClass rs1Class;
+      RevRegClass rs2Class;
+      RevRegClass rs3Class;
+      uint16_t    imm12;
+      RevImmFunc  imm;
+      RevInstF    format;
 
-      // storage
-      uint8_t opcode;       ///< RevInstEntry: opcode
-      uint8_t funct3;       ///< RevInstEntry: funct3 value
-      uint8_t funct7;       ///< RevInstEntry: funct7 value
+      RevInstDefaults(){
+        opcode    = 0b00000000;
+        cost      = 1;
+        funct3    = 0b000;
+        funct7    = 0b0000000;
+        rdClass   = RegGPR;
+        rs1Class  = RegGPR;
+        rs2Class  = RegGPR;
+        rs3Class  = RegUNKNOWN;
+        imm12     = 0b000000000000;
+        imm       = FUnk;
+        format    = RVTypeR;
+      }
+      };
 
-      // register encodings
-      RevRegClass rdClass;  ///< RevInstEntry: Rd register class
-      RevRegClass rs1Class; ///< RevInstEntry: Rs1 register class
-      RevRegClass rs2Class; ///< RevInstEntry: Rs2 register class
-      RevRegClass rs3Class; ///< RevInstEntry: Rs3 register class
+    typedef struct {
+        // disassembly
+        std::string mnemonic; ///< RevInstEntry: instruction mnemonic
+        uint32_t cost;        ///< RevInstEntry: instruction code in cycles
 
-      uint16_t imm12;       ///< RevInstEntry: imm12 value
+        // storage
+        uint8_t opcode;       ///< RevInstEntry: opcode
+        uint8_t funct3;       ///< RevInstEntry: funct3 value
+        uint8_t funct7;       ///< RevInstEntry: funct7 value
 
-      RevImmFunc imm;       ///< RevInstEntry: does the imm12 exist?
+        // register encodings
+        RevRegClass rdClass;  ///< RevInstEntry: Rd register class
+        RevRegClass rs1Class; ///< RevInstEntry: Rs1 register class
+        RevRegClass rs2Class; ///< RevInstEntry: Rs2 register class
+        RevRegClass rs3Class; ///< RevInstEntry: Rs3 register class
 
-      // formatting
-      RevInstF format;      ///< RevInstEntry: instruction formatA
+        uint16_t imm12;       ///< RevInstEntry: imm12 value
 
-      /// RevInstEntry: Instruction implementation function
-      bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst);
+        RevImmFunc imm;       ///< RevInstEntry: does the imm12 exist?
 
-    }RevInstEntry;
+        // formatting
+        RevInstF format;      ///< RevInstEntry: instruction formatA
+
+        /// RevInstEntry: Instruction implementation function
+        bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst);
+      } RevInstEntry;
+
+
+    template <typename RevInstDefaultsPolicy>
+    class RevInstEntryBuilder : public RevInstDefaultsPolicy{
+      public:
+
+      RevInstEntry InstEntry;
+      
+      RevInstEntryBuilder() : RevInstDefaultsPolicy() { 
+        //Set default values 
+        InstEntry.mnemonic  = std::string("nop");
+        InstEntry.func      = NULL;
+        InstEntry.opcode    = RevInstDefaultsPolicy::opcode;
+        InstEntry.cost      = RevInstDefaultsPolicy::cost;
+        InstEntry.funct3    = RevInstDefaultsPolicy::funct3;
+        InstEntry.funct7    = RevInstDefaultsPolicy::funct7;
+        InstEntry.rdClass   = RevInstDefaultsPolicy::rdClass;
+        InstEntry.rs1Class  = RevInstDefaultsPolicy::rs1Class;
+        InstEntry.rs2Class  = RevInstDefaultsPolicy::rs2Class;
+        InstEntry.rs3Class  = RevInstDefaultsPolicy::rs3Class;
+        InstEntry.imm12     = RevInstDefaultsPolicy::imm12;
+        InstEntry.imm       = RevInstDefaultsPolicy::imm;
+        InstEntry.format    = RevInstDefaultsPolicy::format;
+      
+      }
+
+      // Begin Set() functions to allow call chaining - all Set() must return *this
+      RevInstEntryBuilder& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;};
+      RevInstEntryBuilder& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;};
+      RevInstEntryBuilder& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;};
+      RevInstEntryBuilder& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;};
+      RevInstEntryBuilder& SetFunct7(uint8_t f7)        { InstEntry.funct7 = f7;    return *this;};  
+      RevInstEntryBuilder& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;};
+      RevInstEntryBuilder& Setrs1Class(RevRegClass rs1) {InstEntry.rs1Class = rs1;  return *this;};
+      RevInstEntryBuilder& Setrs2Class(RevRegClass rs2) {InstEntry.rs2Class = rs2;  return *this;};
+      RevInstEntryBuilder& Setrs3Class(RevRegClass rs3) {InstEntry.rs3Class = rs3;  return *this;};
+      RevInstEntryBuilder& Setimm12(uint16_t imm12)     {InstEntry.imm12 = imm12;   return *this;};
+      RevInstEntryBuilder& Setimm(RevImmFunc imm)       {InstEntry.imm = imm;       return *this;};
+      RevInstEntryBuilder& SetFormat(RevInstF format)   {InstEntry.format = format; return *this;};
+
+      RevInstEntryBuilder& SetImplFunc(bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst)){ 
+                                                         InstEntry.func = func;     return *this;};
+
+    };// class RevInstEntryBuilder;
 
   } // namespace RevCPU
 } // namespace SST
