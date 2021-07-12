@@ -194,6 +194,8 @@ namespace SST {
       bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations
       bool EnablePANStats;                ///< RevCPU: Flag for enabling PAN statistics
       bool EnableRDMAMBox;                ///< RevCPU: Enable the RDMA Mailbox
+      bool ReadyForRevoke;                ///< RevCPU: Is the CPU ready for revocation?
+      bool RevokeHasArrived;              ///< RevCPU: Determines whether the REVOKE command has arrived
 
       TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
       SST::Output output;                 ///< RevCPU: SST output handler
