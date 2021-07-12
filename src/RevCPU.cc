@@ -33,7 +33,7 @@ const char *pan_splash_msg = "\
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
-    EnableNIC(false), EnablePAN(false), EnablePANStats(false),
+    EnableNIC(false), EnablePAN(false), EnablePANStats(false), ReadyForRevoke(false),
     Nic(nullptr), PNic(nullptr), PExec(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
@@ -136,6 +136,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
       for( unsigned i=0; i<Procs.size(); i++ ){
         Procs[i]->SetExecCtx(PExec);
       }
+      RevokeHasArrived = false;
+    }else{
+      RevokeHasArrived = true;
     }
 
     // record the number of injected messages per cycle
@@ -145,6 +148,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
     if( EnablePANStats )
       registerStatistics();
+  }else{
+    RevokeHasArrived = true;
   }
 
   // See if we should load the test harness as opposed to a binary payload
@@ -832,12 +837,16 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
     return ;
   }
 
+  ReadyForRevoke = true;
+
+#if 0
   // write the completion
   uint64_t Addr = _PAN_COMPLETION_ADDR_;
   uint64_t Payload = 0x01ull;
   Mem->WriteMem(Addr,8,&Payload);
 
   PNic->RevokeToken();
+#endif
   PANBuildRawSuccess(event);
 }
 
@@ -1328,6 +1337,19 @@ bool RevCPU::sendPANMessage(){
 
   // pop the message off the queue
   SendMB.pop();
+
+  // handle the revocation
+  if( ReadyForRevoke ){
+    output.verbose(CALL_INFO, 4, 0, "Revoking token\n");
+    // write the completion
+    uint64_t Addr = _PAN_COMPLETION_ADDR_;
+    uint64_t Payload = 0x01ull;
+    Mem->WriteMem(Addr,8,&Payload);
+
+    PNic->RevokeToken();
+    ReadyForRevoke = false;
+    RevokeHasArrived = true;
+  }
 
   return true;
 }
@@ -2065,8 +2087,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   // Execute each enabled core
   for( unsigned i=0; i<Procs.size(); i++ ){
     if( Enabled[i] ){
-      if( !Procs[i]->ClockTick(currentCycle) )
+      if( !Procs[i]->ClockTick(currentCycle) ){
         Enabled[i] = false;
+      output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
+                     i, static_cast<uint64_t>(currentCycle));
+      }
     }
   }
 
@@ -2100,12 +2125,14 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       rtn = false;
   }
 
-  // check to see if the network has any outstanding messages
-  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() )
+  // check to see if the network has any outstanding messages: fixme
+  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() || !RevokeHasArrived )
     rtn = false;
 
-  if( rtn )
+  if( rtn ){
     primaryComponentOKToEndSim();
+    output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+  }
 
   return rtn;
 }

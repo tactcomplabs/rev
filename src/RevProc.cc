@@ -903,13 +903,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         case PanExec::QExec:
           output->verbose(CALL_INFO, 5, 0,
                       "Core %d ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
-                      id, ExecPC);
+                      id, Addr);
           SetPC(Addr);
           done = false;
           break;
         case PanExec::QNull:
           // no work to do; spin on the firmware jump PC
-          output->verbose(CALL_INFO, 5, 0,
+          output->verbose(CALL_INFO, 6, 0,
                       "Core %d ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
                       id, ExecPC);
           done = false;
