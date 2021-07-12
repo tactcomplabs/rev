@@ -46,6 +46,9 @@ namespace SST {
       /// RevOpts: initialize the set of starting addresses
       bool InitStartAddrs( std::vector<std::string> StartAddrs );
 
+      /// RevOpts: initialize the set of potential starting symbols
+      bool InitStartSymbols( std::vector<std::string> StartSymbols );
+
       /// RevOpts: initialize the set of machine models
       bool InitMachineModels( std::vector<std::string> Machines );
 
@@ -57,6 +60,9 @@ namespace SST {
 
       /// RevOpts: retrieve the start address for the target core
       bool GetStartAddr( unsigned Core, uint64_t &StartAddr );
+
+      /// RevOpts: retrieve the start symbol for the target core
+      bool GetStartSymbol( unsigned Core, std::string &Symbol );
 
       /// RevOpts: retrieve the machine model string for the target core
       bool GetMachineModel( unsigned Core, std::string &MachModel );
@@ -72,6 +78,7 @@ namespace SST {
       int verbosity;                          ///< RevOpts: verbosity level
 
       std::map<unsigned,uint64_t> startAddr;  ///< RevOpts: map of core id to starting address
+      std::map<unsigned,std::string> startSym;///< RevOpts: map of core id to starting symbol
       std::map<unsigned,std::string> machine; ///< RevOpts: map of core id to machine model
       std::map<unsigned,std::string> table;   ///< RevOpts: map of core id to inst table
 

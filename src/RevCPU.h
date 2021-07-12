@@ -86,6 +86,7 @@ namespace SST {
         {"numCores",        "Number of RISC-V cores to instantiate",   "1" },
         {"memSize",         "Main memory size in bytes",               "1073741824"},
         {"startAddr",       "Starting PC of the target core",          "core:0x80000000"},
+        {"startSymbol",     "Starting symbol name of the target core", "core:symbol"},
         {"machine",         "RISC-V machine model of the target core", "core:G"},
         {"memCost",         "Memory latency range in cycles min:max",  "core:0:10"},
         {"table",           "Instruction cost table",                  "core:/path/to/table"},

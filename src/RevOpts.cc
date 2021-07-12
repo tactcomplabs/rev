@@ -39,6 +39,7 @@ void RevOpts::splitStr(const std::string& s,
                        std::vector<std::string>& v){
   std::string::size_type i = 0;
   std::string::size_type j = s.find(c);
+  v.clear();
 
   while (j != std::string::npos) {
     v.push_back(s.substr(i, j-i));
@@ -65,6 +66,23 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
     uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
 
     startAddr.find(Core)->second = Addr;
+  }
+  return true;
+}
+
+bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
+  std::vector<std::string> vstr;
+  for(unsigned i=0; i<StartSymbols.size(); i++ ){
+    std::string s = StartSymbols[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    if( Core > numCores )
+      return false;
+
+    startSym.insert(std::pair<unsigned,std::string>(Core,vstr[1]));
   }
   return true;
 }
@@ -126,7 +144,22 @@ bool RevOpts::GetStartAddr( unsigned Core, uint64_t &StartAddr ){
   if( Core > numCores )
     return false;
 
+  if( startAddr.find(Core) == startAddr.end() )
+    return false;
+
   StartAddr = startAddr.at(Core);
+  return true;
+}
+
+bool RevOpts::GetStartSymbol( unsigned Core, std::string &Symbol ){
+  if( Core > numCores )
+    return false;
+
+  if( startSym.find(Core) == startSym.end() ){
+    Symbol = "main";
+  }else{
+    Symbol = startSym.at(Core);
+  }
   return true;
 }
 

@@ -81,6 +81,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   if( !Opts->InitStartAddrs( startAddrs ) )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting addresses\n" );
 
+  std::vector<std::string> startSyms;
+  params.find_array<std::string>("startSymbol", startSyms);
+  if( !Opts->InitStartSymbols( startSyms ) )
+    output.fatal(CALL_INFO, -1, "Error: failed to initalized the starting symbols\n" );
+
   std::vector<std::string> machModels;
   params.find_array<std::string>("machine", machModels);
   if( !Opts->InitMachineModels( machModels ) )

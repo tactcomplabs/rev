@@ -309,6 +309,14 @@ bool RevProc::Reset(){
   if( !opts->GetStartAddr( id, StartAddr ) )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to init the start address for core=%d\n", id);
+  std::string StartSymbol = "main";
+  if( StartAddr == 0x00ull ){
+    if( !opts->GetStartSymbol( id, StartSymbol ) )
+      output->fatal(CALL_INFO, -1,
+                    "Error: failed to init the start symbol address for core=%d\n", id);
+
+    StartAddr = loader->GetSymbolAddr(StartSymbol);
+  }
   if( StartAddr == 0x00ull ){
     // load "main" symbol
     StartAddr = loader->GetSymbolAddr("main");
