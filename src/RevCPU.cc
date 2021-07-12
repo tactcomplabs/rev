@@ -1328,14 +1328,14 @@ bool RevCPU::sendPANMessage(){
                  SendMB.front().first->getToken(),
                  SendMB.front().first->getSize());
   PNic->send(SendMB.front().first,SendMB.front().second);
-  if( PNic->IsHost() ){
+  //if( PNic->IsHost() ){ // this was removed
     // save the message to track the response
-    uint8_t Opc = SendMB.front().first->getOpcode();
-    if( (Opc != panNicEvent::Success) && (Opc != panNicEvent::Failed) ){
-      TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
-                                         SendMB.front().second));
-    }
+  uint8_t Opc = SendMB.front().first->getOpcode();
+  if( (Opc != panNicEvent::Success) && (Opc != panNicEvent::Failed) ){
+    TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
+                                       SendMB.front().second));
   }
+  //} // this was removed
 
   if( EnablePANStats )
     registerSendCmd(SendMB.front().first);

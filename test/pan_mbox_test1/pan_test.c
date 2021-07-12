@@ -86,7 +86,7 @@ int main(int argc, char **argv){
 
   send_completion();
 
-  //send_revoke_cmd();
+  send_revoke_cmd();
 
   value = *ptr;
   while( value == 0x00ull){
