@@ -51,10 +51,17 @@ namespace SST{
       // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
       //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
       // ----------------------------------------------------------------------
+      class Rev64PInstDefaults : public RevInstDefaults {
+        public:
+        uint8_t opcode       = 0b1110111;
+        RevRegClass rs2Class = RegUNKNOWN;
+        RevImmFunc imm       = FImm;
+        RevInstF format      = RVTypeI;
+      };
       std::vector<RevInstEntry> RV64PTable = {
-      {"future %rd, $imm(%rs1)",   1, 0b1110111, 0b111, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &future},
-      {"rfuture %rd, $imm(%rs1)",  1, 0b1110111, 0b101, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &rfuture},
-      {"sfuture %rd, $imm(%rs1)",  1, 0b1110111, 0b100, 0b0, RegGPR, RegGPR, RegUNKNOWN, RegUNKNOWN, 0b0, FImm, RVTypeI, &sfuture},
+      {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("future %rd, $imm(%rs1)" ).SetFunct3(0b111).SetImplFunc(&future).InstEntry},
+      {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("rfuture %rd, $imm(%rs1)").SetFunct3(0b101).SetImplFunc(&rfuture).InstEntry},
+      {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("sfuture %rd, $imm(%rs1)").SetFunct3(0b100).SetImplFunc(&sfuture).InstEntry}
       };
 
     public:

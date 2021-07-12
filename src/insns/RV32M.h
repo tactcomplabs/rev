@@ -222,15 +222,20 @@ namespace SST{
       // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
       //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
       // ----------------------------------------------------------------------
+      class RevMInstDefaults : public RevInstDefaults {
+        public:
+        uint8_t funct7 = 0b0000001;
+        uint8_t opcode = 0b0110011;
+      };
       std::vector<RevInstEntry> RV32MTable = {
-      {"mul %rd, %rs1, %rs2",    1, 0b0110011, 0b000, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &mul },
-      {"mulh %rd, %rs1, %rs2",   1, 0b0110011, 0b001, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &mulh },
-      {"mulhsu %rd, %rs1, %rs2", 1, 0b0110011, 0b010, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &mulhsu },
-      {"mulhu %rd, %rs1, %rs2",  1, 0b0110011, 0b011, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &mulhu },
-      {"div %rd, %rs1, %rs2",    1, 0b0110011, 0b100, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &div },
-      {"divu %rd, %rs1, %rs2",   1, 0b0110011, 0b101, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &divu },
-      {"rem %rd, %rs1, %rs2",    1, 0b0110011, 0b110, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &rem },
-      {"remu %rd, %rs1, %rs2",   1, 0b0110011, 0b111, 0b0000001, RegGPR, RegGPR, RegGPR, RegUNKNOWN, 0b0, FUnk, RVTypeR, &remu }
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("mul %rd, %rs1, %rs2"   ).SetFunct3(0b000).SetImplFunc( &mul ).InstEntry},
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("mulh %rd, %rs1, %rs2"  ).SetFunct3(0b001).SetImplFunc( &mulh ).InstEntry},
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("mulhsu %rd, %rs1, %rs2").SetFunct3(0b010).SetImplFunc( &mulhsu ).InstEntry},
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("mulhu %rd, %rs1, %rs2" ).SetFunct3(0b011).SetImplFunc( &mulhu ).InstEntry},
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("div %rd, %rs1, %rs2"   ).SetFunct3(0b100).SetImplFunc( &div ).InstEntry},
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("divu %rd, %rs1, %rs2"  ).SetFunct3(0b101).SetImplFunc( &divu ).InstEntry},
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("rem %rd, %rs1, %rs2"   ).SetFunct3(0b110).SetImplFunc( &rem ).InstEntry},
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("remu %rd, %rs1, %rs20" ).SetFunct3(0b111).SetImplFunc( &remu ).InstEntry}
       };
 
     public:
