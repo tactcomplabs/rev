@@ -19,7 +19,7 @@ PanExec::PanExec() : CurEntry(0){
 PanExec::~PanExec(){
 }
 
-bool PanExec::AddEntry(uint64_t Addr, unsigned *Idx){
+bool PanExec::AddEntry(uint64_t Addr, unsigned *Idx, unsigned Core){
   if( ExecQueue.size() == _PANEXEC_MAX_ENTRY_ )
     return false;
 
@@ -27,14 +27,15 @@ bool PanExec::AddEntry(uint64_t Addr, unsigned *Idx){
 
   ExecQueue.push_back(std::tuple<unsigned,
                                  PanExec::PanStatus,
-                                 uint64_t>(Entry,PanExec::QValid,Addr));
+                                 uint64_t,
+                                 unsigned>(Entry,PanExec::QValid,Addr,Core));
 
   *Idx = Entry;
   return true;
 }
 
 bool PanExec::RemoveEntry(unsigned Idx){
-  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
+  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t,unsigned>>::iterator it;
 
   for( it=ExecQueue.begin(); it != ExecQueue.end(); ++it ){
     if( Idx == std::get<0>(*it) ){
@@ -47,7 +48,7 @@ bool PanExec::RemoveEntry(unsigned Idx){
 }
 
 PanExec::PanStatus PanExec::StatusEntry(unsigned Idx){
-  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
+  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t,unsigned>>::iterator it;
 
   for( it=ExecQueue.begin(); it != ExecQueue.end(); ++it ){
     if( Idx == std::get<0>(*it) )
@@ -57,8 +58,8 @@ PanExec::PanStatus PanExec::StatusEntry(unsigned Idx){
   return PanExec::QError;
 }
 
-PanExec::PanStatus PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx){
-  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
+PanExec::PanStatus PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx, unsigned Core){
+  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t,unsigned>>::iterator it;
 
   // if no work to do, return null
   if( ExecQueue.size() == 0 )
@@ -66,11 +67,16 @@ PanExec::PanStatus PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx){
 
   for( it=ExecQueue.begin(); it != ExecQueue.end(); ++it ){
     if( std::get<1>(*it) == PanExec::QValid ){
-      // use this entry
-      *Idx  = std::get<0>(*it);
-      *Addr = std::get<2>(*it);
-      std::get<1>(*it) = PanExec::QExec;
-      return PanExec::QExec;
+      if(std::get<3>(*it) == 0xFFFF || std::get<3>(*it) == Core){
+        // use this entry
+        *Idx  = std::get<0>(*it);
+        *Addr = std::get<2>(*it);
+        std::get<1>(*it) = PanExec::QExec;
+        return PanExec::QExec;
+      }else{
+        // entry Core does not match calling process
+        return PanExec::QNull;
+      }
     }
   }
 

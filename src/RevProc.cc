@@ -906,7 +906,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if( PExec != nullptr){
         uint64_t Addr = 0x00ull;
         unsigned Idx = 0;
-        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
+        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx,id);
         switch( Status ){
         case PanExec::QExec:
           output->verbose(CALL_INFO, 5, 0,

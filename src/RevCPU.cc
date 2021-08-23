@@ -763,7 +763,7 @@ void RevCPU::PANHandleExec(panNicEvent *event){
   }
 
   unsigned Idx = 0;
-  if( !PExec->AddEntry(event->getAddr(),&Idx) ){
+  if( !PExec->AddEntry(event->getAddr(),&Idx, event->getSize()) ){
     PANBuildFailedToken(event);
     return ;
   }
@@ -1044,7 +1044,8 @@ void RevCPU::PANHandleBOTW(panNicEvent *event){
   // marshall the varargs to the device
   // TODO
 
-  if( !PExec->AddEntry(Entry,&Idx) ){
+  if( !PExec->AddEntry(Entry,&Idx,0xFFFF) ){
+    output.verbose(CALL_INFO, 5, 0, "Adding BOTW entry\n");
     PANBuildFailedToken(event);
     return ;
   }
