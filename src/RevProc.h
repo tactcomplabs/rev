@@ -19,6 +19,10 @@
 #include <iostream>
 #include <fstream>
 #include <bitset>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <random>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -79,9 +83,21 @@ namespace SST{
       /// RevProc: Retrieve a random memory cost value
       unsigned RandCost() { return mem->RandCost(feature->GetMinCost(),feature->GetMaxCost()); }
 
+      /// RevProc: Handle register faults
+      void HandleRegFault(unsigned width);
+
+      /// RevProc: Handle crack+decode faults
+      void HandleCrackFault(unsigned width);
+
+      /// RevProc: Handle ALU faults
+      void HandleALUFault(unsigned width);
+
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
       bool SingleStep;          ///< RevProc: determines if we are in a single step
+      bool CrackFault;          ///< RevProc: determiens if we need to handle a crack fault
+      bool ALUFault;            ///< RevProc: determines if we need to handle an ALU fault
+      unsigned fault_width;     ///< RevProc: the width of the target fault
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
       RevOpts *opts;            ///< RevProc: options object

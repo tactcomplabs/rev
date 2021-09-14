@@ -75,9 +75,11 @@ namespace SST {
 
       /// panNicEvent: standard constructor
       panNicEvent(std::string name)
-        : Event(), SrcName(name),
+        : Event(),
+        SrcName(name),
           Tag(0), Opcode(PanRsvd), VarArgs(0),
-          Size(0), Token(0), Offset(0), Addr(0), Data(nullptr) { }
+          Size(0), Token(0), Offset(0),
+          Addr(0){ }
 
       /// panNicEvent: rerieve the source name
       std::string getSource() { return SrcName; }
@@ -229,16 +231,16 @@ namespace SST {
       }
 
     private:
-      std::string SrcName;            ///< panNicEvent: Name of the sending device
-      int Src;                        ///< panNicEvent: Source ID
-      uint8_t Tag;                    ///< panNicEvent: Tag value of the command packet
-      uint8_t Opcode;                 ///< panNicEvent: Opcode value of the command packet
-      uint8_t VarArgs;                ///< panNicEvent: Variadic arguments for BOTW packet
-      uint32_t Size;                  ///< panNicEvent: Size value of the command packet
-      uint32_t Token;                 ///< panNicEvent: Token value of the command packet
-      uint32_t Offset;                ///< panNicEvent: Offset value for BOTW packet
-      uint64_t Addr;                  ///< panNicEvent: Addressing encoding field
-      uint64_t *Data;                 ///< panNicEvent: Data field
+        std::string SrcName;            ///< panNicEvent: Name of the sending device
+        int Src;                        ///< panNicEvent: Source ID
+        uint8_t Tag;                    ///< panNicEvent: Tag value of the command packet
+        uint8_t Opcode;                 ///< panNicEvent: Opcode value of the command packet
+        uint8_t VarArgs;                ///< panNicEvent: Variadic arguments for BOTW packet
+        uint32_t Size;                  ///< panNicEvent: Size value of the command packet
+        uint32_t Token;                 ///< panNicEvent: Token value of the command packet
+        uint32_t Offset;                ///< panNicEvent: Offset value for BOTW packet
+        uint64_t Addr;                  ///< panNicEvent: Addressing encoding field
+        std::vector<uint64_t> Data;     ///< panNicEvent: Data field
 
     public:
       /// panNicEvent: event serializer
@@ -248,6 +250,15 @@ namespace SST {
       void serialize_order(SST::Core::Serialization::serializer &ser) override{
         Event::serialize_order(ser);
         ser & SrcName;
+        ser & Src;
+        ser & Tag;
+        ser & Opcode;
+        ser & VarArgs;
+        ser & Size;
+        ser & Token;
+        ser & Offset;
+        ser & Addr;
+        ser & Data;
       }
 
       /// panNicevent: implements the NIC serialization

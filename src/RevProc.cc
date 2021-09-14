@@ -16,6 +16,7 @@ RevProc::RevProc( unsigned Id,
                   RevLoader *Loader,
                   SST::Output *Output )
   : Halted(false), SingleStep(false),
+    CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output) {
 
   // initialize the machine model for the target core
@@ -708,6 +709,16 @@ RevInst RevProc::DecodeInst(){
                   "Core %d ; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
                   id, PC, Inst);
 
+  // Stage 1a: handle the crack fault injection
+  if( CrackFault ){
+    srand(time(NULL));
+    uint64_t rval = rand() % (2^(fault_width));
+    Inst |= rval;
+
+    // clear the fault
+    CrackFault = false;
+  }
+
   // Stage 2: Retrieve the opcode
   uint32_t Opcode = (uint32_t)(Inst&0b1111111);
 
@@ -820,6 +831,86 @@ void RevProc::ResetInst(RevInst *I){
   I->instSize = 0;
 }
 
+void RevProc::HandleRegFault(unsigned width){
+  // build the permissible set of registers available to fault
+  unsigned LWidth = 0;
+  std::vector<std::pair<std::string,void*>> RRegs;
+
+  if( feature->GetXlen() == 32 ){
+    if( width > feature->GetXlen() ){
+      LWidth = feature->GetXlen();
+    }else{
+      LWidth = width;
+    }
+
+    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
+      std::string Name = "x" + std::to_string(i);
+      RRegs.push_back( std::make_pair(Name,
+                                      (void *)(&RegFile.RV32[i])));
+    }
+  }else{
+    // rv64
+    LWidth = width;
+
+    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
+      std::string Name = "x" + std::to_string(i);
+      RRegs.push_back( std::make_pair(Name,
+                                      (void *)(&RegFile.RV64[i])));
+    }
+  }
+
+  if( feature->IsModeEnabled(RV_F) ){
+    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
+      std::string Name = "f" + std::to_string(i);
+      RRegs.push_back( std::make_pair(Name,
+                                      (void *)(&RegFile.SPF[i])));
+    }
+  }else if( feature->IsModeEnabled(RV_D) ){
+    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
+      std::string Name = "f" + std::to_string(i);
+      RRegs.push_back( std::make_pair(Name,
+                                      (void *)(&RegFile.DPF[i])));
+    }
+  }
+
+  // build the payload
+  srand(time(NULL));
+  uint64_t rval = rand() % (2^(LWidth));
+
+  // select a register
+  std::random_device rd; // obtain a random number from hardware
+  std::mt19937 gen(rd()); // seed the generator
+  std::uniform_int_distribution<> distr(0, RRegs.size()-1); // define the range
+  unsigned RegIdx = distr(gen);
+
+  std::string RegName = RRegs[RegIdx].first;
+  if( feature->GetXlen() == 32 ){
+    uint32_t *ptr = (uint32_t *)(RRegs[RegIdx].second);
+    *ptr |= (uint32_t)(rval);
+  }else{
+    uint64_t *ptr = (uint64_t *)(RRegs[RegIdx].second);
+    *ptr |= rval;
+  }
+
+  output->verbose(CALL_INFO, 5, 0,
+                  "FAULT:REG: Register fault of %d bits into register %s\n",
+                  LWidth,RegName.c_str());
+}
+
+void RevProc::HandleCrackFault(unsigned width){
+  CrackFault = true;
+  fault_width = width;
+  output->verbose(CALL_INFO, 5, 0,
+                  "FAULT:CRACK: Crack+Decode fault injected into next decode cycle\n");
+}
+
+void RevProc::HandleALUFault(unsigned width){
+  ALUFault = true;
+  fault_width = true;
+  output->verbose(CALL_INFO, 5, 0,
+                  "FAULT:ALU: ALU fault injected into next retire cycle\n");
+}
+
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
 
@@ -871,6 +962,38 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if( !Ext->Execute(EToE.second,Inst) ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
+      }
+
+      // inject the ALU fault
+      if( ALUFault ){
+        // inject ALU fault
+        RevExt *Ext = Extensions[EToE.first];
+        if( (Ext->GetName() == "RV32F") ||
+            (Ext->GetName() == "RV32D") ){
+          // write an rv32 float rd
+          uint32_t rval = rand() % (2^(fault_width));
+          uint32_t tmp = (uint32_t)(RegFile.SPF[Inst.rd]);
+          tmp |= rval;
+          RegFile.SPF[Inst.rd] = (float)(tmp);
+        }else if( (Ext->GetName() == "RV64F") ||
+                  (Ext->GetName() == "RV64D") ){
+          // write an rv64 float rd
+          uint64_t rval = rand() % (2^(fault_width));
+          uint64_t tmp = (uint64_t)(RegFile.DPF[Inst.rd]);
+          tmp |= rval;
+          RegFile.DPF[Inst.rd] = (double)(tmp);
+        }else if( feature->GetXlen() == 32 ){
+          // write an rv32 gpr rd
+          uint32_t rval = rand() % (2^(fault_width));
+          RegFile.RV32[Inst.rd] |= rval;
+        }else{
+          // write an rv64 gpr rd
+          uint64_t rval = rand() % (2^(fault_width));
+          RegFile.RV64[Inst.rd] |= rval;
+        }
+
+        // clear the fault
+        ALUFault = false;
       }
     }
 

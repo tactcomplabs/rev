@@ -16,6 +16,10 @@
 #include <queue>
 #include <tuple>
 #include <list>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <random>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -79,26 +83,30 @@ namespace SST {
       // RevCPU Component Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_PARAMS(
-        {"verbose",         "Sets the verbosity level of output",      "0" },
-        {"clock",           "Clock for the CPU",                       "1GHz" },
-        {"program",         "Sets the binary executable",              "a.out" },
-        {"args",            "Sets the argument list",                  ""},
-        {"numCores",        "Number of RISC-V cores to instantiate",   "1" },
-        {"memSize",         "Main memory size in bytes",               "1073741824"},
-        {"startAddr",       "Starting PC of the target core",          "core:0x80000000"},
-        {"startSymbol",     "Starting symbol name of the target core", "core:symbol"},
-        {"machine",         "RISC-V machine model of the target core", "core:G"},
-        {"memCost",         "Memory latency range in cycles min:max",  "core:0:10"},
-        {"table",           "Instruction cost table",                  "core:/path/to/table"},
-        {"enable_nic",      "Enable the internal RevNIC",              "0"},
-        {"enable_pan",      "Enable PAN network endpoint",             "0"},
-        {"enable_test",     "Enable PAN network endpoint test",        "0"},
-        {"enable_pan_stats","Enable PAN network statistics",      "1"},
-        {"enableRDMAMbox",  "Enable the RDMA mailbox", "1"},
-        {"msgPerCycle",     "Number of messages per cycle to inject",  "1"},
-        {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject", "1"},
-        {"testIters",       "Number of PAN test messages to send",     "255"},
-        {"splash",          "Display the splash logo",                 "0"}
+        {"verbose",         "Sets the verbosity level of output",           "0" },
+        {"clock",           "Clock for the CPU",                            "1GHz" },
+        {"program",         "Sets the binary executable",                   "a.out" },
+        {"args",            "Sets the argument list",                       ""},
+        {"numCores",        "Number of RISC-V cores to instantiate",        "1" },
+        {"memSize",         "Main memory size in bytes",                    "1073741824"},
+        {"startAddr",       "Starting PC of the target core",               "core:0x80000000"},
+        {"startSymbol",     "Starting symbol name of the target core",      "core:symbol"},
+        {"machine",         "RISC-V machine model of the target core",      "core:G"},
+        {"memCost",         "Memory latency range in cycles min:max",       "core:0:10"},
+        {"table",           "Instruction cost table",                       "core:/path/to/table"},
+        {"enable_nic",      "Enable the internal RevNIC",                   "0"},
+        {"enable_pan",      "Enable PAN network endpoint",                  "0"},
+        {"enable_test",     "Enable PAN network endpoint test",             "0"},
+        {"enable_pan_stats","Enable PAN network statistics",                "1"},
+        {"enableRDMAMbox",  "Enable the RDMA mailbox",                      "1"},
+        {"enable_faults",   "Enable the fault injection logic",             "0"},
+        {"faults",          "Enable specific faults",                       "decode,mem,reg,alu"},
+        {"fault_width",     "Specify the bit width of potential faults",    "single,word,N"},
+        {"fault_range",     "Specify the range of faults in cycles",        "65536"},
+        {"msgPerCycle",     "Number of messages per cycle to inject",       "1"},
+        {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject",  "1"},
+        {"testIters",       "Number of PAN test messages to send",          "255"},
+        {"splash",          "Display the splash logo",                      "0"}
       )
 
       // -------------------------------------------------------
@@ -188,6 +196,10 @@ namespace SST {
 
       int address;                        ///< RevCPU: local network address
 
+      unsigned fault_width;               ///< RevCPU: the width (in bits) for target faults
+      int64_t fault_range;                ///< RevCPU: the range of cycles to inject the fault
+      int64_t FaultCntr;                  ///< RevCPU: the fault counter
+
       uint64_t PrevAddr;                  ///< RevCPU: previous address for handling PAN messages
 
       bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
@@ -195,6 +207,13 @@ namespace SST {
       bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations
       bool EnablePANStats;                ///< RevCPU: Flag for enabling PAN statistics
       bool EnableRDMAMBox;                ///< RevCPU: Enable the RDMA Mailbox
+
+      bool EnableFaults;                  ///< RevCPU: Enable fault injection logic
+      bool EnableCrackFaults;             ///< RevCPU: Enable Crack+Decode Faults
+      bool EnableMemFaults;               ///< RevCPU: Enable memory faults (bit flips)
+      bool EnableRegFaults;               ///< RevCPU: Enable register faults
+      bool EnableALUFaults;               ///< RevCPU: Enable ALU faults
+
       bool ReadyForRevoke;                ///< RevCPU: Is the CPU ready for revocation?
       bool RevokeHasArrived;              ///< RevCPU: Determines whether the REVOKE command has arrived
 
@@ -282,6 +301,12 @@ namespace SST {
       /// RevCPU: initializes the PAN NIC tables
       void initNICMem();
 
+      /// RevCPU: decode the fault codes
+      void DecodeFaultCodes(std::vector<std::string> faults);
+
+      /// RevCPU:: decode the fault width
+      void DecodeFaultWidth(std::string width);
+
       /// RevCPU: executes the PAN test harness
       void ExecPANTest();
 
@@ -321,10 +346,23 @@ namespace SST {
       // RevCPU: Register send message statistics
       void registerSendCmd(panNicEvent *event);
 
-      /// RevCPU: Retrieve the expected size of the event command from the mailbox entry
-
       /// RevCPU: handle a zero address Put command where the NIC chooses the destination buffer
       bool PANHandleZeroAddrPut(uint32_t Size, void *Data);
+
+      /// RevCPU: handle fault injection
+      void HandleFaultInjection(SST::Cycle_t currentCycle);
+
+      /// RevCPU: handle crack+decode fault injection
+      void HandleCrackFault(SST::Cycle_t currentCycle);
+
+      /// RevCPU: handle memory fault
+      void HandleMemFault(SST::Cycle_t currentCycle);
+
+      /// RevCPU: handle register fault
+      void HandleRegFault(SST::Cycle_t currentCycle);
+
+      /// RevCPU: handle ALU fault
+      void HandleALUFault(SST::Cycle_t currentCycle);
 
       /// RevCPU: handle the SyncGet command
       void PANHandleSyncGet(panNicEvent *event);
