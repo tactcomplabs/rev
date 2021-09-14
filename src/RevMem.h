@@ -15,6 +15,10 @@
 #include <ctime>
 #include <vector>
 #include <algorithm>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <random>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -42,6 +46,9 @@ namespace SST {
 
       /// RevMem: standard destructor
       ~RevMem();
+
+      /// RevMem: handle memory injection
+      void HandleMemFault(unsigned width);
 
       /// RevMem: get the stack_top address
       uint64_t GetStackTop() { return stacktop; }
