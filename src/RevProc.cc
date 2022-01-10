@@ -17,8 +17,8 @@ RevProc::RevProc( unsigned Id,
                   SST::Output *Output )
   : Halted(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output), threadToDecode(0),
-    threadToExec(0) {
+    id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output),
+    Retired(0x00ull) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -1085,6 +1085,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
      output->verbose(CALL_INFO, 6, 0,
                       "Core %d ; No available thread to exec PC= 0x%" PRIx64 "\n",
                       id, ExecPC);
+<<<<<<< HEAD
+=======
+      RegFile.trigger = false;
+      Retired++;
+    }
+>>>>>>> 5cb604c (adding big_loop test to exercise the performance of the sim; adding check for valid memory latency range)
     rtn = true;
     cyclesIdle++;
   }
@@ -1143,6 +1149,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( done ){
       // we are really done, return
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
+<<<<<<< HEAD
       percentEff = float(cyclesBusy)/totalCycles;
       output->verbose(CALL_INFO,2,0,"Program Stats: Total Cycles: %d Busy Cycles: %d Idle Cycles: %d Eff: %f\n", totalCycles, cyclesBusy, cyclesIdle, percentEff);
       output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %d\n", \
@@ -1151,6 +1158,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                                       mem->memStats.floatsRead, \
                                       mem->memStats.doublesRead, \
                                       floatsExec);
+=======
+      output->verbose(CALL_INFO,0,0,"Retired %" PRIu64 " instructions\n", Retired);
+>>>>>>> 5cb604c (adding big_loop test to exercise the performance of the sim; adding check for valid memory latency range)
       return false;
     }
   }
