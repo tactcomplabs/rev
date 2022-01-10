@@ -17,7 +17,8 @@ RevProc::RevProc( unsigned Id,
                   SST::Output *Output )
   : Halted(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output) {
+    id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output),
+    Retired(0x00ull) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -1015,6 +1016,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       "Core %d ; Retiring PC= 0x%" PRIx64 "\n",
                       id, ExecPC);
       RegFile.trigger = false;
+      Retired++;
     }
     rtn = true;
   }
@@ -1061,6 +1063,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( done ){
       // we are really done, return
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
+      output->verbose(CALL_INFO,0,0,"Retired %" PRIu64 " instructions\n", Retired);
       return false;
     }
   }

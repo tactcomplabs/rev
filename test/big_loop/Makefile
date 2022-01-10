@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: ex2
+# makefile: big_loop.c
 #
 # Copyright (C) 2017-2020 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,7 +12,7 @@
 
 .PHONY: src
 
-EXAMPLE=ex2
+EXAMPLE=big_loop
 CC=riscv64-unknown-elf-gcc
 #ARCH=rv64g
 ARCH=rv64imafd

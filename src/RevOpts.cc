@@ -135,6 +135,8 @@ bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
     unsigned Max  = (unsigned)(std::stoi(vstr[2],nullptr,0));
     memCosts[Core].first  = Min;
     memCosts[Core].second = Max;
+    if( (Min==0) || (Max==0) )
+      return false;
   }
 
   return true;
