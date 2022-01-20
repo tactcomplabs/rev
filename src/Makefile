@@ -18,7 +18,7 @@ CXX=$(shell sst-config --CXX)
 CXXFLAGS=$(shell sst-config --ELEMENT_CXXFLAGS) -fno-stack-protector
 LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS) -fno-stack-protector
 CPPFLAGS=-I./
-OPTIMIZE_FLAGS=-O3
+OPTIMIZE_FLAGS=-O0
 
 REV_SOURCES := $(wildcard *.cc)
 
