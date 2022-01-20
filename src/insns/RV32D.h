@@ -378,8 +378,8 @@ namespace SST{
         RevRegClass rs2Class  = RegFLOAT;
       };
       std::vector<RevInstEntry> RV32DTable = {
-      {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fld %rd, $imm(%rs1)"           ).SetOpcode( 0b0000111).SetFunct3(0b011 ).SetFunct7(0b0000001	).SetrdClass(RegFLOAT	).Setrs1Class(RegGPR  ).Setrs2Class(RegGPR).Setrs3Class(    RegUNKNOWN).SetFormat(RVTypeI).SetImplFunc(&fld ).InstEntry},
-      {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fsd %rs2, $imm(%rs1)"          ).SetOpcode( 0b0100111).SetFunct3(0b011 ).SetFunct7(0b0000001	).SetrdClass(RegIMM   ).Setrs1Class(RegGPR  ).Setrs2Class(RegFLOAT).Setrs3Class(  RegUNKNOWN).SetFormat(RVTypeS).SetImplFunc(&fsd ).InstEntry},
+      {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fld %rd, $imm(%rs1)"           ).SetOpcode( 0b0000111).SetFunct3(0b011 ).SetFunct7(0b0000000	).SetrdClass(RegFLOAT	).Setrs1Class(RegGPR  ).Setrs2Class(RegGPR).Setrs3Class(    RegUNKNOWN).SetFormat(RVTypeI).SetImplFunc(&fld ).InstEntry},
+      {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fsd %rs2, $imm(%rs1)"          ).SetOpcode( 0b0100111).SetFunct3(0b011 ).SetFunct7(0b0000000	).SetrdClass(RegIMM   ).Setrs1Class(RegFLOAT  ).Setrs2Class(RegFLOAT).Setrs3Class(  RegUNKNOWN).SetFormat(RVTypeS).SetImplFunc(&fsd ).InstEntry},
 
       {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fmadd.d %rd, %rs1, %rs2, %rs3" ).SetOpcode( 0b1000011).SetFunct3(0b0   ).SetFunct7(0b00	    ).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegFLOAT).Setrs3Class(  RegFLOAT  ).SetFormat(RVTypeR4).SetImplFunc(&fmaddd ).InstEntry},
       {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fmsub.d %rd, %rs1, %rs2, %rs3" ).SetOpcode( 0b1000111).SetFunct3(0b0   ).SetFunct7(0b00	    ).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegFLOAT).Setrs3Class(  RegFLOAT  ).SetFormat(RVTypeR4).SetImplFunc(&fmsubd ).InstEntry},

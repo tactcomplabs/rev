@@ -49,14 +49,14 @@ namespace SST{
       std::string GetName() { return name; }
 
       /// RevExt: baseline execution function
-      bool Execute(unsigned Inst, RevInst Payload);
+      bool Execute(unsigned Inst, RevInst Payload, uint8_t threadID);
 
       /// RevExt: retrieves the extension's instruction table
       std::vector<RevInstEntry> GetInstTable() { return table; }
 
     protected:
       RevFeature *feature;  ///< RevExt: feature object
-      RevRegFile *regFile;  ///< RevExt: register file object
+      RevRegFile* regFile;  ///< RevExt: register file object
       RevMem *mem;          ///< RevExt: memory object
 
     private:
