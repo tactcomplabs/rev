@@ -9,25 +9,37 @@
 //
 
 #include "RevMem.h"
+#include <math.h>
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
-  : memSize(MemSize), opts(Opts), output(Output), mem(nullptr), stacktop(0x00ull) {
+  : memSize(MemSize), opts(Opts), output(Output), physMem(nullptr), stacktop(0x00ull) {
 
   // allocate the backing memory
-  mem = new char [memSize];
-  if( !mem )
+  physMem = new char [memSize];
+  pageSize = 131072; //Page Size (in Bytes)
+  addrShift = int(log(pageSize) / log(2.0));
+  nextPage = 0;
+
+  if( !physMem )
     output->fatal(CALL_INFO, -1, "Error: could not allocate backing memory");
 
   // zero the memory
   for( unsigned long i=0; i<memSize; i++ ){
-    mem[i] = 0;
+    physMem[i] = 0;
   }
 
   stacktop = _REVMEM_BASE_ + memSize;
+
+  memStats.bytesRead = 0;
+  memStats.bytesWritten = 0;
+  memStats.doublesRead = 0;
+  memStats.doublesWritten = 0;
+  memStats.floatsRead = 0;
+  memStats.floatsWritten = 0;
 }
 
 RevMem::~RevMem(){
-  delete[] mem;
+  delete[] physMem;
 }
 
 void RevMem::HandleMemFault(unsigned width){
@@ -40,7 +52,7 @@ void RevMem::HandleMemFault(unsigned width){
   std::mt19937 gen(rd()); // seed the generator
   std::uniform_int_distribution<> distr(0, memSize-8); // define the range
   unsigned NBytes = distr(gen);
-  uint64_t *Addr = (uint64_t *)(&mem[0] + NBytes);
+  uint64_t *Addr = (uint64_t *)(&physMem[0] + NBytes);
 
   // write the fault (read-modify-write)
   *Addr |= rval;
@@ -111,12 +123,45 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+
+  if(Addr == 66384){
+    std::cout << "Writing to 0x10350" << std::endl;
+  }
   RevokeFuture(Addr); // revoke the future if it is present; ignore the return
-  char *BaseMem = (char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&mem[0]));
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = 0;
+  if(pageMap.count(pageNum) == 0){
+    // First touch of this page, mark it as in use
+    pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
+    physAddr = (nextPage << addrShift) + ((pageSize - 1) & Addr);
+    nextPage++;
+#ifdef _REV_DEBUG_
+    std::cout << "First write touch for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+#endif
+  }else if(pageMap.count(pageNum) == 1){
+    //We've accessed this page before, just get the physical address 
+    physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & Addr);
+#ifdef _REV_DEBUG_
+    std::cout << "Write to page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+#endif
+  }else{
+    output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
+  }
+
+#ifdef _REV_DEBUG_
+  std::cout << "Writing " << Len << " Bytes Starting at Logical 0x" << std::hex << Addr << " Phys:" << physAddr << std::dec <<" Page: " << pageNum << std::endl << std::endl;
+#endif
+  //check to see if we're about to walk off the page....
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  if((physAddr + Len) > endOfPage){
+    output->fatal(CALL_INFO, -1, "Error: Walked off page boundary of %llx by writing to %llx", endOfPage, (physAddr + Len));
+  }
+  char *BaseMem = &physMem[physAddr]; //(char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&physMem[0]));
   char *DataMem = (char *)(Data);
   for( unsigned i=0; i<Len; i++ ){
     BaseMem[i] = DataMem[i];
   }
+  memStats.bytesWritten += Len;
   return true;
 }
 
@@ -124,11 +169,38 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
-  char *BaseMem = (char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&mem[0]));
+  //This address computation should really be its own function
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = 0;
+  if(pageMap.count(pageNum) == 0){
+    // First touch of this page, mark it as in use
+    pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
+    physAddr = (nextPage << addrShift) + ((pageSize - 1) & Addr);
+    nextPage++;
+#ifdef _REV_DEBUG_
+    std::cout << "First Read touch for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+#endif
+  }else if(pageMap.count(pageNum) == 1){
+    //We've accessed this page before, just get the physical address 
+    physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & Addr);
+#ifdef _REV_DEBUG_
+    std::cout << "Read for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+#endif
+  }else{
+    output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
+  }
+
+  //check to see if we're about to walk off the page....
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  if((physAddr + Len) > endOfPage){
+    output->fatal(CALL_INFO, -1, "Error: Walked off page boundary");
+  }
+  char *BaseMem = &physMem[physAddr]; //(char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&physMem[0]));
   char *DataMem = (char *)(Data);
   for( unsigned i=0; i<Len; i++ ){
     DataMem[i] = BaseMem[i];
   }
+  memStats.bytesRead += Len;
   return true;
 }
 
@@ -166,6 +238,7 @@ float RevMem::ReadFloat( uint64_t Addr ){
   if( !ReadMem( Addr, 4, (void *)(&Tmp) ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (FLOAT)");
   std::memcpy(&Value,&Tmp,sizeof(float));
+  memStats.floatsRead++;
   return Value;
 }
 
@@ -175,6 +248,7 @@ double RevMem::ReadDouble( uint64_t Addr ){
   if( !ReadMem( Addr, 8, (void *)(&Tmp) ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (DOUBLE)");
   std::memcpy(&Value,&Tmp,sizeof(double));
+  memStats.doublesRead++;
   return Value;
 }
 
@@ -205,6 +279,7 @@ void RevMem::WriteU64( uint64_t Addr, uint64_t Value ){
 void RevMem::WriteFloat( uint64_t Addr, float Value ){
   uint32_t Tmp = 0x00;
   std::memcpy(&Tmp,&Value,sizeof(float));
+  memStats.floatsWritten++;
   if( !WriteMem(Addr,4,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (FLOAT)");
 }
@@ -212,6 +287,7 @@ void RevMem::WriteFloat( uint64_t Addr, float Value ){
 void RevMem::WriteDouble( uint64_t Addr, double Value ){
   uint64_t Tmp = 0x00;
   std::memcpy(&Tmp,&Value,sizeof(double));
+  memStats.doublesWritten++;
   if( !WriteMem(Addr,8,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (DOUBLE)");
 }
