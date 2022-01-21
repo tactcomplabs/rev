@@ -26,6 +26,13 @@ namespace SST{
         return true;
       }
 
+      static bool fcvtwd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        R->RV64[Inst.rd] = (int64_t)((double)(R->DPF[Inst.rs1]));
+        R->RV64_PC += Inst.instSize;
+        return true;
+      }
+
+
       static bool fcvtlud(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         R->RV64[Inst.rd] = (uint64_t)((double)(R->DPF[Inst.rs1]));
         R->RV64_PC += Inst.instSize;
@@ -77,7 +84,8 @@ namespace SST{
       {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.d.l %rd, %rs1"  ).SetFunct7(0b1101001).SetImplFunc( &fcvtdl ).InstEntry},
       {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.d.lu %rd, %rs1" ).SetFunct7(0b1101001).SetImplFunc( &fcvtdlu ).InstEntry},
       {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fmv.x.d %rd, %rs1"   ).SetFunct7(0b1110001).SetImplFunc( &fmvxd ).InstEntry},
-      {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fmv.d.x %rd, %rs1"   ).SetFunct7(0b1111001).SetImplFunc( &fmvdx ).InstEntry}
+      {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fmv.d.x %rd, %rs1"   ).SetFunct7(0b1111001).SetImplFunc( &fmvdx ).InstEntry},
+      {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.w.d %rd, %rs1" ).SetFunct7(0b1100001).SetImplFunc( &fcvtwd ).InstEntry}
       };
 
 

@@ -784,19 +784,33 @@ RevInst RevProc::DecodeInst(){
   // Stage 7: Look up the value in the table
   std::map<uint32_t,unsigned>::iterator it;
   it = EncToEntry.find(Enc);
-  if( it == EncToEntry.end() ){
-    // failed to decode the instruction
-    output->fatal(CALL_INFO, -1,
+   if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
+    //This is kind of a hack, but we may not have found the instruction becasue 
+    //  Funct3 is overloaded with rounding mode, so if this is a RV32F or RV64F 
+    //  set Funct3 to zero and check again 
+    Enc = 0;
+    Enc |= Opcode;
+    Enc |= (Funct7<<11);
+    Enc |= (Imm12<<18);
+    it = EncToEntry.find(Enc);
+    if( it == EncToEntry.end() ){
+      // failed to decode the instruction
+      output->fatal(CALL_INFO, -1,
                   "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
                   PC,
                   Enc );
+    }
+
   }
 
   unsigned Entry = it->second;
 
   if( Entry > (InstTable.size()-1) ){
     output->fatal(CALL_INFO, -1,
-                  "Error: no entry in table for instruction at PC=0x%" PRIx64 ".\n", PC );
+                  "Error: no entry in table for instruction at PC=0x%" PRIx64 " \
+                  Opcode = %x Funct3 = %x Funct7 = %x Imm12 = %x Enc = %x \n", \
+                  PC, Opcode, Funct3, Funct7, Imm12, Enc );
+
   }
 
   RegFile[threadToDecode].Entry = Entry;
@@ -1132,6 +1146,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
       percentEff = float(cyclesBusy)/totalCycles;
       output->verbose(CALL_INFO,2,0,"Program Stats: Total Cycles: %d Busy Cycles: %d Idle Cycles: %d Eff: %f\n", totalCycles, cyclesBusy, cyclesIdle, percentEff);
+      output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d \n", \
+                                      mem->memStats.bytesRead, \
+                                      mem->memStats.bytesWritten, \
+                                      mem->memStats.floatsRead, \
+                                      mem->memStats.doublesRead);
       return false;
     }
   }
