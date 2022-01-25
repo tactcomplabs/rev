@@ -114,6 +114,7 @@ namespace SST{
       RevMem *mem;              ///< RevProc: memory object
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
+      uint64_t Retired;         ///< RevProc: number of retired instructions
       RevFeature *feature;      ///< RevProc: feature handler
       PanExec *PExec;           ///< RevProc: PAN exeuction context
 

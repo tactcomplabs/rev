@@ -18,7 +18,7 @@ RevProc::RevProc( unsigned Id,
   : Halted(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output), threadToDecode(0),
-    threadToExec(0) {
+    threadToExec(0), Retired(0x00ull) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -1096,6 +1096,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
             output->verbose(CALL_INFO, 6, 0,
                       "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
                       id, tID, ExecPC);
+            Retired++;
             RegFile[tID].trigger = false;
         }
       }
@@ -1145,12 +1146,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
       percentEff = float(cyclesBusy)/totalCycles;
       output->verbose(CALL_INFO,2,0,"Program Stats: Total Cycles: %d Busy Cycles: %d Idle Cycles: %d Eff: %f\n", totalCycles, cyclesBusy, cyclesIdle, percentEff);
-      output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %d\n", \
+      output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %d Inst Retired: %" PRIu64 "\n", \
                                       mem->memStats.bytesRead, \
                                       mem->memStats.bytesWritten, \
                                       mem->memStats.floatsRead, \
                                       mem->memStats.doublesRead, \
-                                      floatsExec);
+                                      floatsExec,
+                                      Retired);
       return false;
     }
   }
