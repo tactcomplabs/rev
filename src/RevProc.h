@@ -204,6 +204,7 @@ namespace SST{
       uint64_t totalCycles;
       uint64_t cyclesBusy;
       uint64_t cyclesIdle;
+      uint64_t floatsExec;
       float    percentEff;
 
 

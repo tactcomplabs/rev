@@ -51,6 +51,7 @@ RevProc::RevProc( unsigned Id,
   cyclesBusy = 0;
   cyclesIdle = 0;
   percentEff = 0.0;
+  floatsExec = 0;
 }
 
 RevProc::~RevProc(){
@@ -355,7 +356,7 @@ bool RevProc::Reset(){
 
 bool RevProc::IsFloat(unsigned Entry){
   if( (InstTable[Entry].rdClass == RegFLOAT) ||
-      (InstTable[Entry].rs1Class = RegFLOAT) ||
+      (InstTable[Entry].rs1Class == RegFLOAT) ||
       (InstTable[Entry].rs2Class == RegFLOAT) ||
       (InstTable[Entry].rs3Class == RegFLOAT) ){
     return true;
@@ -762,16 +763,19 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 4: Determine if we have a funct7 field (R-Type)
   uint32_t Funct7 = 0x00ul;
-  if( inst65 == 0b01 ){
+  if( inst65 == 0b01 ) {
     if( (inst42 == 0b011) || (inst42 == 0b100) ){
       // R-Type encodings
       Funct7 = ((Inst >> 25) & 0b1111111);
     }
+  }else if((inst65== 0b10) && (inst42 == 0b100)){
+      // R-Type encodings
+      Funct7 = ((Inst >> 25) & 0b1111111);
   }
 
   // Stage 5: Determine if we have an imm12 field
   uint32_t Imm12 = 0x00ul;
-  if( (inst42 == 0b100) && (inst65 == 0b11) ){
+  if( (inst42 == 0b100) && (inst65 == 0b11)  && (Funct3 == 0)){
     Imm12 = ((Inst >> 19) & 0b111111111111);
   }
 
@@ -1027,6 +1031,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
+        if( (Ext->GetName() == "RV32F") ||
+            (Ext->GetName() == "RV32D") ||
+            (Ext->GetName() == "RV64F") ||
+            (Ext->GetName() == "RV64D") ){
+              floatsExec++;
+            }
 
       // inject the ALU fault
       if( ALUFault ){
@@ -1075,21 +1085,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
      output->verbose(CALL_INFO, 6, 0,
                       "Core %d ; No available thread to exec PC= 0x%" PRIx64 "\n",
                       id, ExecPC);
-
-    /*RegFile[threadToExec].cost = RegFile[threadToExec].cost - 1;
-
-    if( RegFile[threadToExec].cost == 0 ){
-      output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
-                      id, threadToExec, ExecPC);
-      RegFile[threadToExec].trigger = false;
-    }*/
     rtn = true;
     cyclesIdle++;
   }
 
   for(int tID = 0; tID < _REV_THREAD_COUNT_; tID ++){
-  //  if(tID != threadToExec){
       if(RegFile[tID].cost > 0){
         RegFile[tID].cost = RegFile[tID].cost - 1;
         if( RegFile[tID].cost == 0 ){
@@ -1099,7 +1099,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
             RegFile[tID].trigger = false;
         }
       }
- //   }
   }
 
   // Check for completion states and new tasks
@@ -1146,11 +1145,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
       percentEff = float(cyclesBusy)/totalCycles;
       output->verbose(CALL_INFO,2,0,"Program Stats: Total Cycles: %d Busy Cycles: %d Idle Cycles: %d Eff: %f\n", totalCycles, cyclesBusy, cyclesIdle, percentEff);
-      output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d \n", \
+      output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %d\n", \
                                       mem->memStats.bytesRead, \
                                       mem->memStats.bytesWritten, \
                                       mem->memStats.floatsRead, \
-                                      mem->memStats.doublesRead);
+                                      mem->memStats.doublesRead, \
+                                      floatsExec);
       return false;
     }
   }

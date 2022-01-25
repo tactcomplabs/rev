@@ -28,7 +28,7 @@
 #endif
 
 #ifndef _REV_THREAD_COUNT
-#define _REV_THREAD_COUNT_ 5
+#define _REV_THREAD_COUNT_ 1
 #endif
 
 // Masks
@@ -66,12 +66,11 @@
 #define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
 
 // RV{32,64} Register Operation Macros
+                    //(r) = ((r) & (~r));
 #define SEXT(r,x,b) do {\
-                    (r) = ((r) & (~r));\
                     (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register
 #define ZEXT(r,x,b) do {\
-                    (r) = ((r) & (~r));\
                     (r) = (x) | (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register
 
