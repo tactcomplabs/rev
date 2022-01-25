@@ -16,7 +16,8 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
 
   // allocate the backing memory
   physMem = new char [memSize];
-  pageSize = 131072; //Page Size (in Bytes)
+  pageSize = 262144; //Page Size (in Bytes)
+  //pageSize = 65536; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
   nextPage = 0;
 
@@ -119,87 +120,102 @@ unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
   return R;
 }
 
+uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t Addr){
+  uint64_t physAddr = 0;
+  if(pageMap.count(pageNum) == 0){
+    // First touch of this page, mark it as in use
+    pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
+    physAddr = (nextPage << addrShift) + ((pageSize - 1) & Addr);
+    nextPage++;
+#ifdef _REV_DEBUG_
+    std::cout << "First Touch for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+#endif
+  }else if(pageMap.count(pageNum) == 1){
+    //We've accessed this page before, just get the physical address 
+    physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & Addr);
+#ifdef _REV_DEBUG_
+    std::cout << "Access for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+#endif
+  }else{
+    output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
+  }
+  return physAddr;
+}
+
 bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
 
-  if(Addr == 66384){
-    std::cout << "Writing to 0x10350" << std::endl;
+  if(Addr == 0xDEADBEEF){
+    std::cout << "Found special write. Val = " << std::hex << *(int*)(Data) << std::dec << std::endl;
   }
   RevokeFuture(Addr); // revoke the future if it is present; ignore the return
   uint64_t pageNum = Addr >> addrShift;
-  uint64_t physAddr = 0;
-  if(pageMap.count(pageNum) == 0){
-    // First touch of this page, mark it as in use
-    pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
-    physAddr = (nextPage << addrShift) + ((pageSize - 1) & Addr);
-    nextPage++;
-#ifdef _REV_DEBUG_
-    std::cout << "First write touch for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
-#endif
-  }else if(pageMap.count(pageNum) == 1){
-    //We've accessed this page before, just get the physical address 
-    physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & Addr);
-#ifdef _REV_DEBUG_
-    std::cout << "Write to page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
-#endif
-  }else{
-    output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
-  }
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
 
-#ifdef _REV_DEBUG_
-  std::cout << "Writing " << Len << " Bytes Starting at Logical 0x" << std::hex << Addr << " Phys:" << physAddr << std::dec <<" Page: " << pageNum << std::endl << std::endl;
-#endif
   //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  if((physAddr + Len) > endOfPage){
-    output->fatal(CALL_INFO, -1, "Error: Walked off page boundary of %llx by writing to %llx", endOfPage, (physAddr + Len));
-  }
-  char *BaseMem = &physMem[physAddr]; //(char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&physMem[0]));
+  char *BaseMem = &physMem[physAddr]; 
   char *DataMem = (char *)(Data);
-  for( unsigned i=0; i<Len; i++ ){
-    BaseMem[i] = DataMem[i];
+  if((physAddr + Len) > endOfPage){
+    adjPageNum = (physAddr + Len) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, (physAddr + Len));
+    uint32_t span = (physAddr + Len) - endOfPage;
+    std::cout << "Warning: Writing off end of page... " << std::endl;
+    for( unsigned i=0; i< (Len-span); i++ ){
+      BaseMem[i] = DataMem[i];
+    }
+    BaseMem = &physMem[adjPhysAddr]; 
+    for( unsigned i=0; i< span; i++ ){
+      BaseMem[i] = DataMem[i];
+    }
+  }else{
+    for( unsigned i=0; i<Len; i++ ){
+      BaseMem[i] = DataMem[i];
+    }
   }
   memStats.bytesWritten += Len;
   return true;
 }
 
+
+
 bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
-  //This address computation should really be its own function
   uint64_t pageNum = Addr >> addrShift;
-  uint64_t physAddr = 0;
-  if(pageMap.count(pageNum) == 0){
-    // First touch of this page, mark it as in use
-    pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
-    physAddr = (nextPage << addrShift) + ((pageSize - 1) & Addr);
-    nextPage++;
-#ifdef _REV_DEBUG_
-    std::cout << "First Read touch for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
-#endif
-  }else if(pageMap.count(pageNum) == 1){
-    //We've accessed this page before, just get the physical address 
-    physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & Addr);
-#ifdef _REV_DEBUG_
-    std::cout << "Read for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
-#endif
-  }else{
-    output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
-  }
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
 
   //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  if((physAddr + Len) > endOfPage){
-    output->fatal(CALL_INFO, -1, "Error: Walked off page boundary");
-  }
-  char *BaseMem = &physMem[physAddr]; //(char *)((Addr - (uint64_t)(_REVMEM_BASE_)) + (uint64_t)(&physMem[0]));
+  char *BaseMem = &physMem[physAddr]; 
   char *DataMem = (char *)(Data);
-  for( unsigned i=0; i<Len; i++ ){
-    DataMem[i] = BaseMem[i];
+  if((physAddr + Len) > endOfPage){
+    adjPageNum = (physAddr + Len) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, (physAddr + Len));
+    uint32_t span = (physAddr + Len) - endOfPage;
+    for( unsigned i=0; i< (Len-span); i++ ){
+      DataMem[i] = BaseMem[i];
+    }
+    BaseMem = &physMem[adjPhysAddr]; 
+    for( unsigned i=0; i< span; i++ ){
+      DataMem[i] = BaseMem[i];
+    }
+#ifdef _REV_DEBUG_
+    std::cout << "Warning: Reading off end of page... " << std::endl;
+#endif
+  }else{
+    for( unsigned i=0; i<Len; i++ ){
+      DataMem[i] = BaseMem[i];
+    }
   }
+
   memStats.bytesRead += Len;
   return true;
 }

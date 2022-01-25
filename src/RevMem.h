@@ -134,6 +134,8 @@ namespace SST {
       RevOpts *opts;            ///< RevMem: options object
       SST::Output *output;      ///< RevMem: output handler
 
+      uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t Addr);
+
       char *physMem;                          ///< RevMem: memory container
       
       //c++11 should guarentee that these are all zero-initializaed 
