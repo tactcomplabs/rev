@@ -22,7 +22,7 @@ class ExitSystemCallParameters : public virtual SystemCallParameterInterface {
 
     public:
 
-    ExitSystemCallParameters() : SystemCallParameterInterface() {}
+    ExitSystemCallParameters(const int stat) : SystemCallParameterInterface(), status(stat) {}
 
     size_t count();
 
