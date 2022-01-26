@@ -15,6 +15,8 @@
 #include <cstdint>
 #include <type_traits>
 
+struct void_t {};
+
 namespace SST { namespace RevCPU {
 
 class SystemCallParameterInterface {

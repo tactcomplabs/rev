@@ -49,7 +49,7 @@ class ExitSystemCall : public virtual SystemCallInterface<IsRiscv32> {
     // returns true
     //
     template<>
-    bool invoke(SystemCallParameterInterface & parameters, int & value);
+    bool invoke(SystemCallParameterInterface & parameters, void_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST
