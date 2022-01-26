@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLEXIT_H__
-#define __SYSTEMCALLEXIT_H__
+#ifndef __SYSTEMCALLEXITGROUP_H__
+#define __SYSTEMCALLEXITGROUP_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>

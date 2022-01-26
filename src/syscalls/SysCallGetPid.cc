@@ -7,11 +7,10 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "GetPidSystemCall.h"
+#include "SysCallGetPid.h"
 #include <algorithm>
 
 #include <unistd.h>
-#include <sys/syscall.h>
 
 namespace SST { namespace RevCPU {
 
@@ -20,7 +19,7 @@ size_t GetPidSystemCallParameters::count() {
 }
 
 template<>
-bool GetPidSystemCallParameters::get<int>(const size_t parameter_index, void_t& param) {
+bool GetPidSystemCallParameters::get<void_t>(const size_t parameter_index, void_t& param) {
     if(parameter_index == -1) {
         return true;
     }
@@ -35,14 +34,10 @@ typename GetPidSystemCall<IsRiscv32>::RiscvModeIntegerType GetPidSystemCall<IsRi
 
 template<>
 template<>
-bool GetPidSystemCall<true>::invoke<pid_t>(SystemCallParameterInterface & parameters, pid_t & value) {
+bool GetPidSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
 
-    if(parameters.count() == 1) {
-        value = -1;
-        const bool has_value = parameters.get<pid_t>(0, value);
-        if(has_value && value != -1) {
-            value = getpid();
-        }
+    if(parameters.count() == 0) {
+        value = getpid();
     }
 
     return false;
@@ -50,14 +45,10 @@ bool GetPidSystemCall<true>::invoke<pid_t>(SystemCallParameterInterface & parame
 
 template<>
 template<>
-bool GetPidSystemCall<false>::invoke<pid_t>(SystemCallParameterInterface & parameters, pid_t & value) {
+bool GetPidSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
 
-    if(parameters.count() == 1) {
-        value = -1;
-        const bool has_value = parameters.get<pid_t>(0, value);
-        if(has_value && value != -1) {
-            value = getpid();
-        }
+    if(parameters.count() == 0) {
+        value = getpid();
     }
 
     return false;
