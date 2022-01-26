@@ -175,6 +175,15 @@ namespace SST {
         {"SuccessRecv",         "Operation count for incoming Success Commands",        "count",  1},
         {"FailedRecv",          "Operation count for incoming Failed Commands",         "count",  1},
         {"BOTWRecv",            "Operation count for incoming BOTW Commands",           "count",  1},
+        {"CyclesWithIssue",     "Cycles with succesful instruction issue",              "count",  1},
+        {"TotalCycles",         "Total clock cycles",                                   "count",  1},
+        {"FloatsRead",          "Total SP floating point values read",                  "count",  1},
+        {"FloatsWritten",       "Total SP floating point values written",               "count",  1},
+        {"DoublesRead",         "Total DP floating point values read",                  "count",  1},
+        {"DoublesWritten",      "Total DP floating point values written",               "count",  1},
+        {"BytesRead",           "Total bytes read",                                     "count",  1},
+        {"BytesWritten",        "Total bytes written",                                  "count",  1},
+        {"FloatsExec",          "Total SP or DP float instructions executed",           "count",  1},
       )
 
     private:
@@ -293,6 +302,16 @@ namespace SST {
       Statistic<uint64_t>* SuccessRecv;
       Statistic<uint64_t>* FailedRecv;
       Statistic<uint64_t>* BOTWRecv;
+      // ----- Per Core Statistics 
+      std::vector<Statistic<uint64_t>*> TotalCycles;
+      std::vector<Statistic<uint64_t>*> CyclesWithIssue;
+      std::vector<Statistic<uint64_t>*> FloatsRead;
+      std::vector<Statistic<uint64_t>*> FloatsWritten;
+      std::vector<Statistic<uint64_t>*> DoublesRead;
+      std::vector<Statistic<uint64_t>*> DoublesWritten;
+      std::vector<Statistic<uint64_t>*> BytesRead;
+      std::vector<Statistic<uint64_t>*> BytesWritten;
+      std::vector<Statistic<uint64_t>*> FloatsExec;
 
       //-------------------------------------------------------
       // -- FUNCTIONS
@@ -450,6 +469,8 @@ namespace SST {
       /// RevCPU: construct a generic success command response in the target rtn packet.
       ///         Does not push onto the send mailbox
       void PANBuildBasicSuccess(panNicEvent *event, panNicEvent *rtn);
+
+      void UpdateCoreStatistics(uint16_t coreNum);
 
     }; // class RevCPU
   } // namespace RevCPU

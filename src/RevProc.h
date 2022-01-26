@@ -94,11 +94,17 @@ namespace SST{
       /// RevProc: Handle ALU faults
       void HandleALUFault(unsigned width);
 
-      SST_ELI_DOCUMENT_STATISTICS(
-        {"CyclesWithIssue",         "Cycles with succesful instruction issue",        "count",  1},
-        {"CyclesWithIssue",         "Cycles Idle",                                    "count",  1},
-        {"Cycles",                  "Total clock cycles",                             "count",  1}
-      )
+      class RevProcStats {
+        public:
+          uint64_t totalCycles;
+          uint64_t cyclesBusy;
+          uint64_t cyclesIdle;
+          uint64_t floatsExec;
+          float    percentEff;
+          RevMem::RevMemStats memStats;
+      };
+
+      RevProcStats GetStats();
 
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
@@ -117,6 +123,7 @@ namespace SST{
       uint64_t Retired;         ///< RevProc: number of retired instructions
       RevFeature *feature;      ///< RevProc: feature handler
       PanExec *PExec;           ///< RevProc: PAN exeuction context
+      RevProcStats Stats;       ///< RevProc: collection of performance stats
 
       RevRegFile RegFile[_REV_THREAD_COUNT_];      ///< RevProc: register file
       RevInst Inst;             ///< RevProc: instruction payload
@@ -198,15 +205,7 @@ namespace SST{
       /// RevProc: Determine next thread to execute
       uint8_t GetThreadID();
 
-      Statistic<uint64_t>* Cycles;
-      Statistic<uint64_t>* CyclesWithIssue;
-      Statistic<uint64_t>* CyclesWithoutIssue;
 
-      uint64_t totalCycles;
-      uint64_t cyclesBusy;
-      uint64_t cyclesIdle;
-      uint64_t floatsExec;
-      float    percentEff;
 
 
     }; // class RevProc

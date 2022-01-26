@@ -23,6 +23,8 @@ void (*s_cx_1d_t)
 // by repeated application of its strided one-dimensional routine
 inline static void
 mkcx (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a, s_cx_1d_t s_1d) {
+  volatile int* rev = 0xDEADBEEF;
+  *rev = 0x0BBB0004;
 	if (a->sub2==NULL)
 		(*s_1d)(x,y,sy,a);
 	else {
@@ -30,8 +32,9 @@ mkcx (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a, s_cx_1d_t s_1
 		int n; // counter
 		minfft_cmpl *t=a->t; // temporary buffer
 		// strided transform of contiguous hyperplanes
-		for (n=0; n<N2; ++n)
+		for (n=0; n<N2; ++n){
 			mkcx(x+n*N1,t+n,N2,a->sub1,s_1d);
+    }
 		// strided transform of contiguous rows
 		for (n=0; n<N1; ++n)
 			(*s_1d)(t+n*N2,y+sy*n,sy*N1,a->sub2);
@@ -69,6 +72,7 @@ inline static void
 rs_dft_1d (int N, minfft_cmpl *x, minfft_cmpl *t, minfft_cmpl *y, int sy, const minfft_cmpl *e) {
 	int n; // counter
 	// split-radix DIF
+  volatile int* rev = 0xDEADBEEF;
 	if (N==1) {
 		// terminal case
 		minfft_real *xr=(minfft_real*)x,*yr=(minfft_real*)y;
@@ -223,7 +227,9 @@ rs_dft_1d (int N, minfft_cmpl *x, minfft_cmpl *t, minfft_cmpl *y, int sy, const 
 	minfft_real *xr=(minfft_real*)x,*tr=(minfft_real*)t,*er=(minfft_real*)e;
 	minfft_real *xi=xr+1,*ti=tr+1,*ei=er+1;
 	// prepare sub-transform inputs
-	for (n=0; n<N/4; ++n) {
+  int loopCount = N / 4;
+	for (n=0; n<loopCount; n++) {
+    *rev = n + N;
 		register minfft_real t0r,t1r,t2r,t3r;
 		register minfft_real t0i,t1i,t2i,t3i;
 		// t0=x[n]+x[n+N/2];
@@ -270,12 +276,16 @@ s_dft_1d (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a) {
 // strided DFT of arbitrary dimension
 inline static void
 s_dft (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a) {
+  volatile int* rev = 0xDEADBEEF;
+  *rev = 0x0CCC0003;
 	mkcx(x,y,sy,a,s_dft_1d);
 }
 
 // user interface
 void
 minfft_dft (minfft_cmpl *x, minfft_cmpl *y, const minfft_aux *a) {
+  volatile int* rev = 0xDEADBEEF;
+  *rev = 0x0CCC0002;
 	s_dft(x,y,1,a);
 }
 

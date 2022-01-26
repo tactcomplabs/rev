@@ -93,7 +93,7 @@ int main()
 	minfft_cmpl t[P],e2[P]; // input and output buffers
 	//minfft_aux *a; // aux data
 	// prepare aux data
-	//a=minfft_mkaux_dft_1d_local(N);
+	//a=minfft_mkaux_dft_1d(P);
   minfft_aux a;
 	minfft_real *e;
   a.N = P;
@@ -102,24 +102,24 @@ int main()
   int ddd2 = rand();
   int ddd3 = rand();
   int N = P;
-  if (N>=16) {
-		a.t=t;
-		a.e=e2;
-		e=(minfft_real*)a.e;
-		/*while (N>=16) {
-			for (int n=0; n<N/4; ++n) {
-				*e++=ncos_l(-n,N);
-				*e++=nsin_l(-n,N);
-				*e++=ncos_l(-3*n,N);
-				*e++=nsin_l(-3*n,N) + ddd;
-			}
-			N/=2;
-		}
-	}*/
-  //if(N >= 16){
+ // if (N>=16) {
+//	a.t=t;
+//		a.e=e2;
+//		e=(minfft_real*)a.e;
+//		while (N>=16) {
+//			//for (int n=0; n<N/4; ++n) {
+//				*e++=ncos_l(-n,N);
+//				*e++=nsin_l(-n,N);
+//				*e++=ncos_l(-3*n,N);
+//				*e++=nsin_l(-3*n,N) + ddd0;
+//			}
+//			N/2;
+//		}
+//	}
+  if(N >= 16){
     for(int n=0; n< N; ++n){
       *e++=ddd1*pi_l+(n*ddd2);
-    }
+    } 
   }else{ 
     a.t = NULL;
     a.e = NULL;
@@ -127,7 +127,9 @@ int main()
   a.sub1 = a.sub2 = NULL;
 
 	// do transforms
-	minfft_dft(x,y,&a);
+  volatile int* rev = 0xDEADBEEF;
+  *rev = 0x0AAA0001;
+	  minfft_dft(x,y,&a);
 	//minfft_invdft(y,x,&a);
 	// free aux data
 	//minfft_free_aux(a);
