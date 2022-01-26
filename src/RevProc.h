@@ -14,6 +14,8 @@
 // -- SST Headers
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
+#include <sst/core/statapi/stataccumulator.h>
+
 
 // -- Standard Headers
 #include <iostream>
@@ -92,6 +94,18 @@ namespace SST{
       /// RevProc: Handle ALU faults
       void HandleALUFault(unsigned width);
 
+      class RevProcStats {
+        public:
+          uint64_t totalCycles;
+          uint64_t cyclesBusy;
+          uint64_t cyclesIdle;
+          uint64_t floatsExec;
+          float    percentEff;
+          RevMem::RevMemStats memStats;
+      };
+
+      RevProcStats GetStats();
+
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
       bool SingleStep;          ///< RevProc: determines if we are in a single step
@@ -100,6 +114,8 @@ namespace SST{
       unsigned fault_width;     ///< RevProc: the width of the target fault
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
+      uint8_t threadToDecode;   ///< RevProc: Current executing ThreadID
+      uint8_t threadToExec;     ///< RevProc: Thread to dispatch instruction
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
       RevLoader *loader;        ///< RevProc: loader object
@@ -107,8 +123,9 @@ namespace SST{
       uint64_t Retired;         ///< RevProc: number of retired instructions
       RevFeature *feature;      ///< RevProc: feature handler
       PanExec *PExec;           ///< RevProc: PAN exeuction context
+      RevProcStats Stats;       ///< RevProc: collection of performance stats
 
-      RevRegFile RegFile;       ///< RevProc: register file
+      RevRegFile RegFile[_REV_THREAD_COUNT_];      ///< RevProc: register file
       RevInst Inst;             ///< RevProc: instruction payload
 
       std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
@@ -184,6 +201,12 @@ namespace SST{
 
       /// RevProc: reset the inst structure
       void ResetInst(RevInst *Inst);
+
+      /// RevProc: Determine next thread to execute
+      uint8_t GetThreadID();
+
+
+
 
     }; // class RevProc
   } // namespace RevCPU

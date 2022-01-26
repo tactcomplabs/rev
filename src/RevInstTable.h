@@ -27,6 +27,10 @@
 #define _REV_MAX_REGCLASS_ 3
 #endif
 
+#ifndef _REV_THREAD_COUNT
+#define _REV_THREAD_COUNT_ 1
+#endif
+
 // Masks
 #define MASK8   0b11111111                          // 8bit mask
 #define MASK16  0b1111111111111111                  // 16bit mask
@@ -62,12 +66,11 @@
 #define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
 
 // RV{32,64} Register Operation Macros
+                    //(r) = ((r) & (~r));
 #define SEXT(r,x,b) do {\
-                    (r) = ((r) & (~r));\
                     (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register
 #define ZEXT(r,x,b) do {\
-                    (r) = ((r) & (~r));\
                     (r) = (x) | (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register
 
@@ -204,8 +207,8 @@ namespace SST{
     typedef struct{
       uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
       uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
-      float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
-      double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
+      float SPF[_REV_NUM_REGS_];    ///< RevRegFile: RVxxF register file
+      double DPF[_REV_NUM_REGS_];    ///< RevRegFile: RVxxD register file
 
       uint32_t RV32_PC;                 ///< RevRegFile: RV32 PC
       uint64_t RV64_PC;                 ///< RevRegFile: RV64 PC
@@ -215,6 +218,8 @@ namespace SST{
       bool trigger;                     ///< RevRegFile: Has the instruction been triggered?
       unsigned Entry;                   ///< RevRegFile: Instruction entry
     }RevRegFile;                        ///< RevProc: register file construct
+
+    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTS;
 
     typedef enum{
       RVTypeUNKNOWN = 0,  ///< RevInstf: Unknown format

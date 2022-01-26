@@ -15,8 +15,9 @@ RevExt::RevExt( std::string Name,
                 RevRegFile *RegFile,
                 RevMem *RevMem,
                 SST::Output *Output )
-  : feature(Feature), regFile(RegFile), mem(RevMem), name(Name),
+  : feature(Feature), mem(RevMem), name(Name),
     output(Output) {
+      regFile = RegFile;
 }
 
 RevExt::~RevExt(){
@@ -26,7 +27,7 @@ void RevExt::SetTable(std::vector<RevInstEntry> InstVect){
   table = InstVect;
 }
 
-bool RevExt::Execute(unsigned Inst, RevInst payload){
+bool RevExt::Execute(unsigned Inst, RevInst payload, uint8_t threadID){
 
   // ensure that the target instruction is within scope
   if( Inst > (table.size()-1) ){
@@ -38,7 +39,7 @@ bool RevExt::Execute(unsigned Inst, RevInst payload){
 
 #if 0
   std::cout << "EXECUTING INSTRUCTION: " << table[Inst].mnemonic
-            << " @ 0x" << std::hex << regFile->RV32_PC << std::dec
+            << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec
             << "; instSize = " << payload.instSize << std::endl;
 #endif
 
@@ -46,12 +47,12 @@ bool RevExt::Execute(unsigned Inst, RevInst payload){
   bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst) = table[Inst].func;
 
   // execution the instruction
-  if( !(*func)(feature,regFile,mem,payload) )
+  if( !(*func)(feature,&(regFile[threadID]),mem,payload) )
     return false;
 
 #if 0
   std::cout << "COMPLETING INSTRUCTION: " << table[Inst].mnemonic
-            << " @ 0x" << std::hex << regFile->RV32_PC << std::dec << std::endl;
+            << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec << std::endl;
 #endif
 
   return true;
