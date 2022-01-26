@@ -15,6 +15,11 @@
 #include <cstdint>
 #include <type_traits>
 
+/*
+ * void_t
+ *
+ * tag-type representing return type for system calls that return void
+ */
 struct void_t {};
 
 namespace SST { namespace RevCPU {
