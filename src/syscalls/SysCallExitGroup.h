@@ -1,5 +1,5 @@
 //
-// SysCallExit.h
+// SysCallExitGroup.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
