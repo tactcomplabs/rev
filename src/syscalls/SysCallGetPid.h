@@ -1,5 +1,5 @@
 //
-// GetPidSystemCall.h
+// SysCallGetPid.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -21,7 +21,7 @@ class GetPidSystemCallParameters : public virtual SystemCallParameterInterface {
     
     public:
 
-    GetPidSystemCallParameters(const int stat) : SystemCallParameterInterface(), status(stat) {}
+    GetPidSystemCallParameters() : SystemCallParameterInterface() {}
 
     size_t count() override;
 

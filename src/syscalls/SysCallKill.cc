@@ -1,5 +1,5 @@
 //
-// KillSystemCall.cc
+// SysCallKill.cc
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -7,7 +7,7 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "GetPidSystemCall.h"
+#include "SysCallKill.h"
 #include <algorithm>
 
 #include <unistd.h>

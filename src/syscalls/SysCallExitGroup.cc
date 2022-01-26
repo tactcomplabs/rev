@@ -42,7 +42,7 @@ bool ExitGroupSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & pa
         int status = -1;
         const bool has_value = parameters.get<int>(0, status);
         if(has_value && status != -1) {
-            syscall(SYS_exit_group, status);
+            //syscall(SYS_exit_group, status);
         }
     }
 
@@ -57,7 +57,7 @@ bool ExitGroupSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & p
         int status = -1;
         const bool has_value = parameters.get<int>(0, status);
         if(has_value && status != -1) {
-            syscall(SYS_exit_group, status);
+            //syscall(SYS_exit_group, status);
         }
     }
 

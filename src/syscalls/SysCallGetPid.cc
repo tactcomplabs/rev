@@ -37,7 +37,7 @@ template<>
 bool GetPidSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
 
     if(parameters.count() == 0) {
-        value = getpid();
+        getpid();
     }
 
     return false;
@@ -48,7 +48,7 @@ template<>
 bool GetPidSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
 
     if(parameters.count() == 0) {
-        value = getpid();
+        getpid();
     }
 
     return false;
