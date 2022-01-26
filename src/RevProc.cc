@@ -44,14 +44,11 @@ RevProc::RevProc( unsigned Id,
   if( !Reset() )
     output->fatal(CALL_INFO, -1, "Error: failed to reset the core resources for core=%d\n", id );
 
-  /*CyclesWithIssue 	  = registerStatistic<uint64_t>( "cycles_with_issue" );
-	CyclesWithoutIssue 	  =registerStatistic<uint64_t>( "cycles_no_issue" );
-  Cycles                =registerStatistic<uint64_t>( "cycles" );*/
-  totalCycles = 0;
-  cyclesBusy = 0;
-  cyclesIdle = 0;
-  percentEff = 0.0;
-  floatsExec = 0;
+  Stats.totalCycles = 0;
+  Stats.cyclesBusy = 0;
+  Stats.cyclesIdle = 0;
+  Stats.percentEff = 0.0;
+  Stats.floatsExec = 0;
 }
 
 RevProc::~RevProc(){
@@ -59,6 +56,16 @@ RevProc::~RevProc(){
     delete Extensions[i];
   delete feature;
   //delete [] RegFile;
+}
+
+RevProc::RevProcStats RevProc::GetStats(){
+  Stats.memStats.bytesRead      = mem->memStats.bytesRead;
+  Stats.memStats.bytesWritten   = mem->memStats.bytesWritten;
+  Stats.memStats.doublesRead    = mem->memStats.doublesRead;
+  Stats.memStats.doublesWritten = mem->memStats.doublesWritten;
+  Stats.memStats.floatsRead     = mem->memStats.floatsRead;
+  Stats.memStats.floatsWritten  = mem->memStats.floatsWritten;
+  return Stats;
 }
 
 bool RevProc::Halt(){
@@ -971,7 +978,7 @@ uint8_t RevProc::GetThreadID(){
 
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
-  totalCycles++;
+  Stats.totalCycles++;
 
   // -- MAIN PROGRAM LOOP --
   //
@@ -997,7 +1004,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
     rtn = true;
     ExecPC = GetPC();
-    cyclesBusy++;
+    Stats.cyclesBusy++;
   }
   if( (!RegFile[threadToDecode].trigger) && (!Halted) ){
     // trigger the next instruction
@@ -1035,7 +1042,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
             (Ext->GetName() == "RV32D") ||
             (Ext->GetName() == "RV64F") ||
             (Ext->GetName() == "RV64D") ){
-              floatsExec++;
+              Stats.floatsExec++;
             }
 
       // inject the ALU fault
@@ -1086,7 +1093,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       "Core %d ; No available thread to exec PC= 0x%" PRIx64 "\n",
                       id, ExecPC);
     rtn = true;
-    cyclesIdle++;
+    Stats.cyclesIdle++;
   }
 
   for(int tID = 0; tID < _REV_THREAD_COUNT_; tID ++){
@@ -1144,14 +1151,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( done ){
       // we are really done, return
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
-      percentEff = float(cyclesBusy)/totalCycles;
-      output->verbose(CALL_INFO,2,0,"Program Stats: Total Cycles: %d Busy Cycles: %d Idle Cycles: %d Eff: %f\n", totalCycles, cyclesBusy, cyclesIdle, percentEff);
+      Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
+      output->verbose(CALL_INFO,2,0,"Program Stats: Total Cycles: %d Busy Cycles: %d Idle Cycles: %d Eff: %f\n", Stats.totalCycles, Stats.cyclesBusy, Stats.cyclesIdle, Stats.percentEff);
       output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %d Inst Retired: %" PRIu64 "\n", \
                                       mem->memStats.bytesRead, \
                                       mem->memStats.bytesWritten, \
                                       mem->memStats.floatsRead, \
                                       mem->memStats.doublesRead, \
-                                      floatsExec,
+                                      Stats.floatsExec,
                                       Retired);
       return false;
     }

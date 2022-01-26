@@ -156,6 +156,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }else{
     RevokeHasArrived = true;
   }
+  for(int s = 0; s < numCores; s++){
+    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
+    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
+    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
+    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", "core_" + std::to_string(s)));
+    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", "core_" + std::to_string(s)));
+    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", "core_" + std::to_string(s)));
+    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
+    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
+    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
+  }
 
   // See if we should load the test harness as opposed to a binary payload
   if( EnablePANTest && (!EnablePAN) ){
@@ -2246,6 +2257,19 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
   }
 }
 
+void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
+  RevProc::RevProcStats stats = Procs[coreNum]->GetStats();
+  TotalCycles[coreNum]->addData(stats.totalCycles);
+  CyclesWithIssue[coreNum]->addData(stats.cyclesBusy);
+  FloatsRead[coreNum]->addData(stats.memStats.floatsRead);
+  FloatsWritten[coreNum]->addData(stats.memStats.floatsWritten);
+  DoublesRead[coreNum]->addData(stats.memStats.doublesRead);
+  DoublesWritten[coreNum]->addData(stats.memStats.doublesWritten);
+  BytesRead[coreNum]->addData(stats.memStats.bytesRead);
+  BytesWritten[coreNum]->addData(stats.memStats.bytesWritten);
+  FloatsExec[coreNum]->addData(stats.floatsExec);
+}
+
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
@@ -2255,6 +2279,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   for( unsigned i=0; i<Procs.size(); i++ ){
     if( Enabled[i] ){
       if( !Procs[i]->ClockTick(currentCycle) ){
+         UpdateCoreStatistics(i);
         Enabled[i] = false;
       output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
                      i, static_cast<uint64_t>(currentCycle));
