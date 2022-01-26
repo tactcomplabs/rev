@@ -19,7 +19,7 @@ size_t ExitSystemCallParameters::count() {
 template<typename ParameterType>
 std::optional<ParameterType> ExitSystemCallParameters::get(const size_t parameter_index) {
     if(parameter_index == 0) {
-        if(std::conditional< std::is_same<ParameterType, int> >::value) {
+        if( std::is_same<ParameterType, int>::value ) {
             return std::make_optional<int>(status);
         }
     }
@@ -36,7 +36,7 @@ template<bool IsRiscv32>
 template<typename ReturnType>
 std::optional<ReturnType> ExitSystemCall<IsRiscv32>::invoke(const SystemCallParameterInterface& parameters) {
 
-    if(std::conditional< std::is_same<ReturnType, int> >::value) {
+    if( std::is_same<ReturnType, int>::value ) {
         return std::nullopt;
     }
 
