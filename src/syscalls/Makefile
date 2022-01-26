@@ -20,26 +20,22 @@ LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS) -fno-stack-protector
 CPPFLAGS=-I./
 OPTIMIZE_FLAGS=-O3
 
-REV_SOURCES := $(wildcard *.cc)
+SYSCALLS_SOURCES := $(wildcard *.cc)
 
-REV_HEADERS := $(wildcard *.h)
+SYSCALLS_HEADERS := $(wildcard *.h)
 
-REV_OBJS := $(patsubst %.cc,%.o,$(wildcard *.cc)) ./syscalls/syscalls.o
+SYSCALLS_OBJS := $(patsubst %.cc,%.o,$(wildcard *.cc))
 
-all: syscalls.o librevcpu.so
+all: syscalls.o
 
 debug: CXXFLAGS += -DDEBUG -g
-debug: librevcpu.so 
+debug: syscalls.o 
 
-syscalls.o:
-	(cd syscalls; make)
-librevcpu.so: $(REV_OBJS)
+syscalls.o: $(SYSCALLS_OBJS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ *.o
-%.o:%.cc $(REV_HEADERS)
+%.o:%.cc $(SYSCALLS_HEADERS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -c $<
-install: librevcpu.so
-	sst-register revcpu revcpu_LIBDIR=$(CURDIR)
 clean:
-	rm -Rf *.o librevcpu.so
+	rm -Rf *.o syscalls.o
 
 #-- EOF

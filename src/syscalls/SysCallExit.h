@@ -12,6 +12,7 @@
 #define __SYSTEMCALLEXIT_H__
 
 #include "SystemCallInterface.h"
+#include <type_traits>
 
 namespace SST { namespace RevCPU {
 
@@ -19,25 +20,29 @@ class ExitSystemCallParameters : public virtual SystemCallParameterInterface {
     
     int status;
 
+    public:
+
     ExitSystemCallParameters() : SystemCallParameterInterface() {}
 
     size_t count();
 
     template<typename ParameterType>
-    std::optional<ParameterType> get(const size_t parameter_index);
+    bool get(const size_t parameter_index, ParameterType & param);
 };
 
 template<bool IsRiscv32>
 class ExitSystemCall : public virtual SystemCallInterface<IsRiscv32> {
 
-    using RiscvModeIntegerType = std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
+    using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
+
+    public:
 
     ExitSystemCall() {}
 
     RiscvModeIntegerType code();
     
-    template<typename ReturnType>
-    std::optional<ReturnType> invoke(const SystemCallParameterInterface& parameters);
+    template<typename ReturnType, typename SystemCallParameterType>
+    bool invoke(SystemCallParameterType & parameters, ReturnType & value);
 
 };
 

@@ -16,38 +16,49 @@ size_t ExitSystemCallParameters::count() {
     return 1UL;
 }
 
-template<typename ParameterType>
-std::optional<ParameterType> ExitSystemCallParameters::get(const size_t parameter_index) {
+template<>
+bool ExitSystemCallParameters::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
-        if( std::is_same<ParameterType, int>::value ) {
-            return std::make_optional<int>(status);
-        }
+        param = status;
+        return true;
     }
 
-    return std::nullopt;
+    return false;
 }
 
 template<bool IsRiscv32>
-ExitSystemCall<IsRiscv32>::RiscvModeIntegerType ExitSystemCall<IsRiscv32>::code() {
-    return static_cast<RiscvModeIntegerType>(93);
+typename ExitSystemCall<IsRiscv32>::RiscvModeIntegerType ExitSystemCall<IsRiscv32>::code() {
+    return static_cast<ExitSystemCall<IsRiscv32>::RiscvModeIntegerType>(93);
 }
 
-template<bool IsRiscv32>
-template<typename ReturnType>
-std::optional<ReturnType> ExitSystemCall<IsRiscv32>::invoke(const SystemCallParameterInterface& parameters) {
-
-    if( std::is_same<ReturnType, int>::value ) {
-        return std::nullopt;
-    }
+template<>
+template<>
+bool ExitSystemCall<true>::invoke<int>(ExitSystemCallParameters & parameters, int & value) {
 
     if(parameters.count() == 1) {
-        const std::optional<int> status = parameters.get<int>(0);
-        if(status.has_value()) {
-            std::make_optional<int>(exit(*status));
+        value = -1;
+        const bool has_value = parameters.get<int>(0, value);
+        if(has_value && value != -1) {
+            exit(value);
         }
     }
 
-    return std::nullopt;
+    return false;
+}
+
+template<>
+template<>
+bool ExitSystemCall<false>::invoke<int>(ExitSystemCallParameters & parameters, int & value) {
+
+    if(parameters.count() == 1) {
+        value = -1;
+        const bool has_value = parameters.get<int>(0, value);
+        if(has_value && value != -1) {
+            exit(value);
+        }
+    }
+
+    return false;
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

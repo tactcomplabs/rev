@@ -13,81 +13,42 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
+#include <type_traits>
 
 namespace SST { namespace RevCPU {
 
-/*
-    SystemCallParameterInterface
-
-    provides abstraction for all system call
-    parameters
-
-    Methods
-
-    size_t count()
-
-    users can query the abstraction for a parameter
-    count
-
-    std::optional<ParameterType> get(const size_t parameter_index);
-
-    Users can 'get' a parameter by the linear index
-    of the value in the system call interface; this
-    method returns an 'optional' which when populated
-    stores the requested return type (ParameterType).
-    if the type of the parameter (ParameterType) the
-    user requested is not equal to the type of the
-    parameter at 'parameter_index' then the optional
-    returns 'empty'.
- */
 class SystemCallParameterInterface {
     
+    public:
+    
+    SystemCallParameterInterface() {}
+
     virtual size_t count() {
         return -1;
     }
 
     template<typename ParameterType>
-    std::optional<ParameterType> get(const size_t parameter_index) {
-        std::nullopt;
+    bool get(const size_t parameter_index, ParameterType & param) {
+        return false;
     }
 };
 
-/*
-    SystemCallInterface
-
-    provides abstraction for all system calls
-
-    Methods
-
-    size_t count()
-
-    users can query the abstraction for a parameter
-    count
-
-    std::optional<ParameterType> get(const size_t parameter_index);
-
-    Users can 'get' a parameter by the linear index
-    of the value in the system call interface; this
-    method returns an 'optional' which when populated
-    stores the requested return type (ParameterType).
-    if the type of the parameter (ParameterType) the
-    user requested is not equal to the type of the
-    parameter at 'parameter_index' then the optional
-    returns 'empty'.
- */
 template<bool IsRiscv32>
 class SystemCallInterface {
 
-    using RiscvModeIntegerType = std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
+    using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
+
+    public:
+
+    SystemCallInterface() {}
 
     virtual RiscvModeIntegerType code() {
         return -1;
     }
     
     template<typename ReturnType>
-    std::optional<ReturnType> invoke(const SystemCallParameterInterface& parameters) {
-        return std::nullopt;
+    bool invoke(SystemCallParameterInterface & parameters, ReturnType & value) {
+        return false;
     }
 };
 
