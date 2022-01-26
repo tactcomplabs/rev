@@ -41,8 +41,8 @@ class ExitSystemCall : public virtual SystemCallInterface<IsRiscv32> {
 
     RiscvModeIntegerType code();
     
-    template<typename ReturnType, typename SystemCallParameterType>
-    bool invoke(SystemCallParameterType & parameters, ReturnType & value);
+    template<typename ReturnType>
+    bool invoke(SystemCallParameterInterface & parameters, ReturnType & value);
 
 };
 

@@ -33,7 +33,7 @@ typename ExitSystemCall<IsRiscv32>::RiscvModeIntegerType ExitSystemCall<IsRiscv3
 
 template<>
 template<>
-bool ExitSystemCall<true>::invoke<int>(ExitSystemCallParameters & parameters, int & value) {
+bool ExitSystemCall<true>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
 
     if(parameters.count() == 1) {
         value = -1;
@@ -48,7 +48,7 @@ bool ExitSystemCall<true>::invoke<int>(ExitSystemCallParameters & parameters, in
 
 template<>
 template<>
-bool ExitSystemCall<false>::invoke<int>(ExitSystemCallParameters & parameters, int & value) {
+bool ExitSystemCall<false>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
 
     if(parameters.count() == 1) {
         value = -1;
