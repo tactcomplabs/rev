@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include <unistd.h>
-#include <sys/syscall.h>
+#include <signal.h>
 
 namespace SST { namespace RevCPU {
 
@@ -19,20 +19,10 @@ size_t KillSystemCallParameters::count() {
     return 2UL;
 }
 
-template<>
+template<> inline
 bool KillSystemCallParameters::get<pid_t>(const size_t parameter_index, pid_t& param) {
     if(parameter_index == 0) {
         param = pid;
-        return true;
-    }
-
-    return false;
-}
-
-template<>
-bool KillSystemCallParameters::get<int>(const size_t parameter_index, int& param) {
-    if(parameter_index == 1) {
-        param = sig;
         return true;
     }
 
@@ -46,17 +36,17 @@ typename KillSystemCall<IsRiscv32>::RiscvModeIntegerType KillSystemCall<IsRiscv3
 
 template<>
 template<>
-bool KillSystemCall<true>::invoke<pid_t>(SystemCallParameterInterface & parameters, pid_t & value) {
+bool KillSystemCall<true>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
 
     if(parameters.count() == 2) {
         pid_t pid = -1;
         int sig = -1;
 
         bool has_values[2] = { false, false };
-        has_value[0] = parameters.get<pid_t>(0, pid);
-        has_value[1] = parameters.get<int>(0, sig);
+        has_values[0] = parameters.get<pid_t>(0, pid);
+        has_values[1] = parameters.get<int>(0, sig);
 
-        if(has_value[0] && has_value[1] && pid != -1 && sig != -1) {
+        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
             value = kill(pid, sig);
             return true;
         }
@@ -67,17 +57,17 @@ bool KillSystemCall<true>::invoke<pid_t>(SystemCallParameterInterface & paramete
 
 template<>
 template<>
-bool KillSystemCall<false>::invoke<pid_t>(SystemCallParameterInterface & parameters, int & value) {
+bool KillSystemCall<false>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
 
     if(parameters.count() == 2) {
         pid_t pid = -1;
         int sig = -1;
 
         bool has_values[2] = { false, false };
-        has_value[0] = parameters.get<pid_t>(0, pid);
-        has_value[1] = parameters.get<int>(0, sig);
+        has_values[0] = parameters.get<pid_t>(0, pid);
+        has_values[1] = parameters.get<int>(0, sig);
 
-        if(has_value[0] && has_value[1] && pid != -1 && sig != -1) {
+        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
             value = kill(pid, sig);
             return true;
         }

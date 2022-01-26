@@ -8,16 +8,19 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLEXITGROUP_H__
-#define __SYSTEMCALLEXITGROUP_H__
+#ifndef __SYSTEMCALLKILL_H__
+#define __SYSTEMCALLKILL_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <sys/types.h>
 
 namespace SST { namespace RevCPU {
 
 class KillSystemCallParameters : public virtual SystemCallParameterInterface {
-    
+
+    private:
+
     pid_t pid;
     int sig;
 
@@ -50,7 +53,7 @@ class KillSystemCall : public virtual SystemCallInterface<IsRiscv32> {
     // returns true
     //
     template<>
-    bool invoke(SystemCallParameterInterface & parameters, void_t & value);
+    bool invoke(SystemCallParameterInterface & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

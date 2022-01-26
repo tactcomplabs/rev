@@ -27,6 +27,9 @@ class GetPidSystemCallParameters : public virtual SystemCallParameterInterface {
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
+
+    template<typename ParameterType>
+    bool get(const size_t parameter_index, void_t & param);
 };
 
 template<bool IsRiscv32>
