@@ -24,7 +24,7 @@ class ExitSystemCallParameters : public virtual SystemCallParameterInterface {
 
     ExitSystemCallParameters(const int stat) : SystemCallParameterInterface(), status(stat) {}
 
-    size_t count();
+    size_t count() override;
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
@@ -39,7 +39,7 @@ class ExitSystemCall : public virtual SystemCallInterface<IsRiscv32> {
 
     ExitSystemCall() {}
 
-    RiscvModeIntegerType code();
+    RiscvModeIntegerType code() override;
     
     // always returns false
     //
