@@ -10,8 +10,8 @@
 #include "SysCallExitGroup.h"
 #include <algorithm>
 
-#include <sys/syscall.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 
 namespace SST { namespace RevCPU {
 

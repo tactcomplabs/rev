@@ -37,7 +37,7 @@ class ExitGroupSystemCall : public virtual SystemCallInterface<IsRiscv32> {
 
     public:
 
-    ExitSystemCall() {}
+    ExitGroupSystemCall() {}
 
     RiscvModeIntegerType code() override;
     
