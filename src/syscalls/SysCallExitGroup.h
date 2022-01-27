@@ -37,6 +37,8 @@ class ExitGroupSystemCall : public virtual SystemCallInterface<IsRiscv32> {
 
     public:
 
+    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(94);
+
     ExitGroupSystemCall() {}
 
     RiscvModeIntegerType code() override;
@@ -44,12 +46,12 @@ class ExitGroupSystemCall : public virtual SystemCallInterface<IsRiscv32> {
     // always returns false
     //
     template<typename ReturnType>
-    bool invoke(SystemCallParameterInterface & parameters, ReturnType & value);
+    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
 
     // returns true
     //
     template<>
-    bool invoke(SystemCallParameterInterface & parameters, void_t & value);
+    void invoke(SystemCallParameterInterface & parameters, void_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

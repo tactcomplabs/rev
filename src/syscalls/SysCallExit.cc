@@ -28,37 +28,33 @@ bool ExitSystemCallParameters::get<int>(const size_t parameter_index, int& param
 
 template<bool IsRiscv32>
 typename ExitSystemCall<IsRiscv32>::RiscvModeIntegerType ExitSystemCall<IsRiscv32>::code() {
+    return ExitSystemCall<IsRiscv32>::code_value;
     return static_cast<ExitSystemCall<IsRiscv32>::RiscvModeIntegerType>(93);
 }
 
-template<>
-template<>
-bool ExitSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-
+static void invoke_impl(SystemCallParameterInterface & parameters, void_t & value, bool & invoc_success) {
     if(parameters.count() == 1) {
         int status = -1;
         const bool has_value = parameters.get<int>(0, status);
         if(has_value && status != -1) {
+            invoc_success = true;            
             exit(status);
         }
     }
 
-    return false;
+    invoc_success = false;    
 }
 
 template<>
 template<>
-bool ExitSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+void ExitSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+    invoke_impl(parameters, value, success);
+}
 
-    if(parameters.count() == 1) {
-        int status = -1;
-        const bool has_value = parameters.get<int>(0, status);
-        if(has_value && status != -1) {
-            exit(status);
-        }
-    }
-
-    return false;
+template<>
+template<>
+void ExitSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+    invoke_impl(parameters, value, success);
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

@@ -16,6 +16,7 @@
 #include "SysCallExitGroup.h"
 #include "SysCallGetPid.h"
 #include "SysCallKill.h"
+#include "SysCallTGKill.h"
 
 #endif
 

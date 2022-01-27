@@ -45,17 +45,25 @@ class SystemCallInterface {
 
     using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
 
+    protected:
+
+    bool success;
+
     public:
 
-    SystemCallInterface() {}
+    SystemCallInterface() : success(false) {}
+
+    bool invoke_success() {
+        return success;
+    }
 
     virtual RiscvModeIntegerType code() {
         return -1;
     }
     
     template<typename ReturnType>
-    bool invoke(SystemCallParameterInterface & parameters, ReturnType & value) {
-        return false;
+    void invoke(SystemCallParameterInterface & parameters, ReturnType & value) {
+        success = false;
     }
 };
 

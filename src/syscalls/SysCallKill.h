@@ -41,6 +41,8 @@ class KillSystemCall : public virtual SystemCallInterface<IsRiscv32> {
 
     public:
 
+    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(129);
+
     KillSystemCall() {}
 
     RiscvModeIntegerType code() override;
@@ -48,12 +50,12 @@ class KillSystemCall : public virtual SystemCallInterface<IsRiscv32> {
     // always returns false
     //
     template<typename ReturnType>
-    bool invoke(SystemCallParameterInterface & parameters, ReturnType & value);
+    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
 
     // returns true
     //
     template<>
-    bool invoke(SystemCallParameterInterface & parameters, int & value);
+    void invoke(SystemCallParameterInterface & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

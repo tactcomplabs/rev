@@ -29,29 +29,28 @@ bool GetPidSystemCallParameters::get<void_t>(const size_t parameter_index, void_
 
 template<bool IsRiscv32>
 typename GetPidSystemCall<IsRiscv32>::RiscvModeIntegerType GetPidSystemCall<IsRiscv32>::code() {
-    return static_cast<GetPidSystemCall<IsRiscv32>::RiscvModeIntegerType>(172);
+    return GetPidSystemCall<IsRiscv32>::code_value;
+}
+
+static void invoke_impl(SystemCallParameterInterface & parameters, void_t & value, bool & ivoc_success) {
+    if(parameters.count() == 0) {
+        ivoc_success = true;
+        getpid();
+    }
+
+    ivoc_success = false;
 }
 
 template<>
 template<>
-bool GetPidSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-
-    if(parameters.count() == 0) {
-        getpid();
-    }
-
-    return false;
+void GetPidSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+    invoke_impl(parameters, value, success);
 }
 
 template<>
 template<>
-bool GetPidSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-
-    if(parameters.count() == 0) {
-        getpid();
-    }
-
-    return false;
+void GetPidSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+    invoke_impl(parameters, value, success);
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

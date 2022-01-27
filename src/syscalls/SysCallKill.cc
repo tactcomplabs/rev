@@ -31,13 +31,10 @@ bool KillSystemCallParameters::get<pid_t>(const size_t parameter_index, pid_t& p
 
 template<bool IsRiscv32>
 typename KillSystemCall<IsRiscv32>::RiscvModeIntegerType KillSystemCall<IsRiscv32>::code() {
-    return static_cast<KillSystemCall<IsRiscv32>::RiscvModeIntegerType>(129);
+    return KillSystemCall<IsRiscv32>::code_value;
 }
 
-template<>
-template<>
-bool KillSystemCall<true>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
-
+void invoke_impl(SystemCallParameterInterface & parameters, int & value, bool & invoc_success) {
     if(parameters.count() == 2) {
         pid_t pid = -1;
         int sig = -1;
@@ -47,33 +44,25 @@ bool KillSystemCall<true>::invoke<int>(SystemCallParameterInterface & parameters
         has_values[1] = parameters.get<int>(0, sig);
 
         if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
+            invoc_success = true;
             value = kill(pid, sig);
-            return true;
         }
     }
 
-    return false;
+    invoc_success = false;
 }
 
 template<>
 template<>
-bool KillSystemCall<false>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
+void KillSystemCall<true>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
+    invoke_impl(parameters, value, success);
 
-    if(parameters.count() == 2) {
-        pid_t pid = -1;
-        int sig = -1;
+}
 
-        bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<pid_t>(0, pid);
-        has_values[1] = parameters.get<int>(0, sig);
-
-        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
-            value = kill(pid, sig);
-            return true;
-        }
-    }
-
-    return false;
+template<>
+template<>
+void KillSystemCall<false>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
+    invoke_impl(parameters, value, success);
 }
 
 } /* end namespace RevCPU */ } // end namespace SST
