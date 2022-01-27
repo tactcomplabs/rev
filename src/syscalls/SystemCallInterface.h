@@ -72,14 +72,14 @@ class SystemCallInterface {
     using IsRiscv32 = typename std::conditional< std::is_same<RiscvArchType, Riscv32>::value, std::true_type, std::false_type>::type;
     using IsRiscv64 = typename std::conditional< std::is_same<RiscvArchType, Riscv64>::value, std::true_type, std::false_type>::type;
     using IsRiscv128 = typename std::conditional< std::is_same<RiscvArchType, Riscv128>::value, std::true_type, std::false_type>::type;
-    
+
     using RiscvModeIntegerType = typename std::conditional< IsRiscv32::value,
         Riscv32::int_type, // TRUE
         typename std::conditional< IsRiscv64::value, // FALSE
                 Riscv32::int_type, // TRUE
                 typename std::conditional< IsRiscv128::value, // FALSE
                         Riscv128::int_type, // TRUE
-                        Riscv32::int_type
+                        Riscv32::int_type // FALSE - we fall back on Riscv32
                 >::type
             >::type
         >::type;
