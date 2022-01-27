@@ -44,11 +44,11 @@ class SystemCalls {
     public:
 
     enum Codes : RiscvModeIntegerType {
-        EXIT = ExitSystemCall<IsRiscv32>::code_value,
-        EXITGROUP = ExitGroupSystemCall<IsRiscv32>::code_value,
-        GETPID = GetPidSystemCall<IsRiscv32>::code_value,
-        KILL = KillSystemCall<IsRiscv32>::code_value,
-        TGKILL = TGKillSystemCall<IsRiscv32>::code_value,
+        EXIT = ExitSystemCall<RiscvArchType>::code_value,
+        EXITGROUP = ExitGroupSystemCall<RiscvArchType>::code_value,
+        GETPID = GetPidSystemCall<RiscvArchType>::code_value,
+        KILL = KillSystemCall<RiscvArchType>::code_value,
+        TGKILL = TGKillSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
