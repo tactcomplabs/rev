@@ -21,6 +21,8 @@ class TGKillSystemCallParameters : public virtual SystemCallParameterInterface {
 
     private:
 
+    // pid_t is type equivalent to int
+    //
     pid_t pid;
     int sig;
 
@@ -34,14 +36,14 @@ class TGKillSystemCallParameters : public virtual SystemCallParameterInterface {
     bool get(const size_t parameter_index, ParameterType & param);
 };
 
-template<bool IsRiscv32>
-class TGKillSystemCall : public virtual SystemCallInterface<IsRiscv32> {
+template<typename RiscvArchType=Riscv32>
+class TGKillSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
-    using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
-    
+    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
+
     public:
 
-    const static TGKillSystemCall<IsRiscv32>::RiscvModeIntegerType code_value = static_cast<TGKillSystemCall<IsRiscv32>::RiscvModeIntegerType>(131);
+    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(131);
 
     TGKillSystemCall() {}
 

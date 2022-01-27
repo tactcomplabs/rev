@@ -30,10 +30,10 @@ class ExitGroupSystemCallParameters : public virtual SystemCallParameterInterfac
     bool get(const size_t parameter_index, ParameterType & param);
 };
 
-template<bool IsRiscv32>
-class ExitGroupSystemCall : public virtual SystemCallInterface<IsRiscv32> {
+template<typename RiscvArchType=Riscv32>
+class ExitGroupSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
-    using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
+    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
 
     public:
 

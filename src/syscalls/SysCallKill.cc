@@ -29,9 +29,9 @@ bool KillSystemCallParameters::get<pid_t>(const size_t parameter_index, pid_t& p
     return false;
 }
 
-template<bool IsRiscv32>
-typename KillSystemCall<IsRiscv32>::RiscvModeIntegerType KillSystemCall<IsRiscv32>::code() {
-    return KillSystemCall<IsRiscv32>::code_value;
+template<typename RiscvArchType>
+typename KillSystemCall<RiscvArchType>::RiscvModeIntegerType KillSystemCall<RiscvArchType>::code() {
+    return KillSystemCall<RiscvArchType>::code_value;
 }
 
 void invoke_impl(SystemCallParameterInterface & parameters, int & value, bool & invoc_success) {
@@ -54,14 +54,20 @@ void invoke_impl(SystemCallParameterInterface & parameters, int & value, bool & 
 
 template<>
 template<>
-void KillSystemCall<true>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
+void KillSystemCall<Riscv32>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
     invoke_impl(parameters, value, success);
 
 }
 
 template<>
 template<>
-void KillSystemCall<false>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
+void KillSystemCall<Riscv64>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
+    invoke_impl(parameters, value, success);
+}
+
+template<>
+template<>
+void KillSystemCall<Riscv128>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
     invoke_impl(parameters, value, success);
 }
 

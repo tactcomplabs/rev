@@ -29,9 +29,9 @@ bool ExitGroupSystemCallParameters::get<int>(const size_t parameter_index, int& 
     return false;
 }
 
-template<bool IsRiscv32>
-typename ExitGroupSystemCall<IsRiscv32>::RiscvModeIntegerType ExitGroupSystemCall<IsRiscv32>::code() {
-    return ExitGroupSystemCall<IsRiscv32>::code_value;
+template<typename RiscvArchType>
+typename ExitGroupSystemCall<RiscvArchType>::RiscvModeIntegerType ExitGroupSystemCall<RiscvArchType>::code() {
+    return ExitGroupSystemCall<RiscvArchType>::code_value;
 }
 
 static void invoke_impl(SystemCallParameterInterface & parameters, void_t & value, bool & invo_success) {
@@ -40,7 +40,7 @@ static void invoke_impl(SystemCallParameterInterface & parameters, void_t & valu
         const bool has_value = parameters.get<int>(0, status);
         if(has_value && status != -1) {
             invo_success = true;
-            syscall(SYS_exit_group, status);
+            //syscall(SYS_exit_group, status);
         }
     }
 
@@ -49,13 +49,19 @@ static void invoke_impl(SystemCallParameterInterface & parameters, void_t & valu
 
 template<>
 template<>
-void ExitGroupSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+void ExitGroupSystemCall<Riscv32>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
     invoke_impl(parameters, value, success);
 }
 
 template<>
 template<>
-void ExitGroupSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+void ExitGroupSystemCall<Riscv64>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+    invoke_impl(parameters, value, success);
+}
+
+template<>
+template<>
+void ExitGroupSystemCall<Riscv128>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
     invoke_impl(parameters, value, success);
 }
 

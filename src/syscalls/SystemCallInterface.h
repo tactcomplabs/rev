@@ -15,6 +15,26 @@
 #include <cstdint>
 #include <type_traits>
 
+// https://stackoverflow.com/questions/34588650/uint128-t-does-not-name-a-type
+//
+typedef unsigned int uint128_t __attribute__((mode(TI)));
+
+struct RiscvArch {
+    using int_type = std::uint32_t;
+};
+
+struct Riscv32 : RiscvArch {
+    using int_type = std::uint32_t;
+};
+
+struct Riscv64 : RiscvArch {
+    using int_type = std::uint64_t;
+};
+
+struct Riscv128 : RiscvArch {
+    using int_type = uint128_t;
+};
+
 /*
  * void_t
  *
@@ -40,16 +60,30 @@ class SystemCallParameterInterface {
     }
 };
 
-template<bool IsRiscv32>
+template<typename RiscvArchType=Riscv32>
 class SystemCallInterface {
-
-    using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
 
     protected:
 
     bool success;
 
     public:
+
+    using IsRiscv32 = typename std::conditional< std::is_same<RiscvArchType, Riscv32>::value, std::true_type, std::false_type>::type;
+    using IsRiscv64 = typename std::conditional< std::is_same<RiscvArchType, Riscv64>::value, std::true_type, std::false_type>::type;
+    using IsRiscv128 = typename std::conditional< std::is_same<RiscvArchType, Riscv128>::value, std::true_type, std::false_type>::type;
+    
+    using RiscvModeIntegerType = typename std::conditional< IsRiscv32::value,
+        Riscv32::int_type, // TRUE
+        typename std::conditional< IsRiscv64::value, // FALSE
+                Riscv32::int_type, // TRUE
+                typename std::conditional< IsRiscv128::value, // FALSE
+                        Riscv128::int_type, // TRUE
+                        Riscv32::int_type
+                >::type
+            >::type
+        >::type;
+
 
     SystemCallInterface() : success(false) {}
 

@@ -1,4 +1,3 @@
-
 //
 // SysCalls.h
 //
@@ -12,6 +11,7 @@
 #ifndef __SYSTEMCALLS_H__
 #define __SYSTEMCALLS_H__
 
+#include "SystemCallInterface.h"
 #include "SysCallExit.h"
 #include "SysCallExitGroup.h"
 #include "SysCallGetPid.h"
@@ -23,10 +23,23 @@
 
 namespace SST { namespace RevCPU {
 
-template<bool IsRiscv32>
+template<typename RiscvArchType=Riscv32>
 class SystemCalls {
 
-    using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
+    using IsRiscv32 = typename std::conditional< std::is_same<RiscvArchType, Riscv32>::value, std::true_type, std::false_type>::type;
+    using IsRiscv64 = typename std::conditional< std::is_same<RiscvArchType, Riscv64>::value, std::true_type, std::false_type>::type;
+    using IsRiscv128 = typename std::conditional< std::is_same<RiscvArchType, Riscv128>::value, std::true_type, std::false_type>::type;
+    
+    using RiscvModeIntegerType = typename std::conditional< IsRiscv32::value,
+        Riscv32::int_type, // TRUE
+        typename std::conditional< IsRiscv64::value, // FALSE
+                Riscv32::int_type, // TRUE
+                typename std::conditional< IsRiscv128::value, // FALSE
+                        Riscv128::int_type, // TRUE
+                        Riscv32::int_type
+                >::type
+            >::type
+        >::type;
 
     public:
 
@@ -38,7 +51,7 @@ class SystemCalls {
         TGKILL = TGKillSystemCall<IsRiscv32>::code_value,
     };
 
-    static std::unordered_map<Codes, SystemCallInterface<IsRiscv32>> jump_table;
+    static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

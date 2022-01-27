@@ -27,9 +27,9 @@ bool GetPidSystemCallParameters::get<void_t>(const size_t parameter_index, void_
     return false;
 }
 
-template<bool IsRiscv32>
-typename GetPidSystemCall<IsRiscv32>::RiscvModeIntegerType GetPidSystemCall<IsRiscv32>::code() {
-    return GetPidSystemCall<IsRiscv32>::code_value;
+template<typename RiscvArchType>
+typename GetPidSystemCall<RiscvArchType>::RiscvModeIntegerType GetPidSystemCall<RiscvArchType>::code() {
+    return GetPidSystemCall<RiscvArchType>::code_value;
 }
 
 static void invoke_impl(SystemCallParameterInterface & parameters, void_t & value, bool & ivoc_success) {
@@ -43,13 +43,19 @@ static void invoke_impl(SystemCallParameterInterface & parameters, void_t & valu
 
 template<>
 template<>
-void GetPidSystemCall<true>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+void GetPidSystemCall<Riscv32>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
     invoke_impl(parameters, value, success);
 }
 
 template<>
 template<>
-void GetPidSystemCall<false>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+void GetPidSystemCall<Riscv64>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+    invoke_impl(parameters, value, success);
+}
+
+template<>
+template<>
+void GetPidSystemCall<Riscv128>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
     invoke_impl(parameters, value, success);
 }
 
