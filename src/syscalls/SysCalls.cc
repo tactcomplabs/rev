@@ -1,3 +1,12 @@
+//
+// SysCalls.cc
+//
+// Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+// All Rights Reserved
+// contact@tactcomplabs.com
+//
+// See LICENSE in the top level directory for licensing details
+//
 #include "SysCalls.h"
 
 #include <unordered_map>
