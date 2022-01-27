@@ -18,10 +18,17 @@
 #include "SysCallKill.h"
 #include "SysCallTGKill.h"
 
+#include <unordered_map>
+#include <type_traits>
+
+namespace SST { namespace RevCPU {
+
 template<bool IsRiscv32>
-struct SystemCalls {
+class SystemCalls {
 
     using RiscvModeIntegerType = typename std::conditional<IsRiscv32, std::uint32_t, std::uint64_t>::type;
+
+    public:
 
     enum Codes : RiscvModeIntegerType {
         EXIT = ExitSystemCall<IsRiscv32>::code_value,
@@ -31,8 +38,10 @@ struct SystemCalls {
         TGKILL = TGKillSystemCall<IsRiscv32>::code_value,
     };
 
+    static std::unordered_map<Codes, SystemCallInterface<IsRiscv32>> jump_table;
 };
 
+} /* end namespace RevCPU */ } // end namespace SST
 
 #endif
 
