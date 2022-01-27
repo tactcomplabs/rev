@@ -15,10 +15,14 @@
 #include <cstdint>
 #include <type_traits>
 
+// how to support uint128_t? that's not supported in c++11 compilers...
+//
 // https://stackoverflow.com/questions/34588650/uint128-t-does-not-name-a-type
 //
 typedef unsigned int uint128_t __attribute__((mode(TI)));
 
+// type tags for each riscv architecture supported in REV
+//
 struct RiscvArch {
     using int_type = std::uint32_t;
 };

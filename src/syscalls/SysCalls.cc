@@ -20,6 +20,7 @@ std::unordered_map<typename SystemCalls<RiscvArchType>::Codes, SystemCallInterfa
         { SystemCalls<RiscvArchType>::Codes::GETPID, GetPidSystemCall<IsRiscv32>{} },
         { SystemCalls<RiscvArchType>::Codes::KILL, KillSystemCall<IsRiscv32>{} },
         { SystemCalls<RiscvArchType>::Codes::TGKILL, TGKillSystemCall<IsRiscv32>{} },
+        { SystemCalls<RiscvArchType>::Codes::READ, ReadSystemCall<IsRiscv32>{} },
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

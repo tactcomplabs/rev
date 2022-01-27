@@ -34,7 +34,7 @@ template<typename RiscvArchType=Riscv32>
 class ExitSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
     using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-
+    
     public:
 
     const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(93);
