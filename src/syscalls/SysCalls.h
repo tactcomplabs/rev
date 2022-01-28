@@ -51,6 +51,7 @@ class SystemCalls {
         KILL = KillSystemCall<RiscvArchType>::code_value,
         TGKILL = TGKillSystemCall<RiscvArchType>::code_value,
         Read = ReadSystemCall<RiscvArchType>::code_value,
+        Write = WriteSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
