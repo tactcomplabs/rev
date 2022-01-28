@@ -18,6 +18,7 @@
 #include "SysCallKill.h"
 #include "SysCallTGKill.h"
 #include "SysCallRead.h"
+#include "SysCallWrite.h"
 
 #include <unordered_map>
 #include <type_traits>

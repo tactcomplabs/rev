@@ -40,7 +40,7 @@ static void invoke_impl(SystemCallParameterInterface & parameters, void_t & valu
         const bool has_value = parameters.get<int>(0, status);
         if(has_value && status != -1) {
             invo_success = true;
-            syscall(SYS_exit_group, status);
+            //syscall(SYS_exit_group, status);
         }
     }
 

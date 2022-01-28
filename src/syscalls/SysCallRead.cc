@@ -56,7 +56,7 @@ typename ReadSystemCall<RiscvArchType>::RiscvModeIntegerType ReadSystemCall<Risc
     return ReadSystemCall<RiscvArchType>::code_value;
 }
 
-void invoke_impl(SystemCallParameterInterface & parameters, ssize_t & value, bool & invoc_success) {
+static void invoke_impl(SystemCallParameterInterface & parameters, ssize_t & value, bool & invoc_success) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;

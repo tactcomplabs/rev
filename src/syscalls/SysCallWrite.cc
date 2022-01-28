@@ -56,7 +56,7 @@ typename WriteSystemCall<RiscvArchType>::RiscvModeIntegerType WriteSystemCall<Ri
     return WriteSystemCall<RiscvArchType>::code_value;
 }
 
-void invoke_impl(SystemCallParameterInterface & parameters, ssize_t & value, bool & invoc_success) {
+static void invoke_impl(SystemCallParameterInterface & parameters, ssize_t & value, bool & invoc_success) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;
