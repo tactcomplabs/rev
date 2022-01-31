@@ -61,6 +61,7 @@ class SystemCalls {
         OPENAT    = OpenAtSystemCall<RiscvArchType>::code_value,
         CLOSE     = CloseSystemCall<RiscvArchType>::code_value,
         LSEEK     = LseekSystemCall<RiscvArchType>::code_value,
+        BRK       = LseekSystemCall<RiscvArchType>::code_value,        
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
