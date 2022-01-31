@@ -23,6 +23,11 @@
 #include <unordered_map>
 #include <type_traits>
 
+// https://github.com/riscv-software-src/riscv-pk/blob/master/pk/syscall.h
+//
+// https://github.com/riscv-software-src/riscv-isa-sim/tree/master/fesvr
+//
+
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
@@ -51,8 +56,10 @@ class SystemCalls {
         GETPID = GetPidSystemCall<RiscvArchType>::code_value,
         KILL = KillSystemCall<RiscvArchType>::code_value,
         TGKILL = TGKillSystemCall<RiscvArchType>::code_value,
-        Read = ReadSystemCall<RiscvArchType>::code_value,
-        Write = WriteSystemCall<RiscvArchType>::code_value,
+        READ = ReadSystemCall<RiscvArchType>::code_value,
+        WRITE = WriteSystemCall<RiscvArchType>::code_value,
+        OPENAT = OpenAtSystemCall<RiscvArchType>::code_value,
+        CLOSE = OpenAtSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
