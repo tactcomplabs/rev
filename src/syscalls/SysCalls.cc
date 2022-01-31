@@ -24,6 +24,7 @@ std::unordered_map<typename SystemCalls<RiscvArchType>::Codes, SystemCallInterfa
         { SystemCalls<RiscvArchType>::Codes::WRITE, WriteSystemCall<IsRiscv32>{} },
         { SystemCalls<RiscvArchType>::Codes::OPENAT, OpenAtSystemCall<IsRiscv32>{} },
         { SystemCalls<RiscvArchType>::Codes::CLOSE, OpenAtSystemCall<IsRiscv32>{} },
+        { SystemCalls<RiscvArchType>::Codes::LSEEK, OpenAtSystemCall<IsRiscv32>{} },
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

@@ -51,15 +51,16 @@ class SystemCalls {
     public:
 
     enum Codes : RiscvModeIntegerType {
-        EXIT = ExitSystemCall<RiscvArchType>::code_value,
+        EXIT      = ExitSystemCall<RiscvArchType>::code_value,
         EXITGROUP = ExitGroupSystemCall<RiscvArchType>::code_value,
-        GETPID = GetPidSystemCall<RiscvArchType>::code_value,
-        KILL = KillSystemCall<RiscvArchType>::code_value,
-        TGKILL = TGKillSystemCall<RiscvArchType>::code_value,
-        READ = ReadSystemCall<RiscvArchType>::code_value,
-        WRITE = WriteSystemCall<RiscvArchType>::code_value,
-        OPENAT = OpenAtSystemCall<RiscvArchType>::code_value,
-        CLOSE = OpenAtSystemCall<RiscvArchType>::code_value,
+        GETPID    = GetPidSystemCall<RiscvArchType>::code_value,
+        KILL      = KillSystemCall<RiscvArchType>::code_value,
+        TGKILL    = TGKillSystemCall<RiscvArchType>::code_value,
+        READ      = ReadSystemCall<RiscvArchType>::code_value,
+        WRITE     = WriteSystemCall<RiscvArchType>::code_value,
+        OPENAT    = OpenAtSystemCall<RiscvArchType>::code_value,
+        CLOSE     = CloseSystemCall<RiscvArchType>::code_value,
+        LSEEK     = LseekSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
