@@ -1,5 +1,5 @@
 //
-// SysCallRead.h
+// SysCallExit.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,26 +8,21 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLREAD_H__
-#define __SYSTEMCALLREAD_H__
+#ifndef __SYSTEMCALLBRK_H__
+#define __SYSTEMCALLBRK_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
-#include <sys/types.h>
 
 namespace SST { namespace RevCPU {
 
-class ReadSystemCallParameters : public virtual SystemCallParameterInterface {
-
-    private:
-
-    int fd;
-    void * buf;
-    size_t bcount;
+class BrkSystemCallParameters : public virtual SystemCallParameterInterface {
     
+    cvoid_ptr addr;
+
     public:
 
-    ReadSystemCallParameters(int fd_i, void *buf_i, size_t count_i) : SystemCallParameterInterface(), fd(fd_i), buf(buf_i), bcount(count_i) {}
+    BrkSystemCallParameters(cvoid_ptr addr_) : SystemCallParameterInterface(), addr(addr_) {}
 
     size_t count() override;
 
@@ -36,15 +31,15 @@ class ReadSystemCallParameters : public virtual SystemCallParameterInterface {
 };
 
 template<typename RiscvArchType=Riscv32>
-class ReadSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class BrkSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
     using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-
+    
     public:
 
-    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(63);
+    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(214);
 
-    ReadSystemCall() {}
+    BrkSystemCall() {}
 
     RiscvModeIntegerType code() override;
     
@@ -56,7 +51,7 @@ class ReadSystemCall : public virtual SystemCallInterface<RiscvArchType> {
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterface & parameters, int & value);
+    void invoke(SystemCallParameterInterface & parameters, void_ptr & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

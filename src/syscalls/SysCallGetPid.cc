@@ -47,16 +47,4 @@ void GetPidSystemCall<Riscv32>::invoke<void_t>(SystemCallParameterInterface & pa
     invoke_impl(parameters, value, success);
 }
 
-template<>
-template<>
-void GetPidSystemCall<Riscv64>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
-template<>
-template<>
-void GetPidSystemCall<Riscv128>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
 } /* end namespace RevCPU */ } // end namespace SST

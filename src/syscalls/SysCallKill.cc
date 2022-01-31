@@ -25,7 +25,7 @@ bool KillSystemCallParameters::get<pid_t>(const size_t parameter_index, pid_t& p
         param = pid;
         return true;
     }
-
+    
     return false;
 }
 
@@ -57,18 +57,6 @@ template<>
 void KillSystemCall<Riscv32>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
     invoke_impl(parameters, value, success);
 
-}
-
-template<>
-template<>
-void KillSystemCall<Riscv64>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
-    invoke_impl(parameters, value, success);
-}
-
-template<>
-template<>
-void KillSystemCall<Riscv128>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
-    invoke_impl(parameters, value, success);
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

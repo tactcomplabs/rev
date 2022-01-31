@@ -21,6 +21,18 @@
 //
 typedef unsigned int uint128_t __attribute__((mode(TI)));
 
+using cvoid_ptr = const void *;
+using void_ptr = void *;
+
+/*
+ * void_t
+ *
+ * tag-type representing return type for system calls that return void
+ */
+struct void_t {};
+
+namespace SST { namespace RevCPU {
+
 // type tags for each riscv architecture supported in REV
 //
 struct RiscvArch {
@@ -38,15 +50,6 @@ struct Riscv64 : RiscvArch {
 struct Riscv128 : RiscvArch {
     using int_type = uint128_t;
 };
-
-/*
- * void_t
- *
- * tag-type representing return type for system calls that return void
- */
-struct void_t {};
-
-namespace SST { namespace RevCPU {
 
 class SystemCallParameterInterface {
     

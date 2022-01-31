@@ -83,16 +83,4 @@ void WriteSystemCall<Riscv32>::invoke<ssize_t>(SystemCallParameterInterface & pa
 
 }
 
-template<>
-template<>
-void WriteSystemCall<Riscv64>::invoke<ssize_t>(SystemCallParameterInterface & parameters, ssize_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
-template<>
-template<>
-void WriteSystemCall<Riscv128>::invoke<ssize_t>(SystemCallParameterInterface & parameters, ssize_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
 } /* end namespace RevCPU */ } // end namespace SST

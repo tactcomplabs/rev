@@ -7,19 +7,19 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "SysCallExit.h"
+#include "SysCallClose.h"
 #include <algorithm>
 
 namespace SST { namespace RevCPU {
 
-size_t ExitSystemCallParameters::count() {
+size_t BrkSystemCallParameters::count() {
     return 1UL;
 }
 
 template<>
-bool ExitSystemCallParameters::get<int>(const size_t parameter_index, int& param) {
+bool BrkSystemCallParameters::cvoid_ptr<int>(const size_t parameter_index, cvoid_ptr& param) {
     if(parameter_index == 0) {
-        param = status;
+        param = addr;
         return true;
     }
 
@@ -27,17 +27,17 @@ bool ExitSystemCallParameters::get<int>(const size_t parameter_index, int& param
 }
 
 template<typename RiscvArchType>
-typename ExitSystemCall<RiscvArchType>::RiscvModeIntegerType ExitSystemCall<RiscvArchType>::code() {
-    return ExitSystemCall<RiscvArchType>::code_value;
+typename BrkSystemCall<RiscvArchType>::RiscvModeIntegerType BrkSystemCall<RiscvArchType>::code() {
+    return BrkSystemCall<RiscvArchType>::code_value;
 }
 
-static void invoke_impl(SystemCallParameterInterface & parameters, void_t & value, bool & invoc_success) {
+static void invoke_impl(SystemCallParameterInterface & parameters, void_ptr & value) {
     if(parameters.count() == 1) {
-        int status = -1;
-        const bool has_value = parameters.get<int>(0, status);
+        cvoid_ptr addr = -1;
+        const bool has_value = parameters.get<cvoid_ptr>(0, addr);
         if(has_value && status != -1) {
             invoc_success = true;            
-            exit(status);
+            value = brk(addr);
         }
     }
 
@@ -46,7 +46,7 @@ static void invoke_impl(SystemCallParameterInterface & parameters, void_t & valu
 
 template<>
 template<>
-void ExitSystemCall<Riscv32>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
+void BrkSystemCall<Riscv32>::invoke<void_ptr>(SystemCallParameterInterface & parameters, void_ptr & value) {
     invoke_impl(parameters, value, success);
 }
 

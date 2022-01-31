@@ -58,16 +58,4 @@ void TGKillSystemCall<Riscv32>::invoke<int>(SystemCallParameterInterface & param
     invoke_impl(parameters, value, success);
 }
 
-template<>
-template<>
-void TGKillSystemCall<Riscv64>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
-    invoke_impl(parameters, value, success);
-}
-
-template<>
-template<>
-void TGKillSystemCall<Riscv128>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
-    invoke_impl(parameters, value, success);
-}
-
 } /* end namespace RevCPU */ } // end namespace SST

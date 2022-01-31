@@ -53,16 +53,4 @@ void ExitGroupSystemCall<Riscv32>::invoke<void_t>(SystemCallParameterInterface &
     invoke_impl(parameters, value, success);
 }
 
-template<>
-template<>
-void ExitGroupSystemCall<Riscv64>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
-template<>
-template<>
-void ExitGroupSystemCall<Riscv128>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
 } /* end namespace RevCPU */ } // end namespace SST
