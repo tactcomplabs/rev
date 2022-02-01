@@ -27,12 +27,12 @@
 #include "SysCallOpenUnlinkAt.h"
 #include "SysCallLink.h"
 #include "SysCallUnlink.h"
+#include "SysCallMkdirAt.h"
+#include "SysCallMkdir.h"
+#include "SysCallRenameat.h"
 
 /*
-#include "SysCallOpenMkdirAt.h"
-#include "SysCallMkdir.h"
 
-#include "SysCallOpenRenameat.h"
 #include "SysCallChdir.h"
 #include "SysCallGetcwd.h"
 #include "SysCallFstat.h"
@@ -108,21 +108,24 @@ class SystemCalls {
     public:
 
     enum Codes : RiscvModeIntegerType {
-        EXIT           = ExitSystemCall<RiscvArchType>::code_value,
-        EXITGROUP      = ExitGroupSystemCall<RiscvArchType>::code_value,
-        GETPID         = GetPidSystemCall<RiscvArchType>::code_value,
-        KILL           = KillSystemCall<RiscvArchType>::code_value,
-        TGKILL         = TGKillSystemCall<RiscvArchType>::code_value,
-        READ           = ReadSystemCall<RiscvArchType>::code_value,
-        WRITE          = WriteSystemCall<RiscvArchType>::code_value,
-        OPENAT         = OpenAtSystemCall<RiscvArchType>::code_value,
-        CLOSE          = CloseSystemCall<RiscvArchType>::code_value,
-        LSEEK          = LseekSystemCall<RiscvArchType>::code_value,
-        BRK            = LseekSystemCall<RiscvArchType>::code_value,        
-        LINKAT         = LinkAtSystemCall<RiscvArchType>::code_value,
-        UNLINKAT       = UnlinkAtSystemCall<RiscvArchType>::code_value,
-        LINK           = LinkSystemCall<RiscvArchType>::code_value,
-        UNLINK         = UnlinkSystemCall<RiscvArchType>::code_value,        
+        EXIT             = ExitSystemCall<RiscvArchType>::code_value,
+        EXITGROUP        = ExitGroupSystemCall<RiscvArchType>::code_value,
+        GETPID           = GetPidSystemCall<RiscvArchType>::code_value,
+        KILL             = KillSystemCall<RiscvArchType>::code_value,
+        TGKILL           = TGKillSystemCall<RiscvArchType>::code_value,
+        READ             = ReadSystemCall<RiscvArchType>::code_value,
+        WRITE            = WriteSystemCall<RiscvArchType>::code_value,
+        OPENAT           = OpenAtSystemCall<RiscvArchType>::code_value,
+        CLOSE            = CloseSystemCall<RiscvArchType>::code_value,
+        LSEEK            = LseekSystemCall<RiscvArchType>::code_value,
+        BRK              = LseekSystemCall<RiscvArchType>::code_value,        
+        LINKAT           = LinkAtSystemCall<RiscvArchType>::code_value,
+        UNLINKAT         = UnlinkAtSystemCall<RiscvArchType>::code_value,
+        LINK             = LinkSystemCall<RiscvArchType>::code_value,
+        UNLINK           = UnlinkSystemCall<RiscvArchType>::code_value,        
+        RENAMEAT         = UnlinkSystemCall<RiscvArchType>::code_value,     
+        MKDIRAT          = UnlinkSystemCall<RiscvArchType>::code_value,           
+        MKDIR            = UnlinkSystemCall<RiscvArchType>::code_value,        
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
