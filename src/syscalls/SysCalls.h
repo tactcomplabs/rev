@@ -34,11 +34,11 @@
 #include "SysCallGetcwd.h"
 #include "SysCallFstat.h"
 #include "SysCallFstatat.h"
-
-/*
 #include "SysCallFaccessat.h"
 #include "SysCallPread.h"
 #include "SysCallPwrite.h"
+
+/*
 #include "SysCallUname.h"
 #include "SysCallGetuid.h"
 #include "SysCallGeteuid.h"
@@ -76,6 +76,7 @@
 #include "SysCallLstat.h"
 #include "SysCallTime.h"
 */
+
 #include <unordered_map>
 #include <type_traits>
 
@@ -108,18 +109,21 @@ class SystemCalls : public SystemArch<RiscvArchType> {
         OPENAT           = OpenAtSystemCall<RiscvArchType>::code_value,
         CLOSE            = CloseSystemCall<RiscvArchType>::code_value,
         LSEEK            = LseekSystemCall<RiscvArchType>::code_value,
-        BRK              = LseekSystemCall<RiscvArchType>::code_value,        
+        BRK              = LseekSystemCall<RiscvArchType>::code_value,
         LINKAT           = LinkAtSystemCall<RiscvArchType>::code_value,
         UNLINKAT         = UnlinkAtSystemCall<RiscvArchType>::code_value,
         LINK             = LinkSystemCall<RiscvArchType>::code_value,
-        UNLINK           = UnlinkSystemCall<RiscvArchType>::code_value,        
-        RENAMEAT         = UnlinkSystemCall<RiscvArchType>::code_value,     
-        MKDIRAT          = UnlinkSystemCall<RiscvArchType>::code_value,           
-        MKDIR            = UnlinkSystemCall<RiscvArchType>::code_value,        
-        CHDIR            = ChdirSystemCall<RiscvArchType>::code_value,        
-        GETCWD           = GetcwdSystemCall<RiscvArchType>::code_value,        
-        FSTAT            = FstatSystemCall<RiscvArchType>::code_value,        
-        FSTATAT          = FstatatSystemCall<RiscvArchType>::code_value,                        
+        UNLINK           = UnlinkSystemCall<RiscvArchType>::code_value,
+        RENAMEAT         = UnlinkSystemCall<RiscvArchType>::code_value,
+        MKDIRAT          = UnlinkSystemCall<RiscvArchType>::code_value,
+        MKDIR            = UnlinkSystemCall<RiscvArchType>::code_value,
+        CHDIR            = ChdirSystemCall<RiscvArchType>::code_value,
+        GETCWD           = GetcwdSystemCall<RiscvArchType>::code_value,
+        FSTAT            = FstatSystemCall<RiscvArchType>::code_value,
+        FSTATAT          = FstatatSystemCall<RiscvArchType>::code_value,
+        FACCESSAT        = FaccessatSystemCall<RiscvArchType>::code_value,
+        PREAD            = PreadSystemCall<RiscvArchType>::code_value,
+        PWRITE           = PwriteSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;

@@ -34,9 +34,12 @@ std::unordered_map<typename SystemCalls<RiscvArchType>::Codes, SystemCallInterfa
         { SystemCalls<RiscvArchType>::Codes::MKDIRAT        , MkdirAtSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::MKDIR          , MkdirSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::CHDIR          , ChdirSystemCall<RiscvArchType>{} },
-        { SystemCalls<RiscvArchType>::Codes::GETCWD         , ChdirSystemCall<RiscvArchType>{} },
-        { SystemCalls<RiscvArchType>::Codes::FSTAT          , ChdirSystemCall<RiscvArchType>{} },
-        { SystemCalls<RiscvArchType>::Codes::FSTATAT        , ChdirSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETCWD         , GetcwdSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::FSTAT          , FstatSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::FSTATAT        , FstatatSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::FACCESSAT      , FaccessatSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::PREAD          , PreadSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::PWRITE         , PwriteSystemCall<RiscvArchType>{} },
 };
 
 } /* end namespace RevCPU */ } // end namespace SST
