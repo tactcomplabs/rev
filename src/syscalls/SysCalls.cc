@@ -40,6 +40,7 @@ std::unordered_map<typename SystemCalls<RiscvArchType>::Codes, SystemCallInterfa
         { SystemCalls<RiscvArchType>::Codes::FACCESSAT      , FaccessatSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::PREAD          , PreadSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::PWRITE         , PwriteSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::UNAME          , UnameSystemCall<RiscvArchType>{} },
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

@@ -37,9 +37,9 @@
 #include "SysCallFaccessat.h"
 #include "SysCallPread.h"
 #include "SysCallPwrite.h"
+#include "SysCallUname.h"
 
 /*
-#include "SysCallUname.h"
 #include "SysCallGetuid.h"
 #include "SysCallGeteuid.h"
 #include "SysCallGetgid.h"
@@ -124,6 +124,7 @@ class SystemCalls : public SystemArch<RiscvArchType> {
         FACCESSAT        = FaccessatSystemCall<RiscvArchType>::code_value,
         PREAD            = PreadSystemCall<RiscvArchType>::code_value,
         PWRITE           = PwriteSystemCall<RiscvArchType>::code_value,
+        UNAME            = UnameSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
