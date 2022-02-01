@@ -41,6 +41,11 @@ std::unordered_map<typename SystemCalls<RiscvArchType>::Codes, SystemCallInterfa
         { SystemCalls<RiscvArchType>::Codes::PREAD          , PreadSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::PWRITE         , PwriteSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::UNAME          , UnameSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETUID         , GetuidSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETEUID        , GeteuidSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETGID         , GetgidSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETEGID        , GetegidSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETTID         , GettidSystemCall<RiscvArchType>{} },
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

@@ -38,13 +38,13 @@
 #include "SysCallPread.h"
 #include "SysCallPwrite.h"
 #include "SysCallUname.h"
-
-/*
 #include "SysCallGetuid.h"
 #include "SysCallGeteuid.h"
 #include "SysCallGetgid.h"
 #include "SysCallGetegid.h"
 #include "SysCallGettid.h"
+
+/*
 #include "SysCallMmap.h"
 #include "SysCallMunmap.h"
 #include "SysCallMremap.h"
@@ -125,6 +125,11 @@ class SystemCalls : public SystemArch<RiscvArchType> {
         PREAD            = PreadSystemCall<RiscvArchType>::code_value,
         PWRITE           = PwriteSystemCall<RiscvArchType>::code_value,
         UNAME            = UnameSystemCall<RiscvArchType>::code_value,
+        GETUID           = GetuidSystemCall<RiscvArchType>::code_value,
+        GETEUID          = GeteuidSystemCall<RiscvArchType>::code_value,
+        GETGID           = GetgidSystemCall<RiscvArchType>::code_value,
+        GETEGID          = GetegidSystemCall<RiscvArchType>::code_value,
+        GETTID           = GettidSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
