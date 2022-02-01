@@ -32,7 +32,9 @@ std::unordered_map<typename SystemCalls<RiscvArchType>::Codes, SystemCallInterfa
         { SystemCalls<RiscvArchType>::Codes::UNLINK          , UnlinkSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::RENAMEAT        , RenameAtSystemCall<RiscvArchType>{} },
         { SystemCalls<RiscvArchType>::Codes::MKDIRAT         , MkdirAtSystemCall<RiscvArchType>{} },
-        { SystemCalls<RiscvArchType>::Codes::MKDIR           , MkdirAtSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::MKDIR           , MkdirSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::CHDIR           , ChdirSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETCWD           , ChdirSystemCall<RiscvArchType>{} },
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MkdirSystemCall<Riscv32>::invoke<int>(MkdirSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void ChdirSystemCall<Riscv32>::invoke<int>(ChdirSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -36,7 +36,7 @@ void MkdirSystemCall<Riscv32>::invoke<int>(MkdirSystemCall<Riscv32>::SystemCallP
 
 template<>
 template<>
-void MkdirSystemCall<Riscv64>::invoke<int>(MkdirSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void ChdirSystemCall<Riscv64>::invoke<int>(ChdirSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -55,7 +55,7 @@ void MkdirSystemCall<Riscv64>::invoke<int>(MkdirSystemCall<Riscv64>::SystemCallP
 
 template<>
 template<>
-void MkdirSystemCall<Riscv128>::invoke<int>(MkdirSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void ChdirSystemCall<Riscv128>::invoke<int>(ChdirSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth;

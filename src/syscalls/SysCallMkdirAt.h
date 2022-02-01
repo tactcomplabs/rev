@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MkdirAtCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MkdirAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class MkdirAtCallParameters : public virtual MkdirAtCallParametersInterfaceType<RiscvArchType> {
+class MkdirAtSystemCallParameters : public virtual MkdirAtSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,11 @@ class MkdirAtCallParameters : public virtual MkdirAtCallParametersInterfaceType<
 
     public:
 
-    using SystemCallParameterInterfaceType = MkdirAtCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = MkdirAtSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MkdirAtCallParameters(int fd_i, std::string path, size_t count_i) : SystemCallParameterInterfaceType(), fd(fd_i), pth(path), bcount(count_i) {}
+    MkdirAtSystemCallParameters(int fd_i, std::string path, size_t count_i)
+        : SystemCallParameterInterfaceType(), fd(fd_i), pth(path), bcount(count_i) {}
 
     size_t count() override { return 3UL; }
 

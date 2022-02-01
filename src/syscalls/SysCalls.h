@@ -30,11 +30,10 @@
 #include "SysCallMkdirAt.h"
 #include "SysCallMkdir.h"
 #include "SysCallRenameat.h"
-
-/*
-
 #include "SysCallChdir.h"
 #include "SysCallGetcwd.h"
+
+/*
 #include "SysCallFstat.h"
 #include "SysCallFstatat.h"
 #include "SysCallFaccessat.h"
@@ -126,6 +125,8 @@ class SystemCalls {
         RENAMEAT         = UnlinkSystemCall<RiscvArchType>::code_value,     
         MKDIRAT          = UnlinkSystemCall<RiscvArchType>::code_value,           
         MKDIR            = UnlinkSystemCall<RiscvArchType>::code_value,        
+        CHDIR            = ChdirSystemCall<RiscvArchType>::code_value,        
+        GETCWD           = GetcwdSystemCall<RiscvArchType>::code_value,        
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;

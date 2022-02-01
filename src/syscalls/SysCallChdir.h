@@ -1,5 +1,5 @@
 //
-// SysCallMkdir.h
+// SysCallChdir.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLMKDIR_H__
-#define __SYSTEMCALLMKDIR_H__
+#ifndef __SYSTEMCALLCHDIR_H__
+#define __SYSTEMCALLCHDIR_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
@@ -19,23 +19,22 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MkdirSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 34>;
+using ChdirSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 34>;
 
 template<typename RiscvArchType=Riscv32>
-class MkdirSystemCallParameters : public virtual MkdirSystemCallParametersInterfaceType<RiscvArchType> {
+class ChdirSystemCallParameters : public virtual ChdirSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
     std::string pth;
-    mode_t mode;
 
     public:
 
-    using SystemCallParameterInterfaceType = MkdirSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = ChdirSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MkdirSystemCallParameters(std::string path, mode_t mde)
-        : SystemCallParameterInterfaceType(), pth(path), mode(mde) {}
+    ChdirSystemCallParameters(std::string path)
+        : SystemCallParameterInterfaceType(), pth(path) {}
 
     size_t count() override { return 2UL; }
 
@@ -51,34 +50,24 @@ class MkdirSystemCallParameters : public virtual MkdirSystemCallParametersInterf
 
         return false;
     }
-
-    template<>
-    bool get(const size_t parameter_index, mode_t& param) {
-        if(parameter_index == 1) {
-            param = mode;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
-using MkdirSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 34>;
+using ChdirSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 34>;
 
 template<typename RiscvArchType=Riscv32>
-class MkdirSystemCall : public virtual MkdirSystemCallInterfaceType<RiscvArchType> {
+class ChdirSystemCall : public virtual ChdirSystemCallInterfaceType<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MkdirSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = ChdirSystemCallInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
 
-    MkdirSystemCall() : SystemCallInterfaceType() {}
+    ChdirSystemCall() : SystemCallInterfaceType() {}
 
     // always returns false
     //
