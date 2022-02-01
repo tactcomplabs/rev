@@ -113,7 +113,7 @@ class FstatatSystemCall : public virtual FstatatSystemCallInterfaceType<RiscvArc
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, std::string & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST
