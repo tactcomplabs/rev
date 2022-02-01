@@ -8,46 +8,47 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallClose.h"
-#include <algorithm>
+#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
-size_t CloseSystemCallParameters::count() {
-    return 1UL;
-}
-
 template<>
-bool CloseSystemCallParameters::get<int>(const size_t parameter_index, int& param) {
-    if(parameter_index == 0) {
-        param = fd;
-        return true;
-    }
-
-    return false;
-}
-
-template<typename RiscvArchType>
-typename CloseSystemCall<RiscvArchType>::RiscvModeIntegerType CloseSystemCall<RiscvArchType>::code() {
-    return CloseSystemCall<RiscvArchType>::code_value;
-}
-
-static void invoke_impl(SystemCallParameterInterface & parameters, int & value) {
+template<>
+void CloseSystemCall<Riscv32>::invoke<int>(CloseSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
-        int fd = -1;
-        const bool has_value = parameters.get<int>(0, fd);
+        int status = -1;
+        const bool has_value = parameters.get<int>(0, status);
         if(has_value && status != -1) {
-            invoc_success = true;            
-            value = close(fd);
+            success = true;            
+            value = close(status);
         }
     }
-
-    invoc_success = false;    
 }
 
 template<>
 template<>
-void CloseSystemCall<Riscv32>::invoke<int>(SystemCallParameterInterface & parameters, int & value) {
-    invoke_impl(parameters, value, success);
+void CloseSystemCall<Riscv64>::invoke<int>(CloseSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        int status = -1;
+        const bool has_value = parameters.get<int>(0, status);
+        if(has_value && status != -1) {
+            success = true;            
+            value = close(status);
+        }
+    }
+}
+
+template<>
+template<>
+void CloseSystemCall<Riscv128>::invoke<int>(CloseSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        int status = -1;
+        const bool has_value = parameters.get<int>(0, status);
+        if(has_value && status != -1) {
+            success = true;            
+            value = close(status);
+        }
+    }
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

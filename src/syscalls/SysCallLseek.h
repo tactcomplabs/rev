@@ -13,47 +13,86 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
-class LseekSystemCallParameters : public virtual SystemCallParameterInterface {
+template<typename RiscvArchType=Riscv32>
+using LseekSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+
+template<typename RiscvArchType=Riscv32>
+class LseekSystemCallParameters : public virtual LseekSystemCallParametersInterfaceType<RiscvArchType> {
     
+    private:
+
     int fd;
     off_t offset;
     int whence;
 
     public:
 
-    LseekSystemCallParameters(const int fd_, const off_t offset_, const int whence_) : SystemCallParameterInterface(), fd(fd_), offset(offset_), whence(whence_) {}
+    using SystemCallParameterInterfaceType = LseekSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    size_t count() override;
+    LseekSystemCallParameters(const int fd_i, const off_t offset_i, const int whence_i)
+        : SystemCallParameterInterfaceType(), fd(fd_i), offset(offset_i), whence(whence_i) {}
+
+    size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
+
+    template<>
+    bool get(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = fd;
+            return true;
+        }
+        else if(parameter_index == 2) {
+            param = whence;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, off_t& param) {
+        if(parameter_index == 1) {
+            param = offset;
+            return true;
+        }
+        
+        return false;
+    }
 };
 
 template<typename RiscvArchType=Riscv32>
-class LseekSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+using LseekSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
-    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-    
+template<typename RiscvArchType=Riscv32>
+class LseekSystemCall : public virtual LseekSystemCallInterfaceType<RiscvArchType> {
+  
     public:
 
-    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(62);
+    using SystemCallInterfaceType = LseekSystemCallInterfaceType<RiscvArchType>;
 
-    LseekSystemCall() {}
-
-    RiscvModeIntegerType code() override;
+    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
+    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+
+    LseekSystemCall() : SystemCallInterfaceType() {}
+
     // always returns false
     //
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
 
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterface & parameters, off_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, off_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

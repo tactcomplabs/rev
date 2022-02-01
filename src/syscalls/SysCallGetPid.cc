@@ -8,43 +8,32 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallGetPid.h"
-#include <algorithm>
-
-#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
-size_t GetPidSystemCallParameters::count() {
-    return 0UL;
-}
-
-template<>
-bool GetPidSystemCallParameters::get<void_t>(const size_t parameter_index, void_t& param) {
-    if(parameter_index == -1) {
-        return true;
-    }
-
-    return false;
-}
-
-template<typename RiscvArchType>
-typename GetPidSystemCall<RiscvArchType>::RiscvModeIntegerType GetPidSystemCall<RiscvArchType>::code() {
-    return GetPidSystemCall<RiscvArchType>::code_value;
-}
-
-static void invoke_impl(SystemCallParameterInterface & parameters, void_t & value, bool & ivoc_success) {
-    if(parameters.count() == 0) {
-        ivoc_success = true;
-        getpid();
-    }
-
-    ivoc_success = false;
+static void invoke_impl(pid_t & value) {
+    value = getpid();
 }
 
 template<>
 template<>
-void GetPidSystemCall<Riscv32>::invoke<void_t>(SystemCallParameterInterface & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
+void GetPidSystemCall<Riscv32>::invoke(GetPidSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+    success = parameters.count() == 0;
+    invoke_impl(value);
+}
+
+template<>
+template<>
+void GetPidSystemCall<Riscv64>::invoke(GetPidSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+    success = parameters.count() == 0;
+    invoke_impl(value);
+}
+
+template<>
+template<>
+void GetPidSystemCall<Riscv128>::invoke(GetPidSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+    success = parameters.count() == 0;
+    invoke_impl(value);
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

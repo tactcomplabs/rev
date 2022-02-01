@@ -16,42 +16,71 @@
 
 namespace SST { namespace RevCPU {
 
-class ExitGroupSystemCallParameters : public virtual SystemCallParameterInterface {
+template<typename RiscvArchType=Riscv32>
+using ExitGroupSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 94>;
+
+template<typename RiscvArchType=Riscv32>
+class ExitGroupSystemCallParameters : public virtual ExitGroupSystemCallParametersInterfaceType<RiscvArchType> {
     
+    private:
+
     int status;
 
     public:
 
-    ExitGroupSystemCallParameters(const int stat) : SystemCallParameterInterface(), status(stat) {}
+    using SystemCallParameterInterfaceType = ExitGroupSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    size_t count() override;
+    ExitGroupSystemCallParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
+
+    size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
+
+    template<>
+    bool get(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = status;
+            return true;
+        }
+
+        return false;
+    }
 };
 
 template<typename RiscvArchType=Riscv32>
-class ExitGroupSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+using ExitGroupSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 94>;
 
-    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-    
+template<typename RiscvArchType=Riscv32>
+class ExitGroupSystemCall : public virtual ExitGroupSystemCallInterfaceType<RiscvArchType> {
+  
     public:
 
-    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(94);
+    using SystemCallInterfaceType = ExitGroupSystemCallInterfaceType<RiscvArchType>;
 
-    ExitGroupSystemCall() {}
-
-    RiscvModeIntegerType code() override;
+    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
+    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+
+    private:
+
+    void invoke_impl(SystemCallParameterInterfaceType & parameters, void_t & value, bool & invoc_success);
+
+    public:
+
+    ExitGroupSystemCall() : SystemCallInterfaceType() {}
+
     // always returns false
     //
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
 
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterface & parameters, void_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, void_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

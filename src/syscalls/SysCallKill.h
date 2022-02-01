@@ -17,8 +17,12 @@
 
 namespace SST { namespace RevCPU {
 
-class KillSystemCallParameters : public virtual SystemCallParameterInterface {
+template<typename RiscvArchType=Riscv32>
+using KillSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
+template<typename RiscvArchType=Riscv32>
+class KillSystemCallParameters : public virtual KillSystemCallParametersInterfaceType<RiscvArchType> {
+    
     private:
 
     pid_t pid;
@@ -26,36 +30,57 @@ class KillSystemCallParameters : public virtual SystemCallParameterInterface {
 
     public:
 
-    KillSystemCallParameters(const pid_t pid_i, const int sig_i) : SystemCallParameterInterface(), pid(pid_i), sig(sig_i) {}
+    using SystemCallParameterInterfaceType = KillSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    size_t count() override;
+    KillSystemCallParameters(const pid_t pid_i, const int sig_i) : SystemCallParameterInterfaceType(), pid(pid_i), sig(sig_i) {}
+
+    size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
+
+    template<>
+    bool get(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = pid;
+            return true;
+        }
+        else if(parameter_index == 1) {
+            param = sig;
+            return true;
+        }
+        
+        return false;
+    }
 };
 
 template<typename RiscvArchType=Riscv32>
-class KillSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+using KillSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
-    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-
+template<typename RiscvArchType=Riscv32>
+class KillSystemCall : public virtual KillSystemCallInterfaceType<RiscvArchType> {
+  
     public:
 
-    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(129);
+    using SystemCallInterfaceType = KillSystemCallInterfaceType<RiscvArchType>;
 
-    KillSystemCall() {}
-
-    RiscvModeIntegerType code() override;
+    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
+    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+
+    KillSystemCall() : SystemCallInterfaceType() {}
+
     // always returns false
     //
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
 
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterface & parameters, int & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

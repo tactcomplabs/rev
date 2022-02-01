@@ -1,5 +1,5 @@
 //
-// SysCallTGKill.h
+// SysCallWrite.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,74 +8,90 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLTGKILL_H__
-#define __SYSTEMCALLTGKILL_H__
+#ifndef __SYSTEMCALLLINKAT_H__
+#define __SYSTEMCALLLINKAT_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
 #include <sys/types.h>
+#include <string>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using LinkAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1025>;
 
 template<typename RiscvArchType=Riscv32>
-class TGKillSystemCallParameters : public virtual TGKillSystemCallParametersInterfaceType<RiscvArchType> {
+class LinkAtSystemCallParameters : public virtual LinkAtSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
-    int tgid;
-    int tid;
-    int sig;
+    const int fd1, fd2, flag;
+    const std::string oldpth;
+    const std::string newpth;
 
     public:
 
-    using SystemCallParameterInterfaceType = TGKillSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = LinkAtSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    TGKillSystemCallParameters(const int tgid_i, const int tid_i, const int sig_i) : SystemCallParameterInterfaceType(), tgid(tgid_i), tid(tid_i), sig(sig_i) {}
+    LinkAtSystemCallParameters(const int fd_1, const std::string old_pth, const int fd_2, const std::string new_pth, const int flag_i)
+        : SystemCallParameterInterfaceType(), fd1(fd_1), oldpth(old_pth), fd2(fd_2), newpth(new_pth), flag(flag_i) {}
 
-    size_t count() override { return 3UL; }
+    size_t count() override { return 5UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
 
     template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = tgid;
+    bool get(const size_t parameter_index, std::string& param) {
+        if(parameter_index == 1) {
+            param = oldpth;
             return true;
         }
-        else if(parameter_index == 1) {
-            param = tid;
+        else if(parameter_index == 3) {
+            param = newpth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = fd1;
             return true;
         }
         else if(parameter_index == 2) {
-            param = sig;
+            param = fd2;
             return true;
         }
-        
+        else if(parameter_index == 4) {
+            param = flag;
+            return true;
+        }
+
         return false;
     }
 };
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using LinkAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1025>;
 
 template<typename RiscvArchType=Riscv32>
-class TGKillSystemCall : public virtual TGKillSystemCallInterfaceType<RiscvArchType> {
+class LinkAtSystemCall : public virtual LinkAtSystemCallInterfaceType<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = TGKillSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = LinkAtSystemCallInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
 
-    TGKillSystemCall() : SystemCallInterfaceType() {}
+    LinkAtSystemCall() : SystemCallInterfaceType() {}
 
     // always returns false
     //

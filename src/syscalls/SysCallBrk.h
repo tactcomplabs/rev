@@ -1,5 +1,5 @@
 //
-// SysCallExit.h
+// SysCallBrk.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -16,42 +16,66 @@
 
 namespace SST { namespace RevCPU {
 
-class BrkSystemCallParameters : public virtual SystemCallParameterInterface {
+template<typename RiscvArchType=Riscv32>
+using BrkSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 214>;
+
+template<typename RiscvArchType=Riscv32>
+class BrkSystemCallParameters : public virtual BrkSystemCallParametersInterfaceType<RiscvArchType> {
     
+    private:
+
     cvoid_ptr addr;
 
     public:
 
-    BrkSystemCallParameters(cvoid_ptr addr_) : SystemCallParameterInterface(), addr(addr_) {}
+    using SystemCallParameterInterfaceType = BrkSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    size_t count() override;
+    BrkSystemCallParameters(const cvoid_ptr addr_i) : SystemCallParameterInterfaceType(), addr(addr_i) {}
+
+    size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
+
+    template<>
+    bool get(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = addr;
+            return true;
+        }
+
+        return false;
+    }
 };
 
-template<typename RiscvArchType=Riscv32>
-class BrkSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
-    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-    
+template<typename RiscvArchType=Riscv32>
+using BrkSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 214>;
+
+template<typename RiscvArchType=Riscv32>
+class BrkSystemCall : public virtual BrkSystemCallInterfaceType<RiscvArchType> {
+  
     public:
 
-    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(214);
+    using SystemCallInterfaceType = BrkSystemCallInterfaceType<RiscvArchType>;
 
-    BrkSystemCall() {}
-
-    RiscvModeIntegerType code() override;
+    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
+    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+
+    BrkSystemCall() : SystemCallInterfaceType() {}
+
     // always returns false
     //
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
 
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterface & parameters, void_ptr & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, void_ptr & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

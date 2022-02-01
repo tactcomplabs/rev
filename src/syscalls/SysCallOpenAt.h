@@ -20,11 +20,15 @@
 
 namespace SST { namespace RevCPU {
 
-class OpenAtSystemCallParameters : public virtual SystemCallParameterInterface {
 
+template<typename RiscvArchType=Riscv32>
+using OpenAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+
+template<typename RiscvArchType=Riscv32>
+class OpenAtSystemCallParameters : public virtual OpenAtSystemCallParametersInterfaceType<RiscvArchType> {
+    
     private:
 
-    size_t count;
     int fd;
     std::string path;
     int oflag;
@@ -32,44 +36,84 @@ class OpenAtSystemCallParameters : public virtual SystemCallParameterInterface {
 
     public:
 
-    OpenAtSystemCallParameters(int fd_i, size_t path_i_len, char *path_i, size_t oflag_i, mode_t mode_i=-1) : SystemCallParameterInterface(), fd(fd_i), oflag(oflag_i), mode(mode_i) {
-        path = std::string{buf_i, buf_i_len};
-        count = (mode_i == -1) ? 3UL : 4UL;
-    }
+    using SystemCallParameterInterfaceType = OpenAtSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    OpenAtSystemCallParameters(int fd_i, std::string & path_i, size_t oflag_i, mode_t mode_i=-1) : SystemCallParameterInterface(), fd(fd_i), oflag(oflag_i), mode(mode_i) {
-        path = std::string{path_i.c_str(), path_i.size()};
-        count = (mode_i == -1) ? 3UL : 4UL;
-    }
+    OpenAtSystemCallParameters(int fd_i, std::string path_i, int oflag_i, mode_t mode_i)
+        : SystemCallParameterInterfaceType(), fd(fd_i), path(path_i), oflag(oflag_i), mode(mode_i) {}
 
-    size_t count() override;
+    size_t count() override { return 4UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
+
+    template<>
+    bool get(const size_t parameter_index, int & param) {
+        if(parameter_index == 0) {
+            param = fd;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, std::string & param) {
+        if(parameter_index == 1) {
+            param = path;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, int & param) {
+        if(parameter_index == 2) {
+            param = oflag;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, mode_t & param) {
+        if(parameter_index == 3) {
+            param = mode;
+            return true;
+        }
+        
+        return false;
+    }
 };
 
 template<typename RiscvArchType=Riscv32>
-class OpenAtSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+using OpenAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
-    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-
+template<typename RiscvArchType=Riscv32>
+class OpenAtSystemCall : public virtual OpenAtSystemCallInterfaceType<RiscvArchType> {
+  
     public:
 
-    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(56);
+    using SystemCallInterfaceType = OpenAtSystemCallInterfaceType<RiscvArchType>;
 
-    OpenAtSystemCall() {}
-
-    RiscvModeIntegerType code() override;
+    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
+    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+
+    OpenAtSystemCall() : SystemCallInterfaceType() {}
+
     // always returns false
     //
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
-    
+    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
+
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterface & parameters, int & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, ssize_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

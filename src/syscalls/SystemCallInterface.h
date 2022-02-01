@@ -22,7 +22,10 @@
 typedef unsigned int uint128_t __attribute__((mode(TI)));
 
 using cvoid_ptr = const void *;
+using cchar_ptr = const char *;
+
 using void_ptr = void *;
+using char_ptr = char *;
 
 /*
  * void_t
@@ -51,33 +54,13 @@ struct Riscv128 : RiscvArch {
     using int_type = uint128_t;
 };
 
-class SystemCallParameterInterface {
+template<typename RiscvArchType>
+struct SystemArch {
     
-    public:
-    
-    SystemCallParameterInterface() {}
+    using RiscvArch = RiscvArchType;
 
-    virtual size_t count() {
-        return -1;
-    }
-
-    template<typename ParameterType>
-    bool get(const size_t parameter_index, ParameterType & param) {
-        return false;
-    }
-};
-
-template<typename RiscvArchType=Riscv32>
-class SystemCallInterface {
-
-    protected:
-
-    bool success;
-
-    public:
-
-    using IsRiscv32 = typename std::conditional< std::is_same<RiscvArchType, Riscv32>::value, std::true_type, std::false_type>::type;
-    using IsRiscv64 = typename std::conditional< std::is_same<RiscvArchType, Riscv64>::value, std::true_type, std::false_type>::type;
+    using IsRiscv32  = typename std::conditional< std::is_same<RiscvArchType, Riscv32>::value, std::true_type, std::false_type>::type;
+    using IsRiscv64  = typename std::conditional< std::is_same<RiscvArchType, Riscv64>::value, std::true_type, std::false_type>::type;
     using IsRiscv128 = typename std::conditional< std::is_same<RiscvArchType, Riscv128>::value, std::true_type, std::false_type>::type;
 
     using RiscvModeIntegerType = typename std::conditional< IsRiscv32::value,
@@ -90,7 +73,51 @@ class SystemCallInterface {
                 >::type
             >::type
         >::type;
+};
 
+template<typename RiscvArchType, typename SystemArch<RiscvArchType>::RiscvModeIntegerType Code>
+class SystemCallParameterInterface : public SystemArch<RiscvArchType> {
+    
+    public:
+
+    using RiscvArch = typename SystemArch<RiscvArchType>::RiscvArch;
+    using IsRiscv32  = typename SystemArch<RiscvArchType>::IsRiscv32;
+    using IsRiscv64  = typename SystemArch<RiscvArchType>::IsRiscv64;
+    using IsRiscv128 = typename SystemArch<RiscvArchType>::IsRiscv128;
+    using RiscvModeIntegerType = typename SystemArch<RiscvArchType>::RiscvModeIntegerType;
+    using SystemCallCodeType = std::integral_constant<RiscvModeIntegerType, static_cast<RiscvModeIntegerType>(Code)>;
+
+    SystemCallParameterInterface() {}
+
+    static RiscvModeIntegerType code() {
+        return SystemCallCodeType::value;
+    }
+
+    virtual size_t count() {
+        return -1;
+    }
+
+    template<typename ParameterType>
+    bool get(const size_t parameter_index, ParameterType & param) {
+        return false;
+    }
+};
+
+template<typename RiscvArchType, typename SystemArch<RiscvArchType>::RiscvModeIntegerType Code>
+class SystemCallInterface : public SystemArch<RiscvArchType> {
+
+    protected:
+
+    bool success;
+
+    public:
+
+    using RiscvArch = typename SystemArch<RiscvArchType>::RiscvArch;
+    using IsRiscv32  = typename SystemArch<RiscvArchType>::IsRiscv32;
+    using IsRiscv64  = typename SystemArch<RiscvArchType>::IsRiscv64;
+    using IsRiscv128 = typename SystemArch<RiscvArchType>::IsRiscv128;
+    using RiscvModeIntegerType = typename SystemArch<RiscvArchType>::RiscvModeIntegerType;
+    using SystemCallCodeType = std::integral_constant<RiscvModeIntegerType, static_cast<RiscvModeIntegerType>(Code)>;
 
     SystemCallInterface() : success(false) {}
 
@@ -98,12 +125,12 @@ class SystemCallInterface {
         return success;
     }
 
-    virtual RiscvModeIntegerType code() {
-        return -1;
+    static RiscvModeIntegerType code() {
+        return SystemCallCodeType::value;
     }
     
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface & parameters, ReturnType & value) {
+    void invoke(SystemCallParameterInterface<RiscvArchType, SystemCallCodeType::value> & parameters, ReturnType & value) {
         success = false;
     }
 };

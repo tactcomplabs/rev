@@ -17,46 +17,87 @@
 
 namespace SST { namespace RevCPU {
 
-class ReadSystemCallParameters : public virtual SystemCallParameterInterface {
+template<typename RiscvArchType=Riscv32>
+using ReadSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
+template<typename RiscvArchType=Riscv32>
+class ReadSystemCallParameters : public virtual ReadSystemCallParametersInterfaceType<RiscvArchType> {
+    
     private:
 
     int fd;
-    void * buf;
+    void_ptr buf;
     size_t bcount;
-    
+
     public:
 
-    ReadSystemCallParameters(int fd_i, void *buf_i, size_t count_i) : SystemCallParameterInterface(), fd(fd_i), buf(buf_i), bcount(count_i) {}
+    using SystemCallParameterInterfaceType = ReadSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    size_t count() override;
+    ReadSystemCallParameters(int fd_i, void *buf_i, size_t count_i) : SystemCallParameterInterfaceType(), fd(fd_i), buf(buf_i), bcount(count_i) {}
+
+    size_t count() override { return 3UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
+
+    template<>
+    bool get(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = fd;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, void_ptr & param) {
+        if(parameter_index == 0) {
+            param = buf;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, size_t & param) {
+        if(parameter_index == 0) {
+            param = bcount;
+            return true;
+        }
+        
+        return false;
+    }
 };
 
 template<typename RiscvArchType=Riscv32>
-class ReadSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+using ReadSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
-    using RiscvModeIntegerType = typename SystemCallInterface<RiscvArchType>::RiscvModeIntegerType;
-
+template<typename RiscvArchType=Riscv32>
+class ReadSystemCall : public virtual ReadSystemCallInterfaceType<RiscvArchType> {
+  
     public:
 
-    const static RiscvModeIntegerType code_value = static_cast<RiscvModeIntegerType>(63);
+    using SystemCallInterfaceType = ReadSystemCallInterfaceType<RiscvArchType>;
 
-    ReadSystemCall() {}
-
-    RiscvModeIntegerType code() override;
+    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
+    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+
+    ReadSystemCall() : SystemCallInterfaceType() {}
+
     // always returns false
     //
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface & parameters, ReturnType & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
 
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterface & parameters, int & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, ssize_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

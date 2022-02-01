@@ -15,17 +15,21 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 std::unordered_map<typename SystemCalls<RiscvArchType>::Codes, SystemCallInterface<RiscvArchType>> SystemCalls<RiscvArchType>::jump_table {
-        { SystemCalls<RiscvArchType>::Codes::EXIT     , ExitSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::EXITGROUP, ExitGroupSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::GETPID   , GetPidSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::KILL     , KillSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::TGKILL   , TGKillSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::READ     , ReadSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::WRITE    , WriteSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::OPENAT   , OpenAtSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::CLOSE    , CloseSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::LSEEK    , LseekSystemCall<IsRiscv32>{} },
-        { SystemCalls<RiscvArchType>::Codes::BRK      , BrkSystemCall<IsRiscv32>{} },
+        { SystemCalls<RiscvArchType>::Codes::EXIT          , ExitSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::EXITGROUP     , ExitGroupSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::GETPID        , GetPidSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::KILL          , KillSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::TGKILL        , TGKillSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::READ          , ReadSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::WRITE         , WriteSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::OPENAT        , OpenAtSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::CLOSE         , CloseSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::LSEEK         , LseekSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::BRK           , BrkSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::LINKAT        , LinkAtSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::UNLINKAT      , UnlinkAtSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::LINK          , LinkSystemCall<RiscvArchType>{} },
+        { SystemCalls<RiscvArchType>::Codes::UNLINK        , UnlinkSystemCall<RiscvArchType>{} },
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

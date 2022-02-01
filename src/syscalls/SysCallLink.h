@@ -1,5 +1,5 @@
 //
-// SysCallTGKill.h
+// SysCallWrite.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,74 +8,70 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLTGKILL_H__
-#define __SYSTEMCALLTGKILL_H__
+#ifndef __SYSTEMCALLLINK_H__
+#define __SYSTEMCALLLINK_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
 #include <sys/types.h>
+#include <string>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using LinkSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1025>;
 
 template<typename RiscvArchType=Riscv32>
-class TGKillSystemCallParameters : public virtual TGKillSystemCallParametersInterfaceType<RiscvArchType> {
+class LinkSystemCallParameters : public virtual LinkSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
-    int tgid;
-    int tid;
-    int sig;
+    const std::string oldpth, newpth;
 
     public:
 
-    using SystemCallParameterInterfaceType = TGKillSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = LinkSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    TGKillSystemCallParameters(const int tgid_i, const int tid_i, const int sig_i) : SystemCallParameterInterfaceType(), tgid(tgid_i), tid(tid_i), sig(sig_i) {}
+    LinkSystemCallParameters(const std::string old_pth, const std::string new_pth)
+        : SystemCallParameterInterfaceType(), oldpth(old_pth), newpth(new_pth) {}
 
-    size_t count() override { return 3UL; }
+    size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
 
     template<>
-    bool get(const size_t parameter_index, int& param) {
+    bool get(const size_t parameter_index, std::string& param) {
         if(parameter_index == 0) {
-            param = tgid;
+            param = oldpth;
             return true;
         }
         else if(parameter_index == 1) {
-            param = tid;
+            param = newpth;
             return true;
         }
-        else if(parameter_index == 2) {
-            param = sig;
-            return true;
-        }
-        
+
         return false;
     }
 };
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using LinkSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1025>;
 
 template<typename RiscvArchType=Riscv32>
-class TGKillSystemCall : public virtual TGKillSystemCallInterfaceType<RiscvArchType> {
+class LinkSystemCall : public virtual LinkSystemCallInterfaceType<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = TGKillSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = LinkSystemCallInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
 
-    TGKillSystemCall() : SystemCallInterfaceType() {}
+    LinkSystemCall() : SystemCallInterfaceType() {}
 
     // always returns false
     //
