@@ -1,5 +1,5 @@
 //
-// SysCallGetPid.h
+// SysCallGetpid.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -18,11 +18,11 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetPidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using GetpidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 172>;
 
 
 template<typename RiscvArchType=Riscv32>
-class GetPidSystemCallParameters : public virtual GetPidSystemCallParametersInterfaceType<RiscvArchType> {
+class GetpidSystemCallParameters : public virtual GetpidSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -30,10 +30,10 @@ class GetPidSystemCallParameters : public virtual GetPidSystemCallParametersInte
 
     public:
 
-    using SystemCallParameterInterfaceType = GetPidSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GetpidSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GetPidSystemCallParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
+    GetpidSystemCallParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
 
     size_t count() override { return 0UL; }
 
@@ -47,14 +47,14 @@ class GetPidSystemCallParameters : public virtual GetPidSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetPidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using GetpidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 172>;
 
 template<typename RiscvArchType=Riscv32>
-class GetPidSystemCall : public virtual GetPidSystemCallInterfaceType<RiscvArchType> {
+class GetpidSystemCall : public virtual GetpidSystemCallInterfaceType<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GetPidSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GetpidSystemCallInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
@@ -63,7 +63,7 @@ class GetPidSystemCall : public virtual GetPidSystemCallInterfaceType<RiscvArchT
 
     public:
 
-    GetPidSystemCall() : SystemCallInterfaceType() {}
+    GetpidSystemCall() : SystemCallInterfaceType() {}
 
     // always returns false
     //
