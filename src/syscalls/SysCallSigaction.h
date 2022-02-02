@@ -1,5 +1,5 @@
 //
-// SysCallMmap.h
+// SysCallSigaction.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,77 +8,82 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLMUNMAP_H__
-#define __SYSTEMCALLMUNMAP_H__
+#ifndef __SYSTEMCALLSIGACTION_H__
+#define __SYSTEMCALLSIGACTION_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <sys/types.h>
+#include <signal.h>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MunmapSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SigactionSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class MunmapSystemCallParameters : public virtual MunmapSystemCallParametersInterfaceType<RiscvArchType> {
+class SigactionSystemCallParameters : public virtual SigactionSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
-    void * addr;
-    size_t len;
+    int sig;
+    sigaction * act;
+    sigaction * oact;
 
     public:
 
-    using SystemCallParameterInterfaceType = MunmapSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = SigactionSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MunmapSystemCallParameters(void * addrp, size_t lenp)
-        : SystemCallParameterInterfaceType(), addr(addrp), len(lenp) {}
+    SigactionSystemCallParameters(int sigp, sigaction * actp, sigaction * oactp)
+        : SystemCallParameterInterfaceType(), sig(sigp), act(actp), oact(oactp) {}
 
-    size_t count() override { return 6UL; }
+    size_t count() override { return 3UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
 
     template<>
-    bool get(const size_t parameter_index, void_ptr & param) {
+    bool get(const size_t parameter_index, int& param) {
         if(parameter_index == 0) {
-            param = addr;
+            param = sig;
             return true;
         }
-
+        
         return false;
     }
 
     template<>
-    bool get(const size_t parameter_index, size_t & param) {
+    bool get(const size_t parameter_index, sigaction * & param) {
         if(parameter_index == 1) {
-            param = len;
+            param = act;
             return true;
         }
-
+        else if(parameter_index == 1) {
+            param = oact;
+            return true;
+        }
+        
         return false;
     }
 };
 
 template<typename RiscvArchType=Riscv32>
-using MunmapSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SigactionSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class MunmapSystemCall : public virtual MunmapSystemCallInterfaceType<RiscvArchType> {
+class SigactionSystemCall : public virtual SigactionSystemCallInterfaceType<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MunmapSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = SigactionSystemCallInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
 
-    public:
-
-    MunmapSystemCall() : SystemCallInterfaceType() {}
+    SigactionSystemCall() : SystemCallInterfaceType() {}
 
     // always returns false
     //
@@ -88,7 +93,7 @@ class MunmapSystemCall : public virtual MunmapSystemCallInterfaceType<RiscvArchT
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, void_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST
