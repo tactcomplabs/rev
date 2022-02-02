@@ -35,7 +35,7 @@ class GetpidSystemCallParameters : public virtual GetpidSystemCallParametersInte
 
     GetpidSystemCallParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
 
-    size_t count() override { return 0UL; }
+    size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);

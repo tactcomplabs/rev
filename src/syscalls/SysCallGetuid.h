@@ -28,7 +28,7 @@ class GetuidSystemCallParameters : public virtual GetuidSystemCallParametersInte
 
     using SystemCallParameterInterfaceType = GetuidSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
+    
     GetuidSystemCallParameters(const void_t stat) : SystemCallParameterInterfaceType() {}
 
     size_t count() override { return 0UL; }
