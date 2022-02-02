@@ -34,18 +34,22 @@ class FcntlSystemCallParameters : public virtual FcntlCallParametersInterfaceTyp
     using SystemCallParameterInterfaceType = FcntlCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    FcntlSystemCallParameters(tms * tpp)
-        : SystemCallParameterInterfaceType(), tp(tpp) {}
+    FcntlSystemCallParameters(int fildesp, int cmdp)
+        : SystemCallParameterInterfaceType(), fildes(fildesp), cmd(cmdp) {}
 
-    size_t count() override { return 1UL; }
+    size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
 
     template<>
-    bool get(const size_t parameter_index, tms * & param) {
+    bool get(const size_t parameter_index, int & param) {
         if(parameter_index == 0) {
-            param = tp;
+            param = fildes;
+            return true;
+        }
+        else if(parameter_index == 1) {
+            param = cmd;
             return true;
         }
         
