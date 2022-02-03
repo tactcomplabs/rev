@@ -21,7 +21,7 @@ void AccessSystemCall<Riscv32>::invoke<int>(AccessSystemCall<Riscv32>::SystemCal
         std::string pth;
         int mode;
 
-        bool has_values[4] = { false, false };
+        bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
         has_values[1] = parameters.get<int>(1, mode);
 
@@ -40,7 +40,7 @@ void AccessSystemCall<Riscv64>::invoke<int>(AccessSystemCall<Riscv64>::SystemCal
         std::string pth;
         int mode;
 
-        bool has_values[4] = { false, false };
+        bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
         has_values[1] = parameters.get<int>(1, mode);
 
@@ -59,7 +59,7 @@ void AccessSystemCall<Riscv128>::invoke<int>(AccessSystemCall<Riscv128>::SystemC
         std::string pth;
         int mode;
 
-        bool has_values[4] = { false, false };
+        bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
         has_values[1] = parameters.get<int>(1, mode);
 
