@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using CloseSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using CloseSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 57>;
 
 template<typename RiscvArchType=Riscv32>
 class CloseSystemCallParameters : public virtual CloseSystemCallParametersInterfaceType<RiscvArchType> {
@@ -50,7 +50,7 @@ class CloseSystemCallParameters : public virtual CloseSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using CloseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using CloseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 57>;
 
 template<typename RiscvArchType=Riscv32>
 class CloseSystemCall : public virtual CloseSystemCallInterfaceType<RiscvArchType> {

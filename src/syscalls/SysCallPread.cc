@@ -9,8 +9,8 @@
 //
 #include "SysCallPread.h"
 
+#include <sys/uio.h>
 #include <unistd.h>
-#include <signal.h>
 
 namespace SST { namespace RevCPU {
 
@@ -25,9 +25,9 @@ void PreadSystemCall<Riscv32>::invoke<ssize_t>(PreadSystemCall<Riscv32>::SystemC
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
-        has_values[3] = parameters.get<offset_t>(0, offset);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
+        has_values[3] = parameters.get<offset_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -47,9 +47,9 @@ void PreadSystemCall<Riscv64>::invoke<ssize_t>(PreadSystemCall<Riscv64>::SystemC
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
-        has_values[3] = parameters.get<offset_t>(0, offset);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
+        has_values[3] = parameters.get<offset_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -69,9 +69,9 @@ void PreadSystemCall<Riscv128>::invoke<ssize_t>(PreadSystemCall<Riscv128>::Syste
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
-        has_values[3] = parameters.get<offset_t>(0, offset);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
+        has_values[3] = parameters.get<offset_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;

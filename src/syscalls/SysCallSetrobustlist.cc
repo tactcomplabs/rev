@@ -24,7 +24,7 @@ void SetrobustlistSystemCall<Riscv32>::invoke<int>(SetrobustlistSystemCall<Riscv
         size_t len;
 
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<robust_list_head**>(0, hptr);
+        has_values[0] = parameters.get<robust_list_head*>(0, hptr);
         has_values[1] = parameters.get<size_t>(1, len);
 
         if(has_values[0] && has_values[1]) {
@@ -43,7 +43,7 @@ void SetrobustlistSystemCall<Riscv64>::invoke<int>(SetrobustlistSystemCall<Riscv
         size_t len;
 
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<robust_list_head**>(0, hptr);
+        has_values[0] = parameters.get<robust_list_head*>(0, hptr);
         has_values[1] = parameters.get<size_t>(1, len);
 
         if(has_values[0] && has_values[1]) {
@@ -62,7 +62,7 @@ void SetrobustlistSystemCall<Riscv128>::invoke<int>(SetrobustlistSystemCall<Risc
         size_t len;
 
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<robust_list_head**>(0, hptr);
+        has_values[0] = parameters.get<robust_list_head*>(0, hptr);
         has_values[1] = parameters.get<size_t>(1, len);
 
         if(has_values[0] && has_values[1]) {

@@ -19,14 +19,14 @@ template<>
 template<>
 void WriteSystemCall<Riscv32>::invoke<ssize_t>(WriteSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
-        int fd = -1;
-        void * buf = 0;
-        size_t count = 0;
+        int fd;
+        void * buf;
+        size_t count;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
@@ -39,14 +39,14 @@ template<>
 template<>
 void WriteSystemCall<Riscv64>::invoke<ssize_t>(WriteSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
-        int fd = -1;
-        void * buf = 0;
-        size_t count = 0;
+        int fd;
+        void * buf;
+        size_t count;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
@@ -59,14 +59,14 @@ template<>
 template<>
 void WriteSystemCall<Riscv128>::invoke<ssize_t>(WriteSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
-        int fd = -1;
-        void * buf = 0;
-        size_t count = 0;
+        int fd;
+        void * buf;
+        size_t count;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;

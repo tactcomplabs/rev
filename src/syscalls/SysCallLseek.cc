@@ -15,9 +15,9 @@ template<>
 template<>
 void LseekSystemCall<Riscv32>::invoke<off_t>(LseekSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, off_t & value) {
     if(parameters.count() == 3) {
-        int fd = -1;
-        off_t offset = -1;
-        int whence = -1;
+        int fd;
+        off_t offset;
+        int whence;
 
         bool has_value [3] = { false, false, false };
         has_value[0] = parameters.get<int>(0, fd);
@@ -35,9 +35,9 @@ template<>
 template<>
 void LseekSystemCall<Riscv64>::invoke<off_t>(LseekSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, off_t & value) {
     if(parameters.count() == 3) {
-        int fd = -1;
-        off_t offset = -1;
-        int whence = -1;
+        int fd;
+        off_t offset;
+        int whence;
 
         bool has_value [3] = { false, false, false };
         has_value[0] = parameters.get<int>(0, fd);
@@ -55,9 +55,9 @@ template<>
 template<>
 void LseekSystemCall<Riscv128>::invoke<off_t>(LseekSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, off_t & value) {
     if(parameters.count() == 3) {
-        int fd = -1;
-        off_t offset = -1;
-        int whence = -1;
+        int fd;
+        off_t offset;
+        int whence;
 
         bool has_value [3] = { false, false, false };
         has_value[0] = parameters.get<int>(0, fd);

@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GettimeofdaySystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using GettimeofdaySystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 169>;
 
 template<typename RiscvArchType=Riscv32>
 class GettimeofdaySystemCallParameters : public virtual GettimeofdaySystemCallParametersInterfaceType<RiscvArchType> {
@@ -64,7 +64,7 @@ class GettimeofdaySystemCallParameters : public virtual GettimeofdaySystemCallPa
 };
 
 template<typename RiscvArchType=Riscv32>
-using GettimeofdaySystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using GettimeofdaySystemCallInterfaceType = SystemCallInterface<RiscvArchType, 169>;
 
 template<typename RiscvArchType=Riscv32>
 class GettimeofdaySystemCall : public virtual GettimeofdaySystemCallInterfaceType<RiscvArchType> {

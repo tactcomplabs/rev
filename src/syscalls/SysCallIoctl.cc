@@ -24,7 +24,7 @@ void IoctlSystemCall<Riscv32>::invoke<int>(IoctlSystemCall<Riscv32>::SystemCallP
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<unsigned long>(request);
+        has_values[1] = parameters.get<unsigned long>(1, request);
 
         if(has_values[0] && has_values[1]) {
             success = true;

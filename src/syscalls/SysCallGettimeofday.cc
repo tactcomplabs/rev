@@ -8,7 +8,6 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallGettimeofday.h"
-#include <algorithm>
 
 #include <unistd.h>
 

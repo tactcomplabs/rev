@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 template<>
 template<>
 void PwriteSystemCall<Riscv32>::invoke<ssize_t>(PwriteSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
-    if(parameters.count() >= 4) {
+    if(parameters.count() == 4) {
         int fd;
         void * buf = 0;
         size_t count;
@@ -25,9 +25,9 @@ void PwriteSystemCall<Riscv32>::invoke<ssize_t>(PwriteSystemCall<Riscv32>::Syste
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
-        has_values[3] = parameters.get<offset_t>(0, offset);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
+        has_values[3] = parameters.get<offset_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -39,7 +39,7 @@ void PwriteSystemCall<Riscv32>::invoke<ssize_t>(PwriteSystemCall<Riscv32>::Syste
 template<>
 template<>
 void PwriteSystemCall<Riscv64>::invoke<ssize_t>(PwriteSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
-    if(parameters.count() >= 4) {
+    if(parameters.count() == 4) {
         int fd;
         void * buf = 0;
         size_t count;
@@ -47,9 +47,9 @@ void PwriteSystemCall<Riscv64>::invoke<ssize_t>(PwriteSystemCall<Riscv64>::Syste
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
-        has_values[3] = parameters.get<offset_t>(0, offset);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
+        has_values[3] = parameters.get<offset_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -61,7 +61,7 @@ void PwriteSystemCall<Riscv64>::invoke<ssize_t>(PwriteSystemCall<Riscv64>::Syste
 template<>
 template<>
 void PwriteSystemCall<Riscv128>::invoke<ssize_t>(PwriteSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
-    if(parameters.count() >= 4) {
+    if(parameters.count() == 4) {
         int fd;
         void * buf = 0;
         size_t count;
@@ -69,9 +69,9 @@ void PwriteSystemCall<Riscv128>::invoke<ssize_t>(PwriteSystemCall<Riscv128>::Sys
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<void_ptr>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
-        has_values[3] = parameters.get<offset_t>(0, offset);
+        has_values[1] = parameters.get<void_ptr>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
+        has_values[3] = parameters.get<offset_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;

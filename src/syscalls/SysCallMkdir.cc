@@ -25,7 +25,7 @@ void MkdirSystemCall<Riscv32>::invoke<int>(MkdirSystemCall<Riscv32>::SystemCallP
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<mode_t>(1, mode);
 
         if(has_values[0] && has_values[1]) {
             success = true;
@@ -44,7 +44,7 @@ void MkdirSystemCall<Riscv64>::invoke<int>(MkdirSystemCall<Riscv64>::SystemCallP
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<mode_t>(1, mode);
 
         if(has_values[0] && has_values[1]) {
             success = true;
@@ -63,7 +63,7 @@ void MkdirSystemCall<Riscv128>::invoke<int>(MkdirSystemCall<Riscv128>::SystemCal
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<mode_t>(1, mode);
 
         if(has_values[0] && has_values[1]) {
             success = true;

@@ -8,19 +8,18 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLFSTAT_H__
-#define __SYSTEMCALLFSTAT_H__
+#ifndef __SYSTEMCALLFACCESSAT_H__
+#define __SYSTEMCALLFACCESSAT_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
 #include <string>
 #include <sys/types.h>
-#include <string>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FaccessatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FaccessatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 48>;
 
 template<typename RiscvArchType=Riscv32>
 class FaccessatSystemCallParameters : public virtual FaccessatSystemCallParametersInterfaceType<RiscvArchType> {
@@ -77,7 +76,7 @@ class FaccessatSystemCallParameters : public virtual FaccessatSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using FaccessatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FaccessatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 48>;
 
 template<typename RiscvArchType=Riscv32>
 class FaccessatSystemCall : public virtual FaccessatSystemCallInterfaceType<RiscvArchType> {

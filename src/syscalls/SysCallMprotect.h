@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MprotectSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MprotectSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 226>;
 
 template<typename RiscvArchType=Riscv32>
 class MprotectSystemCallParameters : public virtual MprotectSystemCallParametersInterfaceType<RiscvArchType> {
@@ -63,7 +63,7 @@ class MprotectSystemCallParameters : public virtual MprotectSystemCallParameters
 
     template<>
     bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 1) {
+        if(parameter_index == 3) {
             param = prot;
             return true;
         }
@@ -73,7 +73,7 @@ class MprotectSystemCallParameters : public virtual MprotectSystemCallParameters
 };
 
 template<typename RiscvArchType=Riscv32>
-using MprotectSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MprotectSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 226>;
 
 template<typename RiscvArchType=Riscv32>
 class MprotectSystemCall : public virtual MprotectSystemCallInterfaceType<RiscvArchType> {

@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MkdirAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MkdirAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 34>;
 
 template<typename RiscvArchType=Riscv32>
 class MkdirAtSystemCallParameters : public virtual MkdirAtSystemCallParametersInterfaceType<RiscvArchType> {
@@ -75,7 +75,7 @@ class MkdirAtSystemCallParameters : public virtual MkdirAtSystemCallParametersIn
 };
 
 template<typename RiscvArchType=Riscv32>
-using MkdirAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MkdirAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 34>;
 
 template<typename RiscvArchType=Riscv32>
 class MkdirAtSystemCall : public virtual MkdirAtSystemCallInterfaceType<RiscvArchType> {

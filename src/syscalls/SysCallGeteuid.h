@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GeteuidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using GeteuidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 175>;
 
 
 template<typename RiscvArchType=Riscv32>
@@ -43,7 +43,7 @@ class GeteuidSystemCallParameters : public virtual GeteuidSystemCallParametersIn
 };
 
 template<typename RiscvArchType=Riscv32>
-using GeteuidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using GeteuidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 175>;
 
 template<typename RiscvArchType=Riscv32>
 class GeteuidSystemCall : public virtual GeteuidSystemCallInterfaceType<RiscvArchType> {

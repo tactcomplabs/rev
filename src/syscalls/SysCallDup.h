@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using DupSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using DupSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 23>;
 
 template<typename RiscvArchType=Riscv32>
 class DupSystemCallParameters : public virtual DupSystemCallParametersInterfaceType<RiscvArchType> {
@@ -52,7 +52,7 @@ class DupSystemCallParameters : public virtual DupSystemCallParametersInterfaceT
 };
 
 template<typename RiscvArchType=Riscv32>
-using DupSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using DupSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 23>;
 
 template<typename RiscvArchType=Riscv32>
 class DupSystemCall : public virtual DupSystemCallInterfaceType<RiscvArchType> {

@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SigactionSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SigactionSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 134>;
 
 template<typename RiscvArchType=Riscv32>
 class SigactionSystemCallParameters : public virtual SigactionSystemCallParametersInterfaceType<RiscvArchType> {
@@ -59,7 +59,7 @@ class SigactionSystemCallParameters : public virtual SigactionSystemCallParamete
             param = act;
             return true;
         }
-        else if(parameter_index == 1) {
+        else if(parameter_index == 2) {
             param = oact;
             return true;
         }
@@ -69,7 +69,7 @@ class SigactionSystemCallParameters : public virtual SigactionSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using SigactionSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SigactionSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 134>;
 
 template<typename RiscvArchType=Riscv32>
 class SigactionSystemCall : public virtual SigactionSystemCallInterfaceType<RiscvArchType> {

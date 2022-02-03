@@ -26,12 +26,12 @@ void MmapSystemCall<Riscv32>::invoke<void_t>(MmapSystemCall<Riscv32>::SystemCall
 
         bool hasargs[6] = { false, false, false, false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
-        hasargs[2] = parameters.get<int>(prot);
-        hasargs[3] = parameters.get<int>(flags);
-        hasargs[4] = parameters.get<int>(fd);
-        hasargs[5] = parameters.get<int>(offset);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
+        hasargs[2] = parameters.get<int>(2, prot);
+        hasargs[3] = parameters.get<int>(3, flags);
+        hasargs[4] = parameters.get<int>(4, fd);
+        hasargs[5] = parameters.get<int>(5, offset);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4] && hasargs[5]) {
             success = true;
@@ -54,12 +54,12 @@ void MmapSystemCall<Riscv64>::invoke<void_t>(MmapSystemCall<Riscv64>::SystemCall
 
         bool hasargs[6] = { false, false, false, false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
-        hasargs[2] = parameters.get<int>(prot);
-        hasargs[3] = parameters.get<int>(flags);
-        hasargs[4] = parameters.get<int>(fd);
-        hasargs[5] = parameters.get<int>(offset);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
+        hasargs[2] = parameters.get<int>(2, prot);
+        hasargs[3] = parameters.get<int>(3, flags);
+        hasargs[4] = parameters.get<int>(4, fd);
+        hasargs[5] = parameters.get<int>(5, offset);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4] && hasargs[5]) {
             success = true;
@@ -82,12 +82,12 @@ void MmapSystemCall<Riscv128>::invoke<void_t>(MmapSystemCall<Riscv128>::SystemCa
 
         bool hasargs[6] = { false, false, false, false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
-        hasargs[2] = parameters.get<int>(prot);
-        hasargs[3] = parameters.get<int>(flags);
-        hasargs[4] = parameters.get<int>(fd);
-        hasargs[5] = parameters.get<int>(offset);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
+        hasargs[2] = parameters.get<int>(2, prot);
+        hasargs[3] = parameters.get<int>(3, flags);
+        hasargs[4] = parameters.get<int>(4, fd);
+        hasargs[5] = parameters.get<int>(5, offset);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4] && hasargs[5]) {
             success = true;

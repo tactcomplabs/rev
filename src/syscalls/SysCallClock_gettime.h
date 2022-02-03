@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLGETRUSAGE_H__
-#define __SYSTEMCALLGETRUSAGE_H__
+#ifndef __SYSTEMCALLCLOCKGETTIME_H__
+#define __SYSTEMCALLCLOCKGETTIME_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using Clock_gettimeSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using Clock_gettimeSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 113>;
 
 template<typename RiscvArchType=Riscv32>
 class Clock_gettimeSystemCallParameters : public virtual Clock_gettimeSystemCallParametersInterfaceType<RiscvArchType> {
@@ -65,7 +65,7 @@ class Clock_gettimeSystemCallParameters : public virtual Clock_gettimeSystemCall
 };
 
 template<typename RiscvArchType=Riscv32>
-using Clock_gettimeSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using Clock_gettimeSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 113>;
 
 template<typename RiscvArchType=Riscv32>
 class Clock_gettimeSystemCall : public virtual Clock_gettimeSystemCallInterfaceType<RiscvArchType> {

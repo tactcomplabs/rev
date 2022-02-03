@@ -1,5 +1,5 @@
 //
-// SysCallTime.cc
+// SysCallStat.cc
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -7,7 +7,7 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "SysCallTime.h"
+#include "SysCallStat.h"
 
 #include <unistd.h>
 #include <sys/stat.h>

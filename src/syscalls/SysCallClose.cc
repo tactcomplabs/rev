@@ -16,9 +16,9 @@ template<>
 template<>
 void CloseSystemCall<Riscv32>::invoke<int>(CloseSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
-        int status = -1;
+        int status;
         const bool has_value = parameters.get<int>(0, status);
-        if(has_value && status != -1) {
+        if(has_value) {
             success = true;            
             value = close(status);
         }
@@ -29,9 +29,9 @@ template<>
 template<>
 void CloseSystemCall<Riscv64>::invoke<int>(CloseSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
-        int status = -1;
+        int status;
         const bool has_value = parameters.get<int>(0, status);
-        if(has_value && status != -1) {
+        if(has_value) {
             success = true;            
             value = close(status);
         }
@@ -42,9 +42,9 @@ template<>
 template<>
 void CloseSystemCall<Riscv128>::invoke<int>(CloseSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
-        int status = -1;
+        int status;
         const bool has_value = parameters.get<int>(0, status);
-        if(has_value && status != -1) {
+        if(has_value) {
             success = true;            
             value = close(status);
         }

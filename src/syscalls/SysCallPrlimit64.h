@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using Prlimit64SystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using Prlimit64SystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 261>;
 
 template<typename RiscvArchType=Riscv32>
 class Prlimit64SystemCallParameters : public virtual Prlimit64SystemCallParametersInterfaceType<RiscvArchType> {
@@ -39,7 +39,7 @@ class Prlimit64SystemCallParameters : public virtual Prlimit64SystemCallParamete
     Prlimit64SystemCallParameters(pid_t pidp, int resourcep, rlimit * newlimit, rlimit * oldlimit)
         : SystemCallParameterInterfaceType(), pid(pidp), resource(resourcep), new_limit(newlimit), old_limit(oldlimit) {}
 
-    size_t count() override { return 6UL; }
+    size_t count() override { return 4UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
@@ -74,7 +74,7 @@ class Prlimit64SystemCallParameters : public virtual Prlimit64SystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using Prlimit64SystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using Prlimit64SystemCallInterfaceType = SystemCallInterface<RiscvArchType, 261>;
 
 template<typename RiscvArchType=Riscv32>
 class Prlimit64SystemCall : public virtual Prlimit64SystemCallInterfaceType<RiscvArchType> {

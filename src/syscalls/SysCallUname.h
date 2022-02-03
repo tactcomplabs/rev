@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using UnameSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using UnameSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 160>;
 
 template<typename RiscvArchType=Riscv32>
 class UnameSystemCallParameters : public virtual UnameSystemCallParametersInterfaceType<RiscvArchType> {
@@ -37,7 +37,7 @@ class UnameSystemCallParameters : public virtual UnameSystemCallParametersInterf
     UnameSystemCallParameters(utsname * buf)
         : SystemCallParameterInterfaceType(), name(buf) {}
 
-    size_t count() override { return 3UL; }
+    size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
@@ -54,7 +54,7 @@ class UnameSystemCallParameters : public virtual UnameSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using UnameSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using UnameSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 160>;
 
 template<typename RiscvArchType=Riscv32>
 class UnameSystemCall : public virtual UnameSystemCallInterfaceType<RiscvArchType> {

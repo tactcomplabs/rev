@@ -25,11 +25,11 @@ void MremapSystemCall<Riscv32>::invoke<void_t>(MremapSystemCall<Riscv32>::System
         
         bool hasargs[5] = { false, false, false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(oldaddr);
-        hasargs[1] = parameters.get<size_t>(oldlen);
-        hasargs[2] = parameters.get<size_t>(newlen);
-        hasargs[3] = parameters.get<int>(flags);
-        hasargs[4] = parameters.get<void_ptr>(newaddr);
+        hasargs[0] = parameters.get<void_ptr>(0, oldaddr);
+        hasargs[1] = parameters.get<size_t>(1, oldlen);
+        hasargs[2] = parameters.get<size_t>(2, newlen);
+        hasargs[3] = parameters.get<int>(3, flags);
+        hasargs[4] = parameters.get<void_ptr>(4, newaddr);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4]) {
             success = true;
@@ -55,11 +55,11 @@ void MremapSystemCall<Riscv64>::invoke<void_t>(MremapSystemCall<Riscv64>::System
         
         bool hasargs[5] = { false, false, false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(oldaddr);
-        hasargs[1] = parameters.get<size_t>(oldlen);
-        hasargs[2] = parameters.get<size_t>(newlen);
-        hasargs[3] = parameters.get<int>(flags);
-        hasargs[4] = parameters.get<void_ptr>(newaddr);
+        hasargs[0] = parameters.get<void_ptr>(0, oldaddr);
+        hasargs[1] = parameters.get<size_t>(1, oldlen);
+        hasargs[2] = parameters.get<size_t>(2, newlen);
+        hasargs[3] = parameters.get<int>(3, flags);
+        hasargs[4] = parameters.get<void_ptr>(4, newaddr);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4]) {
             success = true;
@@ -85,11 +85,11 @@ void MremapSystemCall<Riscv128>::invoke<void_t>(MremapSystemCall<Riscv128>::Syst
         
         bool hasargs[5] = { false, false, false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(oldaddr);
-        hasargs[1] = parameters.get<size_t>(oldlen);
-        hasargs[2] = parameters.get<size_t>(newlen);
-        hasargs[3] = parameters.get<int>(flags);
-        hasargs[4] = parameters.get<void_ptr>(newaddr);
+        hasargs[0] = parameters.get<void_ptr>(0, oldaddr);
+        hasargs[1] = parameters.get<size_t>(1, oldlen);
+        hasargs[2] = parameters.get<size_t>(2, newlen);
+        hasargs[3] = parameters.get<int>(3, flags);
+        hasargs[4] = parameters.get<void_ptr>(4, newaddr);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4]) {
             success = true;

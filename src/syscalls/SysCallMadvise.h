@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MadviseSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MadviseSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 233>;
 
 template<typename RiscvArchType=Riscv32>
 class MadviseSystemCallParameters : public virtual MadviseSystemCallParametersInterfaceType<RiscvArchType> {
@@ -55,7 +55,7 @@ class MadviseSystemCallParameters : public virtual MadviseSystemCallParametersIn
 
     template<>
     bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 2) {
             param = advice;
             return true;
         }
@@ -75,7 +75,7 @@ class MadviseSystemCallParameters : public virtual MadviseSystemCallParametersIn
 };
 
 template<typename RiscvArchType=Riscv32>
-using MadviseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MadviseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 233>;
 
 template<typename RiscvArchType=Riscv32>
 class MadviseSystemCall : public virtual MadviseSystemCallInterfaceType<RiscvArchType> {
@@ -99,7 +99,7 @@ class MadviseSystemCall : public virtual MadviseSystemCallInterfaceType<RiscvArc
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, clock_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

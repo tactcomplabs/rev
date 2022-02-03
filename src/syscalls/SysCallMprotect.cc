@@ -16,16 +16,16 @@ template<>
 template<>
 void MprotectSystemCall<Riscv32>::invoke<int>(MprotectSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
 
-    if(parameters.count() == 2) {
+    if(parameters.count() == 3) {
         void * addr;
         size_t len;
         int prot;
 
         bool hasargs[3] = { false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
-        hasargs[2] = parameters.get<int>(prot);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
+        hasargs[2] = parameters.get<int>(2, prot);
 
         if(hasargs[0] && hasargs[1] && hasargs[2]) {
             success = true;
@@ -38,16 +38,16 @@ template<>
 template<>
 void MprotectSystemCall<Riscv64>::invoke<int>(MprotectSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
 
-    if(parameters.count() == 2) {
+    if(parameters.count() == 3) {
         void * addr;
         size_t len;
         int prot;
 
         bool hasargs[3] = { false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
-        hasargs[2] = parameters.get<int>(prot);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
+        hasargs[2] = parameters.get<int>(2, prot);
 
         if(hasargs[0] && hasargs[1] && hasargs[2]) {
             success = true;
@@ -60,16 +60,16 @@ template<>
 template<>
 void MprotectSystemCall<Riscv128>::invoke<int>(MprotectSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
 
-    if(parameters.count() == 2) {
+    if(parameters.count() == 3) {
         void * addr;
         size_t len;
         int prot;
 
         bool hasargs[3] = { false, false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
-        hasargs[2] = parameters.get<int>(prot);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
+        hasargs[2] = parameters.get<int>(2, prot);
 
         if(hasargs[0] && hasargs[1] && hasargs[2]) {
             success = true;

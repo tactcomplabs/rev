@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FstatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FstatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 79>;
 
 template<typename RiscvArchType=Riscv32>
 class FstatSystemCallParameters : public virtual FstatSystemCallParametersInterfaceType<RiscvArchType> {
@@ -57,7 +57,7 @@ class FstatSystemCallParameters : public virtual FstatSystemCallParametersInterf
 
     template<>
     bool get(const size_t parameter_index, stat * param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 1) {
             param = buf;
             return true;
         }
@@ -67,7 +67,7 @@ class FstatSystemCallParameters : public virtual FstatSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using FstatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FstatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 79>;
 
 template<typename RiscvArchType=Riscv32>
 class FstatSystemCall : public virtual FstatSystemCallInterfaceType<RiscvArchType> {

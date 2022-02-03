@@ -18,9 +18,9 @@ template<>
 template<>
 void SigactionSystemCall<Riscv32>::invoke<int>(SigactionSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
-        int sig = -1;
-        sigaction * act = -1;
-        sigaction * oact = -1;
+        int sig;
+        sigaction * act;
+        sigaction * oact;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, sig);
@@ -38,9 +38,9 @@ template<>
 template<>
 void SigactionSystemCall<Riscv64>::invoke<int>(SigactionSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
-        int sig = -1;
-        sigaction * act = -1;
-        sigaction * oact = -1;
+        int sig;
+        sigaction * act;
+        sigaction * oact;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, sig);
@@ -58,9 +58,9 @@ template<>
 template<>
 void SigactionSystemCall<Riscv128>::invoke<int>(SigactionSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
-        int sig = -1;
-        sigaction * act = -1;
-        sigaction * oact = -1;
+        int sig;
+        sigaction * act;
+        sigaction * oact;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, sig);

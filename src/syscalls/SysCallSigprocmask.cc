@@ -9,9 +9,6 @@
 //
 #include "SysCallSigprocmask.h"
 
-#include <unistd.h>
-#include <signal.h>
-
 namespace SST { namespace RevCPU {
 
 template<>

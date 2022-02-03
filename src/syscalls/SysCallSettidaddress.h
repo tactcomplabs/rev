@@ -38,7 +38,7 @@ class SettidaddressSystemCallParameters : public virtual SettidaddressSystemCall
         : SystemCallParameterInterfaceType(), tidptr(tidptrp) {}
 
     size_t count() override {
-        return 4UL;
+        return 1UL;
     }
 
     template<typename ParameterType>

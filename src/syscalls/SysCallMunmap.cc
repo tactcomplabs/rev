@@ -22,8 +22,8 @@ void MmapSystemCall<Riscv32>::invoke<int>(MmapSystemCall<Riscv32>::SystemCallPar
 
         bool hasargs[2] = { false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
 
         if(hasargs[0] && hasargs[1]) {
             success = true;
@@ -42,8 +42,8 @@ void MmapSystemCall<Riscv64>::invoke<int>(MmapSystemCall<Riscv64>::SystemCallPar
 
         bool hasargs[2] = { false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
 
         if(hasargs[0] && hasargs[1]) {
             success = true;
@@ -62,8 +62,8 @@ void MunmapSystemCall<Riscv128>::invoke<int>(MmapSystemCall<Riscv128>::SystemCal
 
         bool hasargs[2] = { false, false };
 
-        hasargs[0] = parameters.get<void_ptr>(addr);
-        hasargs[1] = parameters.get<size_t>(len);
+        hasargs[0] = parameters.get<void_ptr>(0, addr);
+        hasargs[1] = parameters.get<size_t>(1, len);
 
         if(hasargs[0] && hasargs[1]) {
             success = true;

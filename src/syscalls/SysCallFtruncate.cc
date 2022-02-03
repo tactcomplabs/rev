@@ -21,11 +21,11 @@ void FtruncateSystemCall<Riscv32>::invoke<int>(FtruncateSystemCall<Riscv32>::Sys
     if(parameters.count() == 2) {
 
         int fildes;
-        off_t length;
+        offset_t length;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<off_t>(1, path);
+        has_values[1] = parameters.get<offset_t>(1, path);
 
 
         if(has_values[0] && has_values[1]) {
@@ -41,7 +41,7 @@ void FtruncateSystemCall<Riscv64>::invoke<int>(FtruncateSystemCall<Riscv64>::Sys
     if(parameters.count() == 2) {
 
         int fildes;
-        off_t length;
+        offset_t length;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fd);
@@ -61,7 +61,7 @@ void FtruncateSystemCall<Riscv128>::invoke<int>(FtruncateSystemCall<Riscv128>::S
     if(parameters.count() == 2) {
 
         int fildes;
-        off_t length;
+        offset_t length;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fd);

@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using UnlinkSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using UnlinkSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1026>;
 
 template<typename RiscvArchType=Riscv32>
 class UnlinkSystemCallParameters : public virtual UnlinkSystemCallParametersInterfaceType<RiscvArchType> {
@@ -36,7 +36,7 @@ class UnlinkSystemCallParameters : public virtual UnlinkSystemCallParametersInte
     UnlinkSystemCallParameters(const std::string path)
         : SystemCallParameterInterfaceType(), pth(path) {}
 
-    size_t count() override { return 3UL; }
+    size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
@@ -53,7 +53,7 @@ class UnlinkSystemCallParameters : public virtual UnlinkSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using UnlinkSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using UnlinkSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1026>;
 
 template<typename RiscvArchType=Riscv32>
 class UnlinkSystemCall : public virtual UnlinkSystemCallInterfaceType<RiscvArchType> {

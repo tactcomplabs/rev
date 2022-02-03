@@ -8,7 +8,6 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallMkdirAt.h"
-#include <algorithm>
 
 #include <unistd.h>
 #include <signal.h>
@@ -26,8 +25,8 @@ void MkdirAtSystemCall<Riscv32>::invoke<int>(SystemCallParameterInterfaceType & 
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<std::string>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
+        has_values[1] = parameters.get<std::string>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
 
         if(has_values[0] && has_values[1] && has_values[1]) {
             success = true;
@@ -46,8 +45,8 @@ void MkdirAtSystemCall<Riscv64>::invoke<int>(SystemCallParameterInterfaceType & 
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<std::string>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
+        has_values[1] = parameters.get<std::string>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
 
         if(has_values[0] && has_values[1] && has_values[1]) {
             success = true;
@@ -66,8 +65,8 @@ void MkdirAtSystemCall<Riscv128>::invoke<int>(SystemCallParameterInterfaceType &
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<std::string>(0, buf);
-        has_values[2] = parameters.get<size_t>(0, count);
+        has_values[1] = parameters.get<std::string>(1, buf);
+        has_values[2] = parameters.get<size_t>(2, count);
 
         if(has_values[0] && has_values[1] && has_values[1]) {
             success = true;

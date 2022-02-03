@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SetrobustlistSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using SetrobustlistSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 99>;
 
 template<typename RiscvArchType=Riscv32>
 class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCallParametersInterfaceType<RiscvArchType> {
@@ -57,7 +57,7 @@ class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCall
 
     template<>
     bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 1) {
             param = len;
             return true;
         }
@@ -67,7 +67,7 @@ class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCall
 };
 
 template<typename RiscvArchType=Riscv32>
-using SetrobustlistSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using SetrobustlistSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 99>;
 
 template<typename RiscvArchType=Riscv32>
 class SetrobustlistSystemCall : public virtual SetrobustlistSystemCallInterfaceType<RiscvArchType> {

@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using IoctlSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using IoctlSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 29>;
 
 
 template<typename RiscvArchType=Riscv32>
@@ -44,7 +44,7 @@ class IoctlSystemCallParameters : public virtual IoctlSystemCallParametersInterf
 
     template<>
     bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 1) {
+        if(parameter_index == 0) {
             param = fildes;
             return true;
         }
@@ -64,7 +64,7 @@ class IoctlSystemCallParameters : public virtual IoctlSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using IoctlSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using IoctlSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 29>;
 
 template<typename RiscvArchType=Riscv32>
 class IoctlSystemCall : public virtual IoctlSystemCallInterfaceType<RiscvArchType> {
@@ -90,7 +90,7 @@ class IoctlSystemCall : public virtual IoctlSystemCallInterfaceType<RiscvArchTyp
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, pid_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

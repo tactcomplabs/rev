@@ -18,7 +18,7 @@ namespace SST { namespace RevCPU {
 template<>
 template<>
 void RenameAtSystemCall<Riscv32>::invoke<ssize_t>(RenameAtSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
-    if(parameters.count() == 3) {
+    if(parameters.count() == 4) {
 
         int fromfd;
         std::string from;
@@ -27,9 +27,9 @@ void RenameAtSystemCall<Riscv32>::invoke<ssize_t>(RenameAtSystemCall<Riscv32>::S
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fromfd);
-        has_values[1] = parameters.get<std::string>(0, from);
-        has_values[2] = parameters.get<int>(0, tofd);
-        has_values[3] = parameters.get<std::string>(0, to);
+        has_values[1] = parameters.get<std::string>(1, from);
+        has_values[2] = parameters.get<int>(2, tofd);
+        has_values[3] = parameters.get<std::string>(3, to);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -41,7 +41,7 @@ void RenameAtSystemCall<Riscv32>::invoke<ssize_t>(RenameAtSystemCall<Riscv32>::S
 template<>
 template<>
 void RenameAtSystemCall<Riscv64>::invoke<ssize_t>(RenameAtSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
-    if(parameters.count() == 3) {
+    if(parameters.count() == 4) {
 
         int fromfd;
         std::string from;
@@ -50,9 +50,9 @@ void RenameAtSystemCall<Riscv64>::invoke<ssize_t>(RenameAtSystemCall<Riscv64>::S
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fromfd);
-        has_values[1] = parameters.get<std::string>(0, from);
-        has_values[2] = parameters.get<int>(0, tofd);
-        has_values[3] = parameters.get<std::string>(0, to);
+        has_values[1] = parameters.get<std::string>(1, from);
+        has_values[2] = parameters.get<int>(2, tofd);
+        has_values[3] = parameters.get<std::string>(3, to);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -64,7 +64,7 @@ void RenameAtSystemCall<Riscv64>::invoke<ssize_t>(RenameAtSystemCall<Riscv64>::S
 template<>
 template<>
 void RenameAtSystemCall<Riscv128>::invoke<ssize_t>(RenameAtSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
-    if(parameters.count() == 3) {
+    if(parameters.count() == 4) {
 
         int fromfd;
         std::string from;
@@ -73,9 +73,9 @@ void RenameAtSystemCall<Riscv128>::invoke<ssize_t>(RenameAtSystemCall<Riscv128>:
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fromfd);
-        has_values[1] = parameters.get<std::string>(0, from);
-        has_values[2] = parameters.get<int>(0, tofd);
-        has_values[3] = parameters.get<std::string>(0, to);
+        has_values[1] = parameters.get<std::string>(1, from);
+        has_values[2] = parameters.get<int>(2, tofd);
+        has_values[3] = parameters.get<std::string>(3, to);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;

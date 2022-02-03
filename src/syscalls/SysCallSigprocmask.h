@@ -13,13 +13,15 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <signal.h>
 #include <sys/types.h>
-#include <sys/times.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SigprocmaskSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SigprocmaskSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 135>;
 
 template<typename RiscvArchType=Riscv32>
 class SigprocmaskSystemCallParameters : public virtual SigprocmaskSystemCallParametersInterfaceType<RiscvArchType> {
@@ -69,7 +71,7 @@ class SigprocmaskSystemCallParameters : public virtual SigprocmaskSystemCallPara
 };
 
 template<typename RiscvArchType=Riscv32>
-using SigprocmaskSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SigprocmaskSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 135>;
 
 template<typename RiscvArchType=Riscv32>
 class SigprocmaskSystemCall : public virtual SigprocmaskSystemCallInterfaceType<RiscvArchType> {

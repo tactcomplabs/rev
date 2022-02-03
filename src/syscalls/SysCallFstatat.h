@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FstatatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FstatatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 79>;
 
 template<typename RiscvArchType=Riscv32>
 class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersInterfaceType<RiscvArchType> {
@@ -59,7 +59,7 @@ class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersIn
 
     template<>
     bool get(const size_t parameter_index, std::string& param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 1) {
             param = path;
             return true;
         }
@@ -69,7 +69,7 @@ class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersIn
 
     template<>
     bool get(const size_t parameter_index, stat * & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 2) {
             param = buf;
             return true;
         }
@@ -79,7 +79,7 @@ class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersIn
 
     template<>
     bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 3) {
             param = flag;
             return true;
         }
@@ -89,7 +89,7 @@ class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersIn
 };
 
 template<typename RiscvArchType=Riscv32>
-using FstatatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FstatatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 79>;
 
 template<typename RiscvArchType=Riscv32>
 class FstatatSystemCall : public virtual FstatatSystemCallInterfaceType<RiscvArchType> {

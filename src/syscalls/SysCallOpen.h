@@ -22,7 +22,7 @@ namespace SST { namespace RevCPU {
 
 
 template<typename RiscvArchType=Riscv32>
-using OpenSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using OpenSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1024>;
 
 template<typename RiscvArchType=Riscv32>
 class OpenSystemCallParameters : public virtual OpenSystemCallParametersInterfaceType<RiscvArchType> {
@@ -78,7 +78,7 @@ class OpenSystemCallParameters : public virtual OpenSystemCallParametersInterfac
 };
 
 template<typename RiscvArchType=Riscv32>
-using OpenSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using OpenSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1024>;
 
 template<typename RiscvArchType=Riscv32>
 class OpenSystemCall : public virtual OpenSystemCallInterfaceType<RiscvArchType> {

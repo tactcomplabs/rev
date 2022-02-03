@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using WritevSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using WritevSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 66>;
 
 template<typename RiscvArchType=Riscv32>
 class WritevSystemCallParameters : public virtual WritevSystemCallParametersInterfaceType<RiscvArchType> {
@@ -67,7 +67,7 @@ class WritevSystemCallParameters : public virtual WritevSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using WritevSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using WritevSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 66>;
 
 template<typename RiscvArchType=Riscv32>
 class WritevSystemCall : public virtual WritevSystemCallInterfaceType<RiscvArchType> {

@@ -27,8 +27,8 @@ void OpenSystemCall<Riscv32>::invoke<int>(OpenSystemCall<Riscv32>::SystemCallPar
 
         bool has_values[5] = { false, false, false, false, false };
         has_values[0] = parameters.get<std::string>(0, path);
-        has_values[1] = parameters.get<int>(0, oflag);
-        has_values[2] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<int>(1, oflag);
+        has_values[2] = parameters.get<mode_t>(2, mode);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
@@ -47,8 +47,8 @@ void OpenSystemCall<Riscv64>::invoke<int>(OpenSystemCall<Riscv64>::SystemCallPar
 
         bool has_values[5] = { false, false, false, false, false };
         has_values[0] = parameters.get<std::string>(0, path);
-        has_values[1] = parameters.get<int>(0, oflag);
-        has_values[2] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<int>(1, oflag);
+        has_values[2] = parameters.get<mode_t>(2, mode);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
@@ -67,8 +67,8 @@ void OpenSystemCall<Riscv128>::invoke<int>(OpenSystemCall<Riscv128>::SystemCallP
 
         bool has_values[5] = { false, false, false, false, false };
         has_values[0] = parameters.get<std::string>(0, path);
-        has_values[1] = parameters.get<int>(0, oflag);
-        has_values[2] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<int>(1, oflag);
+        has_values[2] = parameters.get<mode_t>(2, mode);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;

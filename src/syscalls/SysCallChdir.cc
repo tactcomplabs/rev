@@ -1,5 +1,5 @@
 //
-// SysCallMkdir.cc
+// SysCallChdir.cc
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -7,7 +7,7 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "SysCallMkdir.h"
+#include "SysCallChdir.h"
 
 #include <unistd.h>
 #include <signal.h>
@@ -18,16 +18,13 @@ namespace SST { namespace RevCPU {
 template<>
 template<>
 void ChdirSystemCall<Riscv32>::invoke<int>(ChdirSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parameters.count() == 2) {
+    if(parameters.count() == 1) {
 
         std::string pth;
-        mode_t mode;
 
-        bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<mode_t>(0, mode);
+        bool has_values = parameters.get<std::string>(0, pth);
 
-        if(has_values[0] && has_values[1]) {
+        if(has_values) {
             success = true;
             value = mkdir(pth.c_str(), mode);
         }
@@ -37,16 +34,13 @@ void ChdirSystemCall<Riscv32>::invoke<int>(ChdirSystemCall<Riscv32>::SystemCallP
 template<>
 template<>
 void ChdirSystemCall<Riscv64>::invoke<int>(ChdirSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parameters.count() == 2) {
+    if(parameters.count() == 1) {
 
         std::string pth;
-        mode_t mode;
 
-        bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<mode_t>(0, mode);
+        bool has_values = parameters.get<std::string>(0, pth);
 
-        if(has_values[0] && has_values[1]) {
+        if(has_values) {
             success = true;
             value = mkdir(pth.c_str(), mode);
         }
@@ -56,16 +50,13 @@ void ChdirSystemCall<Riscv64>::invoke<int>(ChdirSystemCall<Riscv64>::SystemCallP
 template<>
 template<>
 void ChdirSystemCall<Riscv128>::invoke<int>(ChdirSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parameters.count() == 2) {
+    if(parameters.count() == 1) {
 
         std::string pth;
-        mode_t mode;
 
-        bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<mode_t>(0, mode);
+        bool has_values = parameters.get<std::string>(0, pth);
 
-        if(has_values[0] && has_values[1]) {
+        if(has_values) {
             success = true;
             value = mkdir(pth.c_str(), mode);
         }

@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FtruncateSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FtruncateSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 46>;
 
 template<typename RiscvArchType=Riscv32>
 class FtruncateSystemCallParameters : public virtual FtruncateSystemCallParametersInterfaceType<RiscvArchType> {
@@ -57,7 +57,7 @@ class FtruncateSystemCallParameters : public virtual FtruncateSystemCallParamete
 
     template<>
     bool get(const size_t parameter_index, offset_t& param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 1) {
             param = length;
             return true;
         }
@@ -67,7 +67,7 @@ class FtruncateSystemCallParameters : public virtual FtruncateSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using FtruncateSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using FtruncateSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 46>;
 
 template<typename RiscvArchType=Riscv32>
 class FtruncateSystemCall : public virtual FtruncateSystemCallInterfaceType<RiscvArchType> {

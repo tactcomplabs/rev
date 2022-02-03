@@ -39,7 +39,7 @@ class AccessSystemCallParameters : public virtual AccessSystemCallParametersInte
         : SystemCallParameterInterfaceType(), pth(path), mode(modei) {}
 
     size_t count() override {
-        return 4UL;
+        return 2UL;
     }
 
     template<typename ParameterType>

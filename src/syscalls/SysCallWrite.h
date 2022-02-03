@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using WriteSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using WriteSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 64>;
 
 template<typename RiscvArchType=Riscv32>
 class WriteSystemCallParameters : public virtual WriteSystemCallParametersInterfaceType<RiscvArchType> {
@@ -53,7 +53,7 @@ class WriteSystemCallParameters : public virtual WriteSystemCallParametersInterf
 
     template<>
     bool get(const size_t parameter_index, void_ptr & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 1) {
             param = buf;
             return true;
         }
@@ -63,7 +63,7 @@ class WriteSystemCallParameters : public virtual WriteSystemCallParametersInterf
 
     template<>
     bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 2) {
             param = bcount;
             return true;
         }
@@ -73,7 +73,7 @@ class WriteSystemCallParameters : public virtual WriteSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using WriteSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using WriteSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 64>;
 
 template<typename RiscvArchType=Riscv32>
 class WriteSystemCall : public virtual WriteSystemCallInterfaceType<RiscvArchType> {

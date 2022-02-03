@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MadviseSystemCall<Riscv32>::invoke<clock_t>(MadviseSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void MadviseSystemCall<Riscv32>::invoke<int>(MadviseSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;
@@ -36,7 +36,7 @@ void MadviseSystemCall<Riscv32>::invoke<clock_t>(MadviseSystemCall<Riscv32>::Sys
 
 template<>
 template<>
-void MadviseSystemCall<Riscv64>::invoke<clock_t>(MadviseSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void MadviseSystemCall<Riscv64>::invoke<int>(MadviseSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;
@@ -56,7 +56,7 @@ void MadviseSystemCall<Riscv64>::invoke<clock_t>(MadviseSystemCall<Riscv64>::Sys
 
 template<>
 template<>
-void MadviseSystemCall<Riscv128>::invoke<clock_t>(MadviseSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void MadviseSystemCall<Riscv128>::invoke<int>(MadviseSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;

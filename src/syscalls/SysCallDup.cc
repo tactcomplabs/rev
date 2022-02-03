@@ -22,7 +22,7 @@ void DupSystemCall<Riscv32>::invoke<int>(DupSystemCall<Riscv32>::SystemCallParam
 
         bool has_values = parameters.get<int>(0, fildes);
 
-        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
+        if(has_values) {
             success = true;
             value = dup(fildes);
         }
@@ -37,7 +37,7 @@ void DupSystemCall<Riscv64>::invoke<int>(DupSystemCall<Riscv64>::SystemCallParam
 
         bool has_values = parameters.get<int>(0, fildes);
 
-        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
+        if(has_values) {
             success = true;
             value = dup(fildes);
         }
@@ -52,7 +52,7 @@ void DupSystemCall<Riscv128>::invoke<int>(DupSystemCall<Riscv128>::SystemCallPar
 
         bool has_values = parameters.get<int>(0, fildes);
 
-        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
+        if(has_values) {
             success = true;
             value = dup(fildes);
         }

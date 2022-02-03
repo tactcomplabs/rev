@@ -25,10 +25,10 @@ void Prlimit64SystemCall<Riscv32>::invoke<int>(Prlimit64SystemCall<Riscv32>::Sys
 
         bool hasargs[4] = { false, false, false, false };
 
-        hasargs[0] = parameters.get<pid_t>(pid);
-        hasargs[1] = parameters.get<int>(resource);
-        hasargs[2] = parameters.get<rlimit *>(new_limit);
-        hasargs[3] = parameters.get<rlimit *>(old_limit);
+        hasargs[0] = parameters.get<pid_t>(0, pid);
+        hasargs[1] = parameters.get<int>(1, resource);
+        hasargs[2] = parameters.get<rlimit *>(2, new_limit);
+        hasargs[3] = parameters.get<rlimit *>(3, old_limit);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
@@ -50,10 +50,10 @@ void Prlimit64SystemCall<Riscv64>::invoke<int>(Prlimit64SystemCall<Riscv64>::Sys
 
         bool hasargs[4] = { false, false, false, false };
 
-        hasargs[0] = parameters.get<pid_t>(pid);
-        hasargs[1] = parameters.get<int>(resource);
-        hasargs[2] = parameters.get<rlimit *>(new_limit);
-        hasargs[3] = parameters.get<rlimit *>(old_limit);
+        hasargs[0] = parameters.get<pid_t>(0, pid);
+        hasargs[1] = parameters.get<int>(1, resource);
+        hasargs[2] = parameters.get<rlimit *>(2, new_limit);
+        hasargs[3] = parameters.get<rlimit *>(3, old_limit);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
@@ -75,10 +75,10 @@ void Prlimit64SystemCall<Riscv128>::invoke<int>(Prlimit64SystemCall<Riscv128>::S
 
         bool hasargs[4] = { false, false, false, false };
 
-        hasargs[0] = parameters.get<pid_t>(pid);
-        hasargs[1] = parameters.get<int>(resource);
-        hasargs[2] = parameters.get<rlimit *>(new_limit);
-        hasargs[3] = parameters.get<rlimit *>(old_limit);
+        hasargs[0] = parameters.get<pid_t>(0, pid);
+        hasargs[1] = parameters.get<int>(1, resource);
+        hasargs[2] = parameters.get<rlimit *>(2, new_limit);
+        hasargs[3] = parameters.get<rlimit *>(3, old_limit);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;

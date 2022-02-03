@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using TGKillSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 131>;
 
 template<typename RiscvArchType=Riscv32>
 class TGKillSystemCallParameters : public virtual TGKillSystemCallParametersInterfaceType<RiscvArchType> {
@@ -61,7 +61,7 @@ class TGKillSystemCallParameters : public virtual TGKillSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using TGKillSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 131>;
 
 template<typename RiscvArchType=Riscv32>
 class TGKillSystemCall : public virtual TGKillSystemCallInterfaceType<RiscvArchType> {

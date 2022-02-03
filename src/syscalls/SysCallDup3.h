@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using Dup3SystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using Dup3SystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 24>;
 
 template<typename RiscvArchType=Riscv32>
 class Dup3SystemCallParameters : public virtual Dup3SystemCallParametersInterfaceType<RiscvArchType> {
@@ -47,13 +47,21 @@ class Dup3SystemCallParameters : public virtual Dup3SystemCallParametersInterfac
             param = fildes;
             return true;
         }
+        else if(parameter_index == 1) {
+            param = fildes;
+            return true;
+        }
+        else if(parameter_index == 2) {
+            param = fildes;
+            return true;
+        }
 
         return false;
     }
 };
 
 template<typename RiscvArchType=Riscv32>
-using Dup3SystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using Dup3SystemCallInterfaceType = SystemCallInterface<RiscvArchType, 24>;
 
 template<typename RiscvArchType=Riscv32>
 class Dup3SystemCall : public virtual Dup3SystemCallInterfaceType<RiscvArchType> {

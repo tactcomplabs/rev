@@ -8,12 +8,11 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallOpenAt.h"
-#include <algorithm>
 
 #include <unistd.h>
-#include <signal.h>
 #include <limits.h>
 #include <string.h>
+#include <string>
 
 namespace SST { namespace RevCPU {
 
@@ -28,9 +27,9 @@ void OpenAtSystemCall<Riscv32>::invoke<int>(OpenAtSystemCall<Riscv32>::SystemCal
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<std::string>(0, path);
-        has_values[2] = parameters.get<int>(0, oflag);
-        has_values[3] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<std::string>(1, path);
+        has_values[2] = parameters.get<int>(2, oflag);
+        has_values[3] = parameters.get<mode_t>(3, mode);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -50,9 +49,9 @@ void OpenAtSystemCall<Riscv64>::invoke<int>(OpenAtSystemCall<Riscv64>::SystemCal
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<std::string>(0, path);
-        has_values[2] = parameters.get<int>(0, oflag);
-        has_values[3] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<std::string>(1, path);
+        has_values[2] = parameters.get<int>(2, oflag);
+        has_values[3] = parameters.get<mode_t>(3, mode);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -72,9 +71,9 @@ void OpenAtSystemCall<Riscv128>::invoke<int>(OpenAtSystemCall<Riscv128>::SystemC
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
-        has_values[1] = parameters.get<std::string>(0, path);
-        has_values[2] = parameters.get<int>(0, oflag);
-        has_values[3] = parameters.get<mode_t>(0, mode);
+        has_values[1] = parameters.get<std::string>(1, path);
+        has_values[2] = parameters.get<int>(2, oflag);
+        has_values[3] = parameters.get<mode_t>(3, mode);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;

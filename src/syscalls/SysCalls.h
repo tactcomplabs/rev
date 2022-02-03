@@ -43,8 +43,6 @@
 #include "SysCallGetgid.h"
 #include "SysCallGetegid.h"
 #include "SysCallGettid.h"
-
-/*
 #include "SysCallMmap.h"
 #include "SysCallMunmap.h"
 #include "SysCallMremap.h"
@@ -75,7 +73,6 @@
 #include "SysCallStat.h"
 #include "SysCallLstat.h"
 #include "SysCallTime.h"
-*/
 
 #include <unordered_map>
 #include <type_traits>

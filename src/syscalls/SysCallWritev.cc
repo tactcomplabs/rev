@@ -25,8 +25,8 @@ void WritevSystemCall<Riscv32>::invoke<ssize_t>(WritevSystemCall<Riscv32>::Syste
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<iovec *>(0, iov);
-        has_values[2] = parameters.get<int>(0, iovcnt);
+        has_values[1] = parameters.get<iovec *>(1, iov);
+        has_values[2] = parameters.get<int>(2, iovcnt);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
@@ -46,8 +46,8 @@ void WritevSystemCall<Riscv64>::invoke<ssize_t>(WritevSystemCall<Riscv64>::Syste
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<iovec *>(0, iov);
-        has_values[2] = parameters.get<int>(0, iovcnt);
+        has_values[1] = parameters.get<iovec *>(1, iov);
+        has_values[2] = parameters.get<int>(2, iovcnt);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
@@ -59,7 +59,7 @@ void WritevSystemCall<Riscv64>::invoke<ssize_t>(WritevSystemCall<Riscv64>::Syste
 template<>
 template<>
 void WritevSystemCall<Riscv128>::invoke<ssize_t>(WritevSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
-    if(parameters.count() == 3) {
+   if(parameters.count() == 3) {
 
         int fildes;
         iovec * iov;
@@ -67,8 +67,8 @@ void WritevSystemCall<Riscv128>::invoke<ssize_t>(WritevSystemCall<Riscv128>::Sys
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<iovec *>(0, iov);
-        has_values[2] = parameters.get<int>(0, iovcnt);
+        has_values[1] = parameters.get<iovec *>(1, iov);
+        has_values[2] = parameters.get<int>(2, iovcnt);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;

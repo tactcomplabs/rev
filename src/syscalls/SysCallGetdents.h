@@ -21,7 +21,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetdentsCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using GetdentsCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 61>;
 
 template<typename RiscvArchType=Riscv32>
 class GetdentsSystemCallParameters : public virtual GetdentsCallParametersInterfaceType<RiscvArchType> {
@@ -57,7 +57,7 @@ class GetdentsSystemCallParameters : public virtual GetdentsCallParametersInterf
 
     template<>
     bool get(const size_t parameter_index, void* & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 1) {
             param = dirp;
             return true;
         }
@@ -67,7 +67,7 @@ class GetdentsSystemCallParameters : public virtual GetdentsCallParametersInterf
 
     template<>
     bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 2) {
             param = count;
             return true;
         }
@@ -77,7 +77,7 @@ class GetdentsSystemCallParameters : public virtual GetdentsCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetdentsSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using GetdentsSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 61>;
 
 template<typename RiscvArchType=Riscv32>
 class GetdentsSystemCall : public virtual GetdentsSystemCallInterfaceType<RiscvArchType> {

@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetrlimitSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using GetrlimitSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 163>;
 
 template<typename RiscvArchType=Riscv32>
 class GetrlimitSystemCallParameters : public virtual GetrlimitSystemCallParametersInterfaceType<RiscvArchType> {
@@ -57,7 +57,7 @@ class GetrlimitSystemCallParameters : public virtual GetrlimitSystemCallParamete
 
     template<>
     bool get(const size_t parameter_index, rlimit* & param) {
-        if(parameter_index == 0) {
+        if(parameter_index == 1) {
             param = rlp;
             return true;
         }
@@ -67,7 +67,7 @@ class GetrlimitSystemCallParameters : public virtual GetrlimitSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetrlimitSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using GetrlimitSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 163>;
 
 template<typename RiscvArchType=Riscv32>
 class GetrlimitSystemCall : public virtual GetrlimitSystemCallInterfaceType<RiscvArchType> {

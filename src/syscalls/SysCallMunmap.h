@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MunmapSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MunmapSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 215>;
 
 template<typename RiscvArchType=Riscv32>
 class MunmapSystemCallParameters : public virtual MunmapSystemCallParametersInterfaceType<RiscvArchType> {
@@ -62,7 +62,7 @@ class MunmapSystemCallParameters : public virtual MunmapSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using MunmapSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using MunmapSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 215>;
 
 template<typename RiscvArchType=Riscv32>
 class MunmapSystemCall : public virtual MunmapSystemCallInterfaceType<RiscvArchType> {
