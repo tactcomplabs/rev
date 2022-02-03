@@ -1,5 +1,5 @@
 //
-// SysCallReadLinkAt.h
+// SysCallSetrlimit.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,44 +8,47 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLREADLINKAT_H__
-#define __SYSTEMCALLREADLINKAT_H__
+#ifndef __SYSTEMCALLSETRLIMIT_H__
+#define __SYSTEMCALLSETRLIMIT_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <string>
 #include <sys/types.h>
+#include <string>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ReadLinkAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SetrlimitSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
-class ReadLinkAtSystemCallParameters : public virtual ReadLinkAtSystemCallParametersInterfaceType<RiscvArchType> {
+class SetrlimitSystemCallParameters : public virtual SetrlimitSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
-    std::string path;
-    char * buf;
-    size_t bufsize;
+    int resource;
+    rlimit * rlp;
 
     public:
 
-    using SystemCallParameterInterfaceType = ReadLinkAtSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = SetrlimitSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    ReadLinkAtSystemCallParameters(std::string pathp, char * bufp, size_t bufsz)
-        : SystemCallParameterInterfaceType(), path(pathp), buf(bufp), bufsize(bufsz) {}
+    SetrlimitSystemCallParameters(int resourcep, rlimit * rlpp)
+        : SystemCallParameterInterfaceType(), resource(resourcep), rlp(rlpp) {}
 
-    size_t count() override { return 1UL; }
+    size_t count() override {
+        return 2UL;
+    }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
 
     template<>
-    bool get(const size_t parameter_index, std::string& param) {
+    bool get(const size_t parameter_index, int& param) {
         if(parameter_index == 0) {
-            param = path;
+            param = resource;
             return true;
         }
 
@@ -53,52 +56,42 @@ class ReadLinkAtSystemCallParameters : public virtual ReadLinkAtSystemCallParame
     }
 
     template<>
-    bool get(const size_t parameter_index, char* & param) {
-        if(parameter_index == 1) {
-            param = buf;
+    bool get(const size_t parameter_index, rlimit* & param) {
+        if(parameter_index == 0) {
+            param = rlp;
             return true;
         }
 
         return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, size_t& param) {
-        if(parameter_index == 2) {
-            param = bufsize;
-            return true;
-        }
-
-        return false;
-    }
+    }    
 };
 
 template<typename RiscvArchType=Riscv32>
-using ReadLinkAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using SetrlimitSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
-class ReadLinkAtSystemCall : public virtual ReadLinkAtSystemCallInterfaceType<RiscvArchType> {
-    
+class SetrlimitSystemCall : public virtual SetrlimitSystemCallInterfaceType<RiscvArchType> {
+  
     public:
 
-    using SystemCallInterfaceType = ReadLinkAtSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = SetrlimitSystemCallInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
-    
-    ReadLinkAtSystemCall() : SystemCallInterfaceType() {}
+
+    SetrlimitSystemCall() : SystemCallInterfaceType() {}
 
     // always returns false
     //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-    
+
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, std::string & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST
