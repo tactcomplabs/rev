@@ -27,7 +27,7 @@ class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCall
     
     private:
 
-    robust_list_head ** hptr;
+    robust_list_head * hptr;
     size_t len;
 
     public:
@@ -35,7 +35,7 @@ class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCall
     using SystemCallParameterInterfaceType = SetrobustlistSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    SetrobustlistSystemCallParameters(robust_list_head ** ptr, size_t lenp)
+    SetrobustlistSystemCallParameters(robust_list_head * ptr, size_t lenp)
         : SystemCallParameterInterfaceType(), hptr(ptr), len(lenp) {}
 
     size_t count() override {
@@ -46,7 +46,7 @@ class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCall
     bool get(const size_t parameter_index, ParameterType & param);
 
     template<>
-    bool get(const size_t parameter_index, robust_list_head** & param) {
+    bool get(const size_t parameter_index, robust_list_head* & param) {
         if(parameter_index == 0) {
             param = hptr;
             return true;
