@@ -21,10 +21,10 @@
 #include "SysCallWrite.h"
 #include "SysCallOpenAt.h"
 #include "SysCallClose.h"
-#include "SysCallOpenLseek.h"
-#include "SysCallOpenBrk.h"
-#include "SysCallOpenLinkAt.h"
-#include "SysCallOpenUnlinkAt.h"
+#include "SysCallLseek.h"
+#include "SysCallBrk.h"
+#include "SysCallLinkAt.h"
+#include "SysCallUnlinkAt.h"
 #include "SysCallLink.h"
 #include "SysCallUnlink.h"
 #include "SysCallMkdirAt.h"
@@ -48,8 +48,7 @@
 #include "SysCallMremap.h"
 #include "SysCallMprotect.h"
 #include "SysCallPrlimit64.h"
-#include "SysCallGetmainvars.h"
-#include "SysCallRtsigaction.h"
+#include "SysCallSigaction.h"
 #include "SysCallWritev.h"
 #include "SysCallGettimeofday.h"
 #include "SysCallTimes.h"
@@ -57,8 +56,8 @@
 #include "SysCallGetdents.h"
 #include "SysCallDup.h"
 #include "SysCallDup3.h"
-#include "SysCallReadlinkat.h"
-#include "SysCallRtsigprocmask.h"
+#include "SysCallReadlinkAt.h"
+#include "SysCallSigprocmask.h"
 #include "SysCallIoctl.h"
 #include "SysCallGetrlimit.h"
 #include "SysCallSetrlimit.h"
@@ -73,6 +72,7 @@
 #include "SysCallStat.h"
 #include "SysCallLstat.h"
 #include "SysCallTime.h"
+#include "SysCallFtruncate.h"
 
 #include <unordered_map>
 #include <type_traits>
@@ -127,6 +127,40 @@ class SystemCalls : public SystemArch<RiscvArchType> {
         GETGID           = GetgidSystemCall<RiscvArchType>::code_value,
         GETEGID          = GetegidSystemCall<RiscvArchType>::code_value,
         GETTID           = GettidSystemCall<RiscvArchType>::code_value,
+        MMAP             = MmapSystemCall<RiscvArchType>::code_value,
+        MUMAP            = MunmapSystemCall<RiscvArchType>::code_value,
+        MREMAP           = MremapSystemCall<RiscvArchType>::code_value,
+        MPROTECT         = MprotectSystemCall<RiscvArchType>::code_value,
+        PRLIMIT64        = Prlimit64SystemCall<RiscvArchType>::code_value,
+        SIGACTION        = SigactionSystemCall<RiscvArchType>::code_value,
+        WRITEV           = WritevSystemCall<RiscvArchType>::code_value,
+        GETTOD           = GettimeofdaySystemCall<RiscvArchType>::code_value,
+        TIMES            = TimesSystemCall<RiscvArchType>::code_value,
+        FCNTL            = FcntlSystemCall<RiscvArchType>::code_value,
+        FTRUNCATE        = FtruncateSystemCall<RiscvArchType>::code_value,
+        GETDENTS         = GetdentsSystemCall<RiscvArchType>::code_value,
+        DUP              = DupSystemCall<RiscvArchType>::code_value,
+        DUP3             = Dup3SystemCall<RiscvArchType>::code_value,        
+        READLINKAT       = ReadLinkAtSystemCall<RiscvArchType>::code_value,        
+        SIGPROCMASK      = SigprocmaskSystemCall<RiscvArchType>::code_value,                
+        IOCTL            = IoctlSystemCall<RiscvArchType>::code_value,                
+        GETRLIMIT        = GetrlimitSystemCall<RiscvArchType>::code_value,                
+        SETRLIMIT        = SetrlimitSystemCall<RiscvArchType>::code_value,                
+        GETRUSAGE        = GetrusageSystemCall<RiscvArchType>::code_value,                
+        CLOCKGETTIME     = Clock_gettimeSystemCall<RiscvArchType>::code_value,
+        SETTIDADDRESS    = SettidaddressSystemCall<RiscvArchType>::code_value,
+        SETROBUSTLIST    = SetrobustlistSystemCall<RiscvArchType>::code_value,
+        MADVISE          = MadviseSystemCall<RiscvArchType>::code_value,
+        STATX            = StatxSystemCall<RiscvArchType>::code_value,        
+        OPEN             = OpenSystemCall<RiscvArchType>::code_value,        
+        LINK             = LinkSystemCall<RiscvArchType>::code_value,        
+        UNLINK           = UnlinkSystemCall<RiscvArchType>::code_value,        
+        MKDIR            = MkdirSystemCall<RiscvArchType>::code_value,        
+        ACCESS           = AccessSystemCall<RiscvArchType>::code_value,        
+        STAT             = StatSystemCall<RiscvArchType>::code_value,        
+        LSTAT            = LstatSystemCall<RiscvArchType>::code_value,        
+        TIME             = TimeSystemCall<RiscvArchType>::code_value,        
+};        
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;

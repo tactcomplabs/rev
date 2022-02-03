@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLUNLINKAT_H__
-#define __SYSTEMCALLUNLINKAT_H__
+#ifndef __SYSTEMCALLUNLINK_H__
+#define __SYSTEMCALLUNLINK_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>

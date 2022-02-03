@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLSIGACTION_H__
-#define __SYSTEMCALLSIGACTION_H__
+#ifndef __SYSTEMCALLTIMES_H__
+#define __SYSTEMCALLTIMES_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>

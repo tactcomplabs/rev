@@ -1,5 +1,5 @@
 //
-// SysCallStat.h
+// SysCallClockgettime.h
 //
 // Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,47 +8,45 @@
 // See LICENSE in the top level directory for licensing details
 //
 #pragma once
-#ifndef __SYSTEMCALLLSTAT_H__
-#define __SYSTEMCALLLSTAT_H__
+#ifndef __SYSTEMCALLCLOCKGETTIME_H__
+#define __SYSTEMCALLCLOCKGETTIME_H__
 
 #include "SystemCallInterface.h"
 #include <type_traits>
-#include <string>
-#include <sys/types.h>
-#include <string>
+
+#include <sys/resource.h>
+#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using LstatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
+using Clock_gettimeSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 113>;
 
 template<typename RiscvArchType=Riscv32>
-class LstatSystemCallParameters : public virtual LstatSystemCallParametersInterfaceType<RiscvArchType> {
+class Clock_gettimeSystemCallParameters : public virtual Clock_gettimeSystemCallParametersInterfaceType<RiscvArchType> {
     
     private:
 
-    std::string pth;
-    stat * buf;
+    clockid_t clkid;
+    timespec * tp;
 
     public:
 
-    using SystemCallParameterInterfaceType = LstatSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = Clock_gettimeSystemCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    LstatSystemCallParameters(std::string path, stat * bufi)
-        : SystemCallParameterInterfaceType(), pth(path), buf(bufi) {}
+    Clock_gettimeSystemCallParameters(clockid_t clockid, timespec * tsp)
+        : SystemCallParameterInterfaceType(), clkid(clockid), tp(tsp) {}
 
-    size_t count() override {
-        return 4UL;
-    }
+    size_t count() override { return 0UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
 
     template<>
-    bool get(const size_t parameter_index, std::string& param) {
-        if(parameter_index == 0) {
-            param = pth;
+    bool get(const size_t parameter_index, clockid_t& param) {
+        if(parameter_index = 0) {
+            param = clkid;
             return true;
         }
 
@@ -56,42 +54,44 @@ class LstatSystemCallParameters : public virtual LstatSystemCallParametersInterf
     }
 
     template<>
-    bool get(const size_t parameter_index, stat * param) {
+    bool get(const size_t parameter_index, timespec* & param) {
         if(parameter_index == 1) {
-            param = buf;
+            param = tp;
             return true;
         }
 
         return false;
-    }    
+    }
 };
 
 template<typename RiscvArchType=Riscv32>
-using LstatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
+using Clock_gettimeSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 113>;
 
 template<typename RiscvArchType=Riscv32>
-class LstatSystemCall : public virtual LstatSystemCallInterfaceType<RiscvArchType> {
+class Clock_gettimeSystemCall : public virtual Clock_gettimeSystemCallInterfaceType<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = LstatSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = Clock_gettimeSystemCallInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
 
-    LstatSystemCall() : SystemCallInterfaceType() {}
+    public:
+
+    Clock_gettimeSystemCall() : SystemCallInterfaceType() {}
 
     // always returns false
     //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
+    
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, pid_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST
