@@ -20,7 +20,7 @@ template<>
 void SetrobustlistSystemCall<Riscv32>::invoke<int>(SetrobustlistSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
-        robust_list_head ** hptr;
+        robust_list_head * hptr;
         size_t len;
 
         bool has_values[2] = { false, false };
@@ -39,7 +39,7 @@ template<>
 void SetrobustlistSystemCall<Riscv64>::invoke<int>(SetrobustlistSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
-        robust_list_head ** hptr;
+        robust_list_head * hptr;
         size_t len;
 
         bool has_values[2] = { false, false };
@@ -58,7 +58,7 @@ template<>
 void SetrobustlistSystemCall<Riscv128>::invoke<int>(SetrobustlistSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
-        robust_list_head ** hptr;
+        robust_list_head * hptr;
         size_t len;
 
         bool has_values[2] = { false, false };
