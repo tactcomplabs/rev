@@ -159,8 +159,7 @@ class SystemCalls : public SystemArch<RiscvArchType> {
         ACCESS           = AccessSystemCall<RiscvArchType>::code_value,        
         STAT             = StatSystemCall<RiscvArchType>::code_value,        
         LSTAT            = LstatSystemCall<RiscvArchType>::code_value,        
-        TIME             = TimeSystemCall<RiscvArchType>::code_value,        
-};        
+        TIME             = TimeSystemCall<RiscvArchType>::code_value,
     };
 
     static std::unordered_map<Codes, SystemCallInterface<RiscvArchType>> jump_table;
