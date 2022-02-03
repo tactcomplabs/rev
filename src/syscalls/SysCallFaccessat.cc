@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void FaccessatSystemCallInterfaceType<Riscv32>::invoke<int>(FstatatSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void FstatatSystemCall<Riscv32>::invoke<int>(FstatatSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
 
         int fd;
@@ -40,7 +40,7 @@ void FaccessatSystemCallInterfaceType<Riscv32>::invoke<int>(FstatatSystemCall<Ri
 
 template<>
 template<>
-void FaccessatSystemCallInterfaceType<Riscv64>::invoke<int>(FstatatSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void FstatatSystemCall<Riscv64>::invoke<int>(FstatatSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
 
         int fd;
@@ -63,7 +63,7 @@ void FaccessatSystemCallInterfaceType<Riscv64>::invoke<int>(FstatatSystemCall<Ri
 
 template<>
 template<>
-void FaccessatSystemCallInterfaceType<Riscv128>::invoke<int>(FstatatSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void FstatatSystemCall<Riscv128>::invoke<int>(FstatatSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
 
         int fd;
