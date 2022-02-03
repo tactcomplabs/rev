@@ -1,0 +1,109 @@
+//
+// SysCallMadvise.h
+//
+// Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+// All Rights Reserved
+// contact@tactcomplabs.com
+//
+// See LICENSE in the top level directory for licensing details
+//
+#pragma once
+#ifndef __SYSTEMCALLMADVISE_H__
+#define __SYSTEMCALLMADVISE_H__
+
+#include "SystemCallInterface.h"
+#include <type_traits>
+#include <sys/types.h>
+#include <sys/mman.h>
+
+namespace SST { namespace RevCPU {
+
+template<typename RiscvArchType=Riscv32>
+using MadviseSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+
+template<typename RiscvArchType=Riscv32>
+class MadviseSystemCallParameters : public virtual MadviseSystemCallParametersInterfaceType<RiscvArchType> {
+    
+    private:
+
+    void * addr;
+    size_t length;
+    int advice;
+
+    public:
+
+    using SystemCallParameterInterfaceType = MadviseSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
+
+    MadviseSystemCallParameters(void * addr_, size_t length_, int advice_)
+        : SystemCallParameterInterfaceType(), addr(addr_), length(length_), advice(advice_) {}
+
+    size_t count() override { return 3UL; }
+
+    template<typename ParameterType>
+    bool get(const size_t parameter_index, ParameterType & param);
+
+    template<>
+    bool get(const size_t parameter_index, size_t & param) {
+        if(parameter_index == 1) {
+            param = length;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, int & param) {
+        if(parameter_index == 0) {
+            param = advice;
+            return true;
+        }
+        
+        return false;
+    }
+
+    template<>
+    bool get(const size_t parameter_index, void * & param) {
+        if(parameter_index == 0) {
+            param = addr;
+            return true;
+        }
+        
+        return false;
+    }
+};
+
+template<typename RiscvArchType=Riscv32>
+using MadviseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+
+template<typename RiscvArchType=Riscv32>
+class MadviseSystemCall : public virtual MadviseSystemCallInterfaceType<RiscvArchType> {
+  
+    public:
+
+    using SystemCallInterfaceType = MadviseSystemCallInterfaceType<RiscvArchType>;
+
+    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
+    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
+    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+
+    MadviseSystemCall() : SystemCallInterfaceType() {}
+
+    // always returns false
+    //
+    template<typename ReturnType>
+    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
+
+    // returns true
+    //
+    template<>
+    void invoke(SystemCallParameterInterfaceType & parameters, clock_t & value);
+};
+
+} /* end namespace RevCPU */ } // end namespace SST
+
+#endif
+
+// EOF
