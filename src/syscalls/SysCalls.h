@@ -14,7 +14,7 @@
 #include "SystemCallInterface.h"
 #include "SysCallExit.h"
 #include "SysCallExitGroup.h"
-#include "SysCallGetPid.h"
+#include "SysCallGetpid.h"
 #include "SysCallKill.h"
 #include "SysCallTGKill.h"
 #include "SysCallRead.h"

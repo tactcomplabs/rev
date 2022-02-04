@@ -13,8 +13,9 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
-#include <sys/types.h>
 #include <string>
+#include <sys/types.h>
+#include <unistd.h>
 
 //     int
 //     renameat(int fromfd, const char *from, int tofd, const char *to);
@@ -23,10 +24,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using RenameAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using RenameatInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class RenameAtSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class RenameatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -37,10 +38,10 @@ class RenameAtSystemCallParameters : public virtual SystemCallParameterInterface
 
     public:
 
-    using SystemCallParameterInterfaceType = RenameAtSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = RenameatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    RenameAtSystemCallParameters(int frfd, const std::string fromstr, int tfd, const std::string to_)
+    RenameatParameters(int frfd, const std::string fromstr, int tfd, const std::string to_)
         : SystemCallParameterInterfaceType(), fromfd(frfd), from(fromstr), tofd(tfd), to(to_) {}
 
     size_t count() override { return 4UL; }
@@ -78,18 +79,18 @@ class RenameAtSystemCallParameters : public virtual SystemCallParameterInterface
 };
 
 template<typename RiscvArchType=Riscv32>
-class RenameAtSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Renameat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = RenameAtSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = RenameatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    RenameAtSystemCall() : SystemCallInterfaceType() {}
+    Renameat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

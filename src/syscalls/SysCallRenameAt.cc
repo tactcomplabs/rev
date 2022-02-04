@@ -8,10 +8,6 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallRenameAt.h"
-#include <algorithm>
-
-#include <unistd.h>
-#include <signal.h>
 
 namespace SST { namespace RevCPU {
 
