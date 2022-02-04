@@ -21,10 +21,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SigprocmaskParametersInterfaceType = SystemCallInterface<RiscvArchType, 135>;
+using SigprocmaskInterfaceType = SystemCallInterface<RiscvArchType, 135>;
 
 template<typename RiscvArchType=Riscv32>
-class SigprocmaskParameters : public virtual SigprocmaskParametersInterfaceType<RiscvArchType> {
+class SigprocmaskParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -69,9 +69,6 @@ class SigprocmaskParameters : public virtual SigprocmaskParametersInterfaceType<
         return false;
     }
 };
-
-template<typename RiscvArchType=Riscv32>
-using SigprocmaskInterfaceType = SystemCallInterface<RiscvArchType, 135>;
 
 template<typename RiscvArchType=Riscv32>
 class Sigprocmask : public virtual SystemCallInterface<RiscvArchType> {

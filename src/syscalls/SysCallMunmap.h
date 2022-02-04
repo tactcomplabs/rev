@@ -17,10 +17,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MunmapSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 215>;
+using MunmapInterfaceType = SystemCallInterface<RiscvArchType, 215>;
 
 template<typename RiscvArchType=Riscv32>
-class MunmapSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class MunmapParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -29,10 +29,10 @@ class MunmapSystemCallParameters : public virtual SystemCallParameterInterface<R
 
     public:
 
-    using SystemCallParameterInterfaceType = MunmapSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = MunmapParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MunmapSystemCallParameters(void * addrp, size_t lenp)
+    MunmapParameters(void * addrp, size_t lenp)
         : SystemCallParameterInterfaceType(), addr(addrp), len(lenp) {}
 
     size_t count() override { return 6UL; }
@@ -62,11 +62,11 @@ class MunmapSystemCallParameters : public virtual SystemCallParameterInterface<R
 };
 
 template<typename RiscvArchType=Riscv32>
-class MunmapSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Munmap : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MunmapSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = MunmapInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
@@ -75,7 +75,7 @@ class MunmapSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    MunmapSystemCall() : SystemCallInterfaceType() {}
+    Munmap() : SystemCallInterfaceType() {}
 
     // always returns false
     //

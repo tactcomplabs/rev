@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using UnlinkParametersInterfaceType = SystemCallInterface<RiscvArchType, 1026>;
+using UnlinkInterfaceType = SystemCallInterfaceCode<RiscvArchType, 1026>;
 
 template<typename RiscvArchType=Riscv32>
 class UnlinkParameters : public virtual UnlinkParametersInterfaceType<RiscvArchType> {
@@ -51,9 +51,6 @@ class UnlinkParameters : public virtual UnlinkParametersInterfaceType<RiscvArchT
         return false;
     }    
 };
-
-template<typename RiscvArchType=Riscv32>
-using UnlinkInterfaceType = SystemCallInterfaceCode<RiscvArchType, 1026>;
 
 template<typename RiscvArchType=Riscv32>
 class Unlink : public virtual SystemCallInterface<RiscvArchType> {

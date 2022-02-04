@@ -23,10 +23,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using RenameAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 38>;
+using RenameAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class RenameAtSystemCallParameters : public virtual RenameAtSystemCallParametersInterfaceType<RiscvArchType> {
+class RenameAtSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -76,9 +76,6 @@ class RenameAtSystemCallParameters : public virtual RenameAtSystemCallParameters
         return false;
     }
 };
-
-template<typename RiscvArchType=Riscv32>
-using RenameAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
 class RenameAtSystemCall : public virtual SystemCallInterface<RiscvArchType> {

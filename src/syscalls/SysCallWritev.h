@@ -14,19 +14,23 @@
 #include "SystemCallInterface.h"
 #include <type_traits>
 #include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType=Riscv32>
-using WritevParametersInterfaceType = SystemCallInterface<RiscvArchType, 66>;
+using iovec_t = struct iovec;
 
 template<typename RiscvArchType=Riscv32>
-class WritevParameters : public virtual WritevParametersInterfaceType<RiscvArchType> {
+using WritevInterfaceType = SystemCallInterfaceCode<RiscvArchType, 66>;
+
+template<typename RiscvArchType=Riscv32>
+class WritevParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
     int fildes;
-    iovec * iov;
+    iovec_t * iov;
     int iovcnt;
 
     public:
@@ -56,7 +60,7 @@ class WritevParameters : public virtual WritevParametersInterfaceType<RiscvArchT
     }
 
     template<>
-    bool get(const size_t parameter_index, iovec * & param) {
+    bool get(const size_t parameter_index, iovec_t * & param) {
         if(parameter_index == 0) {
             param = iov;
             return true;
@@ -65,9 +69,6 @@ class WritevParameters : public virtual WritevParametersInterfaceType<RiscvArchT
         return false;
     }
 };
-
-template<typename RiscvArchType=Riscv32>
-using WritevInterfaceType = SystemCallInterfaceCode<RiscvArchType, 66>;
 
 template<typename RiscvArchType=Riscv32>
 class Writev : public virtual SystemCallInterface<RiscvArchType> {

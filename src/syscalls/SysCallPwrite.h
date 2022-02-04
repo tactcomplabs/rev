@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using PwriteSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 67>;
+using PwriteInterfaceType = SystemCallInterface<RiscvArchType, 67>;
 
 template<typename RiscvArchType=Riscv32>
-class PwriteSystemCallParameters : public virtual WriteSystemCallParametersInterfaceType<RiscvArchType> {
+class PwriteParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class PwriteSystemCallParameters : public virtual WriteSystemCallParametersInter
 
     public:
 
-    using SystemCallParameterInterfaceType = PwriteSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = PwriteParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    PwriteSystemCallParameters(int fd_i, void *buf_i, size_t nbyte_i, off_t offset_i)
+    PwriteParameters(int fd_i, void *buf_i, size_t nbyte_i, off_t offset_i)
         : SystemCallParameterInterfaceType(), fd(fd_i), nbyte(nbyte_i), offset(offset_i) {}
 
     size_t count() override {
@@ -81,21 +81,18 @@ class PwriteSystemCallParameters : public virtual WriteSystemCallParametersInter
 };
 
 template<typename RiscvArchType=Riscv32>
-using PwriteSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 67>;
-
-template<typename RiscvArchType=Riscv32>
-class PwriteSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Pwrite : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = PwriteSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = PwriteInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    PwriteSystemCall() : SystemCallInterfaceType() {}
+    Pwrite() : SystemCallInterfaceType() {}
 
     // always returns false
     //

@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TimesParametersInterfaceType = SystemCallInterface<RiscvArchType, 153>;
+using TimesInterfaceType = SystemCallInterface<RiscvArchType, 153>;
 
 template<typename RiscvArchType=Riscv32>
 class TimesParameters : public virtual TimesParametersInterfaceType<RiscvArchType> {
@@ -51,9 +51,6 @@ class TimesParameters : public virtual TimesParametersInterfaceType<RiscvArchTyp
         return false;
     }
 };
-
-template<typename RiscvArchType=Riscv32>
-using TimesInterfaceType = SystemCallInterface<RiscvArchType, 153>;
 
 template<typename RiscvArchType=Riscv32>
 class Times : public virtual SystemCallInterface<RiscvArchType> {

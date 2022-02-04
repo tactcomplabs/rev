@@ -17,10 +17,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MremapSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 216>;
+using MremapInterfaceType = SystemCallInterface<RiscvArchType, 216>;
 
 template<typename RiscvArchType=Riscv32>
-class MremapSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class MremapParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,13 +32,13 @@ class MremapSystemCallParameters : public virtual SystemCallParameterInterface<R
 
     public:
 
-    using SystemCallParameterInterfaceType = MremapSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = MremapParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MremapSystemCallParameters(void * addrp, size_t oldsz, size_t newsz, int flagsp)
+    MremapParameters(void * addrp, size_t oldsz, size_t newsz, int flagsp)
         : SystemCallParameterInterfaceType(), addr(addrp), len(lenp), prot(protp), flags(flagsp), newaddr(std::nullptr) {}
 
-    MremapSystemCallParameters(void * oaddr, size_t oldsz, size_t newsz, int flagsp, void * naddr)
+    MremapParameters(void * oaddr, size_t oldsz, size_t newsz, int flagsp, void * naddr)
         : SystemCallParameterInterfaceType(), oldaddr(oaddr), oldsize(oldsz), newsize(newsz), flags(flagsp), newaddr(naddr) {}
 
     size_t count() override { return (newaddr == std::nullptr) ? 5UL : 6UL; }
@@ -86,11 +86,11 @@ class MremapSystemCallParameters : public virtual SystemCallParameterInterface<R
 };
 
 template<typename RiscvArchType=Riscv32>
-class MremapSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Mremap : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MremapSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = MremapInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
@@ -99,7 +99,7 @@ class MremapSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    MremapSystemCall() : SystemCallInterfaceType() {}
+    Mremap() : SystemCallInterfaceType() {}
 
     // always returns false
     //

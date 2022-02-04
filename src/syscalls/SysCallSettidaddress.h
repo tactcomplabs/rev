@@ -20,10 +20,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SettidaddressParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using SettidaddressInterfaceType = SystemCallInterface<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
-class SettidaddressParameters : public virtual SettidaddressParametersInterfaceType<RiscvArchType> {
+class SettidaddressParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -54,9 +54,6 @@ class SettidaddressParameters : public virtual SettidaddressParametersInterfaceT
         return false;
     }
 };
-
-template<typename RiscvArchType=Riscv32>
-using SettidaddressInterfaceType = SystemCallInterface<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
 class Settidaddress : public virtual SystemCallInterface<RiscvArchType> {

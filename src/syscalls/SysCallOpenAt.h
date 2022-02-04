@@ -20,12 +20,11 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType=Riscv32>
+using OpenatInterfaceType = SystemCallInterface<RiscvArchType, 56>;
 
 template<typename RiscvArchType=Riscv32>
-using OpenAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 56>;
-
-template<typename RiscvArchType=Riscv32>
-class OpenAtSystemCallParameters : public virtual OpenAtSystemCallParametersInterfaceType<RiscvArchType> {
+class OpenatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -36,10 +35,10 @@ class OpenAtSystemCallParameters : public virtual OpenAtSystemCallParametersInte
 
     public:
 
-    using SystemCallParameterInterfaceType = OpenAtSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = OpenatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    OpenAtSystemCallParameters(int fd_i, std::string path_i, int oflag_i, mode_t mode_i)
+    OpenatParameters(int fd_i, std::string path_i, int oflag_i, mode_t mode_i)
         : SystemCallParameterInterfaceType(), fd(fd_i), path(path_i), oflag(oflag_i), mode(mode_i) {}
 
     size_t count() override { return 4UL; }
@@ -89,21 +88,18 @@ class OpenAtSystemCallParameters : public virtual OpenAtSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using OpenAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 56>;
-
-template<typename RiscvArchType=Riscv32>
-class OpenAtSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Openat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = OpenAtSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = OpenatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    OpenAtSystemCall() : SystemCallInterfaceType() {}
+    Openat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

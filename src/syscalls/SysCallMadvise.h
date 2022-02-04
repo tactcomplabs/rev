@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MadviseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 233>;
+using MadviseInterfaceType = SystemCallInterface<RiscvArchType, 233>;
 
 template<typename RiscvArchType=Riscv32>
-class MadviseSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class MadviseParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class MadviseSystemCallParameters : public virtual SystemCallParameterInterface<
 
     public:
 
-    using SystemCallParameterInterfaceType = MadviseSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = MadviseParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MadviseSystemCallParameters(void * addr_, size_t length_, int advice_)
+    MadviseParameters(void * addr_, size_t length_, int advice_)
         : SystemCallParameterInterfaceType(), addr(addr_), length(length_), advice(advice_) {}
 
     size_t count() override { return 3UL; }
@@ -75,18 +75,18 @@ class MadviseSystemCallParameters : public virtual SystemCallParameterInterface<
 };
 
 template<typename RiscvArchType=Riscv32>
-class MadviseSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Madvise : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MadviseSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = MadviseInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    MadviseSystemCall() : SystemCallInterfaceType() {}
+    Madvise() : SystemCallInterfaceType() {}
 
     // always returns false
     //

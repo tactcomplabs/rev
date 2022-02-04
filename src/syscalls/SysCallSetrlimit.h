@@ -20,10 +20,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SetrlimitParametersInterfaceType = SystemCallInterface<RiscvArchType, 164>;
+using SetrlimitInterfaceType = SystemCallInterface<RiscvArchType, 164>;
 
 template<typename RiscvArchType=Riscv32>
-class SetrlimitParameters : public virtual SetrlimitParametersInterfaceType<RiscvArchType> {
+class SetrlimitParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -65,9 +65,6 @@ class SetrlimitParameters : public virtual SetrlimitParametersInterfaceType<Risc
         return false;
     }    
 };
-
-template<typename RiscvArchType=Riscv32>
-using SetrlimitInterfaceType = SystemCallInterface<RiscvArchType, 164>;
 
 template<typename RiscvArchType=Riscv32>
 class Setrlimit : public virtual SystemCallInterface<RiscvArchType> {

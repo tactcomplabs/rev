@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using PreadSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using PreadInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class PreadSystemCallParameters : public virtual PreadSystemCallParametersInterfaceType<RiscvArchType> {
+class PreadParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class PreadSystemCallParameters : public virtual PreadSystemCallParametersInterf
 
     public:
 
-    using SystemCallParameterInterfaceType = PreadSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = PreadParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    PreadSystemCallParameters(int fd_i, void *buf_i, size_t nbyte_i, off_t offset_i)
+    PreadParameters(int fd_i, void *buf_i, size_t nbyte_i, off_t offset_i)
         : SystemCallParameterInterfaceType(), fd(fd_i), nbyte(nbyte_i), offset(offset_i) {}
 
     size_t count() override {
@@ -81,21 +81,18 @@ class PreadSystemCallParameters : public virtual PreadSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using PreadSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
-
-template<typename RiscvArchType=Riscv32>
-class PreadSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Pread : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = PreadSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = PreadInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    PreadSystemCall() : SystemCallInterfaceType() {}
+    Pread() : SystemCallInterfaceType() {}
 
     // always returns false
     //

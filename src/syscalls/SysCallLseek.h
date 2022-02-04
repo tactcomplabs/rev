@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using LseekSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
+using LseekInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
 
 template<typename RiscvArchType=Riscv32>
-class LseekSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class LseekParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class LseekSystemCallParameters : public virtual SystemCallParameterInterface<Ri
 
     public:
 
-    using SystemCallParameterInterfaceType = LseekSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = LseekParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    LseekSystemCallParameters(const int fd_i, const off_t offset_i, const int whence_i)
+    LseekParameters(const int fd_i, const off_t offset_i, const int whence_i)
         : SystemCallParameterInterfaceType(), fd(fd_i), offset(offset_i), whence(whence_i) {}
 
     size_t count() override { return 2UL; }
@@ -68,18 +68,18 @@ class LseekSystemCallParameters : public virtual SystemCallParameterInterface<Ri
 };
 
 template<typename RiscvArchType=Riscv32>
-class LseekSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Lseek : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = LseekSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = LseekInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    LseekSystemCall() : SystemCallInterfaceType() {}
+    Lseek() : SystemCallInterfaceType() {}
 
     // always returns false
     //

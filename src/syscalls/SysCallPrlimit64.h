@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using Prlimit64SystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 261>;
+using Prlimit64InterfaceType = SystemCallInterface<RiscvArchType, 261>;
 
 template<typename RiscvArchType=Riscv32>
-class Prlimit64SystemCallParameters : public virtual Prlimit64SystemCallParametersInterfaceType<RiscvArchType> {
+class Prlimit64Parameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
     
@@ -33,10 +33,10 @@ class Prlimit64SystemCallParameters : public virtual Prlimit64SystemCallParamete
 
     public:
 
-    using SystemCallParameterInterfaceType = Prlimit64SystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = Prlimit64ParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    Prlimit64SystemCallParameters(pid_t pidp, int resourcep, rlimit * newlimit, rlimit * oldlimit)
+    Prlimit64Parameters(pid_t pidp, int resourcep, rlimit * newlimit, rlimit * oldlimit)
         : SystemCallParameterInterfaceType(), pid(pidp), resource(resourcep), new_limit(newlimit), old_limit(oldlimit) {}
 
     size_t count() override { return 4UL; }
@@ -74,14 +74,11 @@ class Prlimit64SystemCallParameters : public virtual Prlimit64SystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using Prlimit64SystemCallInterfaceType = SystemCallInterface<RiscvArchType, 261>;
-
-template<typename RiscvArchType=Riscv32>
-class Prlimit64SystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Prlimit64 : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = Prlimit64SystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = Prlimit64InterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
@@ -90,7 +87,7 @@ class Prlimit64SystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    Prlimit64SystemCall() : SystemCallInterfaceType() {}
+    Prlimit64() : SystemCallInterfaceType() {}
 
     // always returns false
     //

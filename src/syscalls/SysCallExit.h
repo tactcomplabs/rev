@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ExitParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using ExitInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
 class ExitParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -48,9 +48,6 @@ class ExitParameters : public virtual SystemCallParameterInterface<RiscvArchType
         return false;
     }
 };
-
-template<typename RiscvArchType=Riscv32>
-using ExitInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
 class Exit : public virtual SystemCallInterface<RiscvArchType> {

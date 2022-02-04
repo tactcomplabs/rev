@@ -17,10 +17,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MprotectSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 226>;
+using MprotectInterfaceType = SystemCallInterface<RiscvArchType, 226>;
 
 template<typename RiscvArchType=Riscv32>
-class MprotectSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class MprotectParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -30,10 +30,10 @@ class MprotectSystemCallParameters : public virtual SystemCallParameterInterface
 
     public:
 
-    using SystemCallParameterInterfaceType = MprotectSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = MprotectParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MprotectSystemCallParameters(void * addrp, size_t lenp, int protp)
+    MprotectParameters(void * addrp, size_t lenp, int protp)
         : SystemCallParameterInterfaceType(), addr(addrp), len(lenp), prot(protp) {}
 
     size_t count() override { return 3UL; }
@@ -73,11 +73,11 @@ class MprotectSystemCallParameters : public virtual SystemCallParameterInterface
 };
 
 template<typename RiscvArchType=Riscv32>
-class MprotectSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Mprotect : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MprotectSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = MprotectInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
@@ -86,7 +86,7 @@ class MprotectSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    MprotectSystemCall() : SystemCallInterfaceType() {}
+    Mprotect() : SystemCallInterfaceType() {}
 
     // always returns false
     //

@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using StatParametersInterfaceType = SystemCallInterface<RiscvArchType, 1038>;
+using StatInterfaceType = SystemCallInterface<RiscvArchType, 1038>;
 
 template<typename RiscvArchType=Riscv32>
 class StatParameters : public virtual StatParametersInterfaceType<RiscvArchType> {
@@ -65,9 +65,6 @@ class StatParameters : public virtual StatParametersInterfaceType<RiscvArchType>
         return false;
     }    
 };
-
-template<typename RiscvArchType=Riscv32>
-using StatInterfaceType = SystemCallInterface<RiscvArchType, 1038>;
 
 template<typename RiscvArchType=Riscv32>
 class Stat : public virtual SystemCallInterface<RiscvArchType> {

@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using LinkSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1025>;
+using LinkInterfaceType = SystemCallInterface<RiscvArchType, 1025>;
 
 template<typename RiscvArchType=Riscv32>
-class LinkSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class LinkParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -30,10 +30,10 @@ class LinkSystemCallParameters : public virtual SystemCallParameterInterface<Ris
 
     public:
 
-    using SystemCallParameterInterfaceType = LinkSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = LinkParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    LinkSystemCallParameters(const std::string old_pth, const std::string new_pth)
+    LinkParameters(const std::string old_pth, const std::string new_pth)
         : SystemCallParameterInterfaceType(), oldpth(old_pth), newpth(new_pth) {}
 
     size_t count() override { return 2UL; }
@@ -57,18 +57,18 @@ class LinkSystemCallParameters : public virtual SystemCallParameterInterface<Ris
 };
 
 template<typename RiscvArchType=Riscv32>
-class LinkSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Link : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = LinkSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = LinkInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    LinkSystemCall() : SystemCallInterfaceType() {}
+    Link() : SystemCallInterfaceType() {}
 
     // always returns false
     //

@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using LinkAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 37>;
+using LinkatInterfaceType = SystemCallInterface<RiscvArchType, 37>;
 
 template<typename RiscvArchType=Riscv32>
-class LinkAtSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class LinkatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class LinkAtSystemCallParameters : public virtual SystemCallParameterInterface<R
 
     public:
 
-    using SystemCallParameterInterfaceType = LinkAtSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = LinkatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    LinkAtSystemCallParameters(const int fd_1, const std::string old_pth, const int fd_2, const std::string new_pth, const int flag_i)
+    LinkatParameters(const int fd_1, const std::string old_pth, const int fd_2, const std::string new_pth, const int flag_i)
         : SystemCallParameterInterfaceType(), fd1(fd_1), oldpth(old_pth), fd2(fd_2), newpth(new_pth), flag(flag_i) {}
 
     size_t count() override { return 5UL; }
@@ -77,18 +77,18 @@ class LinkAtSystemCallParameters : public virtual SystemCallParameterInterface<R
 };
 
 template<typename RiscvArchType=Riscv32>
-class LinkAtSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Linkat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = LinkAtSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = LinkatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    LinkAtSystemCall() : SystemCallInterfaceType() {}
+    Linkat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

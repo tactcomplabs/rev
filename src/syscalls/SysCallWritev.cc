@@ -8,9 +8,6 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallWritev.h"
-#include <algorithm>
-
-#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
@@ -20,12 +17,12 @@ void Writev<Riscv32>::invoke<ssize_t>(Writev<Riscv32>::SystemCallParameterInterf
    if(parameters.count() == 3) {
 
         int fildes;
-        iovec * iov;
+        iovec_t * iov;
         int iovcnt;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<iovec *>(1, iov);
+        has_values[1] = parameters.get<iovec_t *>(1, iov);
         has_values[2] = parameters.get<int>(2, iovcnt);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
@@ -41,12 +38,12 @@ void Writev<Riscv64>::invoke<ssize_t>(Writev<Riscv64>::SystemCallParameterInterf
    if(parameters.count() == 3) {
 
         int fildes;
-        iovec * iov;
+        iovec_t * iov;
         int iovcnt;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<iovec *>(1, iov);
+        has_values[1] = parameters.get<iovec_t *>(1, iov);
         has_values[2] = parameters.get<int>(2, iovcnt);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
@@ -62,12 +59,12 @@ void Writev<Riscv128>::invoke<ssize_t>(Writev<Riscv128>::SystemCallParameterInte
    if(parameters.count() == 3) {
 
         int fildes;
-        iovec * iov;
+        iovec_t * iov;
         int iovcnt;
 
         bool has_values[3] = { false, false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<iovec *>(1, iov);
+        has_values[1] = parameters.get<iovec_t *>(1, iov);
         has_values[2] = parameters.get<int>(2, iovcnt);
 
         if(has_values[0] && has_values[1] && has_values[2]) {

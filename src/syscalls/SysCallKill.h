@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using KillSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 129>;
+using KillInterfaceType = SystemCallInterface<RiscvArchType, 129>;
 
 template<typename RiscvArchType=Riscv32>
-class KillSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class KillParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -30,10 +30,10 @@ class KillSystemCallParameters : public virtual SystemCallParameterInterface<Ris
 
     public:
 
-    using SystemCallParameterInterfaceType = KillSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = KillParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    KillSystemCallParameters(const pid_t pid_i, const int sig_i) : SystemCallParameterInterfaceType(), pid(pid_i), sig(sig_i) {}
+    KillParameters(const pid_t pid_i, const int sig_i) : SystemCallParameterInterfaceType(), pid(pid_i), sig(sig_i) {}
 
     size_t count() override { return 2UL; }
 
@@ -56,18 +56,18 @@ class KillSystemCallParameters : public virtual SystemCallParameterInterface<Ris
 };
 
 template<typename RiscvArchType=Riscv32>
-class KillSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Kill : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = KillSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = KillInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    KillSystemCall() : SystemCallInterfaceType() {}
+    Kill() : SystemCallInterfaceType() {}
 
     // always returns false
     //

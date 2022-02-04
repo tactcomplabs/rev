@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using UnameParametersInterfaceType = SystemCallInterface<RiscvArchType, 160>;
+using UnameInterfaceType = SystemCallInterface<RiscvArchType, 160>;
 
 template<typename RiscvArchType=Riscv32>
 class UnameParameters : public virtual UnameParametersInterfaceType<RiscvArchType> {
@@ -52,9 +52,6 @@ class UnameParameters : public virtual UnameParametersInterfaceType<RiscvArchTyp
         return false;
     }    
 };
-
-template<typename RiscvArchType=Riscv32>
-using UnameInterfaceType = SystemCallInterface<RiscvArchType, 160>;
 
 template<typename RiscvArchType=Riscv32>
 class Uname : public virtual SystemCallInterface<RiscvArchType> {

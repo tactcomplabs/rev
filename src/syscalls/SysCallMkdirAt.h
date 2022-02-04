@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MkdirAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 34>;
+using MkdiratInterfaceType = SystemCallInterface<RiscvArchType, 34>;
 
 template<typename RiscvArchType=Riscv32>
-class MkdirAtSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class MkdiratParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class MkdirAtSystemCallParameters : public virtual SystemCallParameterInterface<
 
     public:
 
-    using SystemCallParameterInterfaceType = MkdirAtSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = MkdiratParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MkdirAtSystemCallParameters(int fd_i, std::string path, size_t count_i)
+    MkdiratParameters(int fd_i, std::string path, size_t count_i)
         : SystemCallParameterInterfaceType(), fd(fd_i), pth(path), bcount(count_i) {}
 
     size_t count() override { return 3UL; }
@@ -75,18 +75,18 @@ class MkdirAtSystemCallParameters : public virtual SystemCallParameterInterface<
 };
 
 template<typename RiscvArchType=Riscv32>
-class MkdirAtSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Mkdirat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MkdirAtSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = MkdiratInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    MkdirAtSystemCall() : SystemCallInterfaceType() {}
+    Mkdirat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

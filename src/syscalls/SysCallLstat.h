@@ -23,10 +23,10 @@ namespace SST { namespace RevCPU {
 using stat_t = struct stat;
 
 template<typename RiscvArchType=Riscv32>
-using LstatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
+using LstatInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
 
 template<typename RiscvArchType=Riscv32>
-class LstatSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class LstatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -35,10 +35,10 @@ class LstatSystemCallParameters : public virtual SystemCallParameterInterface<Ri
 
     public:
 
-    using SystemCallParameterInterfaceType = LstatSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = LstatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    LstatSystemCallParameters(std::string path, stat * bufi)
+    LstatParameters(std::string path, stat * bufi)
         : SystemCallParameterInterfaceType(), pth(path), buf(bufi) {}
 
     size_t count() override {
@@ -70,18 +70,18 @@ class LstatSystemCallParameters : public virtual SystemCallParameterInterface<Ri
 };
 
 template<typename RiscvArchType=Riscv32>
-class LstatSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Lstat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = LstatSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = LstatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    LstatSystemCall() : SystemCallInterfaceType() {}
+    Lstat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

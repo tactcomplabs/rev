@@ -20,7 +20,6 @@ namespace SST { namespace RevCPU {
 template<typename RiscvArchType=Riscv32>
 using GetgidInterfaceType = SystemCallInterface<RiscvArchType, 176>;
 
-
 template<typename RiscvArchType=Riscv32>
 class GetgidParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     

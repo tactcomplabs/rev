@@ -18,11 +18,11 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using IoctlSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 29>;
+using IoctlInterfaceType = SystemCallInterface<RiscvArchType, 29>;
 
 
 template<typename RiscvArchType=Riscv32>
-class IoctlSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
+class IoctlParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class IoctlSystemCallParameters : public virtual SystemCallParameterInterface<Ri
 
     public:
 
-    using SystemCallParameterInterfaceType = IoctlSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = IoctlParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
     
-    IoctlSystemCallParameters(int fildesp, unsigned long requestp)
+    IoctlParameters(int fildesp, unsigned long requestp)
         : SystemCallParameterInterfaceType(), fildes(fildesp), request(requestp) {}
 
     size_t count() override { return 2UL; }
@@ -64,11 +64,11 @@ class IoctlSystemCallParameters : public virtual SystemCallParameterInterface<Ri
 };
 
 template<typename RiscvArchType=Riscv32>
-class IoctlSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Ioctl : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = IoctlSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = IoctlInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
@@ -77,7 +77,7 @@ class IoctlSystemCall : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    IoctlSystemCall() : SystemCallInterfaceType() {}
+    Ioctl() : SystemCallInterfaceType() {}
 
     // always returns false
     //

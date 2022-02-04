@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ReadSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 63>;
+using ReadInterfaceType = SystemCallInterface<RiscvArchType, 63>;
 
 template<typename RiscvArchType=Riscv32>
-class ReadSystemCallParameters : public virtual ReadSystemCallParametersInterfaceType<RiscvArchType> {
+class ReadParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class ReadSystemCallParameters : public virtual ReadSystemCallParametersInterfac
 
     public:
 
-    using SystemCallParameterInterfaceType = ReadSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = ReadParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    ReadSystemCallParameters(int fd_i, void *buf_i, size_t count_i) : SystemCallParameterInterfaceType(), fd(fd_i), buf(buf_i), bcount(count_i) {}
+    ReadParameters(int fd_i, void *buf_i, size_t count_i) : SystemCallParameterInterfaceType(), fd(fd_i), buf(buf_i), bcount(count_i) {}
 
     size_t count() override { return 3UL; }
 
@@ -73,21 +73,18 @@ class ReadSystemCallParameters : public virtual ReadSystemCallParametersInterfac
 };
 
 template<typename RiscvArchType=Riscv32>
-using ReadSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 63>;
-
-template<typename RiscvArchType=Riscv32>
-class ReadSystemCall : public virtual SystemCallInterface<RiscvArchType> {
+class Read : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = ReadSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = ReadInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    ReadSystemCall() : SystemCallInterfaceType() {}
+    Read() : SystemCallInterfaceType() {}
 
     // always returns false
     //

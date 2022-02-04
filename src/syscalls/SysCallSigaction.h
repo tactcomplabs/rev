@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SigactionParametersInterfaceType = SystemCallInterface<RiscvArchType, 134>;
+using SigactionInterfaceType = SystemCallInterface<RiscvArchType, 134>;
 
 template<typename RiscvArchType=Riscv32>
-class SigactionParameters : public virtual SigactionParametersInterfaceType<RiscvArchType> {
+class SigactionParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -67,9 +67,6 @@ class SigactionParameters : public virtual SigactionParametersInterfaceType<Risc
         return false;
     }
 };
-
-template<typename RiscvArchType=Riscv32>
-using SigactionInterfaceType = SystemCallInterface<RiscvArchType, 134>;
 
 template<typename RiscvArchType=Riscv32>
 class Sigaction : public virtual SigactionInterfaceType<RiscvArchType> {
