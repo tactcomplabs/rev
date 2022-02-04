@@ -21,7 +21,7 @@ template<typename RiscvArchType=Riscv32>
 using WriteInterfaceType = SystemCallInterfaceCode<RiscvArchType, 64>;
 
 template<typename RiscvArchType=Riscv32>
-class WriteParameters : public virtual WriteParametersInterfaceType<RiscvArchType> {
+class WriteParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 

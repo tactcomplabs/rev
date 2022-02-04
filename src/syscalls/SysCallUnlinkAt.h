@@ -22,7 +22,7 @@ template<typename RiscvArchType=Riscv32>
 using UnlinkatInterfaceType = SystemCallInterfaceCode<RiscvArchType, 35>;
 
 template<typename RiscvArchType=Riscv32>
-class UnlinkatParameters : public virtual UnlinkatParametersInterfaceType<RiscvArchType> {
+class UnlinkatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 

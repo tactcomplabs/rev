@@ -23,7 +23,7 @@ template<typename RiscvArchType=Riscv32>
 using UnameInterfaceType = SystemCallInterface<RiscvArchType, 160>;
 
 template<typename RiscvArchType=Riscv32>
-class UnameParameters : public virtual UnameParametersInterfaceType<RiscvArchType> {
+class UnameParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 

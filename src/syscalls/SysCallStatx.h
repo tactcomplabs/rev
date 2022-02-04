@@ -22,7 +22,7 @@ template<typename RiscvArchType=Riscv32>
 using StatxInterfaceType = SystemCallInterface<RiscvArchType, 291>;
 
 template<typename RiscvArchType=Riscv32>
-class StatxParameters : public virtual StatxParametersInterfaceType<RiscvArchType> {
+class StatxParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 

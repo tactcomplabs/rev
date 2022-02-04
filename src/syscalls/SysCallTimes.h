@@ -22,7 +22,7 @@ template<typename RiscvArchType=Riscv32>
 using TimesInterfaceType = SystemCallInterface<RiscvArchType, 153>;
 
 template<typename RiscvArchType=Riscv32>
-class TimesParameters : public virtual TimesParametersInterfaceType<RiscvArchType> {
+class TimesParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
