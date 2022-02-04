@@ -17,21 +17,21 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GetgidSystemCall<Riscv32>::invoke<int>(GetgidSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getgid<Riscv32>::invoke<gid_t>(Getgid<Riscv32>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
     success = true;
     value = getgid();
 }
 
 template<>
 template<>
-void GetgidSystemCall<Riscv64>::invoke<int>(GetgidSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getgid<Riscv64>::invoke<gid_t>(Getgid<Riscv64>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
     success = true;
     value = getgid();
 }
 
 template<>
 template<>
-void GetgidSystemCall<Riscv128>::invoke<int>(GetgidSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getgid<Riscv128>::invoke<gid_t>(Getgid<Riscv128>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
     success = true;
     value = getgid();
 }

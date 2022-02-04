@@ -15,29 +15,31 @@
 #include <type_traits>
 #include <string>
 #include <sys/types.h>
-#include <string>
+#include <sys/stat.h>
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType=Riscv32>
-using FstatatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 79>;
+using stat_t = struct stat;
 
 template<typename RiscvArchType=Riscv32>
-class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersInterfaceType<RiscvArchType> {
+using FstatatInterfaceType = SystemCallInterface<RiscvArchType, 79>;
+
+template<typename RiscvArchType=Riscv32>
+class FstatatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
     int fd;
     std::string path;
-    stat * buf;
+    stat_t * buf;
     int flag;
 
     public:
 
-    using SystemCallParameterInterfaceType = FstatatSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = FstatatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    FstatatSystemCallParameters(int fdi, std::string pathi, stat * bufi, int flagi)
+    FstatatParameters(int fdi, std::string pathi, stat * bufi, int flagi)
         : SystemCallParameterInterfaceType(), fd(fdi), path(pathi), buf(bufi), flag(flagi) {}
 
     size_t count() override {
@@ -53,7 +55,10 @@ class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersIn
             param = fd;
             return true;
         }
-
+        else if(parameter_index == 3) {
+            param = flag;
+            return true;
+        }
         return false;
     }
 
@@ -68,42 +73,29 @@ class FstatatSystemCallParameters : public virtual FstatatSystemCallParametersIn
     }    
 
     template<>
-    bool get(const size_t parameter_index, stat * & param) {
+    bool get(const size_t parameter_index, stat_t * & param) {
         if(parameter_index == 2) {
             param = buf;
             return true;
         }
 
         return false;
-    }    
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 3) {
-            param = flag;
-            return true;
-        }
-
-        return false;
-    }    
+    }
 };
 
 template<typename RiscvArchType=Riscv32>
-using FstatatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 79>;
-
-template<typename RiscvArchType=Riscv32>
-class FstatatSystemCall : public virtual FstatatSystemCallInterfaceType<RiscvArchType> {
+class Fstatat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = FstatatSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = FstatatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    FstatatSystemCall() : SystemCallInterfaceType() {}
+    Fstatat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

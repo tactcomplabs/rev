@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void UnameSystemCall<Riscv32>::invoke<int>(UnameSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Uname<Riscv32>::invoke<int>(Uname<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         utsname * name;
         
@@ -31,7 +31,7 @@ void UnameSystemCall<Riscv32>::invoke<int>(UnameSystemCall<Riscv32>::SystemCallP
 
 template<>
 template<>
-void UnameSystemCall<Riscv64>::invoke<int>(UnameSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Uname<Riscv64>::invoke<int>(Uname<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         utsname * name;
         
@@ -45,7 +45,7 @@ void UnameSystemCall<Riscv64>::invoke<int>(UnameSystemCall<Riscv64>::SystemCallP
 
 template<>
 template<>
-void UnameSystemCall<Riscv128>::invoke<int>(UnameSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Uname<Riscv128>::invoke<int>(Uname<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         utsname * name;
         

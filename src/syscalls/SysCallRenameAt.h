@@ -81,7 +81,7 @@ template<typename RiscvArchType=Riscv32>
 using RenameAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class RenameAtSystemCall : public virtual RenameAtSystemCallInterfaceType<RiscvArchType> {
+class RenameAtSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -90,7 +90,7 @@ class RenameAtSystemCall : public virtual RenameAtSystemCallInterfaceType<RiscvA
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     RenameAtSystemCall() : SystemCallInterfaceType() {}
 

@@ -15,15 +15,15 @@
 #include <type_traits>
 #include <string>
 #include <sys/types.h>
-#include <string>
+#include <sys/stat.h>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FtruncateSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 46>;
+using FtruncateInterfaceType = SystemCallInterface<RiscvArchType, 46>;
 
 template<typename RiscvArchType=Riscv32>
-class FtruncateSystemCallParameters : public virtual FtruncateSystemCallParametersInterfaceType<RiscvArchType> {
+class FtruncateParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class FtruncateSystemCallParameters : public virtual FtruncateSystemCallParamete
 
     public:
 
-    using SystemCallParameterInterfaceType = FtruncateSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = FtruncateParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    FtruncateSystemCallParameters(int fildesp, offset_t lengthp)
+    FtruncateParameters(int fildesp, offset_t lengthp)
         : SystemCallParameterInterfaceType(), fildes(fildesp), length(lengthp) {}
 
     size_t count() override {
@@ -67,21 +67,18 @@ class FtruncateSystemCallParameters : public virtual FtruncateSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using FtruncateSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 46>;
-
-template<typename RiscvArchType=Riscv32>
-class FtruncateSystemCall : public virtual FtruncateSystemCallInterfaceType<RiscvArchType> {
+class Ftruncate : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = FtruncateSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = FtruncateInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    FtruncateSystemCall() : SystemCallInterfaceType() {}
+    Ftruncate() : SystemCallInterfaceType() {}
 
     // always returns false
     //

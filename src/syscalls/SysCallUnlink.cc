@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void UnlinkSystemCall<Riscv32>::invoke<int>(UnlinkSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlink<Riscv32>::invoke<int>(Unlink<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         std::string pth{};
         
@@ -31,7 +31,7 @@ void UnlinkSystemCall<Riscv32>::invoke<int>(UnlinkSystemCall<Riscv32>::SystemCal
 
 template<>
 template<>
-void UnlinkSystemCall<Riscv64>::invoke<int>(UnlinkSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlink<Riscv64>::invoke<int>(Unlink<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         std::string pth{};
         
@@ -45,7 +45,7 @@ void UnlinkSystemCall<Riscv64>::invoke<int>(UnlinkSystemCall<Riscv64>::SystemCal
 
 template<>
 template<>
-void UnlinkSystemCall<Riscv128>::invoke<int>(UnlinkSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlink<Riscv128>::invoke<int>(Unlink<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         std::string pth{};
         

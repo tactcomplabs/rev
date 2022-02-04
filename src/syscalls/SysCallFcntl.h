@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FcntlCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 25>;
+using FcntlInterfaceType = SystemCallInterface<RiscvArchType, 25>;
 
 template<typename RiscvArchType=Riscv32>
-class FcntlSystemCallParameters : public virtual FcntlCallParametersInterfaceType<RiscvArchType> {
+class FcntlParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -34,7 +34,7 @@ class FcntlSystemCallParameters : public virtual FcntlCallParametersInterfaceTyp
     using SystemCallParameterInterfaceType = FcntlCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    FcntlSystemCallParameters(int fildesp, int cmdp)
+    FcntlParameters(int fildesp, int cmdp)
         : SystemCallParameterInterfaceType(), fildes(fildesp), cmd(cmdp) {}
 
     size_t count() override { return 2UL; }
@@ -58,21 +58,18 @@ class FcntlSystemCallParameters : public virtual FcntlCallParametersInterfaceTyp
 };
 
 template<typename RiscvArchType=Riscv32>
-using FcntlSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 25>;
-
-template<typename RiscvArchType=Riscv32>
-class FcntlSystemCall : public virtual FcntlSystemCallInterfaceType<RiscvArchType> {
+class Fcntl : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = FcntlSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = FcntlInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    FcntlSystemCall() : SystemCallInterfaceType() {}
+    Fcntl() : SystemCallInterfaceType() {}
 
     // always returns false
     //

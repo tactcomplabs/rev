@@ -18,18 +18,17 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GeteuidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 175>;
-
+using GeteuidInterfaceType = SystemCallInterface<RiscvArchType, 175>;
 
 template<typename RiscvArchType=Riscv32>
-class GeteuidSystemCallParameters : public virtual GeteuidSystemCallParametersInterfaceType<RiscvArchType> {
+class GeteuidParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     public:
 
-    using SystemCallParameterInterfaceType = GeteuidSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GeteuidParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GeteuidSystemCallParameters(const void_t stat) : SystemCallParameterInterfaceType() {}
+    GeteuidParameters(const void_t stat) : SystemCallParameterInterfaceType() {}
 
     size_t count() override { return 0UL; }
 
@@ -43,23 +42,20 @@ class GeteuidSystemCallParameters : public virtual GeteuidSystemCallParametersIn
 };
 
 template<typename RiscvArchType=Riscv32>
-using GeteuidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 175>;
-
-template<typename RiscvArchType=Riscv32>
-class GeteuidSystemCall : public virtual GeteuidSystemCallInterfaceType<RiscvArchType> {
+class Geteuid : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GeteuidSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GeteuidInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     public:
 
-    GeteuidSystemCall() : SystemCallInterfaceType() {}
+    Geteuid() : SystemCallInterfaceType() {}
 
     // always returns false
     //

@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void DupSystemCall<Riscv32>::invoke<int>(DupSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup<Riscv32>::invoke<int>(Dup<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int fildes;
 
@@ -31,7 +31,7 @@ void DupSystemCall<Riscv32>::invoke<int>(DupSystemCall<Riscv32>::SystemCallParam
 
 template<>
 template<>
-void DupSystemCall<Riscv64>::invoke<int>(DupSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup<Riscv64>::invoke<int>(Dup<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int fildes;
 
@@ -46,7 +46,7 @@ void DupSystemCall<Riscv64>::invoke<int>(DupSystemCall<Riscv64>::SystemCallParam
 
 template<>
 template<>
-void DupSystemCall<Riscv128>::invoke<int>(DupSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup<Riscv128>::invoke<int>(Dup<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int fildes;
 

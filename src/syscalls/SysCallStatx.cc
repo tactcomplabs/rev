@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void StatxSystemCall<Riscv32>::invoke<int>(StatxSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Statx<Riscv32>::invoke<int>(Statx<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 5) {
 
         int dirfd;
@@ -42,7 +42,7 @@ void StatxSystemCall<Riscv32>::invoke<int>(StatxSystemCall<Riscv32>::SystemCallP
 
 template<>
 template<>
-void StatxSystemCall<Riscv64>::invoke<int>(StatxSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Statx<Riscv64>::invoke<int>(Statx<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 5) {
 
         int dirfd;
@@ -67,7 +67,7 @@ void StatxSystemCall<Riscv64>::invoke<int>(StatxSystemCall<Riscv64>::SystemCallP
 
 template<>
 template<>
-void StatxSystemCall<Riscv128>::invoke<int>(StatxSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Statx<Riscv128>::invoke<int>(Statx<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 5) {
 
         int dirfd;

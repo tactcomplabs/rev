@@ -16,11 +16,12 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType=Riscv32>
-using BrkSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 214>;
 
 template<typename RiscvArchType=Riscv32>
-class BrkSystemCallParameters : public virtual BrkSystemCallParametersInterfaceType<RiscvArchType> {
+using BrkInterfaceType = SystemCallInterface<RiscvArchType, 214>;
+
+template<typename RiscvArchType=Riscv32>
+class BrkParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -28,10 +29,11 @@ class BrkSystemCallParameters : public virtual BrkSystemCallParametersInterfaceT
 
     public:
 
-    using SystemCallParameterInterfaceType = BrkSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = BrkInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    BrkSystemCallParameters(const cvoid_ptr addr_i) : SystemCallParameterInterfaceType(), addr(addr_i) {}
+    BrkParameters(const cvoid_ptr addr_i)
+        : SystemCallParameterInterfaceType(), addr(addr_i) {}
 
     size_t count() override { return 1UL; }
 
@@ -49,23 +51,19 @@ class BrkSystemCallParameters : public virtual BrkSystemCallParametersInterfaceT
     }
 };
 
-
 template<typename RiscvArchType=Riscv32>
-using BrkSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 214>;
-
-template<typename RiscvArchType=Riscv32>
-class BrkSystemCall : public virtual BrkSystemCallInterfaceType<RiscvArchType> {
+class Brk : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = BrkSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = BrkInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    BrkSystemCall() : SystemCallInterfaceType() {}
+    Brk() : SystemCallInterfaceType() {}
 
     // always returns false
     //

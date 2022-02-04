@@ -17,10 +17,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using CloseSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 57>;
+using CloseInterfaceType = SystemCallInterface<RiscvArchType, 57>;
 
 template<typename RiscvArchType=Riscv32>
-class CloseSystemCallParameters : public virtual CloseSystemCallParametersInterfaceType<RiscvArchType> {
+class CloseParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -28,10 +28,10 @@ class CloseSystemCallParameters : public virtual CloseSystemCallParametersInterf
 
     public:
 
-    using SystemCallParameterInterfaceType = CloseSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = CloseParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    CloseSystemCallParameters(const int fd_i) : SystemCallParameterInterfaceType(), fd(fd_i) {}
+    CloseParameters(const int fd_i) : SystemCallParameterInterfaceType(), fd(fd_i) {}
 
     size_t count() override { return 1UL; }
 
@@ -50,27 +50,18 @@ class CloseSystemCallParameters : public virtual CloseSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using CloseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 57>;
-
-template<typename RiscvArchType=Riscv32>
-class CloseSystemCall : public virtual CloseSystemCallInterfaceType<RiscvArchType> {
+class Close : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = CloseSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = CloseInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    private:
-
-    void invoke_impl(SystemCallParameterInterfaceType & parameters, void_t & value, bool & invoc_success);
-
-    public:
-
-    CloseSystemCall() : SystemCallInterfaceType() {}
+    Close() : SystemCallInterfaceType() {}
 
     // always returns false
     //

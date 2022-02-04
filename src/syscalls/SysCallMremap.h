@@ -17,10 +17,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MremapSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 216>;
+using MremapSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 216>;
 
 template<typename RiscvArchType=Riscv32>
-class MremapSystemCallParameters : public virtual MremapSystemCallParametersInterfaceType<RiscvArchType> {
+class MremapSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -86,10 +86,7 @@ class MremapSystemCallParameters : public virtual MremapSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using MremapSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 216>;
-
-template<typename RiscvArchType=Riscv32>
-class MremapSystemCall : public virtual MremapSystemCallInterfaceType<RiscvArchType> {
+class MremapSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -98,7 +95,7 @@ class MremapSystemCall : public virtual MremapSystemCallInterfaceType<RiscvArchT
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     public:
 

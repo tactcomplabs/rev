@@ -8,13 +8,14 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallMprotect.h"
-#include <stdlib.h>
+
+#include <sys/mman.h>
 
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MprotectSystemCall<Riscv32>::invoke<int>(MprotectSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mprotect<Riscv32>::invoke<int>(Mprotect<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 3) {
         void * addr;
@@ -36,7 +37,7 @@ void MprotectSystemCall<Riscv32>::invoke<int>(MprotectSystemCall<Riscv32>::Syste
 
 template<>
 template<>
-void MprotectSystemCall<Riscv64>::invoke<int>(MprotectSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mprotect<Riscv64>::invoke<int>(Mprotect<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 3) {
         void * addr;
@@ -58,7 +59,7 @@ void MprotectSystemCall<Riscv64>::invoke<int>(MprotectSystemCall<Riscv64>::Syste
 
 template<>
 template<>
-void MprotectSystemCall<Riscv128>::invoke<int>(MprotectSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mprotect<Riscv128>::invoke<int>(Mprotect<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 3) {
         void * addr;

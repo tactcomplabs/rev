@@ -19,23 +19,25 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType=Riscv32>
-using FstatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 79>;
+using stat_t = struct stat;
 
 template<typename RiscvArchType=Riscv32>
-class FstatSystemCallParameters : public virtual FstatSystemCallParametersInterfaceType<RiscvArchType> {
+using FstatInterfaceType = SystemCallInterface<RiscvArchType, 79>;
+
+template<typename RiscvArchType=Riscv32>
+class FstatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
     int fildes;
-    stat * buf;
+    stat_t * buf;
 
     public:
 
-    using SystemCallParameterInterfaceType = FstatSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = FstatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    FstatSystemCallParameters(int fildesi, stat * bufi)
+    FstatParameters(int fildesi, stat_t * bufi)
         : SystemCallParameterInterfaceType(), fildes(fildesi), buf(bufi) {}
 
     size_t count() override {
@@ -67,21 +69,18 @@ class FstatSystemCallParameters : public virtual FstatSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using FstatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 79>;
-
-template<typename RiscvArchType=Riscv32>
-class FstatSystemCall : public virtual FstatSystemCallInterfaceType<RiscvArchType> {
+class Fstat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = FstatSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = FstatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    FstatSystemCall() : SystemCallInterfaceType() {}
+    Fstat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

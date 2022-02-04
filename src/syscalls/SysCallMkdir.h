@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MkdirSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1030>;
+using MkdirInterfaceType = SystemCallInterface<RiscvArchType, 1030>;
 
 template<typename RiscvArchType=Riscv32>
-class MkdirSystemCallParameters : public virtual MkdirSystemCallParametersInterfaceType<RiscvArchType> {
+class MkdirParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class MkdirSystemCallParameters : public virtual MkdirSystemCallParametersInterf
 
     public:
 
-    using SystemCallParameterInterfaceType = MkdirSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = MkdirParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    MkdirSystemCallParameters(std::string path, mode_t mde)
+    MkdirParameters(std::string path, mode_t mde)
         : SystemCallParameterInterfaceType(), pth(path), mode(mde) {}
 
     size_t count() override { return 2UL; }
@@ -64,21 +64,18 @@ class MkdirSystemCallParameters : public virtual MkdirSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using MkdirSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1030>;
-
-template<typename RiscvArchType=Riscv32>
-class MkdirSystemCall : public virtual MkdirSystemCallInterfaceType<RiscvArchType> {
+class Mkdir : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = MkdirSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = MkdirInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    MkdirSystemCall() : SystemCallInterfaceType() {}
+    Mkdir() : SystemCallInterfaceType() {}
 
     // always returns false
     //

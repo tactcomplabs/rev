@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GetcwdSystemCall<Riscv32>::invoke<std::string>(GetcwdSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, std::string & value) {
+void Getcwd<Riscv32>::invoke<std::string>(Getcwd<Riscv32>::SystemCallParameterInterfaceType & parameters, std::string & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -36,7 +36,7 @@ void GetcwdSystemCall<Riscv32>::invoke<std::string>(GetcwdSystemCall<Riscv32>::S
 
 template<>
 template<>
-void GetcwdSystemCall<Riscv64>::invoke<std::string>(GetcwdSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, std::string & value) {
+void Getcwd<Riscv64>::invoke<std::string>(Getcwd<Riscv64>::SystemCallParameterInterfaceType & parameters, std::string & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -55,7 +55,7 @@ void GetcwdSystemCall<Riscv64>::invoke<std::string>(GetcwdSystemCall<Riscv64>::S
 
 template<>
 template<>
-void GetcwdSystemCall<Riscv128>::invoke<std::string>(GetcwdSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, std::string & value) {
+void Getcwd<Riscv128>::invoke<std::string>(Getcwd<Riscv128>::SystemCallParameterInterfaceType & parameters, std::string & value) {
     if(parameters.count() == 2) {
 
         std::string pth;

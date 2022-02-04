@@ -84,7 +84,7 @@ template<typename RiscvArchType=Riscv32>
 using PreadSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class PreadSystemCall : public virtual PreadSystemCallInterfaceType<RiscvArchType> {
+class PreadSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -93,7 +93,7 @@ class PreadSystemCall : public virtual PreadSystemCallInterfaceType<RiscvArchTyp
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     PreadSystemCall() : SystemCallInterfaceType() {}
 

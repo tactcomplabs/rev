@@ -9,29 +9,25 @@
 //
 #include "SysCallGettid.h"
 
-#include <unistd.h>
-#include <signal.h>
-#include <sys/stat.h>
-
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GettidSystemCall<Riscv32>::invoke<int>(GettidSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettid<Riscv32>::invoke<int>(Gettid<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     success = true;
     value = gettid();
 }
 
 template<>
 template<>
-void GettidSystemCall<Riscv64>::invoke<int>(GettidSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettid<Riscv64>::invoke<int>(Gettid<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     success = true;
     value = gettid();
 }
 
 template<>
 template<>
-void GettidSystemCall<Riscv128>::invoke<int>(GettidSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettid<Riscv128>::invoke<int>(Gettid<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     success = true;
     value = gettid();
 }

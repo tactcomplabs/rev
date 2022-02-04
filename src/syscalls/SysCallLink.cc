@@ -8,16 +8,13 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallLink.h"
-#include <algorithm>
-
 #include <unistd.h>
-#include <signal.h>
 
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void LinkSystemCall<Riscv32>::invoke<int>(LinkSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Link<Riscv32>::invoke<int>(Link<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
 
      if(parameters.count() == 2) {
         std::string oldpth{};
@@ -36,7 +33,7 @@ void LinkSystemCall<Riscv32>::invoke<int>(LinkSystemCall<Riscv32>::SystemCallPar
 
 template<>
 template<>
-void LinkSystemCall<Riscv64>::invoke<int>(LinkSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Link<Riscv64>::invoke<int>(Link<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 2) {
         std::string oldpth{};
@@ -55,7 +52,7 @@ void LinkSystemCall<Riscv64>::invoke<int>(LinkSystemCall<Riscv64>::SystemCallPar
 
 template<>
 template<>
-void LinkSystemCall<Riscv128>::invoke<int>(LinkSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Link<Riscv128>::invoke<int>(Link<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 2) {
         std::string oldpth{};

@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using DupSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 23>;
+using DupInterfaceType = SystemCallInterface<RiscvArchType, 23>;
 
 template<typename RiscvArchType=Riscv32>
-class DupSystemCallParameters : public virtual DupSystemCallParametersInterfaceType<RiscvArchType> {
+class DupParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -29,10 +29,10 @@ class DupSystemCallParameters : public virtual DupSystemCallParametersInterfaceT
 
     public:
 
-    using SystemCallParameterInterfaceType = DupSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = DupParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    DupSystemCallParameters(const int fildesp)
+    DupParameters(const int fildesp)
         : SystemCallParameterInterfaceType(), fildes(fildesp) {}
 
     size_t count() override { return 1UL; }
@@ -52,21 +52,18 @@ class DupSystemCallParameters : public virtual DupSystemCallParametersInterfaceT
 };
 
 template<typename RiscvArchType=Riscv32>
-using DupSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 23>;
-
-template<typename RiscvArchType=Riscv32>
-class DupSystemCall : public virtual DupSystemCallInterfaceType<RiscvArchType> {
+class Dup : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = DupSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = DupInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    DupSystemCall() : SystemCallInterfaceType() {}
+    Dup() : SystemCallInterfaceType() {}
 
     // always returns false
     //

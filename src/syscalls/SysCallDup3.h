@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using Dup3SystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 24>;
+using Dup3InterfaceType = SystemCallInterface<RiscvArchType, 24>;
 
 template<typename RiscvArchType=Riscv32>
-class Dup3SystemCallParameters : public virtual Dup3SystemCallParametersInterfaceType<RiscvArchType> {
+class Dup3Parameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -30,10 +30,10 @@ class Dup3SystemCallParameters : public virtual Dup3SystemCallParametersInterfac
 
     public:
 
-    using SystemCallParameterInterfaceType = Dup3SystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = Dup3ParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    Dup3SystemCallParameters(const int ofdp, const int nfdp, const int flagsp)
+    Dup3Parameters(const int ofdp, const int nfdp, const int flagsp)
         : SystemCallParameterInterfaceType(), oldfd(ofdp), newfd(nfdp), flags(flagsp) {}
 
     size_t count() override { return 3UL; }
@@ -61,21 +61,18 @@ class Dup3SystemCallParameters : public virtual Dup3SystemCallParametersInterfac
 };
 
 template<typename RiscvArchType=Riscv32>
-using Dup3SystemCallInterfaceType = SystemCallInterface<RiscvArchType, 24>;
-
-template<typename RiscvArchType=Riscv32>
-class Dup3SystemCall : public virtual Dup3SystemCallInterfaceType<RiscvArchType> {
+class Dup3 : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = Dup3SystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = Dup3InterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Dup3SystemCall() : SystemCallInterfaceType() {}
+    Dup3() : SystemCallInterfaceType() {}
 
     // always returns false
     //

@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void ReadSystemCall<Riscv32>::invoke<ssize_t>(ReadSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Read<Riscv32>::invoke<ssize_t>(Read<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;
@@ -37,7 +37,7 @@ void ReadSystemCall<Riscv32>::invoke<ssize_t>(ReadSystemCall<Riscv32>::SystemCal
 
 template<>
 template<>
-void ReadSystemCall<Riscv64>::invoke<ssize_t>(ReadSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Read<Riscv64>::invoke<ssize_t>(Read<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;
@@ -57,7 +57,7 @@ void ReadSystemCall<Riscv64>::invoke<ssize_t>(ReadSystemCall<Riscv64>::SystemCal
 
 template<>
 template<>
-void ReadSystemCall<Riscv128>::invoke<ssize_t>(ReadSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Read<Riscv128>::invoke<ssize_t>(Read<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;

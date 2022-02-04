@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void LseekSystemCall<Riscv32>::invoke<off_t>(LseekSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, off_t & value) {
+void Lseek<Riscv32>::invoke<off_t>(Lseek<Riscv32>::SystemCallParameterInterfaceType & parameters, off_t & value) {
     if(parameters.count() == 3) {
         int fd;
         off_t offset;
@@ -33,7 +33,7 @@ void LseekSystemCall<Riscv32>::invoke<off_t>(LseekSystemCall<Riscv32>::SystemCal
 
 template<>
 template<>
-void LseekSystemCall<Riscv64>::invoke<off_t>(LseekSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, off_t & value) {
+void Lseek<Riscv64>::invoke<off_t>(Lseek<Riscv64>::SystemCallParameterInterfaceType & parameters, off_t & value) {
     if(parameters.count() == 3) {
         int fd;
         off_t offset;
@@ -53,7 +53,7 @@ void LseekSystemCall<Riscv64>::invoke<off_t>(LseekSystemCall<Riscv64>::SystemCal
 
 template<>
 template<>
-void LseekSystemCall<Riscv128>::invoke<off_t>(LseekSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, off_t & value) {
+void Lseek<Riscv128>::invoke<off_t>(Lseek<Riscv128>::SystemCallParameterInterfaceType & parameters, off_t & value) {
     if(parameters.count() == 3) {
         int fd;
         off_t offset;

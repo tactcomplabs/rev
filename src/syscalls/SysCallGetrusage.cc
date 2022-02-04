@@ -17,46 +17,46 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GetrusageSystemCall<Riscv32>::invoke<int>(GetrusageSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parmaters.size() == 2) {
+void Getrusage<Riscv32>::invoke<int>(Getrusage<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
         int who;
         rusage * r_usage;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, who);
-        has_values[1] = parmeters.get<rusage*>(1, r_usage);
+        has_values[1] = parameters.get<rusage*>(1, r_usage);
         success = true;
-        value = rusage(who, r_usage);
+        value = getrusage(who, r_usage);
     }
 }
 
 template<>
 template<>
-void GetrusageSystemCall<Riscv64>::invoke<int>(GetrusageSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parmaters.size() == 2) {
+void Getrusage<Riscv64>::invoke<int>(Getrusage<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
         int who;
         rusage * r_usage;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, who);
-        has_values[1] = parmeters.get<rusage*>(1, r_usage);
+        has_values[1] = parameters.get<rusage*>(1, r_usage);
         success = true;
-        value = rusage(who, r_usage);
+        value = getrusage(who, r_usage);
     }
 }
 
 template<>
 template<>
-void GetrusageSystemCall<Riscv128>::invoke<int>(GetrusageSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parmaters.size() == 2) {
+void Getrusage<Riscv128>::invoke<int>(Getrusage<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+     if(parameters.count() == 2) {
         int who;
         rusage * r_usage;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, who);
-        has_values[1] = parmeters.get<rusage*>(1, r_usage);
+        has_values[1] = parameters.get<rusage*>(1, r_usage);
         success = true;
-        value = rusage(who, r_usage);
+        value = getrusage(who, r_usage);
     }
 }
 

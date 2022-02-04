@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GetdentsSystemCall<Riscv32>::invoke<ssize_t>(GetdentsSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Getdents<Riscv32>::invoke<ssize_t>(Getdents<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
 
         int fd;
@@ -34,7 +34,7 @@ void GetdentsSystemCall<Riscv32>::invoke<ssize_t>(GetdentsSystemCall<Riscv32>::S
 
 template<>
 template<>
-void GetdentsSystemCall<Riscv64>::invoke<ssize_t>(GetdentsSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Getdents<Riscv64>::invoke<ssize_t>(Getdents<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
 
         int fd;
@@ -55,7 +55,7 @@ void GetdentsSystemCall<Riscv64>::invoke<ssize_t>(GetdentsSystemCall<Riscv64>::S
 
 template<>
 template<>
-void GetdentsSystemCall<Riscv128>::invoke<ssize_t>(GetdentsSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Getdents<Riscv128>::invoke<ssize_t>(Getdents<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 3) {
 
         int fd;

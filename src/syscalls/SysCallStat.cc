@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void StatSystemCall<Riscv32>::invoke<int>(StatSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Stat<Riscv32>::invoke<int>(Stat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth; 
@@ -35,7 +35,7 @@ void StatSystemCall<Riscv32>::invoke<int>(StatSystemCall<Riscv32>::SystemCallPar
 
 template<>
 template<>
-void StatSystemCall<Riscv64>::invoke<int>(StatSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Stat<Riscv64>::invoke<int>(Stat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth; 
@@ -54,7 +54,7 @@ void StatSystemCall<Riscv64>::invoke<int>(StatSystemCall<Riscv64>::SystemCallPar
 
 template<>
 template<>
-void StatSystemCall<Riscv128>::invoke<int>(StatSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Stat<Riscv128>::invoke<int>(Stat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth; 

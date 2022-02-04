@@ -15,7 +15,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GettimeofdaySystemCall<Riscv32>::invoke<int>(GettimeofdaySystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettimeofday<Riscv32>::invoke<int>(Gettimeofday<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
    if(parameters.count() == 2) {
 
         timeval * tp;
@@ -34,7 +34,7 @@ void GettimeofdaySystemCall<Riscv32>::invoke<int>(GettimeofdaySystemCall<Riscv32
 
 template<>
 template<>
-void GettimeofdaySystemCall<Riscv64>::invoke<int>(GettimeofdaySystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettimeofday<Riscv64>::invoke<int>(Gettimeofday<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
    if(parameters.count() == 2) {
 
         timeval * tp;
@@ -53,7 +53,7 @@ void GettimeofdaySystemCall<Riscv64>::invoke<int>(GettimeofdaySystemCall<Riscv64
 
 template<>
 template<>
-void GettimeofdaySystemCall<Riscv128>::invoke<int>(GettimeofdaySystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettimeofday<Riscv128>::invoke<int>(Gettimeofday<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
    if(parameters.count() == 2) {
 
         timeval * tp;

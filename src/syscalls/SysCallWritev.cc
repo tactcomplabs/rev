@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void WritevSystemCall<Riscv32>::invoke<ssize_t>(WritevSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Writev<Riscv32>::invoke<ssize_t>(Writev<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
    if(parameters.count() == 3) {
 
         int fildes;
@@ -37,7 +37,7 @@ void WritevSystemCall<Riscv32>::invoke<ssize_t>(WritevSystemCall<Riscv32>::Syste
 
 template<>
 template<>
-void WritevSystemCall<Riscv64>::invoke<ssize_t>(WritevSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Writev<Riscv64>::invoke<ssize_t>(Writev<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
    if(parameters.count() == 3) {
 
         int fildes;
@@ -58,7 +58,7 @@ void WritevSystemCall<Riscv64>::invoke<ssize_t>(WritevSystemCall<Riscv64>::Syste
 
 template<>
 template<>
-void WritevSystemCall<Riscv128>::invoke<ssize_t>(WritevSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Writev<Riscv128>::invoke<ssize_t>(Writev<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
    if(parameters.count() == 3) {
 
         int fildes;

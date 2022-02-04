@@ -8,13 +8,13 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallMunmap.h"
-#include <stdlib.h>
+#include <sys/mman.h>
 
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MmapSystemCall<Riscv32>::invoke<int>(MmapSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Munmap<Riscv32>::invoke<int>(Munmap<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 2) {
         void * addr;
@@ -34,7 +34,7 @@ void MmapSystemCall<Riscv32>::invoke<int>(MmapSystemCall<Riscv32>::SystemCallPar
 
 template<>
 template<>
-void MmapSystemCall<Riscv64>::invoke<int>(MmapSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Munmap<Riscv64>::invoke<int>(Munmap<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 2) {
         void * addr;
@@ -54,7 +54,7 @@ void MmapSystemCall<Riscv64>::invoke<int>(MmapSystemCall<Riscv64>::SystemCallPar
 
 template<>
 template<>
-void MunmapSystemCall<Riscv128>::invoke<int>(MmapSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Munmap<Riscv128>::invoke<int>(Munmap<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 2) {
         void * addr;

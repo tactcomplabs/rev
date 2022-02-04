@@ -14,21 +14,24 @@
 #include "SystemCallInterface.h"
 #include <type_traits>
 #include <string>
-#include <sys/types.h>
-#include <string>
+
+#include <unistd.h>
+#include <sys/stat.h>
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType=Riscv32>
-using LstatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
+using stat_t = struct stat;
 
 template<typename RiscvArchType=Riscv32>
-class LstatSystemCallParameters : public virtual LstatSystemCallParametersInterfaceType<RiscvArchType> {
+using LstatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
+
+template<typename RiscvArchType=Riscv32>
+class LstatSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
     std::string pth;
-    stat * buf;
+    stat_t * buf;
 
     public:
 
@@ -56,7 +59,7 @@ class LstatSystemCallParameters : public virtual LstatSystemCallParametersInterf
     }
 
     template<>
-    bool get(const size_t parameter_index, stat * param) {
+    bool get(const size_t parameter_index, stat_t * param) {
         if(parameter_index == 1) {
             param = buf;
             return true;
@@ -67,10 +70,7 @@ class LstatSystemCallParameters : public virtual LstatSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using LstatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1039>;
-
-template<typename RiscvArchType=Riscv32>
-class LstatSystemCall : public virtual LstatSystemCallInterfaceType<RiscvArchType> {
+class LstatSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -79,7 +79,7 @@ class LstatSystemCall : public virtual LstatSystemCallInterfaceType<RiscvArchTyp
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     LstatSystemCall() : SystemCallInterfaceType() {}
 

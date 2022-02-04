@@ -18,11 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetegidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 176>;
-
+using GetegidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 176>;
 
 template<typename RiscvArchType=Riscv32>
-class GetegidSystemCallParameters : public virtual GetegidSystemCallParametersInterfaceType<RiscvArchType> {
+class GetegidSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     public:
 
@@ -43,10 +42,7 @@ class GetegidSystemCallParameters : public virtual GetegidSystemCallParametersIn
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetegidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 176>;
-
-template<typename RiscvArchType=Riscv32>
-class GetegidSystemCall : public virtual GetegidSystemCallInterfaceType<RiscvArchType> {
+class GetegidSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -55,7 +51,7 @@ class GetegidSystemCall : public virtual GetegidSystemCallInterfaceType<RiscvArc
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     public:
 
@@ -69,7 +65,7 @@ class GetegidSystemCall : public virtual GetegidSystemCallInterfaceType<RiscvArc
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, pid_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, gid_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

@@ -20,11 +20,11 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetrusageSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 165>;
+using GetrusageInterfaceType = SystemCallInterface<RiscvArchType, 165>;
 
 
 template<typename RiscvArchType=Riscv32>
-class GetrusageSystemCallParameters : public virtual GetrusageSystemCallParametersInterfaceType<RiscvArchType> {
+class GetrusageParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -33,10 +33,10 @@ class GetrusageSystemCallParameters : public virtual GetrusageSystemCallParamete
 
     public:
 
-    using SystemCallParameterInterfaceType = GetrusageSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GetrusageParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GetrusageSystemCallParameters(int who, rusage * rusage)
+    GetrusageParameters(int who, rusage * rusage)
         : SystemCallParameterInterfaceType(), who(whor), r_usage(rusage) {}
 
     size_t count() override { return 0UL; }
@@ -66,23 +66,20 @@ class GetrusageSystemCallParameters : public virtual GetrusageSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetrusageSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 165>;
-
-template<typename RiscvArchType=Riscv32>
-class GetrusageSystemCall : public virtual GetrusageSystemCallInterfaceType<RiscvArchType> {
+class Getrusage : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GetrusageSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GetrusageInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     public:
 
-    GetrusageSystemCall() : SystemCallInterfaceType() {}
+    Getrusage() : SystemCallInterfaceType() {}
 
     // always returns false
     //
@@ -92,7 +89,7 @@ class GetrusageSystemCall : public virtual GetrusageSystemCallInterfaceType<Risc
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, pid_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

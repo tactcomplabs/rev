@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SigactionSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 134>;
+using SigactionParametersInterfaceType = SystemCallInterface<RiscvArchType, 134>;
 
 template<typename RiscvArchType=Riscv32>
-class SigactionSystemCallParameters : public virtual SigactionSystemCallParametersInterfaceType<RiscvArchType> {
+class SigactionParameters : public virtual SigactionParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class SigactionSystemCallParameters : public virtual SigactionSystemCallParamete
 
     public:
 
-    using SystemCallParameterInterfaceType = SigactionSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = SigactionParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    SigactionSystemCallParameters(int sigp, sigaction * actp, sigaction * oactp)
+    SigactionParameters(int sigp, sigaction * actp, sigaction * oactp)
         : SystemCallParameterInterfaceType(), sig(sigp), act(actp), oact(oactp) {}
 
     size_t count() override { return 3UL; }
@@ -69,21 +69,21 @@ class SigactionSystemCallParameters : public virtual SigactionSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using SigactionSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 134>;
+using SigactionInterfaceType = SystemCallInterface<RiscvArchType, 134>;
 
 template<typename RiscvArchType=Riscv32>
-class SigactionSystemCall : public virtual SigactionSystemCallInterfaceType<RiscvArchType> {
+class Sigaction : public virtual SigactionInterfaceType<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = SigactionSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = SystemCallInterface<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    SigactionSystemCall() : SystemCallInterfaceType() {}
+    Sigaction() : SystemCallInterfaceType() {}
 
     // always returns false
     //

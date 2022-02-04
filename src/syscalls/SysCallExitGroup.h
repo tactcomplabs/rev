@@ -17,10 +17,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ExitGroupSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 94>;
+using ExitgroupInterfaceType = SystemCallInterface<RiscvArchType, 94>;
 
 template<typename RiscvArchType=Riscv32>
-class ExitGroupSystemCallParameters : public virtual ExitGroupSystemCallParametersInterfaceType<RiscvArchType> {
+class ExitgroupParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -28,10 +28,10 @@ class ExitGroupSystemCallParameters : public virtual ExitGroupSystemCallParamete
 
     public:
 
-    using SystemCallParameterInterfaceType = ExitGroupSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = ExitgroupParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    ExitGroupSystemCallParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
+    ExitgroupParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
 
     size_t count() override { return 1UL; }
 
@@ -50,27 +50,18 @@ class ExitGroupSystemCallParameters : public virtual ExitGroupSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using ExitGroupSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 94>;
-
-template<typename RiscvArchType=Riscv32>
-class ExitGroupSystemCall : public virtual ExitGroupSystemCallInterfaceType<RiscvArchType> {
+class Exitgroup : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = ExitGroupSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = ExitgroupInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    private:
-
-    void invoke_impl(SystemCallParameterInterfaceType & parameters, void_t & value, bool & invoc_success);
-
-    public:
-
-    ExitGroupSystemCall() : SystemCallInterfaceType() {}
+    Exitgroup() : SystemCallInterfaceType() {}
 
     // always returns false
     //

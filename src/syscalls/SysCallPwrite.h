@@ -84,7 +84,7 @@ template<typename RiscvArchType=Riscv32>
 using PwriteSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 67>;
 
 template<typename RiscvArchType=Riscv32>
-class PwriteSystemCall : public virtual PwriteSystemCallInterfaceType<RiscvArchType> {
+class PwriteSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -93,7 +93,7 @@ class PwriteSystemCall : public virtual PwriteSystemCallInterfaceType<RiscvArchT
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     PwriteSystemCall() : SystemCallInterfaceType() {}
 

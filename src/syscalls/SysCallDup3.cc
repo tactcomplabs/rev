@@ -15,7 +15,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void Dup3SystemCall<Riscv32>::invoke<int>(Dup3SystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup3<Riscv32>::invoke<int>(Dup3<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int ofd, nfd, flags;
 
@@ -33,7 +33,7 @@ void Dup3SystemCall<Riscv32>::invoke<int>(Dup3SystemCall<Riscv32>::SystemCallPar
 
 template<>
 template<>
-void Dup3SystemCall<Riscv64>::invoke<int>(Dup3SystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup3<Riscv64>::invoke<int>(Dup3<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int ofd, nfd, flags;
 
@@ -51,7 +51,7 @@ void Dup3SystemCall<Riscv64>::invoke<int>(Dup3SystemCall<Riscv64>::SystemCallPar
 
 template<>
 template<>
-void Dup3SystemCall<Riscv128>::invoke<int>(Dup3SystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup3<Riscv128>::invoke<int>(Dup3<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int ofd, nfd, flags;
 

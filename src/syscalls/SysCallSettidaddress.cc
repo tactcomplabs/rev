@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void SettidaddressSystemCall<Riscv32>::invoke<int>(SettidaddressSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Settidaddress<Riscv32>::invoke<int>(Settidaddress<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
 
         int * fdptr;
@@ -33,7 +33,7 @@ void SettidaddressSystemCall<Riscv32>::invoke<int>(SettidaddressSystemCall<Riscv
 
 template<>
 template<>
-void SettidaddressSystemCall<Riscv64>::invoke<int>(SettidaddressSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Settidaddress<Riscv64>::invoke<int>(Settidaddress<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
 
         int * fdptr;
@@ -49,7 +49,7 @@ void SettidaddressSystemCall<Riscv64>::invoke<int>(SettidaddressSystemCall<Riscv
 
 template<>
 template<>
-void SettidaddressSystemCall<Riscv128>::invoke<int>(SettidaddressSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Settidaddress<Riscv128>::invoke<int>(Settidaddress<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
 
         int * fdptr;

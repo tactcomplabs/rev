@@ -7,7 +7,7 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "SysCallSigprocmask.h"
+#include "SysCallMadvise.h"
 
 #include <unistd.h>
 #include <signal.h>
@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MadviseSystemCall<Riscv32>::invoke<int>(MadviseSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Madvise<Riscv32>::invoke<int>(Madvise<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;
@@ -36,7 +36,7 @@ void MadviseSystemCall<Riscv32>::invoke<int>(MadviseSystemCall<Riscv32>::SystemC
 
 template<>
 template<>
-void MadviseSystemCall<Riscv64>::invoke<int>(MadviseSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Madvise<Riscv64>::invoke<int>(Madvise<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;
@@ -56,7 +56,7 @@ void MadviseSystemCall<Riscv64>::invoke<int>(MadviseSystemCall<Riscv64>::SystemC
 
 template<>
 template<>
-void MadviseSystemCall<Riscv128>::invoke<int>(MadviseSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Madvise<Riscv128>::invoke<int>(Madvise<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;

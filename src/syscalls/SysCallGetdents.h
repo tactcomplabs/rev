@@ -21,10 +21,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetdentsCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 61>;
+using GetdentsInterfaceType = SystemCallInterface<RiscvArchType, 61>;
 
 template<typename RiscvArchType=Riscv32>
-class GetdentsSystemCallParameters : public virtual GetdentsCallParametersInterfaceType<RiscvArchType> {
+class GetdentsParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -37,7 +37,7 @@ class GetdentsSystemCallParameters : public virtual GetdentsCallParametersInterf
     using SystemCallParameterInterfaceType = GetdentsCallParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GetdentsSystemCallParameters(int fdp, void *dirpp, size_t countp)
+    GetdentsParameters(int fdp, void *dirpp, size_t countp)
         : SystemCallParameterInterfaceType(), fd(fdp), dirp(dirpp), count(countp) {}
 
     size_t count() override { return 2UL; }
@@ -77,21 +77,18 @@ class GetdentsSystemCallParameters : public virtual GetdentsCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetdentsSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 61>;
-
-template<typename RiscvArchType=Riscv32>
-class GetdentsSystemCall : public virtual GetdentsSystemCallInterfaceType<RiscvArchType> {
+class Getdents : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GetdentsSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GetdentsInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    GetdentsSystemCall() : SystemCallInterfaceType() {}
+    Getdents() : SystemCallInterfaceType() {}
 
     // always returns false
     //

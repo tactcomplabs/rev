@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void TGKillSystemCall<Riscv32>::invoke<int>(TGKillSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Tgkill<Riscv32>::invoke<int>(Tgkill<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int tgid;
         int tid;
@@ -36,7 +36,7 @@ void TGKillSystemCall<Riscv32>::invoke<int>(TGKillSystemCall<Riscv32>::SystemCal
 
 template<>
 template<>
-void TGKillSystemCall<Riscv64>::invoke<int>(TGKillSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Tgkill<Riscv64>::invoke<int>(Tgkill<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int tgid;
         int tid;
@@ -56,7 +56,7 @@ void TGKillSystemCall<Riscv64>::invoke<int>(TGKillSystemCall<Riscv64>::SystemCal
 
 template<>
 template<>
-void TGKillSystemCall<Riscv128>::invoke<int>(TGKillSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Tgkill<Riscv128>::invoke<int>(Tgkill<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int tgid;
         int tid;

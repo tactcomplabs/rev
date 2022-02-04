@@ -17,10 +17,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ExitSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using ExitParametersInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class ExitSystemCallParameters : public virtual ExitSystemCallParametersInterfaceType<RiscvArchType> {
+class ExitParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -28,10 +28,10 @@ class ExitSystemCallParameters : public virtual ExitSystemCallParametersInterfac
 
     public:
 
-    using SystemCallParameterInterfaceType = ExitSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = ExitParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    ExitSystemCallParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
+    ExitParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
 
     size_t count() override { return 1UL; }
 
@@ -50,19 +50,19 @@ class ExitSystemCallParameters : public virtual ExitSystemCallParametersInterfac
 };
 
 template<typename RiscvArchType=Riscv32>
-using ExitSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using ExitInterfaceType = SystemCallInterface<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
-class ExitSystemCall : public virtual ExitSystemCallInterfaceType<RiscvArchType> {
+class Exit : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = ExitSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = ExitInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     private:
 
@@ -70,7 +70,7 @@ class ExitSystemCall : public virtual ExitSystemCallInterfaceType<RiscvArchType>
 
     public:
 
-    ExitSystemCall() : SystemCallInterfaceType() {}
+    Exit() : SystemCallInterfaceType() {}
 
     // always returns false
     //

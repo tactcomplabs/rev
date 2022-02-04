@@ -17,14 +17,14 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void Clock_gettimeSystemCall<Riscv32>::invoke<int>(Clock_gettimeSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parmaters.size() == 2) {
+void Clockgettime<Riscv32>::invoke<int>(Clockgettime<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
         clockid_t clkid;
         timespec * tp;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<clockid_t>(0, clkid);
-        has_values[1] = parmeters.get<timespec*>(1, tp);
+        has_values[1] = parameters.get<timespec*>(1, tp);
         success = true;
         value = clock_gettime(clkid, tp);
     }
@@ -32,14 +32,14 @@ void Clock_gettimeSystemCall<Riscv32>::invoke<int>(Clock_gettimeSystemCall<Riscv
 
 template<>
 template<>
-void Clock_gettimeSystemCall<Riscv64>::invoke<int>(Clock_gettimeSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parmaters.size() == 2) {
+void Clockgettime<Riscv64>::invoke<int>(Clockgettime<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
         clockid_t clkid;
         timespec * tp;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<clockid_t>(0, clkid);
-        has_values[1] = parmeters.get<timespec*>(1, tp);
+        has_values[1] = parameters.get<timespec*>(1, tp);
         success = true;
         value = clock_gettime(clkid, tp);
     }
@@ -47,14 +47,14 @@ void Clock_gettimeSystemCall<Riscv64>::invoke<int>(Clock_gettimeSystemCall<Riscv
 
 template<>
 template<>
-void Clock_gettimeSystemCall<Riscv128>::invoke<int>(Clock_gettimeSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parmaters.size() == 2) {
+void Clockgettime<Riscv128>::invoke<int>(Clockgettime<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
         clockid_t clkid;
         timespec * tp;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<clockid_t>(0, clkid);
-        has_values[1] = parmeters.get<timespec*>(1, tp);
+        has_values[1] = parameters.get<timespec*>(1, tp);
         success = true;
         value = clock_gettime(clkid, tp);
     }

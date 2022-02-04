@@ -14,7 +14,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MremapSystemCall<Riscv32>::invoke<void_t>(MremapSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mremap<Riscv32>::invoke<void_t>(Mremap<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
 
     if(parameters.count() > 4 && parameters.count() < 7) {
         void * oldaddr;
@@ -44,7 +44,7 @@ void MremapSystemCall<Riscv32>::invoke<void_t>(MremapSystemCall<Riscv32>::System
 
 template<>
 template<>
-void MremapSystemCall<Riscv64>::invoke<void_t>(MremapSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mremap<Riscv64>::invoke<void_t>(Mremap<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
 
     if(parameters.count() > 4 && parameters.count() < 7) {
         void * oldaddr;
@@ -74,7 +74,7 @@ void MremapSystemCall<Riscv64>::invoke<void_t>(MremapSystemCall<Riscv64>::System
 
 template<>
 template<>
-void MremapSystemCall<Riscv128>::invoke<void_t>(MremapSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mremap<Riscv128>::invoke<void_t>(Mremap<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
 
     if(parameters.count() > 4 && parameters.count() < 7) {
         void * oldaddr;

@@ -7,31 +7,27 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "SysCallGetgid.h"
-
-#include <unistd.h>
-#include <signal.h>
-#include <sys/stat.h>
+#include "SysCallGetegid.h"
 
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GetegidSystemCall<Riscv32>::invoke<int>(GetegidSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getegid<Riscv32>::invoke<gid_t>(Getegid<Riscv32>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
     success = true;
     value = getegid();
 }
 
 template<>
 template<>
-void GetegidSystemCall<Riscv64>::invoke<int>(GetegidSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getegid<Riscv64>::invoke<gid_t>(Getegid<Riscv64>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
     success = true;
     value = getegid();
 }
 
 template<>
 template<>
-void GetegidSystemCall<Riscv128>::invoke<int>(GetegidSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getegid<Riscv128>::invoke<gid_t>(Getegid<Riscv128>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
     success = true;
     value = getegid();
 }

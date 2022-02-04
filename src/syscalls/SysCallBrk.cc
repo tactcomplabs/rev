@@ -14,7 +14,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void BrkSystemCall<Riscv32>::invoke<void_ptr>(BrkSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, void_ptr & value) {
+void Brk<Riscv32>::invoke<void_ptr>(Brk<Riscv32>::SystemCallParameterInterfaceType & parameters, void_ptr & value) {
     if(parameters.count() == 1) {
         cvoid_ptr addr;
         const bool has_value = parameters.get<cvoid_ptr>(0, addr);
@@ -27,7 +27,7 @@ void BrkSystemCall<Riscv32>::invoke<void_ptr>(BrkSystemCall<Riscv32>::SystemCall
 
 template<>
 template<>
-void BrkSystemCall<Riscv64>::invoke<void_ptr>(BrkSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, void_ptr & value) {
+void Brk<Riscv64>::invoke<void_ptr>(Brk<Riscv64>::SystemCallParameterInterfaceType & parameters, void_ptr & value) {
     if(parameters.count() == 1) {
         cvoid_ptr addr;
         const bool has_value = parameters.get<cvoid_ptr>(0, addr);
@@ -40,7 +40,7 @@ void BrkSystemCall<Riscv64>::invoke<void_ptr>(BrkSystemCall<Riscv64>::SystemCall
 
 template<>
 template<>
-void BrkSystemCall<Riscv128>::invoke<void_ptr>(BrkSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, void_ptr & value) {
+void Brk<Riscv128>::invoke<void_ptr>(Brk<Riscv128>::SystemCallParameterInterfaceType & parameters, void_ptr & value) {
     if(parameters.count() == 1) {
         cvoid_ptr addr;
         const bool has_value = parameters.get<cvoid_ptr>(0, addr);

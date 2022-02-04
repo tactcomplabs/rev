@@ -76,7 +76,7 @@ template<typename RiscvArchType=Riscv32>
 using ReadSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 63>;
 
 template<typename RiscvArchType=Riscv32>
-class ReadSystemCall : public virtual ReadSystemCallInterfaceType<RiscvArchType> {
+class ReadSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -85,7 +85,7 @@ class ReadSystemCall : public virtual ReadSystemCallInterfaceType<RiscvArchType>
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     ReadSystemCall() : SystemCallInterfaceType() {}
 

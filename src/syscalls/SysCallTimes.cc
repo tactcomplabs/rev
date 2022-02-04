@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void TimesSystemCall<Riscv32>::invoke<clock_t>(TimesSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Times<Riscv32>::invoke<clock_t>(Times<Riscv32>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
     if(parameters.count() == 1) {
         tms * tp;
 
@@ -31,7 +31,7 @@ void TimesSystemCall<Riscv32>::invoke<clock_t>(TimesSystemCall<Riscv32>::SystemC
 
 template<>
 template<>
-void TimesSystemCall<Riscv64>::invoke<clock_t>(TimesSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Times<Riscv64>::invoke<clock_t>(Times<Riscv64>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
     if(parameters.count() == 1) {
         tms * tp;
 
@@ -46,7 +46,7 @@ void TimesSystemCall<Riscv64>::invoke<clock_t>(TimesSystemCall<Riscv64>::SystemC
 
 template<>
 template<>
-void TimesSystemCall<Riscv128>::invoke<clock_t>(TimesSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Times<Riscv128>::invoke<clock_t>(Times<Riscv128>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
     if(parameters.count() == 1) {
         tms * tp;
 

@@ -18,18 +18,18 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetgidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 176>;
+using GetgidInterfaceType = SystemCallInterface<RiscvArchType, 176>;
 
 
 template<typename RiscvArchType=Riscv32>
-class GetgidSystemCallParameters : public virtual GetgidSystemCallParametersInterfaceType<RiscvArchType> {
+class GetgidParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     public:
 
-    using SystemCallParameterInterfaceType = GetgidSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GetgidParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GetgidSystemCallParameters(const void_t stat) : SystemCallParameterInterfaceType() {}
+    GetgidParameters(const void_t stat) : SystemCallParameterInterfaceType() {}
 
     size_t count() override { return 0UL; }
 
@@ -43,23 +43,20 @@ class GetgidSystemCallParameters : public virtual GetgidSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetgidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 176>;
-
-template<typename RiscvArchType=Riscv32>
-class GetgidSystemCall : public virtual GetgidSystemCallInterfaceType<RiscvArchType> {
+class Getgid : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GetgidSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GetgidInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     public:
 
-    GetgidSystemCall() : SystemCallInterfaceType() {}
+    Getgid() : SystemCallInterfaceType() {}
 
     // always returns false
     //
@@ -69,7 +66,7 @@ class GetgidSystemCall : public virtual GetgidSystemCallInterfaceType<RiscvArchT
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, pid_t & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, gid_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

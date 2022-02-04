@@ -20,10 +20,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetrlimitSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 163>;
+using GetrlimitInterfaceType = SystemCallInterface<RiscvArchType, 163>;
 
 template<typename RiscvArchType=Riscv32>
-class GetrlimitSystemCallParameters : public virtual GetrlimitSystemCallParametersInterfaceType<RiscvArchType> {
+class GetrlimitParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class GetrlimitSystemCallParameters : public virtual GetrlimitSystemCallParamete
 
     public:
 
-    using SystemCallParameterInterfaceType = GetrlimitSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GetrlimitParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GetrlimitSystemCallParameters(int resourcep, rlimit * rlpp)
+    GetrlimitParameters(int resourcep, rlimit * rlpp)
         : SystemCallParameterInterfaceType(), resource(resourcep), rlp(rlpp) {}
 
     size_t count() override {
@@ -67,21 +67,18 @@ class GetrlimitSystemCallParameters : public virtual GetrlimitSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetrlimitSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 163>;
-
-template<typename RiscvArchType=Riscv32>
-class GetrlimitSystemCall : public virtual GetrlimitSystemCallInterfaceType<RiscvArchType> {
+class Getrlimit : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GetrlimitSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GetrlimitInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    GetrlimitSystemCall() : SystemCallInterfaceType() {}
+    Getrlimit() : SystemCallInterfaceType() {}
 
     // always returns false
     //
@@ -91,7 +88,7 @@ class GetrlimitSystemCall : public virtual GetrlimitSystemCallInterfaceType<Risc
     // returns true
     //
     template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, std::string & value);
+    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

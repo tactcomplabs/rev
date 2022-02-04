@@ -14,7 +14,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void Prlimit64SystemCall<Riscv32>::invoke<int>(Prlimit64SystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Prlimit64<Riscv32>::invoke<int>(Prlimit64<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 4) {
 
@@ -32,14 +32,14 @@ void Prlimit64SystemCall<Riscv32>::invoke<int>(Prlimit64SystemCall<Riscv32>::Sys
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
-            value = prlimit64(pid, resoure, new_limit, old_limit);
+            value = prlimit64(pid, resource, new_limit, old_limit);
         }
     }
 }
 
 template<>
 template<>
-void Prlimit64SystemCall<Riscv64>::invoke<int>(Prlimit64SystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Prlimit64<Riscv64>::invoke<int>(Prlimit64<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 4) {
 
@@ -57,14 +57,14 @@ void Prlimit64SystemCall<Riscv64>::invoke<int>(Prlimit64SystemCall<Riscv64>::Sys
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
-            value = prlimit64(pid, resoure, new_limit, old_limit);
+            value = prlimit64(pid, resource, new_limit, old_limit);
         }
     }
 }
 
 template<>
 template<>
-void Prlimit64SystemCall<Riscv128>::invoke<int>(Prlimit64SystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Prlimit64<Riscv128>::invoke<int>(Prlimit64<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 4) {
 
@@ -82,7 +82,7 @@ void Prlimit64SystemCall<Riscv128>::invoke<int>(Prlimit64SystemCall<Riscv128>::S
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
-            value = prlimit64(pid, resoure, new_limit, old_limit);
+            value = prlimit64(pid, resource, new_limit, old_limit);
         }
     }
 }

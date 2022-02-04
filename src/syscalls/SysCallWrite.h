@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using WriteSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 64>;
+using WriteParametersInterfaceType = SystemCallInterface<RiscvArchType, 64>;
 
 template<typename RiscvArchType=Riscv32>
-class WriteSystemCallParameters : public virtual WriteSystemCallParametersInterfaceType<RiscvArchType> {
+class WriteParameters : public virtual WriteParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class WriteSystemCallParameters : public virtual WriteSystemCallParametersInterf
 
     public:
 
-    using SystemCallParameterInterfaceType = WriteSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = WriteParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    WriteSystemCallParameters(int fd_i, void *buf_i, size_t count_i) : SystemCallParameterInterfaceType(), fd(fd_i), buf(buf_i), bcount(count_i) {}
+    WriteParameters(int fd_i, void *buf_i, size_t count_i) : SystemCallParameterInterfaceType(), fd(fd_i), buf(buf_i), bcount(count_i) {}
 
     size_t count() override { return 3UL; }
 
@@ -73,21 +73,21 @@ class WriteSystemCallParameters : public virtual WriteSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using WriteSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 64>;
+using WriteInterfaceType = SystemCallInterfaceCode<RiscvArchType, 64>;
 
 template<typename RiscvArchType=Riscv32>
-class WriteSystemCall : public virtual WriteSystemCallInterfaceType<RiscvArchType> {
+class Write : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = WriteSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = WriteInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
-
-    WriteSystemCall() : SystemCallInterfaceType() {}
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;    
+    
+    Write() : SystemCallInterfaceType() {}
 
     // always returns false
     //

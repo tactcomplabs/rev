@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ChdirSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 49>;
+using ChdirInterfaceType = SystemCallInterface<RiscvArchType, 49>;
 
 template<typename RiscvArchType=Riscv32>
-class ChdirSystemCallParameters : public virtual ChdirSystemCallParametersInterfaceType<RiscvArchType> {
+class ChdirParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -30,13 +30,13 @@ class ChdirSystemCallParameters : public virtual ChdirSystemCallParametersInterf
 
     public:
 
-    using SystemCallParameterInterfaceType = ChdirSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = ChdirParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    ChdirSystemCallParameters(std::string path)
+    ChdirParameters(std::string path)
         : SystemCallParameterInterfaceType(), pth(path) {}
 
-    size_t count() override { return 2UL; }
+    size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
@@ -53,21 +53,18 @@ class ChdirSystemCallParameters : public virtual ChdirSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using ChdirSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 49>;
-
-template<typename RiscvArchType=Riscv32>
-class ChdirSystemCall : public virtual ChdirSystemCallInterfaceType<RiscvArchType> {
+class Chdir : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = ChdirSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = ChdirInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    ChdirSystemCall() : SystemCallInterfaceType() {}
+    Chdir() : SystemCallInterfaceType() {}
 
     // always returns false
     //

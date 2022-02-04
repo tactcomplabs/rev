@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TimeSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 1062>;
+using TimeParametersInterfaceType = SystemCallInterface<RiscvArchType, 1062>;
 
 template<typename RiscvArchType=Riscv32>
-class TimeSystemCallParameters : public virtual TimeSystemCallParametersInterfaceType<RiscvArchType> {
+class TimeParameters : public virtual TimeParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -30,10 +30,10 @@ class TimeSystemCallParameters : public virtual TimeSystemCallParametersInterfac
 
     public:
 
-    using SystemCallParameterInterfaceType = TimeSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = TimeParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    TimeSystemCallParameters(time_t * tlocp)
+    TimeParameters(time_t * tlocp)
         : SystemCallParameterInterfaceType(), tloc(tlocp) {}
 
     size_t count() override {
@@ -55,21 +55,21 @@ class TimeSystemCallParameters : public virtual TimeSystemCallParametersInterfac
 };
 
 template<typename RiscvArchType=Riscv32>
-using TimeSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1062>;
+using TimeInterfaceType = SystemCallInterface<RiscvArchType, 1062>;
 
 template<typename RiscvArchType=Riscv32>
-class TimeSystemCall : public virtual TimeSystemCallInterfaceType<RiscvArchType> {
+class Time : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = TimeSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = TimeInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    TimeSystemCall() : SystemCallInterfaceType() {}
+    Time() : SystemCallInterfaceType() {}
 
     // always returns false
     //

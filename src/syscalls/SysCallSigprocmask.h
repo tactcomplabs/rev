@@ -21,10 +21,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SigprocmaskSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 135>;
+using SigprocmaskParametersInterfaceType = SystemCallInterface<RiscvArchType, 135>;
 
 template<typename RiscvArchType=Riscv32>
-class SigprocmaskSystemCallParameters : public virtual SigprocmaskSystemCallParametersInterfaceType<RiscvArchType> {
+class SigprocmaskParameters : public virtual SigprocmaskParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -34,10 +34,10 @@ class SigprocmaskSystemCallParameters : public virtual SigprocmaskSystemCallPara
 
     public:
 
-    using SystemCallParameterInterfaceType = SigprocmaskSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = SigprocmaskParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    SigprocmaskSystemCallParameters(int howp, sigset_t * setp, sigset_t * osetp)
+    SigprocmaskParameters(int howp, sigset_t * setp, sigset_t * osetp)
         : SystemCallParameterInterfaceType(), how(howp), set(setp), oset(osetp) {}
 
     size_t count() override { return 3UL; }
@@ -71,21 +71,21 @@ class SigprocmaskSystemCallParameters : public virtual SigprocmaskSystemCallPara
 };
 
 template<typename RiscvArchType=Riscv32>
-using SigprocmaskSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 135>;
+using SigprocmaskInterfaceType = SystemCallInterface<RiscvArchType, 135>;
 
 template<typename RiscvArchType=Riscv32>
-class SigprocmaskSystemCall : public virtual SigprocmaskSystemCallInterfaceType<RiscvArchType> {
+class Sigprocmask : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = SigprocmaskSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = SigprocmaskInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    SigprocmaskSystemCall() : SystemCallInterfaceType() {}
+    Sigprocmask() : SystemCallInterfaceType() {}
 
     // always returns false
     //

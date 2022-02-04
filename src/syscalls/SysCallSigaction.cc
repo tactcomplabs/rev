@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void SigactionSystemCall<Riscv32>::invoke<int>(SigactionSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Sigaction<Riscv32>::invoke<int>(Sigaction<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int sig;
         sigaction * act;
@@ -36,7 +36,7 @@ void SigactionSystemCall<Riscv32>::invoke<int>(SigactionSystemCall<Riscv32>::Sys
 
 template<>
 template<>
-void SigactionSystemCall<Riscv64>::invoke<int>(SigactionSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Sigaction<Riscv64>::invoke<int>(Sigaction<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int sig;
         sigaction * act;
@@ -56,7 +56,7 @@ void SigactionSystemCall<Riscv64>::invoke<int>(SigactionSystemCall<Riscv64>::Sys
 
 template<>
 template<>
-void SigactionSystemCall<Riscv128>::invoke<int>(SigactionSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Sigaction<Riscv128>::invoke<int>(Sigaction<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int sig;
         sigaction * act;

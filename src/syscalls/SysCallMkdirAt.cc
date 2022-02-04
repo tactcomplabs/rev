@@ -10,14 +10,13 @@
 #include "SysCallMkdirAt.h"
 
 #include <unistd.h>
-#include <signal.h>
 #include <sys/stat.h>
 
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MkdirAtSystemCall<Riscv32>::invoke<int>(SystemCallParameterInterfaceType & parameters, int & value) {
+void Mkdirat<Riscv32>::invoke<int>(SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         std::string buf;
@@ -37,7 +36,7 @@ void MkdirAtSystemCall<Riscv32>::invoke<int>(SystemCallParameterInterfaceType & 
 
 template<>
 template<>
-void MkdirAtSystemCall<Riscv64>::invoke<int>(SystemCallParameterInterfaceType & parameters, int & value) {
+void Mkdirat<Riscv64>::invoke<int>(SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         std::string buf;
@@ -57,7 +56,7 @@ void MkdirAtSystemCall<Riscv64>::invoke<int>(SystemCallParameterInterfaceType & 
 
 template<>
 template<>
-void MkdirAtSystemCall<Riscv128>::invoke<int>(SystemCallParameterInterfaceType & parameters, int & value) {
+void Mkdirat<Riscv128>::invoke<int>(SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         std::string buf;

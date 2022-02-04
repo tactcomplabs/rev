@@ -16,9 +16,9 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void IoctlSystemCall<Riscv32>::invoke<int>(IoctlSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ioctl<Riscv32>::invoke<int>(Ioctl<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
 
-    if(parameters.size() == 2) {
+    if(parameters.count() == 2) {
         int fildes;
         unsigned long request;
 
@@ -35,15 +35,15 @@ void IoctlSystemCall<Riscv32>::invoke<int>(IoctlSystemCall<Riscv32>::SystemCallP
 
 template<>
 template<>
-void IoctlSystemCall<Riscv64>::invoke<int>(IoctlSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ioctl<Riscv64>::invoke<int>(Ioctl<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
 
-    if(parameters.size() == 2) {
+    if(parameters.count() == 2) {
         int fildes;
         unsigned long request;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<unsigned long>(request);
+        has_values[1] = parameters.get<unsigned long>(1, request);
 
         if(has_values[0] && has_values[1]) {
             success = true;
@@ -54,16 +54,16 @@ void IoctlSystemCall<Riscv64>::invoke<int>(IoctlSystemCall<Riscv64>::SystemCallP
 
 template<>
 template<>
-void IoctlSystemCall<Riscv128>::invoke<int>(IoctlSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ioctl<Riscv128>::invoke<int>(Ioctl<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
 
-    if(parameters.size() == 2) {
+    if(parameters.count() == 2) {
         int fildes;
         unsigned long request;
 
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fildes);
-        has_values[1] = parameters.get<unsigned long>(request);
-        
+        has_values[1] = parameters.get<unsigned long>(1, request);
+
         if(has_values[0] && has_values[1]) {
             success = true;
             value = ioctl(fildes, request);

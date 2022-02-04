@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GettimeofdaySystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 169>;
+using GettimeofdayInterfaceType = SystemCallInterface<RiscvArchType, 169>;
 
 template<typename RiscvArchType=Riscv32>
-class GettimeofdaySystemCallParameters : public virtual GettimeofdaySystemCallParametersInterfaceType<RiscvArchType> {
+class GettimeofdayParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class GettimeofdaySystemCallParameters : public virtual GettimeofdaySystemCallPa
 
     public:
 
-    using SystemCallParameterInterfaceType = GettimeofdaySystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GettimeofdayParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GettimeofdaySystemCallParameters(timeval tpp, void * tzp)
+    GettimeofdayParameters(timeval tpp, void * tzp)
         : SystemCallParameterInterfaceType(), tp(tpp), tzp(tzp) {}
 
     size_t count() override { return 3UL; }
@@ -64,21 +64,18 @@ class GettimeofdaySystemCallParameters : public virtual GettimeofdaySystemCallPa
 };
 
 template<typename RiscvArchType=Riscv32>
-using GettimeofdaySystemCallInterfaceType = SystemCallInterface<RiscvArchType, 169>;
-
-template<typename RiscvArchType=Riscv32>
-class GettimeofdaySystemCall : public virtual GettimeofdaySystemCallInterfaceType<RiscvArchType> {
+class Gettimeofday : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GettimeofdaySystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GettimeofdayInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    GettimeofdaySystemCall() : SystemCallInterfaceType() {}
+    Gettimeofday() : SystemCallInterfaceType() {}
 
     // always returns false
     //

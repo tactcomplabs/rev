@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void ChdirSystemCall<Riscv32>::invoke<int>(ChdirSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Chdir<Riscv32>::invoke<int>(Chdir<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
 
         std::string pth;
@@ -26,14 +26,14 @@ void ChdirSystemCall<Riscv32>::invoke<int>(ChdirSystemCall<Riscv32>::SystemCallP
 
         if(has_values) {
             success = true;
-            value = mkdir(pth.c_str(), mode);
+            value = chdir(pth.c_str());
         }
     }
 }
 
 template<>
 template<>
-void ChdirSystemCall<Riscv64>::invoke<int>(ChdirSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Chdir<Riscv64>::invoke<int>(Chdir<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
 
         std::string pth;
@@ -42,14 +42,14 @@ void ChdirSystemCall<Riscv64>::invoke<int>(ChdirSystemCall<Riscv64>::SystemCallP
 
         if(has_values) {
             success = true;
-            value = mkdir(pth.c_str(), mode);
+            value = chdir(pth.c_str());
         }
     }
 }
 
 template<>
 template<>
-void ChdirSystemCall<Riscv128>::invoke<int>(ChdirSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Chdir<Riscv128>::invoke<int>(Chdir<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
 
         std::string pth;
@@ -58,7 +58,7 @@ void ChdirSystemCall<Riscv128>::invoke<int>(ChdirSystemCall<Riscv128>::SystemCal
 
         if(has_values) {
             success = true;
-            value = mkdir(pth.c_str(), mode);
+            value = chdir(pth.c_str());
         }
     }
 }

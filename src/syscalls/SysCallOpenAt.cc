@@ -18,7 +18,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void OpenAtSystemCall<Riscv32>::invoke<int>(OpenAtSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Openat<Riscv32>::invoke<int>(Openat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
         int fd;
         std::string path;
@@ -40,7 +40,7 @@ void OpenAtSystemCall<Riscv32>::invoke<int>(OpenAtSystemCall<Riscv32>::SystemCal
 
 template<>
 template<>
-void OpenAtSystemCall<Riscv64>::invoke<int>(OpenAtSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Openat<Riscv64>::invoke<int>(Openat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
         int fd;
         std::string path;
@@ -62,7 +62,7 @@ void OpenAtSystemCall<Riscv64>::invoke<int>(OpenAtSystemCall<Riscv64>::SystemCal
 
 template<>
 template<>
-void OpenAtSystemCall<Riscv128>::invoke<int>(OpenAtSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Openat<Riscv128>::invoke<int>(Openat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
         int fd;
         std::string path;

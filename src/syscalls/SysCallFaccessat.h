@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FaccessatSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 48>;
+using FaccessatInterfaceType = SystemCallInterface<RiscvArchType, 48>;
 
 template<typename RiscvArchType=Riscv32>
-class FaccessatSystemCallParameters : public virtual FaccessatSystemCallParametersInterfaceType<RiscvArchType> {
+class FaccessatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -33,10 +33,10 @@ class FaccessatSystemCallParameters : public virtual FaccessatSystemCallParamete
 
     public:
 
-    using SystemCallParameterInterfaceType = FaccessatSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = FaccessatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    FaccessatSystemCallParameters(int fdi, std::string path, int modei, int flagi)
+    FaccessatParameters(int fdi, std::string path, int modei, int flagi)
         : SystemCallParameterInterfaceType(), fd(fdi), pth(path), mode(modei), flag(flagi) {}
 
     size_t count() override {
@@ -76,21 +76,18 @@ class FaccessatSystemCallParameters : public virtual FaccessatSystemCallParamete
 };
 
 template<typename RiscvArchType=Riscv32>
-using FaccessatSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 48>;
-
-template<typename RiscvArchType=Riscv32>
-class FaccessatSystemCall : public virtual FaccessatSystemCallInterfaceType<RiscvArchType> {
+class Faccessat : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = FaccessatSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = FaccessatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    FaccessatSystemCall() : SystemCallInterfaceType() {}
+    Faccessat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

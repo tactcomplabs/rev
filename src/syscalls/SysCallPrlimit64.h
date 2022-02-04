@@ -77,7 +77,7 @@ template<typename RiscvArchType=Riscv32>
 using Prlimit64SystemCallInterfaceType = SystemCallInterface<RiscvArchType, 261>;
 
 template<typename RiscvArchType=Riscv32>
-class Prlimit64SystemCall : public virtual Prlimit64SystemCallInterfaceType<RiscvArchType> {
+class Prlimit64SystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -86,7 +86,7 @@ class Prlimit64SystemCall : public virtual Prlimit64SystemCallInterfaceType<Risc
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     public:
 

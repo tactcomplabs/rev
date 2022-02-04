@@ -18,10 +18,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 131>;
+using TgkillParametersInterfaceType = SystemCallInterface<RiscvArchType, 131>;
 
 template<typename RiscvArchType=Riscv32>
-class TGKillSystemCallParameters : public virtual TGKillSystemCallParametersInterfaceType<RiscvArchType> {
+class TgkillParameters : public virtual TgkillParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class TGKillSystemCallParameters : public virtual TGKillSystemCallParametersInte
 
     public:
 
-    using SystemCallParameterInterfaceType = TGKillSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = TgkillParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    TGKillSystemCallParameters(const int tgid_i, const int tid_i, const int sig_i) : SystemCallParameterInterfaceType(), tgid(tgid_i), tid(tid_i), sig(sig_i) {}
+    TgkillParameters(const int tgid_i, const int tid_i, const int sig_i) : SystemCallParameterInterfaceType(), tgid(tgid_i), tid(tid_i), sig(sig_i) {}
 
     size_t count() override { return 3UL; }
 
@@ -61,21 +61,21 @@ class TGKillSystemCallParameters : public virtual TGKillSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using TGKillSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 131>;
+using TgkillInterfaceType = SystemCallInterface<RiscvArchType, 131>;
 
 template<typename RiscvArchType=Riscv32>
-class TGKillSystemCall : public virtual TGKillSystemCallInterfaceType<RiscvArchType> {
+class Tgkill : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = TGKillSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = TgkillInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    TGKillSystemCall() : SystemCallInterfaceType() {}
+    Tgkill() : SystemCallInterfaceType() {}
 
     // always returns false
     //

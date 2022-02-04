@@ -20,10 +20,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using UnameSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 160>;
+using UnameParametersInterfaceType = SystemCallInterface<RiscvArchType, 160>;
 
 template<typename RiscvArchType=Riscv32>
-class UnameSystemCallParameters : public virtual UnameSystemCallParametersInterfaceType<RiscvArchType> {
+class UnameParameters : public virtual UnameParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class UnameSystemCallParameters : public virtual UnameSystemCallParametersInterf
 
     public:
 
-    using SystemCallParameterInterfaceType = UnameSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = UnameParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    UnameSystemCallParameters(utsname * buf)
+    UnameParameters(utsname * buf)
         : SystemCallParameterInterfaceType(), name(buf) {}
 
     size_t count() override { return 1UL; }
@@ -54,21 +54,21 @@ class UnameSystemCallParameters : public virtual UnameSystemCallParametersInterf
 };
 
 template<typename RiscvArchType=Riscv32>
-using UnameSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 160>;
+using UnameInterfaceType = SystemCallInterface<RiscvArchType, 160>;
 
 template<typename RiscvArchType=Riscv32>
-class UnameSystemCall : public virtual UnameSystemCallInterfaceType<RiscvArchType> {
+class Uname : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = UnameSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = UnameInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;    
 
-    UnameSystemCall() : SystemCallInterfaceType() {}
+    Uname() : SystemCallInterfaceType() {}
 
     // always returns false
     //

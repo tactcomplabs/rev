@@ -18,7 +18,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void GetrlimitSystemCall<Riscv32>::invoke<int>(GetrlimitSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrlimit<Riscv32>::invoke<int>(Getrlimit<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int resource;
@@ -38,7 +38,7 @@ void GetrlimitSystemCall<Riscv32>::invoke<int>(GetrlimitSystemCall<Riscv32>::Sys
 
 template<>
 template<>
-void GetrlimitSystemCall<Riscv64>::invoke<int>(GetrlimitSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrlimit<Riscv64>::invoke<int>(Getrlimit<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int resource;
@@ -57,7 +57,7 @@ void GetrlimitSystemCall<Riscv64>::invoke<int>(GetrlimitSystemCall<Riscv64>::Sys
 
 template<>
 template<>
-void GetrlimitSystemCall<Riscv128>::invoke<int>(GetrlimitSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrlimit<Riscv128>::invoke<int>(Getrlimit<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int resource;

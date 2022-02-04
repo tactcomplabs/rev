@@ -20,10 +20,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SettidaddressSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using SettidaddressParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
-class SettidaddressSystemCallParameters : public virtual SettidaddressSystemCallParametersInterfaceType<RiscvArchType> {
+class SettidaddressParameters : public virtual SettidaddressParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -31,10 +31,10 @@ class SettidaddressSystemCallParameters : public virtual SettidaddressSystemCall
 
     public:
 
-    using SystemCallParameterInterfaceType = SettidaddressSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = SettidaddressParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    SettidaddressSystemCallParameters(int * tidptrp)
+    SettidaddressParameters(int * tidptrp)
         : SystemCallParameterInterfaceType(), tidptr(tidptrp) {}
 
     size_t count() override {
@@ -56,21 +56,21 @@ class SettidaddressSystemCallParameters : public virtual SettidaddressSystemCall
 };
 
 template<typename RiscvArchType=Riscv32>
-using SettidaddressSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using SettidaddressInterfaceType = SystemCallInterface<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
-class SettidaddressSystemCall : public virtual SettidaddressSystemCallInterfaceType<RiscvArchType> {
+class Settidaddress : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = SettidaddressSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = SettidaddressInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    SettidaddressSystemCall() : SystemCallInterfaceType() {}
+    Settidaddress() : SystemCallInterfaceType() {}
 
     // always returns false
     //

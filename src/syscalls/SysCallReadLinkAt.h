@@ -12,16 +12,17 @@
 #define __SYSTEMCALLREADLINKAT_H__
 
 #include "SystemCallInterface.h"
+#include <string>
 #include <type_traits>
 #include <sys/types.h>
 
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ReadLinkAtSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 78>;
+using ReadlinkatParametersInterfaceType = SystemCallInterface<RiscvArchType, 78>;
 
 template<typename RiscvArchType=Riscv32>
-class ReadLinkAtSystemCallParameters : public virtual ReadLinkAtSystemCallParametersInterfaceType<RiscvArchType> {
+class ReadlinkatParameters : public virtual ReadlinkatParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -31,10 +32,10 @@ class ReadLinkAtSystemCallParameters : public virtual ReadLinkAtSystemCallParame
 
     public:
 
-    using SystemCallParameterInterfaceType = ReadLinkAtSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = ReadlinkatParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    ReadLinkAtSystemCallParameters(std::string pathp, char * bufp, size_t bufsz)
+    ReadlinkatParameters(std::string pathp, char * bufp, size_t bufsz)
         : SystemCallParameterInterfaceType(), path(pathp), buf(bufp), bufsize(bufsz) {}
 
     size_t count() override { return 1UL; }
@@ -74,21 +75,21 @@ class ReadLinkAtSystemCallParameters : public virtual ReadLinkAtSystemCallParame
 };
 
 template<typename RiscvArchType=Riscv32>
-using ReadLinkAtSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 78>;
+using ReadlinkatInterfaceType = SystemCallInterface<RiscvArchType, 78>;
 
 template<typename RiscvArchType=Riscv32>
-class ReadLinkAtSystemCall : public virtual ReadLinkAtSystemCallInterfaceType<RiscvArchType> {
+class Readlinkat : public virtual SystemCallInterface<RiscvArchType> {
     
     public:
 
-    using SystemCallInterfaceType = ReadLinkAtSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = ReadlinkatInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
     
-    ReadLinkAtSystemCall() : SystemCallInterfaceType() {}
+    Readlinkat() : SystemCallInterfaceType() {}
 
     // always returns false
     //

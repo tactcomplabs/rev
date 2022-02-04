@@ -20,10 +20,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SetrobustlistSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 99>;
+using SetrobustlistParametersInterfaceType = SystemCallInterface<RiscvArchType, 99>;
 
 template<typename RiscvArchType=Riscv32>
-class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCallParametersInterfaceType<RiscvArchType> {
+class SetrobustlistParameters : public virtual SetrobustlistParametersInterfaceType<RiscvArchType> {
     
     private:
 
@@ -32,10 +32,10 @@ class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCall
 
     public:
 
-    using SystemCallParameterInterfaceType = SetrobustlistSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = SetrobustlistParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    SetrobustlistSystemCallParameters(robust_list_head * ptr, size_t lenp)
+    SetrobustlistParameters(robust_list_head * ptr, size_t lenp)
         : SystemCallParameterInterfaceType(), hptr(ptr), len(lenp) {}
 
     size_t count() override {
@@ -67,21 +67,21 @@ class SetrobustlistSystemCallParameters : public virtual SetrobustlistSystemCall
 };
 
 template<typename RiscvArchType=Riscv32>
-using SetrobustlistSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 99>;
+using SetrobustlistInterfaceType = SystemCallInterface<RiscvArchType, 99>;
 
 template<typename RiscvArchType=Riscv32>
-class SetrobustlistSystemCall : public virtual SetrobustlistSystemCallInterfaceType<RiscvArchType> {
+class Setrobustlist : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = SetrobustlistSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = SetrobustlistInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    SetrobustlistSystemCall() : SystemCallInterfaceType() {}
+    Setrobustlist() : SystemCallInterfaceType() {}
 
     // always returns false
     //

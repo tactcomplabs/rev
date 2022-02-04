@@ -7,7 +7,7 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#include "SysCallFacccessat.h"
+#include "SysCallFaccessat.h"
 
 #include <unistd.h>
 #include <signal.h>
@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void FstatatSystemCall<Riscv32>::invoke<int>(FstatatSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Faccessat<Riscv32>::invoke<int>(Faccessat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
 
         int fd;
@@ -40,7 +40,7 @@ void FstatatSystemCall<Riscv32>::invoke<int>(FstatatSystemCall<Riscv32>::SystemC
 
 template<>
 template<>
-void FstatatSystemCall<Riscv64>::invoke<int>(FstatatSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Faccessat<Riscv64>::invoke<int>(Faccessat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
 
         int fd;
@@ -63,7 +63,7 @@ void FstatatSystemCall<Riscv64>::invoke<int>(FstatatSystemCall<Riscv64>::SystemC
 
 template<>
 template<>
-void FstatatSystemCall<Riscv128>::invoke<int>(FstatatSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Faccessat<Riscv128>::invoke<int>(Faccessat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 4) {
 
         int fd;

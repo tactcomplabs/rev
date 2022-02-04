@@ -16,18 +16,18 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void PreadSystemCall<Riscv32>::invoke<ssize_t>(PreadSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pread<Riscv32>::invoke<ssize_t>(Pread<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() >= 4) {
         int fd;
         void * buf = 0;
         size_t count;
-        offset_t offset;
+        off_t offset;
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
         has_values[1] = parameters.get<void_ptr>(1, buf);
         has_values[2] = parameters.get<size_t>(2, count);
-        has_values[3] = parameters.get<offset_t>(3, offset);
+        has_values[3] = parameters.get<off_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -38,18 +38,18 @@ void PreadSystemCall<Riscv32>::invoke<ssize_t>(PreadSystemCall<Riscv32>::SystemC
 
 template<>
 template<>
-void PreadSystemCall<Riscv64>::invoke<ssize_t>(PreadSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pread<Riscv64>::invoke<ssize_t>(Pread<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() >= 4) {
         int fd;
         void * buf = 0;
         size_t count;
-        offset_t offset;
+        off_t offset;
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
         has_values[1] = parameters.get<void_ptr>(1, buf);
         has_values[2] = parameters.get<size_t>(2, count);
-        has_values[3] = parameters.get<offset_t>(3, offset);
+        has_values[3] = parameters.get<off_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;
@@ -60,18 +60,18 @@ void PreadSystemCall<Riscv64>::invoke<ssize_t>(PreadSystemCall<Riscv64>::SystemC
 
 template<>
 template<>
-void PreadSystemCall<Riscv128>::invoke<ssize_t>(PreadSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pread<Riscv128>::invoke<ssize_t>(Pread<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() >= 4) {
         int fd;
         void * buf = 0;
         size_t count;
-        offset_t offset;
+        off_t offset;
 
         bool has_values[4] = { false, false, false, false };
         has_values[0] = parameters.get<int>(0, fd);
         has_values[1] = parameters.get<void_ptr>(1, buf);
         has_values[2] = parameters.get<size_t>(2, count);
-        has_values[3] = parameters.get<offset_t>(3, offset);
+        has_values[3] = parameters.get<off_t>(3, offset);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]) {
             success = true;

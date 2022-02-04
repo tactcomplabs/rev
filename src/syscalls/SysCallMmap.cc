@@ -8,13 +8,13 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallMmap.h"
-#include <stdlib.h>
+#include <sys/mman.h>
 
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void MmapSystemCall<Riscv32>::invoke<void_t>(MmapSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mmap<Riscv32>::invoke<void_t>(Mmap<Riscv32>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;
@@ -42,7 +42,7 @@ void MmapSystemCall<Riscv32>::invoke<void_t>(MmapSystemCall<Riscv32>::SystemCall
 
 template<>
 template<>
-void MmapSystemCall<Riscv64>::invoke<void_t>(MmapSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mmap<Riscv64>::invoke<void_t>(Mmap<Riscv64>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;
@@ -70,7 +70,7 @@ void MmapSystemCall<Riscv64>::invoke<void_t>(MmapSystemCall<Riscv64>::SystemCall
 
 template<>
 template<>
-void MmapSystemCall<Riscv128>::invoke<void_t>(MmapSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mmap<Riscv128>::invoke<void_t>(Mmap<Riscv128>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;

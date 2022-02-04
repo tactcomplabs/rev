@@ -17,15 +17,15 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void FstatSystemCall<Riscv32>::invoke<int>(FstatSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fstat<Riscv32>::invoke<int>(Fstat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int fil; 
-        stat * buf;
+        stat_t * buf;
         
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fil);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[1] = parameters.get<stat_t*>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;
@@ -36,15 +36,15 @@ void FstatSystemCall<Riscv32>::invoke<int>(FstatSystemCall<Riscv32>::SystemCallP
 
 template<>
 template<>
-void FstatSystemCall<Riscv64>::invoke<int>(FstatSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fstat<Riscv64>::invoke<int>(Fstat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int fil; 
-        stat * buf;
+        stat_t * buf;
         
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fil);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[1] = parameters.get<stat_t*>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;
@@ -55,15 +55,15 @@ void FstatSystemCall<Riscv64>::invoke<int>(FstatSystemCall<Riscv64>::SystemCallP
 
 template<>
 template<>
-void FstatSystemCall<Riscv128>::invoke<int>(FstatSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fstat<Riscv128>::invoke<int>(Fstat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int fil; 
-        stat * buf;
+        stat_t * buf;
         
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<int>(0, fil);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[1] = parameters.get<stat_t*>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;

@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void LinkAtSystemCall<Riscv32>::invoke<int>(LinkAtSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Linkat<Riscv32>::invoke<int>(Linkat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 5) {
         std::string oldpth{};
@@ -40,7 +40,7 @@ void LinkAtSystemCall<Riscv32>::invoke<int>(LinkAtSystemCall<Riscv32>::SystemCal
 
 template<>
 template<>
-void LinkAtSystemCall<Riscv64>::invoke<int>(LinkAtSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Linkat<Riscv64>::invoke<int>(Linkat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 5) {
         std::string oldpth{};
@@ -63,7 +63,7 @@ void LinkAtSystemCall<Riscv64>::invoke<int>(LinkAtSystemCall<Riscv64>::SystemCal
 
 template<>
 template<>
-void LinkAtSystemCall<Riscv128>::invoke<int>(LinkAtSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Linkat<Riscv128>::invoke<int>(Linkat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
 
     if(parameters.count() == 5) {
         std::string oldpth{};

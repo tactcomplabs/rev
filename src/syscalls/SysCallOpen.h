@@ -81,7 +81,7 @@ template<typename RiscvArchType=Riscv32>
 using OpenSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 1024>;
 
 template<typename RiscvArchType=Riscv32>
-class OpenSystemCall : public virtual OpenSystemCallInterfaceType<RiscvArchType> {
+class OpenSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -90,7 +90,7 @@ class OpenSystemCall : public virtual OpenSystemCallInterfaceType<RiscvArchType>
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     OpenSystemCall() : SystemCallInterfaceType() {}
 

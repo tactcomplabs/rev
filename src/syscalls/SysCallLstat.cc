@@ -9,23 +9,19 @@
 //
 #include "SysCallLstat.h"
 
-#include <unistd.h>
-#include <signal.h>
-#include <sys/stat.h>
-
 namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void LstatSystemCall<Riscv32>::invoke<int>(LstatSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Lstat<Riscv32>::invoke<int>(Lstat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth; 
-        stat * buf;
+        stat_t * buf;
         
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<int>(0, pth);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[0] = parameters.get<std::string>(0, pth);
+        has_values[1] = parameters.get<stat_t *>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;
@@ -36,15 +32,15 @@ void LstatSystemCall<Riscv32>::invoke<int>(LstatSystemCall<Riscv32>::SystemCallP
 
 template<>
 template<>
-void LstatSystemCall<Riscv64>::invoke<int>(LstatSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Lstat<Riscv64>::invoke<int>(Lstat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth; 
-        stat * buf;
+        stat_t * buf;
         
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<int>(0, pth);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[0] = parameters.get<std::string>(0, pth);
+        has_values[1] = parameters.get<stat_t *>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;
@@ -55,15 +51,15 @@ void LstatSystemCall<Riscv64>::invoke<int>(LstatSystemCall<Riscv64>::SystemCallP
 
 template<>
 template<>
-void LstatSystemCall<Riscv128>::invoke<int>(LstatSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Lstat<Riscv128>::invoke<int>(Lstat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth; 
-        stat * buf;
+        stat_t * buf;
         
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<int>(0, pth);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[0] = parameters.get<std::string>(0, pth);
+        has_values[1] = parameters.get<stat_t *>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;

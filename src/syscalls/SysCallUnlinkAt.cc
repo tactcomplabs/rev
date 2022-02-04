@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void UnlinkAtSystemCall<Riscv32>::invoke<int>(UnlinkAtSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlinkat<Riscv32>::invoke<int>(Unlinkat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int fd, flag;
         std::string pth{};
@@ -36,7 +36,7 @@ void UnlinkAtSystemCall<Riscv32>::invoke<int>(UnlinkAtSystemCall<Riscv32>::Syste
 
 template<>
 template<>
-void UnlinkAtSystemCall<Riscv64>::invoke<int>(UnlinkAtSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlinkat<Riscv64>::invoke<int>(Unlinkat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int fd, flag;
         std::string pth{};
@@ -55,7 +55,7 @@ void UnlinkAtSystemCall<Riscv64>::invoke<int>(UnlinkAtSystemCall<Riscv64>::Syste
 
 template<>
 template<>
-void UnlinkAtSystemCall<Riscv128>::invoke<int>(UnlinkAtSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlinkat<Riscv128>::invoke<int>(Unlinkat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 3) {
         int fd, flag;
         std::string pth{};

@@ -19,10 +19,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MadviseSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 233>;
+using MadviseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 233>;
 
 template<typename RiscvArchType=Riscv32>
-class MadviseSystemCallParameters : public virtual MadviseSystemCallParametersInterfaceType<RiscvArchType> {
+class MadviseSystemCallParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -75,10 +75,7 @@ class MadviseSystemCallParameters : public virtual MadviseSystemCallParametersIn
 };
 
 template<typename RiscvArchType=Riscv32>
-using MadviseSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 233>;
-
-template<typename RiscvArchType=Riscv32>
-class MadviseSystemCall : public virtual MadviseSystemCallInterfaceType<RiscvArchType> {
+class MadviseSystemCall : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
@@ -87,7 +84,7 @@ class MadviseSystemCall : public virtual MadviseSystemCallInterfaceType<RiscvArc
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     MadviseSystemCall() : SystemCallInterfaceType() {}
 

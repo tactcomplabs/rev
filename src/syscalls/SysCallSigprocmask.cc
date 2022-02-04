@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void SigprocmaskSystemCall<Riscv32>::invoke<clock_t>(SigprocmaskSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Sigprocmask<Riscv32>::invoke<clock_t>(Sigprocmask<Riscv32>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
     if(parameters.count() == 3) {
         int how;
         sigset_t * set;
@@ -33,7 +33,7 @@ void SigprocmaskSystemCall<Riscv32>::invoke<clock_t>(SigprocmaskSystemCall<Riscv
 
 template<>
 template<>
-void SigprocmaskSystemCall<Riscv64>::invoke<clock_t>(SigprocmaskSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Sigprocmask<Riscv64>::invoke<clock_t>(Sigprocmask<Riscv64>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
     if(parameters.count() == 3) {
         int how;
         sigset_t * set;
@@ -53,7 +53,7 @@ void SigprocmaskSystemCall<Riscv64>::invoke<clock_t>(SigprocmaskSystemCall<Riscv
 
 template<>
 template<>
-void SigprocmaskSystemCall<Riscv128>::invoke<clock_t>(SigprocmaskSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Sigprocmask<Riscv128>::invoke<clock_t>(Sigprocmask<Riscv128>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
     if(parameters.count() == 3) {
         int how;
         sigset_t * set;

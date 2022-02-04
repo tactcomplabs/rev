@@ -13,63 +13,48 @@
 namespace SST { namespace RevCPU {
 
 template<>
-void ExitSystemCall<Riscv32>::invoke_impl(ExitSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value, bool & invoc_success) {
+template<>
+void Exit<Riscv32>::invoke<void_t>(Exit<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
     if(parameters.count() == 1) {
-        int status = -1;
+        int status;
         const bool has_value = parameters.get<int>(0, status);
-        if(has_value && status != -1) {
-            invoc_success = true;            
+        if(has_value) {
+            success = true;            
             exit(status);
         }
     }
 
-    invoc_success = false;    
+    success = false;    
 }
 
 template<>
-void ExitSystemCall<Riscv64>::invoke_impl(ExitSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value, bool & invoc_success) {
+template<>
+void Exit<Riscv64>::invoke<void_t>(Exit<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
     if(parameters.count() == 1) {
-        int status = -1;
+        int status;
         const bool has_value = parameters.get<int>(0, status);
-        if(has_value && status != -1) {
-            invoc_success = true;            
+        if(has_value) {
+            success = true;            
             exit(status);
         }
     }
 
-    invoc_success = false;    
+    success = false;    
 }
 
 template<>
-void ExitSystemCall<Riscv128>::invoke_impl(ExitSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value, bool & invoc_success) {
+template<>
+void Exit<Riscv128>::invoke<void_t>(Exit<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
     if(parameters.count() == 1) {
-        int status = -1;
+        int status;
         const bool has_value = parameters.get<int>(0, status);
-        if(has_value && status != -1) {
-            invoc_success = true;            
+        if(has_value) {
+            success = true;
             exit(status);
         }
     }
 
-    invoc_success = false;    
-}
-
-template<>
-template<>
-void ExitSystemCall<Riscv32>::invoke<void_t>(ExitSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
-template<>
-template<>
-void ExitSystemCall<Riscv64>::invoke<void_t>(ExitSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
-}
-
-template<>
-template<>
-void ExitSystemCall<Riscv128>::invoke<void_t>(ExitSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
-    invoke_impl(parameters, value, success);
+    success = false;
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

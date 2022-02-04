@@ -14,7 +14,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void CloseSystemCall<Riscv32>::invoke<int>(CloseSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Close<Riscv32>::invoke<int>(Close<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
@@ -27,7 +27,7 @@ void CloseSystemCall<Riscv32>::invoke<int>(CloseSystemCall<Riscv32>::SystemCallP
 
 template<>
 template<>
-void CloseSystemCall<Riscv64>::invoke<int>(CloseSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Close<Riscv64>::invoke<int>(Close<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
@@ -40,7 +40,7 @@ void CloseSystemCall<Riscv64>::invoke<int>(CloseSystemCall<Riscv64>::SystemCallP
 
 template<>
 template<>
-void CloseSystemCall<Riscv128>::invoke<int>(CloseSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Close<Riscv128>::invoke<int>(Close<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);

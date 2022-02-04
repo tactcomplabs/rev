@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void RenameAtSystemCall<Riscv32>::invoke<ssize_t>(RenameAtSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Renameat<Riscv32>::invoke<ssize_t>(Renameat<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 4) {
 
         int fromfd;
@@ -40,7 +40,7 @@ void RenameAtSystemCall<Riscv32>::invoke<ssize_t>(RenameAtSystemCall<Riscv32>::S
 
 template<>
 template<>
-void RenameAtSystemCall<Riscv64>::invoke<ssize_t>(RenameAtSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Renameat<Riscv64>::invoke<ssize_t>(Renameat<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 4) {
 
         int fromfd;
@@ -63,7 +63,7 @@ void RenameAtSystemCall<Riscv64>::invoke<ssize_t>(RenameAtSystemCall<Riscv64>::S
 
 template<>
 template<>
-void RenameAtSystemCall<Riscv128>::invoke<ssize_t>(RenameAtSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Renameat<Riscv128>::invoke<ssize_t>(Renameat<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
     if(parameters.count() == 4) {
 
         int fromfd;

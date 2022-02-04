@@ -20,25 +20,25 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using Clock_gettimeSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 113>;
+using ClockgettimeInterfaceType = SystemCallInterface<RiscvArchType, 113>;
 
 template<typename RiscvArchType=Riscv32>
-class Clock_gettimeSystemCallParameters : public virtual Clock_gettimeSystemCallParametersInterfaceType<RiscvArchType> {
+class ClockgettimeParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
-
+    
     clockid_t clkid;
     timespec * tp;
 
     public:
 
-    using SystemCallParameterInterfaceType = Clock_gettimeSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = ClockgettimeParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    Clock_gettimeSystemCallParameters(clockid_t clockid, timespec * tsp)
+    ClockgettimeParameters(clockid_t clockid, timespec * tsp)
         : SystemCallParameterInterfaceType(), clkid(clockid), tp(tsp) {}
 
-    size_t count() override { return 0UL; }
+    size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
@@ -65,23 +65,18 @@ class Clock_gettimeSystemCallParameters : public virtual Clock_gettimeSystemCall
 };
 
 template<typename RiscvArchType=Riscv32>
-using Clock_gettimeSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 113>;
-
-template<typename RiscvArchType=Riscv32>
-class Clock_gettimeSystemCall : public virtual Clock_gettimeSystemCallInterfaceType<RiscvArchType> {
+class Clockgettime : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = Clock_gettimeSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = ClockgettimeInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    public:
-
-    Clock_gettimeSystemCall() : SystemCallInterfaceType() {}
+    Clockgettime() : SystemCallInterfaceType() {}
 
     // always returns false
     //

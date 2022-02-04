@@ -17,7 +17,26 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void SetrlimitSystemCall<Riscv32>::invoke<int>(SetrlimitSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Setrlimit<Riscv32>::invoke<int>(Setrlimit<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
+
+        int resource;
+        rlimit * rlp;
+
+        bool has_values[2] = { false, false };
+        has_values[0] = parameters.get<int>(0, resource);
+        has_values[1] = parameters.get<rlimit*>(1, rlp);
+
+        if(has_values[0] && has_values[1]) {
+            success = true;
+            value = setrlimit(resource, rlp);
+        }
+    }
+}
+
+template<>
+template<>
+void Setrlimit<Riscv64>::invoke<int>(Setrlimit<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int resource;
@@ -36,26 +55,7 @@ void SetrlimitSystemCall<Riscv32>::invoke<int>(SetrlimitSystemCall<Riscv32>::Sys
 
 template<>
 template<>
-void SetrlimitSystemCall<Riscv64>::invoke<int>(SetrlimitSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parameters.count() == 2) {
-
-        int resource;
-        rlimit * rlp;
-
-        bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<int>(0, resource);
-        has_values[1] = parameters.get<rlimit *>(1, rlp);
-
-        if(has_values[0] && has_values[1]) {
-            success = true;
-            value = setrlimit(resource, rlp);
-        }
-    }
-}
-
-template<>
-template<>
-void SetrlimitSystemCall<Riscv128>::invoke<int>(SetrlimitSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Setrlimit<Riscv128>::invoke<int>(Setrlimit<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
 
         int resource;

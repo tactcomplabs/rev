@@ -16,54 +16,54 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void FcntlSystemCall<Riscv32>::invoke<int>(FcntlSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
-    if(parameters.count() == 1) {
+void Fcntl<Riscv32>::invoke<int>(Fcntl<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+     if(parameters.count() == 1) {
         int fildes;
         int cmd;
 
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<int>(0, files;
+        has_values[0] = parameters.get<int>(0, fildes);
         has_values[1] = parameters.get<int>(1, cmd);
 
         if(has_values[0] && has_values[1]) {
             success = true;
-            value = fcntl(files, cmd);
+            value = fcntl(fildes, cmd);
         }
     }
 }
 
 template<>
 template<>
-void FcntlSystemCall<Riscv64>::invoke<int>(FcntlSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fcntl<Riscv64>::invoke<int>(Fcntl<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int fildes;
         int cmd;
 
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<int>(0, files;
+        has_values[0] = parameters.get<int>(0, fildes);
         has_values[1] = parameters.get<int>(1, cmd);
 
         if(has_values[0] && has_values[1]) {
             success = true;
-            value = fcntl(files, cmd);
+            value = fcntl(fildes, cmd);
         }
     }
 }
 
 template<>
 template<>
-void FcntlSystemCall<Riscv128>::invoke<int>(FcntlSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fcntl<Riscv128>::invoke<int>(Fcntl<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int fildes;
         int cmd;
 
         bool has_values[2] = { false, false };
-        has_values[0] = parameters.get<int>(0, files;
+        has_values[0] = parameters.get<int>(0, fildes);
         has_values[1] = parameters.get<int>(1, cmd);
 
         if(has_values[0] && has_values[1]) {
             success = true;
-            value = fcntl(files, cmd);
+            value = fcntl(fildes, cmd);
         }
     }
 }

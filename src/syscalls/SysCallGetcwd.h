@@ -20,10 +20,10 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetcwdSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using GetcwdInterfaceType = SystemCallInterface<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
-class GetcwdSystemCallParameters : public virtual GetcwdSystemCallParametersInterfaceType<RiscvArchType> {
+class GetcwdParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,13 +32,13 @@ class GetcwdSystemCallParameters : public virtual GetcwdSystemCallParametersInte
 
     public:
 
-    using SystemCallParameterInterfaceType = GetcwdSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GetcwdParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GetcwdSystemCallParameters(std::string path, const size_t sz)
+    GetcwdParameters(std::string path, const size_t sz)
         : SystemCallParameterInterfaceType(), pth(path), size(sz) {}
 
-    GetcwdSystemCallParameters(std::string path)
+    GetcwdParameters(std::string path)
         : SystemCallParameterInterfaceType(), pth(path), size(-1) {}
 
 
@@ -71,21 +71,18 @@ class GetcwdSystemCallParameters : public virtual GetcwdSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetcwdSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
-
-template<typename RiscvArchType=Riscv32>
-class GetcwdSystemCall : public virtual GetcwdSystemCallInterfaceType<RiscvArchType> {
+class Getcwd : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GetcwdSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GetcwdInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    GetcwdSystemCall() : SystemCallInterfaceType() {}
+    Getcwd() : SystemCallInterfaceType() {}
 
     // always returns false
     //

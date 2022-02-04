@@ -15,15 +15,17 @@
 #include <type_traits>
 #include <string>
 #include <sys/types.h>
-#include <string>
+#include <sys/stat.h>
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType=Riscv32>
-using AccessSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using stat_t = stat;
 
 template<typename RiscvArchType=Riscv32>
-class AccessSystemCallParameters : public virtual AccessSystemCallParametersInterfaceType<RiscvArchType> {
+using AccessInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+
+template<typename RiscvArchType=Riscv32>
+class AccessParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -32,10 +34,10 @@ class AccessSystemCallParameters : public virtual AccessSystemCallParametersInte
 
     public:
 
-    using SystemCallParameterInterfaceType = AccessSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = AccessInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    AccessSystemCallParameters(std::string path, int modei)
+    AccessParameters(std::string path, int modei)
         : SystemCallParameterInterfaceType(), pth(path), mode(modei) {}
 
     size_t count() override {
@@ -67,21 +69,18 @@ class AccessSystemCallParameters : public virtual AccessSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using AccessSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 17>;
-
-template<typename RiscvArchType=Riscv32>
-class AccessSystemCall : public virtual AccessSystemCallInterfaceType<RiscvArchType> {
+class Access : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = AccessSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = AccessInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    AccessSystemCall() : SystemCallInterfaceType() {}
+    Access() : SystemCallInterfaceType() {}
 
     // always returns false
     //
