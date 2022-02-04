@@ -11,29 +11,25 @@
 
 namespace SST { namespace RevCPU {
 
-static void invoke_impl(pid_t & value) {
+template<>
+template<>
+void Getpid<Riscv32>::invoke(Getpid<Riscv32>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+    success = parameters.count() == 0;
     value = getpid();
 }
 
 template<>
 template<>
-void GetpidSystemCall<Riscv32>::invoke(GetpidSystemCall<Riscv32>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+void Getpid<Riscv64>::invoke(Getpid<Riscv64>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
     success = parameters.count() == 0;
-    invoke_impl(value);
+    value = getpid();
 }
 
 template<>
 template<>
-void GetpidSystemCall<Riscv64>::invoke(GetpidSystemCall<Riscv64>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+void Getpid<Riscv128>::invoke(Getpid<Riscv128>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
     success = parameters.count() == 0;
-    invoke_impl(value);
-}
-
-template<>
-template<>
-void GetpidSystemCall<Riscv128>::invoke(GetpidSystemCall<Riscv128>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
-    success = parameters.count() == 0;
-    invoke_impl(value);
+    value = getpid();
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

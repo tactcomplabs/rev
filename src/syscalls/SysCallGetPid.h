@@ -18,11 +18,11 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetpidSystemCallParametersInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using GetpidParametersInterfaceType = SystemCallInterface<RiscvArchType, 172>;
 
 
 template<typename RiscvArchType=Riscv32>
-class GetpidSystemCallParameters : public virtual GetpidSystemCallParametersInterfaceType<RiscvArchType> {
+class GetpidParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     private:
 
@@ -30,10 +30,10 @@ class GetpidSystemCallParameters : public virtual GetpidSystemCallParametersInte
 
     public:
 
-    using SystemCallParameterInterfaceType = GetpidSystemCallParametersInterfaceType<RiscvArchType>;
+    using SystemCallParameterInterfaceType = GetpidParametersInterfaceType<RiscvArchType>;
     using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
 
-    GetpidSystemCallParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
+    GetpidParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
 
     size_t count() override { return 1UL; }
 
@@ -47,23 +47,23 @@ class GetpidSystemCallParameters : public virtual GetpidSystemCallParametersInte
 };
 
 template<typename RiscvArchType=Riscv32>
-using GetpidSystemCallInterfaceType = SystemCallInterface<RiscvArchType, 172>;
+using GetpidInterfaceType = SystemCallInterface<RiscvArchType, 172>;
 
 template<typename RiscvArchType=Riscv32>
-class GetpidSystemCall : public virtual GetpidSystemCallInterfaceType<RiscvArchType> {
+class Getpid : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
-    using SystemCallInterfaceType = GetpidSystemCallInterfaceType<RiscvArchType>;
+    using SystemCallInterfaceType = GetpidInterfaceType<RiscvArchType>;
 
     using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
-    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType, SystemCallInterfaceType::SystemCallCodeType::value>;    
+    using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     public:
 
-    GetpidSystemCall() : SystemCallInterfaceType() {}
+    Getpid() : SystemCallInterfaceType() {}
 
     // always returns false
     //
