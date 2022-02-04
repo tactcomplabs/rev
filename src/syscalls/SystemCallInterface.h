@@ -76,6 +76,11 @@ struct SystemArch {
 };
 
 template<typename RiscvArchType, typename SystemArch<RiscvArchType>::RiscvModeIntegerType Code>
+struct SystemCallInterfaceCode {
+    using SystemCallCodeType = std::integral_constant<RiscvModeIntegerType, static_cast<RiscvModeIntegerType>(Code)>;
+};
+
+template<typename RiscvArchType>
 class SystemCallParameterInterface : public SystemArch<RiscvArchType> {
     
     public:
@@ -85,7 +90,6 @@ class SystemCallParameterInterface : public SystemArch<RiscvArchType> {
     using IsRiscv64  = typename SystemArch<RiscvArchType>::IsRiscv64;
     using IsRiscv128 = typename SystemArch<RiscvArchType>::IsRiscv128;
     using RiscvModeIntegerType = typename SystemArch<RiscvArchType>::RiscvModeIntegerType;
-    using SystemCallCodeType = std::integral_constant<RiscvModeIntegerType, static_cast<RiscvModeIntegerType>(Code)>;
 
     SystemCallParameterInterface() {}
 
@@ -103,7 +107,7 @@ class SystemCallParameterInterface : public SystemArch<RiscvArchType> {
     }
 };
 
-template<typename RiscvArchType, typename SystemArch<RiscvArchType>::RiscvModeIntegerType Code>
+template<typename RiscvArchType>
 class SystemCallInterface : public SystemArch<RiscvArchType> {
 
     protected:
@@ -117,8 +121,7 @@ class SystemCallInterface : public SystemArch<RiscvArchType> {
     using IsRiscv64  = typename SystemArch<RiscvArchType>::IsRiscv64;
     using IsRiscv128 = typename SystemArch<RiscvArchType>::IsRiscv128;
     using RiscvModeIntegerType = typename SystemArch<RiscvArchType>::RiscvModeIntegerType;
-    using SystemCallCodeType = std::integral_constant<RiscvModeIntegerType, static_cast<RiscvModeIntegerType>(Code)>;
-
+    
     SystemCallInterface() : success(false) {}
 
     bool invoke_success() {
@@ -130,7 +133,7 @@ class SystemCallInterface : public SystemArch<RiscvArchType> {
     }
     
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface<RiscvArchType, SystemCallCodeType::value> & parameters, ReturnType & value) {
+    void invoke(SystemCallParameterInterface<RiscvArchType> & parameters, ReturnType & value) {
         success = false;
     }
 };
