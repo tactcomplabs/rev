@@ -98,7 +98,7 @@ bool RevProc::SingleStepHart(){
   }
 }
 
-bool RevProc::EnableExt(RevExt *Ext){
+bool RevProc::EnableExt(RevExt *Ext, bool Opt){
   if( !Ext )
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
 
@@ -122,6 +122,37 @@ bool RevProc::EnableExt(RevExt *Ext){
         std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
   }
 
+  // load the compressed instructions
+  if( feature->IsModeEnabled(RV_C) ){
+    output->verbose(CALL_INFO, 6, 0,
+                    "Core %d ; Enabling compressed extension=%s\n",
+                    id, Ext->GetName().c_str());
+    std::vector<RevInstEntry> CT = Ext->GetCInstTable();
+    for( unsigned i=0; i<CT.size(); i++ ){
+      InstTable.push_back(CT[i]);
+      std::pair<unsigned,unsigned> ExtObj =
+        std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+      EntryToExt.insert(
+        std::pair<unsigned,
+          std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+    }
+    // load the optional compressed instructions
+    if( Opt ){
+      output->verbose(CALL_INFO, 6, 0,
+                      "Core %d ; Enabling optional compressed extension=%s\n",
+                      id, Ext->GetName().c_str());
+      CT = Ext->GetOInstTable();
+      for( unsigned i=0; i<CT.size(); i++ ){
+        InstTable.push_back(CT[i]);
+        std::pair<unsigned,unsigned> ExtObj =
+          std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+        EntryToExt.insert(
+          std::pair<unsigned,
+            std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+      }
+    }
+  }
+
   return true;
 }
 
@@ -132,60 +163,72 @@ bool RevProc::SeedInstTable(){
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
-    EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)));
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64I(feature,RegFile,mem,output)));
+      // load RV32I & RV64; no optional compressed
+      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64I(feature,RegFile,mem,output)),false);
+    }else{
+      // load RV32I w/ optional compressed
+      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),true);
     }
   }
 
   // M-Extension
   if( feature->IsModeEnabled(RV_M) ){
-    EnableExt(static_cast<RevExt *>(new RV32M(feature,RegFile,mem,output)));
+    EnableExt(static_cast<RevExt *>(new RV32M(feature,RegFile,mem,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64M(feature,RegFile,mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64M(feature,RegFile,mem,output)),false);
     }
   }
 
   // A-Extension
   if( feature->IsModeEnabled(RV_A) ){
-    EnableExt(static_cast<RevExt *>(new RV32A(feature,RegFile,mem,output)));
+    EnableExt(static_cast<RevExt *>(new RV32A(feature,RegFile,mem,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64A(feature,RegFile,mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64A(feature,RegFile,mem,output)),false);
     }
   }
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
-    EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)));
+    if( (!feature->IsModeEnabled(RV_D)) && (feature->GetXlen() == 32) ){
+      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),true);
+    }else{
+      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),false);
+    }
+#if 0
     if( feature->GetXlen() == 64 ){
       EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)));
     }
+#endif
   }
 
   // D-Extension
   if( feature->IsModeEnabled(RV_D) ){
-    EnableExt(static_cast<RevExt *>(new RV32D(feature,RegFile,mem,output)));
+    EnableExt(static_cast<RevExt *>(new RV32D(feature,RegFile,mem,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)),false);
     }
   }
 
   // PAN Extension
   if( feature->IsModeEnabled(RV_P) ){
-    //if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64P(feature,RegFile,mem,output)));
-    //}else{
-      // FIXME
-      //output->fatal(CALL_INFO, -1, "Error: PAN can only be enabled on RV64");
-    //}
-  }
-
-  // C-Extension
-  if( feature->IsModeEnabled(RV_C) ){
-    output->fatal(CALL_INFO, -1, "Error: compressed encodings enabled for core=%d not currently supported\n", id);
+    EnableExt(static_cast<RevExt *>(new RV64P(feature,RegFile,mem,output)),false);
   }
 
   return true;
+}
+
+uint32_t RevProc::CompressCEncoding(RevInstEntry Entry){
+  uint32_t Value = 0x00;
+
+  Value |= (uint32_t)(Entry.opcode);
+  Value |= (uint32_t)((uint32_t)(Entry.funct2)<<2);
+  Value |= (uint32_t)((uint32_t)(Entry.funct3)<<4);
+  Value |= (uint32_t)((uint32_t)(Entry.funct4)<<8);
+  Value |= (uint32_t)((uint32_t)(Entry.funct6)<<12);
+
+  return Value;
 }
 
 uint32_t RevProc::CompressEncoding(RevInstEntry Entry){
@@ -236,13 +279,25 @@ bool RevProc::InitTableMapping(){
   for( unsigned i=0; i<InstTable.size(); i++ ){
     NameToEntry.insert(
       std::pair<std::string,unsigned>(ExtractMnemonic(InstTable[i]),i) );
-    EncToEntry.insert(
-      std::pair<uint32_t,unsigned>(CompressEncoding(InstTable[i]),i) );
-    output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Table Entry %d = %s\n",
-                    id,
-                    CompressEncoding(InstTable[i]),
-                    ExtractMnemonic(InstTable[i]).c_str() );
+    if( !InstTable[i].compressed ){
+      // map normal instruction
+      EncToEntry.insert(
+        std::pair<uint32_t,unsigned>(CompressEncoding(InstTable[i]),i) );
+      output->verbose(CALL_INFO, 6, 0,
+                      "Core %d ; Table Entry %d = %s\n",
+                      id,
+                      CompressEncoding(InstTable[i]),
+                      ExtractMnemonic(InstTable[i]).c_str() );
+    }else{
+      // map compressed instruction
+      CEncToEntry.insert(
+        std::pair<uint32_t,unsigned>(CompressCEncoding(InstTable[i]),i) );
+      output->verbose(CALL_INFO, 6, 0,
+                      "Core %d ; Compressed Table Entry %d = %s\n",
+                      id,
+                      CompressCEncoding(InstTable[i]),
+                      ExtractMnemonic(InstTable[i]).c_str() );
+    }
   }
   return true;
 }
@@ -312,8 +367,6 @@ bool RevProc::Reset(){
       RegFile[t].SPF[i]  = 0.f;
       RegFile[t].DPF[i]  = 0.f;
     }
-  
-
 
     // initialize all the relevant program registers
     // -- x2 : stack pointer
@@ -369,6 +422,311 @@ bool RevProc::IsFloat(unsigned Entry){
     return true;
   }
   return false;
+}
+
+RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct4  = InstTable[Entry].funct4;
+
+  // registers
+  CompInst.rd      = DECODE_RD(Inst);
+  CompInst.rs1     = DECODE_RD(Inst);
+  CompInst.rs2     = DECODE_LOWER_CRS2(Inst);
+  CompInst.imm     = 0x00;
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct3  = InstTable[Entry].funct3;
+
+  // registers
+  CompInst.rd      = DECODE_RD(Inst);
+  CompInst.rs1     = DECODE_RD(Inst);
+  CompInst.imm     = DECODE_LOWER_CRS2(Inst);
+  CompInst.imm    |= ((Inst & 0b1000000000000)>>7);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct3  = InstTable[Entry].funct3;
+
+  // registers
+  CompInst.rs2     = DECODE_LOWER_CRS2(Inst);
+  CompInst.imm     = ((Inst & 0b1111110000000) >> 7);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct3  = InstTable[Entry].funct3;
+
+  // registers
+  CompInst.rd      = ((Inst & 0b11100) >> 2);
+  CompInst.imm     = ((Inst & 0b1111111100000) >> 5);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct3  = InstTable[Entry].funct3;
+
+  // registers
+  CompInst.rd      = ((Inst & 0b11100) >> 2);
+  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
+  CompInst.imm     = ((Inst & 0b1100000) >> 5);
+  CompInst.imm    |= ((Inst & 0b1110000000000) >> 8);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct3  = InstTable[Entry].funct3;
+
+  // registers
+  CompInst.rs2     = ((Inst & 0b11100) >> 2);
+  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
+  CompInst.imm     = ((Inst & 0b1100000) >> 5);
+  CompInst.imm    |= ((Inst & 0b1110000000000) >> 8);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct2  = InstTable[Entry].funct2;
+  CompInst.funct6  = InstTable[Entry].funct6;
+
+  // registers
+  CompInst.rs2     = ((Inst & 0b11100) >> 2);
+  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
+  CompInst.rd      = ((Inst & 0b1110000000) >> 7);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct3  = InstTable[Entry].funct3;
+
+  // registers
+  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
+  CompInst.offset  = ((Inst & 0b1111100) >> 2);
+  CompInst.offset |= ((Inst & 0b1110000000000) >> 5);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
+  RevInst CompInst;
+
+  // cost
+  RegFile[threadToDecode].cost  = InstTable[Entry].cost;
+
+  // encodings
+  CompInst.opcode  = InstTable[Entry].opcode;
+  CompInst.funct3  = InstTable[Entry].funct3;
+
+  // registers
+  CompInst.jumpTarget = ((Inst & 0b1111111111100) >> 2);
+
+  CompInst.instSize = 2;
+  CompInst.compressed = true;
+
+  return CompInst;
+}
+
+RevInst RevProc::DecodeCompressed(uint32_t Inst){
+  uint16_t TmpInst = (uint16_t)(Inst&0b1111111111111111);
+  RevInst CInst;
+  uint8_t opc     = 0;
+  uint8_t funct2  = 0;
+  uint8_t funct3  = 0;
+  uint8_t funct4  = 0;
+  uint8_t funct6  = 0;
+  uint8_t l3      = 0;
+  uint32_t Enc    = 0x00ul;
+  uint64_t PC     = GetPC();
+
+  // decode the opcode
+  opc = (TmpInst & 0b11);
+  l3  = ((TmpInst & 0b1110000000000000)>>13);
+  if( opc == 0b00 ){
+    // quadrant 0
+    funct3 = l3;
+  }else if( opc == 0b01){
+    // quadrant 1
+    if( l3 <= 0b011 ){
+      // upper portion: misc
+      funct3 = l3;
+    }else if( (l3 > 0b011) && (l3 < 0b101) ){
+      // middle portion: arithmetics
+      funct2 = ((TmpInst & 0b110000000000) >> 10);
+      if( funct2 == 0b11 ){
+        funct6 = ((TmpInst & 0b1111110000000000) >> 10);
+        funct2 = 0b00;
+      }else{
+        funct3 = l3;
+      }
+    }else{
+      // lower power: jumps/branches
+      funct3 = l3;
+    }
+  }else if( opc == 0b10){
+    // quadrant 2
+    if( l3 == 0b000 ){
+      // slli{64}
+      funct3 = l3;
+    }else if( l3 < 0b100 ){
+      // float/double/quad load
+      funct3 = l3;
+    }else if( l3 == 0b100 ){
+      // jump, mv, break, add
+      funct4 = ((TmpInst & 0b1111000000000000) >> 12);
+    }else{
+      // float/double/quad store
+      funct3 = l3;
+    }
+  }
+
+  Enc |= (uint32_t)(opc);
+  Enc |= (uint32_t)(funct2 << 2);
+  Enc |= (uint32_t)(funct3 << 4);
+  Enc |= (uint32_t)(funct4 << 8);
+  Enc |= (uint32_t)(funct6 << 12);
+
+  std::map<uint32_t,unsigned>::iterator it = CEncToEntry.find(Enc);
+  if( it == CEncToEntry.end() ){
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
+                  PC,
+                  Enc );
+  }
+
+  unsigned Entry = it->second;
+  if( Entry > (InstTable.size()-1) ){
+    output->fatal(CALL_INFO, -1,
+                  "Error: no entry in table for instruction at PC=0x%" PRIx64 "\
+                  Opcode = %x Funct2 = %x Funct3 = %x Funct4 = %x Funct6 = %x Enc = %x \n", \
+                  PC, opc, funct2, funct3, funct4, funct6, Enc );
+
+  }
+
+  RegFile[threadToDecode].Entry = Entry;
+
+  RegFile[threadToDecode].trigger = false;
+
+  switch( InstTable[Entry].format ){
+  case RVCTypeCR:
+    return DecodeCRInst(TmpInst,Entry);
+    break;
+  case RVCTypeCI:
+    return DecodeCIInst(TmpInst,Entry);
+    break;
+  case RVCTypeCSS:
+    return DecodeCSSInst(TmpInst,Entry);
+    break;
+  case RVCTypeCIW:
+    return DecodeCIWInst(TmpInst,Entry);
+    break;
+  case RVCTypeCL:
+    return DecodeCLInst(TmpInst,Entry);
+    break;
+  case RVCTypeCS:
+    return DecodeCSInst(TmpInst,Entry);
+    break;
+  case RVCTypeCA:
+    return DecodeCAInst(TmpInst,Entry);
+    break;
+  case RVCTypeCB:
+    return DecodeCBInst(TmpInst,Entry);
+    break;
+  case RVCTypeCJ:
+    return DecodeCJInst(TmpInst,Entry);
+    break;
+  default:
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to decode instruction format at PC=%" PRIx64 ".", PC );
+    break;
+  }
 }
 
 RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
@@ -749,6 +1107,13 @@ RevInst RevProc::DecodeInst(){
   // Stage 2: Retrieve the opcode
   uint32_t Opcode = (uint32_t)(Inst&0b1111111);
 
+  // If we find a compressed instruction, then take
+  // the compressed decode path
+  if( (Opcode&0b11) != 0b11 ){
+    // this is a compressed instruction
+    return DecodeCompressed(Inst);
+  }
+
   // Stage 3: Determine if we have a funct3 field
   uint32_t Funct3 = 0x00ul;
   uint32_t inst42 = ((Opcode&0b11100) >> 2);
@@ -796,9 +1161,9 @@ RevInst RevProc::DecodeInst(){
   std::map<uint32_t,unsigned>::iterator it;
   it = EncToEntry.find(Enc);
    if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
-    //This is kind of a hack, but we may not have found the instruction becasue 
-    //  Funct3 is overloaded with rounding mode, so if this is a RV32F or RV64F 
-    //  set Funct3 to zero and check again 
+    //This is kind of a hack, but we may not have found the instruction becasue
+    //  Funct3 is overloaded with rounding mode, so if this is a RV32F or RV64F
+    //  set Funct3 to zero and check again
     Enc = 0;
     Enc |= Opcode;
     Enc |= (Funct7<<11);
@@ -859,20 +1224,25 @@ RevInst RevProc::DecodeInst(){
 }
 
 void RevProc::ResetInst(RevInst *I){
-  I->opcode = 0;
-  I->funct3 = 0;
-  I->funct2 = 0;
-  I->funct7 = 0;
-  I->rd     = 0;
-  I->rs1    = 0;
-  I->rs2    = 0;
-  I->rs3    = 0;
-  I->imm    = 0;
-  I->fmt    = 0;
-  I->rm     = 0;
-  I->aq     = 0;
-  I->rl     = 0;
-  I->instSize = 0;
+  I->opcode     = 0;
+  I->funct2     = 0;
+  I->funct3     = 0;
+  I->funct4     = 0;
+  I->funct6     = 0;
+  I->funct7     = 0;
+  I->rd         = 0;
+  I->rs1        = 0;
+  I->rs2        = 0;
+  I->rs3        = 0;
+  I->imm        = 0;
+  I->fmt        = 0;
+  I->rm         = 0;
+  I->aq         = 0;
+  I->rl         = 0;
+  I->offset     = 0;
+  I->jumpTarget = 0;
+  I->instSize   = 0;
+  I->compressed = false;
 }
 
 void RevProc::HandleRegFault(unsigned width){
@@ -1034,16 +1404,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       RevExt *Ext = Extensions[EToE.first];
 
       // execute the instruction
-      if( !Ext->Execute(EToE.second,Inst, threadToExec) ){
+      if( !Ext->Execute(EToE.second, Inst, threadToExec) ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
-        if( (Ext->GetName() == "RV32F") ||
-            (Ext->GetName() == "RV32D") ||
-            (Ext->GetName() == "RV64F") ||
-            (Ext->GetName() == "RV64D") ){
-              Stats.floatsExec++;
-            }
+
+      if( (Ext->GetName() == "RV32F") ||
+          (Ext->GetName() == "RV32D") ||
+          (Ext->GetName() == "RV64F") ||
+          (Ext->GetName() == "RV64D") ){
+        Stats.floatsExec++;
+      }
 
       // inject the ALU fault
       if( ALUFault ){
