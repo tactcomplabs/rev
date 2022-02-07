@@ -30,6 +30,12 @@ RevFeature::RevFeature( std::string Machine,
 RevFeature::~RevFeature(){
 }
 
+bool RevFeature::IsRV32C(){
+  if( IsRV32() && !IsRV64() && IsModeEnabled(RV_C) )
+    return true;
+  return false;
+}
+
 bool RevFeature::IsRV32F(){
   if( IsRV32() && IsModeEnabled(RV_F) )
     return true;

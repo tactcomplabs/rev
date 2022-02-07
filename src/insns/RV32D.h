@@ -20,6 +20,46 @@ namespace SST{
   namespace RevCPU{
     class RV32D : public RevExt {
 
+      // Compressed instructions
+      static bool cfldsp(RevFeature *F, RevRegFile *R,
+                        RevMem *M, RevInst Inst) {
+        // c.flwsp rd, $imm = lw rd, x2, $imm
+        Inst.rs1  = 2;
+        Inst.imm = ((Inst.imm&0b11111)*8);
+
+        return fld(F,R,M,Inst);
+      }
+
+      static bool cfsdsp(RevFeature *F, RevRegFile *R,
+                        RevMem *M, RevInst Inst) {
+        // c.fsdsp rs2, $imm = fsd rs2, x2, $imm
+        Inst.rs1  = 2;
+        Inst.imm = ((Inst.imm&0b11111)*8);
+
+        return fsd(F,R,M,Inst);
+      }
+
+      static bool cfld(RevFeature *F, RevRegFile *R,
+                       RevMem *M, RevInst Inst) {
+        // c.fld %rd, %rs1, $imm = flw %rd, %rs1, $imm
+        Inst.rd  = CRegMap[Inst.rd];
+        Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = ((Inst.imm&0b11111)*8);
+
+        return fld(F,R,M,Inst);
+      }
+
+      static bool cfsd(RevFeature *F, RevRegFile *R,
+                       RevMem *M, RevInst Inst) {
+        // c.fsd rs2, rs1, $imm = fsd rs2, $imm(rs1)
+        Inst.rs2 = CRegMap[Inst.rd];
+        Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = ((Inst.imm&0b11111)*8);
+
+        return fsd(F,R,M,Inst);
+      }
+
+      // Standard instructions
       static bool fld(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           R->DPF[Inst.rd] = M->ReadDouble((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
@@ -410,6 +450,12 @@ namespace SST{
       {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.d.wu %rd, %rs1"           ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct7(0b1101001	).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtdwu ).InstEntry}
       };
 
+    std::vector<RevInstEntry> RV32DCTable = {
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fldsp %rd, $imm").SetCost(1).SetOpcode(0b10).SetFunct3(0b001).SetrdClass(RegFLOAT).Setrs1Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCI).SetImplFunc(&cfldsp).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fsdsp %rs1, $imm").SetCost(1).SetOpcode(0b10).SetFunct3(0b101).Setrs2Class(RegFLOAT).Setrs1Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCSS).SetImplFunc(&cfsdsp).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fld %rd, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b001).Setrs1Class(RegGPR).SetrdClass(RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCL).SetImplFunc(&cfld).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fsd %rs2, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b101).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCS).SetImplFunc(&cfsd).SetCompressed(true).InstEntry}
+      };
 
     public:
       /// RV32D: standard constructor
@@ -419,6 +465,7 @@ namespace SST{
              SST::Output *Output )
         : RevExt( "RV32D", Feature, RegFile, RevMem, Output) {
           this->SetTable(RV32DTable);
+          this->SetCTable(RV32DCTable);
         }
 
       /// RV32D: standard destructor

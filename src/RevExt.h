@@ -45,6 +45,12 @@ namespace SST{
       /// RevExt: sets the internal instruction table
       void SetTable(std::vector<RevInstEntry> InstVect);
 
+      /// RevExt: sets the internal compressed instruction table
+      void SetCTable(std::vector<RevInstEntry> InstVect);
+
+      /// RevExt: sets the optional table (used for variant-specific compressed encodings)
+      void SetOTable(std::vector<RevInstEntry> InstVect);
+
       /// RevExt: retrieve the extension name
       std::string GetName() { return name; }
 
@@ -53,6 +59,12 @@ namespace SST{
 
       /// RevExt: retrieves the extension's instruction table
       std::vector<RevInstEntry> GetInstTable() { return table; }
+
+      /// RevExt: retrieves the extension's compressed instruction table
+      std::vector<RevInstEntry> GetCInstTable() { return ctable; }
+
+      /// RevExt: retrieves the extension's optional instruction table
+      std::vector<RevInstEntry> GetOInstTable() { return otable; }
 
     protected:
       RevFeature *feature;  ///< RevExt: feature object
@@ -63,6 +75,8 @@ namespace SST{
       std::string name;                 ///< RevExt: extension name
       SST::Output *output;              ///< RevExt: output handler
       std::vector<RevInstEntry> table;  ///< RevExt: instruction table
+      std::vector<RevInstEntry> ctable; ///< RevExt: compressed instruction table
+      std::vector<RevInstEntry> otable; ///< RevExt: optional compressed instruction table
 
     }; // class RevExt
   } // namespace RevCPU
