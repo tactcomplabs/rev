@@ -18,8 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using IoctlInterfaceType = SystemCallInterface<RiscvArchType, 29>;
-
+using IoctlInterfaceType = SystemCallInterfaceCode<RiscvArchType, 29>;
 
 template<typename RiscvArchType=Riscv32>
 class IoctlParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -31,36 +30,13 @@ class IoctlParameters : public virtual SystemCallParameterInterface<RiscvArchTyp
 
     public:
 
-    using SystemCallParameterInterfaceType = IoctlParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-    
     IoctlParameters(int fildesp, unsigned long requestp)
-        : SystemCallParameterInterfaceType(), fildes(fildesp), request(requestp) {}
+        : fildes(fildesp), request(requestp) {}
 
     size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = fildes;
-            return true;
-        }
-        
-        return false;
-    }
-
-        template<>
-    bool get(const size_t parameter_index, unsigned long& param) {
-        if(parameter_index == 1) {
-            param = request;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -77,17 +53,10 @@ class Ioctl : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    Ioctl() : SystemCallInterfaceType() {}
+    Ioctl() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-    
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

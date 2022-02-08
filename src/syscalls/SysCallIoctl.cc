@@ -14,6 +14,28 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool IoctlParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool IoctlParameters<RiscvArchType>::get(const size_t parameter_index, unsigned long& param) {
+    if(parameter_index == 1) {
+        param = request;
+        return true;
+    }
+
+    return false;
+}
+    
 template<>
 template<>
 void Ioctl<Riscv32>::invoke<int>(Ioctl<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

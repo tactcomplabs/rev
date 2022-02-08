@@ -11,6 +11,32 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool SigprocmaskParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = tp;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool SigprocmaskParameters<RiscvArchType>::get(const size_t parameter_index, sigset_t * & param) {
+    if(parameter_index == 1) {
+        param = set;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = oset;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Sigprocmask<Riscv32>::invoke<clock_t>(Sigprocmask<Riscv32>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
