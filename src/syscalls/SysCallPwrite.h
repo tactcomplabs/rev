@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using PwriteInterfaceType = SystemCallInterface<RiscvArchType, 67>;
+using PwriteInterfaceType = SystemCallInterfaceCode<RiscvArchType, 67>;
 
 template<typename RiscvArchType=Riscv32>
 class PwriteParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -32,11 +32,8 @@ class PwriteParameters : public virtual SystemCallParameterInterface<RiscvArchTy
 
     public:
 
-    using SystemCallParameterInterfaceType = PwriteParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     PwriteParameters(int fd_i, void *buf_i, size_t nbyte_i, off_t offset_i)
-        : SystemCallParameterInterfaceType(), fd(fd_i), nbyte(nbyte_i), offset(offset_i) {}
+        : fildes(fd_i), buf(buf_i), nbyte(nbyte_i), offset(offset_i) {}
 
     size_t count() override {
         return 4UL;
@@ -44,40 +41,6 @@ class PwriteParameters : public virtual SystemCallParameterInterface<RiscvArchTy
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = fildes;
-            return true;
-        }
-        else if(parameter_index == 3) {
-            param = offset;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, void_ptr & param) {
-        if(parameter_index == 1) {
-            param = buf;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 2) {
-            param = nbyte;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -92,17 +55,10 @@ class Pwrite : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Pwrite() : SystemCallInterfaceType() {}
+    Pwrite() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, ssize_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

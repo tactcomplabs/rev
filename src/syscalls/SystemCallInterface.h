@@ -77,7 +77,7 @@ struct SystemArch {
 
 template<typename RiscvArchType, typename SystemArch<RiscvArchType>::RiscvModeIntegerType Code>
 struct SystemCallInterfaceCode {
-    using SystemCallCodeType = std::integral_constant<RiscvModeIntegerType, static_cast<RiscvModeIntegerType>(Code)>;
+    using SystemCallCodeType = std::integral_constant<typename SystemArch<RiscvArchType>::RiscvModeIntegerType, static_cast<typename SystemArch<RiscvArchType>::RiscvModeIntegerType>(Code)>;
 };
 
 template<typename RiscvArchType>
@@ -91,11 +91,7 @@ class SystemCallParameterInterface : public SystemArch<RiscvArchType> {
     using IsRiscv128 = typename SystemArch<RiscvArchType>::IsRiscv128;
     using RiscvModeIntegerType = typename SystemArch<RiscvArchType>::RiscvModeIntegerType;
 
-    SystemCallParameterInterface() {}
-
-    static RiscvModeIntegerType code() {
-        return SystemCallCodeType::value;
-    }
+    SystemCallParameterInterface() : SystemArch<RiscvArchType>() {}
 
     virtual size_t count() {
         return -1;
@@ -128,10 +124,6 @@ class SystemCallInterface : public SystemArch<RiscvArchType> {
         return success;
     }
 
-    static RiscvModeIntegerType code() {
-        return SystemCallCodeType::value;
-    }
-    
     template<typename ReturnType>
     void invoke(SystemCallParameterInterface<RiscvArchType> & parameters, ReturnType & value) {
         success = false;

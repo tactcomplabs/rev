@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ExitgroupInterfaceType = SystemCallInterface<RiscvArchType, 94>;
+using ExitgroupInterfaceType = SystemCallInterfaceCode<RiscvArchType, 94>;
 
 template<typename RiscvArchType=Riscv32>
 class ExitgroupParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -28,25 +28,12 @@ class ExitgroupParameters : public virtual SystemCallParameterInterface<RiscvArc
 
     public:
 
-    using SystemCallParameterInterfaceType = ExitgroupParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    ExitgroupParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
+    ExitgroupParameters(const int stat) : status(stat) {}
 
     size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = status;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -61,17 +48,10 @@ class Exitgroup : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Exitgroup() : SystemCallInterfaceType() {}
+    Exitgroup() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, void_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

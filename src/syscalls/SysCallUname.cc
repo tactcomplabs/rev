@@ -15,6 +15,18 @@
 
 namespace SST { namespace RevCPU {
 
+
+template<typename RiscvArchType>
+template<>
+bool UnameParameters<RiscvArchType>::get(const size_t parameter_index, utsname * & param) {
+    if(parameter_index == 0) {
+        param = name;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Uname<Riscv32>::invoke<int>(Uname<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

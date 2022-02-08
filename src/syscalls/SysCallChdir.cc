@@ -15,6 +15,17 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool ChdirParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Chdir<Riscv32>::invoke<int>(Chdir<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

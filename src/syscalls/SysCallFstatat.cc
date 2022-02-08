@@ -14,6 +14,43 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool FstatatParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = flag;
+        return true;
+    }
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool FstatatParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = path;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool FstatatParameters<RiscvArchType>::get(const size_t parameter_index, stat_t * & param) {
+    if(parameter_index == 2) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+
 template<>
 template<>
 void Fstatat<Riscv32>::invoke<int>(Fstatat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

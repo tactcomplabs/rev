@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ChdirInterfaceType = SystemCallInterface<RiscvArchType, 49>;
+using ChdirInterfaceType = SystemCallInterfaceCode<RiscvArchType, 49>;
 
 template<typename RiscvArchType=Riscv32>
 class ChdirParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -30,26 +30,13 @@ class ChdirParameters : public virtual SystemCallParameterInterface<RiscvArchTyp
 
     public:
 
-    using SystemCallParameterInterfaceType = ChdirParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     ChdirParameters(std::string path)
-        : SystemCallParameterInterfaceType(), pth(path) {}
+        : pth(path) {}
 
     size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, std::string& param) {
-        if(parameter_index == 0) {
-            param = pth;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -64,17 +51,10 @@ class Chdir : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Chdir() : SystemCallInterfaceType() {}
+    Chdir() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

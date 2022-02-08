@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ExitInterfaceType = SystemCallInterface<RiscvArchType, 93>;
+using ExitInterfaceType = SystemCallInterfaceCode<RiscvArchType, 93>;
 
 template<typename RiscvArchType=Riscv32>
 class ExitParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -28,25 +28,12 @@ class ExitParameters : public virtual SystemCallParameterInterface<RiscvArchType
 
     public:
 
-    using SystemCallParameterInterfaceType = ExitParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    ExitParameters(const int stat) : SystemCallParameterInterfaceType(), status(stat) {}
+    ExitParameters(const int stat) : status(stat) {}
 
     size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = status;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -61,23 +48,10 @@ class Exit : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    private:
+    Exit() {}
 
-    void invoke_impl(SystemCallParameterInterfaceType & parameters, void_t & value, bool & invoc_success);
-
-    public:
-
-    Exit() : SystemCallInterfaceType() {}
-
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, void_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

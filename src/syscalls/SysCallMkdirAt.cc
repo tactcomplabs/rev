@@ -14,6 +14,39 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool Mkdirat::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+
+    return false;
+}
+    
+template<typename RiscvArchType>
+template<>
+bool Mkdirat::get(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool Mkdirat::get(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 2) {
+        param = bcount;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Mkdirat<Riscv32>::invoke<int>(SystemCallParameterInterfaceType & parameters, int & value) {

@@ -15,6 +15,12 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool GetgidParameters<RiscvArchType>::get(const size_t parameter_index, void_t& param) {
+    return true;
+}
+
 template<>
 template<>
 void Getgid<Riscv32>::invoke<gid_t>(Getgid<Riscv32>::SystemCallParameterInterfaceType & parameters, gid_t & value) {

@@ -11,6 +11,36 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool RenameatParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fromfd;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = tofd;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool RenameatParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = from;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = to;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Renameat<Riscv32>::invoke<ssize_t>(Renameat<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {

@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using CloseInterfaceType = SystemCallInterface<RiscvArchType, 57>;
+using CloseInterfaceType = SystemCallInterfaceCode<RiscvArchType, 57>;
 
 template<typename RiscvArchType=Riscv32>
 class CloseParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -28,25 +28,12 @@ class CloseParameters : public virtual SystemCallParameterInterface<RiscvArchTyp
 
     public:
 
-    using SystemCallParameterInterfaceType = CloseParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    CloseParameters(const int fd_i) : SystemCallParameterInterfaceType(), fd(fd_i) {}
+    CloseParameters(const int fd_i) : fd(fd_i) {}
 
     size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = fd;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -61,17 +48,10 @@ class Close : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Close() : SystemCallInterfaceType() {}
+    Close() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

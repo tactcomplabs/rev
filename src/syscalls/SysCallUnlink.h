@@ -30,26 +30,13 @@ class UnlinkParameters : public virtual SystemCallParameterInterface<RiscvArchTy
 
     public:
 
-    using SystemCallParameterInterfaceType = UnlinkParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     UnlinkParameters(const std::string path)
-        : SystemCallParameterInterfaceType(), pth(path) {}
+        : pth(path) {}
 
     size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, std::string& param) {
-        if(parameter_index == 0) {
-            param = pth;
-            return true;
-        }
-
-        return false;
-    }    
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -66,15 +53,8 @@ class Unlink : public virtual SystemCallInterface<RiscvArchType> {
     
     Unlink() : SystemCallInterfaceType() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

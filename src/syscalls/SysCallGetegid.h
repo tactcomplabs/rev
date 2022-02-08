@@ -18,27 +18,19 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetegidInterfaceType = SystemCallInterface<RiscvArchType, 176>;
+using GetegidInterfaceType = SystemCallInterfaceCode<RiscvArchType, 176>;
 
 template<typename RiscvArchType=Riscv32>
 class GetegidParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
     
     public:
 
-    using SystemCallParameterInterfaceType = GetegidParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    GetegidParameters(const void_t stat) : SystemCallParameterInterfaceType() {}
+    GetegidParameters(const void_t stat) {}
 
     size_t count() override { return 0UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, void_t& param) {
-        return true;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -55,17 +47,10 @@ class Getegid : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    Getegid() : SystemCallInterfaceType() {}
+    Getegid() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-    
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, gid_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

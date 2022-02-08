@@ -21,7 +21,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using OpenatInterfaceType = SystemCallInterface<RiscvArchType, 56>;
+using OpenatInterfaceType = SystemCallInterfaceCode<RiscvArchType, 56>;
 
 template<typename RiscvArchType=Riscv32>
 class OpenatParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -35,56 +35,13 @@ class OpenatParameters : public virtual SystemCallParameterInterface<RiscvArchTy
 
     public:
 
-    using SystemCallParameterInterfaceType = OpenatParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     OpenatParameters(int fd_i, std::string path_i, int oflag_i, mode_t mode_i)
-        : SystemCallParameterInterfaceType(), fd(fd_i), path(path_i), oflag(oflag_i), mode(mode_i) {}
+        : fd(fd_i), path(path_i), oflag(oflag_i), mode(mode_i) {}
 
     size_t count() override { return 4UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 0) {
-            param = fd;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, std::string & param) {
-        if(parameter_index == 1) {
-            param = path;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 2) {
-            param = oflag;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, mode_t & param) {
-        if(parameter_index == 3) {
-            param = mode;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -101,15 +58,8 @@ class Openat : public virtual SystemCallInterface<RiscvArchType> {
 
     Openat() : SystemCallInterfaceType() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

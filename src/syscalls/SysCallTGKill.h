@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TgkillInterfaceType = SystemCallInterface<RiscvArchType, 131>;
+using TgkillInterfaceType = SystemCallInterfaceCode<RiscvArchType, 131>;
 
 template<typename RiscvArchType=Riscv32>
 class TgkillParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -31,33 +31,13 @@ class TgkillParameters : public virtual SystemCallParameterInterface<RiscvArchTy
 
     public:
 
-    using SystemCallParameterInterfaceType = TgkillParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    TgkillParameters(const int tgid_i, const int tid_i, const int sig_i) : SystemCallParameterInterfaceType(), tgid(tgid_i), tid(tid_i), sig(sig_i) {}
+    TgkillParameters(const int tgid_i, const int tid_i, const int sig_i)
+        : tgid(tgid_i), tid(tid_i), sig(sig_i) {}
 
     size_t count() override { return 3UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = tgid;
-            return true;
-        }
-        else if(parameter_index == 1) {
-            param = tid;
-            return true;
-        }
-        else if(parameter_index == 2) {
-            param = sig;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -72,17 +52,10 @@ class Tgkill : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Tgkill() : SystemCallInterfaceType() {}
+    Tgkill() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

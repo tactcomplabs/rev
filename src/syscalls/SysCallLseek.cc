@@ -11,49 +11,36 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType> 
 template<>
-template<>
-void Lseek<Riscv32>::invoke<off_t>(Lseek<Riscv32>::SystemCallParameterInterfaceType & parameters, off_t & value) {
-    if(parameters.count() == 3) {
-        int fd;
-        off_t offset;
-        int whence;
-
-        bool has_value [3] = { false, false, false };
-        has_value[0] = parameters.get<int>(0, fd);
-        has_value[1] = parameters.get<off_t>(1, offset);
-        has_value[2] = parameters.get<int>(2, whence);
-
-        if(has_value[0] && has_value[1] && has_value[2]) {
-            success = true;
-            value = lseek(fd, offset, whence);
-        }
+bool Lseek<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
     }
+    else if(parameter_index == 2) {
+        param = whence;
+        return true;
+    }
+
+    return false;
+}
+       
+template<typename RiscvArchType> 
+template<>
+bool Lseek<RiscvArchType>::get(const size_t parameter_index, off_t& param) {
+    if(parameter_index == 1) {
+        param = offset;
+        return true;
+    }
+
+    return false;
 }
 
-template<>
-template<>
-void Lseek<Riscv64>::invoke<off_t>(Lseek<Riscv64>::SystemCallParameterInterfaceType & parameters, off_t & value) {
-    if(parameters.count() == 3) {
-        int fd;
-        off_t offset;
-        int whence;
 
-        bool has_value [3] = { false, false, false };
-        has_value[0] = parameters.get<int>(0, fd);
-        has_value[1] = parameters.get<off_t>(1, offset);
-        has_value[2] = parameters.get<int>(2, whence);
-
-        if(has_value[0] && has_value[1] && has_value[2]) {
-            success = true;
-            value = lseek(fd, offset, whence);
-        }
-    }
-}
-
+template<typename RiscvArchType>
 template<>
-template<>
-void Lseek<Riscv128>::invoke<off_t>(Lseek<Riscv128>::SystemCallParameterInterfaceType & parameters, off_t & value) {
+void Lseek<RiscvArchType>::invoke<off_t>(Lseek<RiscvArchType>::SystemCallParameterInterfaceType & parameters, off_t & value) {
     if(parameters.count() == 3) {
         int fd;
         off_t offset;

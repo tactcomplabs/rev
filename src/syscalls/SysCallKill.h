@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using KillInterfaceType = SystemCallInterface<RiscvArchType, 129>;
+using KillInterfaceType = SystemCallInterfaceCode<RiscvArchType, 129>;
 
 template<typename RiscvArchType=Riscv32>
 class KillParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -30,29 +30,12 @@ class KillParameters : public virtual SystemCallParameterInterface<RiscvArchType
 
     public:
 
-    using SystemCallParameterInterfaceType = KillParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    KillParameters(const pid_t pid_i, const int sig_i) : SystemCallParameterInterfaceType(), pid(pid_i), sig(sig_i) {}
+    KillParameters(const pid_t pid_i, const int sig_i) : pid(pid_i), sig(sig_i) {}
 
     size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = pid;
-            return true;
-        }
-        else if(parameter_index == 1) {
-            param = sig;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -67,17 +50,12 @@ class Kill : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Kill() : SystemCallInterfaceType() {}
+    Kill() {}
 
     // always returns false
     //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST
