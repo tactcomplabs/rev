@@ -35,39 +35,13 @@ class WritevParameters : public virtual SystemCallParameterInterface<RiscvArchTy
 
     public:
 
-    using SystemCallParameterInterfaceType = WritevParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     WritevParameters(int fildesp, iovec * iovp, int iovcntp)
-        : SystemCallParameterInterfaceType(), fildes(fildesp), iov(iovp), iovcnt(iovcntp) {}
+        : fildes(fildesp), iov(iovp), iovcnt(iovcntp) {}
 
     size_t count() override { return 3UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = fildes;
-            return true;
-        }
-        else if(parameter_index == 2) {
-            param = iovcnt;
-            return true;
-        }        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, iovec_t * & param) {
-        if(parameter_index == 0) {
-            param = iov;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -82,17 +56,10 @@ class Writev : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Writev() : SystemCallInterfaceType() {}
+    Writev() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, ssize_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

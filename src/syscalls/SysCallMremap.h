@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MremapInterfaceType = SystemCallInterface<RiscvArchType, 216>;
+using MremapInterfaceType = SystemCallInterfaceCode<RiscvArchType, 216>;
 
 template<typename RiscvArchType=Riscv32>
 class MremapParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -32,57 +32,16 @@ class MremapParameters : public virtual SystemCallParameterInterface<RiscvArchTy
 
     public:
 
-    using SystemCallParameterInterfaceType = MremapParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     MremapParameters(void * addrp, size_t oldsz, size_t newsz, int flagsp)
-        : SystemCallParameterInterfaceType(), addr(addrp), len(lenp), prot(protp), flags(flagsp), newaddr(std::nullptr) {}
+        : oldaddr(addrp), oldsize(oldsz), newsize(newsz), flags(flagsp), newaddr(NULL) {}
 
     MremapParameters(void * oaddr, size_t oldsz, size_t newsz, int flagsp, void * naddr)
-        : SystemCallParameterInterfaceType(), oldaddr(oaddr), oldsize(oldsz), newsize(newsz), flags(flagsp), newaddr(naddr) {}
+        : oldaddr(oaddr), oldsize(oldsz), newsize(newsz), flags(flagsp), newaddr(naddr) {}
 
-    size_t count() override { return (newaddr == std::nullptr) ? 5UL : 6UL; }
+    size_t count() override { return (newaddr == NULL) ? 5UL : 6UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, void_ptr & param) {
-        if(parameter_index == 0) {
-            param = oldaddr;
-            return true;
-        }
-        else if(parameter_index == 4 && (newaddr == std::nullptr) ) {
-            param = newaddr;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 3) {
-            param = flags;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 1) {
-            param = oldsize;
-            return true;
-        }
-        else if(parameter_index == 2) {
-            param = newsize;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -99,17 +58,10 @@ class Mremap : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    Mremap() : SystemCallInterfaceType() {}
+    Mremap() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, void_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

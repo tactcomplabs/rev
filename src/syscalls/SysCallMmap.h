@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MmapInterfaceType = SystemCallInterface<RiscvArchType, 222>;
+using MmapInterfaceType = SystemCallInterfaceCode<RiscvArchType, 222>;
 
 template<typename RiscvArchType=Riscv32>
 class MmapParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -33,58 +33,13 @@ class MmapParameters : public virtual SystemCallParameterInterface<RiscvArchType
 
     public:
 
-    using SystemCallParameterInterfaceType = MmapParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     MmapParameters(void * addrp, size_t lenp, int protp, int flagsp, int fdp, off_t offsetp)
-        : SystemCallParameterInterfaceType(), addr(addrp), len(lenp), prot(protp), flags(flagsp), fd(fdp), offset(offsetp) {}
+        : addr(addrp), len(lenp), prot(protp), flags(flagsp), fd(fdp), offset(offsetp) {}
 
     size_t count() override { return 6UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, void_ptr & param) {
-        if(parameter_index == 0) {
-            param = addr;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 1) {
-            param = len;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 2) {
-            param = prot;
-            return true;
-        }
-        else if(parameter_index == 3) {
-            param = flags;
-            return true;
-        }
-        else if(parameter_index == 4) {
-            param = fd;
-            return true;
-        }
-        else if(parameter_index == 5) {
-            param = offset;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -101,17 +56,10 @@ class Mmap : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    Mmap() : SystemCallInterfaceType() {}
+    Mmap() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, void* & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

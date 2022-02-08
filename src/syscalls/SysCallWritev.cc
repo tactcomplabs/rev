@@ -11,6 +11,31 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool WritevParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = iovcnt;
+        return true;
+    }
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool WritevParameters<RiscvArchType>::get(const size_t parameter_index, iovec_t * & param) {
+    if(parameter_index == 0) {
+        param = iov;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Writev<Riscv32>::invoke<ssize_t>(Writev<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {

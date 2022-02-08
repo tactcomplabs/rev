@@ -108,7 +108,7 @@ class SystemCalls : public SystemArch<RiscvArchType> {
         CLOSE            = CloseInterfaceType<RiscvArchType>::value,
         LSEEK            = LseekInterfaceType<RiscvArchType>::value,
         BRK              = LseekInterfaceType<RiscvArchType>::value,
-        LINKAT           = LinkAtInterfaceType<RiscvArchType>::value,
+        LINKAT           = LinkatInterfaceType<RiscvArchType>::value,
         UNLINKAT         = UnlinkatInterfaceType<RiscvArchType>::value,
         LINK             = LinkInterfaceType<RiscvArchType>::value,
         UNLINK           = UnlinkInterfaceType<RiscvArchType>::value,

@@ -18,7 +18,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using DupInterfaceType = SystemCallInterface<RiscvArchType, 23>;
+using DupInterfaceType = SystemCallInterfaceCode<RiscvArchType, 23>;
 
 template<typename RiscvArchType=Riscv32>
 class DupParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -29,26 +29,13 @@ class DupParameters : public virtual SystemCallParameterInterface<RiscvArchType>
 
     public:
 
-    using SystemCallParameterInterfaceType = DupParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     DupParameters(const int fildesp)
-        : SystemCallParameterInterfaceType(), fildes(fildesp) {}
+        : fildes(fildesp) {}
 
     size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = fildes;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -63,17 +50,10 @@ class Dup : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Dup() : SystemCallInterfaceType() {}
+    Dup() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

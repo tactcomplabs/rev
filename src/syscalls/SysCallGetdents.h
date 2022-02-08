@@ -21,7 +21,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetdentsInterfaceType = SystemCallInterface<RiscvArchType, 61>;
+using GetdentsInterfaceType = SystemCallInterfaceCode<RiscvArchType, 61>;
 
 template<typename RiscvArchType=Riscv32>
 class GetdentsParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -30,50 +30,17 @@ class GetdentsParameters : public virtual SystemCallParameterInterface<RiscvArch
 
     int fd;
     void *dirp;
-    size_t count;
+    size_t count_;
     
     public:
 
-    using SystemCallParameterInterfaceType = GetdentsCallParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     GetdentsParameters(int fdp, void *dirpp, size_t countp)
-        : SystemCallParameterInterfaceType(), fd(fdp), dirp(dirpp), count(countp) {}
+        : fd(fdp), dirp(dirpp), count_(countp) {}
 
     size_t count() override { return 2UL; }
 
     template<typename ParameterType>
-    bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 0) {
-            param = fd;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, void* & param) {
-        if(parameter_index == 1) {
-            param = dirp;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 2) {
-            param = count;
-            return true;
-        }
-        
-        return false;
-    }        
+    bool get(const size_t parameter_index, ParameterType & param);  
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -88,17 +55,10 @@ class Getdents : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Getdents() : SystemCallInterfaceType() {}
+    Getdents() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

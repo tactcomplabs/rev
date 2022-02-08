@@ -12,6 +12,48 @@
 
 namespace SST { namespace RevCPU {
 
+
+template<typename RiscvArchType>
+template<>
+bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 0) {
+        param = oldaddr;
+        return true;
+    }
+    else if(parameter_index == 4 && (newaddr == std::nullptr) ) {
+        param = newaddr;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+    if(parameter_index == 3) {
+        param = flags;
+        return true;
+    }
+
+        return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 1) {
+        param = oldsize;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = newsize;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Mremap<Riscv32>::invoke<void_t>(Mremap<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {

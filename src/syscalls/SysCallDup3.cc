@@ -13,6 +13,26 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool Dup3Parameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+
 template<>
 template<>
 void Dup3<Riscv32>::invoke<int>(Dup3<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

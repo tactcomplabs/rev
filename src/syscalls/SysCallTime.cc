@@ -14,6 +14,17 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool TimeParameters<RiscvArchType>::get(const size_t parameter_index, time_t* & param) {
+    if(parameter_index == 0) {
+        param = tloc;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Time<Riscv32>::invoke<time_t>(Time<Riscv32>::SystemCallParameterInterfaceType & parameters, time_t & value) {

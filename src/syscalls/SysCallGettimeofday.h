@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GettimeofdayInterfaceType = SystemCallInterface<RiscvArchType, 169>;
+using GettimeofdayInterfaceType = SystemCallInterfaceCode<RiscvArchType, 169>;
 
 template<typename RiscvArchType=Riscv32>
 class GettimeofdayParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -31,36 +31,13 @@ class GettimeofdayParameters : public virtual SystemCallParameterInterface<Riscv
 
     public:
 
-    using SystemCallParameterInterfaceType = GettimeofdayParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     GettimeofdayParameters(timeval tpp, void * tzp)
-        : SystemCallParameterInterfaceType(), tp(tpp), tzp(tzp) {}
+        : tp(tpp), tzp(tzp) {}
 
     size_t count() override { return 3UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, timeval * & param) {
-        if(parameter_index == 0) {
-            param = tp;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, void * & param) {
-        if(parameter_index == 0) {
-            param = tzp;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -75,17 +52,10 @@ class Gettimeofday : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Gettimeofday() : SystemCallInterfaceType() {}
+    Gettimeofday() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, ssize_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

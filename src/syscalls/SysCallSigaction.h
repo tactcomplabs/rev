@@ -18,8 +18,10 @@
 
 namespace SST { namespace RevCPU {
 
+using sigaction_t = struct sigaction;
+
 template<typename RiscvArchType=Riscv32>
-using SigactionInterfaceType = SystemCallInterface<RiscvArchType, 134>;
+using SigactionInterfaceType = SystemCallInterfaceCode<RiscvArchType, 134>;
 
 template<typename RiscvArchType=Riscv32>
 class SigactionParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -27,45 +29,18 @@ class SigactionParameters : public virtual SystemCallParameterInterface<RiscvArc
     private:
 
     int sig;
-    sigaction * act;
-    sigaction * oact;
+    sigaction_t * act;
+    sigaction_t * oact;
 
     public:
 
-    using SystemCallParameterInterfaceType = SigactionParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    SigactionParameters(int sigp, sigaction * actp, sigaction * oactp)
-        : SystemCallParameterInterfaceType(), sig(sigp), act(actp), oact(oactp) {}
+    SigactionParameters(int sigp, sigaction_t * actp, sigaction_t * oactp)
+        : sig(sigp), act(actp), oact(oactp) {}
 
     size_t count() override { return 3UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index == 0) {
-            param = sig;
-            return true;
-        }
-        
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, sigaction * & param) {
-        if(parameter_index == 1) {
-            param = act;
-            return true;
-        }
-        else if(parameter_index == 2) {
-            param = oact;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -80,17 +55,10 @@ class Sigaction : public virtual SigactionInterfaceType<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Sigaction() : SystemCallInterfaceType() {}
+    Sigaction() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

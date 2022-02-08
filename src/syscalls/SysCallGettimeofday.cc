@@ -13,6 +13,29 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool GettimeofdayParameters<RiscvArchType>::get(const size_t parameter_index, timeval * & param) {
+    if(parameter_index == 0) {
+        param = tp;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool GettimeofdayParameters<RiscvArchType>::get(const size_t parameter_index, void * & param) {
+    if(parameter_index == 0) {
+        param = tzp;
+        return true;
+    }
+
+    return false;
+}
+
+
 template<>
 template<>
 void Gettimeofday<Riscv32>::invoke<int>(Gettimeofday<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

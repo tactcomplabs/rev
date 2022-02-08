@@ -14,6 +14,32 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>    
+template<>
+bool SigactionParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = sig;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>    
+template<>
+bool SigactionParameters<RiscvArchType>::get(const size_t parameter_index, sigaction_t * & param) {
+    if(parameter_index == 1) {
+        param = act;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = oact;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Sigaction<Riscv32>::invoke<int>(Sigaction<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

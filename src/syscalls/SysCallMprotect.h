@@ -17,7 +17,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using MprotectInterfaceType = SystemCallInterface<RiscvArchType, 226>;
+using MprotectInterfaceType = SystemCallInterfaceCode<RiscvArchType, 226>;
 
 template<typename RiscvArchType=Riscv32>
 class MprotectParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -30,46 +30,13 @@ class MprotectParameters : public virtual SystemCallParameterInterface<RiscvArch
 
     public:
 
-    using SystemCallParameterInterfaceType = MprotectParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     MprotectParameters(void * addrp, size_t lenp, int protp)
-        : SystemCallParameterInterfaceType(), addr(addrp), len(lenp), prot(protp) {}
+        : addr(addrp), len(lenp), prot(protp) {}
 
     size_t count() override { return 3UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, void_ptr & param) {
-        if(parameter_index == 0) {
-            param = addr;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, size_t & param) {
-        if(parameter_index == 1) {
-            param = len;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 3) {
-            param = prot;
-            return true;
-        }
-
-        return false;
-    }    
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -86,17 +53,10 @@ class Mprotect : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    Mprotect() : SystemCallInterfaceType() {}
+    Mprotect() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, void_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

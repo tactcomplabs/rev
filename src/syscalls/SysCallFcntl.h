@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using FcntlInterfaceType = SystemCallInterface<RiscvArchType, 25>;
+using FcntlInterfaceType = SystemCallInterfaceCode<RiscvArchType, 25>;
 
 template<typename RiscvArchType=Riscv32>
 class FcntlParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -31,30 +31,13 @@ class FcntlParameters : public virtual SystemCallParameterInterface<RiscvArchTyp
 
     public:
 
-    using SystemCallParameterInterfaceType = FcntlCallParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     FcntlParameters(int fildesp, int cmdp)
-        : SystemCallParameterInterfaceType(), fildes(fildesp), cmd(cmdp) {}
+        : fildes(fildesp), cmd(cmdp) {}
 
     size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int & param) {
-        if(parameter_index == 0) {
-            param = fildes;
-            return true;
-        }
-        else if(parameter_index == 1) {
-            param = cmd;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -69,17 +52,10 @@ class Fcntl : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Fcntl() : SystemCallInterfaceType() {}
+    Fcntl() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

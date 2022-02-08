@@ -14,6 +14,39 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = path;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, char* & param) {
+    if(parameter_index == 1) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 2) {
+        param = bufsize;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Readlinkat<Riscv32>::invoke<ssize_t>(Readlinkat<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {

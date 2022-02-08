@@ -14,6 +14,21 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool FcntlParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = cmd;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Fcntl<Riscv32>::invoke<int>(Fcntl<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

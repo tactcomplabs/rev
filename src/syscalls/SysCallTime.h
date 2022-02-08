@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TimeInterfaceType = SystemCallInterface<RiscvArchType, 1062>;
+using TimeInterfaceType = SystemCallInterfaceCode<RiscvArchType, 1062>;
 
 template<typename RiscvArchType=Riscv32>
 class TimeParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -30,11 +30,8 @@ class TimeParameters : public virtual SystemCallParameterInterface<RiscvArchType
 
     public:
 
-    using SystemCallParameterInterfaceType = TimeParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     TimeParameters(time_t * tlocp)
-        : SystemCallParameterInterfaceType(), tloc(tlocp) {}
+        : tloc(tlocp) {}
 
     size_t count() override {
         return 2UL;
@@ -42,16 +39,6 @@ class TimeParameters : public virtual SystemCallParameterInterface<RiscvArchType
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, time_t* & param) {
-        if(parameter_index == 0) {
-            param = tloc;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -66,17 +53,10 @@ class Time : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Time() : SystemCallInterfaceType() {}
+    Time() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, time_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

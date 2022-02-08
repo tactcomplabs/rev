@@ -11,6 +11,39 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool GetdentsParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool GetdentsParameters<RiscvArchType>::get(const size_t parameter_index, void* & param) {
+    if(parameter_index == 1) {
+        param = dirp;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool GetdentsParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 2) {
+        param = count;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Getdents<Riscv32>::invoke<ssize_t>(Getdents<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
