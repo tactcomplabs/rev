@@ -78,6 +78,7 @@ namespace SST{
                      RevMem *M, RevInst Inst) {
         // c.j $imm = jal x0, $imm
         Inst.rd = 0; // x0
+        Inst.imm = Inst.jumpTarget;
 
         return jal(F,R,M,Inst);
       }
