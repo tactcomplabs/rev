@@ -1,7 +1,7 @@
 /*
- * ex2.c
+ * ex6.c
  *
- * RISC-V ISA: RV64I
+ * RISC-V ISA: RV64IMAFDC
  *
  * Copyright (C) 2017-2020 Tactical Computing Laboratories, LLC
  * All Rights Reserved
