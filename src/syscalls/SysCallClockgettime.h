@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using ClockgettimeInterfaceType = SystemCallInterface<RiscvArchType, 113>;
+using ClockgettimeInterfaceType = SystemCallInterfaceCode<RiscvArchType, 113>;
 
 template<typename RiscvArchType=Riscv32>
 class ClockgettimeParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -32,36 +32,13 @@ class ClockgettimeParameters : public virtual SystemCallParameterInterface<Riscv
 
     public:
 
-    using SystemCallParameterInterfaceType = ClockgettimeParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     ClockgettimeParameters(clockid_t clockid, timespec * tsp)
-        : SystemCallParameterInterfaceType(), clkid(clockid), tp(tsp) {}
+        : clkid(clockid), tp(tsp) {}
 
     size_t count() override { return 2UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, clockid_t& param) {
-        if(parameter_index = 0) {
-            param = clkid;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, timespec* & param) {
-        if(parameter_index == 1) {
-            param = tp;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -76,17 +53,10 @@ class Clockgettime : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Clockgettime() : SystemCallInterfaceType() {}
+    Clockgettime() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-    
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, pid_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

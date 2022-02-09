@@ -16,6 +16,30 @@
 
 namespace SST { namespace RevCPU {
 
+
+template<typename RiscvArchType>
+template<>
+bool GetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = resource;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool GetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, rlimit* & param) {
+    if(parameter_index == 1) {
+        param = rlp;
+        return true;
+    }
+
+    return false;
+}
+
+
 template<>
 template<>
 void Getrlimit<Riscv32>::invoke<int>(Getrlimit<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

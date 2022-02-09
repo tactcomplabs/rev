@@ -15,6 +15,29 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool GetrusageParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    if(parameter_index = 0) {
+        param = who;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool GetrusageParameters<RiscvArchType>::get(const size_t parameter_index, rusage* & param) {
+    if(parameter_index == 1) {
+        param = r_usage;
+        return true;
+    }
+
+    return false;
+}
+
+
 template<>
 template<>
 void Getrusage<Riscv32>::invoke<int>(Getrusage<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

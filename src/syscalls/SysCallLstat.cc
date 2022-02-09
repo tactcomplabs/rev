@@ -11,6 +11,29 @@
 
 namespace SST { namespace RevCPU {
 
+    template<typename RiscvArchType>
+    template<>
+    bool LstatParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+        if(parameter_index == 0) {
+            param = pth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename RiscvArchType>
+    template<>
+    bool LstatParameters<RiscvArchType>::get(const size_t parameter_index, stat_t * param) {
+        if(parameter_index == 1) {
+            param = buf;
+            return true;
+        }
+
+        return false;
+    }
+
+
 template<>
 template<>
 void Lstat<Riscv32>::invoke<int>(Lstat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

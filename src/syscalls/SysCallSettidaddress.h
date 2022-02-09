@@ -20,7 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using SettidaddressInterfaceType = SystemCallInterface<RiscvArchType, 17>;
+using SettidaddressInterfaceType = SystemCallInterfaceCode<RiscvArchType, 17>;
 
 template<typename RiscvArchType=Riscv32>
 class SettidaddressParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -31,11 +31,8 @@ class SettidaddressParameters : public virtual SystemCallParameterInterface<Risc
 
     public:
 
-    using SystemCallParameterInterfaceType = SettidaddressParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     SettidaddressParameters(int * tidptrp)
-        : SystemCallParameterInterfaceType(), tidptr(tidptrp) {}
+        : tidptr(tidptrp) {}
 
     size_t count() override {
         return 1UL;
@@ -43,16 +40,6 @@ class SettidaddressParameters : public virtual SystemCallParameterInterface<Risc
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int* & param) {
-        if(parameter_index == 0) {
-            param = tidptr;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -67,17 +54,10 @@ class Settidaddress : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Settidaddress() : SystemCallInterfaceType() {}
+    Settidaddress() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

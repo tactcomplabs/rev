@@ -20,8 +20,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using GetrusageInterfaceType = SystemCallInterface<RiscvArchType, 165>;
-
+using GetrusageInterfaceType = SystemCallInterfaceCode<RiscvArchType, 165>;
 
 template<typename RiscvArchType=Riscv32>
 class GetrusageParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -33,36 +32,13 @@ class GetrusageParameters : public virtual SystemCallParameterInterface<RiscvArc
 
     public:
 
-    using SystemCallParameterInterfaceType = GetrusageParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
-    GetrusageParameters(int who, rusage * rusage)
-        : SystemCallParameterInterfaceType(), who(whor), r_usage(rusage) {}
+    GetrusageParameters(int rwho, rusage * rusage)
+        : who(rwho), r_usage(rusage) {}
 
     size_t count() override { return 0UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, int& param) {
-        if(parameter_index = 0) {
-            param = who;
-            return true;
-        }
-
-        return false;
-    }
-
-    template<>
-    bool get(const size_t parameter_index, rusage* & param) {
-        if(parameter_index == 1) {
-            param = r_usage;
-            return true;
-        }
-
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -79,17 +55,10 @@ class Getrusage : public virtual SystemCallInterface<RiscvArchType> {
 
     public:
 
-    Getrusage() : SystemCallInterfaceType() {}
+    Getrusage() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-    
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, int & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

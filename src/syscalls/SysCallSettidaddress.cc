@@ -15,6 +15,18 @@
 
 namespace SST { namespace RevCPU {
 
+
+template<typename RiscvArchType>
+template<>
+bool SettidaddressParameters<RiscvArchType>::get(const size_t parameter_index, int* & param) {
+    if(parameter_index == 0) {
+        param = tidptr;
+        return true;
+    }
+
+    return false;
+}
+
 template<>
 template<>
 void Settidaddress<Riscv32>::invoke<int>(Settidaddress<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

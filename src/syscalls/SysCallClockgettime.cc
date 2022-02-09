@@ -15,6 +15,29 @@
 
 namespace SST { namespace RevCPU {
 
+template<typename RiscvArchType>
+template<>
+bool ClockgettimeParameters<RiscvArchType>::get(const size_t parameter_index, clockid_t& param) {
+    if(parameter_index = 0) {
+        param = clkid;
+        return true;
+    }
+
+    return false;
+}
+
+template<typename RiscvArchType>
+template<>
+bool ClockgettimeParameters<RiscvArchType>::get(const size_t parameter_index, timespec* & param) {
+   if(parameter_index == 1) {
+       param = tp;
+       return true;
+   }
+
+   return false;
+}
+
+
 template<>
 template<>
 void Clockgettime<Riscv32>::invoke<int>(Clockgettime<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

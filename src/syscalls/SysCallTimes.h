@@ -19,7 +19,7 @@
 namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType=Riscv32>
-using TimesInterfaceType = SystemCallInterface<RiscvArchType, 153>;
+using TimesInterfaceType = SystemCallInterfaceCode<RiscvArchType, 153>;
 
 template<typename RiscvArchType=Riscv32>
 class TimesParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
@@ -30,26 +30,13 @@ class TimesParameters : public virtual SystemCallParameterInterface<RiscvArchTyp
 
     public:
 
-    using SystemCallParameterInterfaceType = TimesParametersInterfaceType<RiscvArchType>;
-    using SystemCallCodeType = typename SystemCallParameterInterfaceType::SystemCallCodeType;
-
     TimesParameters(tms * tpp)
-        : SystemCallParameterInterfaceType(), tp(tpp) {}
+        : tp(tpp) {}
 
     size_t count() override { return 1UL; }
 
     template<typename ParameterType>
     bool get(const size_t parameter_index, ParameterType & param);
-
-    template<>
-    bool get(const size_t parameter_index, tms * & param) {
-        if(parameter_index == 0) {
-            param = tp;
-            return true;
-        }
-        
-        return false;
-    }
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -64,17 +51,10 @@ class Times : public virtual SystemCallInterface<RiscvArchType> {
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
-    Times() : SystemCallInterfaceType() {}
+    Times() {}
 
-    // always returns false
-    //
     template<typename ReturnType>
     void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
-
-    // returns true
-    //
-    template<>
-    void invoke(SystemCallParameterInterfaceType & parameters, clock_t & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

@@ -14,6 +14,41 @@
 
 namespace SST { namespace RevCPU {
 
+
+    template<typename RiscvArchType>
+    template<>
+    bool MadviseParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+        if(parameter_index == 1) {
+            param = length;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename RiscvArchType>
+    template<>
+    bool MadviseParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+        if(parameter_index == 2) {
+            param = advice;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename RiscvArchType>
+    template<>
+    bool MadviseParameters<RiscvArchType>::get(const size_t parameter_index, void * & param) {
+        if(parameter_index == 0) {
+            param = addr;
+            return true;
+        }
+
+        return false;
+    }
+
+
 template<>
 template<>
 void Madvise<Riscv32>::invoke<int>(Madvise<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {

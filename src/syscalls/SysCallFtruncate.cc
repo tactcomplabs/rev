@@ -13,6 +13,29 @@
 
 namespace SST { namespace RevCPU {
 
+    template<typename RiscvArchType>
+    template<>
+    bool Ftruncate<RiscvArchType>::get(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = fildes;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<typename RiscvArchType>
+    template<>
+    bool Ftruncate<RiscvArchType>::get(const size_t parameter_index, off_t& param) {
+        if(parameter_index == 1) {
+            param = length;
+            return true;
+        }
+
+        return false;
+    }
+
+
 template<>
 template<>
 void Ftruncate<Riscv32>::invoke<int>(Ftruncate<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
