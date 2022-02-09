@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool DupParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool DupParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;

@@ -52,7 +52,6 @@ class Access : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = AccessInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

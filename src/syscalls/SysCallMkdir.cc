@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool MkdirParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+bool MkdirParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = pth;
         return true;
@@ -28,7 +28,7 @@ bool MkdirParameters<RiscvArchType>::get(const size_t parameter_index, std::stri
 
 template<typename RiscvArchType>
 template<>
-bool MkdirParameters<RiscvArchType>::get(const size_t parameter_index, mode_t& param) {
+bool MkdirParameters<RiscvArchType>::get<mode_t>(const size_t parameter_index, mode_t& param) {
     if(parameter_index == 1) {
         param = mode;
         return true;

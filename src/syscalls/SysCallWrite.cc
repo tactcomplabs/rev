@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool Write<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool Write<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fd;
         return true;
@@ -28,7 +28,7 @@ bool Write<RiscvArchType>::get(const size_t parameter_index, int& param) {
 
 template<typename RiscvArchType>
 template<>
-bool Write<RiscvArchType>::get(const size_t parameter_index, void_ptr & param) {
+bool Write<RiscvArchType>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 1) {
         param = buf;
         return true;
@@ -39,7 +39,7 @@ bool Write<RiscvArchType>::get(const size_t parameter_index, void_ptr & param) {
 
 template<typename RiscvArchType>
 template<>
-bool Write<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+bool Write<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
     if(parameter_index == 2) {
         param = bcount;
         return true;

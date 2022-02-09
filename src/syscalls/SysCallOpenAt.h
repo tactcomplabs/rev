@@ -13,6 +13,7 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <cstdlib>
 #include <string>
 
 #include <sys/types.h>

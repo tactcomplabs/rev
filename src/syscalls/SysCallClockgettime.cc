@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool ClockgettimeParameters<RiscvArchType>::get(const size_t parameter_index, clockid_t& param) {
+bool ClockgettimeParameters<RiscvArchType>::get<clockid_t>(const size_t parameter_index, clockid_t& param) {
     if(parameter_index = 0) {
         param = clkid;
         return true;
@@ -28,7 +28,7 @@ bool ClockgettimeParameters<RiscvArchType>::get(const size_t parameter_index, cl
 
 template<typename RiscvArchType>
 template<>
-bool ClockgettimeParameters<RiscvArchType>::get(const size_t parameter_index, timespec* & param) {
+bool ClockgettimeParameters<RiscvArchType>::get<timespec*>(const size_t parameter_index, timespec* & param) {
    if(parameter_index == 1) {
        param = tp;
        return true;

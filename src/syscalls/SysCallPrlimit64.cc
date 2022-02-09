@@ -14,7 +14,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool Prlimit64Parameters<RiscvArchType>::get(const size_t parameter_index, void_ptr & param) {
+bool Prlimit64Parameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 2) {
         param = old_limit;
         return true;
@@ -29,7 +29,7 @@ bool Prlimit64Parameters<RiscvArchType>::get(const size_t parameter_index, void_
 
 template<typename RiscvArchType>
 template<>
-bool Prlimit64Parameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+bool Prlimit64Parameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 0) {
         param = pid;
         return true;

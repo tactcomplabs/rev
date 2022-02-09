@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool IoctlParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool IoctlParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;
@@ -27,7 +27,7 @@ bool IoctlParameters<RiscvArchType>::get(const size_t parameter_index, int& para
 
 template<typename RiscvArchType>
 template<>
-bool IoctlParameters<RiscvArchType>::get(const size_t parameter_index, unsigned long& param) {
+bool IoctlParameters<RiscvArchType>::get<unsigned long>(const size_t parameter_index, unsigned long& param) {
     if(parameter_index == 1) {
         param = request;
         return true;

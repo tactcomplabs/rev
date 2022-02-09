@@ -1,4 +1,3 @@
-
 //
 // SysCallSetrlimit.cc
 //
@@ -18,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool SetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool SetrlimitParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
    if(parameter_index == 0) {
        param = resource;
        return true;
@@ -29,7 +28,7 @@ bool SetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, int& 
 
 template<typename RiscvArchType>
 template<>
-bool SetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, rlimit* & param) {
+bool SetrlimitParameters<RiscvArchType>::get<rlimit*>(const size_t parameter_index, rlimit* & param) {
     if(parameter_index == 0) {
        param = rlp;
        return true;

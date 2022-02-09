@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+bool ReadlinkatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = path;
         return true;
@@ -27,7 +27,7 @@ bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, std:
 
 template<typename RiscvArchType>
 template<>
-bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, char* & param) {
+bool ReadlinkatParameters<RiscvArchType>::get<char*>(const size_t parameter_index, char* & param) {
     if(parameter_index == 1) {
         param = buf;
         return true;
@@ -38,7 +38,7 @@ bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, char
 
 template<typename RiscvArchType>
 template<>
-bool ReadlinkatParameters<RiscvArchType>::get(const size_t parameter_index, size_t& param) {
+bool ReadlinkatParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t& param) {
     if(parameter_index == 2) {
         param = bufsize;
         return true;

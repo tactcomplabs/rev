@@ -14,9 +14,39 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool FcntlParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+template<>
+bool FcntlParameters<Riscv32>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = cmd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FcntlParameters<Riscv64>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = cmd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FcntlParameters<Riscv128>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;

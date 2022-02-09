@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool FaccessatParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool FaccessatParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fd;
         return true;
@@ -36,7 +36,7 @@ bool FaccessatParameters<RiscvArchType>::get(const size_t parameter_index, int& 
 
 template<typename RiscvArchType>
 template<>
-bool FaccessatParameters<RiscvArchType>::get(const size_t parameter_index, std::string param) {
+bool FaccessatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string param) {
     if(parameter_index == 1) {
         param = pth;
         return true;

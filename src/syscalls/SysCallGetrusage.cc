@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool GetrusageParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool GetrusageParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index = 0) {
         param = who;
         return true;
@@ -28,7 +28,7 @@ bool GetrusageParameters<RiscvArchType>::get(const size_t parameter_index, int& 
 
 template<typename RiscvArchType>
 template<>
-bool GetrusageParameters<RiscvArchType>::get(const size_t parameter_index, rusage* & param) {
+bool GetrusageParameters<RiscvArchType>::get<rusage*>(const size_t parameter_index, rusage* & param) {
     if(parameter_index == 1) {
         param = r_usage;
         return true;

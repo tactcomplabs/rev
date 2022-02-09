@@ -18,8 +18,12 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool Openat<RiscvArchType>::get(const size_t parameter_index, int & param) {
+bool Openat<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+    else if(parameter_index == 2) {
         param = fd;
         return true;
     }
@@ -29,7 +33,7 @@ bool Openat<RiscvArchType>::get(const size_t parameter_index, int & param) {
     
 template<typename RiscvArchType>
 template<>
-bool get(const size_t parameter_index, std::string & param) {
+bool Openat<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string & param) {
     if(parameter_index == 1) {
         param = path;
         return true;
@@ -40,18 +44,7 @@ bool get(const size_t parameter_index, std::string & param) {
 
 template<typename RiscvArchType>
 template<>
-bool Openat<RiscvArchType>::get(const size_t parameter_index, int & param) {
-    if(parameter_index == 2) {
-        param = oflag;
-        return true;
-    }
-
-    return false;
-}
-
-template<typename RiscvArchType>
-template<>
-bool Openat<RiscvArchType>::get(const size_t parameter_index, mode_t & param) {
+bool Openat<RiscvArchType>::get<mode_t>(const size_t parameter_index, mode_t & param) {
     if(parameter_index == 3) {
         param = mode;
         return true;

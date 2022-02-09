@@ -46,7 +46,6 @@ class Link : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = LinkInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

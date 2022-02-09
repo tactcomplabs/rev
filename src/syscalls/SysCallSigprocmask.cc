@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool SigprocmaskParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+bool SigprocmaskParameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 0) {
         param = tp;
         return true;
@@ -24,7 +24,7 @@ bool SigprocmaskParameters<RiscvArchType>::get(const size_t parameter_index, int
 
 template<typename RiscvArchType>
 template<>
-bool SigprocmaskParameters<RiscvArchType>::get(const size_t parameter_index, sigset_t * & param) {
+bool SigprocmaskParameters<RiscvArchType>::get<sigset_t*>(const size_t parameter_index, sigset_t * & param) {
     if(parameter_index == 1) {
         param = set;
         return true;

@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool Unlink<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+bool Unlink<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = pth;
         return true;

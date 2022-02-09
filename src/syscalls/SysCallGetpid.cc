@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool Getpid<RiscvArchType>::get(const size_t parameter_index, void_t& param) {
+bool Getpid<RiscvArchType>::get<void_t>(const size_t parameter_index, void_t& param) {
     return true;
 }
 

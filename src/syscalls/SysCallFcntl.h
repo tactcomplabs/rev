@@ -47,7 +47,6 @@ class Fcntl : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = FcntlInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

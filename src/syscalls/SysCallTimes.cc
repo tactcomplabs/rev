@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool Times<RiscvArchType>::get(const size_t parameter_index, tms * & param) {
+    bool Times<RiscvArchType>::get<tms*>(const size_t parameter_index, tms * & param) {
         if(parameter_index == 0) {
             param = tp;
             return true;

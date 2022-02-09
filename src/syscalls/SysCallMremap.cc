@@ -15,7 +15,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, void_ptr & param) {
+bool MremapParameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 0) {
         param = oldaddr;
         return true;
@@ -30,7 +30,7 @@ bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, void_ptr
 
 template<typename RiscvArchType>
 template<>
-bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+bool MremapParameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 3) {
         param = flags;
         return true;
@@ -41,7 +41,7 @@ bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, int & pa
 
 template<typename RiscvArchType>
 template<>
-bool MremapParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+bool MremapParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
     if(parameter_index == 1) {
         param = oldsize;
         return true;

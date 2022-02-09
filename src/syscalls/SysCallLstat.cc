@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool LstatParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+    bool LstatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
         if(parameter_index == 0) {
             param = pth;
             return true;
@@ -24,7 +24,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool LstatParameters<RiscvArchType>::get(const size_t parameter_index, stat_t * param) {
+    bool LstatParameters<RiscvArchType>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
         if(parameter_index == 1) {
             param = buf;
             return true;

@@ -50,7 +50,6 @@ class Getdents : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = GetdentsInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

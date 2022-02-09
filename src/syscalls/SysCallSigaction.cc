@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>    
 template<>
-bool SigactionParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool SigactionParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = sig;
         return true;
@@ -27,7 +27,7 @@ bool SigactionParameters<RiscvArchType>::get(const size_t parameter_index, int& 
 
 template<typename RiscvArchType>    
 template<>
-bool SigactionParameters<RiscvArchType>::get(const size_t parameter_index, sigaction_t * & param) {
+bool SigactionParameters<RiscvArchType>::get<sigaction_t*>(const size_t parameter_index, sigaction_t * & param) {
     if(parameter_index == 1) {
         param = act;
         return true;

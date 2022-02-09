@@ -12,9 +12,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool Brk<RiscvArchType>::get(const size_t parameter_index, int& param) {
+template<>
+bool BrkParameters<Riscv32>::get<void*>(const size_t parameter_index, void* & param) {
     if(parameter_index == 0) {
         param = addr;
         return true;
@@ -23,12 +23,60 @@ bool Brk<RiscvArchType>::get(const size_t parameter_index, int& param) {
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-void Brk<RiscvArchType>::invoke<void_ptr>(Brk<RiscvArchType>::SystemCallParameterInterfaceType & parameters, void_ptr & value) {
+template<>
+bool BrkParameters<Riscv64>::get<void*>(const size_t parameter_index, void* & param) {
+    if(parameter_index == 0) {
+        param = addr;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool BrkParameters<Riscv128>::get<void*>(const size_t parameter_index, void* & param) {
+    if(parameter_index == 0) {
+        param = addr;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+void Brk<Riscv32>::invoke<int>(Brk<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
-        cvoid_ptr addr;
-        const bool has_value = parameters.get<cvoid_ptr>(0, addr);
+        void* addr;
+        const bool has_value = parameters.get<void*>(0, addr);
+        if(has_value) {
+            success = true;
+            value = brk(addr);
+        }
+    }
+}
+
+template<>
+template<>
+void Brk<Riscv64>::invoke<int>(Brk<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        void* addr;
+        const bool has_value = parameters.get<void*>(0, addr);
+        if(has_value) {
+            success = true;
+            value = brk(addr);
+        }
+    }
+}
+
+template<>
+template<>
+void Brk<Riscv128>::invoke<int>(Brk<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        void* addr;
+        const bool has_value = parameters.get<void*>(0, addr);
         if(has_value) {
             success = true;
             value = brk(addr);

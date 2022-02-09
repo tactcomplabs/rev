@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool GetcwdParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+bool GetcwdParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = pth;
         return true;
@@ -28,7 +28,7 @@ bool GetcwdParameters<RiscvArchType>::get(const size_t parameter_index, std::str
 
 template<typename RiscvArchType>
 template<>
-bool GetcwdParameters<RiscvArchType>::get(const size_t parameter_index, size_t& param) {
+bool GetcwdParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t& param) {
     if(parameter_index == 0) {
         param = size;
         return true;

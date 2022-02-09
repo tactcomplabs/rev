@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool RenameatParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool RenameatParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fromfd;
         return true;
@@ -28,7 +28,7 @@ bool RenameatParameters<RiscvArchType>::get(const size_t parameter_index, int& p
 
 template<typename RiscvArchType>
 template<>
-bool RenameatParameters<RiscvArchType>::get(const size_t parameter_index, std::string& param) {
+bool RenameatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 1) {
         param = from;
         return true;

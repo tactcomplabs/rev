@@ -21,14 +21,15 @@ using CloseInterfaceType = SystemCallInterfaceCode<RiscvArchType, 57>;
 
 template<typename RiscvArchType=Riscv32>
 class CloseParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
-    
+
     private:
 
     int fd;
 
     public:
 
-    CloseParameters(const int fd_i) : fd(fd_i) {}
+    CloseParameters(int fdi)
+        : fd(fdi) {}
 
     size_t count() override { return 1UL; }
 
@@ -38,14 +39,13 @@ class CloseParameters : public virtual SystemCallParameterInterface<RiscvArchTyp
 
 template<typename RiscvArchType=Riscv32>
 class Close : public virtual SystemCallInterface<RiscvArchType> {
-  
+
     public:
 
     using SystemCallInterfaceType = CloseInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
-    
+
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     Close() {}

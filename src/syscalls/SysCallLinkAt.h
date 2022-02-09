@@ -48,7 +48,6 @@ class Linkat : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = LinkatInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

@@ -13,10 +13,9 @@
 
 namespace SST { namespace RevCPU {
 
-
-    template<typename RiscvArchType>
     template<>
-    bool AccessParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    template<>
+    bool AccessParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
         if(parameter_index == 1) {
             param = mode;
             return true;
@@ -25,9 +24,54 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
+
     template<>
-    bool AccessParameters<RiscvArchType>::get(const size_t parameter_index, std::string param) {
+    template<>
+    bool AccessParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+        if(parameter_index == 1) {
+            param = mode;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool AccessParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+        if(parameter_index == 1) {
+            param = mode;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool AccessParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string & param) {
+        if(parameter_index == 0) {
+            param = pth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool AccessParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string & param) {
+        if(parameter_index == 0) {
+            param = pth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool AccessParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string & param) {
         if(parameter_index == 0) {
             param = pth;
             return true;

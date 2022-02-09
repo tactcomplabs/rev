@@ -14,7 +14,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool MmapParameters<RiscvArchType>::get(const size_t parameter_index, void_ptr & param) {
+bool MmapParameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 0) {
         param = addr;
         return true;
@@ -25,7 +25,7 @@ bool MmapParameters<RiscvArchType>::get(const size_t parameter_index, void_ptr &
         
 template<typename RiscvArchType>
 template<>
-bool MmapParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+bool MmapParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
     if(parameter_index == 1) {
         param = len;
         return true;
@@ -36,7 +36,7 @@ bool MmapParameters<RiscvArchType>::get(const size_t parameter_index, size_t & p
 
 template<typename RiscvArchType>
 template<>
-bool MmapParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+bool MmapParameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 2) {
         param = prot;
         return true;

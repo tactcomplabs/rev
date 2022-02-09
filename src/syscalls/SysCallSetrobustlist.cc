@@ -18,7 +18,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool SetrobustlistParameters<RiscvArchType>::get(const size_t parameter_index, robust_list_head* & param) {
+    bool SetrobustlistParameters<RiscvArchType>::get<robust_list_head*>(const size_t parameter_index, robust_list_head* & param) {
         if(parameter_index == 0) {
             param = hptr;
             return true;
@@ -29,7 +29,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool SetrobustlistParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+    bool SetrobustlistParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
         if(parameter_index == 1) {
             param = len;
             return true;

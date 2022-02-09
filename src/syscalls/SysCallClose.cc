@@ -12,9 +12,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool Close<RiscvArchType>::get(const size_t parameter_index, int& param) {
+template<>
+bool CloseParameters<Riscv32>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 0) {
         param = fd;
         return true;
@@ -23,9 +23,57 @@ bool Close<RiscvArchType>::get(const size_t parameter_index, int& param) {
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-void Close<RiscvArchType>::invoke<int>(Close<RiscvArchType>::SystemCallParameterInterfaceType & parameters, int & value) {
+template<>
+bool CloseParameters<Riscv64>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool CloseParameters<Riscv128>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+void Close<Riscv32>::invoke<int>(Close<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        int status;
+        const bool has_value = parameters.get<int>(0, status);
+        if(has_value) {
+            success = true;            
+            value = close(status);
+        }
+    }
+}
+
+template<>
+template<>
+void Close<Riscv64>::invoke<int>(Close<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        int status;
+        const bool has_value = parameters.get<int>(0, status);
+        if(has_value) {
+            success = true;            
+            value = close(status);
+        }
+    }
+}
+
+template<>
+template<>
+void Close<Riscv128>::invoke<int>(Close<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);

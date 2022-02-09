@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool WritevParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool WritevParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;
@@ -27,7 +27,7 @@ bool WritevParameters<RiscvArchType>::get(const size_t parameter_index, int& par
 
 template<typename RiscvArchType>
 template<>
-bool WritevParameters<RiscvArchType>::get(const size_t parameter_index, iovec_t * & param) {
+bool WritevParameters<RiscvArchType>::get<iovec_t>(const size_t parameter_index, iovec_t * & param) {
     if(parameter_index == 0) {
         param = iov;
         return true;

@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool MadviseParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+    bool MadviseParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
         if(parameter_index == 1) {
             param = length;
             return true;
@@ -28,7 +28,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool MadviseParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+    bool MadviseParameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
         if(parameter_index == 2) {
             param = advice;
             return true;
@@ -39,7 +39,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool MadviseParameters<RiscvArchType>::get(const size_t parameter_index, void * & param) {
+    bool MadviseParameters<RiscvArchType>::get<void*>(const size_t parameter_index, void * & param) {
         if(parameter_index == 0) {
             param = addr;
             return true;

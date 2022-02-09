@@ -15,7 +15,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool GettimeofdayParameters<RiscvArchType>::get(const size_t parameter_index, timeval * & param) {
+bool GettimeofdayParameters<RiscvArchType>::get<timeval*>(const size_t parameter_index, timeval * & param) {
     if(parameter_index == 0) {
         param = tp;
         return true;
@@ -26,7 +26,7 @@ bool GettimeofdayParameters<RiscvArchType>::get(const size_t parameter_index, ti
 
 template<typename RiscvArchType>
 template<>
-bool GettimeofdayParameters<RiscvArchType>::get(const size_t parameter_index, void * & param) {
+bool GettimeofdayParameters<RiscvArchType>::get<void*>(const size_t parameter_index, void * & param) {
     if(parameter_index == 0) {
         param = tzp;
         return true;

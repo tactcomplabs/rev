@@ -19,7 +19,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool GetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool GetrlimitParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = resource;
         return true;
@@ -30,7 +30,7 @@ bool GetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, int& 
 
 template<typename RiscvArchType>
 template<>
-bool GetrlimitParameters<RiscvArchType>::get(const size_t parameter_index, rlimit* & param) {
+bool GetrlimitParameters<RiscvArchType>::get<rlimit*>(const size_t parameter_index, rlimit* & param) {
     if(parameter_index == 1) {
         param = rlp;
         return true;

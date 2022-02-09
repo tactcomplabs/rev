@@ -13,7 +13,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType> 
 template<>
-bool Lseek<RiscvArchType>::get(const size_t parameter_index, int& param) {
+bool Lseek<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fd;
         return true;
@@ -28,7 +28,7 @@ bool Lseek<RiscvArchType>::get(const size_t parameter_index, int& param) {
        
 template<typename RiscvArchType> 
 template<>
-bool Lseek<RiscvArchType>::get(const size_t parameter_index, off_t& param) {
+bool Lseek<RiscvArchType>::get<off_t>(const size_t parameter_index, off_t& param) {
     if(parameter_index == 1) {
         param = offset;
         return true;

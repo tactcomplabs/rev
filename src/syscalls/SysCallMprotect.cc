@@ -13,9 +13,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool MprotectParameters<RiscvArchType>::get(const size_t parameter_index, void_ptr & param) {
+template<>
+bool MprotectParameters<Riscv32>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 0) {
         param = addr;
         return true;
@@ -24,9 +24,31 @@ bool MprotectParameters<RiscvArchType>::get(const size_t parameter_index, void_p
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool MprotectParameters<RiscvArchType>::get(const size_t parameter_index, size_t & param) {
+template<>
+bool MprotectParameters<Riscv64>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 0) {
+        param = addr;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MprotectParameters<Riscv128>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 0) {
+        param = addr;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MprotectParameters<Riscv32>::get<size_t>(const size_t parameter_index, size_t & param) {
     if(parameter_index == 1) {
         param = len;
         return true;
@@ -35,9 +57,53 @@ bool MprotectParameters<RiscvArchType>::get(const size_t parameter_index, size_t
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool MprotectParameters<RiscvArchType>::get(const size_t parameter_index, int & param) {
+template<>
+bool MprotectParameters<Riscv64>::get<size_t>(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 1) {
+        param = len;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MprotectParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 1) {
+        param = len;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MprotectParameters<Riscv32>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 3) {
+        param = prot;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MprotectParameters<Riscv64>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 3) {
+        param = prot;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MprotectParameters<Riscv128>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 3) {
         param = prot;
         return true;

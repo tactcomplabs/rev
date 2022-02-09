@@ -16,7 +16,6 @@
 
 namespace SST { namespace RevCPU {
 
-
 template<typename RiscvArchType=Riscv32>
 using BrkInterfaceType = SystemCallInterfaceCode<RiscvArchType, 214>;
 
@@ -25,11 +24,11 @@ class BrkParameters : public virtual SystemCallParameterInterface<RiscvArchType>
     
     private:
 
-    cvoid_ptr addr;
+    void* addr;
 
     public:
 
-    BrkParameters(const cvoid_ptr addr_i)
+    BrkParameters(void * addr_i)
         : addr(addr_i) {}
 
     size_t count() override { return 1UL; }
@@ -45,7 +44,6 @@ class Brk : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = BrkInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

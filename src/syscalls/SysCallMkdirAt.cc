@@ -16,7 +16,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool Mkdirat::get(const size_t parameter_index, int& param) {
+bool Mkdirat::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fd;
         return true;
@@ -27,7 +27,7 @@ bool Mkdirat::get(const size_t parameter_index, int& param) {
     
 template<typename RiscvArchType>
 template<>
-bool Mkdirat::get(const size_t parameter_index, std::string& param) {
+bool Mkdirat::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 1) {
         param = pth;
         return true;
@@ -38,7 +38,7 @@ bool Mkdirat::get(const size_t parameter_index, std::string& param) {
 
 template<typename RiscvArchType>
 template<>
-bool Mkdirat::get(const size_t parameter_index, size_t& param) {
+bool Mkdirat::get<size_t>(const size_t parameter_index, size_t& param) {
     if(parameter_index == 2) {
         param = bcount;
         return true;

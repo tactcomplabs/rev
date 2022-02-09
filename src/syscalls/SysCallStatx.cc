@@ -17,7 +17,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get(const size_t parameter_index, int& param) {
+    bool StatxParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
         if(parameter_index == 0) {
             param = dirfd;
             return true;
@@ -32,7 +32,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get(const size_t parameter_index, const char* & param) {
+    bool StatxParameters<RiscvArchType>::get<const char*>(const size_t parameter_index, const char* & param) {
         if(parameter_index == 1) {
             param = pathname;
             return true;
@@ -43,7 +43,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get(const size_t parameter_index, unsigned int & param) {
+    bool StatxParameters<RiscvArchType>::get<unsigned int>(const size_t parameter_index, unsigned int & param) {
         if(parameter_index == 3) {
             param = mask;
             return true;
@@ -54,7 +54,7 @@ namespace SST { namespace RevCPU {
 
     template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get(const size_t parameter_index, statx_t * & param) {
+    bool StatxParameters<RiscvArchType>::get<statx_t*>(const size_t parameter_index, statx_t * & param) {
         if(parameter_index == 4) {
             param = statxbuf;
             return true;

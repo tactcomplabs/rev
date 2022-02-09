@@ -18,7 +18,7 @@ namespace SST { namespace RevCPU {
 
 template<typename RiscvArchType>
 template<>
-bool UnameParameters<RiscvArchType>::get(const size_t parameter_index, utsname * & param) {
+bool UnameParameters<RiscvArchType>::get<utsname *>(const size_t parameter_index, utsname * & param) {
     if(parameter_index == 0) {
         param = name;
         return true;
