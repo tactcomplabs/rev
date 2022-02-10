@@ -14,10 +14,31 @@
 
 namespace SST { namespace RevCPU {
 
-
-    template<typename RiscvArchType>
     template<>
-    bool Times<RiscvArchType>::get<tms*>(const size_t parameter_index, tms * & param) {
+    template<>
+    bool TimesParameters<Riscv32>::get<tms*>(const size_t parameter_index, tms * & param) {
+        if(parameter_index == 0) {
+            param = tp;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool TimesParameters<Riscv64>::get<tms*>(const size_t parameter_index, tms * & param) {
+        if(parameter_index == 0) {
+            param = tp;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool TimesParameters<Riscv128>::get<tms*>(const size_t parameter_index, tms * & param) {
         if(parameter_index == 0) {
             param = tp;
             return true;

@@ -47,7 +47,6 @@ class Read : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = ReadInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

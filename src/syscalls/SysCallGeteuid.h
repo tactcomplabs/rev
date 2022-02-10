@@ -40,7 +40,6 @@ class Geteuid : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = GeteuidInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

@@ -15,9 +15,9 @@
 
 namespace SST { namespace RevCPU {
 
-    template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+    template<>
+    bool StatxParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
         if(parameter_index == 0) {
             param = dirfd;
             return true;
@@ -30,9 +30,39 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get<const char*>(const size_t parameter_index, const char* & param) {
+    template<>
+    bool StatxParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = dirfd;
+            return true;
+        }
+        else if(parameter_index == 2) {
+            param = flags;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatxParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = dirfd;
+            return true;
+        }
+        else if(parameter_index == 2) {
+            param = flags;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatxParameters<Riscv32>::get<const char*>(const size_t parameter_index, const char* & param) {
         if(parameter_index == 1) {
             param = pathname;
             return true;
@@ -41,9 +71,31 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get<unsigned int>(const size_t parameter_index, unsigned int & param) {
+    template<>
+    bool StatxParameters<Riscv64>::get<const char*>(const size_t parameter_index, const char* & param) {
+        if(parameter_index == 1) {
+            param = pathname;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatxParameters<Riscv128>::get<const char*>(const size_t parameter_index, const char* & param) {
+        if(parameter_index == 1) {
+            param = pathname;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatxParameters<Riscv32>::get<unsigned int>(const size_t parameter_index, unsigned int & param) {
         if(parameter_index == 3) {
             param = mask;
             return true;
@@ -52,9 +104,31 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool StatxParameters<RiscvArchType>::get<statx_t*>(const size_t parameter_index, statx_t * & param) {
+    template<>
+    bool StatxParameters<Riscv64>::get<unsigned int>(const size_t parameter_index, unsigned int & param) {
+        if(parameter_index == 3) {
+            param = mask;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatxParameters<Riscv128>::get<unsigned int>(const size_t parameter_index, unsigned int & param) {
+        if(parameter_index == 3) {
+            param = mask;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatxParameters<Riscv32>::get<statx_t*>(const size_t parameter_index, statx_t * & param) {
         if(parameter_index == 4) {
             param = statxbuf;
             return true;
@@ -63,6 +137,27 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
+    template<>
+    template<>
+    bool StatxParameters<Riscv64>::get<statx_t*>(const size_t parameter_index, statx_t * & param) {
+        if(parameter_index == 4) {
+            param = statxbuf;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatxParameters<Riscv128>::get<statx_t*>(const size_t parameter_index, statx_t * & param) {
+        if(parameter_index == 4) {
+            param = statxbuf;
+            return true;
+        }
+
+        return false;
+    }
 
 template<>
 template<>
@@ -76,11 +171,11 @@ void Statx<Riscv32>::invoke<int>(Statx<Riscv32>::SystemCallParameterInterfaceTyp
         statx_t * statxbuf;
 
         bool has_values[5] = { false, false, false, false, false };
-        has_values[0] = parameters.get<int>(0, ofd);
-        has_values[1] = parameters.get<const char *>(1, nfd);
+        has_values[0] = parameters.get<int>(0, dirfd);
+        has_values[1] = parameters.get<const char *>(1, pathname);
         has_values[2] = parameters.get<int>(2, flags);
-        has_values[3] = parameters.get<unsigned int>(3, flags);
-        has_values[4] = parameters.get<statx_t *>(4, flags);
+        has_values[3] = parameters.get<unsigned int>(3, mask);
+        has_values[4] = parameters.get<statx_t *>(4, statxbuf);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]  && has_values[4]) {
             success = true;
@@ -101,11 +196,11 @@ void Statx<Riscv64>::invoke<int>(Statx<Riscv64>::SystemCallParameterInterfaceTyp
         statx_t * statxbuf;
 
         bool has_values[5] = { false, false, false, false, false };
-        has_values[0] = parameters.get<int>(0, ofd);
-        has_values[1] = parameters.get<const char *>(1, nfd);
+        has_values[0] = parameters.get<int>(0, dirfd);
+        has_values[1] = parameters.get<const char *>(1, pathname);
         has_values[2] = parameters.get<int>(2, flags);
-        has_values[3] = parameters.get<unsigned int>(3, flags);
-        has_values[4] = parameters.get<statx_t *>(4, flags);
+        has_values[3] = parameters.get<unsigned int>(3, mask);
+        has_values[4] = parameters.get<statx_t *>(4, statxbuf);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]  && has_values[4]) {
             success = true;
@@ -126,11 +221,11 @@ void Statx<Riscv128>::invoke<int>(Statx<Riscv128>::SystemCallParameterInterfaceT
         statx_t * statxbuf;
 
         bool has_values[5] = { false, false, false, false, false };
-        has_values[0] = parameters.get<int>(0, ofd);
-        has_values[1] = parameters.get<const char *>(1, nfd);
+        has_values[0] = parameters.get<int>(0, dirfd);
+        has_values[1] = parameters.get<const char *>(1, pathname);
         has_values[2] = parameters.get<int>(2, flags);
-        has_values[3] = parameters.get<unsigned int>(3, flags);
-        has_values[4] = parameters.get<statx_t *>(4, flags);
+        has_values[3] = parameters.get<unsigned int>(3, mask);
+        has_values[4] = parameters.get<statx_t *>(4, statxbuf);
 
         if(has_values[0] && has_values[1] && has_values[2] && has_values[3]  && has_values[4]) {
             success = true;

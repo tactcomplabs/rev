@@ -46,7 +46,6 @@ class Times : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = TimesInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

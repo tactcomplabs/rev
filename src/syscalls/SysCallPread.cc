@@ -14,9 +14,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType> 
+template<> 
 template<>
-bool PreadParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+bool PreadParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;
@@ -29,9 +29,39 @@ bool PreadParameters<RiscvArchType>::get<int>(const size_t parameter_index, int&
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool PreadParameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+template<>
+bool PreadParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = offset;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool PreadParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = offset;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool PreadParameters<Riscv32>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 1) {
         param = buf;
         return true;
@@ -40,9 +70,31 @@ bool PreadParameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index,
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool PreadParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
+template<>
+bool PreadParameters<Riscv64>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 1) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool PreadParameters<Riscv128>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 1) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool PreadParameters<Riscv32>::get<size_t>(const size_t parameter_index, size_t & param) {
     if(parameter_index == 2) {
         param = nbyte;
         return true;
@@ -51,6 +103,27 @@ bool PreadParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, s
     return false;
 }
 
+template<>
+template<>
+bool PreadParameters<Riscv64>::get<size_t>(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 2) {
+        param = nbyte;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool PreadParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 2) {
+        param = nbyte;
+        return true;
+    }
+
+    return false;
+}
 
 template<>
 template<>

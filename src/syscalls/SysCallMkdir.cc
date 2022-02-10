@@ -15,9 +15,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool MkdirParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool MkdirParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = pth;
         return true;
@@ -26,9 +26,52 @@ bool MkdirParameters<RiscvArchType>::get<std::string>(const size_t parameter_ind
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool MkdirParameters<RiscvArchType>::get<mode_t>(const size_t parameter_index, mode_t& param) {
+template<>
+bool MkdirParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdirParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdirParameters<Riscv32>::get<mode_t>(const size_t parameter_index, mode_t& param) {
+    if(parameter_index == 1) {
+        param = mode;
+        return true;
+    }
+
+    return false;
+}
+template<>
+template<>
+bool MkdirParameters<Riscv64>::get<mode_t>(const size_t parameter_index, mode_t& param) {
+    if(parameter_index == 1) {
+        param = mode;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdirParameters<Riscv128>::get<mode_t>(const size_t parameter_index, mode_t& param) {
     if(parameter_index == 1) {
         param = mode;
         return true;

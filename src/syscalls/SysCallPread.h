@@ -38,6 +38,9 @@ class PreadParameters : public virtual SystemCallParameterInterface<RiscvArchTyp
     size_t count() override {
         return 4UL;
     }
+
+    template<typename ParameterType>
+    bool get(const size_t parameter_index, ParameterType & param);
 };
 
 template<typename RiscvArchType=Riscv32>
@@ -47,7 +50,6 @@ class Pread : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = PreadInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

@@ -8,7 +8,6 @@
 // See LICENSE in the top level directory for licensing details
 //
 #include "SysCallMmap.h"
-#include <sys/mman.h>
 
 namespace SST { namespace RevCPU {
 

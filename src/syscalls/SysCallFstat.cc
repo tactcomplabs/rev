@@ -9,15 +9,11 @@
 //
 #include "SysCallFstat.h"
 
-#include <unistd.h>
-#include <signal.h>
-#include <sys/stat.h>
-
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool FstatParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool FstatParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;
@@ -26,9 +22,53 @@ bool FstatParameters<RiscvArchType>::get<int>(const size_t parameter_index, int&
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool FstatParameters<RiscvArchType>::get<stat*>(const size_t parameter_index, stat * & param) {
+template<>
+bool FstatParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FstatParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FstatParameters<Riscv32>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+    if(parameter_index == 1) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FstatParameters<Riscv64>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+    if(parameter_index == 1) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FstatParameters<Riscv128>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
     if(parameter_index == 1) {
         param = buf;
         return true;

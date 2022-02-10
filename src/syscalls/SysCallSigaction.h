@@ -44,15 +44,12 @@ class SigactionParameters : public virtual SystemCallParameterInterface<RiscvArc
 };
 
 template<typename RiscvArchType=Riscv32>
-class Sigaction : public virtual SigactionInterfaceType<RiscvArchType> {
+class Sigaction : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
 
     using SystemCallInterfaceType = SystemCallInterface<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
-    using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
-    
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
 
     Sigaction() {}

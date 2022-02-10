@@ -15,10 +15,31 @@
 
 namespace SST { namespace RevCPU {
 
-
-template<typename RiscvArchType>
 template<>
-bool UnameParameters<RiscvArchType>::get<utsname *>(const size_t parameter_index, utsname * & param) {
+template<>
+bool UnameParameters<Riscv32>::get<utsname *>(const size_t parameter_index, utsname * & param) {
+    if(parameter_index == 0) {
+        param = name;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool UnameParameters<Riscv64>::get<utsname *>(const size_t parameter_index, utsname * & param) {
+    if(parameter_index == 0) {
+        param = name;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool UnameParameters<Riscv128>::get<utsname *>(const size_t parameter_index, utsname * & param) {
     if(parameter_index == 0) {
         param = name;
         return true;

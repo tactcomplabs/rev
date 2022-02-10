@@ -15,9 +15,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool GetcwdParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool GetcwdParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = pth;
         return true;
@@ -26,9 +26,31 @@ bool GetcwdParameters<RiscvArchType>::get<std::string>(const size_t parameter_in
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool GetcwdParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t& param) {
+template<>
+bool GetcwdParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool GetcwdParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool GetcwdParameters<Riscv32>::get<size_t>(const size_t parameter_index, size_t& param) {
     if(parameter_index == 0) {
         param = size;
         return true;
@@ -37,7 +59,29 @@ bool GetcwdParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, 
     return false;
 }
 
-template<typename RiscvArchType>
+template<>
+template<>
+bool GetcwdParameters<Riscv64>::get<size_t>(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 0) {
+        param = size;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool GetcwdParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 0) {
+        param = size;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
 template<>
 void Getcwd<Riscv32>::invoke<std::string>(Getcwd<Riscv32>::SystemCallParameterInterfaceType & parameters, std::string & value) {
     if(parameters.count() == 2) {

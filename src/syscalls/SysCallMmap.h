@@ -13,6 +13,7 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <sys/mman.h>
 
 namespace SST { namespace RevCPU {
 
