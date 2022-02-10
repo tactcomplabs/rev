@@ -40,7 +40,6 @@ class Gettid : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = GettidInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;
