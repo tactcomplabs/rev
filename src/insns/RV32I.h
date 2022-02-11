@@ -84,6 +84,7 @@ namespace SST{
                        RevMem *M, RevInst Inst) {
         // c.jal $imm = jal x0, $imm
         Inst.rd = 1; // x1
+        Inst.imm = Inst.jumpTarget;
 
         return jal(F,R,M,Inst);
       }
@@ -137,6 +138,7 @@ namespace SST{
         // c.beqz %rs1, $imm = beq %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = Inst.offset;
 
         return beq(F,R,M,Inst);
       }
@@ -146,6 +148,7 @@ namespace SST{
         // c.bnez %rs1, $imm = bne %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = Inst.offset;
 
         return bne(F,R,M,Inst);
       }
