@@ -327,6 +327,7 @@ namespace SST{
       uint16_t    imm12;
       RevImmFunc  imm;
       RevInstF    format;
+      bool        compressed;
 
       RevInstDefaults(){
         opcode    = 0b00000000;
@@ -345,6 +346,7 @@ namespace SST{
         imm12     = 0b000000000000;
         imm       = FUnk;
         format    = RVTypeR;
+        compressed = false;
       }
     };
 

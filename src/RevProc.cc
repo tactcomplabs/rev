@@ -9,6 +9,7 @@
 //
 
 #include "RevProc.h"
+#include <bitset>
 
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
@@ -614,7 +615,24 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
   CompInst.funct3  = InstTable[Entry].funct3;
 
   // registers
-  CompInst.jumpTarget = ((Inst & 0b1111111111100) >> 2);
+  uint16_t offset = ((Inst & 0b1111111111100) >> 2);
+
+  //swizzle bits offset[11|4|9:8|10|6|7|3:1|5]
+  std::bitset<16> offsetBits(offset);
+  std::bitset<16> target;
+  target.reset();
+  target[0] = offsetBits[1];
+  target[1] = offsetBits[2];
+  target[2] = offsetBits[3];
+  target[3] = offsetBits[9];
+  target[4] = offsetBits[0];
+  target[5] = offsetBits[5];
+  target[6] = offsetBits[4];
+  target[7] = offsetBits[7];
+  target[8] = offsetBits[8];
+  target[9] = offsetBits[6];
+  target[10] = offsetBits[10];
+  CompInst.jumpTarget = ((u_int16_t)target.to_ulong()) << 1;
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -684,9 +702,9 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   std::map<uint32_t,unsigned>::iterator it = CEncToEntry.find(Enc);
   if( it == CEncToEntry.end() ){
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
+                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n opc=%x; funct2=%x, funct3=%x, funct4=%x, funct6=%x\n",
                   PC,
-                  Enc );
+                  Enc, opc, funct2, funct3, funct4, funct6 );
   }
 
   unsigned Entry = it->second;
@@ -786,6 +804,8 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
     DInst.rm = DECODE_FUNCT3(Inst);
   }
 
+  DInst.compressed = false;
+
   return DInst;
 }
 
@@ -828,6 +848,7 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry){
   if( IsFloat(Entry) ){
     DInst.rm = DECODE_FUNCT3(Inst);
   }
+  DInst.compressed = false;
 
   return DInst;
 }
@@ -872,6 +893,7 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry){
     DInst.rm = DECODE_FUNCT3(Inst);
   }
 
+  DInst.compressed = false;
   return DInst;
 }
 
@@ -907,6 +929,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry){
   // Size
   DInst.instSize  = 4;
 
+  DInst.compressed = false;
   return DInst;
 }
 
@@ -949,6 +972,7 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
   // Size
   DInst.instSize  = 4;
 
+  DInst.compressed = false;
   return DInst;
 }
 
@@ -988,6 +1012,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry){
   // Size
   DInst.instSize  = 4;
 
+  DInst.compressed = false;
   return DInst;
 }
 
@@ -1032,6 +1057,7 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry){
   // Size
   DInst.instSize  = 4;
 
+  DInst.compressed = false;
   return DInst;
 }
 
@@ -1358,6 +1384,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
 
+if((currentCycle % 100000000) == 0){
+  std::cout << "Current Cycle: " << currentCycle <<  " PC: " << std::hex << ExecPC << std::dec << std::endl;
+}
   // -- MAIN PROGRAM LOOP --
   //
   // If the clock is down to zero, then fetch the next instruction
