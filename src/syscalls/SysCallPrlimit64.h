@@ -13,10 +13,14 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
+#include <sys/types.h>
+#include <unistd.h>
 #include <sys/time.h> 
 #include <sys/resource.h>
 
 namespace SST { namespace RevCPU {
+
+using rlimit_t = struct rlimit64;
 
 template<typename RiscvArchType=Riscv32>
 using Prlimit64InterfaceType = SystemCallInterfaceCode<RiscvArchType, 261>;
@@ -28,8 +32,8 @@ class Prlimit64Parameters : public virtual SystemCallParameterInterface<RiscvArc
     
     pid_t pid; 
     int resource;
-    const rlimit *new_limit;
-    rlimit *old_limit;
+    rlimit_t *new_limit;
+    rlimit_t *old_limit;
 
     public:
 
@@ -49,7 +53,6 @@ class Prlimit64 : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = Prlimit64InterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

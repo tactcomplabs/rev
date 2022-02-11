@@ -14,9 +14,31 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool Mkdirat::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool MkdiratParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdiratParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdiratParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fd;
         return true;
@@ -25,9 +47,9 @@ bool Mkdirat::get<int>(const size_t parameter_index, int& param) {
     return false;
 }
     
-template<typename RiscvArchType>
 template<>
-bool Mkdirat::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool MkdiratParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 1) {
         param = pth;
         return true;
@@ -36,9 +58,53 @@ bool Mkdirat::get<std::string>(const size_t parameter_index, std::string& param)
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool Mkdirat::get<size_t>(const size_t parameter_index, size_t& param) {
+template<>
+bool MkdiratParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdiratParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdiratParameters<Riscv32>::get<size_t>(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 2) {
+        param = bcount;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdiratParameters<Riscv64>::get<size_t>(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 2) {
+        param = bcount;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MkdiratParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t& param) {
     if(parameter_index == 2) {
         param = bcount;
         return true;

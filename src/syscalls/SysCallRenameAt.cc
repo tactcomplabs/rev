@@ -11,9 +11,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool RenameatParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool RenameatParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fromfd;
         return true;
@@ -26,9 +26,69 @@ bool RenameatParameters<RiscvArchType>::get<int>(const size_t parameter_index, i
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool RenameatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool RenameatParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fromfd;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = tofd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool RenameatParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fromfd;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = tofd;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool RenameatParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = from;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = to;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool RenameatParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = from;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = to;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool RenameatParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 1) {
         param = from;
         return true;

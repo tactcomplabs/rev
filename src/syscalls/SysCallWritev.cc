@@ -11,9 +11,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool WritevParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool WritevParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;
@@ -25,9 +25,59 @@ bool WritevParameters<RiscvArchType>::get<int>(const size_t parameter_index, int
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool WritevParameters<RiscvArchType>::get<iovec_t>(const size_t parameter_index, iovec_t * & param) {
+template<>
+bool WritevParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = iovcnt;
+        return true;
+    }
+    return false;
+}
+
+template<>
+template<>
+bool WritevParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+    else if(parameter_index == 2) {
+        param = iovcnt;
+        return true;
+    }
+    return false;
+}
+
+template<>
+template<>
+bool WritevParameters<Riscv32>::get<iovec_t *>(const size_t parameter_index, iovec_t * & param) {
+    if(parameter_index == 0) {
+        param = iov;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool WritevParameters<Riscv64>::get<iovec_t *>(const size_t parameter_index, iovec_t * & param) {
+    if(parameter_index == 0) {
+        param = iov;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool WritevParameters<Riscv128>::get<iovec_t *>(const size_t parameter_index, iovec_t * & param) {
     if(parameter_index == 0) {
         param = iov;
         return true;

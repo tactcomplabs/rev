@@ -16,10 +16,9 @@
 
 namespace SST { namespace RevCPU {
 
-
-template<typename RiscvArchType>
 template<>
-bool GetrlimitParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool GetrlimitParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = resource;
         return true;
@@ -28,9 +27,31 @@ bool GetrlimitParameters<RiscvArchType>::get<int>(const size_t parameter_index, 
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool GetrlimitParameters<RiscvArchType>::get<rlimit*>(const size_t parameter_index, rlimit* & param) {
+template<>
+bool GetrlimitParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = resource;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool GetrlimitParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = resource;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool GetrlimitParameters<Riscv32>::get<rlimit*>(const size_t parameter_index, rlimit* & param) {
     if(parameter_index == 1) {
         param = rlp;
         return true;
@@ -39,6 +60,27 @@ bool GetrlimitParameters<RiscvArchType>::get<rlimit*>(const size_t parameter_ind
     return false;
 }
 
+template<>
+template<>
+bool GetrlimitParameters<Riscv64>::get<rlimit*>(const size_t parameter_index, rlimit* & param) {
+    if(parameter_index == 1) {
+        param = rlp;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool GetrlimitParameters<Riscv128>::get<rlimit*>(const size_t parameter_index, rlimit* & param) {
+    if(parameter_index == 1) {
+        param = rlp;
+        return true;
+    }
+
+    return false;
+}
 
 template<>
 template<>

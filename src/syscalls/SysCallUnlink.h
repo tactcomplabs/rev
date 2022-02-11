@@ -46,7 +46,6 @@ class Unlink : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = UnlinkInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;    

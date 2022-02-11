@@ -11,7 +11,7 @@
 
 #include <unistd.h>
 #include <signal.h>
-#include <sys/stat.h>
+#include <sys/syscall.h>
 
 namespace SST { namespace RevCPU {
 
@@ -59,7 +59,7 @@ void Settidaddress<Riscv32>::invoke<int>(Settidaddress<Riscv32>::SystemCallParam
 
         if(has_values) {
             success = true;
-            //value = syscall(SYS_set_tid_address, fdptr);
+            value = syscall(SYS_set_tid_address, fdptr);
         }
     }
 }
@@ -75,7 +75,7 @@ void Settidaddress<Riscv64>::invoke<int>(Settidaddress<Riscv64>::SystemCallParam
 
         if(has_values) {
             success = true;
-            //value = syscall(SYS_set_tid_address, fdptr);
+            value = syscall(SYS_set_tid_address, fdptr);
         }
     }
 }
@@ -91,7 +91,7 @@ void Settidaddress<Riscv128>::invoke<int>(Settidaddress<Riscv128>::SystemCallPar
 
         if(has_values) {
             success = true;
-            //value = syscall(SYS_set_tid_address, fdptr);
+            value = syscall(SYS_set_tid_address, fdptr);
         }
     }
 }

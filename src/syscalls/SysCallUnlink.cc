@@ -15,9 +15,19 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool Unlink<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool UnlinkParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+template<>
+template<>
+bool UnlinkParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = pth;
         return true;
@@ -26,12 +36,51 @@ bool Unlink<RiscvArchType>::get<std::string>(const size_t parameter_index, std::
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-void Unlink<RiscvArchType>::invoke<int>(Unlink<RiscvArchType>::SystemCallParameterInterfaceType & parameters, int & value) {
+template<>
+bool UnlinkParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+void Unlink<Riscv32>::invoke<int>(Unlink<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 1) {
         std::string pth{};
         
+        const bool has_values = parameters.get<std::string>(0, pth);
+        if(has_values) {
+            success = true;
+            value = unlink(pth.c_str());
+        }
+    }
+}
+
+template<>
+template<>
+void Unlink<Riscv64>::invoke<int>(Unlink<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        std::string pth{};
+
+        const bool has_values = parameters.get<std::string>(0, pth);
+        if(has_values) {
+            success = true;
+            value = unlink(pth.c_str());
+        }
+    }
+}
+
+template<>
+template<>
+void Unlink<Riscv128>::invoke<int>(Unlink<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 1) {
+        std::string pth{};
+
         const bool has_values = parameters.get<std::string>(0, pth);
         if(has_values) {
             success = true;

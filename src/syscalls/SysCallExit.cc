@@ -13,9 +13,19 @@
 namespace SST { namespace RevCPU {
 
 
-template<typename RiscvArchType>
 template<>
-bool ExitParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool ExitParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = status;
+        return true;
+    }
+
+    return false;
+}
+template<>
+template<>
+bool ExitParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = status;
         return true;
@@ -24,9 +34,20 @@ bool ExitParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& 
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-void Exit<RiscvArchType>::invoke<void_t>(Exit<RiscvArchType>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+template<>
+bool ExitParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = status;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+void Exit<Riscv32>::invoke<void_t>(Exit<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
@@ -37,6 +58,35 @@ void Exit<RiscvArchType>::invoke<void_t>(Exit<RiscvArchType>::SystemCallParamete
     }
 
     success = false;    
+}
+template<>
+template<>
+void Exit<Riscv64>::invoke<void_t>(Exit<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+    if(parameters.count() == 1) {
+        int status;
+        const bool has_value = parameters.get<int>(0, status);
+        if(has_value) {
+            success = true;
+            exit(status);
+        }
+    }
+
+    success = false;
+}
+
+template<>
+template<>
+void Exit<Riscv128>::invoke<void_t>(Exit<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+    if(parameters.count() == 1) {
+        int status;
+        const bool has_value = parameters.get<int>(0, status);
+        if(has_value) {
+            success = true;
+            exit(status);
+        }
+    }
+
+    success = false;
 }
 
 } /* end namespace RevCPU */ } // end namespace SST

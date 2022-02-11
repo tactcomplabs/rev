@@ -45,7 +45,6 @@ class Kill : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = KillInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

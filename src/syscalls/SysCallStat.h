@@ -15,7 +15,8 @@
 #include <type_traits>
 #include <string>
 #include <sys/types.h>
-#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace SST { namespace RevCPU {
 
@@ -52,7 +53,6 @@ class Stat : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = StatInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

@@ -9,6 +9,7 @@
 //
 #include "SysCallMremap.h"
 #include <stdlib.h>
+#include <sys/mman.h>
 
 namespace SST { namespace RevCPU {
 
@@ -19,7 +20,7 @@ bool MremapParameters<Riscv32>::get<void_ptr>(const size_t parameter_index, void
         param = oldaddr;
         return true;
     }
-    else if(parameter_index == 4 && (newaddr == std::nullptr) ) {
+    else if(parameter_index == 4 && (newaddr == NULL) ) {
         param = newaddr;
         return true;
     }
@@ -34,7 +35,7 @@ bool MremapParameters<Riscv64>::get<void_ptr>(const size_t parameter_index, void
         param = oldaddr;
         return true;
     }
-    else if(parameter_index == 4 && (newaddr == std::nullptr) ) {
+    else if(parameter_index == 4 && (newaddr == NULL) ) {
         param = newaddr;
         return true;
     }
@@ -49,7 +50,7 @@ bool MremapParameters<Riscv128>::get<void_ptr>(const size_t parameter_index, voi
         param = oldaddr;
         return true;
     }
-    else if(parameter_index == 4 && (newaddr == std::nullptr) ) {
+    else if(parameter_index == 4 && (newaddr == NULL) ) {
         param = newaddr;
         return true;
     }
@@ -137,7 +138,7 @@ bool MremapParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_
 
 template<>
 template<>
-void Mremap<Riscv32>::invoke<void_t>(Mremap<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mremap<Riscv32>::invoke<void*>(Mremap<Riscv32>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() > 4 && parameters.count() < 7) {
         void * oldaddr;
@@ -167,7 +168,7 @@ void Mremap<Riscv32>::invoke<void_t>(Mremap<Riscv32>::SystemCallParameterInterfa
 
 template<>
 template<>
-void Mremap<Riscv64>::invoke<void_t>(Mremap<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mremap<Riscv64>::invoke<void*>(Mremap<Riscv64>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() > 4 && parameters.count() < 7) {
         void * oldaddr;
@@ -197,7 +198,7 @@ void Mremap<Riscv64>::invoke<void_t>(Mremap<Riscv64>::SystemCallParameterInterfa
 
 template<>
 template<>
-void Mremap<Riscv128>::invoke<void_t>(Mremap<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Mremap<Riscv128>::invoke<void*>(Mremap<Riscv128>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() > 4 && parameters.count() < 7) {
         void * oldaddr;

@@ -13,8 +13,8 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
-
 #include <sys/resource.h>
+#include <time.h>
 #include <unistd.h>
 
 namespace SST { namespace RevCPU {
@@ -48,7 +48,6 @@ class Clockgettime : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = ClockgettimeInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

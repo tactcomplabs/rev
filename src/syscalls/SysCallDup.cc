@@ -14,9 +14,31 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool DupParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool DupParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool DupParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool DupParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;

@@ -15,7 +15,8 @@
 #include <type_traits>
 #include <string>
 #include <sys/types.h>
-#include <string>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 namespace SST { namespace RevCPU {
 
@@ -50,7 +51,6 @@ class Setrlimit : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = SetrlimitInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

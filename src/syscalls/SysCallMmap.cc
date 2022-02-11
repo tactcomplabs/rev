@@ -11,9 +11,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool MmapParameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+template<>
+bool MmapParameters<Riscv32>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 0) {
         param = addr;
         return true;
@@ -21,10 +21,32 @@ bool MmapParameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index, 
 
     return false;
 }
-        
-template<typename RiscvArchType>
+
 template<>
-bool MmapParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
+template<>
+bool MmapParameters<Riscv64>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 0) {
+        param = addr;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MmapParameters<Riscv128>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 0) {
+        param = addr;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MmapParameters<Riscv32>::get<size_t>(const size_t parameter_index, size_t & param) {
     if(parameter_index == 1) {
         param = len;
         return true;
@@ -33,9 +55,31 @@ bool MmapParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, si
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool MmapParameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
+template<>
+bool MmapParameters<Riscv64>::get<size_t>(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 1) {
+        param = len;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MmapParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t & param) {
+    if(parameter_index == 1) {
+        param = len;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MmapParameters<Riscv32>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 2) {
         param = prot;
         return true;
@@ -58,7 +102,53 @@ bool MmapParameters<RiscvArchType>::get<int>(const size_t parameter_index, int &
 
 template<>
 template<>
-void Mmap<Riscv32>::invoke<void_t>(Mmap<Riscv32>::SystemCallParameterInterfaceType & parameters, void* & value) {
+bool MmapParameters<Riscv64>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 2) {
+        param = prot;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = flags;
+        return true;
+    }
+    else if(parameter_index == 4) {
+        param = fd;
+        return true;
+    }
+    else if(parameter_index == 5) {
+        param = offset;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool MmapParameters<Riscv128>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 2) {
+        param = prot;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = flags;
+        return true;
+    }
+    else if(parameter_index == 4) {
+        param = fd;
+        return true;
+    }
+    else if(parameter_index == 5) {
+        param = offset;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+void Mmap<Riscv32>::invoke<void*>(Mmap<Riscv32>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;
@@ -75,7 +165,7 @@ void Mmap<Riscv32>::invoke<void_t>(Mmap<Riscv32>::SystemCallParameterInterfaceTy
         hasargs[2] = parameters.get<int>(2, prot);
         hasargs[3] = parameters.get<int>(3, flags);
         hasargs[4] = parameters.get<int>(4, fd);
-        hasargs[5] = parameters.get<int>(5, offset);
+        hasargs[5] = parameters.get<off_t>(5, offset);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4] && hasargs[5]) {
             success = true;
@@ -86,7 +176,7 @@ void Mmap<Riscv32>::invoke<void_t>(Mmap<Riscv32>::SystemCallParameterInterfaceTy
 
 template<>
 template<>
-void Mmap<Riscv64>::invoke<void_t>(Mmap<Riscv64>::SystemCallParameterInterfaceType & parameters, void* & value) {
+void Mmap<Riscv64>::invoke<void*>(Mmap<Riscv64>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;
@@ -103,7 +193,7 @@ void Mmap<Riscv64>::invoke<void_t>(Mmap<Riscv64>::SystemCallParameterInterfaceTy
         hasargs[2] = parameters.get<int>(2, prot);
         hasargs[3] = parameters.get<int>(3, flags);
         hasargs[4] = parameters.get<int>(4, fd);
-        hasargs[5] = parameters.get<int>(5, offset);
+        hasargs[5] = parameters.get<off_t>(5, offset);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4] && hasargs[5]) {
             success = true;
@@ -114,7 +204,7 @@ void Mmap<Riscv64>::invoke<void_t>(Mmap<Riscv64>::SystemCallParameterInterfaceTy
 
 template<>
 template<>
-void Mmap<Riscv128>::invoke<void_t>(Mmap<Riscv128>::SystemCallParameterInterfaceType & parameters, void* & value) {
+void Mmap<Riscv128>::invoke<void*>(Mmap<Riscv128>::SystemCallParameterInterfaceType & parameters, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;
@@ -131,7 +221,7 @@ void Mmap<Riscv128>::invoke<void_t>(Mmap<Riscv128>::SystemCallParameterInterface
         hasargs[2] = parameters.get<int>(2, prot);
         hasargs[3] = parameters.get<int>(3, flags);
         hasargs[4] = parameters.get<int>(4, fd);
-        hasargs[5] = parameters.get<int>(5, offset);
+        hasargs[5] = parameters.get<off_t>(5, offset);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3] && hasargs[4] && hasargs[5]) {
             success = true;

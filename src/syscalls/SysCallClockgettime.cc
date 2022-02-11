@@ -9,16 +9,12 @@
 //
 #include "SysCallClockgettime.h"
 
-#include <unistd.h>
-#include <signal.h>
-#include <sys/stat.h>
-
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool ClockgettimeParameters<RiscvArchType>::get<clockid_t>(const size_t parameter_index, clockid_t& param) {
-    if(parameter_index = 0) {
+template<>
+bool ClockgettimeParameters<Riscv32>::get<clockid_t>(const size_t parameter_index, clockid_t& param) {
+    if(parameter_index == 0) {
         param = clkid;
         return true;
     }
@@ -26,9 +22,31 @@ bool ClockgettimeParameters<RiscvArchType>::get<clockid_t>(const size_t paramete
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool ClockgettimeParameters<RiscvArchType>::get<timespec*>(const size_t parameter_index, timespec* & param) {
+template<>
+bool ClockgettimeParameters<Riscv64>::get<clockid_t>(const size_t parameter_index, clockid_t& param) {
+    if(parameter_index == 0) {
+        param = clkid;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ClockgettimeParameters<Riscv128>::get<clockid_t>(const size_t parameter_index, clockid_t& param) {
+    if(parameter_index == 0) {
+        param = clkid;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ClockgettimeParameters<Riscv32>::get<timespec*>(const size_t parameter_index, timespec* & param) {
    if(parameter_index == 1) {
        param = tp;
        return true;
@@ -37,6 +55,27 @@ bool ClockgettimeParameters<RiscvArchType>::get<timespec*>(const size_t paramete
    return false;
 }
 
+template<>
+template<>
+bool ClockgettimeParameters<Riscv64>::get<timespec*>(const size_t parameter_index, timespec* & param) {
+   if(parameter_index == 1) {
+       param = tp;
+       return true;
+   }
+
+   return false;
+}
+
+template<>
+template<>
+bool ClockgettimeParameters<Riscv128>::get<timespec*>(const size_t parameter_index, timespec* & param) {
+   if(parameter_index == 1) {
+       param = tp;
+       return true;
+   }
+
+   return false;
+}
 
 template<>
 template<>

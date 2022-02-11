@@ -14,9 +14,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool ReadlinkatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool ReadlinkatParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = path;
         return true;
@@ -25,9 +25,31 @@ bool ReadlinkatParameters<RiscvArchType>::get<std::string>(const size_t paramete
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool ReadlinkatParameters<RiscvArchType>::get<char*>(const size_t parameter_index, char* & param) {
+template<>
+bool ReadlinkatParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = path;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ReadlinkatParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = path;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ReadlinkatParameters<Riscv32>::get<char*>(const size_t parameter_index, char* & param) {
     if(parameter_index == 1) {
         param = buf;
         return true;
@@ -36,9 +58,53 @@ bool ReadlinkatParameters<RiscvArchType>::get<char*>(const size_t parameter_inde
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool ReadlinkatParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t& param) {
+template<>
+bool ReadlinkatParameters<Riscv64>::get<char*>(const size_t parameter_index, char* & param) {
+    if(parameter_index == 1) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ReadlinkatParameters<Riscv128>::get<char*>(const size_t parameter_index, char* & param) {
+    if(parameter_index == 1) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ReadlinkatParameters<Riscv32>::get<size_t>(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 2) {
+        param = bufsize;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ReadlinkatParameters<Riscv64>::get<size_t>(const size_t parameter_index, size_t& param) {
+    if(parameter_index == 2) {
+        param = bufsize;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ReadlinkatParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t& param) {
     if(parameter_index == 2) {
         param = bufsize;
         return true;
@@ -57,13 +123,13 @@ void Readlinkat<Riscv32>::invoke<ssize_t>(Readlinkat<Riscv32>::SystemCallParamet
         size_t bufsize;
 
         bool has_values[3] = { false, false, false };
-        has_values[0] = parameters.get<int>(0, path);
+        has_values[0] = parameters.get<std::string>(0, path);
         has_values[1] = parameters.get<char *>(1, buf);
         has_values[2] = parameters.get<size_t>(2, bufsize);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
-            value = readlink(path, buf, bufsize);
+            value = readlink(path.c_str(), buf, bufsize);
         }
     }
 }
@@ -78,13 +144,13 @@ void Readlinkat<Riscv64>::invoke<ssize_t>(Readlinkat<Riscv64>::SystemCallParamet
         size_t bufsize;
 
         bool has_values[3] = { false, false, false };
-        has_values[0] = parameters.get<int>(0, path);
+        has_values[0] = parameters.get<std::string>(0, path);
         has_values[1] = parameters.get<char *>(1, buf);
         has_values[2] = parameters.get<size_t>(2, bufsize);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
-            value = readlink(path, buf, bufsize);
+            value = readlink(path.c_str(), buf, bufsize);
         }
     }
 }
@@ -99,13 +165,13 @@ void Readlinkat<Riscv128>::invoke<ssize_t>(Readlinkat<Riscv128>::SystemCallParam
         size_t bufsize;
 
         bool has_values[3] = { false, false, false };
-        has_values[0] = parameters.get<int>(0, path);
+        has_values[0] = parameters.get<std::string>(0, path);
         has_values[1] = parameters.get<char *>(1, buf);
         has_values[2] = parameters.get<size_t>(2, bufsize);
 
         if(has_values[0] && has_values[1] && has_values[2]) {
             success = true;
-            value = readlink(path, buf, bufsize);
+            value = readlink(path.c_str(), buf, bufsize);
         }
     }
 }

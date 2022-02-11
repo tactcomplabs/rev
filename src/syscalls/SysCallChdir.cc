@@ -15,9 +15,31 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool ChdirParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool ChdirParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ChdirParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 0) {
+        param = pth;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool ChdirParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 0) {
         param = pth;
         return true;

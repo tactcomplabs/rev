@@ -12,9 +12,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool Prlimit64Parameters<RiscvArchType>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+template<>
+bool Prlimit64Parameters<Riscv32>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
     if(parameter_index == 2) {
         param = old_limit;
         return true;
@@ -27,9 +27,69 @@ bool Prlimit64Parameters<RiscvArchType>::get<void_ptr>(const size_t parameter_in
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool Prlimit64Parameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
+template<>
+bool Prlimit64Parameters<Riscv64>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 2) {
+        param = old_limit;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = new_limit;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool Prlimit64Parameters<Riscv128>::get<void_ptr>(const size_t parameter_index, void_ptr & param) {
+    if(parameter_index == 2) {
+        param = old_limit;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = new_limit;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool Prlimit64Parameters<Riscv32>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = pid;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = resource;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool Prlimit64Parameters<Riscv64>::get<int>(const size_t parameter_index, int & param) {
+    if(parameter_index == 0) {
+        param = pid;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = resource;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool Prlimit64Parameters<Riscv128>::get<int>(const size_t parameter_index, int & param) {
     if(parameter_index == 0) {
         param = pid;
         return true;
@@ -50,19 +110,19 @@ void Prlimit64<Riscv32>::invoke<int>(Prlimit64<Riscv32>::SystemCallParameterInte
 
         pid_t pid; 
         int resource;
-        const rlimit *new_limit;
-        rlimit *old_limit;
+        rlimit_t *new_limit;
+        rlimit_t *old_limit;
 
         bool hasargs[4] = { false, false, false, false };
 
         hasargs[0] = parameters.get<pid_t>(0, pid);
         hasargs[1] = parameters.get<int>(1, resource);
-        hasargs[2] = parameters.get<rlimit *>(2, new_limit);
-        hasargs[3] = parameters.get<rlimit *>(3, old_limit);
+        hasargs[2] = parameters.get<rlimit_t *>(2, new_limit);
+        hasargs[3] = parameters.get<rlimit_t *>(3, old_limit);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
-            value = prlimit64(pid, resource, new_limit, old_limit);
+            value = prlimit64(pid, (__rlimit_resource)resource, (const rlimit64*)new_limit, old_limit);
         }
     }
 }
@@ -75,19 +135,19 @@ void Prlimit64<Riscv64>::invoke<int>(Prlimit64<Riscv64>::SystemCallParameterInte
 
         pid_t pid; 
         int resource;
-        const rlimit *new_limit;
-        rlimit *old_limit;
+        rlimit_t *new_limit;
+        rlimit_t *old_limit;
 
         bool hasargs[4] = { false, false, false, false };
 
         hasargs[0] = parameters.get<pid_t>(0, pid);
         hasargs[1] = parameters.get<int>(1, resource);
-        hasargs[2] = parameters.get<rlimit *>(2, new_limit);
-        hasargs[3] = parameters.get<rlimit *>(3, old_limit);
+        hasargs[2] = parameters.get<rlimit_t *>(2, new_limit);
+        hasargs[3] = parameters.get<rlimit_t *>(3, old_limit);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
-            value = prlimit64(pid, resource, new_limit, old_limit);
+            value = prlimit64(pid, (__rlimit_resource)resource, (const rlimit64*)new_limit, old_limit);
         }
     }
 }
@@ -100,19 +160,19 @@ void Prlimit64<Riscv128>::invoke<int>(Prlimit64<Riscv128>::SystemCallParameterIn
 
         pid_t pid; 
         int resource;
-        const rlimit *new_limit;
-        rlimit *old_limit;
+        rlimit_t *new_limit;
+        rlimit_t *old_limit;
 
         bool hasargs[4] = { false, false, false, false };
 
         hasargs[0] = parameters.get<pid_t>(0, pid);
         hasargs[1] = parameters.get<int>(1, resource);
-        hasargs[2] = parameters.get<rlimit *>(2, new_limit);
-        hasargs[3] = parameters.get<rlimit *>(3, old_limit);
+        hasargs[2] = parameters.get<rlimit_t *>(2, new_limit);
+        hasargs[3] = parameters.get<rlimit_t *>(3, old_limit);
 
         if(hasargs[0] && hasargs[1] && hasargs[2] && hasargs[3]) {
             success = true;
-            value = prlimit64(pid, resource, new_limit, old_limit);
+            value = prlimit64(pid, (__rlimit_resource)resource, (const rlimit64*)new_limit, old_limit);
         }
     }
 }

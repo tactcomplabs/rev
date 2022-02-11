@@ -13,9 +13,9 @@
 
 namespace SST { namespace RevCPU {
 
-    template<typename RiscvArchType>
     template<>
-    bool Ftruncate<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+    template<>
+    bool FtruncateParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
         if(parameter_index == 0) {
             param = fildes;
             return true;
@@ -24,9 +24,31 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool Ftruncate<RiscvArchType>::get<off_t>(const size_t parameter_index, off_t& param) {
+    template<>
+    bool FtruncateParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = fildes;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool FtruncateParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+        if(parameter_index == 0) {
+            param = fildes;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool FtruncateParameters<Riscv32>::get<off_t>(const size_t parameter_index, off_t& param) {
         if(parameter_index == 1) {
             param = length;
             return true;
@@ -35,6 +57,27 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
+    template<>
+    template<>
+    bool FtruncateParameters<Riscv64>::get<off_t>(const size_t parameter_index, off_t& param) {
+        if(parameter_index == 1) {
+            param = length;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool FtruncateParameters<Riscv128>::get<off_t>(const size_t parameter_index, off_t& param) {
+        if(parameter_index == 1) {
+            param = length;
+            return true;
+        }
+
+        return false;
+    }
 
 template<>
 template<>

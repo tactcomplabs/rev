@@ -14,9 +14,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool IoctlParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool IoctlParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fildes;
         return true;
@@ -25,9 +25,53 @@ bool IoctlParameters<RiscvArchType>::get<int>(const size_t parameter_index, int&
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool IoctlParameters<RiscvArchType>::get<unsigned long>(const size_t parameter_index, unsigned long& param) {
+template<>
+bool IoctlParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool IoctlParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fildes;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool IoctlParameters<Riscv32>::get<unsigned long>(const size_t parameter_index, unsigned long& param) {
+    if(parameter_index == 1) {
+        param = request;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool IoctlParameters<Riscv64>::get<unsigned long>(const size_t parameter_index, unsigned long& param) {
+    if(parameter_index == 1) {
+        param = request;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool IoctlParameters<Riscv128>::get<unsigned long>(const size_t parameter_index, unsigned long& param) {
     if(parameter_index == 1) {
         param = request;
         return true;

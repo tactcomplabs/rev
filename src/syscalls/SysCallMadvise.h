@@ -48,7 +48,6 @@ class Madvise : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = MadviseInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

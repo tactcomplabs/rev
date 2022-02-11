@@ -13,10 +13,10 @@
 
 #include "SystemCallInterface.h"
 #include <type_traits>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <signal.h>
 
 namespace SST { namespace RevCPU {
 
@@ -50,7 +50,6 @@ class Sigprocmask : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = SigprocmaskInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

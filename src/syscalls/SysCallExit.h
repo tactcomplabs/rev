@@ -43,7 +43,6 @@ class Exit : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = ExitInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

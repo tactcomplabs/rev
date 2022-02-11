@@ -51,7 +51,6 @@ class Mremap : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = MremapInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

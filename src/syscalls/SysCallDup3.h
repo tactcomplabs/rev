@@ -46,7 +46,6 @@ class Dup3 : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = Dup3InterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

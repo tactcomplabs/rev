@@ -14,9 +14,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool Kill<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool KillParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = pid;
         return true;
@@ -29,9 +29,75 @@ bool Kill<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-void Kill<RiscvArchType>::invoke<int>(Kill<RiscvArchType>::SystemCallParameterInterfaceType & parameters, int & value) {
+template<>
+bool KillParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = pid;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = sig;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool KillParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = pid;
+        return true;
+    }
+    else if(parameter_index == 1) {
+        param = sig;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+void Kill<Riscv32>::invoke<int>(Kill<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
+        pid_t pid;
+        int sig;
+
+        bool has_values[2] = { false, false };
+        has_values[0] = parameters.get<pid_t>(0, pid);
+        has_values[1] = parameters.get<int>(1, sig);
+
+        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
+            success = true;
+            value = kill(pid, sig);
+        }
+    }
+}
+
+template<>
+template<>
+void Kill<Riscv64>::invoke<int>(Kill<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+    if(parameters.count() == 2) {
+        pid_t pid;
+        int sig;
+
+        bool has_values[2] = { false, false };
+        has_values[0] = parameters.get<pid_t>(0, pid);
+        has_values[1] = parameters.get<int>(1, sig);
+
+        if(has_values[0] && has_values[1] && pid != -1 && sig != -1) {
+            success = true;
+            value = kill(pid, sig);
+        }
+    }
+}
+
+template<>
+template<>
+void Kill<Riscv128>::invoke<int>(Kill<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
     if(parameters.count() == 2) {
         pid_t pid;
         int sig;

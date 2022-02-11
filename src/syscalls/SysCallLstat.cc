@@ -11,9 +11,9 @@
 
 namespace SST { namespace RevCPU {
 
-    template<typename RiscvArchType>
     template<>
-    bool LstatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+    template<>
+    bool LstatParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
         if(parameter_index == 0) {
             param = pth;
             return true;
@@ -22,9 +22,31 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool LstatParameters<RiscvArchType>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+    template<>
+    bool LstatParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+        if(parameter_index == 0) {
+            param = pth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool LstatParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+        if(parameter_index == 0) {
+            param = pth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool LstatParameters<Riscv32>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
         if(parameter_index == 1) {
             param = buf;
             return true;
@@ -33,6 +55,27 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
+    template<>
+    template<>
+    bool LstatParameters<Riscv64>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+        if(parameter_index == 1) {
+            param = buf;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool LstatParameters<Riscv128>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+        if(parameter_index == 1) {
+            param = buf;
+            return true;
+        }
+
+        return false;
+    }
 
 template<>
 template<>

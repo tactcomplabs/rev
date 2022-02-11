@@ -9,15 +9,12 @@
 //
 #include "SysCallStat.h"
 
-#include <unistd.h>
-#include <sys/stat.h>
-
 namespace SST { namespace RevCPU {
 
 
-    template<typename RiscvArchType>
     template<>
-    bool StatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+    template<>
+    bool StatParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
         if(parameter_index == 0) {
             param = pth;
             return true;
@@ -26,9 +23,31 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool StatParameters<RiscvArchType>::get<stat_t*>(const size_t parameter_index, stat_t* & param) {
+    template<>
+    bool StatParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+        if(parameter_index == 0) {
+            param = pth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+        if(parameter_index == 0) {
+            param = pth;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatParameters<Riscv32>::get<stat_t*>(const size_t parameter_index, stat_t* & param) {
         if(parameter_index == 0) {
             param = buf;
             return true;
@@ -37,6 +56,27 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
+    template<>
+    template<>
+    bool StatParameters<Riscv64>::get<stat_t*>(const size_t parameter_index, stat_t* & param) {
+        if(parameter_index == 0) {
+            param = buf;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool StatParameters<Riscv128>::get<stat_t*>(const size_t parameter_index, stat_t* & param) {
+        if(parameter_index == 0) {
+            param = buf;
+            return true;
+        }
+
+        return false;
+    }
 
 template<>
 template<>
@@ -48,11 +88,11 @@ void Stat<Riscv32>::invoke<int>(Stat<Riscv32>::SystemCallParameterInterfaceType 
         
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[1] = parameters.get<stat_t *>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;
-            value = stat(fil.c_str(), buf);
+            value = stat(pth.c_str(), buf);
         }
     }
 }
@@ -67,11 +107,11 @@ void Stat<Riscv64>::invoke<int>(Stat<Riscv64>::SystemCallParameterInterfaceType 
         
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[1] = parameters.get<stat_t *>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;
-            value = stat(fil.c_str(), buf);
+            value = stat(pth.c_str(), buf);
         }
     }
 }
@@ -86,11 +126,11 @@ void Stat<Riscv128>::invoke<int>(Stat<Riscv128>::SystemCallParameterInterfaceTyp
         
         bool has_values[2] = { false, false };
         has_values[0] = parameters.get<std::string>(0, pth);
-        has_values[1] = parameters.get<stat *>(1, buf);
+        has_values[1] = parameters.get<stat_t *>(1, buf);
 
         if(has_values[0] && has_values[1]) {
             success = true;
-            value = stat(fil.c_str(), buf);
+            value = stat(pth.c_str(), buf);
         }
     }
 }

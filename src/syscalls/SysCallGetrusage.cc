@@ -15,10 +15,30 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool GetrusageParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
-    if(parameter_index = 0) {
+template<>
+bool GetrusageParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = who;
+        return true;
+    }
+
+    return false;
+}
+template<>
+template<>
+bool GetrusageParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = who;
+        return true;
+    }
+
+    return false;
+}
+template<>
+template<>
+bool GetrusageParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
         param = who;
         return true;
     }
@@ -26,9 +46,9 @@ bool GetrusageParameters<RiscvArchType>::get<int>(const size_t parameter_index, 
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool GetrusageParameters<RiscvArchType>::get<rusage*>(const size_t parameter_index, rusage* & param) {
+template<>
+bool GetrusageParameters<Riscv32>::get<rusage*>(const size_t parameter_index, rusage* & param) {
     if(parameter_index == 1) {
         param = r_usage;
         return true;
@@ -37,6 +57,27 @@ bool GetrusageParameters<RiscvArchType>::get<rusage*>(const size_t parameter_ind
     return false;
 }
 
+template<>
+template<>
+bool GetrusageParameters<Riscv64>::get<rusage*>(const size_t parameter_index, rusage* & param) {
+    if(parameter_index == 1) {
+        param = r_usage;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool GetrusageParameters<Riscv128>::get<rusage*>(const size_t parameter_index, rusage* & param) {
+    if(parameter_index == 1) {
+        param = r_usage;
+        return true;
+    }
+
+    return false;
+}
 
 template<>
 template<>

@@ -48,7 +48,6 @@ class Getrusage : public virtual SystemCallInterface<RiscvArchType> {
 
     using SystemCallInterfaceType = GetrusageInterfaceType<RiscvArchType>;
 
-    using RiscvModeIntegerType = typename SystemCallInterfaceType::RiscvModeIntegerType;
     using SystemCallCodeType = typename SystemCallInterfaceType::SystemCallCodeType;
     
     using SystemCallParameterInterfaceType = SystemCallParameterInterface<RiscvArchType>;

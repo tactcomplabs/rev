@@ -14,9 +14,9 @@
 
 namespace SST { namespace RevCPU {
 
-template<typename RiscvArchType>
 template<>
-bool FstatatParameters<RiscvArchType>::get<int>(const size_t parameter_index, int& param) {
+template<>
+bool FstatatParameters<Riscv32>::get<int>(const size_t parameter_index, int& param) {
     if(parameter_index == 0) {
         param = fd;
         return true;
@@ -28,9 +28,37 @@ bool FstatatParameters<RiscvArchType>::get<int>(const size_t parameter_index, in
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool FstatatParameters<RiscvArchType>::get<std::string>(const size_t parameter_index, std::string& param) {
+template<>
+bool FstatatParameters<Riscv64>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = flag;
+        return true;
+    }
+    return false;
+}
+
+template<>
+template<>
+bool FstatatParameters<Riscv128>::get<int>(const size_t parameter_index, int& param) {
+    if(parameter_index == 0) {
+        param = fd;
+        return true;
+    }
+    else if(parameter_index == 3) {
+        param = flag;
+        return true;
+    }
+    return false;
+}
+
+template<>
+template<>
+bool FstatatParameters<Riscv32>::get<std::string>(const size_t parameter_index, std::string& param) {
     if(parameter_index == 1) {
         param = path;
         return true;
@@ -39,9 +67,31 @@ bool FstatatParameters<RiscvArchType>::get<std::string>(const size_t parameter_i
     return false;
 }
 
-template<typename RiscvArchType>
 template<>
-bool FstatatParameters<RiscvArchType>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+template<>
+bool FstatatParameters<Riscv64>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = path;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FstatatParameters<Riscv128>::get<std::string>(const size_t parameter_index, std::string& param) {
+    if(parameter_index == 1) {
+        param = path;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FstatatParameters<Riscv32>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
     if(parameter_index == 2) {
         param = buf;
         return true;
@@ -50,6 +100,27 @@ bool FstatatParameters<RiscvArchType>::get<stat_t*>(const size_t parameter_index
     return false;
 }
 
+template<>
+template<>
+bool FstatatParameters<Riscv64>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+    if(parameter_index == 2) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+template<>
+bool FstatatParameters<Riscv128>::get<stat_t*>(const size_t parameter_index, stat_t * & param) {
+    if(parameter_index == 2) {
+        param = buf;
+        return true;
+    }
+
+    return false;
+}
 
 template<>
 template<>

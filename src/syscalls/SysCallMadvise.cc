@@ -14,10 +14,9 @@
 
 namespace SST { namespace RevCPU {
 
-
-    template<typename RiscvArchType>
     template<>
-    bool MadviseParameters<RiscvArchType>::get<size_t>(const size_t parameter_index, size_t & param) {
+    template<>
+    bool MadviseParameters<Riscv32>::get<size_t>(const size_t parameter_index, size_t & param) {
         if(parameter_index == 1) {
             param = length;
             return true;
@@ -26,9 +25,31 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool MadviseParameters<RiscvArchType>::get<int>(const size_t parameter_index, int & param) {
+    template<>
+    bool MadviseParameters<Riscv64>::get<size_t>(const size_t parameter_index, size_t & param) {
+        if(parameter_index == 1) {
+            param = length;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool MadviseParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t & param) {
+        if(parameter_index == 1) {
+            param = length;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool MadviseParameters<Riscv32>::get<int>(const size_t parameter_index, int & param) {
         if(parameter_index == 2) {
             param = advice;
             return true;
@@ -37,9 +58,31 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
-    template<typename RiscvArchType>
     template<>
-    bool MadviseParameters<RiscvArchType>::get<void*>(const size_t parameter_index, void * & param) {
+    template<>
+    bool MadviseParameters<Riscv64>::get<int>(const size_t parameter_index, int & param) {
+        if(parameter_index == 2) {
+            param = advice;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool MadviseParameters<Riscv128>::get<int>(const size_t parameter_index, int & param) {
+        if(parameter_index == 2) {
+            param = advice;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool MadviseParameters<Riscv32>::get<void*>(const size_t parameter_index, void * & param) {
         if(parameter_index == 0) {
             param = addr;
             return true;
@@ -48,6 +91,27 @@ namespace SST { namespace RevCPU {
         return false;
     }
 
+    template<>
+    template<>
+    bool MadviseParameters<Riscv64>::get<void*>(const size_t parameter_index, void * & param) {
+        if(parameter_index == 0) {
+            param = addr;
+            return true;
+        }
+
+        return false;
+    }
+
+    template<>
+    template<>
+    bool MadviseParameters<Riscv128>::get<void*>(const size_t parameter_index, void * & param) {
+        if(parameter_index == 0) {
+            param = addr;
+            return true;
+        }
+
+        return false;
+    }
 
 template<>
 template<>
