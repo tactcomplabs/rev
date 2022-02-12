@@ -84,6 +84,8 @@
                     (r) = (r) | (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
+// Swizzle Macro
+#define SWIZZLE(q,in,start,dest ) q |= ((in >> start) & 1) << dest;
 
 /// td_u32: convert u32 in two's complement to decimal
 static uint32_t td_u32(uint32_t binary, unsigned bits){

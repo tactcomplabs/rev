@@ -471,6 +471,16 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
   CompInst.imm     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm    |= ((Inst & 0b1000000000000)>>7);
 
+  //swizzle: offset[5] offset[4:3|8:6]
+  std::bitset<16> offset(0);
+  std::bitset<32> imm(CompInst.imm);
+  offset[0] = imm[3]; 
+  offset[1] = imm[4]; 
+  offset[2] = imm[5];
+  offset[3] = imm[0];
+  offset[4] = imm[1];
+  offset[5] = imm[2];
+  CompInst.imm = offset.to_ulong(); 
   CompInst.instSize = 2;
   CompInst.compressed = true;
 
@@ -530,8 +540,10 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
   // registers
   CompInst.rd      = ((Inst & 0b11100) >> 2);
   CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
-  CompInst.imm     = ((Inst & 0b1100000) >> 5);
-  CompInst.imm    |= ((Inst & 0b1110000000000) >> 8);
+  //CompInst.imm     = ((Inst & 0b1100000) >> 5);
+  //CompInst.imm    |= ((Inst & 0b1110000000000) >> 8);
+  CompInst.imm     = ((Inst & 0b1100000) >> 2);
+  CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -552,8 +564,8 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
   // registers
   CompInst.rs2     = ((Inst & 0b11100) >> 2);
   CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
-  CompInst.imm     = ((Inst & 0b1100000) >> 5);
-  CompInst.imm    |= ((Inst & 0b1110000000000) >> 8);
+  CompInst.imm     = ((Inst & 0b1100000) >> 2);
+  CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
