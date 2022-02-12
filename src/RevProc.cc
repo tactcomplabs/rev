@@ -471,16 +471,18 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
   CompInst.imm     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm    |= ((Inst & 0b1000000000000)>>7);
 
-  //swizzle: offset[5] offset[4:3|8:6]
-  std::bitset<16> offset(0);
-  std::bitset<32> imm(CompInst.imm);
-  offset[0] = imm[3]; 
-  offset[1] = imm[4]; 
-  offset[2] = imm[5];
-  offset[3] = imm[0];
-  offset[4] = imm[1];
-  offset[5] = imm[2];
-  CompInst.imm = offset.to_ulong(); 
+  if(CompInst.opcode == 0b10){
+    //swizzle: offset[5] offset[4:3|8:6]
+    std::bitset<16> offset(0);
+    std::bitset<32> imm(CompInst.imm);
+    offset[0] = imm[3]; 
+    offset[1] = imm[4]; 
+    offset[2] = imm[5];
+    offset[3] = imm[0];
+    offset[4] = imm[1];
+    offset[5] = imm[2];
+    CompInst.imm = offset.to_ulong(); 
+  }
   CompInst.instSize = 2;
   CompInst.compressed = true;
 
@@ -501,6 +503,15 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry){
   CompInst.rs2     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm     = ((Inst & 0b1111110000000) >> 7);
 
+  //Swizzle the immd
+  if((CompInst.funct3 == 0b101) || (CompInst.funct3 == 0b111)){
+    uint32_t tmp = CompInst.imm & 0b111;
+    CompInst.imm = (CompInst.imm >> 3) | (tmp << 3);
+  }else{
+    uint32_t tmp = CompInst.imm & 0b11;
+    CompInst.imm = (CompInst.imm >> 2) | (tmp << 4);
+  }
+
   CompInst.instSize = 2;
   CompInst.compressed = true;
 
@@ -520,6 +531,20 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry){
   // registers
   CompInst.rd      = ((Inst & 0b11100) >> 2);
   CompInst.imm     = ((Inst & 0b1111111100000) >> 5);
+
+  //swizzle: nzuimm[5:4|9:6|2|3]
+  std::bitset<32> imm(CompInst.imm);
+  std::bitset<32> tmp(0);
+  tmp[0] = imm[1];
+  tmp[1] = imm[0];
+  tmp[2] = imm[6];
+  tmp[3] = imm[7];
+  tmp[4] = imm[2];
+  tmp[5] = imm[3];
+  tmp[6] = imm[4];
+  tmp[7] = imm[5];
+
+  CompInst.imm = tmp.to_ulong();
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -542,8 +567,14 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
   CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
   //CompInst.imm     = ((Inst & 0b1100000) >> 5);
   //CompInst.imm    |= ((Inst & 0b1110000000000) >> 8);
-  CompInst.imm     = ((Inst & 0b1100000) >> 2);
-  CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
+  if(CompInst.funct3 == 0b010){
+    CompInst.imm     = ((Inst & 0b0100000) >> 1);         //offset[6]
+    CompInst.imm    |= ((Inst & 0b1110000000000) >> 6);   //offset[5:3]
+    CompInst.imm    |= ((Inst & 0b1000000) >> 6);          //offset[2]
+  }else{
+    CompInst.imm     = ((Inst & 0b1100000) >> 2);
+    CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
+  }
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -564,8 +595,16 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
   // registers
   CompInst.rs2     = ((Inst & 0b11100) >> 2);
   CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
-  CompInst.imm     = ((Inst & 0b1100000) >> 2);
-  CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
+  //CompInst.imm     = ((Inst & 0b1100000) >> 2);
+  //CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
+  if(CompInst.funct3 == 0b110){
+    CompInst.imm     = ((Inst & 0b0100000) >> 1);         //offset[6]
+    CompInst.imm    |= ((Inst & 0b1110000000000) >> 6);   //offset[5:3]
+    CompInst.imm    |= ((Inst & 0b1000000) >> 6);          //offset[2]
+  }else{
+    CompInst.imm     = ((Inst & 0b1100000) >> 2);
+    CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
+  }
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -610,6 +649,20 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
   CompInst.offset  = ((Inst & 0b1111100) >> 2);
   CompInst.offset |= ((Inst & 0b1110000000000) >> 5);
 
+  //swizzle: offset[8|4:3]  offset[7:6|2:1|5]
+  std::bitset<16> tmp(0);
+  std::bitset<16> o(CompInst.offset);
+  tmp[0] = o[1];
+  tmp[1] = o[2];
+  tmp[2] = o[5];
+  tmp[3] = o[6];
+  tmp[4] = o[0];
+  tmp[5] = o[3];
+  tmp[6] = o[4];
+  tmp[7] = o[7];
+
+  CompInst.offset = (uint16_t)tmp.to_ulong();
+  
   CompInst.instSize = 2;
   CompInst.compressed = true;
 
