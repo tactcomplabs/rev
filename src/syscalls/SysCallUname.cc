@@ -50,7 +50,7 @@ bool UnameParameters<Riscv128>::get<utsname *>(const size_t parameter_index, uts
 
 template<>
 template<>
-void Uname<Riscv32>::invoke<int>(Uname<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Uname<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         utsname * name;
         
@@ -64,7 +64,7 @@ void Uname<Riscv32>::invoke<int>(Uname<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Uname<Riscv64>::invoke<int>(Uname<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Uname<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         utsname * name;
         
@@ -78,7 +78,7 @@ void Uname<Riscv64>::invoke<int>(Uname<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Uname<Riscv128>::invoke<int>(Uname<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Uname<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         utsname * name;
         

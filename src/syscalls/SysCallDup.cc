@@ -49,7 +49,7 @@ bool DupParameters<Riscv128>::get<int>(const size_t parameter_index, int& param)
 
 template<>
 template<>
-void Dup<Riscv32>::invoke<int>(Dup<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int fildes;
 
@@ -64,7 +64,7 @@ void Dup<Riscv32>::invoke<int>(Dup<Riscv32>::SystemCallParameterInterfaceType & 
 
 template<>
 template<>
-void Dup<Riscv64>::invoke<int>(Dup<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int fildes;
 
@@ -79,7 +79,7 @@ void Dup<Riscv64>::invoke<int>(Dup<Riscv64>::SystemCallParameterInterfaceType & 
 
 template<>
 template<>
-void Dup<Riscv128>::invoke<int>(Dup<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int fildes;
 

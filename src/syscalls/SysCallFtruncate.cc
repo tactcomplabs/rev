@@ -81,7 +81,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void Ftruncate<Riscv32>::invoke<int>(Ftruncate<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ftruncate<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int fildes;
@@ -101,7 +101,7 @@ void Ftruncate<Riscv32>::invoke<int>(Ftruncate<Riscv32>::SystemCallParameterInte
 
 template<>
 template<>
-void Ftruncate<Riscv64>::invoke<int>(Ftruncate<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ftruncate<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int fildes;
@@ -121,7 +121,7 @@ void Ftruncate<Riscv64>::invoke<int>(Ftruncate<Riscv64>::SystemCallParameterInte
 
 template<>
 template<>
-void Ftruncate<Riscv128>::invoke<int>(Ftruncate<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ftruncate<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int fildes;

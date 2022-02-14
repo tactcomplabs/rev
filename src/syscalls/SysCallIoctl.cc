@@ -82,7 +82,7 @@ bool IoctlParameters<Riscv128>::get<unsigned long>(const size_t parameter_index,
     
 template<>
 template<>
-void Ioctl<Riscv32>::invoke<int>(Ioctl<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ioctl<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 2) {
         int fildes;
@@ -101,7 +101,7 @@ void Ioctl<Riscv32>::invoke<int>(Ioctl<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Ioctl<Riscv64>::invoke<int>(Ioctl<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ioctl<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 2) {
         int fildes;
@@ -120,7 +120,7 @@ void Ioctl<Riscv64>::invoke<int>(Ioctl<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Ioctl<Riscv128>::invoke<int>(Ioctl<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Ioctl<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 2) {
         int fildes;

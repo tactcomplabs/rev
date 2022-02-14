@@ -118,7 +118,7 @@ bool OpenParameters<Riscv128>::get<mode_t>(const size_t parameter_index, mode_t 
 
 template<>
 template<>
-void Open<Riscv32>::invoke<int>(Open<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Open<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         std::string path;
         int oflag;
@@ -138,7 +138,7 @@ void Open<Riscv32>::invoke<int>(Open<Riscv32>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Open<Riscv64>::invoke<int>(Open<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Open<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         std::string path;
         int oflag;
@@ -158,7 +158,7 @@ void Open<Riscv64>::invoke<int>(Open<Riscv64>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Open<Riscv128>::invoke<int>(Open<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Open<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         std::string path;
         int oflag;

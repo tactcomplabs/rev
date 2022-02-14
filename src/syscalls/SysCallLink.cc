@@ -59,7 +59,7 @@ bool LinkParameters<Riscv128>::get<std::string>(const size_t parameter_index, st
 
 template<>
 template<>
-void Link<Riscv32>::invoke<int>(Link<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Link<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
      if(parameters.count() == 2) {
         std::string oldpth{};
@@ -78,7 +78,7 @@ void Link<Riscv32>::invoke<int>(Link<Riscv32>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Link<Riscv64>::invoke<int>(Link<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Link<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
      if(parameters.count() == 2) {
         std::string oldpth{};
@@ -97,7 +97,7 @@ void Link<Riscv64>::invoke<int>(Link<Riscv64>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Link<Riscv128>::invoke<int>(Link<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Link<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
      if(parameters.count() == 2) {
         std::string oldpth{};

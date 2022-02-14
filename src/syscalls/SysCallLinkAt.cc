@@ -51,7 +51,7 @@ bool LinkatParameters<Riscv64>::get<int>(const size_t parameter_index, int& para
 
 template<>
 template<>
-void Linkat<Riscv32>::invoke<int>(Linkat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Linkat<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 5) {
         std::string oldpth{};
@@ -74,7 +74,7 @@ void Linkat<Riscv32>::invoke<int>(Linkat<Riscv32>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Linkat<Riscv64>::invoke<int>(Linkat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Linkat<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 5) {
         std::string oldpth{};
@@ -97,7 +97,7 @@ void Linkat<Riscv64>::invoke<int>(Linkat<Riscv64>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Linkat<Riscv128>::invoke<int>(Linkat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Linkat<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 5) {
         std::string oldpth{};

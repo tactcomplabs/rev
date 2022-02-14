@@ -31,21 +31,21 @@ bool GettidParameters<Riscv128>::get<void_t>(const size_t parameter_index, void_
 
 template<>
 template<>
-void Gettid<Riscv32>::invoke<int>(Gettid<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettid<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     success = true;
     value = gettid();
 }
 
 template<>
 template<>
-void Gettid<Riscv64>::invoke<int>(Gettid<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettid<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     success = true;
     value = gettid();
 }
 
 template<>
 template<>
-void Gettid<Riscv128>::invoke<int>(Gettid<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettid<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     success = true;
     value = gettid();
 }

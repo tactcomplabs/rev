@@ -127,7 +127,7 @@ bool PreadParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t
 
 template<>
 template<>
-void Pread<Riscv32>::invoke<ssize_t>(Pread<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pread<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() >= 4) {
         int fd;
         void * buf = 0;
@@ -149,7 +149,7 @@ void Pread<Riscv32>::invoke<ssize_t>(Pread<Riscv32>::SystemCallParameterInterfac
 
 template<>
 template<>
-void Pread<Riscv64>::invoke<ssize_t>(Pread<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pread<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() >= 4) {
         int fd;
         void * buf = 0;
@@ -171,7 +171,7 @@ void Pread<Riscv64>::invoke<ssize_t>(Pread<Riscv64>::SystemCallParameterInterfac
 
 template<>
 template<>
-void Pread<Riscv128>::invoke<ssize_t>(Pread<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pread<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() >= 4) {
         int fd;
         void * buf = 0;

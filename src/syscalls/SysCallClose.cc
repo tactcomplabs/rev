@@ -47,7 +47,7 @@ bool CloseParameters<Riscv128>::get<int>(const size_t parameter_index, int & par
 
 template<>
 template<>
-void Close<Riscv32>::invoke<int>(Close<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Close<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
@@ -60,7 +60,7 @@ void Close<Riscv32>::invoke<int>(Close<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Close<Riscv64>::invoke<int>(Close<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Close<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
@@ -73,7 +73,7 @@ void Close<Riscv64>::invoke<int>(Close<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Close<Riscv128>::invoke<int>(Close<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Close<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);

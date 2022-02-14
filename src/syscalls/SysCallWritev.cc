@@ -88,7 +88,7 @@ bool WritevParameters<Riscv128>::get<iovec_t *>(const size_t parameter_index, io
 
 template<>
 template<>
-void Writev<Riscv32>::invoke<ssize_t>(Writev<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Writev<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
    if(parameters.count() == 3) {
 
         int fildes;
@@ -109,7 +109,7 @@ void Writev<Riscv32>::invoke<ssize_t>(Writev<Riscv32>::SystemCallParameterInterf
 
 template<>
 template<>
-void Writev<Riscv64>::invoke<ssize_t>(Writev<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Writev<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
    if(parameters.count() == 3) {
 
         int fildes;
@@ -130,7 +130,7 @@ void Writev<Riscv64>::invoke<ssize_t>(Writev<Riscv64>::SystemCallParameterInterf
 
 template<>
 template<>
-void Writev<Riscv128>::invoke<ssize_t>(Writev<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Writev<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
    if(parameters.count() == 3) {
 
         int fildes;

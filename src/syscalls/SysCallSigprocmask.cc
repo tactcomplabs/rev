@@ -91,7 +91,7 @@ bool SigprocmaskParameters<Riscv128>::get<sigset_t*>(const size_t parameter_inde
 
 template<>
 template<>
-void Sigprocmask<Riscv32>::invoke<clock_t>(Sigprocmask<Riscv32>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Sigprocmask<Riscv32>::invoke<clock_t>(RevRegFile const& memregfile, RevMem const& revmemory, clock_t & value) {
     if(parameters.count() == 3) {
         int how;
         sigset_t * set;
@@ -111,7 +111,7 @@ void Sigprocmask<Riscv32>::invoke<clock_t>(Sigprocmask<Riscv32>::SystemCallParam
 
 template<>
 template<>
-void Sigprocmask<Riscv64>::invoke<clock_t>(Sigprocmask<Riscv64>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Sigprocmask<Riscv64>::invoke<clock_t>(RevRegFile const& memregfile, RevMem const& revmemory, clock_t & value) {
     if(parameters.count() == 3) {
         int how;
         sigset_t * set;
@@ -131,7 +131,7 @@ void Sigprocmask<Riscv64>::invoke<clock_t>(Sigprocmask<Riscv64>::SystemCallParam
 
 template<>
 template<>
-void Sigprocmask<Riscv128>::invoke<clock_t>(Sigprocmask<Riscv128>::SystemCallParameterInterfaceType & parameters, clock_t & value) {
+void Sigprocmask<Riscv128>::invoke<clock_t>(RevRegFile const& memregfile, RevMem const& revmemory, clock_t & value) {
     if(parameters.count() == 3) {
         int how;
         sigset_t * set;

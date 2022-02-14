@@ -148,7 +148,7 @@ bool MmapParameters<Riscv128>::get<int>(const size_t parameter_index, int & para
 
 template<>
 template<>
-void Mmap<Riscv32>::invoke<void*>(Mmap<Riscv32>::SystemCallParameterInterfaceType & parameters, void* & value) {
+void Mmap<Riscv32>::invoke<void*>(RevRegFile const& memregfile, RevMem const& revmemory, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;
@@ -176,7 +176,7 @@ void Mmap<Riscv32>::invoke<void*>(Mmap<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Mmap<Riscv64>::invoke<void*>(Mmap<Riscv64>::SystemCallParameterInterfaceType & parameters, void* & value) {
+void Mmap<Riscv64>::invoke<void*>(RevRegFile const& memregfile, RevMem const& revmemory, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;
@@ -204,7 +204,7 @@ void Mmap<Riscv64>::invoke<void*>(Mmap<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Mmap<Riscv128>::invoke<void*>(Mmap<Riscv128>::SystemCallParameterInterfaceType & parameters, void* & value) {
+void Mmap<Riscv128>::invoke<void*>(RevRegFile const& memregfile, RevMem const& revmemory, void* & value) {
 
     if(parameters.count() == 6) {
         void * addr;

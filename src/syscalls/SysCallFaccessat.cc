@@ -107,7 +107,7 @@ bool FaccessatParameters<Riscv128>::get<std::string>(const size_t parameter_inde
 
 template<>
 template<>
-void Faccessat<Riscv32>::invoke<int>(Faccessat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Faccessat<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 4) {
 
         int fd;
@@ -130,7 +130,7 @@ void Faccessat<Riscv32>::invoke<int>(Faccessat<Riscv32>::SystemCallParameterInte
 
 template<>
 template<>
-void Faccessat<Riscv64>::invoke<int>(Faccessat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Faccessat<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 4) {
 
         int fd;
@@ -153,7 +153,7 @@ void Faccessat<Riscv64>::invoke<int>(Faccessat<Riscv64>::SystemCallParameterInte
 
 template<>
 template<>
-void Faccessat<Riscv128>::invoke<int>(Faccessat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Faccessat<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 4) {
 
         int fd;

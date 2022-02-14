@@ -114,7 +114,7 @@ bool MprotectParameters<Riscv128>::get<int>(const size_t parameter_index, int & 
 
 template<>
 template<>
-void Mprotect<Riscv32>::invoke<int>(Mprotect<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mprotect<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 3) {
         void * addr;
@@ -136,7 +136,7 @@ void Mprotect<Riscv32>::invoke<int>(Mprotect<Riscv32>::SystemCallParameterInterf
 
 template<>
 template<>
-void Mprotect<Riscv64>::invoke<int>(Mprotect<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mprotect<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 3) {
         void * addr;
@@ -158,7 +158,7 @@ void Mprotect<Riscv64>::invoke<int>(Mprotect<Riscv64>::SystemCallParameterInterf
 
 template<>
 template<>
-void Mprotect<Riscv128>::invoke<int>(Mprotect<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mprotect<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 3) {
         void * addr;

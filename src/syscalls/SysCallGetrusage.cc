@@ -81,7 +81,7 @@ bool GetrusageParameters<Riscv128>::get<rusage*>(const size_t parameter_index, r
 
 template<>
 template<>
-void Getrusage<Riscv32>::invoke<int>(Getrusage<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrusage<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         int who;
         rusage * r_usage;
@@ -96,7 +96,7 @@ void Getrusage<Riscv32>::invoke<int>(Getrusage<Riscv32>::SystemCallParameterInte
 
 template<>
 template<>
-void Getrusage<Riscv64>::invoke<int>(Getrusage<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrusage<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         int who;
         rusage * r_usage;
@@ -111,7 +111,7 @@ void Getrusage<Riscv64>::invoke<int>(Getrusage<Riscv64>::SystemCallParameterInte
 
 template<>
 template<>
-void Getrusage<Riscv128>::invoke<int>(Getrusage<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrusage<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
      if(parameters.count() == 2) {
         int who;
         rusage * r_usage;

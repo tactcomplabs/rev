@@ -116,7 +116,7 @@ bool WriteParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t
 
 template<>
 template<>
-void Write<Riscv32>::invoke<ssize_t>(Write<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Write<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd;
         void * buf;
@@ -136,7 +136,7 @@ void Write<Riscv32>::invoke<ssize_t>(Write<Riscv32>::SystemCallParameterInterfac
 
 template<>
 template<>
-void Write<Riscv64>::invoke<ssize_t>(Write<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Write<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd;
         void * buf;
@@ -156,7 +156,7 @@ void Write<Riscv64>::invoke<ssize_t>(Write<Riscv64>::SystemCallParameterInterfac
 
 template<>
 template<>
-void Write<Riscv128>::invoke<ssize_t>(Write<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Write<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd;
         void * buf;

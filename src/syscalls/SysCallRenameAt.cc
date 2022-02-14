@@ -103,7 +103,7 @@ bool RenameatParameters<Riscv128>::get<std::string>(const size_t parameter_index
 
 template<>
 template<>
-void Renameat<Riscv32>::invoke<ssize_t>(Renameat<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Renameat<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 4) {
 
         int fromfd;
@@ -126,7 +126,7 @@ void Renameat<Riscv32>::invoke<ssize_t>(Renameat<Riscv32>::SystemCallParameterIn
 
 template<>
 template<>
-void Renameat<Riscv64>::invoke<ssize_t>(Renameat<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Renameat<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 4) {
 
         int fromfd;
@@ -149,7 +149,7 @@ void Renameat<Riscv64>::invoke<ssize_t>(Renameat<Riscv64>::SystemCallParameterIn
 
 template<>
 template<>
-void Renameat<Riscv128>::invoke<ssize_t>(Renameat<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Renameat<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 4) {
 
         int fromfd;

@@ -104,7 +104,7 @@ bool Prlimit64Parameters<Riscv128>::get<int>(const size_t parameter_index, int &
 
 template<>
 template<>
-void Prlimit64<Riscv32>::invoke<int>(Prlimit64<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Prlimit64<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 4) {
 
@@ -129,7 +129,7 @@ void Prlimit64<Riscv32>::invoke<int>(Prlimit64<Riscv32>::SystemCallParameterInte
 
 template<>
 template<>
-void Prlimit64<Riscv64>::invoke<int>(Prlimit64<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Prlimit64<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 4) {
 
@@ -154,7 +154,7 @@ void Prlimit64<Riscv64>::invoke<int>(Prlimit64<Riscv64>::SystemCallParameterInte
 
 template<>
 template<>
-void Prlimit64<Riscv128>::invoke<int>(Prlimit64<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Prlimit64<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 4) {
 

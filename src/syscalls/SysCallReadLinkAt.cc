@@ -115,7 +115,7 @@ bool ReadlinkatParameters<Riscv128>::get<size_t>(const size_t parameter_index, s
 
 template<>
 template<>
-void Readlinkat<Riscv32>::invoke<ssize_t>(Readlinkat<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Readlinkat<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
 
         std::string path;
@@ -136,7 +136,7 @@ void Readlinkat<Riscv32>::invoke<ssize_t>(Readlinkat<Riscv32>::SystemCallParamet
 
 template<>
 template<>
-void Readlinkat<Riscv64>::invoke<ssize_t>(Readlinkat<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Readlinkat<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
 
         std::string path;
@@ -157,7 +157,7 @@ void Readlinkat<Riscv64>::invoke<ssize_t>(Readlinkat<Riscv64>::SystemCallParamet
 
 template<>
 template<>
-void Readlinkat<Riscv128>::invoke<ssize_t>(Readlinkat<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Readlinkat<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
 
         std::string path;

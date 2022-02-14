@@ -50,7 +50,7 @@ bool ChdirParameters<Riscv128>::get<std::string>(const size_t parameter_index, s
 
 template<>
 template<>
-void Chdir<Riscv32>::invoke<int>(Chdir<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Chdir<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
 
         std::string pth;
@@ -66,7 +66,7 @@ void Chdir<Riscv32>::invoke<int>(Chdir<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Chdir<Riscv64>::invoke<int>(Chdir<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Chdir<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
 
         std::string pth;
@@ -82,7 +82,7 @@ void Chdir<Riscv64>::invoke<int>(Chdir<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Chdir<Riscv128>::invoke<int>(Chdir<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Chdir<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
 
         std::string pth;

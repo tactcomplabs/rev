@@ -61,7 +61,7 @@ bool FcntlParameters<Riscv128>::get<int>(const size_t parameter_index, int & par
 
 template<>
 template<>
-void Fcntl<Riscv32>::invoke<int>(Fcntl<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fcntl<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
      if(parameters.count() == 1) {
         int fildes;
         int cmd;
@@ -79,7 +79,7 @@ void Fcntl<Riscv32>::invoke<int>(Fcntl<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Fcntl<Riscv64>::invoke<int>(Fcntl<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fcntl<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int fildes;
         int cmd;
@@ -97,7 +97,7 @@ void Fcntl<Riscv64>::invoke<int>(Fcntl<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Fcntl<Riscv128>::invoke<int>(Fcntl<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fcntl<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         int fildes;
         int cmd;

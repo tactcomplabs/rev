@@ -35,21 +35,21 @@ bool GetgidParameters<Riscv128>::get<void_t>(const size_t parameter_index, void_
 
 template<>
 template<>
-void Getgid<Riscv32>::invoke<gid_t>(Getgid<Riscv32>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
+void Getgid<Riscv32>::invoke<gid_t>(RevRegFile const& memregfile, RevMem const& revmemory, gid_t & value) {
     success = true;
     value = getgid();
 }
 
 template<>
 template<>
-void Getgid<Riscv64>::invoke<gid_t>(Getgid<Riscv64>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
+void Getgid<Riscv64>::invoke<gid_t>(RevRegFile const& memregfile, RevMem const& revmemory, gid_t & value) {
     success = true;
     value = getgid();
 }
 
 template<>
 template<>
-void Getgid<Riscv128>::invoke<gid_t>(Getgid<Riscv128>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
+void Getgid<Riscv128>::invoke<gid_t>(RevRegFile const& memregfile, RevMem const& revmemory, gid_t & value) {
     success = true;
     value = getgid();
 }

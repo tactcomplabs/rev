@@ -36,21 +36,21 @@ bool GeteuidParameters<Riscv128>::get<void_t>(const size_t parameter_index, void
 
 template<>
 template<>
-void Geteuid<Riscv32>::invoke<int>(Geteuid<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Geteuid<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     success = true;
     value = geteuid();
 }
 
 template<>
 template<>
-void Geteuid<Riscv64>::invoke<int>(Geteuid<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Geteuid<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     success = true;
     value = geteuid();
 }
 
 template<>
 template<>
-void Geteuid<Riscv128>::invoke<int>(Geteuid<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Geteuid<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     success = true;
     value = geteuid();
 }

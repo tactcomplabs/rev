@@ -113,7 +113,7 @@ bool ReadParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_t 
 
 template<>
 template<>
-void Read<Riscv32>::invoke<ssize_t>(Read<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Read<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;
@@ -133,7 +133,7 @@ void Read<Riscv32>::invoke<ssize_t>(Read<Riscv32>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Read<Riscv64>::invoke<ssize_t>(Read<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Read<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;
@@ -153,7 +153,7 @@ void Read<Riscv64>::invoke<ssize_t>(Read<Riscv64>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Read<Riscv128>::invoke<ssize_t>(Read<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Read<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
         int fd = -1;
         void * buf = 0;

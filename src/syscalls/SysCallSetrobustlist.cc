@@ -83,7 +83,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void Setrobustlist<Riscv32>::invoke<int>(Setrobustlist<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Setrobustlist<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         robust_list_head * hptr;
@@ -102,7 +102,7 @@ void Setrobustlist<Riscv32>::invoke<int>(Setrobustlist<Riscv32>::SystemCallParam
 
 template<>
 template<>
-void Setrobustlist<Riscv64>::invoke<int>(Setrobustlist<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Setrobustlist<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         robust_list_head * hptr;
@@ -121,7 +121,7 @@ void Setrobustlist<Riscv64>::invoke<int>(Setrobustlist<Riscv64>::SystemCallParam
 
 template<>
 template<>
-void Setrobustlist<Riscv128>::invoke<int>(Setrobustlist<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Setrobustlist<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         robust_list_head * hptr;

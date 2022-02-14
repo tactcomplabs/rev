@@ -31,21 +31,21 @@ bool GetegidParameters<Riscv128>::get<void_t>(const size_t parameter_index, void
 
 template<>
 template<>
-void Getegid<Riscv32>::invoke<gid_t>(Getegid<Riscv32>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
+void Getegid<Riscv32>::invoke<gid_t>(RevRegFile const& memregfile, RevMem const& revmemory, gid_t & value) {
     success = true;
     value = getegid();
 }
 
 template<>
 template<>
-void Getegid<Riscv64>::invoke<gid_t>(Getegid<Riscv64>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
+void Getegid<Riscv64>::invoke<gid_t>(RevRegFile const& memregfile, RevMem const& revmemory, gid_t & value) {
     success = true;
     value = getegid();
 }
 
 template<>
 template<>
-void Getegid<Riscv128>::invoke<gid_t>(Getegid<Riscv128>::SystemCallParameterInterfaceType & parameters, gid_t & value) {
+void Getegid<Riscv128>::invoke<gid_t>(RevRegFile const& memregfile, RevMem const& revmemory, gid_t & value) {
     success = true;
     value = getegid();
 }

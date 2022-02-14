@@ -49,7 +49,7 @@ bool TimeParameters<Riscv128>::get<time_t*>(const size_t parameter_index, time_t
 
 template<>
 template<>
-void Time<Riscv32>::invoke<time_t>(Time<Riscv32>::SystemCallParameterInterfaceType & parameters, time_t & value) {
+void Time<Riscv32>::invoke<time_t>(RevRegFile const& memregfile, RevMem const& revmemory, time_t & value) {
     if(parameters.count() == 1) {
 
         time_t * tloc;
@@ -65,7 +65,7 @@ void Time<Riscv32>::invoke<time_t>(Time<Riscv32>::SystemCallParameterInterfaceTy
 
 template<>
 template<>
-void Time<Riscv64>::invoke<time_t>(Time<Riscv64>::SystemCallParameterInterfaceType & parameters, time_t & value) {
+void Time<Riscv64>::invoke<time_t>(RevRegFile const& memregfile, RevMem const& revmemory, time_t & value) {
     if(parameters.count() == 1) {
 
         time_t * tloc;
@@ -81,7 +81,7 @@ void Time<Riscv64>::invoke<time_t>(Time<Riscv64>::SystemCallParameterInterfaceTy
 
 template<>
 template<>
-void Time<Riscv128>::invoke<time_t>(Time<Riscv128>::SystemCallParameterInterfaceType & parameters, time_t & value) {
+void Time<Riscv128>::invoke<time_t>(RevRegFile const& memregfile, RevMem const& revmemory, time_t & value) {
     if(parameters.count() == 1) {
 
         time_t * tloc;

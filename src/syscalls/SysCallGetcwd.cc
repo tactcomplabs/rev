@@ -83,7 +83,7 @@ bool GetcwdParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_
 
 template<>
 template<>
-void Getcwd<Riscv32>::invoke<std::string>(Getcwd<Riscv32>::SystemCallParameterInterfaceType & parameters, std::string & value) {
+void Getcwd<Riscv32>::invoke<std::string>(RevRegFile const& memregfile, RevMem const& revmemory, std::string & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -102,7 +102,7 @@ void Getcwd<Riscv32>::invoke<std::string>(Getcwd<Riscv32>::SystemCallParameterIn
 
 template<>
 template<>
-void Getcwd<Riscv64>::invoke<std::string>(Getcwd<Riscv64>::SystemCallParameterInterfaceType & parameters, std::string & value) {
+void Getcwd<Riscv64>::invoke<std::string>(RevRegFile const& memregfile, RevMem const& revmemory, std::string & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -121,7 +121,7 @@ void Getcwd<Riscv64>::invoke<std::string>(Getcwd<Riscv64>::SystemCallParameterIn
 
 template<>
 template<>
-void Getcwd<Riscv128>::invoke<std::string>(Getcwd<Riscv128>::SystemCallParameterInterfaceType & parameters, std::string & value) {
+void Getcwd<Riscv128>::invoke<std::string>(RevRegFile const& memregfile, RevMem const& revmemory, std::string & value) {
     if(parameters.count() == 2) {
 
         std::string pth;

@@ -81,7 +81,7 @@ bool GettimeofdayParameters<Riscv128>::get<void*>(const size_t parameter_index, 
 
 template<>
 template<>
-void Gettimeofday<Riscv32>::invoke<int>(Gettimeofday<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettimeofday<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
    if(parameters.count() == 2) {
 
         timeval * tp;
@@ -100,7 +100,7 @@ void Gettimeofday<Riscv32>::invoke<int>(Gettimeofday<Riscv32>::SystemCallParamet
 
 template<>
 template<>
-void Gettimeofday<Riscv64>::invoke<int>(Gettimeofday<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettimeofday<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
    if(parameters.count() == 2) {
 
         timeval * tp;
@@ -119,7 +119,7 @@ void Gettimeofday<Riscv64>::invoke<int>(Gettimeofday<Riscv64>::SystemCallParamet
 
 template<>
 template<>
-void Gettimeofday<Riscv128>::invoke<int>(Gettimeofday<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Gettimeofday<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
    if(parameters.count() == 2) {
 
         timeval * tp;

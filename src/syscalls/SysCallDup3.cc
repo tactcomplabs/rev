@@ -72,7 +72,7 @@ bool Dup3Parameters<Riscv128>::get<int>(const size_t parameter_index, int& param
 
 template<>
 template<>
-void Dup3<Riscv32>::invoke<int>(Dup3<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup3<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int ofd, nfd, flags;
 
@@ -90,7 +90,7 @@ void Dup3<Riscv32>::invoke<int>(Dup3<Riscv32>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Dup3<Riscv64>::invoke<int>(Dup3<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup3<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int ofd, nfd, flags;
 
@@ -108,7 +108,7 @@ void Dup3<Riscv64>::invoke<int>(Dup3<Riscv64>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Dup3<Riscv128>::invoke<int>(Dup3<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Dup3<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int ofd, nfd, flags;
 

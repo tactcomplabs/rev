@@ -91,7 +91,7 @@ bool LseekParameters<Riscv128>::get<off_t>(const size_t parameter_index, off_t& 
 
 template<>
 template<>
-void Lseek<Riscv32>::invoke<off_t>(Lseek<Riscv32>::SystemCallParameterInterfaceType & parameters, off_t & value) {
+void Lseek<Riscv32>::invoke<off_t>(RevRegFile const& memregfile, RevMem const& revmemory, off_t & value) {
     if(parameters.count() == 3) {
         int fd;
         off_t offset;
@@ -111,7 +111,7 @@ void Lseek<Riscv32>::invoke<off_t>(Lseek<Riscv32>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Lseek<Riscv64>::invoke<off_t>(Lseek<Riscv64>::SystemCallParameterInterfaceType & parameters, off_t & value) {
+void Lseek<Riscv64>::invoke<off_t>(RevRegFile const& memregfile, RevMem const& revmemory, off_t & value) {
     if(parameters.count() == 3) {
         int fd;
         off_t offset;
@@ -131,7 +131,7 @@ void Lseek<Riscv64>::invoke<off_t>(Lseek<Riscv64>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Lseek<Riscv128>::invoke<off_t>(Lseek<Riscv128>::SystemCallParameterInterfaceType & parameters, off_t & value) {
+void Lseek<Riscv128>::invoke<off_t>(RevRegFile const& memregfile, RevMem const& revmemory, off_t & value) {
     if(parameters.count() == 3) {
         int fd;
         off_t offset;

@@ -49,7 +49,7 @@ bool UnlinkParameters<Riscv128>::get<std::string>(const size_t parameter_index, 
 
 template<>
 template<>
-void Unlink<Riscv32>::invoke<int>(Unlink<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlink<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         std::string pth{};
         
@@ -63,7 +63,7 @@ void Unlink<Riscv32>::invoke<int>(Unlink<Riscv32>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Unlink<Riscv64>::invoke<int>(Unlink<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlink<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         std::string pth{};
 
@@ -77,7 +77,7 @@ void Unlink<Riscv64>::invoke<int>(Unlink<Riscv64>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Unlink<Riscv128>::invoke<int>(Unlink<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlink<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         std::string pth{};
 

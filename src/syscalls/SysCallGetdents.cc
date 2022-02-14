@@ -46,7 +46,7 @@ bool GetdentsParameters<Riscv128>::get<size_t>(const size_t parameter_index, siz
 
 template<>
 template<>
-void Getdents<Riscv32>::invoke<ssize_t>(Getdents<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Getdents<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
 
         int fd;
@@ -67,7 +67,7 @@ void Getdents<Riscv32>::invoke<ssize_t>(Getdents<Riscv32>::SystemCallParameterIn
 
 template<>
 template<>
-void Getdents<Riscv64>::invoke<ssize_t>(Getdents<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Getdents<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
 
         int fd;
@@ -88,7 +88,7 @@ void Getdents<Riscv64>::invoke<ssize_t>(Getdents<Riscv64>::SystemCallParameterIn
 
 template<>
 template<>
-void Getdents<Riscv128>::invoke<ssize_t>(Getdents<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Getdents<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 3) {
 
         int fd;

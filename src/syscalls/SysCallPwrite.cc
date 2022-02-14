@@ -127,7 +127,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void Pwrite<Riscv32>::invoke<ssize_t>(Pwrite<Riscv32>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pwrite<Riscv32>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 4) {
         int fd;
         void * buf = 0;
@@ -149,7 +149,7 @@ void Pwrite<Riscv32>::invoke<ssize_t>(Pwrite<Riscv32>::SystemCallParameterInterf
 
 template<>
 template<>
-void Pwrite<Riscv64>::invoke<ssize_t>(Pwrite<Riscv64>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pwrite<Riscv64>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 4) {
         int fd;
         void * buf = 0;
@@ -171,7 +171,7 @@ void Pwrite<Riscv64>::invoke<ssize_t>(Pwrite<Riscv64>::SystemCallParameterInterf
 
 template<>
 template<>
-void Pwrite<Riscv128>::invoke<ssize_t>(Pwrite<Riscv128>::SystemCallParameterInterfaceType & parameters, ssize_t & value) {
+void Pwrite<Riscv128>::invoke<ssize_t>(RevRegFile const& memregfile, RevMem const& revmemory, ssize_t & value) {
     if(parameters.count() == 4) {
         int fd;
         void * buf = 0;

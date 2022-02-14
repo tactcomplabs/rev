@@ -91,7 +91,7 @@ bool UnlinkatParameters<Riscv128>::get<std::string>(const size_t parameter_index
 
 template<>
 template<>
-void Unlinkat<Riscv32>::invoke<int>(Unlinkat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlinkat<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int fd, flag;
         std::string pth{};
@@ -110,7 +110,7 @@ void Unlinkat<Riscv32>::invoke<int>(Unlinkat<Riscv32>::SystemCallParameterInterf
 
 template<>
 template<>
-void Unlinkat<Riscv64>::invoke<int>(Unlinkat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlinkat<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int fd, flag;
         std::string pth{};
@@ -129,7 +129,7 @@ void Unlinkat<Riscv64>::invoke<int>(Unlinkat<Riscv64>::SystemCallParameterInterf
 
 template<>
 template<>
-void Unlinkat<Riscv128>::invoke<int>(Unlinkat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Unlinkat<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int fd, flag;
         std::string pth{};

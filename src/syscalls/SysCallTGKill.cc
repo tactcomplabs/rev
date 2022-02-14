@@ -73,7 +73,7 @@ bool TgkillParameters<Riscv128>::get<int>(const size_t parameter_index, int& par
 
 template<>
 template<>
-void Tgkill<Riscv32>::invoke<int>(Tgkill<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Tgkill<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int tgid;
         int tid;
@@ -93,7 +93,7 @@ void Tgkill<Riscv32>::invoke<int>(Tgkill<Riscv32>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Tgkill<Riscv64>::invoke<int>(Tgkill<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Tgkill<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int tgid;
         int tid;
@@ -112,7 +112,7 @@ void Tgkill<Riscv64>::invoke<int>(Tgkill<Riscv64>::SystemCallParameterInterfaceT
 }
 template<>
 template<>
-void Tgkill<Riscv128>::invoke<int>(Tgkill<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Tgkill<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         int tgid;
         int tid;

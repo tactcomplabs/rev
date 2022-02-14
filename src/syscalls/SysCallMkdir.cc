@@ -82,7 +82,7 @@ bool MkdirParameters<Riscv128>::get<mode_t>(const size_t parameter_index, mode_t
 
 template<>
 template<>
-void Mkdir<Riscv32>::invoke<int>(Mkdir<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mkdir<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -101,7 +101,7 @@ void Mkdir<Riscv32>::invoke<int>(Mkdir<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Mkdir<Riscv64>::invoke<int>(Mkdir<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mkdir<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth;
@@ -120,7 +120,7 @@ void Mkdir<Riscv64>::invoke<int>(Mkdir<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Mkdir<Riscv128>::invoke<int>(Mkdir<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Mkdir<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         std::string pth;

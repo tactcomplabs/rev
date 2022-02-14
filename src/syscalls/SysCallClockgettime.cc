@@ -79,7 +79,7 @@ bool ClockgettimeParameters<Riscv128>::get<timespec*>(const size_t parameter_ind
 
 template<>
 template<>
-void Clockgettime<Riscv32>::invoke<int>(Clockgettime<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Clockgettime<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         clockid_t clkid;
         timespec * tp;
@@ -94,7 +94,7 @@ void Clockgettime<Riscv32>::invoke<int>(Clockgettime<Riscv32>::SystemCallParamet
 
 template<>
 template<>
-void Clockgettime<Riscv64>::invoke<int>(Clockgettime<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Clockgettime<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         clockid_t clkid;
         timespec * tp;
@@ -109,7 +109,7 @@ void Clockgettime<Riscv64>::invoke<int>(Clockgettime<Riscv64>::SystemCallParamet
 
 template<>
 template<>
-void Clockgettime<Riscv128>::invoke<int>(Clockgettime<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Clockgettime<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         clockid_t clkid;
         timespec * tp;

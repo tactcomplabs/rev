@@ -61,7 +61,7 @@ bool KillParameters<Riscv128>::get<int>(const size_t parameter_index, int& param
 
 template<>
 template<>
-void Kill<Riscv32>::invoke<int>(Kill<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Kill<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         pid_t pid;
         int sig;
@@ -79,7 +79,7 @@ void Kill<Riscv32>::invoke<int>(Kill<Riscv32>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Kill<Riscv64>::invoke<int>(Kill<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Kill<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         pid_t pid;
         int sig;
@@ -97,7 +97,7 @@ void Kill<Riscv64>::invoke<int>(Kill<Riscv64>::SystemCallParameterInterfaceType 
 
 template<>
 template<>
-void Kill<Riscv128>::invoke<int>(Kill<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Kill<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
         pid_t pid;
         int sig;

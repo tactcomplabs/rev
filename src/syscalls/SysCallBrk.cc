@@ -47,7 +47,7 @@ bool BrkParameters<Riscv128>::get<void*>(const size_t parameter_index, void* & p
 
 template<>
 template<>
-void Brk<Riscv32>::invoke<int>(Brk<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Brk<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         void* addr;
         const bool has_value = parameters.get<void*>(0, addr);
@@ -60,7 +60,7 @@ void Brk<Riscv32>::invoke<int>(Brk<Riscv32>::SystemCallParameterInterfaceType & 
 
 template<>
 template<>
-void Brk<Riscv64>::invoke<int>(Brk<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Brk<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         void* addr;
         const bool has_value = parameters.get<void*>(0, addr);
@@ -73,7 +73,7 @@ void Brk<Riscv64>::invoke<int>(Brk<Riscv64>::SystemCallParameterInterfaceType & 
 
 template<>
 template<>
-void Brk<Riscv128>::invoke<int>(Brk<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Brk<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
         void* addr;
         const bool has_value = parameters.get<void*>(0, addr);

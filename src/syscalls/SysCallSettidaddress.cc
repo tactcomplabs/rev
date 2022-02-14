@@ -50,7 +50,7 @@ bool SettidaddressParameters<Riscv128>::get<int*>(const size_t parameter_index, 
 
 template<>
 template<>
-void Settidaddress<Riscv32>::invoke<int>(Settidaddress<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Settidaddress<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
 
         int * fdptr;
@@ -66,7 +66,7 @@ void Settidaddress<Riscv32>::invoke<int>(Settidaddress<Riscv32>::SystemCallParam
 
 template<>
 template<>
-void Settidaddress<Riscv64>::invoke<int>(Settidaddress<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Settidaddress<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
 
         int * fdptr;
@@ -82,7 +82,7 @@ void Settidaddress<Riscv64>::invoke<int>(Settidaddress<Riscv64>::SystemCallParam
 
 template<>
 template<>
-void Settidaddress<Riscv128>::invoke<int>(Settidaddress<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Settidaddress<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 1) {
 
         int * fdptr;

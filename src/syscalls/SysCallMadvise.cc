@@ -115,7 +115,7 @@ namespace SST { namespace RevCPU {
 
 template<>
 template<>
-void Madvise<Riscv32>::invoke<int>(Madvise<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Madvise<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;
@@ -135,7 +135,7 @@ void Madvise<Riscv32>::invoke<int>(Madvise<Riscv32>::SystemCallParameterInterfac
 
 template<>
 template<>
-void Madvise<Riscv64>::invoke<int>(Madvise<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Madvise<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;
@@ -155,7 +155,7 @@ void Madvise<Riscv64>::invoke<int>(Madvise<Riscv64>::SystemCallParameterInterfac
 
 template<>
 template<>
-void Madvise<Riscv128>::invoke<int>(Madvise<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Madvise<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 3) {
         void * addr;
         size_t length;

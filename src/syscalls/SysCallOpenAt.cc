@@ -129,7 +129,7 @@ bool OpenatParameters<Riscv128>::get<mode_t>(const size_t parameter_index, mode_
 
 template<>
 template<>
-void Openat<Riscv32>::invoke<int>(Openat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Openat<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 4) {
         int fd;
         std::string path;
@@ -151,7 +151,7 @@ void Openat<Riscv32>::invoke<int>(Openat<Riscv32>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Openat<Riscv64>::invoke<int>(Openat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Openat<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 4) {
         int fd;
         std::string path;
@@ -173,7 +173,7 @@ void Openat<Riscv64>::invoke<int>(Openat<Riscv64>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Openat<Riscv128>::invoke<int>(Openat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Openat<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 4) {
         int fd;
         std::string path;

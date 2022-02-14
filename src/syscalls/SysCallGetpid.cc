@@ -31,21 +31,21 @@ bool GetpidParameters<Riscv128>::get<void_t>(const size_t parameter_index, void_
 
 template<>
 template<>
-void Getpid<Riscv32>::invoke<pid_t>(Getpid<Riscv32>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+void Getpid<Riscv32>::invoke<pid_t>(RevRegFile const& memregfile, RevMem const& revmemory, pid_t & value) {
     success = true;
     value = getpid();
 }
 
 template<>
 template<>
-void Getpid<Riscv64>::invoke<pid_t>(Getpid<Riscv64>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+void Getpid<Riscv64>::invoke<pid_t>(RevRegFile const& memregfile, RevMem const& revmemory, pid_t & value) {
     success = true;
     value = getpid();
 }
 
 template<>
 template<>
-void Getpid<Riscv128>::invoke<pid_t>(Getpid<Riscv128>::SystemCallParameterInterfaceType & parameters, pid_t & value) {
+void Getpid<Riscv128>::invoke<pid_t>(RevRegFile const& memregfile, RevMem const& revmemory, pid_t & value) {
     success = true;
     value = getpid();
 }

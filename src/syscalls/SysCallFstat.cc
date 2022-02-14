@@ -79,7 +79,7 @@ bool FstatParameters<Riscv128>::get<stat_t*>(const size_t parameter_index, stat_
 
 template<>
 template<>
-void Fstat<Riscv32>::invoke<int>(Fstat<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fstat<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int fil; 
@@ -98,7 +98,7 @@ void Fstat<Riscv32>::invoke<int>(Fstat<Riscv32>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Fstat<Riscv64>::invoke<int>(Fstat<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fstat<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int fil; 
@@ -117,7 +117,7 @@ void Fstat<Riscv64>::invoke<int>(Fstat<Riscv64>::SystemCallParameterInterfaceTyp
 
 template<>
 template<>
-void Fstat<Riscv128>::invoke<int>(Fstat<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Fstat<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int fil; 

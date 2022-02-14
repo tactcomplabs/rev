@@ -81,7 +81,7 @@ bool MunmapParameters<Riscv128>::get<size_t>(const size_t parameter_index, size_
 
 template<>
 template<>
-void Munmap<Riscv32>::invoke<int>(Munmap<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Munmap<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 2) {
         void * addr;
@@ -101,7 +101,7 @@ void Munmap<Riscv32>::invoke<int>(Munmap<Riscv32>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Munmap<Riscv64>::invoke<int>(Munmap<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Munmap<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 2) {
         void * addr;
@@ -121,7 +121,7 @@ void Munmap<Riscv64>::invoke<int>(Munmap<Riscv64>::SystemCallParameterInterfaceT
 
 template<>
 template<>
-void Munmap<Riscv128>::invoke<int>(Munmap<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Munmap<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
 
     if(parameters.count() == 2) {
         void * addr;

@@ -56,7 +56,7 @@ class Settidaddress : public virtual SystemCallInterface<RiscvArchType> {
     Settidaddress() {}
 
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
+    void invoke(RevRegFile const& memregfile, RevMem const& revmemory, ReturnType & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

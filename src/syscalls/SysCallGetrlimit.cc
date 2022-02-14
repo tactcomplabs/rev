@@ -84,7 +84,7 @@ bool GetrlimitParameters<Riscv128>::get<rlimit*>(const size_t parameter_index, r
 
 template<>
 template<>
-void Getrlimit<Riscv32>::invoke<int>(Getrlimit<Riscv32>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrlimit<Riscv32>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int resource;
@@ -104,7 +104,7 @@ void Getrlimit<Riscv32>::invoke<int>(Getrlimit<Riscv32>::SystemCallParameterInte
 
 template<>
 template<>
-void Getrlimit<Riscv64>::invoke<int>(Getrlimit<Riscv64>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrlimit<Riscv64>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int resource;
@@ -123,7 +123,7 @@ void Getrlimit<Riscv64>::invoke<int>(Getrlimit<Riscv64>::SystemCallParameterInte
 
 template<>
 template<>
-void Getrlimit<Riscv128>::invoke<int>(Getrlimit<Riscv128>::SystemCallParameterInterfaceType & parameters, int & value) {
+void Getrlimit<Riscv128>::invoke<int>(RevRegFile const& memregfile, RevMem const& revmemory, int & value) {
     if(parameters.count() == 2) {
 
         int resource;

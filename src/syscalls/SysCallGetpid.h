@@ -49,7 +49,7 @@ class Getpid : public virtual SystemCallInterface<RiscvArchType> {
     Getpid() : SystemCallInterfaceType() {}
 
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterfaceType & parameters, ReturnType & value);
+    void invoke(RevRegFile const& memregfile, RevMem const& revmemory, ReturnType & value);
 };
 
 } /* end namespace RevCPU */ } // end namespace SST

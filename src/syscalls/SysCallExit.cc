@@ -47,7 +47,7 @@ bool ExitParameters<Riscv128>::get<int>(const size_t parameter_index, int& param
 
 template<>
 template<>
-void Exit<Riscv32>::invoke<void_t>(Exit<Riscv32>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Exit<Riscv32>::invoke<void_t>(RevRegFile const& memregfile, RevMem const& revmemory, void_t & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
@@ -61,7 +61,7 @@ void Exit<Riscv32>::invoke<void_t>(Exit<Riscv32>::SystemCallParameterInterfaceTy
 }
 template<>
 template<>
-void Exit<Riscv64>::invoke<void_t>(Exit<Riscv64>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Exit<Riscv64>::invoke<void_t>(RevRegFile const& memregfile, RevMem const& revmemory, void_t & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
@@ -76,7 +76,7 @@ void Exit<Riscv64>::invoke<void_t>(Exit<Riscv64>::SystemCallParameterInterfaceTy
 
 template<>
 template<>
-void Exit<Riscv128>::invoke<void_t>(Exit<Riscv128>::SystemCallParameterInterfaceType & parameters, void_t & value) {
+void Exit<Riscv128>::invoke<void_t>(RevRegFile const& memregfile, RevMem const& revmemory, void_t & value) {
     if(parameters.count() == 1) {
         int status;
         const bool has_value = parameters.get<int>(0, status);
