@@ -11,9 +11,13 @@
 #ifndef __SYSTEMCALLINTERFACE_H__
 #define __SYSTEMCALLINTERFACE_H__
 
+#include "../RevInstTable.h"
+#include "../RevMem.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+
 
 // how to support uint128_t? that's not supported in c++11 compilers...
 //
@@ -125,7 +129,7 @@ class SystemCallInterface : public SystemArch<RiscvArchType> {
     }
 
     template<typename ReturnType>
-    void invoke(SystemCallParameterInterface<RiscvArchType> & parameters, ReturnType & value) {
+    void invoke(RevRegFile const& memregfile, RevMem const& revmemory, ReturnType & value) {
         success = false;
     }
 };
