@@ -24,7 +24,6 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.lwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
-        Inst.imm = ((Inst.imm&0b11111)*8);
 
         return ld(F,R,M,Inst);
       }
