@@ -25,7 +25,6 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.flwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
-        Inst.imm = ((Inst.imm&0b11111)*4);
 
         return flw(F,R,M,Inst);
       }
@@ -34,7 +33,6 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
-        Inst.imm = ((Inst.imm&0b11111)*4);
 
         return fsw(F,R,M,Inst);
       }
@@ -44,7 +42,6 @@ namespace SST{
         // c.flw %rd, %rs1, $imm = flw %rd, %rs1, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*4);
 
         return flw(F,R,M,Inst);
       }
@@ -54,7 +51,6 @@ namespace SST{
         // c.fsw rs2, rs1, $imm = fsw rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*4);
 
         return fsw(F,R,M,Inst);
       }
