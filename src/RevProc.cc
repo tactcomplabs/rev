@@ -113,6 +113,8 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
   std::vector<RevInstEntry> IT = Ext->GetInstTable();
 
   // setup the mapping of InstTable to Ext objects
+  InstTable.reserve(InstTable.size() + IT.size());
+
   for( unsigned i=0; i<IT.size(); i++ ){
     InstTable.push_back(IT[i]);
     std::pair<unsigned,unsigned> ExtObj =
@@ -127,7 +129,10 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
     output->verbose(CALL_INFO, 6, 0,
                     "Core %d ; Enabling compressed extension=%s\n",
                     id, Ext->GetName().c_str());
+
     std::vector<RevInstEntry> CT = Ext->GetCInstTable();
+    InstTable.reserve(InstTable.size() + CT.size());
+
     for( unsigned i=0; i<CT.size(); i++ ){
       InstTable.push_back(CT[i]);
       std::pair<unsigned,unsigned> ExtObj =
@@ -142,6 +147,9 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
                       "Core %d ; Enabling optional compressed extension=%s\n",
                       id, Ext->GetName().c_str());
       CT = Ext->GetOInstTable();
+
+      InstTable.reserve(InstTable.size() + CT.size());
+
       for( unsigned i=0; i<CT.size(); i++ ){
         InstTable.push_back(CT[i]);
         std::pair<unsigned,unsigned> ExtObj =
