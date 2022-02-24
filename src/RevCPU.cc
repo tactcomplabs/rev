@@ -45,12 +45,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   EnablePANTest = params.find<bool>("enable_test", 0);
 
   // Register a new clock handler
-  std::string cpuClock = params.find<std::string>("clock", "1GHz");
-  if( EnablePANTest ){
-    timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
-    testIters = params.find<unsigned>("testIters", 255);
-  }else{
-    timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+  {
+    const std::string cpuClock = params.find<std::string>("clock", "1GHz");
+    if( EnablePANTest ){
+      timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
+      testIters = params.find<unsigned>("testIters", 255);
+    }else{
+      timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+    }
   }
 
   // Inform SST to wait unti we authorize it to exit
@@ -76,30 +78,32 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
 
   // Initialize the remaining options
-  std::vector<std::string> startAddrs;
-  params.find_array<std::string>("startAddr", startAddrs);
-  if( !Opts->InitStartAddrs( startAddrs ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting addresses\n" );
+  {
+    std::vector<std::string> startAddrs;
+    params.find_array<std::string>("startAddr", startAddrs);
+    if( !Opts->InitStartAddrs( startAddrs ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting addresses\n" );
 
-  std::vector<std::string> startSyms;
-  params.find_array<std::string>("startSymbol", startSyms);
-  if( !Opts->InitStartSymbols( startSyms ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initalized the starting symbols\n" );
+    std::vector<std::string> startSyms;
+    params.find_array<std::string>("startSymbol", startSyms);
+    if( !Opts->InitStartSymbols( startSyms ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initalized the starting symbols\n" );
 
-  std::vector<std::string> machModels;
-  params.find_array<std::string>("machine", machModels);
-  if( !Opts->InitMachineModels( machModels ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the machine models\n" );
+    std::vector<std::string> machModels;
+    params.find_array<std::string>("machine", machModels);
+    if( !Opts->InitMachineModels( machModels ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the machine models\n" );
 
-  std::vector<std::string> instTables;
-  params.find_array<std::string>("table",instTables);
-  if( !Opts->InitInstTables( instTables ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the instruction tables\n" );
+    std::vector<std::string> instTables;
+    params.find_array<std::string>("table",instTables);
+    if( !Opts->InitInstTables( instTables ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the instruction tables\n" );
 
-  std::vector<std::string> memCosts;
-  params.find_array<std::string>("memCost",memCosts);
-  if( !Opts->InitMemCosts( memCosts ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
+    std::vector<std::string> memCosts;
+    params.find_array<std::string>("memCost",memCosts);
+    if( !Opts->InitMemCosts( memCosts ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
+  }
 
   // See if we should load the network interface controller
   EnableNIC = params.find<bool>("enable_nic", 0);
@@ -199,10 +203,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the memory object
-  unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
-  Mem = new RevMem( memSize, Opts,  &output );
-  if( !Mem )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
+  {
+    const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
+    Mem = new RevMem( memSize, Opts,  &output );
+    if( !Mem )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
+  }
 
   // Load the binary into memory
   Loader = new RevLoader( Exe, Args, Mem, &output );
@@ -211,7 +217,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the processor objects
-  Procs.reserve(Proces.size() + numCores);
+  Procs.reserve(Procs.size() + numCores);
   for( unsigned i=0; i<numCores; i++ ){
     Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
   }
@@ -233,13 +239,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     Enabled[i] = true;
   }
 
-  unsigned Splash = params.find<bool>("splash",0);
+  {
+    const unsigned Splash = params.find<bool>("splash",0);
 
-  if( Splash > 0 ){
-    if( EnablePANTest )
-      output.verbose(CALL_INFO,1,0,pan_splash_msg);
-    else
-      output.verbose(CALL_INFO,1,0,splash_msg);
+    if( Splash > 0 ){
+      if( EnablePANTest )
+        output.verbose(CALL_INFO,1,0,pan_splash_msg);
+      else
+        output.verbose(CALL_INFO,1,0,splash_msg);
+    }
   }
 
   // Done with initialization
