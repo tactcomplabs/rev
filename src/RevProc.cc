@@ -1323,7 +1323,7 @@ RevInst RevProc::DecodeInst(){
   }
 
   // Stage 2: Retrieve the opcode
-  uint32_t Opcode = (uint32_t)(Inst&0b1111111);
+  const uint32_t Opcode = (uint32_t)(Inst&0b1111111);
 
   // If we find a compressed instruction, then take
   // the compressed decode path
@@ -1334,8 +1334,8 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 3: Determine if we have a funct3 field
   uint32_t Funct3 = 0x00ul;
-  uint32_t inst42 = ((Opcode&0b11100) >> 2);
-  uint32_t inst65 = ((Opcode&0b1100000) >> 5);
+  const uint32_t inst42 = ((Opcode&0b11100) >> 2);
+  const uint32_t inst65 = ((Opcode&0b1100000) >> 5);
 
   if( (inst42 == 0b011) && (inst65 == 0b11) ){
     // JAL
