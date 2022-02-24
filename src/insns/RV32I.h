@@ -28,7 +28,6 @@ namespace SST{
         Inst.rd   = CRegMap[Inst.rd];
         if( Inst.imm == 0x00 )
           return false;
-        Inst.imm = ((Inst.imm&0b11111111)*4);
 
         return addi(F,R,M,Inst);
       }
@@ -37,7 +36,6 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.lwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
-        Inst.imm = ((Inst.imm&0b111111)*4);
 
         return lw(F,R,M,Inst);
       }
@@ -46,7 +44,6 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
-        Inst.imm = ((Inst.imm&0b11111)*4);
 
         return sw(F,R,M,Inst);
       }
@@ -56,7 +53,6 @@ namespace SST{
         // c.lw rd, rs1, $imm = lw rd, $imm(rs1)
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*4);
 
         return lw(F,R,M,Inst);
       }
@@ -66,7 +62,6 @@ namespace SST{
         // c.sw rs2, rs1, $imm = sw rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*4);
 
         return sw(F,R,M,Inst);
       }
@@ -84,6 +79,7 @@ namespace SST{
                        RevMem *M, RevInst Inst) {
         // c.jal $imm = jal x0, $imm
         Inst.rd = 1; // x1
+        Inst.imm = Inst.jumpTarget;
 
         return jal(F,R,M,Inst);
       }
@@ -137,6 +133,7 @@ namespace SST{
         // c.beqz %rs1, $imm = beq %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = Inst.offset;
 
         return beq(F,R,M,Inst);
       }
@@ -146,6 +143,7 @@ namespace SST{
         // c.bnez %rs1, $imm = bne %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = Inst.offset;
 
         return bne(F,R,M,Inst);
       }
@@ -937,7 +935,7 @@ namespace SST{
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.lui %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b011).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCI).SetImplFunc(&CIFUNC).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.addi %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b000).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCI).SetImplFunc(&caddi).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.slli %rd, $imm").SetCost(1).SetOpcode(0b10).SetFunct3(0b000).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCI).SetImplFunc(&cslli).SetCompressed(true).InstEntry},
-        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.srli %rd, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b100).SetFunct2(0b00).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCB).SetImplFunc(&csrli).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.srli %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b100).SetFunct2(0b00).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCB).SetImplFunc(&csrli).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.srai %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b100).SetFunct2(0b01).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCB).SetImplFunc(&csrai).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.andi %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b100).SetFunct2(0b10).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCB).SetImplFunc(&candi).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.and %rd,%rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b11).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&cand).SetCompressed(true).InstEntry},
