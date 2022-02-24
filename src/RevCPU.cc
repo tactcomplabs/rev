@@ -156,6 +156,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }else{
     RevokeHasArrived = true;
   }
+
+  TotalCycles.reserve(TotalCycles.size() + numCores);
+  CyclesWithIssue.reserve(CyclesWithIssue.size() + numCores);
+  FloatsRead.reserve(FloatsRead.size() + numCores);
+  FloatsWritten.reserve(FloatsWritten.size() + numCores);
+  DoublesRead.reserve(DoublesRead.size() + numCores);
+  DoublesWritten.reserve(DoublesWritten.size() + numCores);
+  BytesRead.reserve(BytesRead.size() + numCores);
+  BytesWritten.reserve(BytesWritten.size() + numCores);
+  FloatsExec.reserve(FloatsExec.size() + numCores);
+
   for(int s = 0; s < numCores; s++){
     TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
     CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
@@ -200,6 +211,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the processor objects
+  Procs.reserve(Proces.size() + numCores);
   for( unsigned i=0; i<numCores; i++ ){
     Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
   }
@@ -2286,7 +2298,6 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       }
     }
   }
-
   // Clock the PAN network transport module
   if( EnablePAN ){
 
