@@ -15,8 +15,9 @@ RevExt::RevExt( std::string Name,
                 RevRegFile *RegFile,
                 RevMem *RevMem,
                 SST::Output *Output )
-  : feature(Feature), regFile(RegFile), mem(RevMem), name(Name),
+  : feature(Feature), mem(RevMem), name(Name),
     output(Output) {
+  regFile = RegFile;
 }
 
 RevExt::~RevExt(){
@@ -26,7 +27,15 @@ void RevExt::SetTable(std::vector<RevInstEntry> InstVect){
   table = InstVect;
 }
 
-bool RevExt::Execute(unsigned Inst, RevInst payload){
+void RevExt::SetCTable(std::vector<RevInstEntry> InstVect){
+  ctable = InstVect;
+}
+
+void RevExt::SetOTable(std::vector<RevInstEntry> InstVect){
+  otable = InstVect;
+}
+
+bool RevExt::Execute(unsigned Inst, RevInst payload, uint8_t threadID){
 
   // ensure that the target instruction is within scope
   if( Inst > (table.size()-1) ){
@@ -36,22 +45,35 @@ bool RevExt::Execute(unsigned Inst, RevInst payload){
                   name.c_str());
   }
 
+  bool (*func)(RevFeature *,
+               RevRegFile *,
+               RevMem *,
+               RevInst) = nullptr;
+  if( payload.compressed ){
 #if 0
-  std::cout << "EXECUTING INSTRUCTION: " << table[Inst].mnemonic
-            << " @ 0x" << std::hex << regFile->RV32_PC << std::dec
-            << "; instSize = " << payload.instSize << std::endl;
+    std::cout << "EXECUTING COMPRESSED INSTRUCTION: " << ctable[Inst].mnemonic
+              << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec
+              << "; instSize = " << payload.instSize << std::endl;
 #endif
+    // this is a compressed instruction, grab the compressed trampoline function
+    func = ctable[Inst].func;
+  }else{
+#if 0
+    std::cout << "EXECUTING INSTRUCTION: " << table[Inst].mnemonic
+              << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec
+              << "; instSize = " << payload.instSize << std::endl;
+#endif
+    // retrieve the function pointer for this instruction
+    func = table[Inst].func;
+  }
 
-  // retrieve the function pointer for this instruction
-  bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst) = table[Inst].func;
-
-  // execution the instruction
-  if( !(*func)(feature,regFile,mem,payload) )
+  // execute the instruction
+  if( !(*func)(feature,&(regFile[threadID]),mem,payload) )
     return false;
 
 #if 0
   std::cout << "COMPLETING INSTRUCTION: " << table[Inst].mnemonic
-            << " @ 0x" << std::hex << regFile->RV32_PC << std::dec << std::endl;
+            << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec << std::endl;
 #endif
 
   return true;

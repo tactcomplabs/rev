@@ -14,11 +14,17 @@
 // -- SST Headers
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
+#include <sst/core/statapi/stataccumulator.h>
+
 
 // -- Standard Headers
 #include <iostream>
 #include <fstream>
 #include <bitset>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <random>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -79,19 +85,47 @@ namespace SST{
       /// RevProc: Retrieve a random memory cost value
       unsigned RandCost() { return mem->RandCost(feature->GetMinCost(),feature->GetMaxCost()); }
 
+      /// RevProc: Handle register faults
+      void HandleRegFault(unsigned width);
+
+      /// RevProc: Handle crack+decode faults
+      void HandleCrackFault(unsigned width);
+
+      /// RevProc: Handle ALU faults
+      void HandleALUFault(unsigned width);
+
+      class RevProcStats {
+        public:
+          uint64_t totalCycles;
+          uint64_t cyclesBusy;
+          uint64_t cyclesIdle;
+          uint64_t floatsExec;
+          float    percentEff;
+          RevMem::RevMemStats memStats;
+      };
+
+      RevProcStats GetStats();
+
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
       bool SingleStep;          ///< RevProc: determines if we are in a single step
+      bool CrackFault;          ///< RevProc: determiens if we need to handle a crack fault
+      bool ALUFault;            ///< RevProc: determines if we need to handle an ALU fault
+      unsigned fault_width;     ///< RevProc: the width of the target fault
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
+      uint8_t threadToDecode;   ///< RevProc: Current executing ThreadID
+      uint8_t threadToExec;     ///< RevProc: Thread to dispatch instruction
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
+      uint64_t Retired;         ///< RevProc: number of retired instructions
       RevFeature *feature;      ///< RevProc: feature handler
       PanExec *PExec;           ///< RevProc: PAN exeuction context
+      RevProcStats Stats;       ///< RevProc: collection of performance stats
 
-      RevRegFile RegFile;       ///< RevProc: register file
+      RevRegFile RegFile[_REV_THREAD_COUNT_];      ///< RevProc: register file
       RevInst Inst;             ///< RevProc: instruction payload
 
       std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
@@ -100,6 +134,7 @@ namespace SST{
 
       std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
       std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
+      std::map<uint32_t,unsigned> CEncToEntry;    ///< RevProc: compressed instruction encoding to table entry mapping
 
       std::map<unsigned,std::pair<unsigned,unsigned>> EntryToExt;     ///< RevProc: instruction entry to extension object mapping
                                                                       ///           first = Master table entry number
@@ -118,7 +153,7 @@ namespace SST{
       bool SeedInstTable();
 
       /// RevProc: enable the target extension by merging its instruction table with the master
-      bool EnableExt(RevExt *Ext);
+      bool EnableExt(RevExt *Ext, bool Opt);
 
       /// RevProc: initializes the internal mapping tables
       bool InitTableMapping();
@@ -128,6 +163,9 @@ namespace SST{
 
       /// RevProc: compresses the encoding structure to a single value
       uint32_t CompressEncoding(RevInstEntry Entry);
+
+      /// RevProc: compressed the compressed encoding structure to a single value
+      uint32_t CompressCEncoding(RevInstEntry Entry);
 
       /// RevProc: extracts the instruction mnemonic from the table entry
       std::string ExtractMnemonic(RevInstEntry Entry);
@@ -140,6 +178,9 @@ namespace SST{
 
       /// RevProc: decode the instruction at the current PC
       RevInst DecodeInst();
+
+      /// RevProc: decode a compressed instruction
+      RevInst DecodeCompressed(uint32_t Inst);
 
       /// RevProc: decode an R-type instruction
       RevInst DecodeRInst(uint32_t Inst, unsigned Entry);
@@ -162,11 +203,41 @@ namespace SST{
       /// RevProc: decode an R4-type instruction
       RevInst DecodeR4Inst(uint32_t Inst, unsigned Entry);
 
+      /// RevProc: decode a compressed CR-type isntruction
+      RevInst DecodeCRInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CI-type isntruction
+      RevInst DecodeCIInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CSS-type isntruction
+      RevInst DecodeCSSInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CIW-type isntruction
+      RevInst DecodeCIWInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CL-type isntruction
+      RevInst DecodeCLInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CS-type isntruction
+      RevInst DecodeCSInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CA-type isntruction
+      RevInst DecodeCAInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CB-type isntruction
+      RevInst DecodeCBInst(uint16_t Inst, unsigned Entry);
+
+      /// RevProc: decode a compressed CJ-type isntruction
+      RevInst DecodeCJInst(uint16_t Inst, unsigned Entry);
+
       /// RevProc: determine if the instruction is an SP/FP float
       bool IsFloat(unsigned Entry);
 
       /// RevProc: reset the inst structure
       void ResetInst(RevInst *Inst);
+
+      /// RevProc: Determine next thread to execute
+      uint8_t GetThreadID();
 
     }; // class RevProc
   } // namespace RevCPU

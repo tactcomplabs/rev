@@ -33,6 +33,7 @@ comp_cpu.addParams({
         "program" : os.getenv("REV_EXE", "ex1.exe"),  # Target executable
         "splash" : 1                                  # Display the splash message
 })
+comp_cpu.enableAllStatistics()
 
 sst.setStatisticOutput("sst.statOutputCSV")
 sst.enableAllStatisticsForAllComponents()

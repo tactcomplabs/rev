@@ -15,6 +15,10 @@
 #include <ctime>
 #include <vector>
 #include <algorithm>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <random>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -35,6 +39,7 @@ using namespace SST::RevCPU;
 
 namespace SST {
   namespace RevCPU {
+
     class RevMem {
     public:
       /// RevMem: standard constructor
@@ -42,6 +47,9 @@ namespace SST {
 
       /// RevMem: standard destructor
       ~RevMem();
+
+      /// RevMem: handle memory injection
+      void HandleMemFault(unsigned width);
 
       /// RevMem: get the stack_top address
       uint64_t GetStackTop() { return stacktop; }
@@ -109,12 +117,33 @@ namespace SST {
       /// RevMem: Interrogates the target address and returns 'true' if a future reservation is present [RV64P only]
       bool StatusFuture( uint64_t Addr );
 
+    class RevMemStats {
+      public:
+      uint32_t floatsRead;
+      uint32_t floatsWritten;
+      uint32_t doublesWritten;
+      uint32_t doublesRead;
+      uint32_t bytesRead;
+      uint32_t bytesWritten;
+    };
+
+    RevMemStats memStats;
+
     private:
       unsigned long memSize;    ///< RevMem: size of the target memory
       RevOpts *opts;            ///< RevMem: options object
       SST::Output *output;      ///< RevMem: output handler
 
-      char *mem;                ///< RevMem: memory container
+      uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t Addr);
+
+      char *physMem;                          ///< RevMem: memory container
+      
+      //c++11 should guarentee that these are all zero-initializaed 
+      std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
+      uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
+      uint32_t                                      addrShift; ///< RevMem: Bits to shift to caclulate page of address 
+      uint32_t                                      nextPage;  ///< RevMem: next physical page to be allocated. Will result in index 
+                                                                    /// nextPage * pageSize into physMem
 
       uint64_t stacktop;        ///< RevMem: top of the stack
 

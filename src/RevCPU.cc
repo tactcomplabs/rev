@@ -33,7 +33,7 @@ const char *pan_splash_msg = "\
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
-    EnableNIC(false), EnablePAN(false), EnablePANStats(false),
+    EnableNIC(false), EnablePAN(false), EnablePANStats(false), ReadyForRevoke(false),
     Nic(nullptr), PNic(nullptr), PExec(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
@@ -45,12 +45,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   EnablePANTest = params.find<bool>("enable_test", 0);
 
   // Register a new clock handler
-  std::string cpuClock = params.find<std::string>("clock", "1GHz");
-  if( EnablePANTest ){
-    timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
-    testIters = params.find<unsigned>("testIters", 255);
-  }else{
-    timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+  {
+    const std::string cpuClock = params.find<std::string>("clock", "1GHz");
+    if( EnablePANTest ){
+      timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
+      testIters = params.find<unsigned>("testIters", 255);
+    }else{
+      timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+    }
   }
 
   // Inform SST to wait unti we authorize it to exit
@@ -76,25 +78,32 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
 
   // Initialize the remaining options
-  std::vector<std::string> startAddrs;
-  params.find_array<std::string>("startAddr", startAddrs);
-  if( !Opts->InitStartAddrs( startAddrs ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting addresses\n" );
+  {
+    std::vector<std::string> startAddrs;
+    params.find_array<std::string>("startAddr", startAddrs);
+    if( !Opts->InitStartAddrs( startAddrs ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting addresses\n" );
 
-  std::vector<std::string> machModels;
-  params.find_array<std::string>("machine", machModels);
-  if( !Opts->InitMachineModels( machModels ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the machine models\n" );
+    std::vector<std::string> startSyms;
+    params.find_array<std::string>("startSymbol", startSyms);
+    if( !Opts->InitStartSymbols( startSyms ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initalized the starting symbols\n" );
 
-  std::vector<std::string> instTables;
-  params.find_array<std::string>("table",instTables);
-  if( !Opts->InitInstTables( instTables ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the instruction tables\n" );
+    std::vector<std::string> machModels;
+    params.find_array<std::string>("machine", machModels);
+    if( !Opts->InitMachineModels( machModels ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the machine models\n" );
 
-  std::vector<std::string> memCosts;
-  params.find_array<std::string>("memCost",memCosts);
-  if( !Opts->InitMemCosts( memCosts ) )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
+    std::vector<std::string> instTables;
+    params.find_array<std::string>("table",instTables);
+    if( !Opts->InitInstTables( instTables ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the instruction tables\n" );
+
+    std::vector<std::string> memCosts;
+    params.find_array<std::string>("memCost",memCosts);
+    if( !Opts->InitMemCosts( memCosts ) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
+  }
 
   // See if we should load the network interface controller
   EnableNIC = params.find<bool>("enable_nic", 0);
@@ -132,9 +141,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     // setup the PAN target device execution context
     if( !PNic->IsHost() ){
       PExec = new PanExec();
+      if( PExec == nullptr )
       for( unsigned i=0; i<Procs.size(); i++ ){
         Procs[i]->SetExecCtx(PExec);
       }
+      RevokeHasArrived = false;
+    }else{
+      RevokeHasArrived = true;
     }
 
     // record the number of injected messages per cycle
@@ -144,6 +157,30 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
     if( EnablePANStats )
       registerStatistics();
+  }else{
+    RevokeHasArrived = true;
+  }
+
+  TotalCycles.reserve(TotalCycles.size() + numCores);
+  CyclesWithIssue.reserve(CyclesWithIssue.size() + numCores);
+  FloatsRead.reserve(FloatsRead.size() + numCores);
+  FloatsWritten.reserve(FloatsWritten.size() + numCores);
+  DoublesRead.reserve(DoublesRead.size() + numCores);
+  DoublesWritten.reserve(DoublesWritten.size() + numCores);
+  BytesRead.reserve(BytesRead.size() + numCores);
+  BytesWritten.reserve(BytesWritten.size() + numCores);
+  FloatsExec.reserve(FloatsExec.size() + numCores);
+
+  for(int s = 0; s < numCores; s++){
+    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
+    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
+    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
+    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", "core_" + std::to_string(s)));
+    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", "core_" + std::to_string(s)));
+    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", "core_" + std::to_string(s)));
+    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
+    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
+    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
   }
 
   // See if we should load the test harness as opposed to a binary payload
@@ -151,11 +188,27 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: enabling PAN tests requires a pan_nic");
   }
 
+  // Look for the fault injection logic
+  EnableFaults = params.find<bool>("enable_faults", 0);
+  if( EnableFaults ){
+    std::vector<std::string> faults;
+    params.find_array<std::string>("faults",faults);
+    DecodeFaultCodes(faults);
+
+    std::string width = params.find<std::string>("fault_width","1");
+    DecodeFaultWidth(width);
+
+    fault_width = params.find<int64_t>("fault_range","65536");
+    FaultCntr = fault_width;
+  }
+
   // Create the memory object
-  unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
-  Mem = new RevMem( memSize, Opts,  &output );
-  if( !Mem )
-    output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
+  {
+    const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
+    Mem = new RevMem( memSize, Opts,  &output );
+    if( !Mem )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
+  }
 
   // Load the binary into memory
   Loader = new RevLoader( Exe, Args, Mem, &output );
@@ -164,8 +217,20 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the processor objects
+  Procs.reserve(Procs.size() + numCores);
   for( unsigned i=0; i<numCores; i++ ){
     Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
+  }
+
+  // setup the PAN execution contexts
+  if( EnablePAN ){
+    // setup the PAN target device execution context
+    if( !PNic->IsHost() ){
+      PExec = new PanExec();
+      for( unsigned i=0; i<Procs.size(); i++ ){
+        Procs[i]->SetExecCtx(PExec);
+      }
+    }
   }
 
   // Create the completion array
@@ -174,13 +239,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     Enabled[i] = true;
   }
 
-  unsigned Splash = params.find<bool>("splash",0);
+  {
+    const unsigned Splash = params.find<bool>("splash",0);
 
-  if( Splash > 0 ){
-    if( EnablePANTest )
-      output.verbose(CALL_INFO,1,0,pan_splash_msg);
-    else
-      output.verbose(CALL_INFO,1,0,splash_msg);
+    if( Splash > 0 ){
+      if( EnablePANTest )
+        output.verbose(CALL_INFO,1,0,pan_splash_msg);
+      else
+        output.verbose(CALL_INFO,1,0,splash_msg);
+    }
   }
 
   // Done with initialization
@@ -212,6 +279,52 @@ RevCPU::~RevCPU(){
 
   // delete the options object
   delete Opts;
+}
+
+void RevCPU::DecodeFaultWidth(std::string width){
+  fault_width = 1;  // default to single bit failures
+
+  if( width == "single" ){
+    fault_width = 1;
+  }else if( width == "word" ){
+    fault_width = 8;
+  }else{
+    fault_width = std::stoi(width);
+  }
+
+  if( fault_width > 64 ){
+    output.fatal(CALL_INFO, -1, "Fault width must be <= 64 bits");
+  }
+}
+
+void RevCPU::DecodeFaultCodes(std::vector<std::string> faults){
+  if( faults.size() == 0 ){
+    output.fatal(CALL_INFO, -1, "No fault codes defined");
+  }
+
+  EnableCrackFaults = false;
+  EnableMemFaults = false;
+  EnableRegFaults = false;
+  EnableALUFaults = false;
+
+  for( unsigned i=0; i<faults.size(); i++ ){
+    if( faults[i] == "decode"){
+      EnableCrackFaults = true;
+    }else if( faults[i] == "mem"){
+      EnableMemFaults = true;
+    }else if( faults[i] == "reg"){
+      EnableRegFaults = true;
+    }else if( faults[i] == "alu"){
+      EnableALUFaults = true;
+    }else if( faults[i] == "all" ){
+      EnableCrackFaults = true;
+      EnableMemFaults = true;
+      EnableRegFaults = true;
+      EnableALUFaults = true;
+    }else{
+      output.fatal(CALL_INFO, -1, "Undefined fault code: %s", faults[i].c_str() );
+    }
+  }
 }
 
 void RevCPU::initNICMem(){
@@ -483,7 +596,7 @@ bool RevCPU::PANHandleZeroAddrPut(uint32_t Size, void *Data){
 
 void RevCPU::PANBuildFailedToken(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Building failed return packet\n");
-  panNicEvent *FEvent = new panNicEvent();
+  panNicEvent *FEvent = new panNicEvent(getName());
   FEvent->setSrc(address);
   if( !FEvent->buildFailed(event->getToken(),event->getTag()) ){
     output.fatal(CALL_INFO, -1,
@@ -495,7 +608,7 @@ void RevCPU::PANBuildFailedToken(panNicEvent *event){
 
 void RevCPU::PANBuildRawSuccess(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Building success return packet\n");
-  panNicEvent *SEvent = new panNicEvent();
+  panNicEvent *SEvent = new panNicEvent(getName());
   SEvent->setSrc(address);
   if( !SEvent->buildSuccess(event->getToken(),event->getTag()) ){
     output.fatal(CALL_INFO, -1,
@@ -567,7 +680,7 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
 
   // build response
   delete[] Data;
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize(Size);
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -623,7 +736,7 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
 
   // build response
   delete[] Data;
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize(Size);
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -674,7 +787,7 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
 
   // build response
   delete[] Data;
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize(Size);
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -725,7 +838,7 @@ void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
 
   // build response
   delete[] Data;
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize(Size);
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -746,7 +859,7 @@ void RevCPU::PANHandleExec(panNicEvent *event){
     return ;
   }
 
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize(Idx);
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -767,7 +880,7 @@ void RevCPU::PANHandleStatus(panNicEvent *event){
     return ;
   }
 
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize((uint32_t)(Status));
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -788,7 +901,7 @@ void RevCPU::PANHandleCancel(panNicEvent *event){
     return ;
   }
 
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize(Idx);
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -820,12 +933,16 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
     return ;
   }
 
+  ReadyForRevoke = true;
+
+#if 0
   // write the completion
   uint64_t Addr = _PAN_COMPLETION_ADDR_;
   uint64_t Payload = 0x01ull;
   Mem->WriteMem(Addr,8,&Payload);
 
   PNic->RevokeToken();
+#endif
   PANBuildRawSuccess(event);
 }
 
@@ -887,7 +1004,7 @@ void RevCPU::PANHandleReadReg(panNicEvent *event){
     return ;
   }
 
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
 
   uint32_t Width = 0;
   if( Procs[HART]->DebugIsRV32() )
@@ -949,7 +1066,7 @@ void RevCPU::PANHandleSingleStep(panNicEvent *event){
     return ;
   }
 
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   PANBuildBasicSuccess(event,SCmd);
   SCmd->setAddr(PC);
   SCmd->setSrc(address);
@@ -993,7 +1110,7 @@ void RevCPU::PANHandleStatusFuture(panNicEvent *event){
   }
 
   bool IsFuture = Mem->StatusFuture(event->getAddr());
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   PANBuildBasicSuccess(event,SCmd);
   if( IsFuture )
     SCmd->setSize(0x01);
@@ -1023,7 +1140,7 @@ void RevCPU::PANHandleBOTW(panNicEvent *event){
     return ;
   }
 
-  panNicEvent *SCmd = new panNicEvent();
+  panNicEvent *SCmd = new panNicEvent(getName());
   SCmd->setSize(Idx);
   SCmd->setSrc(address);
   PANBuildBasicSuccess(event,SCmd);
@@ -1090,8 +1207,8 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
   default:
     // host devices should never receive these commands
     output.fatal(CALL_INFO, -1,
-                 "Error: host devices cannot handle %s commands; Opcode = %d\n",
-                 event->getOpcodeStr().c_str(), event->getOpcode() );
+                 "Error: host devices cannot handle %s commands; Opcode = %d; SrcID = %d\n",
+                 event->getOpcodeStr().c_str(), event->getOpcode(), event->getSrc() );
     break;
   }
 }
@@ -1302,20 +1419,33 @@ bool RevCPU::sendPANMessage(){
                  SendMB.front().first->getToken(),
                  SendMB.front().first->getSize());
   PNic->send(SendMB.front().first,SendMB.front().second);
-  if( PNic->IsHost() ){
+  //if( PNic->IsHost() ){ // this was removed
     // save the message to track the response
-    uint8_t Opc = SendMB.front().first->getOpcode();
-    if( (Opc != panNicEvent::Success) && (Opc != panNicEvent::Failed) ){
-      TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
-                                         SendMB.front().second));
-    }
+  uint8_t Opc = SendMB.front().first->getOpcode();
+  if( (Opc != panNicEvent::Success) && (Opc != panNicEvent::Failed) ){
+    TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
+                                       SendMB.front().second));
   }
+  //} // this was removed
 
   if( EnablePANStats )
     registerSendCmd(SendMB.front().first);
 
   // pop the message off the queue
   SendMB.pop();
+
+  // handle the revocation
+  if( ReadyForRevoke ){
+    output.verbose(CALL_INFO, 4, 0, "Revoking token\n");
+    // write the completion
+    uint64_t Addr = _PAN_COMPLETION_ADDR_;
+    uint64_t Payload = 0x01ull;
+    Mem->WriteMem(Addr,8,&Payload);
+
+    PNic->RevokeToken();
+    ReadyForRevoke = false;
+    RevokeHasArrived = true;
+  }
 
   return true;
 }
@@ -1388,7 +1518,7 @@ bool RevCPU::processPANMemRead(){
       uint64_t tmp_addr = std::get<4>(*it);
 
       // -- setup the response
-      panNicEvent *SCmd = new panNicEvent();
+      panNicEvent *SCmd = new panNicEvent(getName());
       uint64_t *Data = new uint64_t [SCmd->getNumBlocks(tmp_size)];
       if( !Mem->ReadMem( tmp_addr,
                          (size_t)(tmp_size),
@@ -1718,7 +1848,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
       output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command; Entry=%d\n", iter);
 
       // Stage 2.a: Convert the buffer into an event
-      panNicEvent *FEvent = new panNicEvent();
+      panNicEvent *FEvent = new panNicEvent(getName());
 
       if( !PANConvertRDMAtoEvent(Payload[2],FEvent) )
         output.fatal(CALL_INFO, -1,
@@ -1790,7 +1920,7 @@ void RevCPU::ExecPANTest(){
   case 0:
     // Token reservation
     output.verbose(CALL_INFO, 4, 0, "Executing RESERVE test\n");
-    TEvent = new panNicEvent();
+    TEvent = new panNicEvent(getName());
     LToken = 0xfeedbeef;
     TEvent->setSrc(address);
     if( !TEvent->buildReserve(LToken,createTag()) )
@@ -1803,7 +1933,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing SYNC_PUT test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1825,7 +1955,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing SYNC_GET test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1846,7 +1976,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing ASYNC_PUT test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1868,7 +1998,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing ASYNC_GET test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1889,7 +2019,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing SYNC_STREAM_PUT test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1911,7 +2041,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing SYNC_STREAM_GET test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1932,7 +2062,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing ASYNC_STREAM_PUT test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1954,7 +2084,7 @@ void RevCPU::ExecPANTest(){
     output.verbose(CALL_INFO, 4, 0, "Executing ASYNC_STREAM_GET test\n");
     for( unsigned i=0; i<testIters; i++ ){
       // create a new event
-      TEvent = new panNicEvent();  // new event to send
+      TEvent = new panNicEvent(getName());  // new event to send
       TEvent->setSrc(address);
       Buf = 0xdeadbeef;            // buffer to send
 
@@ -1974,7 +2104,7 @@ void RevCPU::ExecPANTest(){
     // write the completion command
     testStage++;
     output.verbose(CALL_INFO, 4, 0, "Sending destination completion command\n");
-    TEvent = new panNicEvent();
+    TEvent = new panNicEvent(getName());
     TEvent->setSrc(address);
     Buf = 0xdeadbeef;
     if( !TEvent->buildSyncPut(LToken,
@@ -1991,7 +2121,7 @@ void RevCPU::ExecPANTest(){
   case 10:
     // revoke reservation
     output.verbose(CALL_INFO, 4, 0, "Executing REVOKE test\n");
-    TEvent = new panNicEvent();
+    TEvent = new panNicEvent(getName());
     TEvent->setSrc(address);
     if( !TEvent->buildRevoke(LToken,createTag()) )
       output.fatal(CALL_INFO, -1, "Error: could not create PAN REVOKE command\n");
@@ -2045,6 +2175,121 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
   return rtn;
 }
 
+void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
+  output.verbose(CALL_INFO, 4, 0, "FAULT: Crack fault injected at cycle: %" PRIu64 "\n",
+                 static_cast<uint64_t>(currentCycle));
+
+  // select a random processor core
+  unsigned Core = 0;
+  if( numCores > 1 ){
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(0, numCores-1); // define the range
+    Core = distr(gen);
+  }
+
+  Procs[Core]->HandleCrackFault(fault_width);
+}
+
+void RevCPU::HandleMemFault(SST::Cycle_t currentCycle){
+  output.verbose(CALL_INFO, 4, 0, "FAULT: Memory fault injected at cycle: %" PRIu64 "\n",
+                 static_cast<uint64_t>(currentCycle));
+  Mem->HandleMemFault(fault_width);
+}
+
+void RevCPU::HandleRegFault(SST::Cycle_t currentCycle){
+  output.verbose(CALL_INFO, 4, 0, "FAULT: Register fault injected at cycle: %" PRIu64 "\n",
+                 static_cast<uint64_t>(currentCycle));
+
+  // select a random processor core
+  unsigned Core = 0;
+  if( numCores > 1 ){
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(0, numCores-1); // define the range
+    Core = distr(gen);
+  }
+
+  Procs[Core]->HandleRegFault(fault_width);
+}
+
+void RevCPU::HandleALUFault(SST::Cycle_t currentCycle){
+  output.verbose(CALL_INFO, 4, 0, "FAULT: ALU fault injected at cycle: %" PRIu64 "\n",
+                 static_cast<uint64_t>(currentCycle));
+
+  // select a random processor core
+  unsigned Core = 0;
+  if( numCores > 1 ){
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(0, numCores-1); // define the range
+    Core = distr(gen);
+  }
+
+  Procs[Core]->HandleALUFault(fault_width);
+}
+
+void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
+  // build up a vector of faults
+  // then randomly determine which one to inject
+  std::vector<std::string> myfaults;
+  if( EnableCrackFaults ){
+    myfaults.push_back("crack");
+  }
+  if( EnableMemFaults ){
+    myfaults.push_back("mem");
+  }
+  if( EnableRegFaults ){
+    myfaults.push_back("reg");
+  }
+  if( EnableALUFaults ){
+    myfaults.push_back("alu");
+  }
+
+  if( myfaults.size() == 0 ){
+    output.fatal(CALL_INFO, -1,
+                 "Error: no faults enabled; add a fault vector in the 'faults' param\n" );
+  }
+
+  srand(time(NULL));
+
+  unsigned selector = 0;
+  if( myfaults.size() == 1 ){
+    selector = 0;
+  }else{
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(0, myfaults.size()-1); // define the range
+    selector = distr(gen);
+  }
+
+  // handle the selected fault
+  if( myfaults[selector] == "crack" ){
+    HandleCrackFault(currentCycle);
+  }else if( myfaults[selector] == "mem" ){
+    HandleMemFault(currentCycle);
+  }else if( myfaults[selector] == "reg" ){
+    HandleRegFault(currentCycle);
+  }else if( myfaults[selector] == "alu" ){
+    HandleALUFault(currentCycle);
+  }else{
+    output.fatal(CALL_INFO, -1, "Error: erroneous fault selection\n" );
+  }
+}
+
+void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
+  RevProc::RevProcStats stats = Procs[coreNum]->GetStats();
+  TotalCycles[coreNum]->addData(stats.totalCycles);
+  CyclesWithIssue[coreNum]->addData(stats.cyclesBusy);
+  FloatsRead[coreNum]->addData(stats.memStats.floatsRead);
+  FloatsWritten[coreNum]->addData(stats.memStats.floatsWritten);
+  DoublesRead[coreNum]->addData(stats.memStats.doublesRead);
+  DoublesWritten[coreNum]->addData(stats.memStats.doublesWritten);
+  BytesRead[coreNum]->addData(stats.memStats.bytesRead);
+  BytesWritten[coreNum]->addData(stats.memStats.bytesWritten);
+  FloatsExec[coreNum]->addData(stats.floatsExec);
+}
+
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
@@ -2053,11 +2298,14 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   // Execute each enabled core
   for( unsigned i=0; i<Procs.size(); i++ ){
     if( Enabled[i] ){
-      if( !Procs[i]->ClockTick(currentCycle) )
+      if( !Procs[i]->ClockTick(currentCycle) ){
+         UpdateCoreStatistics(i);
         Enabled[i] = false;
+      output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
+                     i, static_cast<uint64_t>(currentCycle));
+      }
     }
   }
-
   // Clock the PAN network transport module
   if( EnablePAN ){
 
@@ -2082,18 +2330,33 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       output.fatal(CALL_INFO, -1, "Error: failed to process the PAN zero address put queue\n" );
   }
 
+  // check to see if we need to inject a fault
+  if( EnableFaults ){
+    if( FaultCntr == 0 ){
+      // inject a fault
+      HandleFaultInjection(currentCycle);
+
+      // reset the fault counter
+      FaultCntr = fault_width;
+    }else{
+      FaultCntr--;
+    }
+  }
+
   // check to see if all the processors are completed
   for( unsigned i=0; i<Procs.size(); i++ ){
     if( Enabled[i] )
       rtn = false;
   }
 
-  // check to see if the network has any outstanding messages
-  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() )
+  // check to see if the network has any outstanding messages: fixme
+  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() || !RevokeHasArrived )
     rtn = false;
 
-  if( rtn )
+  if( rtn ){
     primaryComponentOKToEndSim();
+    output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+  }
 
   return rtn;
 }

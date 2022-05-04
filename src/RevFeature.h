@@ -72,6 +72,9 @@ namespace SST{
       /// RevFeature: Is the device an RV64
       bool IsRV64() { if( xlen == 64 ){ return true; }return false; }
 
+      /// RevFeature: Does the device support RV32C?
+      bool IsRV32C();
+
       /// RevFeature: Does the device support RV32F?
       bool IsRV32F();
 

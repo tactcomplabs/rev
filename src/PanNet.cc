@@ -110,9 +110,8 @@ bool panNicEvent::setData(uint64_t *In, uint32_t Sz){
     return true;
 
   blocks = getNumBlocks(Sz);
-  Data = new uint64_t [blocks];
   for( unsigned i=0; i<blocks; i++ ){
-    Data[i] = In[i];
+    Data.push_back(In[i]);
   }
 
   return true;
@@ -208,27 +207,21 @@ bool panNicEvent::buildSyncGet(uint32_t Token, uint8_t Tag, uint64_t Addr, uint3
 bool panNicEvent::buildSyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint32_t Size, uint64_t *Data){
   Opcode = SyncPut;
   if( Data == nullptr ){
-    std::cout << "Error: data is null" << std::endl;
     return false;
   }
   if( !setToken(Token) ){
-    std::cout << "Error: failed to set the token" << std::endl;
     return false;
   }
   if( !setTag(Tag) ){
-    std::cout << "Error: failed to set the tag" << std::endl;
     return false;
   }
   if( !setSize(Size) ){
-    std::cout << "Error: failed to set the size" << std::endl;
     return false;
   }
   if( !setAddr(Addr) ){
-    std::cout << "Error: failed to set the addr" << std::endl;
     return false;
   }
   if( !setData(Data,Size) ){
-    std::cout << "Error: failed to set the data" << std::endl;
     return false;
   }
 
@@ -612,17 +605,25 @@ void PanNet::setup(){
 bool PanNet::msgNotify(int vn){
   SST::Interfaces::SimpleNetwork::Request* req = iFace->recv(0);
   if( req != nullptr ){
-    if( req != nullptr ){
-      panNicEvent *ev = static_cast<panNicEvent*>(req->takePayload());
-      delete req;
-      (*msgHandler)(ev);
+    panNicEvent *ev = static_cast<panNicEvent*>(req->takePayload());
+    if( !ev ){
+      output->fatal(CALL_INFO, -1, "%s, Error: panNicEvent on PanNet is null\n",
+                    getName().c_str());
     }
+    output->verbose(CALL_INFO, 9, 0,
+                    "%s received message opcode of %d from %s\n",
+                    getName().c_str(), ev->getOpcode(), ev->getSource().c_str());
+    (*msgHandler)(ev);
+    delete req;
   }
   return true;
 }
 
 void PanNet::send(panNicEvent* event, int destination){
   SST::Interfaces::SimpleNetwork::Request *req = new SST::Interfaces::SimpleNetwork::Request();
+  output->verbose(CALL_INFO, 9, 0,
+                  "%s sending message opcode of %d from %s\n",
+                  getName().c_str(), event->getOpcode(), event->getSource().c_str());
   req->dest = destination;
   req->src = iFace->getEndpointID();
   req->givePayload(event);

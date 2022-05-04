@@ -39,6 +39,7 @@ void RevOpts::splitStr(const std::string& s,
                        std::vector<std::string>& v){
   std::string::size_type i = 0;
   std::string::size_type j = s.find(c);
+  v.clear();
 
   while (j != std::string::npos) {
     v.push_back(s.substr(i, j-i));
@@ -65,6 +66,25 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
     uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
 
     startAddr.find(Core)->second = Addr;
+    vstr.clear();
+  }
+  return true;
+}
+
+bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
+  std::vector<std::string> vstr;
+  for(unsigned i=0; i<StartSymbols.size(); i++ ){
+    std::string s = StartSymbols[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    if( Core > numCores )
+      return false;
+
+    startSym.insert(std::pair<unsigned,std::string>(Core,vstr[1]));
+    vstr.clear();
   }
   return true;
 }
@@ -82,6 +102,7 @@ bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
       return false;
 
     machine.at(Core) = vstr[1];
+    vstr.clear();
   }
   return true;
 }
@@ -99,6 +120,7 @@ bool RevOpts::InitInstTables( std::vector<std::string> InstTables ){
       return false;
 
     table.at(Core) = vstr[1];
+    vstr.clear();
   }
   return true;
 }
@@ -117,6 +139,10 @@ bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
     unsigned Max  = (unsigned)(std::stoi(vstr[2],nullptr,0));
     memCosts[Core].first  = Min;
     memCosts[Core].second = Max;
+    if( (Min==0) || (Max==0) ){
+      return false;
+    }
+    vstr.clear();
   }
 
   return true;
@@ -126,7 +152,22 @@ bool RevOpts::GetStartAddr( unsigned Core, uint64_t &StartAddr ){
   if( Core > numCores )
     return false;
 
+  if( startAddr.find(Core) == startAddr.end() )
+    return false;
+
   StartAddr = startAddr.at(Core);
+  return true;
+}
+
+bool RevOpts::GetStartSymbol( unsigned Core, std::string &Symbol ){
+  if( Core > numCores )
+    return false;
+
+  if( startSym.find(Core) == startSym.end() ){
+    Symbol = "main";
+  }else{
+    Symbol = startSym.at(Core);
+  }
   return true;
 }
 
