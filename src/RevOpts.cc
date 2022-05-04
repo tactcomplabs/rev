@@ -66,6 +66,7 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
     uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
 
     startAddr.find(Core)->second = Addr;
+    vstr.clear();
   }
   return true;
 }
@@ -83,6 +84,7 @@ bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
       return false;
 
     startSym.insert(std::pair<unsigned,std::string>(Core,vstr[1]));
+    vstr.clear();
   }
   return true;
 }
@@ -100,6 +102,7 @@ bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
       return false;
 
     machine.at(Core) = vstr[1];
+    vstr.clear();
   }
   return true;
 }
@@ -117,6 +120,7 @@ bool RevOpts::InitInstTables( std::vector<std::string> InstTables ){
       return false;
 
     table.at(Core) = vstr[1];
+    vstr.clear();
   }
   return true;
 }
@@ -135,8 +139,10 @@ bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
     unsigned Max  = (unsigned)(std::stoi(vstr[2],nullptr,0));
     memCosts[Core].first  = Min;
     memCosts[Core].second = Max;
-    if( (Min==0) || (Max==0) )
+    if( (Min==0) || (Max==0) ){
       return false;
+    }
+    vstr.clear();
   }
 
   return true;
