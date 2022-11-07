@@ -15,8 +15,8 @@
 all: src
 doc:
 	doxygen ./doxygen/Rev.conf
-debug: 
-	$(MAKE) debug -C src 
+debug:
+	$(MAKE) debug -C src
 src:
 	$(MAKE) -C src
 install:
