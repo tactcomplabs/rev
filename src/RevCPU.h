@@ -1,7 +1,7 @@
 //
 // _RevCPU_h_
 //
-// Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -71,9 +71,9 @@ namespace SST {
       // -------------------------------------------------------
       /// RevCPU: Register the component with the SST core
       SST_ELI_REGISTER_COMPONENT(
-                                  RevCPU,
-                                  "revcpu",
-                                  "RevCPU",
+                                  RevCPU,                             // component class
+                                  "revcpu",                           // component library
+                                  "RevCPU",                           // component name
                                   SST_ELI_ELEMENT_VERSION( 1, 0, 0 ),
                                   "RISC-V SST CPU",
                                   COMPONENT_CATEGORY_PROCESSOR

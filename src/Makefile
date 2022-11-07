@@ -3,7 +3,7 @@
 #
 # Integrated makefile to build the RevCPU library
 #
-# Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -26,20 +26,22 @@ REV_HEADERS := $(wildcard *.h)
 
 REV_OBJS := $(patsubst %.cc,%.o,$(wildcard *.cc)) ./syscalls/syscalls.o
 
-all: syscalls.o librevcpu.so
+REV_INCS := $(patsubst %.py,%.inc,$(wildcard *.py))
+
+all: librevcpu.so
 
 debug: CXXFLAGS += -DDEBUG -g
-debug: librevcpu.so 
+debug: librevcpu.so
 
-syscalls.o:
-	(cd syscalls; make)
-librevcpu.so: $(REV_OBJS)
+librevcpu.so: $(REV_INCS) $(REV_OBJS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ *.o
 %.o:%.cc $(REV_HEADERS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -c $<
+%.inc:%.py
+	od -v -t x1 < $< | sed -e 's/^[^ ]*[ ]*//g' -e '/^\s*$$/d' -e 's/\([0-9a-f]*\)[ $$]*/0x\1,/g' > $@
 install: librevcpu.so
 	sst-register revcpu revcpu_LIBDIR=$(CURDIR)
 clean:
-	rm -Rf *.o librevcpu.so
+	rm -Rf *.o *.inc librevcpu.so
 
 #-- EOF
