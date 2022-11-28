@@ -9,7 +9,7 @@
 //
 
 #include <sst/core/sst_config.h>
-#include "RevCPU.h"
+#include "../include/RevCPU.h"
 
 // Install the python library
 #include <sst/core/model/element_python.h>
@@ -18,7 +18,7 @@ namespace SST {
   namespace RevCPU {
 
     char pyrevcpu[] = {
-      #include "pyrevcpu.inc"
+      #include "../include/pyrevcpu.inc"
       0x00};
 
     class RevCPUPyModule : public SSTElementPythonModule {

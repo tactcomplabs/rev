@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevExt.h"
+#include "../include/RevExt.h"
 
 RevExt::RevExt( std::string Name,
                 RevFeature *Feature,

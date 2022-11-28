@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevOpts.h"
+#include "../include/RevOpts.h"
 
 RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   : numCores(NumCores), verbosity(Verbosity) {
