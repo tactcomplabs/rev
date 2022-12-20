@@ -51,22 +51,28 @@ endif()
 #------------------------------------------------------------------------
 execute_process(COMMAND sst-config --CXX
                 OUTPUT_VARIABLE CXX
+                OUTPUT_STRIP_TRAILING_WHITESPACE
   )
+message (CXX="${CXX}")
+execute_process(COMMAND sst-config --ELEMENT_CXXFLAGS 
+  OUTPUT_VARIABLE SST_CXXFLAGS
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+set(CXXFLAGS "${SST_CXXFLAGS}  -fno-stack-protector")
+message (CXXFLAGS="${CXXFLAGS}")
 
-execute_process(COMMAND sst-config --ELEMENT_CXXFLAGS -fno-stack-protector
-  OUTPUT_VARIABLE CXXFLAGS
+execute_process(COMMAND sst-config --ELEMENT_LDFLAGS 
+  OUTPUT_VARIABLE SST_LDFLAGS
+  OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-
-execute_process(COMMAND sst-config --ELEMENT_LDFLAGS -fno-stack-protector
-  OUTPUT_VARIABLE LDFLAGS
-  )
+set(LDFLAGS "${SST_LDFLAGS}  -fno-stack-protector")
+message (LDFLAGS="${LDFLAGS}")
 
 #------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
-# Require C++14
 # TODO: This might not be necessary
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -std=c++14 -Wall ${REVCPU_COMPILER_MACROS}")
+set(CMAKE_CXX_FLAGS "-O2 -Wall ${CMAKE_CXX_FLAGS} -std=c++11 -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
 
