@@ -18,9 +18,13 @@ project(revcpu CXX)
 #-- SETUP PATHS - This will be relevant as soon as SST supports sane CMake
 #---------------------------------------------------------------------------
 # Setup the path to the SST installation directory
-set(SST_INSTALL_DIR "" CACHE PATH "SST installation directory")
+#set(SST_INSTALL_DIR "" CACHE PATH "SST installation directory")
+execute_process(COMMAND sst-config --prefix 
+                OUTPUT_VARIABLE SST_INSTALL_DIR
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                )
 set(SST_INCLUDE_DIR "${SST_INSTALL_DIR}/include")
-if(NOT EXISTS "${SST_INSTALL_DIR}")
+if(NOT (EXISTS "${SST_INSTALL_DIR}"))
   message(FATAL_ERROR " SST_INSTALL_DIR (${SST_INSTALL_DIR}) is invalid.")
 endif()
 
@@ -125,7 +129,7 @@ endif()
 #-- TESTING
 #------------------------------------------------------------------------
 # Enable Testing
-option(REV_ENABLE_TESTING )
+option(REV_ENABLE_TESTING "Enable Testing")
 enable_testing()
 
 
