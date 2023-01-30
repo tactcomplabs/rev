@@ -1,7 +1,7 @@
 //
 // _RV32I_h_
 //
-// Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -26,8 +26,17 @@ namespace SST{
         // c.addi4spn rd, $imm == addi rd, x2, $imm
         Inst.rs1  = 2;
         Inst.rd   = CRegMap[Inst.rd];
-        if( Inst.imm == 0x00 )
-          return false;
+
+        // if Inst.imm == 0; this is a HINT instruction
+        // this is effectively a NOP
+        if( Inst.imm == 0x00 ){
+          if( F->IsRV32() ){
+            R->RV32_PC += Inst.instSize;
+          }else{
+            R->RV64_PC += Inst.instSize;
+          }
+          return true;
+        }
 
         return addi(F,R,M,Inst);
       }

@@ -1,7 +1,7 @@
 //
 // _RevCPU_cc_
 //
-// Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -1419,14 +1419,12 @@ bool RevCPU::sendPANMessage(){
                  SendMB.front().first->getToken(),
                  SendMB.front().first->getSize());
   PNic->send(SendMB.front().first,SendMB.front().second);
-  //if( PNic->IsHost() ){ // this was removed
-    // save the message to track the response
+
   uint8_t Opc = SendMB.front().first->getOpcode();
   if( (Opc != panNicEvent::Success) && (Opc != panNicEvent::Failed) ){
     TrackTags.push_back(std::make_pair(SendMB.front().first->getTag(),
                                        SendMB.front().second));
   }
-  //} // this was removed
 
   if( EnablePANStats )
     registerSendCmd(SendMB.front().first);
@@ -2350,8 +2348,22 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   // check to see if the network has any outstanding messages: fixme
-  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() || !RevokeHasArrived )
+  if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() || !RevokeHasArrived ){
+#ifdef _REV_DEBUG_
+    if( RevokeHasArrived && !PNic->IsHost() ){
+      if( !SendMB.empty() ){
+        output.verbose(CALL_INFO,5,0,"SendMB not empty\n");
+      }
+      if( !ZeroRqst.empty() ){
+        output.verbose(CALL_INFO,5,0,"ZeroRqst not empty\n");
+      }
+      if( !TrackTags.empty() ){
+        output.verbose(CALL_INFO,5,0,"TrackTags not empty: %d\n", TrackTags.size());
+      }
+    }
+#endif
     rtn = false;
+  }
 
   if( rtn ){
     primaryComponentOKToEndSim();

@@ -1,7 +1,7 @@
 //
 // _RevProc_cc_
 //
-// Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -817,6 +817,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
   target[9] = offsetBits[6];
   target[10] = offsetBits[10];
   CompInst.jumpTarget = ((u_int16_t)target.to_ulong()) << 1;
+  //CompInst.jumpTarget = ((u_int16_t)target.to_ulong());
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -1583,6 +1584,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   for (int tID = 0; tID < _REV_THREAD_COUNT_; tID++){
     THREAD_CTS[tID] = (RegFile[tID].cost == 0);
   }
+
   if( THREAD_CTS.any() && (!Halted)) { // && (RegFile[threadID].cost == 0)){
     // fetch the next instruction
     ResetInst(&Inst);
@@ -1600,6 +1602,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     ExecPC = GetPC();
     Stats.cyclesBusy++;
   }
+
   if( (!RegFile[threadToDecode].trigger) && (!Halted) ){
     // trigger the next instruction
     threadToExec = threadToDecode;
@@ -1684,9 +1687,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // wait until the counter has been decremented
     // note that this will continue to occur until the counter is drained
     // and the HART is halted
-     output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; No available thread to exec PC= 0x%" PRIx64 "\n",
-                      id, ExecPC);
+    output->verbose(CALL_INFO, 9, 0,
+                    "Core %d ; No available thread to exec PC= 0x%" PRIx64 "\n",
+                    id, ExecPC);
     rtn = true;
     Stats.cyclesIdle++;
   }

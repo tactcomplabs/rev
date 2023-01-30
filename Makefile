@@ -3,7 +3,7 @@
 #
 # Top-level Rev makefile
 #
-# Copyright (C) 2017-2021 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -15,8 +15,8 @@
 all: src
 doc:
 	doxygen ./doxygen/Rev.conf
-debug: 
-	$(MAKE) debug -C src 
+debug:
+	$(MAKE) debug -C src
 src:
 	$(MAKE) -C src
 install:
