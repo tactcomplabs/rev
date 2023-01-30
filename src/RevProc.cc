@@ -817,6 +817,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
   target[9] = offsetBits[6];
   target[10] = offsetBits[10];
   CompInst.jumpTarget = ((u_int16_t)target.to_ulong()) << 1;
+  //CompInst.jumpTarget = ((u_int16_t)target.to_ulong());
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
