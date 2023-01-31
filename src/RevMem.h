@@ -26,6 +26,7 @@
 
 // -- RevCPU Headers
 #include "RevOpts.h"
+#include "RevMemCtrl.h"
 
 #ifndef _REVMEM_BASE_
 #define _REVMEM_BASE_ 0x00000000
@@ -45,8 +46,14 @@ namespace SST {
       /// RevMem: standard constructor
       RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output );
 
+      /// RevMem: standard memory controller constructor
+      RevMem( RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
+
       /// RevMem: standard destructor
       ~RevMem();
+
+      /// RevMem: handle incoming memory event
+      void handleEvent(Interfaces::StandardMem::Request* ev) { }
 
       /// RevMem: handle memory injection
       void HandleMemFault(unsigned width);
@@ -118,7 +125,7 @@ namespace SST {
       bool StatusFuture( uint64_t Addr );
 
     class RevMemStats {
-      public:
+    public:
       uint32_t floatsRead;
       uint32_t floatsWritten;
       uint32_t doublesWritten;
@@ -132,13 +139,14 @@ namespace SST {
     private:
       unsigned long memSize;    ///< RevMem: size of the target memory
       RevOpts *opts;            ///< RevMem: options object
+      RevMemCtrl *ctrl;         ///< RevMem: memory controller object
       SST::Output *output;      ///< RevMem: output handler
 
       uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t Addr);
 
       char *physMem;                          ///< RevMem: memory container
-      
-      //c++11 should guarentee that these are all zero-initializaed 
+
+      //c++11 should guarentee that these are all zero-initializaed
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
       uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
       uint32_t                                      addrShift; ///< RevMem: Bits to shift to caclulate page of address 

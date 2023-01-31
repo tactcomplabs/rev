@@ -1750,8 +1750,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // we are really done, return
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
       Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
-      output->verbose(CALL_INFO,2,0,"Program Stats: Total Cycles: %d Busy Cycles: %d Idle Cycles: %d Eff: %f\n", Stats.totalCycles, Stats.cyclesBusy, Stats.cyclesIdle, Stats.percentEff);
-      output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %d Inst Retired: %" PRIu64 "\n", \
+      output->verbose(CALL_INFO,2,0,
+                      "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64 " Idle Cycles: %" PRIu64 " Eff: %f\n",
+                      Stats.totalCycles, Stats.cyclesBusy,
+                      Stats.cyclesIdle, Stats.percentEff);
+      output->verbose(CALL_INFO,2,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %" PRIu64 " Inst Retired: %" PRIu64 "\n", \
                                       mem->memStats.bytesRead, \
                                       mem->memStats.bytesWritten, \
                                       mem->memStats.floatsRead, \

@@ -29,6 +29,7 @@
 // -- Rev Headers
 #include "RevOpts.h"
 #include "RevMem.h"
+#include "RevMemCtrl.h"
 #include "RevLoader.h"
 #include "RevProc.h"
 #include "RevNIC.h"
@@ -98,6 +99,7 @@ namespace SST {
         {"enable_pan",      "Enable PAN network endpoint",                  "0"},
         {"enable_test",     "Enable PAN network endpoint test",             "0"},
         {"enable_pan_stats","Enable PAN network statistics",                "1"},
+        {"enable_memH",     "Enable memHierarchy",                          "0"},
         {"enableRDMAMbox",  "Enable the RDMA mailbox",                      "1"},
         {"enable_faults",   "Enable the fault injection logic",             "0"},
         {"faults",          "Enable specific faults",                       "decode,mem,reg,alu"},
@@ -113,14 +115,15 @@ namespace SST {
       // RevCPU Port Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_PORTS(
-                            )
+      )
 
       // -------------------------------------------------------
       // RevCPU SubComponent Parameter Data
       // -------------------------------------------------------
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
-        {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"}
+        {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
+        {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevBasicMemCtrl"}
       )
 
       // -------------------------------------------------------
@@ -217,6 +220,8 @@ namespace SST {
       bool EnablePANStats;                ///< RevCPU: Flag for enabling PAN statistics
       bool EnableRDMAMBox;                ///< RevCPU: Enable the RDMA Mailbox
 
+      bool EnableMemH;                    ///< RevCPU: Enable memHierarchy
+
       bool EnableFaults;                  ///< RevCPU: Enable fault injection logic
       bool EnableCrackFaults;             ///< RevCPU: Enable Crack+Decode Faults
       bool EnableMemFaults;               ///< RevCPU: Enable memory faults (bit flips)
@@ -232,6 +237,7 @@ namespace SST {
       nicAPI *Nic;                        ///< RevCPU: Network interface controller
       panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
       PanExec *PExec;                     ///< RevCPU: PAN execution context
+      RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
 
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
@@ -302,7 +308,7 @@ namespace SST {
       Statistic<uint64_t>* SuccessRecv;
       Statistic<uint64_t>* FailedRecv;
       Statistic<uint64_t>* BOTWRecv;
-      // ----- Per Core Statistics 
+      // ----- Per Core Statistics
       std::vector<Statistic<uint64_t>*> TotalCycles;
       std::vector<Statistic<uint64_t>*> CyclesWithIssue;
       std::vector<Statistic<uint64_t>*> FloatsRead;

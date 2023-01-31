@@ -11,8 +11,21 @@
 #include "RevMem.h"
 #include <math.h>
 
+RevMem::RevMem( RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
+  : memSize(0), opts(Opts), ctrl(Ctrl), output(Output), physMem(nullptr),
+    stacktop(0x00ull) {
+  // Note: this constructor assumes the use of the memHierarchy backend
+  memStats.bytesRead = 0;
+  memStats.bytesWritten = 0;
+  memStats.doublesRead = 0;
+  memStats.doublesWritten = 0;
+  memStats.floatsRead = 0;
+  memStats.floatsWritten = 0;
+}
+
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
-  : memSize(MemSize), opts(Opts), output(Output), physMem(nullptr), stacktop(0x00ull) {
+  : memSize(MemSize), opts(Opts), ctrl(nullptr),output(Output),
+    physMem(nullptr), stacktop(0x00ull) {
 
   // allocate the backing memory
   physMem = new char [memSize];
