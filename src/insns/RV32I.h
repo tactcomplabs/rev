@@ -264,11 +264,13 @@ namespace SST{
       }
 
       static bool auipc(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        uint64_t tmp;
         if( F->IsRV32() ){
           R->RV32[Inst.rd] = 0x00;
           R->RV32[Inst.rd] = (Inst.imm << 12) + dt_u32(R->RV32_PC,32);
           R->RV32_PC += Inst.instSize;
         }else{
+          SEXT(tmp, Inst.imm << 12, 32);
           R->RV64[Inst.rd] = 0x00;
           R->RV64[Inst.rd] = (Inst.imm << 12) + dt_u64(R->RV64_PC,64);
           R->RV64_PC += Inst.instSize;
