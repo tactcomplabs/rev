@@ -32,11 +32,16 @@ RevMemCtrl::~RevMemCtrl(){
 // RevBasicMemCtrl
 // ---------------------------------------------------------------
 RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
-  : RevMemCtrl(id,params), memIface(nullptr),stdMemHandlers(nullptr){
+  : RevMemCtrl(id,params), memIface(nullptr),stdMemHandlers(nullptr),
+    max_loads(64), max_stores(64), max_ops(2){
 
   stdMemHandlers = new RevBasicMemCtrl::RevStdMemHandlers(this,output);
 
   std::string ClockFreq = params.find<std::string>("clock", "1Ghz");
+
+  max_loads = params.find<unsigned>("max_loads", 64);
+  max_stores = params.find<unsigned>("max_stores", 64);
+  max_ops = params.find<unsigned>("ops_per_cycle", 2);
 
   memIface = loadUserSubComponent<Interfaces::StandardMem>(
     "memIface", ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
@@ -44,12 +49,43 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
       this, &RevBasicMemCtrl::processMemEvent));
 
 
+  registerStats();
+
   registerClock( ClockFreq,
               new Clock::Handler<RevBasicMemCtrl>(this,&RevBasicMemCtrl::clockTick));
 }
 
 RevBasicMemCtrl::~RevBasicMemCtrl(){
   delete stdMemHandlers;
+}
+
+void RevBasicMemCtrl::registerStats(){
+  stats.push_back(registerStatistic<uint64_t>("ReadInFlight"));
+  stats.push_back(registerStatistic<uint64_t>("ReadPending"));
+  stats.push_back(registerStatistic<uint64_t>("ReadBytes"));
+  stats.push_back(registerStatistic<uint64_t>("WriteInFlight"));
+  stats.push_back(registerStatistic<uint64_t>("WritePending"));
+  stats.push_back(registerStatistic<uint64_t>("WriteBytes"));
+  stats.push_back(registerStatistic<uint64_t>("FlushInFlight"));
+  stats.push_back(registerStatistic<uint64_t>("FlushPending"));
+  stats.push_back(registerStatistic<uint64_t>("ReadLockInFlight"));
+  stats.push_back(registerStatistic<uint64_t>("ReadLockPending"));
+  stats.push_back(registerStatistic<uint64_t>("ReadLockBytes"));
+  stats.push_back(registerStatistic<uint64_t>("WriteUnlockInFlight"));
+  stats.push_back(registerStatistic<uint64_t>("WriteUnlockPending"));
+  stats.push_back(registerStatistic<uint64_t>("WriteUnlockBytes"));
+  stats.push_back(registerStatistic<uint64_t>("LoadLinkInFlight"));
+  stats.push_back(registerStatistic<uint64_t>("LoadLinkPending"));
+  stats.push_back(registerStatistic<uint64_t>("StoreCondInFlight"));
+  stats.push_back(registerStatistic<uint64_t>("StoreCondPending"));
+}
+
+void RevBasicMemCtrl::recordStat(RevBasicMemCtrl::MemCtrlStats Stat, uint64_t Data){
+  if( Stat > RevBasicMemCtrl::MemCtrlStats::StoreCondPending){
+    // do nothing
+    return ;
+  }
+  stats[Stat]->addData(Data);
 }
 
 void RevBasicMemCtrl::processMemEvent(StandardMem::Request* ev){

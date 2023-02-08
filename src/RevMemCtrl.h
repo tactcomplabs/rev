@@ -70,15 +70,58 @@ namespace SST {
                                             SST::RevCPU::RevMemCtrl
                                            )
 
-      SST_ELI_DOCUMENT_PARAMS({ "verbose", "Set the verbosity of output for the memory controller", "0" },
-                              { "clock",   "Sets the clock frequency of the memory conroller", "1Ghz" }
+      SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the memory controller",    "0" },
+                              { "clock",          "Sets the clock frequency of the memory conroller",         "1Ghz" },
+                              { "max_loads",      "Sets the maximum number of outstanding loads",             "64"},
+                              { "max_stores",     "Sets the maximum number of outstanding stores",            "64"},
+                              { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" }
       )
 
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({ "memIface", "Set the interface to memory", "SST::Interfaces::StandardMem" })
 
       SST_ELI_DOCUMENT_PORTS({ "cache_link", "Connects the controller to the first level of cache/memory", {} })
 
-      SST_ELI_DOCUMENT_STATISTICS()
+      SST_ELI_DOCUMENT_STATISTICS(
+        {"ReadInFlight",        "Counts the number of reads in flight",             "count", 1},
+        {"ReadPending",         "Counts the number of reads pending",               "count", 1},
+        {"ReadBytes",           "Counts the number of bytes read",                  "bytes", 1},
+        {"WriteInFlight",       "Counts the number of writes in flight",            "count", 1},
+        {"WritePending",        "Counts the number of writes pending",              "count", 1},
+        {"WriteBytes",          "Counts the number of bytes written",               "bytes", 1},
+        {"FlushInFlight",       "Counts the number of flushes in flight",           "count", 1},
+        {"FlushPending",        "Counts the number of flushes pending",             "count", 1},
+        {"ReadLockInFlight",    "Counts the number of readlocks in flight",         "count", 1},
+        {"ReadLockPending",     "Counts the number of readlocks pending",           "count", 1},
+        {"ReadLockBytes",       "Counts the number of readlock bytes read",         "bytes", 1},
+        {"WriteUnlockInFlight", "Counts the number of write unlocks in flight",     "count", 1},
+        {"WriteUnlockPending",  "Counts the number of write unlocks pending",       "count", 1},
+        {"WriteUnlockBytes",    "Counts the number of write unlock bytes written",  "bytes", 1},
+        {"LoadLinkInFlight",    "Counts the number of loadlinks in flight",         "count", 1},
+        {"LoadLinkPending",     "Counts the number of loadlinks pending",           "count", 1},
+        {"StoreCondInFlight",   "Counts the number of storeconds in flight",        "count", 1},
+        {"StoreCondPending",    "Counts the number of storeconds pending",          "count", 1}
+      )
+
+      typedef enum{
+        ReadInFlight        = 0,
+        ReadPending         = 1,
+        ReadBytes           = 2,
+        WriteInFlight       = 3,
+        WritePending        = 4,
+        WriteBytes          = 5,
+        FlushInFlight       = 6,
+        FlushPending        = 7,
+        ReadLockInFlight    = 8,
+        ReadLockPending     = 9,
+        ReadLockBytes       = 10,
+        WriteUnlockInFlight = 11,
+        WriteUnlockPending  = 12,
+        WriteUnlockBytes    = 13,
+        LoadLinkInFlight    = 14,
+        LoadLinkPending     = 15,
+        StoreCondInFlight   = 16,
+        StoreCondPending    = 17
+      }MemCtrlStats;
 
       /// RevBasicMemCtrl: constructor
       RevBasicMemCtrl(ComponentId_t id, Params& params);
@@ -118,8 +161,21 @@ namespace SST {
 
 
     private:
+
+      /// RevBasicMemCtrl: register statistics
+      void registerStats();
+
+      /// RevBasicMemCtrl: inject statistics data for the target metric
+      void recordStat(MemCtrlStats Stat, uint64_t Data);
+
+      // -- private data members
       StandardMem* memIface;                  ///< StandardMem memory interface
       RevStdMemHandlers* stdMemHandlers;      ///< StandardMem interface response handlers
+      unsigned max_loads;                     ///< maximum number of outstanding loads
+      unsigned max_stores;                    ///< maximum number of outstanding stores
+      unsigned max_ops;                       ///< maximum number of ops to issue per cycle
+
+      std::vector<Statistic<uint64_t>*> stats;///< statistics vector
 
     }; // RevBasicMemCtrl
   } // namespace RevCPU
