@@ -14,6 +14,7 @@
 // -- C++ Headers
 #include <ctime>
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +40,62 @@ using namespace SST::Interfaces;
 namespace SST {
   namespace RevCPU {
 
+    // ----------------------------------------
+    // RevMemOp
+    // ----------------------------------------
+    class RevMemOp {
+    public:
+      typedef enum{
+        MemOpREAD           = 0,
+        MemOpWRITE          = 1,
+        MemOpFLUSH          = 2,
+        MemOpREADLOCK       = 3,
+        MemOpWRITEUNLOCK    = 4,
+        MemOpLOADLINK       = 5,
+        MemOpSTORECOND      = 6,
+        MemOpCUSTOM         = 7,
+        MemOpFENCE          = 8
+      }MemOp;
+
+      /// RevMemOp constructor
+      RevMemOp( uint64_t Addr, uint32_t Size, RevMemOp::MemOp Op );
+
+      /// RevMemOp constructor
+      RevMemOp( uint64_t Addr, uint32_t Size, void *target, RevMemOp::MemOp Op );
+
+      /// RevMemOp overloaded constructor
+      RevMemOp( uint64_t Addr, uint32_t Size, char *buffer, RevMemOp::MemOp Op );
+
+      /// RevMemOp overloaded constructor
+      RevMemOp( uint64_t Addr, uint32_t Size, void *target, unsigned CustomOpc, RevMemOp::MemOp Op );
+
+      /// RevMemOp overloaded constructor
+      RevMemOp( uint64_t Addr, uint32_t Size, char *buffer, unsigned CustomOpc, RevMemOp::MemOp Op );
+
+      /// RevMemOp destructor
+      ~RevMemOp();
+
+      /// RevMemOp: retrieve the memory operation type
+      MemOp getOp() { return Op; }
+
+      /// RevMemOp: retrieve the custom opcode
+      unsigned getCustomOpc() { return CustomOpc; }
+
+      /// RevMemOp: retrieve the target address
+      uint64_t getAddr() { return Addr; }
+
+    private:
+      uint64_t Addr;      ///< RevMemOp: address
+      uint32_t Size;      ///< RevMemOp: size of the memory operation in bytes
+      MemOp Op;           ///< RevMemOp: target memory operation
+      unsigned CustomOpc; ///< RevMemOp: custom memory opcode
+      char *membuf;       ///< RevMemOp: buffer
+      void *target;       ///< RevMemOp: target register pointer
+    };
+
+    // ----------------------------------------
+    // RevMemCtrl
+    // ----------------------------------------
     class RevMemCtrl : public SST::SubComponent {
     public:
 
@@ -61,6 +118,9 @@ namespace SST {
 
     }; // class RevMemCtrl
 
+    // ----------------------------------------
+    // RevBasicMemCtrl
+    // ----------------------------------------
     class RevBasicMemCtrl : public RevMemCtrl{
     public:
       SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(RevBasicMemCtrl, "revcpu",
@@ -74,6 +134,11 @@ namespace SST {
                               { "clock",          "Sets the clock frequency of the memory conroller",         "1Ghz" },
                               { "max_loads",      "Sets the maximum number of outstanding loads",             "64"},
                               { "max_stores",     "Sets the maximum number of outstanding stores",            "64"},
+                              { "max_flush",      "Sets the maxmium number of oustanding flush events",       "64"},
+                              { "max_llsc",       "Sets the maximum number of outstanding LL/SC events",      "64"},
+                              { "max_readlock",   "Sets the maxmium number of outstanding readlock events",   "64"},
+                              { "max_writeunlock","Sets the maximum number of outstanding writeunlock events","64"},
+                              { "max_custom",     "Sets the maximum number of outstanding custom events",     "64"},
                               { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" }
       )
 
@@ -99,7 +164,11 @@ namespace SST {
         {"LoadLinkInFlight",    "Counts the number of loadlinks in flight",         "count", 1},
         {"LoadLinkPending",     "Counts the number of loadlinks pending",           "count", 1},
         {"StoreCondInFlight",   "Counts the number of storeconds in flight",        "count", 1},
-        {"StoreCondPending",    "Counts the number of storeconds pending",          "count", 1}
+        {"StoreCondPending",    "Counts the number of storeconds pending",          "count", 1},
+        {"CustomInFlight",      "Counts the number of custom commands in flight",   "count", 1},
+        {"CustomPending",       "Counts the number of custom commands pending",     "count", 1},
+        {"CustomBytes",         "Counts the number of bytes in custom transactions","bytes", 1},
+        {"FencePending",        "Counts the number of fence operations pending",    "count", 1}
       )
 
       typedef enum{
@@ -120,7 +189,11 @@ namespace SST {
         LoadLinkInFlight    = 14,
         LoadLinkPending     = 15,
         StoreCondInFlight   = 16,
-        StoreCondPending    = 17
+        StoreCondPending    = 17,
+        CustomInFlight      = 18,
+        CustomPending       = 19,
+        CustomBytes         = 20,
+        FencePending        = 21
       }MemCtrlStats;
 
       /// RevBasicMemCtrl: constructor
@@ -138,7 +211,40 @@ namespace SST {
       /// RevBasicMemCtrl: memory event processing handler
       void processMemEvent(StandardMem::Request* ev);
 
+      /// RevBasicMemCtrl: send a flush request
+      bool sendFLUSHRequest(uint64_t Addr, uint32_t Size);
+
+      /// RevBasicMemCtrl: send a read request
+      bool sendREADRequest(uint64_t Addr, uint32_t Size, void *target);
+
+      /// RevBasicMemCtrl: send a write request
+      bool sendWRITERequest(uint64_t Addr, uint32_t Size, char *buffer);
+
+      // RevBasicMemCtrl: send a readlock request
+      bool sendREADLOCKRequest(uint64_t Addr, uint32_t Size, void *target);
+
+      // RevBasicMemCtrl: send a writelock request
+      bool sendWRITELOCKRequest(uint64_t Addr, uint32_t Size, char *buffer);
+
+      // RevBasicMemCtrl: send a loadlink request
+      bool sendLOADLINKRequest(uint64_t Addr, uint32_t Size);
+
+      // RevBasicMemCtrl: send a storecond request
+      bool sendSTORECONDRequest(uint64_t Addr, uint32_t Size, char *buffer);
+
+      // RevBasicMemCtrl: send an void custom read memory request
+      bool sendCUSTOMREADRequest(uint64_t Addr, uint32_t Size, void *target, unsigned Opc);
+
+      // RevBasicMemCtrl: send a custom write request
+      bool sendCUSTOMWRITERequest(uint64_t Addr, uint32_t Size, char *buffer, unsigned Opc);
+
+      // RevBasicMemCtrl: send a FENCE request
+      bool sendFENCE();
+
     protected:
+      // ----------------------------------------
+      // RevStdMemHandlers
+      // ----------------------------------------
       class RevStdMemHandlers : public Interfaces::StandardMem::RequestHandler {
       public:
         friend class RevBasicMemCtrl;
@@ -162,6 +268,17 @@ namespace SST {
 
     private:
 
+      /// RevBasicMemCtrl: process the next memory request
+      bool processNextRqst(unsigned &t_max_loads, unsigned &t_max_stores,
+                           unsigned &t_max_flush, unsigned &t_max_llsc,
+                           unsigned &t_max_readlock, unsigned &t_max_writeunlock,
+                           unsigned &t_max_custom, unsigned &t_max_ops);
+
+      bool isMemOpAvail(RevMemOp *Op, unsigned &t_max_loads, unsigned &t_max_stores,
+                        unsigned &t_max_flush, unsigned &t_max_llsc,
+                        unsigned &t_max_readlock, unsigned &t_max_writeunlock,
+                        unsigned &t_max_custom);
+
       /// RevBasicMemCtrl: register statistics
       void registerStats();
 
@@ -173,9 +290,27 @@ namespace SST {
       RevStdMemHandlers* stdMemHandlers;      ///< StandardMem interface response handlers
       unsigned max_loads;                     ///< maximum number of outstanding loads
       unsigned max_stores;                    ///< maximum number of outstanding stores
+      unsigned max_flush;                     ///< maximum number of oustanding flush events
+      unsigned max_llsc;                      ///< maximum number of outstanding llsc events
+      unsigned max_readlock;                  ///< maximum number of oustanding readlock events
+      unsigned max_writeunlock;               ///< maximum number of oustanding writelock events
+      unsigned max_custom;                    ///< maximum number of oustanding custom events
       unsigned max_ops;                       ///< maximum number of ops to issue per cycle
 
-      std::vector<Statistic<uint64_t>*> stats;///< statistics vector
+      uint64_t num_read;                      ///< number of outstanding read requests
+      uint64_t num_write;                     ///< number of outstanding write requests
+      uint64_t num_flush;                     ///< number of outstanding flush requests
+      uint64_t num_llsc;                      ///< number of outstanding LL/SC requests
+      uint64_t num_readlock;                  ///< number of oustanding readlock requests
+      uint64_t num_writeunlock;               ///< number of oustanding writelock requests
+      uint64_t num_custom;                    ///< number of outstanding custom requests
+      uint64_t num_fence;                     ///< numebr of oustanding fence requests
+
+      std::vector<StandardMem::Request::id_t> requests;               ///< outstanding StandardMem requests
+      std::list<RevMemOp *> rqstQ;                                    ///< queued memory requests
+      std::map<StandardMem::Request::id_t,RevMemOp *> outstanding;    ///< map of outstanding requests
+
+      std::vector<Statistic<uint64_t>*> stats;                        ///< statistics vector
 
     }; // RevBasicMemCtrl
   } // namespace RevCPU

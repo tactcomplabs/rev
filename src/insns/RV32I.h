@@ -791,9 +791,19 @@ namespace SST{
       }
 
       static bool ecall(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        // x17 (a7) is the code for ecall
         if( F->IsRV32() ){
+          uint32_t code = R->RV32[17];
+          switch( code ){
+          case 4: 
+            // execute the getc syscall
+            break;
+          default:
+            break;
+          }
           R->RV32_PC += Inst.instSize;
         }else{
+          uint64_t code = R->RV64[17];
           R->RV64_PC += Inst.instSize;
         }
         return true;
