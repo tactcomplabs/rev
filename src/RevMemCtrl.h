@@ -58,19 +58,24 @@ namespace SST {
       }MemOp;
 
       /// RevMemOp constructor
-      RevMemOp( uint64_t Addr, uint32_t Size, RevMemOp::MemOp Op );
+      RevMemOp( uint64_t Addr, uint32_t Size,
+                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp constructor
-      RevMemOp( uint64_t Addr, uint32_t Size, void *target, RevMemOp::MemOp Op );
+      RevMemOp( uint64_t Addr, uint32_t Size, void *target,
+                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
-      RevMemOp( uint64_t Addr, uint32_t Size, char *buffer, RevMemOp::MemOp Op );
+      RevMemOp( uint64_t Addr, uint32_t Size, char *buffer,
+                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
-      RevMemOp( uint64_t Addr, uint32_t Size, void *target, unsigned CustomOpc, RevMemOp::MemOp Op );
+      RevMemOp( uint64_t Addr, uint32_t Size, void *target, unsigned CustomOpc,
+                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
-      RevMemOp( uint64_t Addr, uint32_t Size, char *buffer, unsigned CustomOpc, RevMemOp::MemOp Op );
+      RevMemOp( uint64_t Addr, uint32_t Size, char *buffer, unsigned CustomOpc,
+                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp destructor
       ~RevMemOp();
@@ -84,13 +89,30 @@ namespace SST {
       /// RevMemOp: retrieve the target address
       uint64_t getAddr() { return Addr; }
 
+      /// RevMemOp: retrieve the size of the request
+      uint32_t getSize() { return Size; }
+
+      /// RevMemOp: retrieve the memory buffer
+      std::vector<uint8_t> getBuf() { return membuf; }
+
+      /// RevMemOp: retrieve the memory operation flags
+      StandardMem::Request::flags_t getFlags() { return flags; }
+
+      /// RevMemOp: set the invalidate flag
+      void setInv(bool I){ Inv = I; }
+
+      /// RevMemOp: retrieve the invalidate flag
+      bool getInv() { return Inv; }
+
     private:
       uint64_t Addr;      ///< RevMemOp: address
       uint32_t Size;      ///< RevMemOp: size of the memory operation in bytes
+      bool Inv;           ///< RevMemOp: flush operation invalidate flag
       MemOp Op;           ///< RevMemOp: target memory operation
       unsigned CustomOpc; ///< RevMemOp: custom memory opcode
-      char *membuf;       ///< RevMemOp: buffer
-      void *target;       ///< RevMemOp: target register pointer
+      std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
+      StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
+      void *target;                         ///< RevMemOp: target register pointer
     };
 
     // ----------------------------------------
@@ -212,31 +234,41 @@ namespace SST {
       void processMemEvent(StandardMem::Request* ev);
 
       /// RevBasicMemCtrl: send a flush request
-      bool sendFLUSHRequest(uint64_t Addr, uint32_t Size);
+      bool sendFLUSHRequest(uint64_t Addr, uint32_t Size,
+                            bool Inv,
+                            StandardMem::Request::flags_t flags);
 
       /// RevBasicMemCtrl: send a read request
-      bool sendREADRequest(uint64_t Addr, uint32_t Size, void *target);
+      bool sendREADRequest(uint64_t Addr, uint32_t Size, void *target,
+                           StandardMem::Request::flags_t flags);
 
       /// RevBasicMemCtrl: send a write request
-      bool sendWRITERequest(uint64_t Addr, uint32_t Size, char *buffer);
+      bool sendWRITERequest(uint64_t Addr, uint32_t Size, char *buffer,
+                            StandardMem::Request::flags_t flags);
 
       // RevBasicMemCtrl: send a readlock request
-      bool sendREADLOCKRequest(uint64_t Addr, uint32_t Size, void *target);
+      bool sendREADLOCKRequest(uint64_t Addr, uint32_t Size, void *target,
+                               StandardMem::Request::flags_t flags);
 
       // RevBasicMemCtrl: send a writelock request
-      bool sendWRITELOCKRequest(uint64_t Addr, uint32_t Size, char *buffer);
+      bool sendWRITELOCKRequest(uint64_t Addr, uint32_t Size, char *buffer,
+                                StandardMem::Request::flags_t flags);
 
       // RevBasicMemCtrl: send a loadlink request
-      bool sendLOADLINKRequest(uint64_t Addr, uint32_t Size);
+      bool sendLOADLINKRequest(uint64_t Addr, uint32_t Size,
+                               StandardMem::Request::flags_t flags);
 
       // RevBasicMemCtrl: send a storecond request
-      bool sendSTORECONDRequest(uint64_t Addr, uint32_t Size, char *buffer);
+      bool sendSTORECONDRequest(uint64_t Addr, uint32_t Size, char *buffer,
+                                StandardMem::Request::flags_t flags);
 
       // RevBasicMemCtrl: send an void custom read memory request
-      bool sendCUSTOMREADRequest(uint64_t Addr, uint32_t Size, void *target, unsigned Opc);
+      bool sendCUSTOMREADRequest(uint64_t Addr, uint32_t Size, void *target,
+                                 unsigned Opc, StandardMem::Request::flags_t flags);
 
       // RevBasicMemCtrl: send a custom write request
-      bool sendCUSTOMWRITERequest(uint64_t Addr, uint32_t Size, char *buffer, unsigned Opc);
+      bool sendCUSTOMWRITERequest(uint64_t Addr, uint32_t Size, char *buffer,
+                                  unsigned Opc, StandardMem::Request::flags_t flags);
 
       // RevBasicMemCtrl: send a FENCE request
       bool sendFENCE();
@@ -261,6 +293,15 @@ namespace SST {
         /// RevStdMemhandlers: handle write response
         virtual void handle(StandardMem::WriteResp* ev);
 
+        /// RevStdMemHandlers: handle flush response
+        virtual void handle(StandardMem::FlushResp* ev);
+
+        /// RevStdMemHandlers: handle custom response
+        virtual void handle(StandardMem::CustomResp* ev);
+
+        /// RevStdMemHandlers: handle invalidate response
+        virtual void handle(StandardMem::InvNotify* ev);
+
       private:
         RevBasicMemCtrl *ctrl;       ///< RevStdMemHandlers: memory controller object
       }; // class RevStdMemHandlers
@@ -274,10 +315,14 @@ namespace SST {
                            unsigned &t_max_readlock, unsigned &t_max_writeunlock,
                            unsigned &t_max_custom, unsigned &t_max_ops);
 
+      /// RevBasicMemCtrl: determine if we can instantiate the target memory operation
       bool isMemOpAvail(RevMemOp *Op, unsigned &t_max_loads, unsigned &t_max_stores,
                         unsigned &t_max_flush, unsigned &t_max_llsc,
                         unsigned &t_max_readlock, unsigned &t_max_writeunlock,
                         unsigned &t_max_custom);
+
+      /// RevBasicMemCtrl: build a standard memory request
+      bool buildStandardMemRqst(RevMemOp *op);
 
       /// RevBasicMemCtrl: register statistics
       void registerStats();
