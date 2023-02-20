@@ -64,6 +64,9 @@ namespace SST {
       /// RevMem: set the stack_top address
       void SetStackTop(uint64_t Addr) { stacktop = Addr; }
 
+      /// RevMem: initiate a memory fence
+      bool FenceMem();
+
       /// RevMem: write to the target memory location
       bool WriteMem( uint64_t Addr, size_t Len, void *Data );
 

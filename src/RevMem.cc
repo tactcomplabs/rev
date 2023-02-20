@@ -155,6 +155,13 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t Addr){
   return physAddr;
 }
 
+bool RevMem::FenceMem(){
+  if( ctrl ){
+    return ctrl->sendFENCE();
+  }
+  return true;  // base RevMem support does nothing here
+}
+
 bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -184,12 +191,10 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
     BaseMem = &physMem[adjPhysAddr];
     if( ctrl ){
       // write the memory using RevMemCtrl
-      if( !ctrl->sendWRITERequest((uint64_t)(BaseMem),
-                                  Len,
-                                  DataMem,
-                                  0x00) ){
-        output->fatal(CALL_INFO, -1, "Error : failed to dispatch write request to RevMemCtrl");
-      }
+      return ctrl->sendWRITERequest((uint64_t)(BaseMem),
+                                    Len,
+                                    DataMem,
+                                    0x00);
     }else{
       // write the memory using the internal RevMem model
       for( unsigned i=0; i< span; i++ ){
@@ -199,12 +204,10 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
   }else{
     if( ctrl ){
       // write the memory using RevMemCtrl
-      if( !ctrl->sendWRITERequest((uint64_t)(BaseMem),
-                                  Len,
-                                  DataMem,
-                                  0x00) ){
-        output->fatal(CALL_INFO, -1, "Error : failed to dispatch write request to RevMemCtrl");
-      }
+      return ctrl->sendWRITERequest((uint64_t)(BaseMem),
+                                    Len,
+                                    DataMem,
+                                    0x00);
     }else{
       // write the memory using the internal RevMem model
       for( unsigned i=0; i<Len; i++ ){
