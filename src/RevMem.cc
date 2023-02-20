@@ -171,7 +171,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
   uint32_t adjPageNum = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  char *BaseMem = &physMem[physAddr]; 
+  char *BaseMem = &physMem[physAddr];
   char *DataMem = (char *)(Data);
   if((physAddr + Len) > endOfPage){
     adjPageNum = (physAddr + Len) >> addrShift;
@@ -181,13 +181,35 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
     for( unsigned i=0; i< (Len-span); i++ ){
       BaseMem[i] = DataMem[i];
     }
-    BaseMem = &physMem[adjPhysAddr]; 
-    for( unsigned i=0; i< span; i++ ){
-      BaseMem[i] = DataMem[i];
+    BaseMem = &physMem[adjPhysAddr];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      if( !ctrl->sendWRITERequest((uint64_t)(BaseMem),
+                                  Len,
+                                  DataMem,
+                                  0x00) ){
+        output->fatal(CALL_INFO, -1, "Error : failed to dispatch write request to RevMemCtrl");
+      }
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i< span; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
     }
   }else{
-    for( unsigned i=0; i<Len; i++ ){
-      BaseMem[i] = DataMem[i];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      if( !ctrl->sendWRITERequest((uint64_t)(BaseMem),
+                                  Len,
+                                  DataMem,
+                                  0x00) ){
+        output->fatal(CALL_INFO, -1, "Error : failed to dispatch write request to RevMemCtrl");
+      }
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i<Len; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
     }
   }
   memStats.bytesWritten += Len;

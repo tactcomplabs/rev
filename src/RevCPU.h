@@ -123,7 +123,7 @@ namespace SST {
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
         {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
-        {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevBasicMemCtrl"}
+        {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"}
       )
 
       // -------------------------------------------------------
