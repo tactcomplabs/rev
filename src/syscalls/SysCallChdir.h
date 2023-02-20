@@ -22,24 +22,6 @@ template<typename RiscvArchType=Riscv32>
 using ChdirInterfaceType = SystemCallInterfaceCode<RiscvArchType, 49>;
 
 template<typename RiscvArchType=Riscv32>
-class ChdirParameters : public virtual SystemCallParameterInterface<RiscvArchType> {
-    
-    private:
-
-    std::string pth;
-
-    public:
-
-    ChdirParameters(std::string path)
-        : pth(path) {}
-
-    size_t count() override { return 1UL; }
-
-    template<typename ParameterType>
-    bool get(const size_t parameter_index, ParameterType & param);
-};
-
-template<typename RiscvArchType=Riscv32>
 class Chdir : public virtual SystemCallInterface<RiscvArchType> {
   
     public:
