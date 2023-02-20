@@ -170,32 +170,39 @@ bool RevMem::FindStringTerminal( uint64_t Addr, size_t & Len ) {
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
 
   const static char nullTerminalCharacter = '\0';
+  const auto pageMapEnd = std::end(pageMap);
 
-  //check to see if we're about to walk off the page....
-  uint32_t adjPageNum = 0;
-  uint64_t adjPhysAddr = 0;
-  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  auto pageMapItr = pageMap[pageNum];
 
-  char *BaseMem = &physMem[physAddr]; 
-  char *DataMem = (char *)(Data);
-  if(physAddr > endOfPage){
-    adjPageNum = physAddr >> addrShift;
-    adjPhysAddr = CalcPhysAddr(adjPageNum, physAddr);
-    uint32_t span = physAddr - endOfPage;
-    for( unsigned i=0; i< span; i++ ){
-      if(BaseMem[i] == nullTerminalCharacter) { Len = i; return true; }
-    }
-    BaseMem = &physMem[adjPhysAddr]; 
-    for( unsigned i=0; i< span; i++ ){
-      if(BaseMem[i] == nullTerminalCharacter) { Len = i; return true; }
-    }
+  while(pageMapItr != pageMapEnd) {
+     //check to see if we're about to walk off the page....
+     uint32_t adjPageNum = 0;
+     uint64_t adjPhysAddr = 0;
+     uint64_t endOfPage = (pageMapItr->first << addrShift) + pageSize;
+
+     char *BaseMem = &physMem[physAddr]; 
+     char *DataMem = (char *)(Data);
+     if(physAddr > endOfPage){
+       adjPageNum = physAddr >> addrShift;
+       adjPhysAddr = CalcPhysAddr(adjPageNum, physAddr);
+       uint32_t span = physAddr - endOfPage;
+       for( unsigned i=0; i< span; i++ ){
+         if(BaseMem[i] == nullTerminalCharacter) { Len = i; return true; }
+     }
+     BaseMem = &physMem[adjPhysAddr]; 
+     for( unsigned i=0; i< span; i++ ){
+        if(BaseMem[i] == nullTerminalCharacter) { Len = i; return true; }
+     }
 #ifdef _REV_DEBUG_
-    std::cout << "Warning: Reading off end of page... " << std::endl;
+     std::cout << "Warning: Reading off end of page... " << std::endl;
 #endif
-  }else{
-    for( unsigned i=0; i<std::numeric_limit<std::size_t>::max; i++ ){
-      if(BaseMem[i] == nullTerminalCharacter) { Len = i; return true; }
+    }else{
+      for( unsigned i=0; i<std::numeric_limit<std::size_t>::max; i++ ){
+        if(BaseMem[i] == nullTerminalCharacter) { Len = i; return true; }
+      }
     }
+
+    pageMapItr = pageMap[endOfPage+1];
   }
   return false;
 }
