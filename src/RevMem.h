@@ -63,6 +63,9 @@ namespace SST {
       /// RevMem: read data from the target memory location
       bool ReadMem( uint64_t Addr, size_t Len, void *Data );
 
+      /// RevMem: for a given address, find the null termination character '\0' 
+      bool FindStringTerminal( uint64_t Addr, size_t & Len );
+
       /// RevMem: Read uint8 from the target memory location
       uint8_t ReadU8( uint64_t Addr );
 
