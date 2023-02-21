@@ -11,8 +11,21 @@
 #include "RevMem.h"
 #include <math.h>
 
+RevMem::RevMem( RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
+  : memSize(0), opts(Opts), ctrl(Ctrl), output(Output), physMem(nullptr),
+    stacktop(0x00ull) {
+  // Note: this constructor assumes the use of the memHierarchy backend
+  memStats.bytesRead = 0;
+  memStats.bytesWritten = 0;
+  memStats.doublesRead = 0;
+  memStats.doublesWritten = 0;
+  memStats.floatsRead = 0;
+  memStats.floatsWritten = 0;
+}
+
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
-  : memSize(MemSize), opts(Opts), output(Output), physMem(nullptr), stacktop(0x00ull) {
+  : memSize(MemSize), opts(Opts), ctrl(nullptr),output(Output),
+    physMem(nullptr), stacktop(0x00ull) {
 
   // allocate the backing memory
   physMem = new char [memSize];
@@ -142,6 +155,13 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t Addr){
   return physAddr;
 }
 
+bool RevMem::FenceMem(){
+  if( ctrl ){
+    return ctrl->sendFENCE();
+  }
+  return true;  // base RevMem support does nothing here
+}
+
 bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -158,7 +178,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
   uint32_t adjPageNum = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  char *BaseMem = &physMem[physAddr]; 
+  char *BaseMem = &physMem[physAddr];
   char *DataMem = (char *)(Data);
   if((physAddr + Len) > endOfPage){
     adjPageNum = (physAddr + Len) >> addrShift;
@@ -168,13 +188,31 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
     for( unsigned i=0; i< (Len-span); i++ ){
       BaseMem[i] = DataMem[i];
     }
-    BaseMem = &physMem[adjPhysAddr]; 
-    for( unsigned i=0; i< span; i++ ){
-      BaseMem[i] = DataMem[i];
+    BaseMem = &physMem[adjPhysAddr];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      return ctrl->sendWRITERequest((uint64_t)(BaseMem),
+                                    Len,
+                                    DataMem,
+                                    0x00);
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i< span; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
     }
   }else{
-    for( unsigned i=0; i<Len; i++ ){
-      BaseMem[i] = DataMem[i];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      return ctrl->sendWRITERequest((uint64_t)(BaseMem),
+                                    Len,
+                                    DataMem,
+                                    0x00);
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i<Len; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
     }
   }
   memStats.bytesWritten += Len;

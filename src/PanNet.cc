@@ -550,6 +550,7 @@ PanNet::PanNet(ComponentId_t id, Params& params)
 }
 
 PanNet::~PanNet(){
+  delete output;
 }
 
 void PanNet::setMsgHandler(Event::HandlerBase* handler){

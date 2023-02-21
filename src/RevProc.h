@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <random>
+#include <inttypes.h>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
