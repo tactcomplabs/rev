@@ -41,6 +41,16 @@ namespace SST {
   namespace RevCPU {
 
     // ----------------------------------------
+    // Extended StandardMem::Request::Flag enums
+    // ----------------------------------------
+    enum class RevFlag {
+      F_SEXT32 = 1 << 17,     /// sign extend the 32bit result
+      F_SEXT64 = 1 << 18,     /// sign extend the 64bit result
+      F_ZEXT32 = 1 << 19,     /// zero extend the 32bit result
+      F_ZEXT64 = 1 << 20      /// zero extend the 64bit result
+    };
+
+    // ----------------------------------------
     // RevMemOp
     // ----------------------------------------
     class RevMemOp {

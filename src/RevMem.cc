@@ -185,8 +185,15 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
     adjPhysAddr = CalcPhysAddr(adjPageNum, (physAddr + Len));
     uint32_t span = (physAddr + Len) - endOfPage;
     std::cout << "Warning: Writing off end of page... " << std::endl;
-    for( unsigned i=0; i< (Len-span); i++ ){
-      BaseMem[i] = DataMem[i];
+    if( ctrl ){
+      return ctrl->sendWRITERequest((uint64_t)(BaseMem),
+                                    Len,
+                                    DataMem,
+                                    0x00);
+    }else{
+      for( unsigned i=0; i< (Len-span); i++ ){
+        BaseMem[i] = DataMem[i];
+      }
     }
     BaseMem = &physMem[adjPhysAddr];
     if( ctrl ){
@@ -232,7 +239,7 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
   uint32_t adjPageNum = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  char *BaseMem = &physMem[physAddr]; 
+  char *BaseMem = &physMem[physAddr];
   char *DataMem = (char *)(Data);
   if((physAddr + Len) > endOfPage){
     adjPageNum = (physAddr + Len) >> addrShift;
@@ -241,7 +248,7 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
     for( unsigned i=0; i< (Len-span); i++ ){
       DataMem[i] = BaseMem[i];
     }
-    BaseMem = &physMem[adjPhysAddr]; 
+    BaseMem = &physMem[adjPhysAddr];
     for( unsigned i=0; i< span; i++ ){
       DataMem[i] = BaseMem[i];
     }
@@ -256,6 +263,87 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 
   memStats.bytesRead += Len;
   return true;
+}
+
+bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
+                     StandardMem::Request::flags_t flags){
+#ifdef _REV_DEBUG_
+  std::cout << "Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+#endif
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Target);
+  if((physAddr + Len) > endOfPage){
+    adjPageNum = (physAddr + Len) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, (physAddr + Len));
+    uint32_t span = (physAddr + Len) - endOfPage;
+    if( ctrl ){
+      return ctrl->sendREADRequest(Addr, Len, Target, flags);
+    }else{
+      for( unsigned i=0; i< (Len-span); i++ ){
+        DataMem[i] = BaseMem[i];
+      }
+    }
+    BaseMem = &physMem[adjPhysAddr];
+    if( ctrl ){
+      return ctrl->sendREADRequest(Addr, Len, Target, flags);
+    }else{
+      for( unsigned i=0; i< span; i++ ){
+        DataMem[i] = BaseMem[i];
+      }
+    }
+#ifdef _REV_DEBUG_
+    std::cout << "Warning: Reading off end of page... " << std::endl;
+#endif
+  }else{
+    if( ctrl ){
+      ctrl->sendREADRequest(Addr, Len, Target, flags);
+    }else{
+      for( unsigned i=0; i<Len; i++ ){
+        DataMem[i] = BaseMem[i];
+      }
+    }
+  }
+
+  memStats.bytesRead += Len;
+  memStats.bytesRead += Len;
+  return true;
+}
+
+bool RevMem::ReadU8( uint64_t Addr, void *Target,
+                     StandardMem::Request::flags_t flags){
+  return ReadMem(Addr, 1, Target, flags);
+}
+
+bool RevMem::ReadU16( uint64_t Addr, void *Target,
+                      StandardMem::Request::flags_t flags){
+  return ReadMem(Addr, 2, Target, flags);
+}
+
+bool RevMem::ReadU32( uint64_t Addr, void *Target,
+                      StandardMem::Request::flags_t flags){
+  return ReadMem(Addr, 4, Target, flags);
+}
+
+bool RevMem::ReadU64( uint64_t Addr, void *Target,
+                      StandardMem::Request::flags_t flags){
+  return ReadMem(Addr, 8, Target, flags);
+}
+
+bool RevMem::ReadFloat( uint64_t Addr, void *Target,
+                        StandardMem::Request::flags_t flags){
+  return ReadMem(Addr, 4, Target, flags);
+}
+
+bool RevMem::ReadDouble( uint64_t Addr, void *Target,
+                         StandardMem::Request::flags_t flags){
+  return ReadMem(Addr, 8, Target, flags);
 }
 
 uint8_t RevMem::ReadU8( uint64_t Addr ){
