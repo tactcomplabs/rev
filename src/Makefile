@@ -24,17 +24,20 @@ REV_SOURCES := $(wildcard *.cc)
 
 REV_HEADERS := $(wildcard *.h)
 
-REV_OBJS := $(patsubst %.cc,%.o,$(wildcard *.cc))
+REV_OBJS := $(patsubst %.cc,%.o,$(wildcard *.cc)) ./softfp/softfp.o ./softfp/softfloat.o
 
 REV_INCS := $(patsubst %.py,%.inc,$(wildcard *.py))
 
-all: librevcpu.so
+all: softfp.o librevcpu.so
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: librevcpu.so
 
+softfp.o:
+	(cd softfp; make)
+
 librevcpu.so: $(REV_INCS) $(REV_OBJS)
-	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ *.o
+	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ *.o ./softfp/softfp.o ./softfp/softfloat.o
 %.o:%.cc $(REV_HEADERS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -c $<
 %.inc:%.py

@@ -212,8 +212,16 @@ namespace SST{
     typedef struct{
       uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
       uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
-      float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
-      double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
+      // float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
+      // double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
+
+      // Floating-point register file (updated implementation)
+      uint32_t SFP[_REV_NUM_REGS_];
+      uint64_t DFP[_REV_NUM_REGS_];
+
+      // For floating-point
+      uint32_t fflags;
+      uint8_t frm;
 
       uint32_t RV32_PC;                 ///< RevRegFile: RV32 PC
       uint64_t RV64_PC;                 ///< RevRegFile: RV64 PC
@@ -386,6 +394,16 @@ namespace SST{
         bool compressed;      ///< RevInstEntry: compressed instruction
       } RevInstEntry;
 
+    /* return -1 if invalid roundind mode */
+    static int get_insn_rm(RevRegFile *R, uint8_t rm)
+    {
+        if (rm == 7)
+            return R->frm;
+        if (rm >= 5)
+            return -1;
+        else
+            return rm;
+    }
 
     template <typename RevInstDefaultsPolicy>
     class RevInstEntryBuilder : public RevInstDefaultsPolicy{

@@ -1,0 +1,8 @@
+*.a
+*.o
+*.so
+*.exe
+*.asm
+*.h.gch
+*.csv
+*.inc
