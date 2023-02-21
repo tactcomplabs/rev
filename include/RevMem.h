@@ -32,6 +32,8 @@
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
+#define REVMEM_FLAGS(x) ((StandardMem::Request::flags_t)(x))
+
 namespace SST::RevCPU {
   class RevMem;
 }
@@ -67,30 +69,67 @@ namespace SST {
       /// RevMem: initiate a memory fence
       bool FenceMem();
 
+      // ----------------------------------------------------
+      // ---- Base Memory Interfaces
+      // ----------------------------------------------------
       /// RevMem: write to the target memory location
       bool WriteMem( uint64_t Addr, size_t Len, void *Data );
 
       /// RevMem: read data from the target memory location
+      bool ReadMem( uint64_t Addr, size_t Len, void *Target, StandardMem::Request::flags_t flags);
+
+      /// RevMem: DEPRECATED: read data from the target memory location
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
       bool ReadMem( uint64_t Addr, size_t Len, void *Data );
 
+      // ----------------------------------------------------
+      // ---- Read Memory Interfaces
+      // ----------------------------------------------------
       /// RevMem: Read uint8 from the target memory location
-      uint8_t ReadU8( uint64_t Addr );
+      bool ReadU8( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
 
       /// RevMem: Read uint16 from the target memory location
-      uint16_t ReadU16( uint64_t Addr );
+      bool ReadU16( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
 
       /// RevMem: Read uint32 from the target memory location
-      uint32_t ReadU32( uint64_t Addr );
+      bool ReadU32( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
 
       /// RevMem: Read uint64 from the target memory location
-      uint64_t ReadU64( uint64_t Addr );
+      bool ReadU64( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
 
       /// RevMem: Read float from the target memory location
+      bool ReadFloat( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
+
+      /// RevMem: Read float from the target memory location
+      bool ReadDouble( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
+
+      /// RevMem: DEPRECATED: Read uint8 from the target memory location
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
+      uint8_t ReadU8( uint64_t Addr );
+
+      /// RevMem: DEPRECATED: Read uint16 from the target memory location
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
+      uint16_t ReadU16( uint64_t Addr );
+
+      /// RevMem: DEPRECATED: Read uint32 from the target memory location
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
+      uint32_t ReadU32( uint64_t Addr );
+
+      /// RevMem: DEPRECATED: Read uint64 from the target memory location
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
+      uint64_t ReadU64( uint64_t Addr );
+
+      /// RevMem: DEPRECATED: Read float from the target memory location
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
       float ReadFloat( uint64_t Addr );
 
-      /// RevMem: Read double from the target memory location
+      /// RevMem: DEPRECATED: Read double from the target memory location
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
       double ReadDouble( uint64_t Addr );
 
+      // ----------------------------------------------------
+      // ---- Write Memory Interfaces
+      // ----------------------------------------------------
       /// RevMem: Write a uint8 to the target memory location
       void WriteU8( uint64_t Addr, uint8_t Value );
 
@@ -109,9 +148,9 @@ namespace SST {
       /// RevMem: Write a double to the target memory location
       void WriteDouble( uint64_t Addr, double Value );
 
-      /// RevMem: Randomly assign a memory cost
-      unsigned RandCost( unsigned Min, unsigned Max );
-
+      // ----------------------------------------------------
+      // ---- Atomic/Future/LRSC Interfaces
+      // ----------------------------------------------------
       /// RevMem: Add a memory reservation for the target address
       bool LR(unsigned Hart, uint64_t Addr);
 
@@ -126,6 +165,9 @@ namespace SST {
 
       /// RevMem: Interrogates the target address and returns 'true' if a future reservation is present [RV64P only]
       bool StatusFuture( uint64_t Addr );
+
+      /// RevMem: Randomly assign a memory cost
+      unsigned RandCost( unsigned Min, unsigned Max );
 
     class RevMemStats {
     public:
