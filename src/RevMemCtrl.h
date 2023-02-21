@@ -346,7 +346,7 @@ namespace SST {
         virtual void handle(StandardMem::InvNotify* ev);
 
       private:
-        RevBasicMemCtrl *ctrl;       ///< RevStdMemHandlers: memory controller object
+        RevBasicMemCtrl *Ctrl;       ///< RevStdMemHandlers: memory controller object
       }; // class RevStdMemHandlers
 
 

@@ -522,7 +522,7 @@ bool RevBasicMemCtrl::clockTick(Cycle_t cycle){
 // ---------------------------------------------------------------
 RevBasicMemCtrl::RevStdMemHandlers::RevStdMemHandlers( RevBasicMemCtrl* Ctrl,
                                                        SST::Output* output)
-  : Interfaces::StandardMem::RequestHandler(output), ctrl(Ctrl){
+  : Interfaces::StandardMem::RequestHandler(output), Ctrl(Ctrl){
 }
 
 RevBasicMemCtrl::RevStdMemHandlers::~RevStdMemHandlers(){
