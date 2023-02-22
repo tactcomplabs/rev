@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <random>
+#include <queue>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -98,10 +99,12 @@ namespace SST{
         public:
           uint64_t totalCycles;
           uint64_t cyclesBusy;
-          uint64_t cyclesIdle;
+          uint64_t cyclesIdle_Total;
           uint64_t floatsExec;
           float    percentEff;
           RevMem::RevMemStats memStats;
+          uint64_t cyclesIdle_Pipeline;
+          uint64_t cyclesIdle_MemoryFetch;
       };
 
       RevProcStats GetStats();
@@ -114,8 +117,8 @@ namespace SST{
       unsigned fault_width;     ///< RevProc: the width of the target fault
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
-      uint8_t threadToDecode;   ///< RevProc: Current executing ThreadID
-      uint8_t threadToExec;     ///< RevProc: Thread to dispatch instruction
+      uint16_t threadToDecode;   ///< RevProc: Current executing ThreadID
+      uint16_t threadToExec;     ///< RevProc: Thread to dispatch instruction
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
       RevLoader *loader;        ///< RevProc: loader object
@@ -131,6 +134,8 @@ namespace SST{
       std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
 
       std::vector<RevExt *> Extensions;           ///< RevProc: vector of enabled extensions
+
+      std::queue<std::pair<uint16_t, RevInst>>   Pipeline; ///< RevProc: pipeline of instructions - bypass paths not supported
 
       std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
       std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
@@ -237,7 +242,16 @@ namespace SST{
       void ResetInst(RevInst *Inst);
 
       /// RevProc: Determine next thread to execute
-      uint8_t GetThreadID();
+      uint16_t GetThreadID();
+
+      /// RevProc: Check scoreboard for pipeline hazards
+      bool DependencyCheck(uint16_t threadID, RevInst* Inst);
+
+      /// RevProc: Set scoreboard based on instruction destination
+      void DependencySet(uint16_t threadID, RevInst* Inst);
+
+      /// RevProc: Clear scoreboard on instruction retirement
+      void DependencyClear(uint16_t threadID, RevInst* Inst);
 
     }; // class RevProc
   } // namespace RevCPU

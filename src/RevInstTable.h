@@ -32,6 +32,10 @@
 #define _REV_THREAD_COUNT_ 1
 #endif
 
+#ifndef _REV_INVALID_THREAD_ID_
+#define _REV_INVALID_THREAD_ID ~(uint16_t(0))
+#endif
+
 // Masks
 #define MASK8   0b11111111                          // 8bit mask
 #define MASK16  0b1111111111111111                  // 16bit mask
@@ -215,6 +219,11 @@ namespace SST{
       float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
       double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
 
+      bool RV32_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
+      bool RV64_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
+      bool SPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for SPF RF to manage pipeline hazard
+      bool DPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
+
       uint32_t RV32_PC;                 ///< RevRegFile: RV32 PC
       uint64_t RV64_PC;                 ///< RevRegFile: RV64 PC
       uint64_t FCSR;                    ///< RevRegFile: FCSR
@@ -224,7 +233,8 @@ namespace SST{
       unsigned Entry;                   ///< RevRegFile: Instruction entry
     }RevRegFile;                        ///< RevProc: register file construct
 
-    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTS;
+    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
     typedef enum{
       RVTypeUNKNOWN = 0,  ///< RevInstf: Unknown format
@@ -289,6 +299,8 @@ namespace SST{
       uint16_t jumpTarget;  ///< RevInst: compressed jumpTarget
       size_t instSize;      ///< RevInst: size of the instruction in bytes
       bool compressed;      ///< RevInst: determines if the instruction is compressed
+      uint32_t cost;        ///< RevInst: the cost to execute this instruction, in clock cycles
+      unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
     }RevInst;
 
     /// RevInstEntry: Holds the compressed index to normal index mapping
