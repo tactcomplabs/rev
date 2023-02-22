@@ -316,36 +316,6 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
   return true;
 }
 
-bool RevMem::ReadU8( uint64_t Addr, void *Target,
-                     StandardMem::Request::flags_t flags){
-  return ReadMem(Addr, 1, Target, flags);
-}
-
-bool RevMem::ReadU16( uint64_t Addr, void *Target,
-                      StandardMem::Request::flags_t flags){
-  return ReadMem(Addr, 2, Target, flags);
-}
-
-bool RevMem::ReadU32( uint64_t Addr, void *Target,
-                      StandardMem::Request::flags_t flags){
-  return ReadMem(Addr, 4, Target, flags);
-}
-
-bool RevMem::ReadU64( uint64_t Addr, void *Target,
-                      StandardMem::Request::flags_t flags){
-  return ReadMem(Addr, 8, Target, flags);
-}
-
-bool RevMem::ReadFloat( uint64_t Addr, void *Target,
-                        StandardMem::Request::flags_t flags){
-  return ReadMem(Addr, 4, Target, flags);
-}
-
-bool RevMem::ReadDouble( uint64_t Addr, void *Target,
-                         StandardMem::Request::flags_t flags){
-  return ReadMem(Addr, 8, Target, flags);
-}
-
 uint8_t RevMem::ReadU8( uint64_t Addr ){
   uint8_t Value;
   if( !ReadMem( Addr, 1, (void *)(&Value) ) )
