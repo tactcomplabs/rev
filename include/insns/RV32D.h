@@ -59,14 +59,14 @@ namespace SST{
       static bool fld(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           //R->DPF[Inst.rd] = M->ReadDouble((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
-          M->ReadDouble((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    (void *)(&R->DPF[Inst.rd]),
+          M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    &R->DPF[Inst.rd],
                     REVMEM_FLAGS(0));
           R->RV32_PC += Inst.instSize;
         }else{
           //R->DPF[Inst.rd] = M->ReadDouble((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
-          M->ReadDouble((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    (void *)(&R->DPF[Inst.rd]),
+          M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    &R->DPF[Inst.rd],
                     REVMEM_FLAGS(0));
           R->RV64_PC += Inst.instSize;
         }

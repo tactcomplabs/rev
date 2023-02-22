@@ -85,23 +85,12 @@ namespace SST {
       // ----------------------------------------------------
       // ---- Read Memory Interfaces
       // ----------------------------------------------------
-      /// RevMem: Read uint8 from the target memory location
-      bool ReadU8( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
-
-      /// RevMem: Read uint16 from the target memory location
-      bool ReadU16( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
-
-      /// RevMem: Read uint32 from the target memory location
-      bool ReadU32( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
-
-      /// RevMem: Read uint64 from the target memory location
-      bool ReadU64( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
-
-      /// RevMem: Read float from the target memory location
-      bool ReadFloat( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
-
-      /// RevMem: Read float from the target memory location
-      bool ReadDouble( uint64_t Addr, void *Target, StandardMem::Request::flags_t flags);
+      /// RevMem: template read memory interface
+      template <typename T>
+      bool ReadVal( uint64_t Addr, T *Target,
+                    StandardMem::Request::flags_t flags){
+        return ReadMem(Addr, sizeof(T), (void *)(Target), flags);
+      }
 
       /// RevMem: DEPRECATED: Read uint8 from the target memory location
       [[deprecated("Simple RevMem interfaces have been deprecated")]]
