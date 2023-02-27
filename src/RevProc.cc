@@ -377,6 +377,10 @@ bool RevProc::Reset(){
       RegFile[t].RV64[i] = 0x00ull;
       RegFile[t].SPF[i]  = 0.f;
       RegFile[t].DPF[i]  = 0.f;
+      RegFile[t].RV32_Scoreboard[i] = false;
+      RegFile[t].RV64_Scoreboard[i] = false;
+      RegFile[t].SPF_Scoreboard[i] = false;
+      RegFile[t].DPF_Scoreboard[i] = false;
     }
 
     // initialize all the relevant program registers
@@ -1550,30 +1554,31 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-bool RevProc::DependencyCheck(uint16_t threadID, RevInst* Inst){
+bool RevProc::DependencyCheck(uint16_t threadID, RevInst* I){
 
       bool depFound = false;
-      bool isFloat = IsFloat(Inst->entry);
+      bool isFloat = IsFloat(I->entry);
+
 
       if(feature->IsRV32()){
         if(isFloat){
-          depFound = (Inst->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[Inst->rs1] || depFound : depFound;
-          depFound = (Inst->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[Inst->rs2] || depFound : depFound;
-          depFound = (Inst->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[Inst->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[I->rs3] || depFound : depFound;
         }else{
-          depFound = (Inst->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[Inst->rs1] || depFound : depFound;
-          depFound = (Inst->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[Inst->rs2] || depFound : depFound;
-          depFound = (Inst->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[Inst->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[I->rs3] || depFound : depFound;
         }
       }else {
         if(isFloat){
-          depFound = (Inst->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[Inst->rs1] || depFound : depFound;
-          depFound = (Inst->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[Inst->rs2] || depFound : depFound;
-          depFound = (Inst->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[Inst->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[I->rs3] || depFound : depFound;
         }else{
-          depFound = (Inst->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[Inst->rs1] || depFound : depFound;
-          depFound = (Inst->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[Inst->rs2] || depFound : depFound;
-          depFound = (Inst->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[Inst->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[I->rs3] || depFound : depFound;
         }
       }
     return depFound;
@@ -1670,9 +1675,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // We do not want to retire this instruction until we're ready
     if( GetPC() != _PAN_FWARE_JUMP_ ){
       Inst = DecodeInst();
+      Inst.entry = RegFile[threadToDecode].Entry;
     }
     //Now that we have decoded the instruction, check for pipeline hazards
-    if(!DependencyCheck(threadToDecode, &Inst)) {
+    if(DependencyCheck(threadToDecode, &Inst)) {
       RegFile[threadToDecode].cost = 0; // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
       THREAD_CTE[threadToDecode] = false;
@@ -1800,6 +1806,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         RevInst retiredInst = Pipeline.front().second;
         DependencyClear(tID, &retiredInst);
         Pipeline.pop();
+        RegFile[tID].cost = 0;
       }
   }
   /*for(int tID = 0; tID < _REV_THREAD_COUNT_; tID ++){
