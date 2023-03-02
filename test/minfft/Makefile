@@ -12,7 +12,7 @@
 
 .PHONY: src
 
-EXAMPLE=ex1
+EXAMPLE=minfft
 CC=riscv64-unknown-elf-gcc
 ARCH=rv64imfd
 #ARCH=rv32i
