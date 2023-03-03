@@ -94,6 +94,7 @@ namespace SST {
         {"startSymbol",     "Starting symbol name of the target core",      "core:symbol"},
         {"machine",         "RISC-V machine model of the target core",      "core:G"},
         {"memCost",         "Memory latency range in cycles min:max",       "core:0:10"},
+        {"prefetchDepth",   "Instruction prefetch depth per core",          "core:1"},
         {"table",           "Instruction cost table",                       "core:/path/to/table"},
         {"enable_nic",      "Enable the internal RevNIC",                   "0"},
         {"enable_pan",      "Enable PAN network endpoint",                  "0"},

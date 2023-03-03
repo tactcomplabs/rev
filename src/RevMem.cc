@@ -15,6 +15,12 @@ RevMem::RevMem( RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
   : memSize(0), opts(Opts), ctrl(Ctrl), output(Output), physMem(nullptr),
     stacktop(0x00ull) {
   // Note: this constructor assumes the use of the memHierarchy backend
+  pageSize = 262144; //Page Size (in Bytes)
+  addrShift = int(log(pageSize) / log(2.0));
+  nextPage = 0;
+
+  stacktop = _REVMEM_BASE_ + memSize;
+
   memStats.bytesRead = 0;
   memStats.bytesWritten = 0;
   memStats.doublesRead = 0;
@@ -53,7 +59,8 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
 }
 
 RevMem::~RevMem(){
-  delete[] physMem;
+  if( physMem )
+    delete[] physMem;
 }
 
 void RevMem::HandleMemFault(unsigned width){

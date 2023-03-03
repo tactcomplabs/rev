@@ -245,7 +245,6 @@ bool RevLoader::LoadProgramArgs(){
     mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));
   }
 
-
   return true;
 }
 
@@ -303,6 +302,7 @@ bool RevLoader::LoadElf(){
   // unmap the file
   munmap( membuf, FileSize );
 
+  // print the symbol table entries
   std::map<std::string,uint64_t>::iterator it = symtable.begin();
   while( it != symtable.end() ){
     output->verbose(CALL_INFO,6,0,
@@ -315,12 +315,18 @@ bool RevLoader::LoadElf(){
   if( !LoadProgramArgs() )
     return false;
 
+  // Initiate a memory fence in order to ensure that the entire ELF
+  // infrastructure is loaded
+  mem->FenceMem();
+
   return true;
 }
 
 uint64_t RevLoader::GetSymbolAddr(std::string Symbol){
   uint64_t tmp = 0x00ull;
-  tmp = symtable[Symbol];
+  if( symtable.find(Symbol) != symtable.end() ){
+    tmp = symtable[Symbol];
+  }
   return tmp;
 }
 

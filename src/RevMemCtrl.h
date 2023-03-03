@@ -289,42 +289,42 @@ namespace SST {
       /// RevBasicMemCtrl: send a flush request
       virtual bool sendFLUSHRequest(uint64_t Addr, uint32_t Size,
                             bool Inv,
-                            StandardMem::Request::flags_t flags);
+                            StandardMem::Request::flags_t flags) override;
 
       /// RevBasicMemCtrl: send a read request
       virtual bool sendREADRequest(uint64_t Addr, uint32_t Size, void *target,
-                           StandardMem::Request::flags_t flags);
+                           StandardMem::Request::flags_t flags) override;
 
       /// RevBasicMemCtrl: send a write request
       virtual bool sendWRITERequest(uint64_t Addr, uint32_t Size, char *buffer,
-                            StandardMem::Request::flags_t flags = 0);
+                            StandardMem::Request::flags_t flags = 0) override;
 
       // RevBasicMemCtrl: send a readlock request
       virtual bool sendREADLOCKRequest(uint64_t Addr, uint32_t Size, void *target,
-                               StandardMem::Request::flags_t flags);
+                               StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a writelock request
       virtual bool sendWRITELOCKRequest(uint64_t Addr, uint32_t Size, char *buffer,
-                                StandardMem::Request::flags_t flags);
+                                StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a loadlink request
       virtual bool sendLOADLINKRequest(uint64_t Addr, uint32_t Size,
-                               StandardMem::Request::flags_t flags);
+                               StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a storecond request
       virtual bool sendSTORECONDRequest(uint64_t Addr, uint32_t Size, char *buffer,
-                                StandardMem::Request::flags_t flags);
+                                StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send an void custom read memory request
       virtual bool sendCUSTOMREADRequest(uint64_t Addr, uint32_t Size, void *target,
-                                 unsigned Opc, StandardMem::Request::flags_t flags);
+                                 unsigned Opc, StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a custom write request
       virtual bool sendCUSTOMWRITERequest(uint64_t Addr, uint32_t Size, char *buffer,
-                                  unsigned Opc, StandardMem::Request::flags_t flags);
+                                  unsigned Opc, StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a FENCE request
-      virtual bool sendFENCE();
+      virtual bool sendFENCE() override;
 
     protected:
       // ----------------------------------------

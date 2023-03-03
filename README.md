@@ -154,6 +154,8 @@ See the LICENSE file
 ## Authors
 * *John Leidel* - *Chief Scientist* - [Tactical Computing Labs](http://www.tactcomplabs.com)
 * *David Donofrio* - *Chief Hardware Architect* - [Tactical Computing Labs](http://www.tactcomplabs.com)
+* *Chris Taylor* - *Sr. Prin. Research Engineer* - [Tactical Computing Labs](http://www.tactcomplabs.com)
+* *Ryan Kabrick* - *Sr. Research Engineer* - [Tactical Computing Labs](http://www.tactcomplabs.com)
 
 ## Acknowledgements
 * None at this time
