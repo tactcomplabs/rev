@@ -16,15 +16,17 @@ RevProc::RevProc( unsigned Id,
                   RevMem *Mem,
                   RevLoader *Loader,
                   SST::Output *Output )
-  : Halted(false), SingleStep(false),
+  : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), opts(Opts), mem(Mem), loader(Loader), output(Output), threadToDecode(0),
-    threadToExec(0), Retired(0x00ull) {
+    id(Id), threadToDecode(0), threadToExec(0), Retired(0x00ull),
+    opts(Opts), mem(Mem), loader(Loader), output(Output),
+    feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
   if( !Opts->GetMachineModel(id,Machine) )
-    output->fatal(CALL_INFO, -1, "Error: failed to retrieve the machine model for core=%d\n", id);
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to retrieve the machine model for core=%d\n", id);
 
   unsigned MinCost = 0;
   unsigned MaxCost = 0;
@@ -33,21 +35,34 @@ RevProc::RevProc( unsigned Id,
 
   feature = new RevFeature(Machine,output,MinCost,MaxCost,Id);
   if( !feature )
-    output->fatal(CALL_INFO, -1, "Error: failed to create the RevFeature object for core=%d\n", id);
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to create the RevFeature object for core=%d\n", id);
+
+  unsigned Depth = 0;
+  Opts->GetPrefetchDepth(Id, Depth);
+  if( Depth == 0 ){
+    Depth = 16;
+  }
+  std::cout << "prefetching depth = " << Depth << std::endl;
+  sfetch = new RevPrefetcher(Mem,Depth);
+  if( !sfetch )
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to create the RevPrefetcher object for core=%d\n", id);
 
   // load the instruction tables
   if( !LoadInstructionTable() )
-    output->fatal(CALL_INFO, -1, "Error : failed to load instruction table for core=%d\n", id );
-
-  //RegFile = new RevRegFile[_REV_THREAD_COUNT_];
+    output->fatal(CALL_INFO, -1,
+                  "Error : failed to load instruction table for core=%d\n", id );
 
   // reset the core
   if( !Reset() )
-    output->fatal(CALL_INFO, -1, "Error: failed to reset the core resources for core=%d\n", id );
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to reset the core resources for core=%d\n", id );
 
   Stats.totalCycles = 0;
   Stats.cyclesBusy = 0;
   Stats.cyclesIdle = 0;
+  Stats.cyclesStalled = 0;
   Stats.percentEff = 0.0;
   Stats.floatsExec = 0;
 }
@@ -56,7 +71,7 @@ RevProc::~RevProc(){
   for( unsigned i=0; i<Extensions.size(); i++ )
     delete Extensions[i];
   delete feature;
-  //delete [] RegFile;
+  delete sfetch;
 }
 
 RevProc::RevProcStats RevProc::GetStats(){
@@ -1292,10 +1307,22 @@ void RevProc::SetPC(uint64_t PC){
   }
 }
 
+bool RevProc::PrefetchInst(){
+  uint64_t PC   = 0x00ull;
+  if( feature->GetXlen() == 32 ){
+    PC = (uint64_t)(RegFile[threadToDecode].RV32_PC);
+  }else{
+    PC = RegFile[threadToDecode].RV64_PC;
+  }
+
+  return sfetch->IsAvail(PC);
+}
+
 RevInst RevProc::DecodeInst(){
   uint32_t Enc  = 0x00ul;
   uint32_t Inst = 0x00ul;
   uint64_t PC   = 0x00ull;
+  bool Fetched  = false;
 
   // Stage 1: Retrieve the instruction
   if( feature->GetXlen() == 32 ){
@@ -1304,10 +1331,18 @@ RevInst RevProc::DecodeInst(){
     PC = RegFile[threadToDecode].RV64_PC;
   }
 
+  if( !sfetch->InstFetch(PC, Fetched, Inst) ){
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to retrieve prefetched instruction at PC=0x%" PRIx64 "\n",
+                  PC);
+  }
+
+#if 0
   if( !mem->ReadMem( PC, 4, (void *)(&Inst)) ){
     output->fatal(CALL_INFO, -1,
                   "Error: failed to retrieve instruction at PC=0x%" PRIx64 ".", PC );
   }
+#endif
 
   output->verbose(CALL_INFO, 6, 0,
                   "Core %d ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
@@ -1592,18 +1627,27 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     //Determine the active thread
     threadToDecode = GetThreadID();
 
+    if( !PrefetchInst() ){
+      Stalled = true;
+      Stats.cyclesStalled++;
+    }else{
+      Stalled = false;
+    }
+
     // If the next instruction is our special bounce address
     // DO NOT decode it.  It will decode to a bogus instruction.
     // We do not want to retire this instruction until we're ready
-    if( GetPC() != _PAN_FWARE_JUMP_ ){
+    if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
       Inst = DecodeInst();
     }
+    if( !Stalled ){
+      ExecPC = GetPC();
+      Stats.cyclesBusy++;
+    }
     rtn = true;
-    ExecPC = GetPC();
-    Stats.cyclesBusy++;
   }
 
-  if( (!RegFile[threadToDecode].trigger) && (!Halted) ){
+  if( (!RegFile[threadToDecode].trigger) && (!Halted) && (!Stalled) ){
     // trigger the next instruction
     threadToExec = threadToDecode;
     RegFile[threadToExec].trigger = true;

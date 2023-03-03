@@ -105,6 +105,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     params.find_array<std::string>("memCost",memCosts);
     if( !Opts->InitMemCosts( memCosts ) )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
+
+    std::vector<std::string> prefetchDepths;
+    params.find_array<std::string>("prefetchDepth",prefetchDepths);
+    if( !Opts->InitPrefetchDepth( prefetchDepths) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initalize the prefetch depth\n" );
   }
 
   // See if we should load the network interface controller
@@ -190,6 +195,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
   }else{
+    if( EnablePAN )
+      output.fatal(CALL_INFO, -1, "Error: PAN does not currently support memHierarchy\n");
+
     Ctrl = loadUserSubComponent<RevMemCtrl>("memory");
     if( !Ctrl )
       output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");

@@ -304,13 +304,6 @@ namespace SST{
       {0b111,15}
     };
 
-    /*! \struct RevInstEntry
-     *  \brief Rev instruction entry
-     *
-     * Contains all the details required to decode and execute
-     * a target instruction as well as its cost function
-     *
-     */
     class RevInstDefaults {
       public:
       uint8_t     opcode;
@@ -352,6 +345,13 @@ namespace SST{
       }
     };
 
+    /*! \struct RevInstEntry
+     *  \brief Rev instruction entry
+     *
+     * Contains all the details required to decode and execute
+     * a target instruction as well as its cost function
+     *
+     */
     typedef struct {
         // disassembly
         std::string mnemonic; ///< RevInstEntry: instruction mnemonic
