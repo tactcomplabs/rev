@@ -114,6 +114,9 @@ namespace SST {
       /// RevMemOp: retrieve the invalidate flag
       bool getInv() { return Inv; }
 
+      /// RevMemOp: retrieve the target address
+      void *getTarget() { return target; }
+
     private:
       uint64_t Addr;      ///< RevMemOp: address
       uint32_t Size;      ///< RevMemOp: size of the memory operation in bytes
