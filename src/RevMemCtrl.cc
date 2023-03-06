@@ -476,6 +476,11 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
+    uint8_t *target = (uint8_t *)(op->getTarget());
+    for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
+      *target = ev->data[i];
+      target++;
+    }
     // handle the read response by writing the payload to the target memory location
     if( op )
       delete op;
