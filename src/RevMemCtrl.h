@@ -158,35 +158,49 @@ namespace SST {
       virtual bool sendWRITERequest(uint64_t Addr, uint32_t Size, char *buffer,
                                     StandardMem::Request::flags_t flags) = 0;
 
-      // RevMemCtrl: send a readlock request
+      /// RevMemCtrl: send a readlock request
       virtual bool sendREADLOCKRequest(uint64_t Addr, uint32_t Size, void *target,
                                        StandardMem::Request::flags_t flags) = 0;
 
-      // RevMemCtrl: send a writelock request
+      /// RevMemCtrl: send a writelock request
       virtual bool sendWRITELOCKRequest(uint64_t Addr, uint32_t Size, char *buffer,
                                         StandardMem::Request::flags_t flags) = 0;
 
-      // RevMemCtrl: send a loadlink request
+      /// RevMemCtrl: send a loadlink request
       virtual bool sendLOADLINKRequest(uint64_t Addr, uint32_t Size,
                                        StandardMem::Request::flags_t flags) = 0;
 
-      // RevMemCtrl: send a storecond request
+      /// RevMemCtrl: send a storecond request
       virtual bool sendSTORECONDRequest(uint64_t Addr, uint32_t Size, char *buffer,
                                         StandardMem::Request::flags_t flags) = 0;
 
-      // RevMemCtrl: send an void custom read memory request
+      /// RevMemCtrl: send an void custom read memory request
       virtual bool sendCUSTOMREADRequest(uint64_t Addr, uint32_t Size, void *target,
                                          unsigned Opc,
                                          StandardMem::Request::flags_t flags) = 0;
 
-      // RevMemCtrl: send a custom write request
+      /// RevMemCtrl: send a custom write request
       virtual bool sendCUSTOMWRITERequest(uint64_t Addr, uint32_t Size, char *buffer,
                                           unsigned Opc,
                                           StandardMem::Request::flags_t flags) = 0;
 
-      // RevMemCtrl: send a FENCE request
+      /// RevMemCtrl: send a FENCE request
       virtual bool sendFENCE() = 0;
 
+      /// RevMemCtrl: handle a read response
+      virtual void handleReadResp(StandardMem::ReadResp* ev) = 0;
+
+      /// RevMemCtrl: handle a write response
+      virtual void handleWriteResp(StandardMem::WriteResp* ev) = 0;
+
+      /// RevMemCtrl: handle a flush response
+      virtual void handleFlushResp(StandardMem::FlushResp* ev) = 0;
+
+      /// RevMemCtrl: handle a custom response
+      virtual void handleCustomResp(StandardMem::CustomResp* ev) = 0;
+
+      /// RevMemCtrl: handle an invalidate response
+      virtual void handleInvResp(StandardMem::InvNotify* ev) = 0;
 
     protected:
       SST::Output *output;       ///< RevMemCtrl: sst output object
@@ -326,6 +340,21 @@ namespace SST {
       // RevBasicMemCtrl: send a FENCE request
       virtual bool sendFENCE() override;
 
+      /// RevBasicMemCtrl: handle a read response
+      virtual void handleReadResp(StandardMem::ReadResp* ev) override;
+
+      /// RevBasicMemCtrl: handle a write response
+      virtual void handleWriteResp(StandardMem::WriteResp* ev) override;
+
+      /// RevBasicMemCtrl: handle a flush response
+      virtual void handleFlushResp(StandardMem::FlushResp* ev) override;
+
+      /// RevBasicMemCtrl: handle a custom response
+      virtual void handleCustomResp(StandardMem::CustomResp* ev) override;
+
+      /// RevBasicMemCtrl: handle an invalidate response
+      virtual void handleInvResp(StandardMem::InvNotify* ev) override;
+
     protected:
       // ----------------------------------------
       // RevStdMemHandlers
@@ -358,7 +387,6 @@ namespace SST {
       private:
         RevBasicMemCtrl *Ctrl;       ///< RevStdMemHandlers: memory controller object
       }; // class RevStdMemHandlers
-
 
     private:
 

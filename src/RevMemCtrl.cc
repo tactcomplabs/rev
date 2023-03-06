@@ -472,6 +472,76 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
   return true;
 }
 
+void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
+  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+    RevMemOp *op = outstanding[ev->getID()];
+    // handle the read response by writing the payload to the target memory location
+    if( op )
+      delete op;
+    outstanding.erase(ev->getID());
+    delete ev;
+  }else{
+    output->fatal(CALL_INFO, -1, "Error : found unknown ReadResp\n");
+  }
+  num_read--;
+}
+
+void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
+  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+    RevMemOp *op = outstanding[ev->getID()];
+    if( op )
+      delete op;
+    outstanding.erase(ev->getID());
+    delete ev;
+  }else{
+    output->fatal(CALL_INFO, -1, "Error : found unknown WriteResp\n");
+  }
+  num_write--;
+}
+
+void RevBasicMemCtrl::handleFlushResp(StandardMem::FlushResp* ev){
+  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+    RevMemOp *op = outstanding[ev->getID()];
+    if( op )
+      delete op;
+    outstanding.erase(ev->getID());
+    delete ev;
+  }else{
+    output->fatal(CALL_INFO, -1, "Error : found unknown FlushResp\n");
+  }
+  num_flush--;
+}
+
+void RevBasicMemCtrl::handleCustomResp(StandardMem::CustomResp* ev){
+  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+    RevMemOp *op = outstanding[ev->getID()];
+    if( op )
+      delete op;
+    outstanding.erase(ev->getID());
+    delete ev;
+  }else{
+    output->fatal(CALL_INFO, -1, "Error : found unknown CustomResp\n");
+  }
+  num_custom--;
+}
+
+void RevBasicMemCtrl::handleInvResp(StandardMem::InvNotify* ev){
+  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+    RevMemOp *op = outstanding[ev->getID()];
+    if( op )
+      delete op;
+    outstanding.erase(ev->getID());
+    delete ev;
+  }else{
+    output->fatal(CALL_INFO, -1, "Error : found unknown InvResp\n");
+  }
+}
+
 bool RevBasicMemCtrl::clockTick(Cycle_t cycle){
 
   // check to see if the top request is a FENCE
@@ -529,18 +599,23 @@ RevBasicMemCtrl::RevStdMemHandlers::~RevStdMemHandlers(){
 }
 
 void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::ReadResp* ev){
+  Ctrl->handleReadResp(ev);
 }
 
 void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::WriteResp* ev){
+  Ctrl->handleWriteResp(ev);
 }
 
 void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::FlushResp* ev){
+  Ctrl->handleFlushResp(ev);
 }
 
 void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::CustomResp* ev){
+  Ctrl->handleCustomResp(ev);
 }
 
 void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::InvNotify* ev){
+  Ctrl->handleInvResp(ev);
 }
 
 // EOF
