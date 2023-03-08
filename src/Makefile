@@ -30,7 +30,7 @@ REV_INCS := $(patsubst %.py,%.inc,$(wildcard *.py))
 
 all: librevcpu.so
 
-debug: CXXFLAGS += -DDEBUG -g
+debug: CXXFLAGS += -DDEBUG -g -D_REV_DEBUG_
 debug: librevcpu.so
 
 librevcpu.so: $(REV_INCS) $(REV_OBJS)

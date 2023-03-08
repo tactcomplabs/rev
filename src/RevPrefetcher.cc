@@ -16,8 +16,10 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
   //       however, it should work for what we need.  we only need
   //       to know whether an instruction as been filled
 
+  uint64_t lastAddr = 0x00ull;
   for( unsigned i=0; i<baseAddr.size(); i++ ){
-    if( (Addr >= baseAddr[i]) && (Addr <= (baseAddr[i]+(depth*4))) ){
+    lastAddr = baseAddr[i] + (depth*4);
+    if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
       uint32_t Off = 0;
@@ -51,9 +53,13 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
 
   uint32_t tmpinst  = 0x00;
 
+  //std::cout << "fetching addr=0x" << std::hex << Addr << std::dec << std::endl;
+
   // scan the baseAddr vector to see if the address is cached
+  uint64_t lastAddr = 0x00ull;
   for( unsigned i=0; i<baseAddr.size(); i++ ){
-    if( (Addr >= baseAddr[i]) && (Addr <= (baseAddr[i]+(depth*4))) ){
+    lastAddr = baseAddr[i] + (depth*4);
+    if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
       uint32_t Off = 0;
@@ -102,6 +108,13 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
 }
 
 void RevPrefetcher::Fill(uint64_t Addr){
+
+  // determine if the address is 32bit aligned
+  if((Addr & 0x3ull)){
+    // not 32bit aligned, adjust the base address by 2 bytes
+    Fill(Addr-2);
+  }
+
   // allocate a new stream buffer
   baseAddr.push_back(Addr);
   iStack.push_back( new uint32_t[depth] );
