@@ -1939,6 +1939,8 @@ void RevCPU::ExecPANTest(){
   int dest = 1;
   uint64_t BASE = 0x00000080ull;
   uint64_t Buf = 0x00ull;
+  uint64_t Addr = _PAN_COMPLETION_ADDR_;
+  uint64_t Payload = 0x01ull;
   panNicEvent *TEvent = nullptr;
 
   switch( testStage ){
@@ -2190,8 +2192,9 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
 
   // check to see if we have outstanding network messages and whether the tests are complete
   if( (!SendMB.empty() || !TrackTags.empty()) &&
-      (testStage < _MAX_PAN_TEST_) )
+      (testStage < _MAX_PAN_TEST_) ){
     rtn = false;
+  }
 
   // if its time to return, end the sim
   if( rtn )

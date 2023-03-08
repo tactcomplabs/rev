@@ -43,7 +43,7 @@ RevProc::RevProc( unsigned Id,
   if( Depth == 0 ){
     Depth = 16;
   }
-  std::cout << "prefetching depth = " << Depth << std::endl;
+
   sfetch = new RevPrefetcher(Mem,Depth);
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
