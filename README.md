@@ -31,7 +31,7 @@ current installation of the SST Core and Elements infrastructure.  The Rev
 building infrastructure assumes that the ``sst-config`` tool is installed 
 and can be found in the current PATH environment.
 
-## Building
+## Building - GNU Make
 
 Building the Rev SST component from source can be performed as follows:
 
@@ -44,6 +44,31 @@ Optionally, you can also build the integrated documentation using Doxygen:
 
     $ make doc
 
+## Building - CMake
+
+Building the Rev SST component from source using CMake can be performed as follows:
+
+    $ git clone
+    $ cd rev
+    $ mkdir build
+    $ cd build
+    $ cmake ../
+    $ make 
+    $ make install
+
+After a successful build you can test your install (if you are using CMake) with:
+
+    $ make test
+
+You can also run a single test with:
+
+    $ ctest -R <test_name>
+
+where you can substitute `test_name` with the name of the test, for example:
+
+    $ ctest -R TEST_EX1
+
+will run the test found in test/ex1. See the full list of tests in test/CMakeLists.txt
 
 ## Building Compatible Compilers
 
@@ -123,6 +148,17 @@ Executing one of the included sample tests can be performed as follows:
 $ export REV_EXE=ex1.exe
 $ sst rev-test-ex1.py
 ```
+
+## Adding Tests to the test suite
+
+To add tests to the Rev test suite, edit `test/CMakeLists.txt`. By default, the tests look for the 
+SST output string "Program Execution Complete" and have a max runtime of 30 seconds. Both of
+these values are user defined with the `test/CMakeLists.txt` file.
+
+All tests should follow the existing directory structure and be added to `test/<your_new_test_name>/`
+
+CTest will look in your newly created folder for a shell script, this is the script that will build
+the RISC-VV executable using the RISC-V compiler. See `test/ext/run_ex1.sh` for an example.
 
 ## Contributing
 

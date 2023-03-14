@@ -11,6 +11,7 @@ if(NOT RVTOOLS)
   message(FATAL_ERROR "No riscv64-unknown-elf-gcc binary found in path")
 endif()
 
+find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
 set (passRegex "Program execution complete")
 
 #------- TEST EX 1 ---------------
@@ -49,14 +50,18 @@ set_property (TEST TEST_BIG_LOOP PROPERTY TIMEOUT 30)
 set_property (TEST TEST_BIG_LOOP PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
 
 #------- TEST DOT_DOUBLE ---------------
-add_test(NAME TEST_DOT_DOUBLE COMMAND run_dot_double.sh WORKING_DIRECTORY ../test/dot_double)
-set_property (TEST TEST_DOT_DOUBLE PROPERTY TIMEOUT 30)
-set_property (TEST TEST_DOT_DOUBLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+if(RVLINUX)
+  add_test(NAME TEST_DOT_DOUBLE COMMAND run_dot_double.sh WORKING_DIRECTORY ../test/dot_double)
+  set_property (TEST TEST_DOT_DOUBLE PROPERTY TIMEOUT 30)
+  set_property (TEST TEST_DOT_DOUBLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+endif()
 
 #------- TEST DOT_SINGLE ---------------
-add_test(NAME TEST_DOT_SINGLE COMMAND run_dot_single.sh WORKING_DIRECTORY ../test/dot_single)
-set_property (TEST TEST_DOT_SINGLE PROPERTY TIMEOUT 30)
-set_property (TEST TEST_DOT_SINGLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+if(RVLINUX)
+  add_test(NAME TEST_DOT_SINGLE COMMAND run_dot_single.sh WORKING_DIRECTORY ../test/dot_single)
+  set_property (TEST TEST_DOT_SINGLE PROPERTY TIMEOUT 30)
+  set_property (TEST TEST_DOT_SINGLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+endif()
 
 #------- TEST MINFFT ---------------
 add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY ../test/minfft)
