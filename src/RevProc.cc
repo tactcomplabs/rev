@@ -259,9 +259,9 @@ uint32_t RevProc::CompressEncoding(RevInstEntry Entry){
   uint32_t Value = 0x00;
 
   Value |= (uint32_t)(Entry.opcode);
-  Value |= (uint32_t)((uint32_t)(Entry.funct3)<<8);
-  Value |= (uint32_t)((uint32_t)(Entry.funct7)<<11);
-  Value |= (uint32_t)((uint32_t)(Entry.imm12)<<18);
+  Value |= (uint32_t)((uint32_t)(Entry.funct3)<<7);
+  Value |= (uint32_t)((uint32_t)(Entry.funct7)<<10);
+  Value |= (uint32_t)((uint32_t)(Entry.imm12) <<17);
 
   return Value;
 }
@@ -1377,67 +1377,81 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 3: Determine if we have a funct3 field
   uint32_t Funct3 = 0x00ul;
-  const uint32_t inst42 = ((Opcode&0b11100) >> 2);
-  const uint32_t inst65 = ((Opcode&0b1100000) >> 5);
+  const uint32_t inst4  = ((Opcode&0b10000) >> 4);    // bit 4
+  const uint32_t inst42 = ((Opcode&0b11100) >> 2);    // bits 4, 3, 2
+  const uint32_t inst65 = ((Opcode&0b1100000) >> 5);  // bits 6, 5
+  const uint32_t inst29 = ((Inst >> 29) & 0b001);     // bit 29
 
-  if( (inst42 == 0b011) && (inst65 == 0b11) ){
-    // JAL
+  if( (Opcode == 0b0110111) || (Opcode == 0b0010111) || (Opcode == 0b1101111)){
+    // LUI, AUIPC, JAL
     Funct3 = 0x00ul;
-  }else if( (inst42 == 0b101) && (inst65 == 0b00) ){
-    // AUIPC
+  }else if ((inst65 == 0b10) && (inst4 == 0b0)){
+    // R4
     Funct3 = 0x00ul;
-  }else if( (inst42 == 0b101) && (inst65 == 0b01) ){
-    // LUI
+  }else if ( ((inst65 == 0b10) && (inst42 == 0b100) && (inst29 == 0b000)) ){
+    // Floating-Rtype, Funct3 is rm
     Funct3 = 0x00ul;
   }else{
     // Retrieve the field
     Funct3 = ((Inst&0b111000000000000) >> 12 );
   }
 
+
   // Stage 4: Determine if we have a funct7 field (R-Type)
   uint32_t Funct7 = 0x00ul;
   if( inst65 == 0b01 ) {
-    if( (inst42 == 0b011) || (inst42 == 0b100) ){
+    if( (inst42 == 0b100) || (inst42 == 0b110)){
+      // inst42 == 0b100 for RV32I, inst42 == 0b110 for RV64I
       // R-Type encodings
       Funct7 = ((Inst >> 25) & 0b1111111);
+    } else if (inst42 == 0b011) {
+      // inst42 == 0b011 for Atomic instructions
+      // bit-25, bit-26 are used for rl and aq, respectively.
+      Funct7 = ((Inst >> 25) & 0b1111100);
     }
-  }else if((inst65== 0b10) && (inst42 == 0b100)){
-      // R-Type encodings
-      Funct7 = ((Inst >> 25) & 0b1111111);
+  }else if((inst65 == 0b10) && (inst42 == 0b100)){
+    // R-Type encodings
+    Funct7 = ((Inst >> 25) & 0b1111111);
+  }else if (( inst65 == 0b00) && (inst42 == 0b100) && ((Funct3 == 0b001) || (Funct3 == 0b101))) {
+    // SLLI, SRLI, SRAI.
+    // In RV64, bit-25 is used to shamt[5], we intentionally set the first bit 
+    // of Funct 7 to 0 to match the encoding of Funct7.
+    Funct7 = ((Inst >> 25) & 0b1111110);
+  }else if (( inst65 == 0b00) && (inst42 == 0b110) && ((Funct3 == 0b001) || (Funct3 == 0b101))){
+    // SLLIW, SRLIW, SRAIW. I-Type encodings
+    Funct7 = ((Inst >> 25) & 0b1111111);
+  }else if ((inst65 == 0b10) && (inst4 == 0b0)){
+    // R4
+    Funct7 = ((Inst >> 25) & 0b0000011);
   }
 
   // Stage 5: Determine if we have an imm12 field
   uint32_t Imm12 = 0x00ul;
-  if( (inst42 == 0b100) && (inst65 == 0b11)  && (Funct3 == 0)){
-    Imm12 = ((Inst >> 19) & 0b111111111111);
+  const uint32_t inst30 = ((Funct7&0b0100000) >> 5);
+  if((inst65 == 0b11) && (inst42 == 0b100) && (Funct3 == 0b000)){
+    // ECAL, EBREAK
+    Imm12 = Inst >> 20;
+  } else if ((inst65 == 0b10) && (inst42 == 0b100) && (inst30 == 0b01)) {
+    // For F and D extension. e.g. Imm12 has to be used to differentiate fcvt.w.s from fcvt.wu.s
+    Imm12 = Inst >> 20;
   }
 
   // Stage 6: Compress the encoding
-  Enc |= Opcode;
-  Enc |= (Funct3<<8);
-  Enc |= (Funct7<<11);
-  Enc |= (Imm12<<18);
+  Enc |= Opcode;        // 7 bits
+  Enc |= (Funct3<<7);   // 3 bits
+  Enc |= (Funct7<<10);  // 7 bits
+  Enc |= (Imm12<<17);
 
   // Stage 7: Look up the value in the table
   std::map<uint32_t,unsigned>::iterator it;
   it = EncToEntry.find(Enc);
-   if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
-    //This is kind of a hack, but we may not have found the instruction becasue
-    //  Funct3 is overloaded with rounding mode, so if this is a RV32F or RV64F
-    //  set Funct3 to zero and check again
-    Enc = 0;
-    Enc |= Opcode;
-    Enc |= (Funct7<<11);
-    Enc |= (Imm12<<18);
-    it = EncToEntry.find(Enc);
-    if( it == EncToEntry.end() ){
-      // failed to decode the instruction
-      output->fatal(CALL_INFO, -1,
-                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
-                  PC,
-                  Enc );
-    }
 
+  if( it == EncToEntry.end() ){
+    // failed to decode the instruction
+    output->fatal(CALL_INFO, -1,
+                "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
+                PC,
+                Enc );
   }
 
   unsigned Entry = it->second;
