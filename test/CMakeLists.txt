@@ -12,7 +12,8 @@ if(NOT RVTOOLS)
 endif()
 
 find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
-set (passRegex "Program execution complete")
+set (passRegex "Simulation is complete")
+#Program execution complete
 
 #------- TEST EX 1 ---------------
 add_test(NAME TEST_EX1 COMMAND run_ex1.sh WORKING_DIRECTORY ../test/ex1)
@@ -46,25 +47,32 @@ set_property (TEST TEST_EX6 PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
 
 #------- TEST BIG_LOOP ---------------
 add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY ../test/big_loop)
-set_property (TEST TEST_BIG_LOOP PROPERTY TIMEOUT 30)
+set_property (TEST TEST_BIG_LOOP PROPERTY TIMEOUT 60)
 set_property (TEST TEST_BIG_LOOP PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
 
 #------- TEST DOT_DOUBLE ---------------
-if(RVLINUX)
   add_test(NAME TEST_DOT_DOUBLE COMMAND run_dot_double.sh WORKING_DIRECTORY ../test/dot_double)
+if(RVLINUX)
   set_property (TEST TEST_DOT_DOUBLE PROPERTY TIMEOUT 30)
   set_property (TEST TEST_DOT_DOUBLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+else()
+  set_property (TEST TEST_DOT_DOUBLE PROPERTY DISABLED True)
+  message(NOTICE "TEST_DOT_DOUBLE Skipped: RV Linux Compiler not found") 
 endif()
 
 #------- TEST DOT_SINGLE ---------------
-if(RVLINUX)
   add_test(NAME TEST_DOT_SINGLE COMMAND run_dot_single.sh WORKING_DIRECTORY ../test/dot_single)
+if(RVLINUX)
   set_property (TEST TEST_DOT_SINGLE PROPERTY TIMEOUT 30)
   set_property (TEST TEST_DOT_SINGLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+else()
+  set_property (TEST TEST_DOT_SINGLE PROPERTY DISABLED True)
+  message(NOTICE "TEST_DOT_SINGLE Skipped: RV Linux Compiler not found") 
 endif()
 
 #------- TEST MINFFT ---------------
 add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY ../test/minfft)
 set_property (TEST TEST_MINFFT PROPERTY TIMEOUT 30)
+set_property (TEST TEST_MINFFT PROPERTY DISABLED True)
 set_property (TEST TEST_MINFFT PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
 

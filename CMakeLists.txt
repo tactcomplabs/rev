@@ -143,7 +143,7 @@ add_subdirectory(src)
 add_subdirectory(include)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-install (CODE "execute_process(COMMAND sst-register revcpu -revcpu_LIBDIR=${CMAKE_INSTALL_PREFIX}/lib)")
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
+install (CODE "execute_process(COMMAND sst-register revcpu -revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR}/src)")
 
 # EOF

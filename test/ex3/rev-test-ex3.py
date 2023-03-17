@@ -28,7 +28,7 @@ comp_cpu0.addParams({
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV32I]",                      # Core:Config; RV32I for core 0
-        "startAddr" : "[0:0x00010144]",               # Starting address for core 0
+        "startAddr" : "[0:0x000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "ex3.exe"),  # Target executable
         "nic" : "revcpu.RevNIC",
