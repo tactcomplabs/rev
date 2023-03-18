@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevMemCtrl.h"
+#include "../include/RevMemCtrl.h"
 
 using namespace SST;
 using namespace RevCPU;

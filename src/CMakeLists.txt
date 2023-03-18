@@ -14,10 +14,11 @@ set(RevCPUSrcs
   RevFeature.cc
   RevLoader.cc
   RevMem.cc
+  RevMemCtrl.cc
   RevNIC.cc
   RevOpts.cc
   RevProc.cc
-  libRevComponent.cc
+  librevcpu.cc
   )
 
 add_library(${PROJECT_NAME} SHARED ${RevCPUSrcs})
