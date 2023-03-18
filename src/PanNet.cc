@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "PanNet.h"
+#include "../include/PanNet.h"
 
 using namespace SST;
 using namespace RevCPU;

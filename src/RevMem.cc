@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevMem.h"
+#include "../include/RevMem.h"
 #include <math.h>
 
 RevMem::RevMem( RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )

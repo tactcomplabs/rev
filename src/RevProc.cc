@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevProc.h"
+#include "../include/RevProc.h"
 #include <bitset>
 
 RevProc::RevProc( unsigned Id,

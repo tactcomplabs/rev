@@ -11,8 +11,8 @@
 #ifndef _SST_REVCPU_RV64D_H_
 #define _SST_REVCPU_RV64D_H_
 
-#include "RevInstTable.h"
-#include "RevExt.h"
+#include "../RevInstTable.h"
+#include "../RevExt.h"
 
 using namespace SST::RevCPU;
 
