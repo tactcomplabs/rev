@@ -7,11 +7,14 @@ endif()
 
 # Check for RISCV Compiler
 find_program(RVTOOLS riscv64-unknown-elf-gcc)
-if(NOT RVTOOLS)
-  message(FATAL_ERROR "No riscv64-unknown-elf-gcc binary found in path")
+find_program(RVGNULINUX riscv64-unknown-linux-gnu-gcc)
+find_program(RVMUSLLINUX riscv64-unknown-linux-musl-gcc)
+
+if(NOT (RVTOOLS OR RVGNULINUX OR RVMUSLLINUX))
+    message(FATAL_ERROR "No riscv64 compatible gcc (riscv64-unknown-elf-gcc || riscv64-unknown-linux-gnu-gcc || riscv64-unknown-linux-musl-gcc) binary found in path")
 endif()
 
-find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
+# find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
 set (passRegex "Simulation is complete")
 #Program execution complete
 
