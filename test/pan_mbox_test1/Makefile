@@ -14,7 +14,7 @@
 
 EXAMPLE=pan_test
 SPIN=pan_spin
-CC=riscv64-unknown-elf-gcc
+CC=${RVCC}
 ARCH=rv64g
 
 all: $(EXAMPLE).exe $(SPIN).exe

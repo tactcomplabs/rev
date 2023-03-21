@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=minfft
-CC=riscv64-unknown-elf-gcc
+CC=${RVCC}
 ARCH=rv64imfd
 #ARCH=rv32i
 #ABI=ilp32

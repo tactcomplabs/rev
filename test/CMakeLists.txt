@@ -6,11 +6,11 @@ else()
 endif()
 
 # Check for RISCV Compiler
-find_program(RVTOOLS riscv64-unknown-elf-gcc)
-find_program(RVGNULINUX riscv64-unknown-linux-gnu-gcc)
-find_program(RVMUSLLINUX riscv64-unknown-linux-musl-gcc)
+find_program(RVCC NAMES riscv64-unknown-elf-gcc
+                        riscv64-unknown-linux-gnu-gcc 
+                        riscv64-unknown-linux-musl-gcc)
 
-if(NOT (RVTOOLS OR RVGNULINUX OR RVMUSLLINUX))
+if(RVCC-NOTFOUND)
     message(FATAL_ERROR "No riscv64 compatible gcc (riscv64-unknown-elf-gcc || riscv64-unknown-linux-gnu-gcc || riscv64-unknown-linux-musl-gcc) binary found in path")
 endif()
 
@@ -18,64 +18,122 @@ endif()
 set (passRegex "Simulation is complete")
 #Program execution complete
 
-#------- TEST EX 1 ---------------
-add_test(NAME TEST_EX1 COMMAND run_ex1.sh WORKING_DIRECTORY ../test/ex1)
-set_property (TEST TEST_EX1 PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
-set_property (TEST TEST_EX1 PROPERTY TIMEOUT 30)
 
-#------- TEST EX 2 ---------------
-add_test(NAME TEST_EX2 COMMAND run_ex2.sh WORKING_DIRECTORY ../test/ex2)
-set_property (TEST TEST_EX2 PROPERTY TIMEOUT 30)
-set_property (TEST TEST_EX2 PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+#------- TESTS  ---------------
+message(STATUS "CTest Setup")
 
-#------- TEST EX 3 ---------------
-add_test(NAME TEST_EX3 COMMAND run_ex3.sh WORKING_DIRECTORY ../test/ex3)
-set_property (TEST TEST_EX3 PROPERTY TIMEOUT 30)
-set_property (TEST TEST_EX3 PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+# -- Add tests
 
-#------- TEST EX 4 ---------------
-add_test(NAME TEST_EX4 COMMAND run_ex4.sh WORKING_DIRECTORY ../test/ex4)
-set_property (TEST TEST_EX4 PROPERTY TIMEOUT 30)
-set_property (TEST TEST_EX4 PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+# TEST EX1
+add_test(NAME TEST_EX1 COMMAND run_ex1.sh WORKING_DIRECTORY ../test/ex1 ) # ex1
+set_tests_properties(TEST_EX1 
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv32"
+)
 
-#------- TEST EX 5 ---------------
-add_test(NAME TEST_EX5 COMMAND run_ex5.sh WORKING_DIRECTORY ../test/ex5)
-set_property (TEST TEST_EX5 PROPERTY TIMEOUT 30)
-set_property (TEST TEST_EX5 PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+add_test(NAME TEST_EX2 COMMAND run_ex2.sh WORKING_DIRECTORY ../test/ex2 ) # ex2
+set_tests_properties(TEST_EX2
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
 
-#------- TEST EX 6 ---------------
-add_test(NAME TEST_EX6 COMMAND run_ex6.sh WORKING_DIRECTORY ../test/ex6)
-set_property (TEST TEST_EX6 PROPERTY TIMEOUT 30)
-set_property (TEST TEST_EX6 PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+add_test(NAME TEST_EX3 COMMAND run_ex3.sh WORKING_DIRECTORY ../test/ex3 ) # ex3
+set_tests_properties(TEST_EX3
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv32"
+)
 
-#------- TEST BIG_LOOP ---------------
-add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY ../test/big_loop)
-set_property (TEST TEST_BIG_LOOP PROPERTY TIMEOUT 60)
-set_property (TEST TEST_BIG_LOOP PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
+add_test(NAME TEST_EX4 COMMAND run_ex4.sh WORKING_DIRECTORY ../test/ex4 ) # ex3
+set_tests_properties(TEST_EX4
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv32"
+)
 
-#------- TEST DOT_DOUBLE ---------------
-  add_test(NAME TEST_DOT_DOUBLE COMMAND run_dot_double.sh WORKING_DIRECTORY ../test/dot_double)
-if(RVLINUX)
-  set_property (TEST TEST_DOT_DOUBLE PROPERTY TIMEOUT 30)
-  set_property (TEST TEST_DOT_DOUBLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
-else()
-  set_property (TEST TEST_DOT_DOUBLE PROPERTY DISABLED True)
-  message(NOTICE "TEST_DOT_DOUBLE Skipped: RV Linux Compiler not found") 
+add_test(NAME TEST_EX5 COMMAND run_ex5.sh WORKING_DIRECTORY ../test/ex5 ) # ex4
+set_tests_properties(TEST_EX5
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME TEST_EX6 COMMAND run_ex6.sh WORKING_DIRECTORY ../test/ex6 ) # ex5
+set_tests_properties(TEST_EX6
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY ../test/big_loop ) # big_loop
+set_tests_properties(TEST_BIG_LOOP
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY ../test/minfft ) # minfft
+set_tests_properties(TEST_MINFFT
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME TEST_DOT_SINGLE COMMAND run_dot_single.sh WORKING_DIRECTORY ../test/dot_single ) # dot_single
+set_tests_properties(TEST_DOT_SINGLE
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64;blas-required"
+)
+
+
+add_test(NAME TEST_DOT_DOUBLE COMMAND run_dot_double.sh WORKING_DIRECTORY ../test/dot_double ) # dot_double
+set_tests_properties(TEST_DOT_DOUBLE
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64;blas-required"
+)
+
+# -- PROCESS CTest Config Variables
+if(NOT CTEST_BLAS_REQUIRED_TESTS)
+  set_tests_properties (TEST_DOT_SINGLE PROPERTIES DISABLED True)
+  set_tests_properties (TEST_DOT_DOUBLE PROPERTIES DISABLED True)
+  message(NOTICE "   * Tests requiring BLAS headers are disabled (ie. -DCTEST_BLAS_REQUIRED_TESTS=OFF)
+    - If you'd like to still run these tests run: `ctest -L blas_required`")
+  message(VERBOSE "   TEST_DOT_SINGLE - Disabled")
+  message(VERBOSE "   TEST_DOT_DOUBLE - Disabled")
 endif()
 
-#------- TEST DOT_SINGLE ---------------
-  add_test(NAME TEST_DOT_SINGLE COMMAND run_dot_single.sh WORKING_DIRECTORY ../test/dot_single)
-if(RVLINUX)
-  set_property (TEST TEST_DOT_SINGLE PROPERTY TIMEOUT 30)
-  set_property (TEST TEST_DOT_SINGLE PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
-else()
-  set_property (TEST TEST_DOT_SINGLE PROPERTY DISABLED True)
-  message(NOTICE "TEST_DOT_SINGLE Skipped: RV Linux Compiler not found") 
+if(NOT CTEST_MULTILIB_TESTS)
+  set_tests_properties (TEST_EX1 PROPERTIES DISABLED True)
+  set_tests_properties (TEST_EX3 PROPERTIES DISABLED True)
+  set_tests_properties (TEST_EX4 PROPERTIES DISABLED True)
+  message(NOTICE "   * RV32 tests disabled (ie. -DCTEST_MULTILIB_TESTS=OFF)
+    - If you'd like to still run these tests run: `ctest -L rv32`")
+  message(VERBOSE "TEST_EX1  - Disabled")
+  message(VERBOSE "TEST_EX3  - Disabled")
+  message(VERBOSE "TEST_EX4  - Disabled")
 endif()
-
-#------- TEST MINFFT ---------------
-add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY ../test/minfft)
-set_property (TEST TEST_MINFFT PROPERTY TIMEOUT 30)
-set_property (TEST TEST_MINFFT PROPERTY DISABLED True)
-set_property (TEST TEST_MINFFT PROPERTY PASS_REGULAR_EXPRESSION "${passRegex}")
 

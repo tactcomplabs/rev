@@ -14,6 +14,17 @@ endif()
 cmake_minimum_required(VERSION 3.0)
 project(revcpu CXX)
 
+
+#---------------------------------------------------------------------------
+#-- CMAKE ARGS
+#---------------------------------------------------------------------------
+# Tests requiring blas headers - Default: OFF
+option(CTEST_BLAS_REQUIRED_TESTS "Enable tests which require BLAS headers" OFF)
+# Tests requiring 32-bit enabled compiler - Default: ON
+option(CTEST_MULTILIB_TESTS "Enable 32-bit tests" ON)
+
+
+
 #---------------------------------------------------------------------------
 #-- SETUP PATHS - This will be relevant as soon as SST supports sane CMake
 #---------------------------------------------------------------------------
@@ -130,6 +141,11 @@ if(NOT INSTRUCTIONS_PATH)
   message(STATUS "INSTRUCTIONS_PATH set to ${INSTRUCTIONS_PATH}")
 endif()
 
+# RevCPU syscalls path
+if(NOT SYSCALLS_PATH)
+  set(SYSCALLS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include/syscalls")
+  message(STATUS "SYSCALLS_PATH set to ${SYSCALLS_PATH}")
+endif()
 
 #------------------------------------------------------------------------
 #-- TESTING

@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=dot_single
-CC=riscv64-unknown-linux-gnu-gcc
+CC=${RVCC}
 ARCH=rv64imafd
 
 all: $(EXAMPLE).exe

@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=big_loop
-CC=riscv64-unknown-elf-gcc
+CC=${RVCC}
 #ARCH=rv64g
 ARCH=rv64imafd
 
