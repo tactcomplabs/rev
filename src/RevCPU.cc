@@ -188,9 +188,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the memory object
+  const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
   EnableMemH = params.find<bool>("enable_memH", 0);
   if( !EnableMemH ){
-    const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
     Mem = new RevMem( memSize, Opts,  &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
@@ -202,7 +202,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     if( !Ctrl )
       output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");
 
-    Mem = new RevMem( Opts, Ctrl, &output );
+    Mem = new RevMem( memSize, Opts, Ctrl, &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
 
@@ -461,6 +461,9 @@ void RevCPU::setup(){
     address = PNic->getAddress();
     initNICMem();
   }
+  if( EnableMemH ){
+    Ctrl->setup();
+  }
 }
 
 void RevCPU::finish(){
@@ -471,6 +474,8 @@ void RevCPU::init( unsigned int phase ){
     Nic->init(phase);
   if( EnablePAN )
     PNic->init(phase);
+  if( EnableMemH )
+    Ctrl->init(phase);
 }
 
 void RevCPU::handleMessage(Event *ev){
