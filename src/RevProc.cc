@@ -1315,6 +1315,13 @@ bool RevProc::PrefetchInst(){
     PC = RegFile[threadToDecode].RV64_PC;
   }
 
+  // These are addresses that we can't decode
+  // Return false back to the main program loop
+  if( (PC == 0x00ull) ||
+      (PC == _PAN_FWARE_JUMP_) ){
+    return false;
+  }
+
   return sfetch->IsAvail(PC);
 }
 
@@ -1788,6 +1795,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }else if( GetPC() == 0x00ull ) {
       // PAN execution contexts not enabled, this is our last PC
       done = true;
+    }
+
+    // determine if we have any outstanding memory requests
+    if( mem->outstandingRqsts() ){
+      std::cout << "outstanding memory requests" << std::endl;
+      done = false;
+    }else{
+      std::cout << "no outstanding memory requests; time to end" << std::endl;
     }
 
     if( done ){

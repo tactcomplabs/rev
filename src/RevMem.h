@@ -49,10 +49,13 @@ namespace SST {
       RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output );
 
       /// RevMem: standard memory controller constructor
-      RevMem( RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
+      RevMem( unsigned long MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
 
       /// RevMem: standard destructor
       ~RevMem();
+
+      /// RevMem: determine if there are any outstanding requests
+      bool outstandingRqsts();
 
       /// RevMem: handle incoming memory event
       void handleEvent(Interfaces::StandardMem::Request* ev) { }
@@ -170,6 +173,9 @@ namespace SST {
 
     RevMemStats memStats;
 
+    protected:
+      char *physMem;                          ///< RevMem: memory container
+
     private:
       unsigned long memSize;    ///< RevMem: size of the target memory
       RevOpts *opts;            ///< RevMem: options object
@@ -178,7 +184,6 @@ namespace SST {
 
       uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t Addr);
 
-      char *physMem;                          ///< RevMem: memory container
 
       //c++11 should guarentee that these are all zero-initializaed
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
