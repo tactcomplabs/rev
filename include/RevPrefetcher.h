@@ -13,8 +13,8 @@
 
 #include <vector>
 
-#include "RevMem.h"
-#include "RevFeature.h"
+#include "../include/RevMem.h"
+#include "../include/RevFeature.h"
 
 namespace SST{
 namespace RevCPU {
