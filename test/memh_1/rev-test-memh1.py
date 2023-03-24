@@ -55,34 +55,20 @@ iface.addParams({
 })
 
 
-#comp_cpu = sst.Component("core", "memHierarchy.standardCPU")
-#comp_cpu.addParams({
-#    "memFreq" : 100,
-#    "memSize" : "512MiB",
-#    "clock" : "1GHz",
-#    "maxOutstanding" : 10,
-#    "opCount" : 1000,
-#    "write_freq" : 25,
-#    "read_freq" : 75,
+#l1cache = sst.Component("l1cache", "memHierarchy.Cache")
+#l1cache.addParams({
+#    "access_latency_cycles" : "4",
+#    "cache_frequency" : "2 Ghz",
+#    "replacement_policy" : "lru",
+#    "coherence_protocol" : "MSI",
+#    "associativity" : "4",
+#    "cache_line_size" : "64",
+#    "debug" : DEBUG_L1,
+#    "debug_level" : DEBUG_LEVEL,
+#    "verbose" : VERBOSE,
+#    "L1" : "1",
+#    "cache_size" : "16KiB"
 #})
-#iface = comp_cpu.setSubComponent("memory", "memHierarchy.standardInterface")
-
-
-
-l1cache = sst.Component("l1cache", "memHierarchy.Cache")
-l1cache.addParams({
-    "access_latency_cycles" : "4",
-    "cache_frequency" : "2 Ghz",
-    "replacement_policy" : "lru",
-    "coherence_protocol" : "MSI",
-    "associativity" : "4",
-    "cache_line_size" : "64",
-    "debug" : DEBUG_L1,
-    "debug_level" : DEBUG_LEVEL,
-    "verbose" : VERBOSE,
-    "L1" : "1",
-    "cache_size" : "16KiB"
-})
 
 memctrl = sst.Component("memory", "memHierarchy.MemController")
 memctrl.addParams({
@@ -104,9 +90,12 @@ memory.addParams({
 #sst.setStatisticOutput("sst.statOutputConsole")
 #sst.enableAllStatisticsForAllComponents()
 
-link_cpu_cache_link = sst.Link("link_cpu_cache_link")
-link_cpu_cache_link.connect( (iface, "port", "1000ps"), (l1cache, "high_network_0", "1000ps") )
-link_mem_bus_link = sst.Link("link_mem_bus_link")
-link_mem_bus_link.connect( (l1cache, "low_network_0", "50ps"), (memctrl, "direct_link", "50ps") )
+#link_cpu_cache_link = sst.Link("link_cpu_cache_link")
+#link_cpu_cache_link.connect( (iface, "port", "1000ps"), (l1cache, "high_network_0", "1000ps") )
+#link_mem_bus_link = sst.Link("link_mem_bus_link")
+#link_mem_bus_link.connect( (l1cache, "low_network_0", "50ps"), (memctrl, "direct_link", "50ps") )
+
+link_iface_mem = sst.Link("link_iface_mem")
+link_iface_mem.connect( (iface, "port", "50ps"), (memctrl, "direct_link", "50ps") )
 
 # EOF

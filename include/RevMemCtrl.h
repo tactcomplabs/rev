@@ -267,9 +267,7 @@ namespace SST {
 
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({ "memIface", "Set the interface to memory", "SST::Interfaces::StandardMem" })
 
-      //SST_ELI_DOCUMENT_PORTS()
-      SST_ELI_DOCUMENT_PORTS({ "cache_link", "Connects the controller to the first level of cache/memory", {} })
-
+      SST_ELI_DOCUMENT_PORTS()
 
       SST_ELI_DOCUMENT_STATISTICS(
         {"ReadInFlight",        "Counts the number of reads in flight",             "count", 1},

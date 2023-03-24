@@ -15,6 +15,12 @@
 
 int main(int argc, char **argv){
   int i = 9;
+  int j = 0;
   i = i + argc;
+  for( i=0; i<1024; i++ ){
+    if( (j/3) == 0 ){
+      j+= i*12;
+    }
+  }
   return i;
 }

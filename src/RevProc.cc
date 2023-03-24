@@ -1799,10 +1799,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     // determine if we have any outstanding memory requests
     if( mem->outstandingRqsts() ){
-      std::cout << "outstanding memory requests" << std::endl;
       done = false;
-    }else{
-      std::cout << "no outstanding memory requests; time to end" << std::endl;
     }
 
     if( done ){
