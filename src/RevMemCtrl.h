@@ -30,6 +30,22 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 
+// RV{32,64} Register Operation Macros
+                    //(r) = ((r) & (~r));
+#define SEXT(r,x,b) do {\
+                    (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register
+#define ZEXT(r,x,b) do {\
+                    (r) = (x) | (((1UL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register
+
+#define SEXTI(r,b)  do {\
+                    (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register inline
+#define ZEXTI(r,b)  do {\
+                    (r) = (r) | (((1UL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register inline
+
 namespace SST::RevCPU {
   class RevMemCtrl;
 }
@@ -234,6 +250,9 @@ namespace SST {
       /// RevMemCtrl: handle an invalidate response
       virtual void handleInvResp(StandardMem::InvNotify* ev) = 0;
 
+      /// RevMemCtrl: handle RevMemCtrl flags for write responses
+      virtual void handleFlagResp(RevMemOp *op) = 0;
+
     protected:
       SST::Output *output;       ///< RevMemCtrl: sst output object
       char *physMem;             ///< physical memory backing from RevMem
@@ -407,6 +426,9 @@ namespace SST {
 
       /// RevBasicMemCtrl: handle an invalidate response
       virtual void handleInvResp(StandardMem::InvNotify* ev) override;
+
+      /// RevBasicMemCtrl: handle RevMemCtrl flags for write responses
+      virtual void handleFlagResp(RevMemOp *op) override;
 
     protected:
       // ----------------------------------------

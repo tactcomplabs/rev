@@ -537,6 +537,24 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
   return true;
 }
 
+void RevBasicMemCtrl::handleFlagResp(RevMemOp *op){
+   StandardMem::Request::flags_t flags = op->getFlags();
+
+   if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_SEXT32)) ){
+     uint32_t *target = (uint32_t *)(op->getTarget());
+     SEXTI(*target,32);
+   }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_SEXT64)) ){
+     uint64_t *target = (uint64_t *)(op->getTarget());
+     SEXTI(*target,64);
+   }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_ZEXT32)) ){
+     uint32_t *target = (uint32_t *)(op->getTarget());
+     ZEXTI(*target,32);
+   }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_ZEXT64)) ){
+     uint64_t *target = (uint64_t *)(op->getTarget());
+     ZEXTI(*target,64);
+   }
+}
+
 void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
@@ -548,12 +566,14 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
               << std::hex << op->getAddr() << std::dec << std::endl;
 #endif
     uint8_t *target = (uint8_t *)(op->getTarget());
-    uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
+    //uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
     for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
-      *target = BaseMem[i];
+      //*target = BaseMem[i];
+      *target = ev->data[i];
       target++;
     }
-    // handle the read response by writing the payload to the target memory location
+    // determine if we need to sign/zero extend
+    handleFlagResp(op);
     delete op;
     outstanding.erase(ev->getID());
     delete ev;
@@ -573,11 +593,11 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     std::cout << "handleWriteResp : id=" << ev->getID() << " @Addr= 0x"
               << std::hex << op->getAddr() << std::dec << std::endl;
 #endif
-    std::vector<uint8_t> buf = op->getBuf();
-    uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
-    for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
-      BaseMem[i] = buf[i];
-    }
+    //std::vector<uint8_t> buf = op->getBuf();
+    //uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
+    //for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
+      //BaseMem[i] = buf[i];
+    //}
     delete op;
     outstanding.erase(ev->getID());
     delete ev;
