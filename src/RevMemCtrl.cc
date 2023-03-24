@@ -49,8 +49,8 @@ RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
 RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size, char *buffer,
                    unsigned CustomOpc, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
-  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(CustomOpc), flags(flags),
-    target(nullptr){
+  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
+    CustomOpc(CustomOpc), flags(flags), target(nullptr){
   for(unsigned i=0; i<(unsigned)(Size); i++ ){
     membuf.push_back((uint8_t)(buffer[i]));
   }
@@ -97,13 +97,16 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
   max_custom = params.find<unsigned>("max_custom", 64);
   max_ops = params.find<unsigned>("ops_per_cycle", 2);
 
+  rqstQ.reserve(max_ops);
+
   memIface = loadUserSubComponent<Interfaces::StandardMem>(
-    "memIface", ComponentInfo::SHARE_NONE,//ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
+    "memIface", ComponentInfo::SHARE_NONE,//*/ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
     getTimeConverter(ClockFreq), new StandardMem::Handler<SST::RevCPU::RevBasicMemCtrl>(
       this, &RevBasicMemCtrl::processMemEvent));
 
-  if( !memIface )
+  if( !memIface ){
     output->fatal(CALL_INFO, -1, "Error : memory interface is null\n");
+  }
 
   registerStats();
 
@@ -181,7 +184,6 @@ bool RevBasicMemCtrl::sendWRITERequest(uint64_t Addr,
                                        uint32_t Size,
                                        char *buffer,
                                        StandardMem::Request::flags_t flags){
-  std::cout << "SENDING WRITE RQST @ 0x" << std::hex << Addr << std::dec << std::endl;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpWRITE, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WritePending,1);
@@ -281,7 +283,6 @@ void RevBasicMemCtrl::setup(){
 }
 
 void RevBasicMemCtrl::finish(){
-  std::cout << "CALLING FINISH" << std::endl;
 }
 
 bool RevBasicMemCtrl::isMemOpAvail(RevMemOp *Op,
@@ -367,15 +368,16 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
     return false;
   }
 
+#ifdef _REV_DEBUG_
   std::cout << "building mem request for addr=0x"
             << std::hex << op->getAddr() << std::dec << std::endl;
+#endif
 
   switch(op->getOp()){
   case RevMemOp::MemOp::MemOpREAD:
     rqst = new Interfaces::StandardMem::Read(op->getAddr(),
                                              (uint64_t)(op->getSize()),
                                              op->getStdFlags());
-    std::cout << "MemOpRead ID = " << rqst->getID() << std::endl;
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -515,10 +517,6 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
       // sent the request, remove it
       rqstQ.erase(rqstQ.begin()+i);
 
-      if( rqstQ.size() == 0 ){
-        std::cout << "=================================> ZERO'D THE RQSTQ" << std::endl;
-      }
-
       return true;
     }
   }
@@ -528,11 +526,13 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
   // that can be dispatched at this time.
   t_max_ops = max_ops;
 
+#ifdef _REV_DEBUG_
   for( unsigned i=0; i<rqstQ.size(); i++ ){
     std::cout << "rqstQ[" << i << "] = " << rqstQ[i]->getOp() << " @ 0x"
               << std::hex << rqstQ[i]->getAddr() << std::dec
               << "; physAddr = 0x" << std::hex << rqstQ[i]->getPhysAddr() << std::dec << std::endl;
   }
+#endif
 
   return true;
 }
@@ -541,7 +541,12 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
-    std::cout << "handleReadResp : id=" << ev->getID() << " @Addr= 0x" << std::hex << op->getAddr() << std::dec << std::endl;
+    if( !op )
+      output->fatal(CALL_INFO, -1, "RevMemOp is null in handleReadResp\n" );
+#ifdef _REV_DEBUG_
+    std::cout << "handleReadResp : id=" << ev->getID() << " @Addr= 0x"
+              << std::hex << op->getAddr() << std::dec << std::endl;
+#endif
     uint8_t *target = (uint8_t *)(op->getTarget());
     uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
     for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
@@ -549,8 +554,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
       target++;
     }
     // handle the read response by writing the payload to the target memory location
-    if( op )
-      delete op;
+    delete op;
     outstanding.erase(ev->getID());
     delete ev;
   }else{
@@ -563,14 +567,18 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
-    std::cout << "handleWriteResp : id=" << ev->getID() << " @Addr= 0x" << std::hex << op->getAddr() << std::dec << std::endl;
+    if( !op )
+      output->fatal(CALL_INFO, -1, "RevMemOp is null in handleWriteResp\n" );
+#ifdef _REV_DEBUG_
+    std::cout << "handleWriteResp : id=" << ev->getID() << " @Addr= 0x"
+              << std::hex << op->getAddr() << std::dec << std::endl;
+#endif
     std::vector<uint8_t> buf = op->getBuf();
     uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
     for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
       BaseMem[i] = buf[i];
     }
-    if( op )
-      delete op;
+    delete op;
     outstanding.erase(ev->getID());
     delete ev;
   }else{
@@ -656,7 +664,6 @@ bool RevBasicMemCtrl::clockTick(Cycle_t cycle){
   unsigned t_max_custom = 0;
 
   while( !done ){
-    std::cout << "==================> rqstQ.size() = " << rqstQ.size() << std::endl;
     if( !processNextRqst(t_max_loads, t_max_stores, t_max_flush,
                          t_max_llsc, t_max_readlock, t_max_writeunlock,
                          t_max_custom, t_max_ops) ){
