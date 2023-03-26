@@ -112,7 +112,7 @@ void RevPrefetcher::Fill(uint64_t Addr){
   // determine if the address is 32bit aligned
   if((Addr & 0x3ull)){
     // not 32bit aligned, adjust the base address by 2 bytes
-    Fill(Addr-2);
+    Fill(Addr&0xFFFFFFFFFFFFFFFC);
   }
 
   // allocate a new stream buffer
