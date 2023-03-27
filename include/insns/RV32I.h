@@ -763,7 +763,7 @@ namespace SST{
           R->RV32[Inst.rd] = R->RV32[Inst.rs1] - R->RV32[Inst.rs2];
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = R->RV32[Inst.rs1] - R->RV32[Inst.rs2];
+          R->RV64[Inst.rd] = R->RV64[Inst.rs1] - R->RV64[Inst.rs2];
           R->RV64_PC += Inst.instSize;
         }
         return true;
