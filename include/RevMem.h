@@ -182,7 +182,7 @@ namespace SST {
       RevMemCtrl *ctrl;         ///< RevMem: memory controller object
       SST::Output *output;      ///< RevMem: output handler
 
-      uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t Addr);
+      uint64_t CalcPhysAddr(uint64_t pageNum);
 
 
       //c++11 should guarentee that these are all zero-initializaed
