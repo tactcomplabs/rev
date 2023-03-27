@@ -372,8 +372,9 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
 
       // Read data
       BaseMem = &physMem[tmpPhysAddr];
-      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), tmpLen, Target, flags);
-
+      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), tmpLen, DataMem, flags);
+      DataMem = DataMem + lenCount;
+      
       // Move to the next page
       tmpStartAddr = tmpStartAddr + tmpLen;
       lenCount = lenCount + tmpLen;
@@ -382,7 +383,7 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
     std::cout << "Warning: Reading off end of page... " << std::endl;
 #endif
   }else{
-    ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, Target, flags);
+    ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, DataMem, flags);
   }
   memStats.bytesRead += Len;
   return true;

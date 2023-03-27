@@ -215,11 +215,11 @@ bool RevProc::SeedInstTable(){
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
-    EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,xbgas,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64F(feature,RegFile,mem,xbgas,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64F(feature,RegFile,mem,output)),false);
     } else {
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,xbgas,output)),true);
+      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),true);
     }
   }
 
