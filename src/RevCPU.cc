@@ -105,6 +105,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     params.find_array<std::string>("memCost",memCosts);
     if( !Opts->InitMemCosts( memCosts ) )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
+
+    std::vector<std::string> prefetchDepths;
+    params.find_array<std::string>("prefetchDepth",prefetchDepths);
+    if( !Opts->InitPrefetchDepth( prefetchDepths) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initalize the prefetch depth\n" );
   }
 
   // See if we should load the network interface controller
@@ -183,18 +188,21 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the memory object
+  const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
   EnableMemH = params.find<bool>("enable_memH", 0);
   if( !EnableMemH ){
-    const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
     Mem = new RevMem( memSize, Opts,  &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
   }else{
+    if( EnablePAN )
+      output.fatal(CALL_INFO, -1, "Error: PAN does not currently support memHierarchy\n");
+
     Ctrl = loadUserSubComponent<RevMemCtrl>("memory");
     if( !Ctrl )
       output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");
 
-    Mem = new RevMem( Opts, Ctrl, &output );
+    Mem = new RevMem( memSize, Opts, Ctrl, &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
 
@@ -453,6 +461,9 @@ void RevCPU::setup(){
     address = PNic->getAddress();
     initNICMem();
   }
+  if( EnableMemH ){
+    Ctrl->setup();
+  }
 }
 
 void RevCPU::finish(){
@@ -463,6 +474,8 @@ void RevCPU::init( unsigned int phase ){
     Nic->init(phase);
   if( EnablePAN )
     PNic->init(phase);
+  if( EnableMemH )
+    Ctrl->init(phase);
 }
 
 void RevCPU::handleMessage(Event *ev){
@@ -1931,6 +1944,8 @@ void RevCPU::ExecPANTest(){
   int dest = 1;
   uint64_t BASE = 0x00000080ull;
   uint64_t Buf = 0x00ull;
+  uint64_t Addr = _PAN_COMPLETION_ADDR_;
+  uint64_t Payload = 0x01ull;
   panNicEvent *TEvent = nullptr;
 
   switch( testStage ){
@@ -2182,8 +2197,9 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
 
   // check to see if we have outstanding network messages and whether the tests are complete
   if( (!SendMB.empty() || !TrackTags.empty()) &&
-      (testStage < _MAX_PAN_TEST_) )
+      (testStage < _MAX_PAN_TEST_) ){
     rtn = false;
+  }
 
   // if its time to return, end the sim
   if( rtn )
