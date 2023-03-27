@@ -187,9 +187,9 @@ bool RevProc::SeedInstTable(){
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
+    EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),false);
     if( feature->GetXlen() == 64 ){
       // load RV32I & RV64; no optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),false);
       EnableExt(static_cast<RevExt *>(new RV64I(feature,RegFile,mem,output)),false);
     }else{
       // load RV32I w/ optional compressed
@@ -215,16 +215,12 @@ bool RevProc::SeedInstTable(){
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
-    if( (!feature->IsModeEnabled(RV_D)) && (feature->GetXlen() == 32) ){
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),true);
-    }else{
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),false);
-    }
-#if 0
+    EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,xbgas,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64F(feature,RegFile,mem,xbgas,output)),false);
+    } else {
+      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,xbgas,output)),true);
     }
-#endif
   }
 
   // D-Extension

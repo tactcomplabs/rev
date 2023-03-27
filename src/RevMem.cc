@@ -341,7 +341,7 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
   uint64_t firstPageEnd = (firstPageNum << addrShift) | (pageSize - 1);
 
   char *BaseMem = &physMem[physAddr]; 
-  char *DataMem = (char *)(Data);
+  char *DataMem = (char *)(Target);
 
   uint32_t tmpLen = 0;
   uint32_t lenCount = 0;
