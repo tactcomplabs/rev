@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevFeature.h"
+#include "../include/RevFeature.h"
 
 RevFeature::RevFeature( std::string Machine,
                         SST::Output *Output,

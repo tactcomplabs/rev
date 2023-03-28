@@ -26,6 +26,7 @@
 #include <time.h>
 #include <random>
 #include <queue>
+#include <inttypes.h>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -35,6 +36,7 @@
 #include "RevInstTable.h"
 #include "RevInstTables.h"
 #include "PanExec.h"
+#include "RevPrefetcher.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
@@ -100,6 +102,7 @@ namespace SST{
           uint64_t totalCycles;
           uint64_t cyclesBusy;
           uint64_t cyclesIdle_Total;
+          uint64_t cyclesStalled;
           uint64_t floatsExec;
           float    percentEff;
           RevMem::RevMemStats memStats;
@@ -111,22 +114,25 @@ namespace SST{
 
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
+      bool Stalled;             ///< RevProc: determines if the core is stalled on instruction fetch
       bool SingleStep;          ///< RevProc: determines if we are in a single step
       bool CrackFault;          ///< RevProc: determiens if we need to handle a crack fault
       bool ALUFault;            ///< RevProc: determines if we need to handle an ALU fault
       unsigned fault_width;     ///< RevProc: the width of the target fault
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
-      uint16_t threadToDecode;   ///< RevProc: Current executing ThreadID
-      uint16_t threadToExec;     ///< RevProc: Thread to dispatch instruction
+      uint8_t threadToDecode;   ///< RevProc: Current executing ThreadID
+      uint8_t threadToExec;     ///< RevProc: Thread to dispatch instruction
+      uint64_t Retired;         ///< RevProc: number of retired instructions
+
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
-      uint64_t Retired;         ///< RevProc: number of retired instructions
       RevFeature *feature;      ///< RevProc: feature handler
       PanExec *PExec;           ///< RevProc: PAN exeuction context
       RevProcStats Stats;       ///< RevProc: collection of performance stats
+      RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
       RevRegFile RegFile[_REV_THREAD_COUNT_];      ///< RevProc: register file
       RevInst Inst;             ///< RevProc: instruction payload
@@ -180,6 +186,9 @@ namespace SST{
 
       /// RevProc: set the PC
       void SetPC(uint64_t PC);
+
+      /// RevProc: prefetch the next instruction
+      bool PrefetchInst();
 
       /// RevProc: decode the instruction at the current PC
       RevInst DecodeInst();

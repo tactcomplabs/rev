@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevCPU.h"
+#include "../include/RevCPU.h"
 
 const char *splash_msg = "\
 \n\
@@ -33,8 +33,8 @@ const char *pan_splash_msg = "\
 
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
-    EnableNIC(false), EnablePAN(false), EnablePANStats(false), ReadyForRevoke(false),
-    Nic(nullptr), PNic(nullptr), PExec(nullptr) {
+    EnableNIC(false), EnablePAN(false), EnablePANStats(false), EnableMemH(false),
+    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
@@ -48,10 +48,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   {
     const std::string cpuClock = params.find<std::string>("clock", "1GHz");
     if( EnablePANTest ){
-      timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
+      timeConverter  = registerClock(cpuClock,
+                                     new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
       testIters = params.find<unsigned>("testIters", 255);
     }else{
-      timeConverter  = registerClock(cpuClock, new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+      timeConverter  = registerClock(cpuClock,
+                                     new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
     }
   }
 
@@ -103,6 +105,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     params.find_array<std::string>("memCost",memCosts);
     if( !Opts->InitMemCosts( memCosts ) )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
+
+    std::vector<std::string> prefetchDepths;
+    params.find_array<std::string>("prefetchDepth",prefetchDepths);
+    if( !Opts->InitPrefetchDepth( prefetchDepths) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initalize the prefetch depth\n" );
   }
 
   // See if we should load the network interface controller
@@ -161,28 +168,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     RevokeHasArrived = true;
   }
 
-  TotalCycles.reserve(TotalCycles.size() + numCores);
-  CyclesWithIssue.reserve(CyclesWithIssue.size() + numCores);
-  FloatsRead.reserve(FloatsRead.size() + numCores);
-  FloatsWritten.reserve(FloatsWritten.size() + numCores);
-  DoublesRead.reserve(DoublesRead.size() + numCores);
-  DoublesWritten.reserve(DoublesWritten.size() + numCores);
-  BytesRead.reserve(BytesRead.size() + numCores);
-  BytesWritten.reserve(BytesWritten.size() + numCores);
-  FloatsExec.reserve(FloatsExec.size() + numCores);
-
-  for(int s = 0; s < numCores; s++){
-    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
-    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
-    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
-    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", "core_" + std::to_string(s)));
-    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", "core_" + std::to_string(s)));
-    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", "core_" + std::to_string(s)));
-    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
-    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
-    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
-  }
-
   // See if we should load the test harness as opposed to a binary payload
   if( EnablePANTest && (!EnablePAN) ){
     output.fatal(CALL_INFO, -1, "Error: enabling PAN tests requires a pan_nic");
@@ -203,11 +188,26 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the memory object
-  {
-    const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
+  const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
+  EnableMemH = params.find<bool>("enable_memH", 0);
+  if( !EnableMemH ){
     Mem = new RevMem( memSize, Opts,  &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
+  }else{
+    if( EnablePAN )
+      output.fatal(CALL_INFO, -1, "Error: PAN does not currently support memHierarchy\n");
+
+    Ctrl = loadUserSubComponent<RevMemCtrl>("memory");
+    if( !Ctrl )
+      output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");
+
+    Mem = new RevMem( memSize, Opts, Ctrl, &output );
+    if( !Mem )
+      output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
+
+    if( EnableFaults )
+      output.verbose(CALL_INFO, 1, 0, "Warning: memory faults cannot be enabled with memHierarchy support\n");
   }
 
   // Load the binary into memory
@@ -220,6 +220,29 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   Procs.reserve(Procs.size() + numCores);
   for( unsigned i=0; i<numCores; i++ ){
     Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
+  }
+
+  // setup the per-proc statistics
+  TotalCycles.reserve(TotalCycles.size() + numCores);
+  CyclesWithIssue.reserve(CyclesWithIssue.size() + numCores);
+  FloatsRead.reserve(FloatsRead.size() + numCores);
+  FloatsWritten.reserve(FloatsWritten.size() + numCores);
+  DoublesRead.reserve(DoublesRead.size() + numCores);
+  DoublesWritten.reserve(DoublesWritten.size() + numCores);
+  BytesRead.reserve(BytesRead.size() + numCores);
+  BytesWritten.reserve(BytesWritten.size() + numCores);
+  FloatsExec.reserve(FloatsExec.size() + numCores);
+
+  for(int s = 0; s < numCores; s++){
+    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
+    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
+    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
+    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", "core_" + std::to_string(s)));
+    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", "core_" + std::to_string(s)));
+    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", "core_" + std::to_string(s)));
+    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
+    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
+    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
   }
 
   // setup the PAN execution contexts
@@ -269,6 +292,10 @@ RevCPU::~RevCPU(){
 
   if( PExec )
     delete PExec;
+
+  // delete the memory controller if present
+  if( Ctrl )
+    delete Ctrl;
 
   // delete the memory object
   delete Mem;
@@ -434,6 +461,9 @@ void RevCPU::setup(){
     address = PNic->getAddress();
     initNICMem();
   }
+  if( EnableMemH ){
+    Ctrl->setup();
+  }
 }
 
 void RevCPU::finish(){
@@ -444,6 +474,8 @@ void RevCPU::init( unsigned int phase ){
     Nic->init(phase);
   if( EnablePAN )
     PNic->init(phase);
+  if( EnableMemH )
+    Ctrl->init(phase);
 }
 
 void RevCPU::handleMessage(Event *ev){
@@ -1912,6 +1944,8 @@ void RevCPU::ExecPANTest(){
   int dest = 1;
   uint64_t BASE = 0x00000080ull;
   uint64_t Buf = 0x00ull;
+  uint64_t Addr = _PAN_COMPLETION_ADDR_;
+  uint64_t Payload = 0x01ull;
   panNicEvent *TEvent = nullptr;
 
   switch( testStage ){
@@ -2163,8 +2197,9 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
 
   // check to see if we have outstanding network messages and whether the tests are complete
   if( (!SendMB.empty() || !TrackTags.empty()) &&
-      (testStage < _MAX_PAN_TEST_) )
+      (testStage < _MAX_PAN_TEST_) ){
     rtn = false;
+  }
 
   // if its time to return, end the sim
   if( rtn )

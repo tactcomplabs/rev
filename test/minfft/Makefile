@@ -12,8 +12,8 @@
 
 .PHONY: src
 
-EXAMPLE=ex1
-CC=riscv64-unknown-elf-gcc
+EXAMPLE=minfft
+CC=${RVCC}
 ARCH=rv64imfd
 #ARCH=rv32i
 #ABI=ilp32
@@ -21,7 +21,7 @@ ARCH=rv64imfd
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
 	#$(CC) -O1 -mcmodel=medlow -march=$(ARCH) -mabi=lp64d -o $(EXAMPLE).exe minfft.c $(EXAMPLE).c -lm
-	$(CC) -O2 -mno-explicit-relocs -mno-save-restore -march=$(ARCH) -mabi=lp64d -o $(EXAMPLE).exe minfft.c $(EXAMPLE).c -lm
+	$(CC) -O2 -mno-explicit-relocs -mno-save-restore -march=$(ARCH) -mabi=lp64d -o $(EXAMPLE).exe $(EXAMPLE).c ex1.c -lm
 clean:
 	rm -Rf $(EXAMPLE).exe
 

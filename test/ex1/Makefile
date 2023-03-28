@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=ex1
-CC=riscv64-unknown-elf-gcc
+CC="${RVCC}"
 ARCH=rv32i
 ABI=ilp32
 

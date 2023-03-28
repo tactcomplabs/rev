@@ -11,8 +11,8 @@
 #ifndef _SST_REVCPU_RV32F_H_
 #define _SST_REVCPU_RV32F_H_
 
-#include "RevInstTable.h"
-#include "RevExt.h"
+#include "../RevInstTable.h"
+#include "../RevExt.h"
 
 using namespace SST::RevCPU;
 
@@ -59,18 +59,30 @@ namespace SST{
       static bool flw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
+            //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    (float *)(&R->DPF[Inst.rd]),
+                    REVMEM_FLAGS(0));
             R->RV32_PC += Inst.instSize;
           }else{
-            R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
+            //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    (float *)(&R->DPF[Inst.rd]),
+                    REVMEM_FLAGS(0));
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
+            //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    &R->SPF[Inst.rd],
+                    REVMEM_FLAGS(0));
             R->RV32_PC += Inst.instSize;
           }else{
-            R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
+            //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    &R->SPF[Inst.rd],
+                    REVMEM_FLAGS(0));
             R->RV64_PC += Inst.instSize;
           }
         }

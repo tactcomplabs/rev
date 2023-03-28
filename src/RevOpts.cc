@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevOpts.h"
+#include "../include/RevOpts.h"
 
 RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   : numCores(NumCores), verbosity(Verbosity) {
@@ -23,11 +23,13 @@ RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   // -- pipeLine = 5
   // -- table = internal
   // -- memCosts[core] = 0:10
+  // -- prefetch depth = 16
   for( unsigned i=0; i<numCores; i++ ){
     startAddr.insert( std::pair<unsigned,uint64_t>(i,(uint64_t)(0x00000000)) );
     machine.insert( std::pair<unsigned,std::string>(i,"G") );
     table.insert( std::pair<unsigned,std::string>(i,"_REV_INTERNAL_") );
     memCosts.push_back(InitialPair);
+    prefetchDepth.insert( std::pair<unsigned,unsigned>(i,16) );
   }
 }
 
@@ -48,6 +50,27 @@ void RevOpts::splitStr(const std::string& s,
     if (j == std::string::npos)
       v.push_back(s.substr(i, s.length()));
   }
+}
+
+bool RevOpts::InitPrefetchDepth( std::vector<std::string> Depths ){
+  std::vector<std::string> vstr;
+  for(unsigned i=0; i<Depths.size(); i++ ){
+    std::string s = Depths[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    if( Core > numCores )
+      return false;
+
+    std::string::size_type sz = 0;
+    unsigned Depth = (unsigned)(std::stoul(vstr[1],&sz,0));
+
+    prefetchDepth.find(Core)->second = Depth;
+    vstr.clear();
+  }
+  return true;
 }
 
 bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
@@ -145,6 +168,17 @@ bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
     vstr.clear();
   }
 
+  return true;
+}
+
+bool RevOpts::GetPrefetchDepth( unsigned Core, unsigned &Depth ){
+  if( Core > numCores )
+    return false;
+
+  if( prefetchDepth.find(Core) == prefetchDepth.end() )
+    return false;
+
+  Depth = prefetchDepth.at(Core);
   return true;
 }
 

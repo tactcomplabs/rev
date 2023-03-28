@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevNIC.h"
+#include "../include/RevNIC.h"
 
 using namespace SST;
 using namespace RevCPU;
