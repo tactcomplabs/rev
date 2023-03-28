@@ -61,7 +61,9 @@ RevProc::RevProc( unsigned Id,
 
   Stats.totalCycles = 0;
   Stats.cyclesBusy = 0;
-  Stats.cyclesIdle = 0;
+  Stats.cyclesIdle_Total = 0;
+  Stats.cyclesIdle_Pipeline = 0;
+  Stats.cyclesIdle_MemoryFetch= 0;
   Stats.cyclesStalled = 0;
   Stats.percentEff = 0.0;
   Stats.floatsExec = 0;
@@ -390,6 +392,10 @@ bool RevProc::Reset(){
       RegFile[t].RV64[i] = 0x00ull;
       RegFile[t].SPF[i]  = 0.f;
       RegFile[t].DPF[i]  = 0.f;
+      RegFile[t].RV32_Scoreboard[i] = false;
+      RegFile[t].RV64_Scoreboard[i] = false;
+      RegFile[t].SPF_Scoreboard[i] = false;
+      RegFile[t].DPF_Scoreboard[i] = false;
     }
 
     // initialize all the relevant program registers
@@ -406,6 +412,10 @@ bool RevProc::Reset(){
     RegFile[t].RV64[8] = RegFile[t].RV64[3];
 
     RegFile[t].cost = 0;
+
+    while(!Pipeline.empty()){
+      Pipeline.pop();
+    }
 
   }
   // set the pc
@@ -1491,10 +1501,10 @@ void RevProc::ResetInst(RevInst *I){
   I->funct4     = 0;
   I->funct6     = 0;
   I->funct7     = 0;
-  I->rd         = 0;
-  I->rs1        = 0;
-  I->rs2        = 0;
-  I->rs3        = 0;
+  I->rd         = ~0;  // Set registers to value that is clearly invalid
+  I->rs1        = ~0;
+  I->rs2        = ~0;
+  I->rs3        = ~0;
   I->imm        = 0;
   I->fmt        = 0;
   I->rm         = 0;
@@ -1586,10 +1596,78 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-uint8_t RevProc::GetThreadID(){
+bool RevProc::DependencyCheck(uint16_t threadID, RevInst* I){
+
+      bool depFound = false;
+      bool isFloat = IsFloat(I->entry);
+
+
+      if(feature->IsRV32()){
+        if(isFloat){
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].SPF_Scoreboard[I->rs3] || depFound : depFound;
+        }else{
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].RV32_Scoreboard[I->rs3] || depFound : depFound;
+        }
+      }else {
+        if(isFloat){
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].DPF_Scoreboard[I->rs3] || depFound : depFound;
+        }else{
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile[threadID].RV64_Scoreboard[I->rs3] || depFound : depFound;
+        }
+      }
+    return depFound;
+}
+
+void RevProc::DependencySet(uint16_t threadID, RevInst* Inst){
+      if(Inst->rd < _REV_NUM_REGS_){
+        bool isFloat = IsFloat(Inst->entry);
+        if(feature->IsRV32()){
+          if(isFloat){
+            RegFile[threadID].SPF_Scoreboard[Inst->rd] = true;
+          }else{
+            RegFile[threadID].RV32_Scoreboard[Inst->rd] = true;
+          }
+      }else{
+          if(isFloat){
+            RegFile[threadID].DPF_Scoreboard[Inst->rd] = true;
+          }else{
+            RegFile[threadID].RV64_Scoreboard[Inst->rd] = true;
+          }
+      }
+    }
+}
+
+void RevProc::DependencyClear(uint16_t threadID, RevInst* Inst){
+    if(Inst->rd < _REV_NUM_REGS_){
+        bool isFloat = IsFloat(Inst->entry);
+        if(feature->IsRV32()){
+          if(isFloat){
+            RegFile[threadID].SPF_Scoreboard[Inst->rd] = false;
+          }else{
+            RegFile[threadID].RV32_Scoreboard[Inst->rd] = false;
+          }
+      }else{
+          if(isFloat){
+            RegFile[threadID].DPF_Scoreboard[Inst->rd] = false;
+          }else{
+            RegFile[threadID].RV64_Scoreboard[Inst->rd] = false;
+          }
+      }
+    }
+}
+
+uint16_t RevProc::GetThreadID(){
   if(THREAD_CTS.none()) { return threadToDecode;};
 
-  uint8_t nextID = threadToDecode;
+  uint16_t nextID = threadToDecode;
   if(THREAD_CTS[threadToDecode]){
     nextID = threadToDecode;
   }else{
@@ -1646,18 +1724,31 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // We do not want to retire this instruction until we're ready
     if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
       Inst = DecodeInst();
+      Inst.entry = RegFile[threadToDecode].Entry;
     }
-    if( !Stalled ){
-      ExecPC = GetPC();
+
+    //Now that we have decoded the instruction, check for pipeline hazards
+    if(Stalled || DependencyCheck(threadToDecode, &Inst)) {
+      RegFile[threadToDecode].cost = 0; // We failed dependency check, so set cost to 0 - this will
+      Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
+      THREAD_CTE[threadToDecode] = false;
+      threadToExec = _REV_INVALID_THREAD_ID;
+    }else {                 
       Stats.cyclesBusy++;
-    }
+      THREAD_CTE[threadToDecode] = true;
+      threadToExec = threadToDecode;
+    };
+    Inst.cost = RegFile[threadToDecode].cost;
+    Inst.entry = RegFile[threadToDecode].Entry;
     rtn = true;
+    ExecPC = GetPC();
   }
 
-  if( (!RegFile[threadToDecode].trigger) && (!Halted) && (!Stalled) ){
+  if( (!RegFile[threadToExec].trigger) && !Halted && (threadToExec != _REV_INVALID_THREAD_ID) && THREAD_CTE[threadToExec]){
     // trigger the next instruction
-    threadToExec = threadToDecode;
+    // threadToExec = threadToDecode;
     RegFile[threadToExec].trigger = true;
+    
 
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
@@ -1687,12 +1778,18 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
 
+      Pipeline.push(std::make_pair(threadToExec, Inst));
+      bool isFloat = false;
       if( (Ext->GetName() == "RV32F") ||
           (Ext->GetName() == "RV32D") ||
           (Ext->GetName() == "RV64F") ||
           (Ext->GetName() == "RV64D") ){
         Stats.floatsExec++;
+        isFloat = true;
       }
+
+      DependencySet(threadToExec, &Inst);
+
 
       // inject the ALU fault
       if( ALUFault ){
@@ -1742,11 +1839,30 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     "Core %d ; No available thread to exec PC= 0x%" PRIx64 "\n",
                     id, ExecPC);
     rtn = true;
-    Stats.cyclesIdle++;
+    Stats.cyclesIdle_Total++;
+    if(THREAD_CTE.any()){
+      Stats.cyclesIdle_MemoryFetch++;
+    }
   }
 
-  for(int tID = 0; tID < _REV_THREAD_COUNT_; tID ++){
-      if(RegFile[tID].cost > 0){
+  if(!Pipeline.empty() && Pipeline.front().second.cost > 0){
+      Pipeline.front().second.cost--;
+      if(Pipeline.front().second.cost == 0){
+        uint16_t tID = Pipeline.front().first;
+        output->verbose(CALL_INFO, 6, 0,
+                      "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
+                      id, tID, ExecPC);
+        Retired++;
+        RevInst retiredInst = Pipeline.front().second;
+        DependencyClear(tID, &retiredInst);
+        Pipeline.pop();
+        RegFile[tID].cost = 0;
+      }
+  }
+  /*for(int tID = 0; tID < _REV_THREAD_COUNT_; tID ++){
+    //A thread that has successfully decoded an instruction AND has no dependencies will have
+      // a cost > 0 as set by the decode stage
+      if(RegFile[tID].cost > 0){   
         RegFile[tID].cost = RegFile[tID].cost - 1;
         if( RegFile[tID].cost == 0 ){
             output->verbose(CALL_INFO, 6, 0,
@@ -1756,7 +1872,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
             RegFile[tID].trigger = false;
         }
       }
-  }
+  }*/
 
   // Check for completion states and new tasks
   if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
@@ -1809,7 +1925,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       output->verbose(CALL_INFO,2,0,
                       "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64 " Idle Cycles: %" PRIu64 " Eff: %f\n",
                       Stats.totalCycles, Stats.cyclesBusy,
-                      Stats.cyclesIdle, Stats.percentEff);
+                      Stats.cyclesIdle_Total, Stats.percentEff);
       output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %" PRIu64 " Inst Retired: %" PRIu64 "\n", \
                                       mem->memStats.bytesRead, \
                                       mem->memStats.bytesWritten, \

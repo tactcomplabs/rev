@@ -23,8 +23,8 @@ int main(int argc, char **argv){
   uint64_t j = 0;
   int r = 0;
 
-  for( i=0; i<1024; i++ ){
-    for( unsigned j=0; j<1024; j++ ){
+  for( i=0; i<512; i++ ){
+    for( unsigned j=0; j<512; j++ ){
       R[j] = A[j] + B[j] * i;
       if( (R[j]%2) == 0 ){
         r++;

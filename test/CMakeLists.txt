@@ -116,6 +116,17 @@ set_tests_properties(TEST_DOT_DOUBLE
     LABELS "all;rv64;blas-required"
 )
 
+
+add_test(NAME TEST_DEP_CHECK COMMAND run_dep_check.sh WORKING_DIRECTORY ../test/dep_check ) # dep_check
+set_tests_properties(TEST_DEP_CHECK
+  PROPERTIES 
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv32"
+)
+
+
 # -- PROCESS CTest Config Variables
 if(NOT CTEST_BLAS_REQUIRED_TESTS)
   set_tests_properties (TEST_DOT_SINGLE PROPERTIES DISABLED True)
