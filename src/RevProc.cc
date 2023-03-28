@@ -1173,7 +1173,7 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
   DInst.imm =   (uint32_t)((Inst << 4)&0b100000000000)|   // [11]
                 (uint32_t)((Inst & 0b111100000000)>>7)|   // [4:1]
                 (uint32_t)((Inst >> 20)&0b11111100000)|   // [10:5]
-                (uint32_t)((Inst >> 20)&0b1000000000000);  // [12]
+                (uint32_t)((Inst >> 19)&0b1000000000000);  // [12]
 
   // SP/DP Float
   DInst.fmt     = 0;
