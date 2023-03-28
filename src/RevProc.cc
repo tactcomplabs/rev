@@ -1728,7 +1728,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     //Now that we have decoded the instruction, check for pipeline hazards
-    if(!Stalled && DependencyCheck(threadToDecode, &Inst)) {
+    if(Stalled || DependencyCheck(threadToDecode, &Inst)) {
       RegFile[threadToDecode].cost = 0; // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
       THREAD_CTE[threadToDecode] = false;
