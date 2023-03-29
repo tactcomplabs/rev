@@ -644,8 +644,8 @@ namespace SST{
 
       static bool slli(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R->RV32[Inst.rd],(R->RV32[Inst.rs1] << (Inst.imm&0x3F)),32);
-          R->RV32[Inst.rd] = R->RV32[Inst.rs1] << (Inst.imm&0x3F);
+          //SEXT(R->RV32[Inst.rd],(R->RV32[Inst.rs1] << (Inst.imm&0x1F)),32);
+          R->RV32[Inst.rd] = R->RV32[Inst.rs1] << (Inst.imm&0x1F);
           R->RV32_PC += Inst.instSize;
         }else{
           R->RV64[Inst.rd] = R->RV64[Inst.rs1] << (Inst.imm&0x3F);
@@ -658,7 +658,7 @@ namespace SST{
         if( F->IsRV32() ){
           //ZEXT(R->RV32[Inst.rd],(R->RV32[Inst.rs1] >> (Inst.imm&0x3F)),32);
           //SEXTI(R->RV32[Inst.rd],32);
-          R->RV32[Inst.rd] = R->RV32[Inst.rs1] >> (Inst.imm&0x3F);
+          R->RV32[Inst.rd] = R->RV32[Inst.rs1] >> (Inst.imm&0x1F);
           R->RV32_PC += Inst.instSize;
         }else{
           R->RV64[Inst.rd] = R->RV64[Inst.rs1] >> (Inst.imm&0x3F);
@@ -670,11 +670,11 @@ namespace SST{
       static bool srai(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint32_t tmp = R->RV32[Inst.rs1] | (1<<31);
         if( F->IsRV32() ){
-          SEXT(R->RV32[Inst.rd],((R->RV32[Inst.rs1] >> (Inst.imm&0b111111))|tmp),32);
+          SEXT(R->RV32[Inst.rd],((R->RV32[Inst.rs1] >> (Inst.imm&0x1F))|tmp),32);
           SEXTI(R->RV32[Inst.rd],32);
           R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R->RV64[Inst.rd],((R->RV64[Inst.rs1] >> (Inst.imm&0b111111))|tmp),64);
+          SEXT(R->RV64[Inst.rd],((R->RV64[Inst.rs1] >> (Inst.imm&0x3F))|tmp),64);
           SEXTI(R->RV64[Inst.rd],64);
           R->RV64_PC += Inst.instSize;
         }
