@@ -599,10 +599,14 @@ namespace SST{
 
       static bool xori(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32[Inst.rd] = R->RV32[Inst.rs1] ^ Inst.imm;
+          uint32_t tmp32 = 0;
+          SEXT(tmp32,Inst.imm,12);
+          R->RV32[Inst.rd] = R->RV32[Inst.rs1] ^ tmp32;
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = R->RV64[Inst.rs1] ^ Inst.imm;
+          uint64_t tmp64 = 0;
+          SEXT(tmp64,Inst.imm,12);
+          R->RV64[Inst.rd] = R->RV64[Inst.rs1] ^ tmp64;
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -610,10 +614,14 @@ namespace SST{
 
       static bool ori(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32[Inst.rd] = R->RV32[Inst.rs1] | Inst.imm;
+          uint32_t tmp32 = 0;
+          SEXT(tmp32,Inst.imm,12);
+          R->RV32[Inst.rd] = R->RV32[Inst.rs1] | tmp32;
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = R->RV64[Inst.rs1] | Inst.imm;
+          uint64_t tmp64 = 0;
+          SEXT(tmp64,Inst.imm,12);
+          R->RV64[Inst.rd] = R->RV64[Inst.rs1] | tmp64;
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -621,10 +629,14 @@ namespace SST{
 
       static bool andi(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32[Inst.rd] = R->RV32[Inst.rs1] & Inst.imm;
+          uint32_t tmp32 = 0;
+          SEXT(tmp32,Inst.imm,12);
+          R->RV32[Inst.rd] = R->RV32[Inst.rs1] & tmp32;
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = R->RV64[Inst.rs1] & Inst.imm;
+          uint64_t tmp64 = 0;
+          SEXT(tmp64,Inst.imm,12);
+          R->RV64[Inst.rd] = R->RV64[Inst.rs1] & tmp64;
           R->RV64_PC += Inst.instSize;
         }
         return true;
