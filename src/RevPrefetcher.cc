@@ -86,6 +86,7 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
       }else{
         // compressed instruction, adjust the offset
         Inst = (iStack[i][Off] >> 16);
+        Inst |= (iStack[i][Off+1] << 16);
       }
 
       Fetched = true;
@@ -110,7 +111,7 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
 void RevPrefetcher::Fill(uint64_t Addr){
 
   // determine if the address is 32bit aligned
-  if((Addr & 0x3ull)){
+  if((Addr%4)!=0){
     // not 32bit aligned, adjust the base address by 2 bytes
     Fill(Addr&0xFFFFFFFFFFFFFFFC);
   }
