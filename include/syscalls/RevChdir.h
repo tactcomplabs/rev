@@ -22,7 +22,8 @@ struct RevChdir{
       // we don't know how long the path string is so read a byte (char)
       // at a time and search for the string terminator character '\0'
       do {
-        char dirchar = mem.ReadU8(regFile.RV32[10] + sizeof(char)*i);
+        char dirchar;
+        mem.ReadMem(regFile.RV32[10] + sizeof(char)*i, sizeof(char), &dirchar);
         path = path + dirchar;
         i++;
       } while( path.back() != '\0');
@@ -32,19 +33,18 @@ struct RevChdir{
       return rc; 
     }
     else if (std::is_same<RiscvArchType, Riscv64>::value){
-      DumpRegisters(regFile.RV64, 'a');
       std::string path = "";
       unsigned i=0;
       
       // we don't know how long the path string is so read a byte (char)
       // at a time and search for the string terminator character '\0'
       do {
-        char dirchar = mem.ReadU8(regFile.RV64[10] + sizeof(char)*i);
+        char dirchar;
+        mem.ReadMem(regFile.RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
         path = path + dirchar;
         i++;
       } while( path.back() != '\0');
 
-      
       const int rc = chdir(path.data());
       
       return rc; 
