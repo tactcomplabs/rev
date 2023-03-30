@@ -89,8 +89,6 @@ bool RevPrefetcher::FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst){
 
 bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
 
-  uint32_t tmpinst  = 0x00;
-
   // scan the baseAddr vector to see if the address is cached
   uint64_t lastAddr = 0x00ull;
   for( unsigned i=0; i<baseAddr.size(); i++ ){
