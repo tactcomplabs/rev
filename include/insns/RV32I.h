@@ -13,6 +13,7 @@
 
 #include "../RevInstTable.h"
 #include "../RevExt.h"
+#include "../RevSysCalls.h"
 
 using namespace SST::RevCPU;
 
@@ -837,16 +838,11 @@ namespace SST{
         // x17 (a7) is the code for ecall
         if( F->IsRV32() ){
           uint32_t code = R->RV32[17];
-          switch( code ){
-          case 4: 
-            // execute the getc syscall
-            break;
-          default:
-            break;
-          }
+          const uint32_t rc = SystemCalls::jump_table32.at(code)(*R, *M, Inst);
           R->RV32_PC += Inst.instSize;
         }else{
           uint64_t code = R->RV64[17];
+          const uint64_t rc = SystemCalls::jump_table64.at(code)(*R, *M, Inst);
           R->RV64_PC += Inst.instSize;
         }
         return true;
