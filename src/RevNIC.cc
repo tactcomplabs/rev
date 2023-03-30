@@ -19,7 +19,8 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
   int verbosity = params.find<int>("verbose",0);
   output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
 
-  registerClock("1Ghz", new Clock::Handler<RevNIC>(this,&RevNIC::clockTick));
+  const std::string nicClock = params.find<std::string>("clock", "1GHz");
+  registerClock(nicClock, new Clock::Handler<RevNIC>(this,&RevNIC::clockTick));
 
   // load the SimpleNetwork interfaces
   iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1); 
@@ -48,6 +49,7 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
 }
 
 RevNIC::~RevNIC(){
+  delete output;
 }
 
 void RevNIC::setMsgHandler(Event::HandlerBase* handler){

@@ -34,8 +34,15 @@ namespace SST {
       /// nicEvent: standard constructor
       nicEvent(std::string name) : Event(), SrcName(name) { }
 
+      /// nicEvent: extended constructor
+      nicEvent(std::string name, std::vector<uint8_t> data)
+        : Event(), SrcName(name), Data(data) { }
+
       /// nicEvent: retrieve the source name
       std::string getSource() { return SrcName; }
+
+      // nicEvent: retrieve the data payload
+      std::vector<uint8_t> getData() { return Data; }
 
       /// nicEvent: virtual function to clone an event
       virtual Event* clone(void) override{
@@ -44,7 +51,8 @@ namespace SST {
       }
 
     private:
-      std::string SrcName;      ///< nicEvent: Name of the sending device
+      std::string SrcName;        ///< nicEvent: Name of the sending device
+      std::vector<uint8_t> Data;  ///< nicEvent: Data payload
 
     public:
       /// nicEvent: secondary constructor
@@ -54,6 +62,7 @@ namespace SST {
       void serialize_order(SST::Core::Serialization::serializer &ser) override{
         Event::serialize_order(ser);
         ser & SrcName;
+        ser & Data;
       }
 
       /// nicEvent: implements the NIC serialization
@@ -111,6 +120,7 @@ namespace SST {
 
       // Register the parameters
       SST_ELI_DOCUMENT_PARAMS(
+        {"clock", "Clock frequency of the NIC", "1Ghz"},
         {"port", "Port to use, if loaded as an anonymous subcomponent", "network"},
         {"verbose", "Verbosity for output (0 = nothing)", "0"}
       )

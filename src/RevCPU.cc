@@ -480,6 +480,7 @@ void RevCPU::init( unsigned int phase ){
 
 void RevCPU::handleMessage(Event *ev){
   nicEvent *event = static_cast<nicEvent*>(ev);
+  // -- RevNIC: This is where you can unpack and handle the data paylod
   delete event;
 }
 
