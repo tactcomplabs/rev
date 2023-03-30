@@ -3,3 +3,4 @@ src/librevcpu.so
 *.exe
 *.csv
 .cache/clangd/index
+src/src/librevcpu.so
