@@ -134,14 +134,7 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
       }else{
         // compressed instruction, adjust the offset
         Inst = (iStack[i][Off] >> 16);
-        uint32_t TmpInst;
-        if( !FetchUpper(Addr+2, Fetched, TmpInst) )
-          return false;
-        if( !Fetched ){
-          // we initiated a fill
-          return true;
-        }
-        Inst |= TmpInst;
+        Inst |= (iStack[i][Off+1] << 16);
       }
 
       Fetched = true;
