@@ -564,6 +564,9 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
 #ifdef _REV_DEBUG_
     std::cout << "handleReadResp : id=" << ev->getID() << " @Addr= 0x"
               << std::hex << op->getAddr() << std::dec << std::endl;
+    for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
+      std::cout << "               : data[" << i << "] = " << (unsigned)(ev->data[i]) << std::endl;
+    }
 #endif
     uint8_t *target = (uint8_t *)(op->getTarget());
     //uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());

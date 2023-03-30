@@ -23,6 +23,7 @@
 // -- SST Headers
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
+#include <sst/core/interfaces/stdMem.h>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -78,8 +79,13 @@ namespace SST {
       /// RevMem: write to the target memory location
       bool WriteMem( uint64_t Addr, size_t Len, void *Data );
 
+      /// RevMem: write to the target memory location with the target flags
+      bool WriteMem( uint64_t Addr, size_t Len, void *Data,
+                     StandardMem::Request::flags_t flags );
+
       /// RevMem: read data from the target memory location
-      bool ReadMem( uint64_t Addr, size_t Len, void *Target, StandardMem::Request::flags_t flags);
+      bool ReadMem( uint64_t Addr, size_t Len, void *Target,
+                    StandardMem::Request::flags_t flags);
 
       /// RevMem: DEPRECATED: read data from the target memory location
       [[deprecated("Simple RevMem interfaces have been deprecated")]]

@@ -192,6 +192,77 @@ bool RevMem::FenceMem(){
   return true;  // base RevMem support does nothing here
 }
 
+bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data,
+                       StandardMem::Request::flags_t flags){
+#ifdef _REV_DEBUG_
+  std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+#endif
+
+  if(Addr == 0xDEADBEEF){
+    std::cout << "Found special write. Val = " << std::hex << *(int*)(Data) << std::dec << std::endl;
+  }
+  RevokeFuture(Addr); // revoke the future if it is present; ignore the return
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Data);
+  if((physAddr + Len) > endOfPage){
+    adjPageNum = (physAddr + Len) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, (physAddr + Len));
+    uint32_t span = (physAddr + Len) - endOfPage;
+#ifdef _REV_DEBUG_
+    std::cout << "Warning: Writing off end of page... " << std::endl;
+#endif
+    if( ctrl ){
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             DataMem,
+                             flags);
+    }else{
+      for( unsigned i=0; i< (Len-span); i++ ){
+        BaseMem[i] = DataMem[i];
+      }
+    }
+    BaseMem = &physMem[adjPhysAddr];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             DataMem,
+                             flags);
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i< span; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
+    }
+  }else{
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             DataMem,
+                             flags);
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i<Len; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
+    }
+  }
+  memStats.bytesWritten += Len;
+  return true;
+}
+
+
 bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
