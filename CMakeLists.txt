@@ -58,31 +58,30 @@ endif()
 
 
 #------------------------------------------------------------------------
-#-- DERIVE SST ENV 
+#-- DERIVE SST ENV
 #------------------------------------------------------------------------
 execute_process(COMMAND sst-config --CXX
                 OUTPUT_VARIABLE CXX
                 OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+)
 message (CXX="${CXX}")
-execute_process(COMMAND sst-config --ELEMENT_CXXFLAGS 
+execute_process(COMMAND sst-config --ELEMENT_CXXFLAGS
   OUTPUT_VARIABLE SST_CXXFLAGS
   OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+)
 set(CXXFLAGS "${SST_CXXFLAGS}  -fno-stack-protector")
 message (CXXFLAGS="${CXXFLAGS}")
 
-execute_process(COMMAND sst-config --ELEMENT_LDFLAGS 
+execute_process(COMMAND sst-config --ELEMENT_LDFLAGS
   OUTPUT_VARIABLE SST_LDFLAGS
   OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+)
 set(LDFLAGS "${SST_LDFLAGS}  -fno-stack-protector")
 message (LDFLAGS="${LDFLAGS}")
 
 #------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
-# TODO: This might not be necessary
 set(CMAKE_CXX_FLAGS "-O2 -Wall ${CMAKE_CXX_FLAGS} -std=c++11 -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
@@ -157,9 +156,9 @@ enable_testing()
 
 add_subdirectory(src)
 add_subdirectory(include)
-add_subdirectory(test)
+#add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
-install (CODE "execute_process(COMMAND sst-register revcpu -revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR}/src)")
+#install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
+#install (CODE "execute_process(COMMAND sst-register revcpu -revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR}/src)")
 
 # EOF

@@ -22,11 +22,9 @@ set(RevCPUSrcs
   RevPrefetcher.cc
   )
 
-add_library(${PROJECT_NAME} SHARED ${RevCPUSrcs})
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}../include)
-target_include_directories(${PROJECT_NAME} PUBLIC ${SST_INSTALL_DIR}/include)
-# target_compile_options(${PROJECT_NAME} 
-# include_directories(revcpu SHARED ${CMAKE_CURRENT_SOURCE_DIR}../include/insns)
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}../include/insns/)
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_library(revcpu SHARED ${RevCPUSrcs})
+target_include_directories(revcpu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}../include)
+target_include_directories(revcpu PUBLIC ${SST_INSTALL_DIR}/include)
 
+install(TARGETS revcpu DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
+install (CODE "execute_process(COMMAND sst-register revcpu -revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR}")
