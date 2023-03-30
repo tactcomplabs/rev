@@ -86,9 +86,11 @@ namespace SST{
       // Standard instructions
       static bool lwu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst){
         //ZEXT(R->RV64[Inst.rd],M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
+        uint32_t val = 0;
         M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    (uint32_t *)(&R->RV64[Inst.rd]),
+                    &val,
                     REVMEM_FLAGS(RevCPU::RevFlag::F_ZEXT64));
+        ZEXT(R->RV64[Inst.rd], (uint64_t)val, 64);
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;
         return true;
@@ -121,7 +123,7 @@ namespace SST{
 
       static bool slliw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         //SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (Inst.imm&0b111111))&MASK32,64);
-        R->RV64[Inst.rd] |= ((R->RV64[Inst.rs1]<< Inst.imm)&0xffffffff);
+        SEXT(R->RV64[Inst.rd], ((R->RV64[Inst.rs1]<< (Inst.imm & 0b0111111))&0xffffffff), 64);
         R->RV64_PC += Inst.instSize;
         return true;
       }
