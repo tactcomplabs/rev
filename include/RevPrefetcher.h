@@ -53,6 +53,9 @@ private:
 
   /// deletes the target stream buffer
   void DeleteStream(unsigned i);
+
+  /// attempts to fetch the upper half of a 32bit word of an unaligned base address
+  bool FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst);
 };
 
 } // namespace RevCPU

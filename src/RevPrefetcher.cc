@@ -49,11 +49,47 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
   return false;
 }
 
+bool RevPrefetcher::FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst){
+  uint64_t lastAddr = 0x00ull;
+  for( unsigned i=0; i<baseAddr.size(); i++ ){
+    lastAddr = baseAddr[i] + (depth*4);
+    if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
+      uint32_t Off = 0;
+      if( Addr == baseAddr[i] ){
+        Off = 0;  // lets avoid division by zero
+      }else{
+        Off = (uint32_t)((Addr-baseAddr[i])/4);
+      }
+      if( Off > (depth-1) ){
+        // some sort of error occurred
+        Fetched = false;
+        return false;
+      }
+
+      if( iStack[i][Off] == REVPREF_INIT_ADDR ){
+        // the instruction hasn't been filled yet, stall
+        Fetched = false;
+        return true;
+      }
+
+      // fetch the instruction
+      if( Addr == (baseAddr[i]+(Off*4)) ){
+        UInst = (iStack[i][Off]<<16);
+        Fetched = true;
+        return true;
+      }
+    }
+  }
+
+  Fill(Addr);
+  Fetched = false;
+
+  return true;
+}
+
 bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
 
   uint32_t tmpinst  = 0x00;
-
-  //std::cout << "fetching addr=0x" << std::hex << Addr << std::dec << std::endl;
 
   // scan the baseAddr vector to see if the address is cached
   uint64_t lastAddr = 0x00ull;
@@ -86,7 +122,15 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
       }else{
         // compressed instruction, adjust the offset
         Inst = (iStack[i][Off] >> 16);
-        Inst |= (iStack[i][Off+1] << 16);
+        //Inst |= (iStack[i][Off+1] << 16);
+        uint32_t TmpInst;
+        if( !FetchUpper(Addr+2, Fetched, TmpInst) )
+          return false;
+        if( !Fetched ){
+          // we initiated a fill
+          return true;
+        }
+        Inst |= TmpInst;
       }
 
       Fetched = true;
