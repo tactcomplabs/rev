@@ -26,6 +26,15 @@
 
 namespace SST {
   namespace RevCPU {
+
+    /**
+     * nicPayload : base class for building NIC payloads for RevNIC
+     */
+    class nicPayload {
+    public:
+    private:
+    };
+
     /**
      * nicEvent : inherited class to handle the individual network events for RevNIC
      */
