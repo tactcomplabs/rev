@@ -1,3 +1,4 @@
+#define _SYSCALL_DEBUG_ 1
 #include "../RevSysCalls.h"
 #include "../RevSysCallInterface.h"
 #include <filesystem>
@@ -5,7 +6,10 @@
 #include <unistd.h>
 
 struct RevWrite{
-  // ecall (a7 = 64) -> write
+
+  using value_type = ssize_t;
+
+ // ecall (a7 = 64) -> write
   static const int value = 64; 
   
   template<typename RiscvArchType>
@@ -19,13 +23,40 @@ struct RevWrite{
       const int rc = write(fildes, buf, nbyte);
       return rc; 
     }
+
+
+
+
+
+
+
     else if (std::is_same<RiscvArchType, Riscv64>::value){
+
+      #if _SYSCALL_DEBUG_
+      DumpRegisters(regFile.RV64, 'a');
+      std::cout << "Executing Write" << std::endl;
+      #endif
+
       int fildes = regFile.RV64[10];
-      void * buf = nullptr;
-      mem.ReadMem(regFile.RV64[11] + sizeof(void*), sizeof(void*), &buf);
-      std::size_t nbyte = static_cast<std::size_t>(regFile.RV64[12]);
+
+      // mem.ReadMem(regFile.RV64[10], sizeof(int), &fildes);
+      std::size_t nbyte = regFile.RV64[12];
+
+      char buf[nbyte];
+      char bufchar;
+
+      // uint64_t BufAddr = regFile.RV64[12]
+      for (unsigned i=0; i<nbyte; i++){
+        mem.ReadU8(regFile.RV64[11]+sizeof(char)*i);//, sizeof(char), &bufchar);
+        mem.ReadMem(regFile.RV64[11]+sizeof(char)*i, sizeof(char), &bufchar);
+        std::cout << "BUFFER CHARACTER - " << static_cast<int>(bufchar) << std::endl;
+      }
+
+      mem.ReadMem(regFile.RV64[11], sizeof(buf), &buf);
    
       const int rc = write(fildes, buf, nbyte);
+      std::cout << "ERROR CODE : " << strerror(errno) << std::endl;
+      DumpRegisters(regFile.RV64, 'a');
       return rc; 
     }
     return -1;

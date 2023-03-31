@@ -839,11 +839,12 @@ namespace SST{
         // x17 (a7) is the code for ecall
         if( F->IsRV32() ){
           uint32_t code = R->RV32[17];
-          const uint32_t rc = SystemCalls::jump_table32.at(code)(*R, *M, Inst);
+          R->RV32[10] = SystemCalls::jump_table32.at(code)(*R, *M, Inst);
           R->RV32_PC += Inst.instSize;
         }else{
           uint64_t code = R->RV64[17];
-          const uint64_t rc = SystemCalls::jump_table64.at(code)(*R, *M, Inst);
+          R->RV64[10] = SystemCalls::jump_table64.at(code)(*R, *M, Inst);
+          std::cout << "DBG --- Return Code from Syscall = " << R->RV64[10] << std::endl;
           R->RV64_PC += Inst.instSize;
         }
         return true;
