@@ -17,8 +17,8 @@ struct RevPwrite{
       mem.ReadMem(regFile.RV32[11] + sizeof(void*), sizeof(void*), &buf);
       std::size_t nbyte = 0;
       mem.ReadMem(regFile.RV32[12] + sizeof(size_t), sizeof(size_t), &nbyte);
-      std::off_t offset = 0;
-      mem.ReadMem(regFile.RV32[12] + sizeof(std::off_t), sizeof(std::off_t), &offset);
+      off_t offset = 0;
+      mem.ReadMem(regFile.RV32[12] + sizeof(off_t), sizeof(off_t), &offset);
     
       const int rc = pwrite(fildes, buf, nbyte, offset);
       return rc; 
@@ -31,8 +31,8 @@ struct RevPwrite{
       std::size_t nbyte = 0;
       mem.ReadMem(regFile.RV64[12] + sizeof(size_t), sizeof(size_t), &nbyte);
    
-      std::off_t offset = 0;
-      mem.ReadMem(regFile.RV64[12] + sizeof(std::off_t), sizeof(std::off_t), &offset);
+      off_t offset = 0;
+      mem.ReadMem(regFile.RV64[12] + sizeof(off_t), sizeof(off_t), &offset);
     
       const int rc = pwrite(fildes, buf, nbyte, offset);
       return rc; 
