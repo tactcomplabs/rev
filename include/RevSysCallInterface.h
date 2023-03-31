@@ -2,6 +2,8 @@
 #ifndef _REV_SYSCALL_INTERFACE
 #define _REV_SYSCALL_INTERFACE
 
+
+#define _SYSCALL_DEBUG_ 1 
 #include <cstddef>
 #include <cstdint>
 #include <sys/types.h>
@@ -64,7 +66,7 @@ struct SystemCallInterfaceCode {
 };
 
 
-static void DumpRegisters(const uint64_t RegFile[], const char& RegType){
+static void DumpRegisters(const uint64_t RegFile[32], const char& RegType){
   std::vector<std::string> Output;
   std::string RegOutStr;
   switch (RegType) {
