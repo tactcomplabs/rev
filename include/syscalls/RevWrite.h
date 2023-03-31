@@ -24,12 +24,6 @@ struct RevWrite{
       return rc; 
     }
 
-
-
-
-
-
-
     else if (std::is_same<RiscvArchType, Riscv64>::value){
 
       #if _SYSCALL_DEBUG_
@@ -40,21 +34,27 @@ struct RevWrite{
       int fildes = regFile.RV64[10];
 
       // mem.ReadMem(regFile.RV64[10], sizeof(int), &fildes);
-      std::size_t nbyte = regFile.RV64[12];
+      std::size_t nbytes = regFile.RV64[12];
 
-      char buf[nbyte];
+      char buf[nbytes];
       char bufchar;
 
+      // const char mystr[3] = "HE";
+
+      // mem.WriteMem(regFile.RV64[11], sizeof(char)*3, (void*)mystr);
       // uint64_t BufAddr = regFile.RV64[12]
-      for (unsigned i=0; i<nbyte; i++){
-        mem.ReadU8(regFile.RV64[11]+sizeof(char)*i);//, sizeof(char), &bufchar);
+      for (unsigned i=0; i<nbytes; i++){
+        // mem.ReadU8(regFile.RV64[11]+sizeof(char)*i);//, sizeof(char), &bufchar);
         mem.ReadMem(regFile.RV64[11]+sizeof(char)*i, sizeof(char), &bufchar);
-        std::cout << "BUFFER CHARACTER - " << static_cast<int>(bufchar) << std::endl;
+        // std::cout << "BUFFER CHARACTER - " << static_cast<int>(bufchar) << std::endl;
       }
+      // std::cout << "S REGISTERS: ";
+      // std::cout << regFile.RV64[18] << regFile.RV64[19] << regFile.RV64[20] << std::endl;
+      // mem.ReadMem(regFile.RV64[11]+sizeof(char)*i, sizeof(char), &bufchar);
 
       mem.ReadMem(regFile.RV64[11], sizeof(buf), &buf);
    
-      const int rc = write(fildes, buf, nbyte);
+      const int rc = write(fildes, buf, nbytes);
       std::cout << "ERROR CODE : " << strerror(errno) << std::endl;
       DumpRegisters(regFile.RV64, 'a');
       return rc; 
