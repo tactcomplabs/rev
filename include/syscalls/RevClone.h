@@ -12,11 +12,10 @@ struct RevClone {
   static int ECall(RevRegFile& regFile, RevMem& mem, RevInst& inst) {
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
       int (*fnptr)(void*) = nullptr;
-      mem.ReadMem(regFile.RV32[10] + sizeof(std::function<int(void*)>), sizeof(std::function<int(void*)>), &fnptr);
+      mem.ReadMem(regFile.RV32[10] + sizeof(fnptr), sizeof(fnptr), &fnptr);
       void * stack = nullptr;
       mem.ReadMem(regFile.RV32[11] + sizeof(void*), sizeof(void*), &stack);
-      int flags = 0;
-      mem.ReadMem(regFile.RV32[12] + sizeof(size_t), sizeof(size_t), &flags);
+      int flags = regFile.RV32[12];
       void * arg = nullptr;
       mem.ReadMem(regFile.RV32[12] + sizeof(void*), sizeof(void*), &arg);
     
@@ -25,11 +24,10 @@ struct RevClone {
     }
     else if (std::is_same<RiscvArchType, Riscv64>::value){
       int (*fnptr)(void*) = nullptr;
-      mem.ReadMem(regFile.RV64[10] + sizeof(std::function<int(void*)>), sizeof(std::function<int(void*)>), &fnptr);
+      mem.ReadMem(regFile.RV64[10] + sizeof(fnptr), sizeof(fnptr), &fnptr);
       void * stack = nullptr;
       mem.ReadMem(regFile.RV64[11] + sizeof(void*), sizeof(void*), &stack);
-      int flags = 0;
-      mem.ReadMem(regFile.RV64[12] + sizeof(size_t), sizeof(size_t), &flags);
+      int flags = regFile.RV64[12];
       void * arg = nullptr;
       mem.ReadMem(regFile.RV64[12] + sizeof(void*), sizeof(void*), &arg);
     
