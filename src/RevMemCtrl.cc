@@ -371,6 +371,8 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
 #ifdef _REV_DEBUG_
   std::cout << "building mem request for addr=0x"
             << std::hex << op->getAddr() << std::dec << std::endl;
+  if( op->getAddr() % 64 )
+    std::cout << "WARNING: address is not cache aligned!" << std::endl;
 #endif
 
   switch(op->getOp()){

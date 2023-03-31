@@ -14,6 +14,7 @@
 // -- Standard Headers
 #include <vector>
 #include <queue>
+#include <tuple>
 #include <unistd.h>
 
 // -- SST Headers
@@ -31,8 +32,18 @@ namespace SST {
      * nicPayload : base class for building NIC payloads for RevNIC
      */
     class nicPayload {
-    public:
     private:
+      std::vector<std::tuple<std::string,
+                             unsigned,
+                             unsigned>>   Fields;
+
+    public:
+      /// standard constructor
+      nicPayload() {}
+
+      /// standard destructor
+      ~nicPayload() {}
+
     };
 
     /**
