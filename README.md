@@ -53,7 +53,7 @@ Building the Rev SST component from source using CMake can be performed as follo
     $ mkdir build
     $ cd build
     $ cmake ../
-    $ make 
+    $ make
     $ make install
 
 After a successful build you can test your install (if you are using CMake) with:
@@ -69,6 +69,11 @@ where you can substitute `test_name` with the name of the test, for example:
     $ ctest -R TEST_EX1
 
 will run the test found in test/ex1. See the full list of tests in test/CMakeLists.txt
+
+NOTE: Switching between CMake and GNU Make will have unreliable results.  If you seek to 
+switch between the different build systems, first uinstall Rev from your SST environment: 
+
+  $ sst-register -u revcpu
 
 ## Building Compatible Compilers
 
