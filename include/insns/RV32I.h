@@ -257,7 +257,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           R->RV64[Inst.rd] = 0x00;
-          R->RV64[Inst.rd] = (Inst.imm << 12);
+          SEXT(R->RV64[Inst.rd], Inst.imm << 12, 32); 
           R->RV64_PC += Inst.instSize;
         }
         return true;
