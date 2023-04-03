@@ -1,9 +1,6 @@
-
-// John's Message 
-// output->fatal(CALL_INFO, -1, "Encountered exit code\n");
-
 #include "../RevSysCalls.h"
 #include "../RevSysCallInterface.h"
+#include <string>
 
 
 struct RevExit{
@@ -14,17 +11,18 @@ struct RevExit{
   static int ECall(RevRegFile& regFile, RevMem& mem, RevInst& inst){
     SST::Output *output = new SST::Output("[RevCPU @t]: ", 0, 0, SST::Output::STDOUT);
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
-      output->fatal(CALL_INFO, -1, "Encountered exit code\n");
-      std::cout << "Encountered Exit Code" << std::endl;
-      const uint64_t status = regFile.RV64[10];
+      const uint32_t status = regFile.RV64[10];
+      const std::string ExitString = "Encountered exit code with status = " + std::to_string(status) + "\n";
+      output->fatal(CALL_INFO, -1, ExitString.c_str());
+      // TODO: Figure out if this should be returning something or not... _exit returns void 
       exit(status);
     }
     else if (std::is_same<RiscvArchType, Riscv64>::value){
-      output->fatal(CALL_INFO, -1, "Encountered exit code\n");
-      std::cout << "Encountered Exit Code" << std::endl;
       const uint64_t status = regFile.RV64[10];
+      const std::string ExitString = "Encountered exit code with status = " + std::to_string(status) + "\n";
+      output->fatal(CALL_INFO, -1, ExitString.c_str());
       exit(status);
-      return 0;
+      // TODO: Figure out if this should be returning something or not... _exit returns void 
     }
     return -1;
   }
