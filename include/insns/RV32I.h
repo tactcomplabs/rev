@@ -287,7 +287,6 @@ namespace SST{
         }else{
           tmp = td_u64(Inst.imm,20);
           R->RV64[Inst.rd] = R->RV64_PC + Inst.instSize;  // PC following return
-          std::cout << "JAL TMP = 0x" << std::hex << tmp << std::dec << std::endl;
           R->RV64_PC = (int64_t)(R->RV64_PC) + tmp;
           R->RV64[0] = 0x00ull;  // ensure that x0 = 0
         }

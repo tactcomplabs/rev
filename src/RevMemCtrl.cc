@@ -79,6 +79,7 @@ RevMemCtrl::~RevMemCtrl(){
 // ---------------------------------------------------------------
 RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
   : RevMemCtrl(id,params), memIface(nullptr), stdMemHandlers(nullptr),
+    hasCache(false), lineSize(0),
     max_loads(64), max_stores(64), max_flush(64), max_llsc(64),
     max_readlock(64), max_writeunlock(64), max_custom(64), max_ops(2),
     num_read(0), num_write(0), num_flush(0), num_llsc(0), num_readlock(0),
@@ -276,6 +277,15 @@ void RevBasicMemCtrl::init(unsigned int phase){
   if( !physMem )
     output->fatal(CALL_INFO, -1, "Error : not backing physical memory found\n" );
   memIface->init(phase);
+
+  lineSize = memIface->getLineSize();
+  if( lineSize > 0 ){
+    output->verbose(CALL_INFO, 5, 0, "Detected cache layers; default line size=%d\n", lineSize);
+    hasCache = true;
+  }else{
+    output->verbose(CALL_INFO, 5, 0, "No cache detected; disabling caching\n");
+    hasCache = false;
+  }
 }
 
 void RevBasicMemCtrl::setup(){
@@ -375,11 +385,20 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
     std::cout << "WARNING: address is not cache aligned!" << std::endl;
 #endif
 
+  StandardMem::Request::flags_t TmpFlags;
+  if( hasCache ){
+    // grab the flags with all the caching attributes enabled
+    TmpFlags = op->getStdFlags();
+  }else{
+    // disable the caching flags
+    TmpFlags = op->getNoCacheFlags();
+  }
+
   switch(op->getOp()){
   case RevMemOp::MemOp::MemOpREAD:
     rqst = new Interfaces::StandardMem::Read(op->getAddr(),
                                              (uint64_t)(op->getSize()),
-                                             op->getStdFlags());
+                                             TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -390,7 +409,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
     rqst = new Interfaces::StandardMem::Write(op->getAddr(),
                                               (uint64_t)(op->getSize()),
                                               op->getBuf(),
-                                              op->getStdFlags());
+                                              TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -402,7 +421,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
                                                   (uint64_t)(op->getSize()),
                                                   op->getInv(),
                                                   (uint64_t)(op->getSize()),
-                                                  op->getStdFlags());
+                                                  TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -412,7 +431,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
   case RevMemOp::MemOp::MemOpREADLOCK:
     rqst = new Interfaces::StandardMem::ReadLock(op->getAddr(),
                                                  (uint64_t)(op->getSize()),
-                                                 op->getStdFlags());
+                                                 TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -424,7 +443,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
                                                     (uint64_t)(op->getSize()),
                                                     op->getBuf(),
                                                     false,
-                                                    op->getStdFlags());
+                                                    TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -434,7 +453,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
   case RevMemOp::MemOp::MemOpLOADLINK:
     rqst = new Interfaces::StandardMem::LoadLink(op->getAddr(),
                                                  (uint64_t)(op->getSize()),
-                                                 op->getStdFlags());
+                                                 TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -445,7 +464,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
     rqst = new Interfaces::StandardMem::StoreConditional(op->getAddr(),
                                                         (uint64_t)(op->getSize()),
                                                         op->getBuf(),
-                                                        op->getStdFlags());
+                                                        TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -454,7 +473,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
     break;
   case RevMemOp::MemOp::MemOpCUSTOM:
     // TODO: need more support for custom memory ops
-    rqst = new Interfaces::StandardMem::CustomReq(nullptr, op->getStdFlags());
+    rqst = new Interfaces::StandardMem::CustomReq(nullptr, TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);

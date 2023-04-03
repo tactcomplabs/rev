@@ -133,6 +133,9 @@ namespace SST {
       /// RevMemOp: retrieve the standard set of memory flags for MemEventBase
       StandardMem::Request::flags_t getStdFlags() { return ((uint32_t)(flags) & 0b1111111111111111); }
 
+      /// RevMemOp: retrieve the flags for MemEventBase without caching enable
+      StandardMem::Request::flags_t getNoCacheFlags() { return ((uint32_t)(flags) & 0b1111111111111101); }
+
       /// RevMemOp: set the invalidate flag
       void setInv(bool I){ Inv = I; }
 
@@ -255,9 +258,8 @@ namespace SST {
       virtual void handleFlagResp(RevMemOp *op) = 0;
 
     protected:
-      SST::Output *output;       ///< RevMemCtrl: sst output object
-      char *physMem;             ///< physical memory backing from RevMem
-
+      SST::Output *output;        ///< RevMemCtrl: sst output object
+      char *physMem;              ///< physical memory backing from RevMem
 
     }; // class RevMemCtrl
 
@@ -493,6 +495,8 @@ namespace SST {
       // -- private data members
       StandardMem* memIface;                  ///< StandardMem memory interface
       RevStdMemHandlers* stdMemHandlers;      ///< StandardMem interface response handlers
+      bool hasCache;                          ///< detects whether cache layers are present
+      unsigned lineSize;                      ///< cache line size
       unsigned max_loads;                     ///< maximum number of outstanding loads
       unsigned max_stores;                    ///< maximum number of outstanding stores
       unsigned max_flush;                     ///< maximum number of oustanding flush events
