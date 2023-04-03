@@ -2,5 +2,8 @@ build
 src/librevcpu.so
 *.exe
 *.csv
+*.out
+*.s
 .cache/clangd/index
 src/src/librevcpu.so
+
