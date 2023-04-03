@@ -844,7 +844,6 @@ namespace SST{
         }else{
           uint64_t code = R->RV64[17];
           R->RV64[10] = SystemCalls::jump_table64.at(code)(*R, *M, Inst);
-          std::cout << "DBG --- Return Code from Syscall = " << R->RV64[10] << std::endl;
           R->RV64_PC += Inst.instSize;
         }
         return true;
