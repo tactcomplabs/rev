@@ -550,6 +550,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
       // sign extend
       CompInst.imm |= 0b11111111111111000000000000000000;
     }
+    CompInst.imm >>= 12;  //immd value will be re-aligned on execution
   }else if( (CompInst.opcode == 0b01) &&
             (CompInst.funct3 == 0b010) &&
             (CompInst.rd != 0) ){
