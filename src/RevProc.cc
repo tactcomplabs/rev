@@ -995,7 +995,11 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
   }
 
   // imm
-  DInst.imm     = 0x0;
+  if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RegUNKNOWN)){
+    DInst.imm  = DECODE_IMM12(Inst) & 0b011111; 
+  }else{
+    DInst.imm     = 0x0;
+  }
 
   // SP/DP Float
   DInst.fmt     = 0;
@@ -1413,6 +1417,9 @@ RevInst RevProc::DecodeInst(){
       Funct7 = ((Inst >> 25) & 0b1111111);
     }
   }else if((inst65== 0b10) && (inst42 == 0b100)){
+      // R-Type encodings
+      Funct7 = ((Inst >> 25) & 0b1111111);
+  }else if((inst65 == 0b00) && (inst42 == 0b110) && (Funct3 != 0)){
       // R-Type encodings
       Funct7 = ((Inst >> 25) & 0b1111111);
   }
