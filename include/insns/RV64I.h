@@ -151,7 +151,8 @@ namespace SST{
       }
 
       static bool subw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],64) - td_u64(R->RV64[Inst.rs2],64),64);
+        R->RV64[Inst.rd] = dt_u32(td_u32(R->RV64[Inst.rs1],32) - td_u32(R->RV64[Inst.rs2],32),32);
+        SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
         R->RV64_PC += Inst.instSize;
         return true;
       }

@@ -1408,7 +1408,7 @@ RevInst RevProc::DecodeInst(){
   // Stage 4: Determine if we have a funct7 field (R-Type)
   uint32_t Funct7 = 0x00ul;
   if( inst65 == 0b01 ) {
-    if( (inst42 == 0b011) || (inst42 == 0b100) ){
+    if( (inst42 == 0b011) || (inst42 == 0b100) || (inst42 == 0b110) ){
       // R-Type encodings
       Funct7 = ((Inst >> 25) & 0b1111111);
     }
