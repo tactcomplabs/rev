@@ -70,7 +70,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf32_Phdr);
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
+  mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph),REVMEM_FLAGS(RevCPU::RevFlag::F_NONCACHEABLE));
   mem->SetStackTop(sp);
 
   for( unsigned i=0; i<eh->e_phnum; i++ ){
@@ -80,12 +80,14 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
           output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
         mem->WriteMem(ph[i].p_paddr,
                       ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
+                      (uint8_t*)(membuf+ph[i].p_offset),
+                      REVMEM_FLAGS(RevCPU::RevFlag::F_NONCACHEABLE));
       }
       zeros.resize(ph[i].p_memsz - ph[i].p_filesz);
       mem->WriteMem(ph[i].p_paddr + ph[i].p_filesz,
                     ph[i].p_memsz - ph[i].p_filesz,
-                    &zeros[0] );
+                    &zeros[0],
+                    REVMEM_FLAGS(RevCPU::RevFlag::F_NONCACHEABLE) );
     }
   }
 
@@ -150,7 +152,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
+  mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph),REVMEM_FLAGS(RevCPU::RevFlag::F_NONCACHEABLE));
   mem->SetStackTop(sp);
 
 
@@ -161,12 +163,14 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
           output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
         mem->WriteMem(ph[i].p_paddr,
                       ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
+                      (uint8_t*)(membuf+ph[i].p_offset),
+                      REVMEM_FLAGS(RevCPU::RevFlag::F_NONCACHEABLE));
       }
       zeros.resize(ph[i].p_memsz - ph[i].p_filesz);
       mem->WriteMem(ph[i].p_paddr + ph[i].p_filesz,
                     ph[i].p_memsz - ph[i].p_filesz,
-                    &zeros[0] );
+                    &zeros[0],
+                    REVMEM_FLAGS(RevCPU::RevFlag::F_NONCACHEABLE) );
     }
   }
 
@@ -242,7 +246,7 @@ bool RevLoader::LoadProgramArgs(){
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
     mem->SetStackTop(sp-(uint64_t)(len));
-    mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));
+    mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc),REVMEM_FLAGS(RevCPU::RevFlag::F_NONCACHEABLE));
   }
 
   return true;
