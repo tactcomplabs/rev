@@ -5,11 +5,16 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-# rev-test-ex1.py
+# rev-test-isa.py
 #
 
 import os
 import sst
+import sys
+
+#if len(sys.argv) != 2:
+#    sys.stderr.write("Usage: You must pass the executable you wish to simulate using the '--model-options' option with sst")
+#    raise SystemExit(1)
 
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
@@ -27,10 +32,10 @@ comp_cpu.addParams({
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
-        "machine" : "[0:RV64IMAFDC]",                      # Core:Config; RV32I for core 0
+        "machine" : "[0:RV64IMAFDC]",                 # Core:Config; RV64I for core 0
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "add.exe"),  # Target executable
+        "program" : os.getenv("REV_EXE", "addi"),  # Target executable
         "splash" : 1                                  # Display the splash message
 })
 comp_cpu.enableAllStatistics()

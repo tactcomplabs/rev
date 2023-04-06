@@ -148,3 +148,4 @@ if(NOT CTEST_MULTILIB_TESTS)
   message(VERBOSE "TEST_EX4  - Disabled")
 endif()
 
+add_subdirectory(isa)
