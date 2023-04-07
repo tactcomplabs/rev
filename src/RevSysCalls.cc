@@ -2,7 +2,7 @@
 #include "../include/syscalls/RevMkdirat.h"
 #include "../include/syscalls/RevWrite.h"
 #include "../include/syscalls/RevPwrite.h"
-#include "../include/syscalls/RevFork.h"
+// #include "../include/syscalls/RevFork.h"
 #include "../include/syscalls/RevClone.h"
 #include "../include/syscalls/RevExit.h"
 #include "../include/syscalls/RevGetPID.h"
