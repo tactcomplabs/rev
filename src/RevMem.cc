@@ -16,23 +16,9 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   : memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output), physMem(nullptr),
     stacktop(0x00ull) {
   // Note: this constructor assumes the use of the memHierarchy backend
-  physMem = new char [memSize];
   pageSize = 262144; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
   nextPage = 0;
-
-  if( !physMem )
-    output->fatal(CALL_INFO, -1, "Error: could not allocate backing memory\n");
-
-  // zero the memory
-  for( unsigned long i=0; i<memSize; i++ ){
-    physMem[i] = 0;
-  }
-
-  // Ensure that the RevMemCtrl has access to the locally allocated
-  // physical memory.  This will read/write/modify memory using the
-  // memHierarchy notion of memory timing, ordering, etc
-  Ctrl->setPhys(physMem);
 
   stacktop = _REVMEM_BASE_ + memSize;
 

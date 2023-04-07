@@ -19,20 +19,20 @@ using namespace RevCPU;
 RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    RevMemOp::MemOp Op, StandardMem::Request::flags_t flags )
   : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
-    flags(flags), target(nullptr){
+    SplitRqst(1), flags(flags), target(nullptr){
 }
 
 RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size, void *target,
                    RevMemOp::MemOp Op, StandardMem::Request::flags_t flags )
   : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
-    flags(flags), target(target){
+    SplitRqst(1), flags(flags), target(target){
 }
 
 RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    char *buffer, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
   : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
-    flags(flags), target(nullptr){
+    SplitRqst(1), flags(flags), target(nullptr){
   for(unsigned i=0; i<(unsigned)(Size); i++ ){
     membuf.push_back((uint8_t)(buffer[i]));
   }
@@ -42,7 +42,7 @@ RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    void *target, unsigned CustomOpc, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
   : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
-    CustomOpc(CustomOpc), flags(flags),
+    CustomOpc(CustomOpc), SplitRqst(1), flags(flags),
     target(target){
 }
 
@@ -50,7 +50,7 @@ RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size, char *buffer,
                    unsigned CustomOpc, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
   : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
-    CustomOpc(CustomOpc), flags(flags), target(nullptr){
+    CustomOpc(CustomOpc), SplitRqst(1), flags(flags), target(nullptr){
   for(unsigned i=0; i<(unsigned)(Size); i++ ){
     membuf.push_back((uint8_t)(buffer[i]));
   }
@@ -162,6 +162,8 @@ bool RevBasicMemCtrl::sendFLUSHRequest(uint64_t Addr,
                                        uint32_t Size,
                                        bool Inv,
                                        StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, RevMemOp::MemOp::MemOpFLUSH, flags);
   Op->setInv(Inv);
   rqstQ.push_back(Op);
@@ -174,6 +176,8 @@ bool RevBasicMemCtrl::sendREADRequest(uint64_t Addr,
                                       uint32_t Size,
                                       void *target,
                                       StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, target, RevMemOp::MemOp::MemOpREAD, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadPending,1);
@@ -185,6 +189,8 @@ bool RevBasicMemCtrl::sendWRITERequest(uint64_t Addr,
                                        uint32_t Size,
                                        char *buffer,
                                        StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpWRITE, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WritePending,1);
@@ -196,6 +202,8 @@ bool RevBasicMemCtrl::sendREADLOCKRequest(uint64_t Addr,
                                           uint32_t Size,
                                           void *target,
                                           StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, target, RevMemOp::MemOp::MemOpREADLOCK, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadLockPending,1);
@@ -207,6 +215,8 @@ bool RevBasicMemCtrl::sendWRITELOCKRequest(uint64_t Addr,
                                            uint32_t Size,
                                            char *buffer,
                                            StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpWRITEUNLOCK, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WriteUnlockPending,1);
@@ -217,6 +227,8 @@ bool RevBasicMemCtrl::sendLOADLINKRequest(uint64_t Addr,
                                           uint64_t PAddr,
                                           uint32_t Size,
                                           StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, RevMemOp::MemOp::MemOpLOADLINK, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::LoadLinkPending,1);
@@ -228,6 +240,8 @@ bool RevBasicMemCtrl::sendSTORECONDRequest(uint64_t Addr,
                                            uint32_t Size,
                                            char *buffer,
                                            StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpSTORECOND, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::StoreCondPending,1);
@@ -240,6 +254,8 @@ bool RevBasicMemCtrl::sendCUSTOMREADRequest(uint64_t Addr,
                                             void *target,
                                             unsigned Opc,
                                             StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, target, Opc, RevMemOp::MemOp::MemOpCUSTOM, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::CustomPending,1);
@@ -252,6 +268,8 @@ bool RevBasicMemCtrl::sendCUSTOMWRITERequest(uint64_t Addr,
                                              char *buffer,
                                              unsigned Opc,
                                              StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, Opc, RevMemOp::MemOp::MemOpCUSTOM, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::CustomPending,1);
@@ -274,8 +292,6 @@ void RevBasicMemCtrl::processMemEvent(StandardMem::Request* ev){
 }
 
 void RevBasicMemCtrl::init(unsigned int phase){
-  if( !physMem )
-    output->fatal(CALL_INFO, -1, "Error : not backing physical memory found\n" );
   memIface->init(phase);
 
   lineSize = memIface->getLineSize();
@@ -371,28 +387,396 @@ bool RevBasicMemCtrl::isMemOpAvail(RevMemOp *Op,
   return false;
 }
 
-bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
-  Interfaces::StandardMem::Request *rqst = nullptr;
+unsigned RevBasicMemCtrl::getBaseCacheLineSize(uint64_t Addr, uint32_t Size){
 
-  if( !op ){
-    return false;
+  bool done = false;
+  uint64_t BaseCacheAddr = Addr;
+  while( !done ){
+    if( (BaseCacheAddr%(uint64_t)(lineSize)) == 0 ){
+      done = true;
+    }else{
+      BaseCacheAddr-=1;
+    }
   }
 
 #ifdef _REV_DEBUG_
-  std::cout << "building mem request for addr=0x"
-            << std::hex << op->getAddr() << std::dec << std::endl;
-  if( op->getAddr() % 64 )
-    std::cout << "WARNING: address is not cache aligned!" << std::endl;
+  std::cout << "not aligned to a base cache line" << std::endl;
+  std::cout << "BaseCacheAddr = 0x" << std::hex << BaseCacheAddr << std::dec << std::endl;
+  std::cout << "Addr          = 0x" << std::hex << Addr << std::dec << std::endl;
+  std::cout << "lineSize      = " << (uint64_t)(lineSize) << std::endl;
 #endif
 
-  StandardMem::Request::flags_t TmpFlags;
-  if( hasCache ){
-    // grab the flags with all the caching attributes enabled
-    TmpFlags = op->getStdFlags();
+  if( Addr == BaseCacheAddr ){
+    if( Size < lineSize ){
+      return Size;
+    }else{
+      return lineSize;
+    }
+  }else if( (Addr+(uint64_t)(Size)) <= (BaseCacheAddr+(uint64_t)(lineSize)) ){
+    // we stay within a single cache line
+    return Size;
   }else{
-    // disable the caching flags
-    TmpFlags = op->getNoCacheFlags();
+    return ((BaseCacheAddr+lineSize)-Addr);
   }
+}
+
+unsigned RevBasicMemCtrl::getNumCacheLines(uint64_t Addr, uint32_t Size){
+  // if the cache is disabled, then return 1
+  // eg, there is a 1-to-1 mapping of CPU memops to memory requests
+  if( !hasCache )
+    return 1;
+
+  if( Addr%lineSize ){
+    return ((Size/lineSize)+(Addr%lineSize > 1));
+  }else{
+    // address is aligned already
+    if( Size <= lineSize ){
+      return 1;
+    }else{
+      return (Size/lineSize)+1;
+    }
+  }
+}
+
+bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
+                                        bool &Success){
+  Interfaces::StandardMem::Request *rqst = nullptr;
+  unsigned NumLines = getNumCacheLines(op->getAddr(),
+                                       op->getSize());
+  StandardMem::Request::flags_t TmpFlags = op->getStdFlags();
+
+#ifdef _REV_DEBUG_
+  std::cout << "building caching mem request for addr=0x"
+            << std::hex << op->getAddr() << std::dec
+            << "; NumLines = " << NumLines << std::endl;
+#endif
+
+  // first determine if we have enough request slots to service all the cache lines
+  // if we don't have enough request slots, then requeue the entire RevMemOp
+  switch(op->getOp()){
+  case RevMemOp::MemOp::MemOpREAD:
+    if( (max_loads-num_read) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  case RevMemOp::MemOp::MemOpWRITE:
+    if( (max_stores-num_write) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  case RevMemOp::MemOp::MemOpFLUSH:
+    if( (max_flush-num_flush) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  case RevMemOp::MemOp::MemOpREADLOCK:
+    if( (max_readlock-num_readlock) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  case RevMemOp::MemOp::MemOpWRITEUNLOCK:
+    if( (max_writeunlock-num_writeunlock) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  case RevMemOp::MemOp::MemOpLOADLINK:
+    if( (max_llsc-num_llsc) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  case RevMemOp::MemOp::MemOpSTORECOND:
+    if( (max_llsc-num_llsc) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  case RevMemOp::MemOp::MemOpCUSTOM:
+    if( (max_custom-num_custom) < NumLines ){
+      Success = false;
+      return true;
+    }
+    break;
+  default:
+    return false;
+    break;
+  }
+
+  Success = true;
+
+#ifdef _REV_DEBUG_
+  std::cout << "Found sufficient request slots for multi-line cache requests" << std::endl;
+#endif
+
+  // dispatch the base request
+  // this the base address to the end of the first cache line
+  // this prevents us from sending requests that span multiple cache lines
+
+  op->setSplitRqst(NumLines);
+
+  std::vector<uint8_t> tmpBuf = op->getBuf();
+  std::vector<uint8_t> newBuf;
+  unsigned BaseCacheLineSize = 0;
+  if( NumLines > 1 ){
+    BaseCacheLineSize = getBaseCacheLineSize(op->getAddr(),op->getSize());
+  }else{
+    BaseCacheLineSize = op->getSize();
+  }
+#ifdef _REV_DEBUG_
+  std::cout << "base cache line request size = "
+            << BaseCacheLineSize
+            << std::endl;
+#endif
+  unsigned curByte = 0;
+
+  switch(op->getOp()){
+  case RevMemOp::MemOp::MemOpREAD:
+    rqst = new Interfaces::StandardMem::Read(op->getAddr(),
+                                             (uint64_t)(BaseCacheLineSize),
+                                             TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(ReadInFlight,1);
+    num_read++;
+    break;
+  case RevMemOp::MemOp::MemOpWRITE:
+    for( unsigned i=0; i<BaseCacheLineSize; i++ ){
+      newBuf.push_back(tmpBuf[i]);
+    }
+    curByte = BaseCacheLineSize;
+    rqst = new Interfaces::StandardMem::Write(op->getAddr(),
+                                              (uint64_t)(BaseCacheLineSize),
+                                              newBuf,
+                                              TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(WriteInFlight,1);
+    num_write++;
+    break;
+  case RevMemOp::MemOp::MemOpFLUSH:
+    rqst = new Interfaces::StandardMem::FlushAddr(op->getAddr(),
+                                                  (uint64_t)(BaseCacheLineSize),
+                                                  op->getInv(),
+                                                  (uint64_t)(BaseCacheLineSize),
+                                                  TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(FlushInFlight,1);
+    num_flush++;
+    break;
+  case RevMemOp::MemOp::MemOpREADLOCK:
+    rqst = new Interfaces::StandardMem::ReadLock(op->getAddr(),
+                                                 (uint64_t)(BaseCacheLineSize),
+                                                 TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(ReadLockInFlight,1);
+    num_readlock++;
+    break;
+  case RevMemOp::MemOp::MemOpWRITEUNLOCK:
+    for( unsigned i=0; i<BaseCacheLineSize; i++ ){
+      newBuf.push_back(tmpBuf[i]);
+    }
+    curByte = BaseCacheLineSize;
+    rqst = new Interfaces::StandardMem::WriteUnlock(op->getAddr(),
+                                                    (uint64_t)(BaseCacheLineSize),
+                                                    newBuf,
+                                                    false,
+                                                    TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(WriteUnlockInFlight,1);
+    num_writeunlock++;
+    break;
+  case RevMemOp::MemOp::MemOpLOADLINK:
+    rqst = new Interfaces::StandardMem::LoadLink(op->getAddr(),
+                                                 (uint64_t)(BaseCacheLineSize),
+                                                 TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(LoadLinkInFlight,1);
+    num_llsc++;
+    break;
+  case RevMemOp::MemOp::MemOpSTORECOND:
+    for( unsigned i=0; i<BaseCacheLineSize; i++ ){
+      newBuf.push_back(tmpBuf[i]);
+    }
+    curByte = BaseCacheLineSize;
+    rqst = new Interfaces::StandardMem::StoreConditional(op->getAddr(),
+                                                         (uint64_t)(BaseCacheLineSize),
+                                                         newBuf,
+                                                         TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(StoreCondInFlight,1);
+    num_llsc++;
+    break;
+  case RevMemOp::MemOp::MemOpCUSTOM:
+    // TODO: need more support for custom memory ops
+    rqst = new Interfaces::StandardMem::CustomReq(nullptr, TmpFlags);
+    requests.push_back(rqst->getID());
+    outstanding[rqst->getID()] = op;
+    memIface->send(rqst);
+    recordStat(CustomInFlight,1);
+    num_custom++;
+    break;
+  case RevMemOp::MemOp::MemOpFENCE:
+    // we should never get here with a FENCE operation
+    // the FENCE is handled locally and never dispatch on the memIface
+  default:
+    return false;
+    break;
+  }
+
+  // dispatch a request for each subsequent cache line
+  newBuf.clear();
+  uint64_t newBase = op->getAddr() + BaseCacheLineSize;
+  uint64_t bytesLeft = (uint64_t)(op->getSize()) - BaseCacheLineSize;
+  uint64_t newSize = 0x00ull;
+
+  for( unsigned i=1; i<NumLines; i++ ){
+    // setup the adjusted size of the request
+    if( bytesLeft < lineSize ){
+      newSize = bytesLeft;
+    }else{
+      newSize = lineSize;
+    }
+
+    // clear the adjusted buffer
+    newBuf.clear();
+
+    switch(op->getOp()){
+    case RevMemOp::MemOp::MemOpREAD:
+      rqst = new Interfaces::StandardMem::Read(newBase,
+                                               newSize,
+                                               TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(ReadInFlight,1);
+      num_read++;
+      break;
+    case RevMemOp::MemOp::MemOpWRITE:
+      for( unsigned j=curByte; j<(curByte+newSize); j++ ){
+        newBuf.push_back(tmpBuf[j]);
+      }
+      curByte += newSize;
+      rqst = new Interfaces::StandardMem::Write(newBase,
+                                                newSize,
+                                                newBuf,
+                                                TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(WriteInFlight,1);
+      num_write++;
+      break;
+    case RevMemOp::MemOp::MemOpFLUSH:
+      rqst = new Interfaces::StandardMem::FlushAddr(newBase,
+                                                    newSize,
+                                                    op->getInv(),
+                                                    newSize,
+                                                    TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(FlushInFlight,1);
+      num_flush++;
+      break;
+    case RevMemOp::MemOp::MemOpREADLOCK:
+      rqst = new Interfaces::StandardMem::ReadLock(newBase,
+                                                   newSize,
+                                                   TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(ReadLockInFlight,1);
+      num_readlock++;
+      break;
+    case RevMemOp::MemOp::MemOpWRITEUNLOCK:
+      for( unsigned j=curByte; j<(curByte+newSize); j++ ){
+        newBuf.push_back(tmpBuf[j]);
+      }
+      curByte += newSize;
+      rqst = new Interfaces::StandardMem::WriteUnlock(newBase,
+                                                      newSize,
+                                                      newBuf,
+                                                      false,
+                                                      TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(WriteUnlockInFlight,1);
+      num_writeunlock++;
+      break;
+    case RevMemOp::MemOp::MemOpLOADLINK:
+      rqst = new Interfaces::StandardMem::LoadLink(newBase,
+                                                   newSize,
+                                                   TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(LoadLinkInFlight,1);
+      num_llsc++;
+      break;
+    case RevMemOp::MemOp::MemOpSTORECOND:
+      for( unsigned j=curByte; j<(curByte+newSize); j++ ){
+        newBuf.push_back(tmpBuf[j]);
+      }
+      curByte += newSize;
+      rqst = new Interfaces::StandardMem::StoreConditional(newBase,
+                                                           newSize,
+                                                           newBuf,
+                                                           TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(StoreCondInFlight,1);
+      num_llsc++;
+      break;
+    case RevMemOp::MemOp::MemOpCUSTOM:
+      // TODO: need more support for custom memory ops
+      rqst = new Interfaces::StandardMem::CustomReq(nullptr, TmpFlags);
+      requests.push_back(rqst->getID());
+      outstanding[rqst->getID()] = op;
+      memIface->send(rqst);
+      recordStat(CustomInFlight,1);
+      num_custom++;
+      break;
+    case RevMemOp::MemOp::MemOpFENCE:
+      // we should never get here with a FENCE operation
+      // the FENCE is handled locally and never dispatch on the memIface
+    default:
+      return false;
+      break;
+    } // end case
+    bytesLeft -= newSize;
+    newBase += newSize;
+  } // end for
+  return true;
+}
+
+bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
+                                      StandardMem::Request::flags_t TmpFlags){
+  Interfaces::StandardMem::Request *rqst = nullptr;
+
+#ifdef _REV_DEBUG_
+  std::cout << "building raw mem request for addr=0x"
+            << std::hex << op->getAddr() << std::dec
+            << "; Flags = 0x" << std::hex << TmpFlags << std::dec << std::endl;
+#endif
 
   switch(op->getOp()){
   case RevMemOp::MemOp::MemOpREAD:
@@ -490,6 +874,58 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op){
   return true;
 }
 
+bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op,
+                                           bool &Success){
+  if( !op ){
+    return false;
+  }
+
+#ifdef _REV_DEBUG_
+  std::cout << "building mem request for addr=0x"
+            << std::hex << op->getAddr() << std::dec
+            << "; flags = 0x" << std::hex << op->getFlags() << std::dec << std::endl;
+  if( op->getAddr() % lineSize )
+    std::cout << "WARNING: address is not cache aligned!" << std::endl;
+  if( !op->isCacheable() )
+    std::cout << "WARNING: operation is not cache-able!" << std::endl;
+#endif
+
+  // ---------------------------------------------------------
+  // Cache Handler Logic
+  // ---------------------------------------------------------
+  // There are five potential scenarios:
+  // 1. Caching is disabled (no L1 cache detected)
+  // 2. Addr = Cache Aligned && Size <= LineSize
+  // 3. Addr = Cache Aligned && Size > LineSize
+  // 4. Addr = !Cache Aligned && Size <= LineSize
+  // 5. Addr = !Cache Aligned && Size > LineSize
+  //
+  // We handle these by adjusting:
+  // 1. the number of cache lines to request
+  // 2. the base address of each request (cache aligned)
+  //
+  // If caching is disabled, then the number of cache lines is
+  // ALWAYS 1 and we dispatch a single memory requests per
+  // RevMemOp
+  // ---------------------------------------------------------
+  StandardMem::Request::flags_t TmpFlags;
+  if( (hasCache) &&
+      (op->isCacheable()) ){
+    // cache is enabled and we want to cache the request
+    return buildCacheMemRqst(op,Success);
+  }else if( (hasCache) && (!op->isCacheable()) ){
+    // cache is enabled but the request says not to cache the data
+    Success = true;
+    TmpFlags = op->getStdFlags();
+    return buildRawMemRqst(op,TmpFlags);
+  }else{
+    // no cache enabled
+    Success = true;
+    TmpFlags = op->getNonCacheFlags();
+    return buildRawMemRqst(op,TmpFlags);
+  }
+}
+
 bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
                                       unsigned &t_max_stores,
                                       unsigned &t_max_flush,
@@ -503,6 +939,8 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
     t_max_ops = max_ops;
     return true;
   }
+
+  bool success = false;
 
   // retrieve the next candidate memory operation
   for( unsigned i=0; i<rqstQ.size(); i++ ){
@@ -530,13 +968,20 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
       }
 
       // build a StandardMem request
-      if( !buildStandardMemRqst(op) ){
+      if( !buildStandardMemRqst(op, success) ){
         output->fatal(CALL_INFO, -1, "Error : failed to build memory request");
         return false;
       }
 
       // sent the request, remove it
-      rqstQ.erase(rqstQ.begin()+i);
+      if( success ){
+        rqstQ.erase(rqstQ.begin()+i);
+      }else{
+        // go ahead and max out our current request window
+        // otherwise, this request for induce an infinite loop
+        // we also leave the current (failed) request in the queue
+        t_max_ops = max_ops;
+      }
 
       return true;
     }
@@ -551,7 +996,8 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
   for( unsigned i=0; i<rqstQ.size(); i++ ){
     std::cout << "rqstQ[" << i << "] = " << rqstQ[i]->getOp() << " @ 0x"
               << std::hex << rqstQ[i]->getAddr() << std::dec
-              << "; physAddr = 0x" << std::hex << rqstQ[i]->getPhysAddr() << std::dec << std::endl;
+              << "; physAddr = 0x" << std::hex << rqstQ[i]->getPhysAddr()
+              << std::dec << std::endl;
   }
 #endif
 
@@ -576,6 +1022,16 @@ void RevBasicMemCtrl::handleFlagResp(RevMemOp *op){
    }
 }
 
+unsigned RevBasicMemCtrl::getNumSplitRqsts(RevMemOp *op){
+  unsigned count = 0;
+  for (const auto& n : outstanding ){
+    if( n.second == op ){
+      count++;
+    }
+  }
+  return count;
+}
+
 void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
@@ -589,10 +1045,33 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
       std::cout << "               : data[" << i << "] = " << (unsigned)(ev->data[i]) << std::endl;
     }
 #endif
+
+    // determine if we have a split request
+    if( op->getSplitRqst() > 1 ){
+      // split request exists, determine how to handle it
+
+      uint8_t *target = (uint8_t *)(op->getTarget());
+      unsigned startByte = (unsigned)( (uint64_t)(ev->pAddr) - op->getAddr() );
+      target += (uint8_t)(startByte);
+      for( unsigned i=0; i<(unsigned)(ev->size); i++ ){
+        *target = ev->data[i];
+        target++;
+      }
+
+      if( getNumSplitRqsts(op) == 1 ){
+        // this was the last request to service, delete the op
+        handleFlagResp(op);
+        delete op;
+      }
+      outstanding.erase(ev->getID());
+      delete ev;
+      num_read--;
+      return ;
+    }
+
+    // no split request exists; handle as normal
     uint8_t *target = (uint8_t *)(op->getTarget());
-    //uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
     for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
-      //*target = BaseMem[i];
       *target = ev->data[i];
       target++;
     }
@@ -617,11 +1096,21 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     std::cout << "handleWriteResp : id=" << ev->getID() << " @Addr= 0x"
               << std::hex << op->getAddr() << std::dec << std::endl;
 #endif
-    //std::vector<uint8_t> buf = op->getBuf();
-    //uint8_t *BaseMem = (uint8_t *)(op->getPhysAddr());
-    //for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
-      //BaseMem[i] = buf[i];
-    //}
+
+    // determine if we have a split request
+    if( op->getSplitRqst() > 1 ){
+      // split request exists, determine how to handle it
+      if( getNumSplitRqsts(op) == 1 ){
+        // this was the last request to service, delete the op
+        delete op;
+      }
+      outstanding.erase(ev->getID());
+      delete ev;
+      num_write--;
+      return ;
+    }
+
+    // no split request exists; handle as normal
     delete op;
     outstanding.erase(ev->getID());
     delete ev;
@@ -635,8 +1124,24 @@ void RevBasicMemCtrl::handleFlushResp(StandardMem::FlushResp* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
-    if( op )
-      delete op;
+    if( !op )
+      output->fatal(CALL_INFO, -1, "RevMemOp is null in handleFlushResp\n" );
+
+    // determine if we have a split request
+    if( op->getSplitRqst() > 1 ){
+      // split request exists, determine how to handle it
+      if( getNumSplitRqsts(op) == 1 ){
+        // this was the last request to service, delete the op
+        delete op;
+      }
+      outstanding.erase(ev->getID());
+      delete ev;
+      num_flush--;
+      return ;
+    }
+
+    // no split request exists; handle as normal
+    delete op;
     outstanding.erase(ev->getID());
     delete ev;
   }else{
@@ -649,8 +1154,24 @@ void RevBasicMemCtrl::handleCustomResp(StandardMem::CustomResp* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
-    if( op )
-      delete op;
+    if( !op )
+      output->fatal(CALL_INFO, -1, "RevMemOp is null in handleCustomResp\n" );
+
+    // determine if we have a split request
+    if( op->getSplitRqst() > 1 ){
+      // split request exists, determine how to handle it
+      if( getNumSplitRqsts(op) == 1 ){
+        // this was the last request to service, delete the op
+        delete op;
+      }
+      outstanding.erase(ev->getID());
+      delete ev;
+      num_custom--;
+      return ;
+    }
+
+    // no split request exists; handle as normal
+    delete op;
     outstanding.erase(ev->getID());
     delete ev;
   }else{
@@ -663,8 +1184,23 @@ void RevBasicMemCtrl::handleInvResp(StandardMem::InvNotify* ev){
   if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
-    if( op )
-      delete op;
+    if( !op )
+      output->fatal(CALL_INFO, -1, "RevMemOp is null in handleInvResp\n" );
+
+    // determine if we have a split request
+    if( op->getSplitRqst() > 1 ){
+      // split request exists, determine how to handle it
+      if( getNumSplitRqsts(op) == 1 ){
+        // this was the last request to service, delete the op
+        delete op;
+      }
+      outstanding.erase(ev->getID());
+      delete ev;
+      return ;
+    }
+
+    // no split request exists; handle as normal
+    delete op;
     outstanding.erase(ev->getID());
     delete ev;
   }else{
