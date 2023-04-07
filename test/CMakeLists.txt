@@ -1,3 +1,12 @@
+# RevCPU test/CMakeLists.txt
+#
+# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+# All Rights Reserved
+# contact@tactcomplabs.com
+#
+# See LICENSE in the top level directory for licensing details
+#
+
 set( RISCV_ENV "$ENV{RISCV}" )
 if(RISCV_ENV)
   message(STATUS "RISCV environment set to ${RISCV_ENV}")
@@ -7,7 +16,7 @@ endif()
 
 # Check for RISCV Compiler
 find_program(RVCC NAMES riscv64-unknown-elf-gcc
-                        riscv64-unknown-linux-gnu-gcc 
+                        riscv64-unknown-linux-gnu-gcc
                         riscv64-unknown-linux-musl-gcc)
 
 if(RVCC-NOTFOUND)
@@ -25,81 +34,81 @@ message(STATUS "CTest Setup")
 # -- Add tests
 
 # TEST EX1
-add_test(NAME TEST_EX1 COMMAND run_ex1.sh WORKING_DIRECTORY ../test/ex1 ) # ex1
-set_tests_properties(TEST_EX1 
-  PROPERTIES 
+add_test(NAME TEST_EX1 COMMAND run_ex1.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ex1" )
+set_tests_properties(TEST_EX1
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv32"
 )
 
-add_test(NAME TEST_EX2 COMMAND run_ex2.sh WORKING_DIRECTORY ../test/ex2 ) # ex2
+add_test(NAME TEST_EX2 COMMAND run_ex2.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ex2" ) # ex2
 set_tests_properties(TEST_EX2
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
 
-add_test(NAME TEST_EX3 COMMAND run_ex3.sh WORKING_DIRECTORY ../test/ex3 ) # ex3
+add_test(NAME TEST_EX3 COMMAND run_ex3.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ex3" ) # ex3
 set_tests_properties(TEST_EX3
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv32"
 )
 
-add_test(NAME TEST_EX4 COMMAND run_ex4.sh WORKING_DIRECTORY ../test/ex4 ) # ex3
+add_test(NAME TEST_EX4 COMMAND run_ex4.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ex4" ) # ex4
 set_tests_properties(TEST_EX4
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv32"
 )
 
-add_test(NAME TEST_EX5 COMMAND run_ex5.sh WORKING_DIRECTORY ../test/ex5 ) # ex4
+add_test(NAME TEST_EX5 COMMAND run_ex5.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ex5" ) # ex5
 set_tests_properties(TEST_EX5
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
 
-add_test(NAME TEST_EX6 COMMAND run_ex6.sh WORKING_DIRECTORY ../test/ex6 ) # ex5
+add_test(NAME TEST_EX6 COMMAND run_ex6.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ex6" ) # ex6
 set_tests_properties(TEST_EX6
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
 
-add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY ../test/big_loop ) # big_loop
+add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/big_loop" ) # big_loop
 set_tests_properties(TEST_BIG_LOOP
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
 
-add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY ../test/minfft ) # minfft
+add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/minfft" ) # minfft
 set_tests_properties(TEST_MINFFT
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
 
-add_test(NAME TEST_DOT_SINGLE COMMAND run_dot_single.sh WORKING_DIRECTORY ../test/dot_single ) # dot_single
+add_test(NAME TEST_DOT_SINGLE COMMAND run_dot_single.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dot_single" ) # dot_single
 set_tests_properties(TEST_DOT_SINGLE
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
@@ -107,9 +116,9 @@ set_tests_properties(TEST_DOT_SINGLE
 )
 
 
-add_test(NAME TEST_DOT_DOUBLE COMMAND run_dot_double.sh WORKING_DIRECTORY ../test/dot_double ) # dot_double
+add_test(NAME TEST_DOT_DOUBLE COMMAND run_dot_double.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dot_double" ) # dot_double
 set_tests_properties(TEST_DOT_DOUBLE
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
@@ -117,9 +126,9 @@ set_tests_properties(TEST_DOT_DOUBLE
 )
 
 
-add_test(NAME TEST_DEP_CHECK COMMAND run_dep_check.sh WORKING_DIRECTORY ../test/dep_check ) # dep_check
+add_test(NAME TEST_DEP_CHECK COMMAND run_dep_check.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dep_check" ) # dep_check
 set_tests_properties(TEST_DEP_CHECK
-  PROPERTIES 
+  PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
     PASS_REGULAR_EXPRESSION "${passRegex}"
@@ -149,3 +158,5 @@ if(NOT CTEST_MULTILIB_TESTS)
 endif()
 
 add_subdirectory(isa)
+
+# EOF
