@@ -8,10 +8,16 @@
 // See LICENSE in the top level directory for licensing details
 //
 
+#pragma once
+
 #ifndef _SST_REVCPU_REVPROC_H_
 #define _SST_REVCPU_REVPROC_H_
 
 // -- SST Headers
+#include <algorithm>
+#include <cstdint>
+#include <iterator>
+#include <map>
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/statapi/stataccumulator.h>
@@ -27,6 +33,7 @@
 #include <random>
 #include <queue>
 #include <inttypes.h>
+#include <utility>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -37,6 +44,7 @@
 #include "RevInstTables.h"
 #include "PanExec.h"
 #include "RevPrefetcher.h"
+#include "RevProcCtx.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
@@ -49,7 +57,7 @@ using namespace SST::RevCPU;
 namespace SST{
   namespace RevCPU{
 
-    class RevProc{
+  class RevProc{
     public:
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
@@ -134,7 +142,9 @@ namespace SST{
       RevProcStats Stats;       ///< RevProc: collection of performance stats
       RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
+public:
       RevRegFile RegFile[_REV_THREAD_COUNT_];      ///< RevProc: register file
+private:
       RevInst Inst;             ///< RevProc: instruction payload
 
       std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
@@ -250,8 +260,15 @@ namespace SST{
       /// RevProc: reset the inst structure
       void ResetInst(RevInst *Inst);
 
+public:
       /// RevProc: Determine next thread to execute
       uint16_t GetThreadID();
+
+      /// RevProc: Context switching utils
+      void LoadCtx(RevMem& Mem, const RevProcCtx& ProcCtx);
+      void SaveCtx(const RevMem& Mem, RevProcCtx& ProcCtx);
+
+private:
 
       /// RevProc: Check scoreboard for pipeline hazards
       bool DependencyCheck(uint16_t threadID, RevInst* Inst);
@@ -262,7 +279,11 @@ namespace SST{
       /// RevProc: Clear scoreboard on instruction retirement
       void DependencyClear(uint16_t threadID, RevInst* Inst);
 
-    }; // class RevProc
+    }; // class RevProc 
+    
+    
+    
+
   } // namespace RevCPU
 } // namespace SST
 

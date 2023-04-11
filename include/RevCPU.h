@@ -202,6 +202,8 @@ namespace SST {
       RevMem *Mem;                        ///< RevCPU: RISC-V main memory object
       RevLoader *Loader;                  ///< RevCPU: RISC-V loader
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
+      std::vector<RevProcessTable*> ProcsProcessTable; ///< RevCPU: Vector of process tables for each Proc/Hart
+
       bool *Enabled;                      ///< RevCPU: Completion structure
 
       uint8_t PrivTag;                    ///< RevCPU: private tag locator

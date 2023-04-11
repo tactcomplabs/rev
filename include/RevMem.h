@@ -28,6 +28,7 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 #include "RevMemCtrl.h"
+#include "RevProc.h"
 
 #ifndef _REVMEM_BASE_
 #define _REVMEM_BASE_ 0x00000000
@@ -64,6 +65,19 @@ namespace SST {
       /// RevMem: handle memory injection
       void HandleMemFault(unsigned width);
 
+      /// RevMem: Set Rev Proc Ctx
+      void StoreProcCtx(RevProcCtx& Ctx){
+        // Stack Pointer
+        Ctx.ParentSP = GetStackTop();
+      }
+  
+      void LoadProcCtx(const RevProcCtx& Ctx){
+        // Stack Pointer
+        SetStackTop(Ctx.ParentSP);
+      }
+
+private:
+  
       /// RevMem: get the stack_top address
       uint64_t GetStackTop() { return stacktop; }
 
