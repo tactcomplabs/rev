@@ -136,7 +136,7 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
       // if this is the last instruction in the stream buffer, we need to deallocate the stream
       if( Off == (depth-1) ){
         DeleteStream(i);
-        Fill(Addr+4);   // go ahead and fill the next instruction
+        Fill(Addr+2);   // go ahead and fill the next instruction
       }
 
       return true;

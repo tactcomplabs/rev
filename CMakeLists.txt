@@ -30,7 +30,7 @@ option(CTEST_MULTILIB_TESTS "Enable 32-bit tests" ON)
 #---------------------------------------------------------------------------
 # Setup the path to the SST installation directory
 #set(SST_INSTALL_DIR "" CACHE PATH "SST installation directory")
-execute_process(COMMAND sst-config --prefix 
+execute_process(COMMAND sst-config --prefix
                 OUTPUT_VARIABLE SST_INSTALL_DIR
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 )
@@ -158,7 +158,9 @@ add_subdirectory(src)
 add_subdirectory(include)
 add_subdirectory(test)
 
-#install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src)
-#install (CODE "execute_process(COMMAND sst-register revcpu -revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR}/src)")
+#------------------------------------------------------------------------
+#-- CUSTOM COMMANDS
+#------------------------------------------------------------------------
+add_custom_target(uninstall COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/uninstall.sh")
 
 # EOF
