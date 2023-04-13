@@ -12,9 +12,9 @@ import os
 import sst
 import sys
 
-#if len(sys.argv) != 2:
-#    sys.stderr.write("Usage: You must pass the executable you wish to simulate using the '--model-options' option with sst")
-#    raise SystemExit(1)
+if len(sys.argv) != 2:
+    sys.stderr.write("Usage: You must pass the executable you wish to simulate using the '--model-options' option with sst")
+    raise SystemExit(1)
 
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
@@ -35,7 +35,7 @@ comp_cpu.addParams({
         "machine" : "[0:RV64IMAFDC]",                 # Core:Config; RV64I for core 0
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "addi"),  # Target executable
+        "program" : os.getenv("REV_EXE", sys.argv[1]),  # Target executable
         "splash" : 1                                  # Display the splash message
 })
 comp_cpu.enableAllStatistics()
