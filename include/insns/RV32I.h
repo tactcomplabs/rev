@@ -37,7 +37,7 @@ namespace SST{
           }
           return true;
         }
-
+        Inst.imm = (Inst.imm & 0b011111111)*4;
         return addi(F,R,M,Inst);
       }
 
@@ -168,6 +168,7 @@ namespace SST{
                        RevMem *M, RevInst Inst) {
         if( Inst.rd == 2 ){
           // c.addi16sp
+           SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32)
           return addi(F,R,M,Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
