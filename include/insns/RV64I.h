@@ -164,7 +164,8 @@ namespace SST{
       }
 
       static bool sllw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b111111))&MASK32,64);
+        SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b11111))&MASK32,64);
+        SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
         R->RV64_PC += Inst.instSize;
         return true;
       }
