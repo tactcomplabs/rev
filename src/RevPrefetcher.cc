@@ -38,6 +38,21 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
         return false;
       }
 
+      // we may be short of instruction width in our current stream
+      // determine if an adjacent stream has the payload
+      if( lastAddr-Addr < 4 ){
+
+        uint32_t TmpInst;
+        bool Fetched = false;
+        if( !FetchUpper(Addr+2, Fetched, TmpInst) ){
+          return false;
+        }
+        if( !Fetched ){
+          // initiated a Fill
+          return false;
+        }
+      }
+
       // the instruction is available in the stream cache
       return true;
     }
@@ -88,7 +103,6 @@ bool RevPrefetcher::FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst){
 }
 
 bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
-
   // scan the baseAddr vector to see if the address is cached
   uint64_t lastAddr = 0x00ull;
   for( unsigned i=0; i<baseAddr.size(); i++ ){
@@ -120,7 +134,6 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
       }else{
         // compressed instruction, adjust the offset
         Inst = (iStack[i][Off] >> 16);
-        //Inst |= (iStack[i][Off+1] << 16);
         uint32_t TmpInst;
         if( !FetchUpper(Addr+2, Fetched, TmpInst) )
           return false;
