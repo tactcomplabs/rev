@@ -1409,7 +1409,7 @@ RevInst RevProc::DecodeInst(){
     Funct3 = ((Inst&0b111000000000000) >> 12 );
   }
 
-  // Stage 4: Determine if we have a funct7 field (R-Type)
+  // Stage 4: Determine if we have a funct7 field (R-Type and some specific I-Type)
   uint32_t Funct7 = 0x00ul;
   if( inst65 == 0b01 ) {
     if( (inst42 == 0b011) || (inst42 == 0b100) || (inst42 == 0b110) ){
@@ -1422,6 +1422,9 @@ RevInst RevProc::DecodeInst(){
   }else if((inst65 == 0b00) && (inst42 == 0b110) && (Funct3 != 0)){
       // R-Type encodings
       Funct7 = ((Inst >> 25) & 0b1111111);
+  }else if((inst65 == 0b00) && (inst42 == 0b100) && (Funct3 == 0b101)){
+      // Special I-Type encoding for SRAI - also, Funct7 is only 6 bits in this case
+      Funct7 = ((Inst >> 26) & 0b1111111);
   }
 
   // Stage 5: Determine if we have an imm12 field
