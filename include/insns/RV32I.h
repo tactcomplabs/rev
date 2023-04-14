@@ -711,7 +711,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b11111)),64);
-          R->RV64[Inst.rd] = (R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b11111));
+          R->RV64[Inst.rd] = (R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b111111));
           R->RV64_PC += Inst.instSize;
         }
         return true;
