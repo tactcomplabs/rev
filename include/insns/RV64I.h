@@ -179,9 +179,12 @@ namespace SST{
       }
 
       static bool sraw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t tmp = R->RV64[Inst.rs1] | (1<<31);
-        SEXT(R->RV64[Inst.rd],((R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b111111))&MASK32)|tmp,64);
-        SEXTI(R->RV64[Inst.rd],64);
+        uint64_t tmp = R->RV64[Inst.rs1] & (1<<31);
+        int32_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit signed value
+        SEXT(R->RV64[Inst.rd],((srcTrunc >> (R->RV64[Inst.rs2]&0b111111)))|tmp,32);
+        SEXTI(R->RV64[Inst.rd],32);
+        //replicate rs1[31] across all upper bits
+        R->RV64[Inst.rd] = (R->RV64[Inst.rs1] & 0x80000000) ? (R->RV64[Inst.rd] & MASK32) | (0xFFFFFFFF00000000) : (R->RV64[Inst.rd] & MASK32) ;
         R->RV64_PC += Inst.instSize;
         return true;
       }
