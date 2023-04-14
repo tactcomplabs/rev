@@ -37,7 +37,7 @@ namespace SST{
           }
           return true;
         }
-
+        Inst.imm = (Inst.imm & 0b011111111)*4;
         return addi(F,R,M,Inst);
       }
 
@@ -168,6 +168,7 @@ namespace SST{
                        RevMem *M, RevInst Inst) {
         if( Inst.rd == 2 ){
           // c.addi16sp
+           SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
           return addi(F,R,M,Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
@@ -578,7 +579,9 @@ namespace SST{
 
       static bool sltiu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint32_t tmp = 0x00;
+        uint64_t tmp64 = 0x00;
         SEXT(tmp,Inst.imm,12);
+        SEXT(tmp64,Inst.imm,12);
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] < tmp ){
             R->RV32[Inst.rd] = 1;
@@ -587,7 +590,7 @@ namespace SST{
           }
           R->RV32_PC += Inst.instSize;
         }else{
-          if( R->RV64[Inst.rs1] < tmp ){
+          if( (R->RV64[Inst.rs1]) < tmp64 ){
             R->RV64[Inst.rd] = 1;
           }else{
             R->RV64[Inst.rd] = 0;
@@ -668,13 +671,12 @@ namespace SST{
       }
 
       static bool srai(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint32_t tmp = R->RV32[Inst.rs1] | (1<<31);
         if( F->IsRV32() ){
-          SEXT(R->RV32[Inst.rd],((R->RV32[Inst.rs1] >> (Inst.imm&0x1F))|tmp),32);
+          SEXT(R->RV32[Inst.rd],(((int32_t)(R->RV32[Inst.rs1]) >> (Inst.imm&0x1F))),32);
           SEXTI(R->RV32[Inst.rd],32);
           R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R->RV64[Inst.rd],((R->RV64[Inst.rs1] >> (Inst.imm&0x3F))|tmp),64);
+          SEXT(R->RV64[Inst.rd],(((int64_t)(R->RV64[Inst.rs1]) >> (Inst.imm&0x3F))),64);
           SEXTI(R->RV64[Inst.rd],64);
           R->RV64_PC += Inst.instSize;
         }
@@ -710,7 +712,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b11111)),64);
-          R->RV64[Inst.rd] = (R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b11111));
+          R->RV64[Inst.rd] = (R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b111111));
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -779,13 +781,12 @@ namespace SST{
       }
 
       static bool sra(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint32_t tmp = R->RV32[Inst.rs1] | (1<<31);
         if( F->IsRV32() ){
-          SEXT(R->RV32[Inst.rd],((R->RV32[Inst.rs1] >> (R->RV32[Inst.rs2]&0b11111))|tmp),32);
+          SEXT(R->RV32[Inst.rd],(((int32_t)(R->RV32[Inst.rs1]) >> (R->RV32[Inst.rs2]&0b11111))),32);
           SEXTI(R->RV32[Inst.rd],32);
           R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R->RV64[Inst.rd],((R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111))|tmp),64);
+          SEXT(R->RV64[Inst.rd],(((int64_t)(R->RV64[Inst.rs1]) >> (R->RV64[Inst.rs2]&0b111111))),64);
           SEXTI(R->RV64[Inst.rd],64);
           R->RV64_PC += Inst.instSize;
         }
@@ -955,7 +956,7 @@ namespace SST{
 
       {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("slli %rd, %rs1, $imm").SetCost(1).SetOpcode(0b0010011).SetFunct3(0b001).SetFunct7(0b0000000).SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&slli ).InstEntry},
       {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("srli %rd, %rs1, $imm").SetCost(1).SetOpcode(0b0010011).SetFunct3(0b101).SetFunct7(0b0000000).SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&srli ).InstEntry},
-      {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("srai %rd, %rs1, $imm").SetCost(1).SetOpcode(0b0010011).SetFunct3(0b101).SetFunct7(0b0100000).SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&srai ).InstEntry},
+      {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("srai %rd, %rs1, $imm").SetCost(1).SetOpcode(0b0010011).SetFunct3(0b101).SetFunct7(0b0010000).SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&srai ).InstEntry},
 
       {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("add %rd, %rs1, %rs2" ).SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0000000).SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeR).SetImplFunc(&add ).InstEntry},
       {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("sub %rd, %rs1, %rs2" ).SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0100000).SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeR).SetImplFunc(&sub ).InstEntry},
