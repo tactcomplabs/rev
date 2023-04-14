@@ -29,24 +29,6 @@ namespace SST {
   namespace RevCPU {
 
     /**
-     * nicPayload : base class for building NIC payloads for RevNIC
-     */
-    class nicPayload {
-    private:
-      std::vector<std::tuple<std::string,
-                             unsigned,
-                             unsigned>>   Fields;
-
-    public:
-      /// standard constructor
-      nicPayload() {}
-
-      /// standard destructor
-      ~nicPayload() {}
-
-    };
-
-    /**
      * nicEvent : inherited class to handle the individual network events for RevNIC
      */
     class nicEvent : public SST::Event {

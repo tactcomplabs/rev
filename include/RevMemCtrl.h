@@ -134,7 +134,10 @@ namespace SST {
       StandardMem::Request::flags_t getStdFlags() { return ((uint32_t)(flags) & 0b1111111111111111); }
 
       /// RevMemOp: retrieve the flags for MemEventBase without caching enable
-      StandardMem::Request::flags_t getNoCacheFlags() { return ((uint32_t)(flags) & 0b1111111111111101); }
+      StandardMem::Request::flags_t getNonCacheFlags() { return ((uint32_t)(flags) & 0b1111111111111101); }
+
+      /// RevMemOp: sets the number of split cache line requests
+      void setSplitRqst(unsigned S){ SplitRqst = S; }
 
       /// RevMemOp: set the invalidate flag
       void setInv(bool I){ Inv = I; }
@@ -142,8 +145,14 @@ namespace SST {
       /// RevMemOp: retrieve the invalidate flag
       bool getInv() { return Inv; }
 
+      /// RevMemOp: retrieve the number of split cache line requests
+      unsigned getSplitRqst() { return SplitRqst; }
+
       /// RevMemOp: retrieve the target address
       void *getTarget() { return target; }
+
+      // RevMemOp: determine if the request is cache-able
+      bool isCacheable() { if( (flags & 0b10) > 0 ){ return false; } return true; }
 
     private:
       uint64_t Addr;      ///< RevMemOp: address
@@ -152,6 +161,7 @@ namespace SST {
       bool Inv;           ///< RevMemOp: flush operation invalidate flag
       MemOp Op;           ///< RevMemOp: target memory operation
       unsigned CustomOpc; ///< RevMemOp: custom memory opcode
+      unsigned SplitRqst; ///< RevMemOp: number of split cache line requests
       std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
       StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
       void *target;                         ///< RevMemOp: target register pointer
@@ -170,9 +180,6 @@ namespace SST {
 
       /// RevMemCtrl: default constructor
       RevMemCtrl( ComponentId_t id, Params& params);
-
-      /// RevMemCtrl: set the physical memory space
-      void setPhys(char *P){physMem = P;}
 
       /// RevMemCtrl: default destructor
       virtual ~RevMemCtrl();
@@ -259,8 +266,6 @@ namespace SST {
 
     protected:
       SST::Output *output;        ///< RevMemCtrl: sst output object
-      char *physMem;              ///< physical memory backing from RevMem
-
     }; // class RevMemCtrl
 
     // ----------------------------------------
@@ -481,7 +486,13 @@ namespace SST {
                         unsigned &t_max_custom);
 
       /// RevBasicMemCtrl: build a standard memory request
-      bool buildStandardMemRqst(RevMemOp *op);
+      bool buildStandardMemRqst(RevMemOp *op, bool &Success);
+
+      /// RevBasicMemCtrl: build raw memory requests with a 1-to-1 mapping to RevMemOps'
+      bool buildRawMemRqst(RevMemOp *op, StandardMem::Request::flags_t TmpFlags);
+
+      /// RevBasicMemCtrl: build cache-aligned requests
+      bool buildCacheMemRqst(RevMemOp *op, bool &Success);
 
       /// RevBasicMemCtrl: register statistics
       void registerStats();
@@ -491,6 +502,15 @@ namespace SST {
 
       /// RevBasicMemCtrl: returns the total number of outstanding requests
       uint64_t getTotalRqsts();
+
+      /// RevBasicMemCtrl: Determine the number of cache lines are required
+      unsigned getNumCacheLines(uint64_t Addr, uint32_t Size);
+
+      /// RevBasicMemCtrl: Retrieve the base cache line request size
+      unsigned getBaseCacheLineSize(uint64_t Addr, uint32_t Size);
+
+      /// RevBasicMemCtrl: retrieve the number of outstanding requests on the wire
+      unsigned getNumSplitRqsts(RevMemOp *op);
 
       // -- private data members
       StandardMem* memIface;                  ///< StandardMem memory interface
