@@ -171,8 +171,9 @@ namespace SST{
       }
 
       static bool srlw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        ZEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b111111))&MASK32,64);
-        SEXTI(R->RV64[Inst.rd],64);
+        uint64_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit unsigned value, scale up to 64bit to avoid sign bit shift
+        R->RV64[Inst.rd] = (srcTrunc >> (R->RV64[Inst.rs2]&0b11111));
+        SEXTI(R->RV64[Inst.rd],32);
         R->RV64_PC += Inst.instSize;
         return true;
       }
