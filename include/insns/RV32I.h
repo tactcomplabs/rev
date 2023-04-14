@@ -579,7 +579,9 @@ namespace SST{
 
       static bool sltiu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint32_t tmp = 0x00;
+        uint64_t tmp64 = 0x00;
         SEXT(tmp,Inst.imm,12);
+        SEXT(tmp64,Inst.imm,12);
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] < tmp ){
             R->RV32[Inst.rd] = 1;
@@ -588,7 +590,7 @@ namespace SST{
           }
           R->RV32_PC += Inst.instSize;
         }else{
-          if( R->RV64[Inst.rs1] < tmp ){
+          if( (R->RV64[Inst.rs1]) < tmp64 ){
             R->RV64[Inst.rd] = 1;
           }else{
             R->RV64[Inst.rd] = 0;
