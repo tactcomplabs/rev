@@ -122,11 +122,6 @@ namespace SST{
         return true;
       }
 
-   //     R->RV64[Inst.rd] = dt_u32(td_u32(R->RV64[Inst.rs1],32) + td_u32(R->RV64[Inst.rs2],32),32); //addw operates on and produces 32-bit results even on RV64I codes 
-   //     SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
-   //     R->RV64_PC += Inst.instSize;
-   //     return true;
-
       static bool slliw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         //SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (Inst.imm&0b111111))&MASK32,64);
         SEXT(R->RV64[Inst.rd], ((R->RV64[Inst.rs1]<< (Inst.imm & 0b0111111))&0xffffffff), 32);
