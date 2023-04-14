@@ -782,13 +782,12 @@ namespace SST{
       }
 
       static bool sra(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint32_t tmp = R->RV32[Inst.rs1] | (1<<31);
         if( F->IsRV32() ){
-          SEXT(R->RV32[Inst.rd],((R->RV32[Inst.rs1] >> (R->RV32[Inst.rs2]&0b11111))|tmp),32);
+          SEXT(R->RV32[Inst.rd],(((int32_t)(R->RV32[Inst.rs1]) >> (R->RV32[Inst.rs2]&0b11111))),32);
           SEXTI(R->RV32[Inst.rd],32);
           R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R->RV64[Inst.rd],((R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111))|tmp),64);
+          SEXT(R->RV64[Inst.rd],(((int64_t)(R->RV64[Inst.rs1]) >> (R->RV64[Inst.rs2]&0b111111))),64);
           SEXTI(R->RV64[Inst.rd],64);
           R->RV64_PC += Inst.instSize;
         }
