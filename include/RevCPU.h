@@ -32,6 +32,7 @@
 #include "RevMemCtrl.h"
 #include "RevLoader.h"
 #include "RevProc.h"
+#include "RevThreadCtx.h"
 #include "RevNIC.h"
 #include "PanNet.h"
 #include "PanExec.h"
