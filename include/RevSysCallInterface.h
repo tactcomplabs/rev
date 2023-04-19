@@ -12,6 +12,7 @@
 #include <functional>
 
 #include "RevInstTable.h"
+#include "RevProc.h"
 
 namespace SST { namespace RevCPU {
 
@@ -117,7 +118,7 @@ static void DumpRegisters(const uint64_t RegFile[32], const char& RegType){
   }
 }
 
-using systemcall_t = std::function<int(RevRegFile &, RevMem &, RevInst &)>;
+using systemcall_t = std::function<int(RevProc&)>;
 
 } /* end namespace RevCPU */ } // end namespace SST
 #endif // !_REV_SYSCALL_INTERFACE

@@ -46,8 +46,8 @@
  * will be better but by including the ECALL implementations in RevProc gives access
  * RevProc and allows for higher priviledge access to operate on Ctx objects
 */
-#include "RevSysCallInterface.h"
-#include "RevSysCalls.h"
+// #include "RevSysCallInterface.h"
+// #include "RevSysCalls.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
@@ -123,11 +123,15 @@ namespace SST{
 
       RevProcStats GetStats();
 
+      RevMem& GetMem(){ return *mem; }
+      RevRegFile& GetHWThreadToExecRegFile(){ return RegFile[threadToExec]; }
+
       /* Software Process Table */
       bool AddCtx(RevThreadCtx& Ctx);
-      RevThreadCtx& CreateCtx(uint32_t pid,
+      bool CreateCtx(uint32_t pid,
                               uint64_t pc,
                               uint32_t parent_pid,
+                              ThreadState InitialThreadState,
                               uint64_t MemStartAddr,
                               uint64_t MemSize);
       std::optional<RevThreadCtx> GetCtx(uint32_t pid);
@@ -139,17 +143,23 @@ namespace SST{
       bool ReadyThread(uint32_t pid);
 
       uint32_t GetActivePID(){ return ActivePID; }
+      uint32_t SetActivePID(uint32_t NewActivePID){ ActivePID = NewActivePID; }
 
+      RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(GetActivePID()); }
+
+      void RestoreRegFile(RevThreadCtx& Ctx){ RegFile[threadToExec] = Ctx.GetRegFile(); }
+      const char&& GetThreadMemRef(uint32_t pid);
       // FIXME: This will likely not be a forever method
-      std::unordered_map<uint32_t, RevThreadCtx> GetThreadTable(){ return ThreadTable;} 
+      std::unordered_map<uint32_t, RevThreadCtx>& GetThreadTable(){ return ThreadTable;} 
       std::vector<uint32_t> GetPIDs();
       
       
-      RevThreadCtx ExtractCtx(uint32_t pid); ///< RevProc: Fetches Ctx by pid and removes it from this procs ThreadTable
+      // RevThreadCtx& ExtractCtx(uint32_t pid); ///< RevProc: Fetches Ctx by pid and removes it from this procs ThreadTable
 
     private:
       
       std::unordered_map<uint32_t, RevThreadCtx> ThreadTable; ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
+      RevThreadCtx *Ctx;
       uint32_t ActivePID = id;  ///< RevProc: First software thread id = processor id to avoid collisions
 
       bool Halted;              ///< RevProc: determines if the core is halted
