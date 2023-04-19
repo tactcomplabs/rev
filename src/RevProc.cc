@@ -1699,28 +1699,6 @@ uint16_t RevProc::GetThreadID(){
   return nextID;
 }
 
-void RevProc::LoadCtx(RevMem& Mem, const RevProcCtx& ProcCtx){
-  // Load reg file
-  RegFile[ProcCtx.tID] = ProcCtx.ParentRegFile;
-
-  RegFile[ProcCtx.tID].RV32_PC = (uint32_t)ProcCtx.ProcStartAddr;
-  RegFile[ProcCtx.tID].RV64_PC = ProcCtx.ProcStartAddr;
-  
-  // Stack Pointer
-  Mem.LoadProcCtx(ProcCtx);
-}
-
-void RevProc::SaveCtx(const RevMem& Mem, RevProcCtx& ProcCtx){
-  // Load reg file
-  ProcCtx.ParentRegFile = RegFile[ProcCtx.tID];
-  ProcCtx.ProcStartAddr = (uint32_t)RegFile[ProcCtx.tID].RV32_PC;
-  ProcCtx.ProcStartAddr = RegFile[ProcCtx.tID].RV64_PC;
-  
-  // Stack Pointer
-  Mem.StoreProcCtx(ProcCtx);
-}
-
-
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
@@ -1975,12 +1953,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       done = false;
     }
 
-    if( !done ){
-      // TODO: 
-    } 
-    // we are really done, return
-    else{ 
-
+    if( done ){
+      // we are really done, return
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
       Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
       output->verbose(CALL_INFO,2,0,
