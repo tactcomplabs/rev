@@ -17,8 +17,9 @@ set(RevCPUSrcs
   RevMemCtrl.cc
   RevNIC.cc
   RevOpts.cc
-  RevSysCalls.cc
   RevProc.cc
+  RevThreadCtx.cc
+  RevSysCalls.cc
   librevcpu.cc
   RevPrefetcher.cc
   )
