@@ -15,6 +15,7 @@ struct RevChdir{
   
   template<typename RiscvArchType>
   static int ECall(RevRegFile& regFile, RevMem& mem, RevInst& inst) {
+    std::cout << "ECALL: Inside Chdir" << std::endl;
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
       std::string path = "";
       unsigned i=0;
@@ -45,8 +46,11 @@ struct RevChdir{
         i++;
       } while( path.back() != '\0');
 
+      std::cout << "Current Directory: " << std::filesystem::current_path().string() << std::endl;
       const int rc = chdir(path.data());
-      
+      std::cout << "New Directory: " << std::filesystem::current_path().string() << std::endl;
+      std::cout << "Return Code: " << rc << std::endl;
+
       return rc; 
     }
     return -1;

@@ -10,6 +10,9 @@
 
 #include "../include/RevProc.h"
 #include <bitset>
+#include <cstdint>
+#include <optional>
+#include <utility>
 
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
@@ -1811,6 +1814,26 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
 
+      /* 
+       * Exception Handling
+       * - Currently this is only for ecall
+      */
+      
+      if( RegFile[threadToExec].RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE || RegFile[threadToExec].RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE ){ // Ecall found
+        // x17 (a7) is the code for ecall
+        if( feature->IsRV32() ){
+          uint32_t code = RegFile[threadToExec].RV32[17];
+          RegFile[threadToExec].RV32[10] = SystemCalls::jump_table32.at(code)(RegFile[threadToExec], *mem, Inst);
+          // RegFile[threadToExec].RV32_PC += Inst.instSize;
+          RegFile[threadToExec].RV64_SCAUSE = 0;
+        }else{
+          uint64_t code = RegFile[threadToExec].RV64[17];
+          RegFile[threadToExec].RV64[10] = SystemCalls::jump_table64.at(code)(RegFile[threadToExec], *mem, Inst);
+          // RegFile[threadToExec].RV64_PC = RegFile[threadToExec].RV64_SEPC + Inst.instSize;
+          RegFile[threadToExec].RV64_SCAUSE = 0;
+        }
+      }
+
       Pipeline.push(std::make_pair(threadToExec, Inst));
       bool isFloat = false;
       if( (Ext->GetName() == "RV32F") ||
@@ -1856,6 +1879,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         ALUFault = false;
       }
     }
+
 
     // if this is a singlestep, clear the singlestep and halt
     if( SingleStep ){
@@ -1976,5 +2000,101 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   return rtn;
 }
+
+std::vector<uint32_t> RevProc::GetPIDs(){
+  std::vector<uint32_t> PIDs;
+  for( const auto& Thread : ThreadTable ){
+    PIDs.emplace_back(Thread.first);
+  }
+  return PIDs;
+}
+
+RevThreadCtx RevProc::ExtractCtx(const uint32_t pid){
+  auto Thread = ThreadTable.extract(pid);
+  if( !Thread.empty() ){
+    return Thread.mapped();
+  }
+  else{
+    std::string error_str = "ERROR: Attempted to extract non-existant ThreadCtx object (pid = " + std::to_string(pid) + ") on Proc " + std::to_string(id);
+    output->fatal(CALL_INFO, -1, "%s", error_str.c_str());
+    // TODO: Return something
+  }
+}
+
+/*
+ * Create a new Ctx object on this RevProc
+ * - Uses GetPC to 
+ */
+// RevThreadCtx& RevProc::CreateCtx(uint32_t pid, uint64_t pc, uint32_t parent_pid,
+//                                 uint64_t MemStartAddr, uint64_t MemSize){
+//   RevThreadCtx* NewCtx = new RevThreadCtx(pid, pc, parent_pid, ThreadState::Ready, MemStartAddr,  MemSize);
+//   // TODO: Should CreateCtx automatically add it to its own ThreadTable?
+//   return *NewCtx;
+// }
+
+
+// bool RevProc::AddCtx(RevThreadCtx& Ctx){//, bool clone_vm){
+//   auto it = ThreadTable.find(Ctx.GetPID());
+//   if( it != ThreadTable.end() ){
+//     // ThreadTable.emplace(std::make_pair(Ctx.GetPID(), Ctx));
+//     ThreadTable[Ctx.GetPID()] = Ctx;
+//     // TODO: May be able to make this the new active pid but not sure 
+//     //       if that will always make sense so not doing it 
+//     return true;
+//   }
+//   #if _REV_DEBUG_
+//   std::cout << "ERROR - Thread ID: " << Ctx.GetPID() << " already exists" << std::endl;
+//   #endif
+
+//   return false;
+// }
+
+/*
+ * Returns a RevThreadCtx object if it exists in the ThreadTable
+ * Check if it found it with: 
+ * `if( GetCtx(pid).has_value())` to avoid the null case
+*/
+std::optional<RevThreadCtx> RevProc::GetCtx(uint32_t pid){
+  auto it = ThreadTable.find(pid);
+  if( it != ThreadTable.end() ){
+    // Thread Exists 
+    return it->second;
+  }
+  return std::nullopt;
+}
+
+bool RevProc::SetState(ThreadState NewState, uint32_t pid){
+  auto it = ThreadTable.find(pid);
+  if( it != ThreadTable.end() ){
+    // process found
+    it->second.SetState(NewState);
+    return true;
+  }
+  // thread not found
+  return false;
+}
+
+bool RevProc::RetireThread(const uint32_t pid){
+  std::optional<RevThreadCtx> Ctx = GetCtx(pid);
+  if( Ctx.has_value() ){
+    Ctx->SetState(ThreadState::Retired);
+    return true;
+  }
+  return false;
+}
+
+bool RevProc::ReadyThread(const uint32_t pid){
+  std::optional<RevThreadCtx> Ctx = GetCtx(pid);
+  if( Ctx.has_value() ){
+    Ctx->SetState(ThreadState::Ready);
+    return true;
+  }
+  return false;
+}
+
+ThreadState RevProc::GetThreadState(uint32_t pid){
+  return ThreadTable.find(pid)->second.GetState();
+}
+
 
 // EOF

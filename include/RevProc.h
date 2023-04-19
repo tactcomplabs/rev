@@ -32,6 +32,7 @@
 #include <time.h>
 #include <random>
 #include <queue>
+#include <optional>
 #include <inttypes.h>
 #include <utility>
 
@@ -44,7 +45,16 @@
 #include "RevInstTables.h"
 #include "PanExec.h"
 #include "RevPrefetcher.h"
-#include "RevProcCtx.h"
+#include "RevThreadCtx.h"
+
+/* NOTE:
+ * The following are included to allow for a notion of "Priviledge"
+ * Eventually adding full CSR support (ie. Supervisor Mode, Machine Mode, etc.)
+ * will be better but by including the ECALL implementations in RevProc gives access
+ * RevProc and allows for higher priviledge access to operate on Ctx objects
+*/
+#include "RevSysCallInterface.h"
+#include "RevSysCalls.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
@@ -80,7 +90,7 @@ namespace SST{
 
       /// RevProc: retrieve the local PC for the correct feature set
       uint64_t GetPC();
-
+  
       /// RevProc: Debug mode read a register
       bool DebugReadReg(unsigned Idx, uint64_t *Value);
 
@@ -120,7 +130,35 @@ namespace SST{
 
       RevProcStats GetStats();
 
+      /* Software Process Table */
+      bool AddCtx(RevThreadCtx& Ctx);
+      RevThreadCtx& CreateCtx(uint32_t pid,
+                              uint64_t pc,
+                              uint32_t parent_pid,
+                              uint64_t MemStartAddr,
+                              uint64_t MemSize);
+      std::optional<RevThreadCtx> GetCtx(uint32_t pid);
+      bool RetireThread(uint32_t pid);
+      bool SaveRegFiles(RevRegFile);
+      ThreadState GetThreadState(uint32_t pid);
+      bool SetState(ThreadState, uint32_t pid);
+      bool PauseThread(uint32_t pid);
+      bool ReadyThread(uint32_t pid);
+
+      uint32_t GetActivePID(){ return ActivePID; }
+
+      // FIXME: This will likely not be a forever method
+      std::unordered_map<uint32_t, RevThreadCtx> GetThreadTable(){ return ThreadTable;} 
+      std::vector<uint32_t> GetPIDs();
+      
+      
+      RevThreadCtx ExtractCtx(uint32_t pid); ///< RevProc: Fetches Ctx by pid and removes it from this procs ThreadTable
+
     private:
+      
+      std::unordered_map<uint32_t, RevThreadCtx> ThreadTable; ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
+      uint32_t ActivePID = id;  ///< RevProc: First software thread id = processor id to avoid collisions
+
       bool Halted;              ///< RevProc: determines if the core is halted
       bool Stalled;             ///< RevProc: determines if the core is stalled on instruction fetch
       bool SingleStep;          ///< RevProc: determines if we are in a single step

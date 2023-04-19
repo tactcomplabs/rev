@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=chdir
-CC=riscv64-unknown-linux-gnu-gcc
+CC=riscv64-unknown-linux-musl-gcc
 #ARCH=rv64g
 ARCH=rv64imafdc
 

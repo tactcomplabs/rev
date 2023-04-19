@@ -13,6 +13,7 @@
 
 #include <bitset>
 #include <map>
+#include <unordered_map>
 #include "RevMem.h"
 #include "RevFeature.h"
 
@@ -213,11 +214,48 @@ static uint32_t twos_compl(uint32_t binary, int bits){
 namespace SST{
   namespace RevCPU {
 
+    /* Ref: RISC-V Priviledged Spec (pg. 39) */
+    enum EXCEPTION_CAUSE {
+      MISALIGNED_INST_ADDR = 0,
+      INST_ACCESS_FAULT = 1,
+      ILLEGAL_INST = 2,
+      BREAKPOINT = 3,
+      LOAD_ADDR_MISALIGNED = 4,
+      LOAD_ACCESS_FAULT = 5,
+      STORE_AMO_ADDR_MISALIGNED = 6,
+      STORE_AMO_ACCESS_FAULT = 7,
+      ECALL_USER_MODE = 8,
+      ECALL_SUPERVISOR_MODE = 9,
+      ECALL_MACHINE_MODE = 11,
+      INST_PAGE_FAULT = 12,
+      LOAD_PAGE_FAULT = 13,
+      STORE_AMO_PAGE_FAULT = 15
+    };
+
     typedef struct{
       uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
       uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
       float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
       double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
+  
+      // uint32_t RV32_CSR[_REV_NUM_REGS_];    ///< RevRegFile: RV32 CSR register file (Incomplete)
+      // uint64_t RV64_CSR[_REV_NUM_REGS_];    ///< RevRegFile: RV64 CSR register file (Incomplete)
+      // FIXME: Not bothering with specific indices for csr registers at first 
+
+      /* Supervisor Mode CSRs */
+      uint64_t RV64_SSTATUS; // During ecall, previous priviledge mode is saved in this register (Incomplete)
+      uint64_t RV64_SEPC;    // Holds address of instruction that caused the exception (ie. ECALL)
+      uint64_t RV64_SCAUSE;  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
+      uint64_t RV64_STVAL;   // Used to store additional info about exception (ECALL does not use this and sets value to 0)
+      uint64_t RV64_STVEC;   // Holds the base address of the exception handling routine (trap handler) that the processor jumps to when and exception occurs
+
+      uint32_t RV32_SSTATUS;
+      uint32_t RV32_SEPC;
+      uint32_t RV32_SCAUSE;
+      uint32_t RV32_STVAL;
+      uint32_t RV32_STVEC;
+
+      
 
       bool RV32_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
       bool RV64_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
@@ -263,7 +301,7 @@ namespace SST{
       RegGPR        = 2,  ///< RevRegClass: GPR reg file
       RegCSR        = 3,  ///< RevRegClass: CSR reg file
       RegFLOAT      = 4   ///< RevRegClass: Float register file
-    }RevRegClass;         ///< Rev CPU Register Classes
+   }RevRegClass;         ///< Rev CPU Register Classes
 
     typedef enum{
       FUnk          = 0,  ///< RevRegClass: Imm12 is not used

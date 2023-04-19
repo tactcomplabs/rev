@@ -13,7 +13,7 @@
 
 #include "../RevInstTable.h"
 #include "../RevExt.h"
-#include "../RevSysCalls.h"
+// #include "../RevSysCalls.h"
 
 using namespace SST::RevCPU;
 
@@ -835,19 +835,59 @@ namespace SST{
         return true;  // temporarily disabled
       }
 
-      static bool ecall(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        // x17 (a7) is the code for ecall
+      static bool sret(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
         if( F->IsRV32() ){
-          uint32_t code = R->RV32[17];
-          R->RV32[10] = SystemCalls::jump_table32.at(code)(*R, *M, Inst);
+          // Set PC to instruction that raised exception (ie. ECALL)
+          R->RV32_PC = R->RV32_SEPC;
+          // technically should also update previous mode and all that jazz 
+          // but that's for another day
           R->RV32_PC += Inst.instSize;
-        }else{
-          uint64_t code = R->RV64[17];
-          R->RV64[10] = SystemCalls::jump_table64.at(code)(*R, *M, Inst);
+        }
+        else{
+          R->RV64_PC = R->RV64_SEPC;
           R->RV64_PC += Inst.instSize;
         }
+      }
+
+      static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+        // Save PC of Ecall to *epc register
+        if( F->IsRV32() ){
+          R->RV32_SEPC = R->RV32_PC; // Save PC of instruction that raised exception
+          R->RV32_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV32_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
+          
+        }
+        else {
+          /* 
+          * In reality this should be getting/setting a LOT of bits inside the 
+          * CSRs however because we are only concerned with ecall right now it's 
+          * not a concern.
+          * NOTE: Normally you would have to check if you are currently executing in 
+          *       Supervisor mode already and set RV64_MEPC instead but we don't need 
+          *       to worry about machine mode with the ecalls we are supporting
+          */
+          R->RV64_SEPC = R->RV64_PC; // Save PC of instruction that raised exception
+          R->RV64_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV64_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
+          // Trap Handler is not implemented because we only have one exception 
+          // So we don't have to worry about setting `mtvec` reg
+          R->RV64_PC += Inst.instSize;
+        } 
         return true;
       }
+      // static bool ecall(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      //   // x17 (a7) is the code for ecall
+      //   if( F->IsRV32() ){
+      //     uint32_t code = R->RV32[17];
+      //     R->RV32[10] = SystemCalls::jump_table32.at(code)(*R, *M, Inst);
+      //     R->RV32_PC += Inst.instSize;
+      //   }else{
+      //     uint64_t code = R->RV64[17];
+      //     R->RV64[10] = SystemCalls::jump_table64.at(code)(*R, *M, Inst);
+      //     R->RV64_PC += Inst.instSize;
+      //   }
+      //   return true;
+      // }
 
       static bool ebreak(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){

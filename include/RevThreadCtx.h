@@ -27,41 +27,51 @@ Memory Stuff?
 ***/
 
 #include <cstdint>
+#include <vector>
 
 enum class ThreadState {
   Running,
-  Ready,
+  Ready,  
   Waiting,
   Terminated,
-  Aborted
+  Aborted,
+  Retired // TODO: Should this be a state
 };
 
 class RevThreadCtx {
 public:
-  RevThreadCtx(ThreadState initialState) : state(initialState) {}
+  RevThreadCtx(uint32_t pid, uint64_t pc, 
+               uint32_t parentPID, ThreadState initialState, 
+               uint64_t memInfoStartAddr, uint64_t memInfoSize); // : State(initialState) {}
   RevThreadCtx(RevThreadCtx &&) = default;
   RevThreadCtx(const RevThreadCtx &) = default;
   RevThreadCtx &operator=(RevThreadCtx &&) = default;
   RevThreadCtx &operator=(const RevThreadCtx &) = default;
   ~RevThreadCtx();
 
-  ThreadState GetPID() const { return state; }
-  void SetPID(uint32_t NewPID) { pid = NewPID; }
+  uint32_t GetPID() const { return PID; }
+  void SetPID(uint32_t NewPID) { PID = NewPID; }
 
-  ThreadState GetState() const { return state; }
-  void SetState(ThreadState newState) { state = newState; }
-  bool isRunning(){ return ( state == ThreadState::Running ); }
-  bool isReady(){ return (state == ThreadState::Ready); }
-  bool isWaiting(){ return (state == ThreadState::Waiting); }
-  bool isTerminated(){ return (state == ThreadState::Terminated); }
-  bool isAborted(){ return (state == ThreadState::Aborted); }
+  ThreadState GetState() const { return State; }
+  void SetState(ThreadState newState) { State = newState; }
 
-  ThreadState GetPC() const { return state; }
+  bool isRunning(){ return ( State == ThreadState::Running ); }
+  bool isReady(){ return (State == ThreadState::Ready); }
+  bool isWaiting(){ return (State == ThreadState::Waiting); }
+  bool isTerminated(){ return (State == ThreadState::Terminated); }
+  bool isAborted(){ return (State == ThreadState::Aborted); }
+
+  uint64_t GetPC() const { return PC; }
   void SetPC(uint32_t NewPC) { PC = NewPC; }
 
 private:
-  uint32_t pid;
-  ThreadState state;
+  uint32_t PID;
+  std::vector<uint32_t> ChildrenPIDs;
+  uint32_t ParentPID;
+  uint64_t MemInfoStartAddr;
+  uint64_t MemInfoSize;
+  ThreadState State;
+
   uint64_t PC;
   
 };
