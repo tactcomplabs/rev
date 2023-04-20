@@ -4,7 +4,7 @@
 
 #include <unistd.h>
 
-struct RevFork {
+struct RevClone {
   // ecall (a7 = 2) -> fork
   static const int value = 17; 
   

@@ -7,7 +7,7 @@ RevThreadCtx::RevThreadCtx(uint32_t pid, uint64_t pc,
                uint64_t startAddr, uint64_t memSize,
                            RevRegFile regFile)
 : PID(pid), PC(pc), ParentPID(parentPID), State(ThreadState::Ready),
-  MemInfoStartAddr(startAddr), MemInfoSize(memSize), RegFile(regFile) {}
+  MemInfoStartAddr(startAddr), MemInfoSize(memSize), RegFile(regFile){}
 
 
 RevThreadCtx::~RevThreadCtx() {

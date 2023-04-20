@@ -129,11 +129,11 @@ namespace SST{
       /* Software Process Table */
       bool AddCtx(RevThreadCtx& Ctx);
       bool CreateCtx(uint32_t pid,
-                              uint64_t pc,
-                              uint32_t parent_pid,
-                              ThreadState InitialThreadState,
-                              uint64_t MemStartAddr,
-                              uint64_t MemSize);
+                     uint64_t pc,
+                     uint32_t parent_pid,
+                     ThreadState InitialThreadState,
+                     uint64_t MemStartAddr,
+                     uint64_t MemSize);
       std::optional<RevThreadCtx> GetCtx(uint32_t pid);
       bool RetireThread(uint32_t pid);
       bool SaveRegFiles(RevRegFile);

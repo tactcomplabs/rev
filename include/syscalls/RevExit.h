@@ -22,10 +22,10 @@ struct RevExit{
     }
     else if (std::is_same<RiscvArchType, Riscv64>::value){
       const uint64_t status = RegFile.RV64[10];
-      const std::string ExitString = "Encountered exit code with status = " + std::to_string(status) + "\n";
+      const std::string ExitString = "ECALL: Encountered exit code with status = " + std::to_string(status) + "\n";
        
       /* Check if the active thread is the original */
-      if( Proc.GetActiveCtx().GetParentPID() == -1 ){
+      if( Proc.GetActiveCtx().GetParentPID() == 0 ){
         std::cout << "ORIGIN PROCESS FOUND... EXITING" << std::endl;
         output->fatal(CALL_INFO, -1, ExitString.c_str());
         exit(status);

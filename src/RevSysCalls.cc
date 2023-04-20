@@ -3,7 +3,7 @@
 // #include "../include/syscalls/RevWrite.h"
 // #include "../include/syscalls/RevPwrite.h"
 #include "../include/syscalls/RevFork.h"
-#include "../include/syscalls/RevSysfs.h"
+#include "../include/syscalls/RevRTSigProcMask.h"
 // #include "../include/syscalls/RevClone.h"
 #include "../include/syscalls/RevExit.h"
 // #include "../include/syscalls/RevGetPID.h"
@@ -20,7 +20,7 @@ std::unordered_map<int, systemcall_t> SystemCalls::jump_table32 = {
   // { RevClone::value, RevClone::ECall<Riscv32> },
   { RevExit::value, RevExit::ECall<Riscv32> },
   { RevFork::value, RevFork::ECall<Riscv32> },
-  { RevSysfs::value, RevSysfs::ECall<Riscv32> },
+  { RevRTSigProcMask::value, RevRTSigProcMask::ECall<Riscv32> },
   // { RevGetPID::value, RevGetPID::ECall<Riscv32> }
 };
 std::unordered_map<int, systemcall_t> SystemCalls::jump_table64 = {
@@ -32,6 +32,6 @@ std::unordered_map<int, systemcall_t> SystemCalls::jump_table64 = {
   // { RevClone::value, RevClone::ECall<Riscv64> },
   { RevExit::value, RevExit::ECall<Riscv64> },
   { RevFork::value, RevFork::ECall<Riscv64> },
-  { RevSysfs::value, RevSysfs::ECall<Riscv64> },
+  { RevRTSigProcMask::value, RevRTSigProcMask::ECall<Riscv64> },
   // { RevGetPID::value, RevGetPID::ECall<Riscv64> }
 };

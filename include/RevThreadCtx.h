@@ -56,6 +56,7 @@ public:
   void SetPID(uint32_t NewPID) { PID = NewPID; }
 
   uint32_t GetParentPID() const { return ParentPID; }
+  void SetParentPID(uint32_t pid) { ParentPID = pid; }
 
   ThreadState GetState() const { return State; }
   void SetState(ThreadState newState) { State = newState; }
@@ -80,6 +81,8 @@ public:
   uint64_t GetPC() const { return PC; }
   void SetPC(uint32_t NewPC) { PC = NewPC; }
 
+  bool HasParent(){ return hasParent; }
+
 private:
   uint32_t PID;
   std::vector<uint32_t> ChildrenPIDs;
@@ -88,6 +91,7 @@ private:
   uint64_t MemInfoSize;
   ThreadState State;
   RevRegFile RegFile;
+  bool hasParent = false; 
 
   uint64_t PC;
   

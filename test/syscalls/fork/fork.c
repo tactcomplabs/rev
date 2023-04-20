@@ -19,6 +19,7 @@ int main() {
       // ssize_t child_bytes_written = write(STDOUT_FILENO, &child_msg, sizeof(child_msg));
     _Exit(0);
     } else { // This is the parent process
+    _Exit(0);
     }
 
     return 0;

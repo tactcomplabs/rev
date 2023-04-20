@@ -4,13 +4,16 @@
 
 #include <unistd.h>
 
-struct RevSysfs {
+
+
+// NOTE: This is not implemented at all... there is a call to ECALL 135 in fork.s 
+struct RevRTSigProcMask {
   // ecall (a7 = 2) -> fork
   static const int value = 135;
   
   template<typename RiscvArchType>
   static int ECall(RevProc& Proc) {
-    return 1;
+    return 0;
   }
 };
 // struct RevClone {

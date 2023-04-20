@@ -76,11 +76,17 @@ RevProc::RevProc( unsigned Id,
   Stats.percentEff = 0.0;
   Stats.floatsExec = 0;
 
+  // FIXME: Feel like this shouldn't be hardcoded
+  uint32_t FirstPID = 1024 + Id;
   // ThreadCtx Stuff
-  RevThreadCtx Ctx = RevThreadCtx(static_cast<uint32_t>(Id), RegFile[threadToExec].RV64_PC, static_cast<uint32_t>(-1), ThreadState::Running, Mem->GetStackTop(), DEFAULT_THREAD_MEM_SIZE, RegFile[threadToExec]);
-  ThreadTable.emplace(Id, Ctx);
+  RevThreadCtx *Ctx = new RevThreadCtx(FirstPID, RegFile[threadToExec].RV64_PC, 0, ThreadState::Running, Mem->GetStackTop(), DEFAULT_THREAD_MEM_SIZE, RegFile[threadToExec]);
+  // TODO: Make this not hardcoded here
+  // Ctx.SetPID(FirstPID);
+  // Ctx.SetParentPID(0);
+
   // ThreadTable.insert_or_assign(std::make_pair<Id, Ctx>);
-  ActivePID = Id;
+  // SetActivePID(Ctx->GetPID());
+  ActivePID = FirstPID;
 }
 
 RevProc::~RevProc(){
@@ -1814,11 +1820,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         if( feature->IsRV32() ){
           uint32_t code = RegFile[threadToExec].RV32[17];
           RegFile[threadToExec].RV32[10] = SystemCalls::jump_table32.at(code)(*this);
-          // RegFile[threadToExec].RV32_PC += Inst.instSize;
           RegFile[threadToExec].RV32_SCAUSE = 0;
         }else{
           uint64_t code = RegFile[threadToExec].RV64[17];
-          std::cout << "FOUND ECALL WITH CODE: " << code << std::endl;
+          std::cout << "THREAD with ID = " << ActivePID << " FOUND ECALL WITH CODE: " << code << std::endl;
           std::cout << "PRE ECALL THREAD ID: " << this->GetActivePID() << std::endl;
           RegFile[threadToExec].RV64[10] = SystemCalls::jump_table64.at(code)(*this);
           std::cout << "POST ECALL THREAD ID: " << this->GetActivePID() << std::endl;
@@ -2015,7 +2020,11 @@ std::vector<uint32_t> RevProc::GetPIDs(){
  */
 bool RevProc::CreateCtx(uint32_t pid, uint64_t pc, uint32_t parent_pid,
                                  ThreadState InitialThreadState, uint64_t MemStartAddr, uint64_t MemSize){
-  RevThreadCtx* NewCtx = new RevThreadCtx{pid, pc, parent_pid, ThreadState::Ready, MemStartAddr, MemSize, this->GetHWThreadToExecRegFile()};
+  // TODO: Verify there isn't a better way to copy the regfile
+  RevRegFile ChildRegFile;
+  ChildRegFile = this->GetHWThreadToExecRegFile();
+  RevThreadCtx* NewCtx = new RevThreadCtx{pid, pc, parent_pid, ThreadState::Ready,
+                                          MemStartAddr, MemSize, ChildRegFile};
   // TODO: Should CreateCtx automatically add it to its own ThreadTable?
   // TODO: Will we ever not duplicate the parents regfile?
   ThreadTable.emplace(pid, *NewCtx);
