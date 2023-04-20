@@ -45,6 +45,7 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.lwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
+        Inst.imm = ((Inst.imm & 0b111111)*4);
 
         return lw(F,R,M,Inst);
       }
@@ -53,6 +54,7 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
+        Inst.imm = ((Inst.imm & 0b111111)*4);
 
         return sw(F,R,M,Inst);
       }
@@ -79,7 +81,9 @@ namespace SST{
                      RevMem *M, RevInst Inst) {
         // c.j $imm = jal x0, $imm
         Inst.rd = 0; // x0
-        Inst.imm = Inst.jumpTarget;
+        //Inst.imm = Inst.jumpTarget;
+        SEXT(Inst.imm, Inst.jumpTarget, 12);
+        std::cout << "executing C.J : Imm=0x" << std::hex << Inst.imm << std::dec << std::endl;
 
         return jal(F,R,M,Inst);
       }
@@ -142,7 +146,9 @@ namespace SST{
         // c.beqz %rs1, $imm = beq %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = Inst.offset;
+        //Inst.imm = Inst.offset;
+        Inst.imm = Inst.offset & 0b111111;
+        //SEXT(Inst.imm, Inst.offset, 6);
 
         return beq(F,R,M,Inst);
       }
@@ -152,7 +158,9 @@ namespace SST{
         // c.bnez %rs1, $imm = bne %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = Inst.offset;
+        //Inst.imm = Inst.offset;
+        Inst.imm = Inst.offset & 0b111111;
+        //SEXT(Inst.imm, Inst.offset, 6);
 
         return bne(F,R,M,Inst);
       }
@@ -179,6 +187,8 @@ namespace SST{
       static bool caddi(RevFeature *F, RevRegFile *R,
                        RevMem *M, RevInst Inst) {
         // c.addi %rd, $imm = addi %rd, %rd, $imm
+        uint32_t tmp = Inst.imm & 0b111111;
+        SEXT(Inst.imm, tmp, 6);
         Inst.rs1 = Inst.rd;
         return addi(F,R,M,Inst);
       }

@@ -22,9 +22,10 @@ namespace SST{
       // Compressed instructions
       static bool cldsp(RevFeature *F, RevRegFile *R,
                         RevMem *M, RevInst Inst) {
-        // c.lwsp rd, $imm = lw rd, x2, $imm
+        // c.ldsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
-        ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        Inst.imm = ((Inst.imm & 0b111111)*8);
 
         return ld(F,R,M,Inst);
       }
@@ -33,7 +34,8 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
-        ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        Inst.imm = ((Inst.imm & 0b111111)*8);
 
         return sd(F,R,M,Inst);
       }
@@ -104,6 +106,10 @@ namespace SST{
                     REVMEM_FLAGS(0x00));
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;
+        if( R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)) == 0x88d08 ){
+          std::cout << "Loading from 0x88d08" << std::endl;
+          std::cout << "x[" << Inst.rd << "] = 0x" << std::hex << R->RV64[Inst.rd] << std::dec << std::endl;
+        }
         return true;
       }
 
