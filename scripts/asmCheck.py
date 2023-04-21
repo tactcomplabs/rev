@@ -35,6 +35,8 @@ for line in sstLines:
   if "RDT:" in line:
     PC = line.split("PC = ")[1].split(' ')[0]
     so = line.split("Inst:")[1].strip()
-    o = '{:<60} {:<3} {:<60}'.format(asmHash[PC].strip(),":::", so)
     if PC in asmHash:
+      o = '{:<60} {:<3} {:<60}'.format(asmHash[PC].strip(),":::", so)
       print(o)
+    else:
+      print("WARNING: PC " + PC + " not found in asm file, but was executed by Rev")
