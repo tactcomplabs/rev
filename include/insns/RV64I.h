@@ -46,7 +46,7 @@ namespace SST{
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
         Inst.imm = ((Inst.imm&0b11111)*8);
-
+        std::cout << "ld src = 0x" << std::hex << R->RV64[Inst.rs1] << std::dec << std::endl;
         return ld(F,R,M,Inst);
       }
 
@@ -55,7 +55,7 @@ namespace SST{
         // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*8);
+        Inst.imm = ((Inst.imm&0b111111)*8);
 
         return sd(F,R,M,Inst);
       }
@@ -64,6 +64,8 @@ namespace SST{
                          RevMem *M, RevInst Inst) {
         // c.addiw %rd, $imm = addiw %rd, %rd, $imm
         Inst.rs1 = Inst.rd;
+        uint64_t tmp = Inst.imm & 0b111111;
+        SEXT(Inst.imm, tmp, 6);
 
         return addiw(F,R,M,Inst);
       }

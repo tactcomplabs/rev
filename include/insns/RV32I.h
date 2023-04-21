@@ -37,7 +37,8 @@ namespace SST{
           }
           return true;
         }
-        Inst.imm = (Inst.imm & 0b011111111)*4;
+        //Inst.imm = (Inst.imm & 0b011111111)*4;
+        Inst.imm = (Inst.imm & 0b11111111)*4;
         return addi(F,R,M,Inst);
       }
 
@@ -64,6 +65,7 @@ namespace SST{
         // c.lw rd, rs1, $imm = lw rd, $imm(rs1)
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = ((Inst.imm & 0b11111)*4);
 
         return lw(F,R,M,Inst);
       }
@@ -73,6 +75,7 @@ namespace SST{
         // c.sw rs2, rs1, $imm = sw rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
+        Inst.imm = ((Inst.imm & 0b11111)*4);
 
         return sw(F,R,M,Inst);
       }
@@ -83,7 +86,6 @@ namespace SST{
         Inst.rd = 0; // x0
         //Inst.imm = Inst.jumpTarget;
         SEXT(Inst.imm, Inst.jumpTarget, 12);
-        std::cout << "executing C.J : Imm=0x" << std::hex << Inst.imm << std::dec << std::endl;
 
         return jal(F,R,M,Inst);
       }
@@ -99,8 +101,9 @@ namespace SST{
 
       static bool CRFUNC_1000(RevFeature *F, RevRegFile *R,
                               RevMem *M, RevInst Inst){
-        if( Inst.rs2 != 0 )
+        if( Inst.rs2 != 0 ){
           return cmv(F,R,M,Inst);
+        }
         return cjr(F,R,M,Inst);
       }
 
@@ -169,6 +172,7 @@ namespace SST{
                       RevMem *M, RevInst Inst) {
         // c.li %rd, $imm = addi %rd, x0, $imm
         Inst.rs1 = 0;
+        SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
         return addi(F,R,M,Inst);
       }
 
@@ -176,10 +180,12 @@ namespace SST{
                        RevMem *M, RevInst Inst) {
         if( Inst.rd == 2 ){
           // c.addi16sp
-           SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
+           //SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
+           SEXT(Inst.imm, (Inst.imm & 0b111111)*16, 6);
           return addi(F,R,M,Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
+          SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
           return lui(F,R,M,Inst);
         }
       }
@@ -268,7 +274,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           R->RV64[Inst.rd] = 0x00;
-          SEXT(R->RV64[Inst.rd], Inst.imm << 12, 32); 
+          SEXT(R->RV64[Inst.rd], Inst.imm << 12, 32);
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -314,6 +320,7 @@ namespace SST{
           R->RV32[0] = 0x00;  // ensure that x0 = 0
         }else{
           TMP64PC = R->RV64_PC + Inst.instSize;
+          std::cout << "JALR Target PC = 0x" << std::hex << TMP64PC << std::dec << std::endl;
           R->RV64_PC = (td_u64(R->RV64[Inst.rs1],64) + td_u64(Inst.imm,12)) & ~(1<<0);
           R->RV64[Inst.rd] = TMP64PC;
           R->RV64[0] = 0x00ull;  // ensure that x0 = 0
