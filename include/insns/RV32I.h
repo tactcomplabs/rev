@@ -85,7 +85,7 @@ namespace SST{
         // c.j $imm = jal x0, $imm
         Inst.rd = 0; // x0
         //Inst.imm = Inst.jumpTarget;
-        SEXT(Inst.imm, Inst.jumpTarget, 12);
+        SEXT(Inst.imm, Inst.jumpTarget&0b11111111111, 12);
 
         return jal(F,R,M,Inst);
       }
