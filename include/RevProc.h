@@ -108,6 +108,9 @@ namespace SST{
       /// RevProc: Handle ALU faults
       void HandleALUFault(unsigned width);
 
+      /// RevProc: Initialize ThreadTable & First Thread
+      uint32_t InitThreadTable();
+
       class RevProcStats {
         public:
           uint64_t totalCycles;
@@ -128,13 +131,8 @@ namespace SST{
 
       /* Software Process Table */
       bool AddCtx(RevThreadCtx& Ctx);
-      bool CreateCtx(uint32_t pid,
-                     uint64_t pc,
-                     uint32_t parent_pid,
-                     ThreadState InitialThreadState,
-                     uint64_t MemStartAddr,
-                     uint64_t MemSize);
-      std::optional<RevThreadCtx> GetCtx(uint32_t pid);
+      uint32_t CreateChildCtx();
+      RevThreadCtx& GetCtx(uint32_t pid);
       bool RetireThread(uint32_t pid);
       bool SaveRegFiles(RevRegFile);
       ThreadState GetThreadState(uint32_t pid);
@@ -145,22 +143,25 @@ namespace SST{
       uint32_t GetActivePID(){ return ActivePID; }
       uint32_t SetActivePID(uint32_t NewActivePID){ ActivePID = NewActivePID; }
 
-      RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(GetActivePID()); }
+      RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(ActivePID); }
 
       void RestoreRegFile(RevThreadCtx& Ctx){ RegFile[threadToExec] = Ctx.GetRegFile(); }
       const char&& GetThreadMemRef(uint32_t pid);
-      // FIXME: This will likely not be a forever method
-      std::unordered_map<uint32_t, RevThreadCtx>& GetThreadTable(){ return ThreadTable;} 
+  
+     // FIXME: This will likely not be a forever method
+      // std::unordered_map<uint32_t, RevThreadCtx>& GetThreadTable(){ return ThreadTable;} 
       std::vector<uint32_t> GetPIDs();
+
+      bool RetireAndSwap();
       
+      bool UpdateCtx();
       
+      std::unordered_map<uint32_t, RevThreadCtx> ThreadTable; ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
       // RevThreadCtx& ExtractCtx(uint32_t pid); ///< RevProc: Fetches Ctx by pid and removes it from this procs ThreadTable
 
     private:
       
-      std::unordered_map<uint32_t, RevThreadCtx> ThreadTable; ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
-      RevThreadCtx *Ctx;
-      uint32_t ActivePID = id;  ///< RevProc: First software thread id = processor id to avoid collisions
+      uint32_t ActivePID;  ///< RevProc: First software thread id = processor id to avoid collisions
 
       bool Halted;              ///< RevProc: determines if the core is halted
       bool Stalled;             ///< RevProc: determines if the core is stalled on instruction fetch

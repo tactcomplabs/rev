@@ -42,21 +42,20 @@ enum class ThreadState {
 
 class RevThreadCtx {
 public:
-  RevThreadCtx(uint32_t pid, uint64_t pc, 
-               uint32_t parentPID, ThreadState initialState, 
-               uint64_t memInfoStartAddr, uint64_t memInfoSize,
-               RevRegFile regFile); // : State(initialState) {}
+  RevThreadCtx(uint32_t pid, uint32_t parentPID, 
+               ThreadState initialState, RevRegFile regFile,
+               uint64_t memInfoStartAddr, uint64_t memInfoSize); // : State(initialState) {}
   // RevThreadCtx(RevThreadCtx &&) = default;
   // RevThreadCtx(const RevThreadCtx &) = default;
   // RevThreadCtx &operator=(RevThreadCtx &&) = default;
   // RevThreadCtx &operator=(const RevThreadCtx &) = default;
   ~RevThreadCtx();
 
-  uint32_t GetPID() const { return PID; }
+  uint32_t GetPID() { return PID; }
   void SetPID(uint32_t NewPID) { PID = NewPID; }
 
   uint32_t GetParentPID() const { return ParentPID; }
-  void SetParentPID(uint32_t pid) { ParentPID = pid; }
+  void SetParentPID(uint32_t parent_pid) { ParentPID = parent_pid; }
 
   ThreadState GetState() const { return State; }
   void SetState(ThreadState newState) { State = newState; }
@@ -77,11 +76,6 @@ public:
   bool isWaiting(){ return (State == ThreadState::Waiting); }
   bool isTerminated(){ return (State == ThreadState::Terminated); }
   bool isAborted(){ return (State == ThreadState::Aborted); }
-
-  uint64_t GetPC() const { return PC; }
-  void SetPC(uint32_t NewPC) { PC = NewPC; }
-
-  bool HasParent(){ return hasParent; }
 
 private:
   uint32_t PID;

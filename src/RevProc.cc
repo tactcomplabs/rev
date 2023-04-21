@@ -67,6 +67,15 @@ RevProc::RevProc( unsigned Id,
     output->fatal(CALL_INFO, -1,
                   "Error: failed to reset the core resources for core=%d\n", id );
 
+  // Initialize ThreadTable
+  ActivePID = InitThreadTable();
+  std::cout << "ActivePID : AKA Return Value from InitThreadTable" << ActivePID << std::endl;
+  if( ActivePID < 0 )
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to initialize the ThreadTable for core=%d\n", id );
+
+  std::cout << "GetActivePID() " << GetActivePID() << std::endl;
+
   Stats.totalCycles = 0;
   Stats.cyclesBusy = 0;
   Stats.cyclesIdle_Total = 0;
@@ -76,17 +85,6 @@ RevProc::RevProc( unsigned Id,
   Stats.percentEff = 0.0;
   Stats.floatsExec = 0;
 
-  // FIXME: Feel like this shouldn't be hardcoded
-  uint32_t FirstPID = 1024 + Id;
-  // ThreadCtx Stuff
-  RevThreadCtx *Ctx = new RevThreadCtx(FirstPID, RegFile[threadToExec].RV64_PC, 0, ThreadState::Running, Mem->GetStackTop(), DEFAULT_THREAD_MEM_SIZE, RegFile[threadToExec]);
-  // TODO: Make this not hardcoded here
-  // Ctx.SetPID(FirstPID);
-  // Ctx.SetParentPID(0);
-
-  // ThreadTable.insert_or_assign(std::make_pair<Id, Ctx>);
-  // SetActivePID(Ctx->GetPID());
-  ActivePID = FirstPID;
 }
 
 RevProc::~RevProc(){
@@ -1813,6 +1811,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
        * Exception Handling
        * - Currently this is only for ecall
       */
+
       
       if( RegFile[threadToExec].RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE || RegFile[threadToExec].RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE ){ // Ecall found
         // x17 (a7) is the code for ecall
@@ -1824,12 +1823,18 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         }else{
           uint64_t code = RegFile[threadToExec].RV64[17];
           std::cout << "THREAD with ID = " << ActivePID << " FOUND ECALL WITH CODE: " << code << std::endl;
-          std::cout << "PRE ECALL THREAD ID: " << this->GetActivePID() << std::endl;
+          std::cout << "PRE ECALL THREAD ID: " << ActivePID << std::endl;
           RegFile[threadToExec].RV64[10] = SystemCalls::jump_table64.at(code)(*this);
-          std::cout << "POST ECALL THREAD ID: " << this->GetActivePID() << std::endl;
-          RegFile[threadToExec].RV64_SCAUSE = 0;
+          // if(!UpdateCtx()){
+          //   output->fatal(CALL_INFO, -1,
+          //           "Error: FAILED TO UPDATE CTX");
+          // }
+          std::cout << "POST ECALL THREAD ID: " << ActivePID << std::endl;
+          RegFile[threadToDecode].RV64_SCAUSE = 0;
         }
+        // SetPC(RegFile[threadToExec].RV64_PC + Inst.instSize);
       }
+
 
       Pipeline.push(std::make_pair(threadToExec, Inst));
       bool isFloat = false;
@@ -1930,68 +1935,123 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   // Check for completion states and new tasks
   if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
-    // look for more work on the execution queue
-    // if no work is found, don't update the PC
-    // just wait and spin
-    bool done = true;
-    if( GetPC() == _PAN_FWARE_JUMP_ ){
-      if( PExec != nullptr){
-        uint64_t Addr = 0x00ull;
-        unsigned Idx = 0;
-        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
-        switch( Status ){
-        case PanExec::QExec:
-          output->verbose(CALL_INFO, 5, 0,
-                      "Core %d ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
-                      id, Addr);
-          SetPC(Addr);
-          done = false;
-          break;
-        case PanExec::QNull:
-          // no work to do; spin on the firmware jump PC
-          output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
-                      id, ExecPC);
-          done = false;
-          SetPC(_PAN_FWARE_JUMP_);
-          break;
-        case PanExec::QValid:
-        case PanExec::QError:
-          done = true;
-        default:
-          break;
-        }
+    /*
+     * We need to check if the thread whose PC = 0x00ull is 
+     * the only thread still alive
+     *
+     * We do this by checking its ParentPID = 0. 
+     * If it is, we know we are actually done
+     * Else: Transition control back to ParentPID 
+    */
+    
+    uint32_t ActiveThreadParentPID = GetActiveCtx().GetParentPID();
+    if( ActiveThreadParentPID != 0 ){
+      std::cout << "THREAD EVENT: About to retire child with PID = " << ActivePID << std::endl;
+      if( !RetireAndSwap() ){
+        output->fatal(CALL_INFO, -1, "RETIRE AND SWAP FAILED");
       }
-    }else if( GetPC() == 0x00ull ) {
-      // PAN execution contexts not enabled, this is our last PC
-      done = true;
-    }
+      RegFile[threadToExec] = GetActiveCtx().GetRegFile();
+      std::cout << "New PC: " << GetPC() << std::endl;
+      
+      bool done = false;
+      /*
+       * ActiveThread has a parent
+       * - Retire ActivePID
+       * - Make ParentPID Proc.ActivePID
+       * - 
+       */
+      
+      rtn = false;
+    } else{
 
-    // determine if we have any outstanding memory requests
-    if( mem->outstandingRqsts() ){
-      done = false;
-    }
+      // look for more work on the execution queue
+      // if no work is found, don't update the PC
+      // just wait and spin
+      bool done = true;
+      if( GetPC() == _PAN_FWARE_JUMP_ ){
+        if( PExec != nullptr){
+          uint64_t Addr = 0x00ull;
+          unsigned Idx = 0;
+          PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
+          switch( Status ){
+          case PanExec::QExec:
+            output->verbose(CALL_INFO, 5, 0,
+                        "Core %d ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
+                        id, Addr);
+            SetPC(Addr);
+            done = false;
+            break;
+          case PanExec::QNull:
+            // no work to do; spin on the firmware jump PC
+            output->verbose(CALL_INFO, 6, 0,
+                        "Core %d ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
+                        id, ExecPC);
+            done = false;
+            SetPC(_PAN_FWARE_JUMP_);
+            break;
+          case PanExec::QValid:
+          case PanExec::QError:
+            done = true;
+          default:
+            break;
+          }
+        }
+      }else if( GetPC() == 0x00ull ) {
+        // PAN execution contexts not enabled, this is our last PC
+        done = true;
+      }
 
-    if( done ){
-      // we are really done, return
-      output->verbose(CALL_INFO,2,0,"Program execution complete\n");
-      Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
-      output->verbose(CALL_INFO,2,0,
-                      "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64 " Idle Cycles: %" PRIu64 " Eff: %f\n",
-                      Stats.totalCycles, Stats.cyclesBusy,
-                      Stats.cyclesIdle_Total, Stats.percentEff);
-      output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %" PRIu64 " Inst Retired: %" PRIu64 "\n", \
-                                      mem->memStats.bytesRead, \
-                                      mem->memStats.bytesWritten, \
-                                      mem->memStats.floatsRead, \
-                                      mem->memStats.doublesRead, \
-                                      Stats.floatsExec,
-                                      Retired);
-      return false;
+      // determine if we have any outstanding memory requests
+      if( mem->outstandingRqsts() ){
+        done = false;
+      }
+
+      if( done ){
+        // we are really done, return
+        output->verbose(CALL_INFO,2,0,"Program execution complete\n");
+        Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
+        output->verbose(CALL_INFO,2,0,
+                        "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64 " Idle Cycles: %" PRIu64 " Eff: %f\n",
+                        Stats.totalCycles, Stats.cyclesBusy,
+                        Stats.cyclesIdle_Total, Stats.percentEff);
+        output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %" PRIu64 " Inst Retired: %" PRIu64 "\n", \
+                                        mem->memStats.bytesRead, \
+                                        mem->memStats.bytesWritten, \
+                                        mem->memStats.floatsRead, \
+                                        mem->memStats.doublesRead, \
+                                        Stats.floatsExec,
+                                        Retired);
+        return false;
+      }
     }
   }
 
   return rtn;
+}
+
+uint32_t RevProc::InitThreadTable(){
+  /*
+   * We need to create the first Ctx which will have the following attributes: 
+   * - PID = 1024 + Proc.ID
+   * - ParentPID = 0 : (Only the first thread on every RevProc has ParentPID = 0)
+   * - MemStartAddr : TODO: Figure out if Mem.GetStackTop() is correct 
+   * - 
+  */
+  std::cout << "Initializing ThreadTable" << std::endl;
+  uint32_t FirstPID = 1024 + id;
+  std::cout << "First PID = " << FirstPID <<  std::endl;
+
+  RevThreadCtx DefaultCtx {FirstPID,                   // pid
+                           0,                          // Parent PID 
+                           ThreadState::Running,       // Initial ThreadState
+                           RegFile[threadToExec], // RegFile
+                           mem->GetStackTop(),         // MemStartAddr
+                           4*1024*1024};               // MemSize
+
+  DefaultCtx.SetPID(FirstPID);
+  ThreadTable.emplace(FirstPID, DefaultCtx);
+
+  return FirstPID;
 }
 
 std::vector<uint32_t> RevProc::GetPIDs(){
@@ -2018,17 +2078,31 @@ std::vector<uint32_t> RevProc::GetPIDs(){
  * Create a new Ctx object on this RevProc
  * - Uses GetPC to 
  */
-bool RevProc::CreateCtx(uint32_t pid, uint64_t pc, uint32_t parent_pid,
-                                 ThreadState InitialThreadState, uint64_t MemStartAddr, uint64_t MemSize){
-  // TODO: Verify there isn't a better way to copy the regfile
-  RevRegFile ChildRegFile;
-  ChildRegFile = this->GetHWThreadToExecRegFile();
-  RevThreadCtx* NewCtx = new RevThreadCtx{pid, pc, parent_pid, ThreadState::Ready,
-                                          MemStartAddr, MemSize, ChildRegFile};
-  // TODO: Should CreateCtx automatically add it to its own ThreadTable?
-  // TODO: Will we ever not duplicate the parents regfile?
-  ThreadTable.emplace(pid, *NewCtx);
-  return true;
+// bool RevProc::CreateCtx(uint32_t pid, uint64_t pc, uint32_t parent_pid,
+//                                  ThreadState InitialThreadState, uint64_t MemStartAddr, uint64_t MemSize){
+//   // TODO: Verify there isn't a better way to copy the regfile
+//   RevRegFile ChildRegFile;
+//   ChildRegFile = GetHWThreadToExecRegFile();
+//   RevThreadCtx* NewCtx = new RevThreadCtx{pid, pc, parent_pid, ThreadState::Ready,
+//                                           MemStartAddr, MemSize, ChildRegFile};
+//   // TODO: Should CreateCtx automatically add it to its own ThreadTable?
+//   // TODO: Will we ever not duplicate the parents regfile?
+//   ThreadTable.emplace(pid, *NewCtx);
+//   return true;
+// }
+
+uint32_t RevProc::CreateChildCtx(){
+  RevRegFile ChildRegFile = GetHWThreadToExecRegFile();
+  RevThreadCtx ChildCtx{ ActivePID + 1,
+                         ActivePID,
+                         ThreadState::Ready,
+    ChildRegFile,
+                         ThreadTable.at(ActivePID).GetMemStartAddr() + ThreadTable.at(ActivePID).GetMemSize(),
+                         GetActiveCtx().GetMemSize()
+  }; 
+
+  ThreadTable.emplace(ActivePID + 1, ChildCtx);
+  return ChildCtx.GetPID();
 }
 
 
@@ -2053,13 +2127,12 @@ bool RevProc::CreateCtx(uint32_t pid, uint64_t pc, uint32_t parent_pid,
  * Check if it found it with: 
  * `if( GetCtx(pid).has_value())` to avoid the null case
 */
-std::optional<RevThreadCtx> RevProc::GetCtx(uint32_t pid){
+RevThreadCtx& RevProc::GetCtx(uint32_t pid){
   auto it = ThreadTable.find(pid);
   if( it != ThreadTable.end() ){
     // Thread Exists 
     return it->second;
   }
-  return std::nullopt;
 }
 
 bool RevProc::SetState(ThreadState NewState, uint32_t pid){
@@ -2095,5 +2168,39 @@ ThreadState RevProc::GetThreadState(uint32_t pid){
   return ThreadTable.find(pid)->second.GetState();
 }
 
+bool RevProc::UpdateCtx(){
+  /* 
+   * Called after ECALL_EXCEPTION
+   * - Ensure correct register file 
+   * - Ensure correct PC (setpc)
+   * - Mem shit
+   */
+  std::cout << "PRE-UPDATE a0: " << RegFile[threadToExec].RV64[10] << std::endl;
+  RegFile[threadToExec] = ThreadTable.at(ActivePID).GetRegFile();
+  std::cout << "POST-UPDATE a0: " << RegFile[threadToExec].RV64[10] << std::endl;
+  SetPC(RegFile[threadToExec].RV64_PC);
+  return true;
+}
+/*
+* This function:
+* - Retires the current ActivePID 
+* - Makes the ActivePID = Parent of the old ActivePID
+* - Swaps Ctx
+*/
+bool RevProc::RetireAndSwap(){
+  // RevThreadCtx& ChildCtx = GetActiveCtx();
+  std::cout << "THREAD EVENT: SWAPPING FROM THREAD " << GetActiveCtx().GetPID() << " to its Parent Thread " << GetActiveCtx().GetParentPID() << std::endl;
+  uint32_t ParentPID = GetActiveCtx().GetParentPID();
+  ActivePID = ParentPID;
+  std::cout << "NEW ACTIVE PID: " << ActivePID << std::endl;
+  GetActiveCtx().SetState(ThreadState::Running);
+  std::cout << "THREAD EVENT: PARENT PC = " << std::hex << GetActiveCtx().GetRegFile().RV64_SEPC << std::endl;
 
+  SetPC(GetActiveCtx().GetRegFile().RV64_SEPC);
+  
+  return true;
+
+}
+
+//
 // EOF

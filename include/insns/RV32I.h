@@ -872,7 +872,7 @@ namespace SST{
           // Trap Handler is not implemented because we only have one exception 
           // So we don't have to worry about setting `mtvec` reg
           R->RV64_PC += Inst.instSize;
-          R->RV64_PC += Inst.instSize;
+          // R->RV64_PC += Inst.instSize;
         } 
         return true;
       }

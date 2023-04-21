@@ -12,71 +12,44 @@ struct RevFork {
   static int ECall(RevProc& Proc) {
     RevMem& Mem = Proc.GetMem();
     RevRegFile& RegFile = Proc.GetHWThreadToExecRegFile();
-    std::cout << "INSIDE FORK" << std::endl;
-    RevThreadCtx& ParentCtx = Proc.GetActiveCtx();//Proc.GetThreadTable().find(Proc.GetActivePID())->second;
+    std::cout << "INSIDE FORK with PROC ACTIVE PID = " << Proc.GetActivePID() << std::endl;
 
       // .at(Proc.GetActivePID*()];
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
-      std::cout << "Hello from Software Thread: " << ParentCtx.GetPID() << std::endl;
-      
-      // TODO: Make a better way of allocating the kids starting mem address (Arg 4)
-      uint64_t ChildStartMemAddr = ParentCtx.GetMemStartAddr() + (ParentCtx.GetMemSize() * 2);
-      uint32_t NewPID = *std::max_element(Proc.GetPIDs().begin(), Proc.GetPIDs().end())+1;
-      std::cout << "The New PID will be: " << NewPID << std::endl;
-      if( Proc.CreateCtx(NewPID, ParentCtx.GetPC(),  ParentCtx.GetPID(), ThreadState::Ready,
-                                        ChildStartMemAddr, ParentCtx.GetMemSize() != 0 ) ){
-
-        /* Set Parent to Waiting (NOTE: This will change in the future once we support simultaneous multithreading) */
-        ParentCtx.SetState(ThreadState::Waiting);
-        
-        /* Make the child the new active process */
-        Proc.SetActivePID(NewPID);
-        
-        /* Create a copy of Parents Memory Space */
-        const char* ParentMem[ParentCtx.GetMemSize()];
-        Mem.ReadMem(ParentCtx.GetMemStartAddr(), ParentCtx.GetMemSize(), ParentMem );
-        Mem.WriteMem(ChildStartMemAddr, ParentCtx.GetMemSize(), ParentMem);
-
-
-        // Return 0 to signify we are in the child process
-        return 0;
-      } else {
-        return -1;
-      }
-    } 
-    
+    }
+   
     else if (std::is_same<RiscvArchType, Riscv64>::value){
-      std::cout << "Hello from Software Thread: " << ParentCtx.GetPID() << std::endl;
+
+      RevThreadCtx& ParentCtx = Proc.GetCtx(Proc.GetActivePID());
+      std::cout << "ParentCtx.GetPID() = "<< ParentCtx.GetPID() << std::endl;
+
+      ParentCtx.SetPID(Proc.GetActivePID());
+      // std::cout << "Hello from Software Thread: " << ParentCtx.GetPID() << std::endl;
       
       // TODO: Make a better way of allocating the kids starting mem address (Arg 4)
       // TODO: Move Mem Calculation Function to RevMem
       uint64_t ChildStartMemAddr = ParentCtx.GetMemStartAddr() + (ParentCtx.GetMemSize() * 2);
-      std::cout << "The Child's MemAddr will be: " << std::hex << ChildStartMemAddr << std::endl;
       // TODO: Need to change this to use a global counter
       std::vector<uint32_t> PIDs = Proc.GetPIDs();
-      // std::cout << "PIDs = " << PIDs.data() << std::endl;
-      for( auto it : PIDs ){
-        std::cout << "PID: " << std::to_string(it) << std::endl;
-      }
-      uint32_t NewPID = ParentCtx.GetPID() + 1;
-      std::cout << "The New PID will be: " << NewPID << std::endl;
-      if( Proc.CreateCtx(NewPID, ParentCtx.GetPC(),
-                         ParentCtx.GetPID(), ThreadState::Ready,
-                         ChildStartMemAddr, ParentCtx.GetMemSize()) != 0  ){
 
-        std::cout << "Ctx Created Successfully" << std::endl;
+      uint32_t ParentPID = Proc.GetActivePID();
+      std::cout << "ParentPID = " << ParentPID << std::endl;
+      uint32_t ChildPID = Proc.CreateChildCtx();
+      std::cout << "CHILD PID BEFORE IF: " << ChildPID << std::endl;
+      if( ChildPID > 0 ){
+
 
         /* Set Parent to Waiting (NOTE: This will change in the future once we support simultaneous multithreading) */
-        ParentCtx.SetState(ThreadState::Waiting);
+        Proc.GetCtx(Proc.GetActivePID()).SetState(ThreadState::Waiting);
         
-        /* Make the child the new active process */
-        Proc.SetActivePID(NewPID);
  
         /* Create a copy of Parents Memory Space */
-        const char* ParentMem[ParentCtx.GetMemSize()];
-        Mem.ReadMem(ParentCtx.GetMemStartAddr(), ParentCtx.GetMemSize(), ParentMem );
-        Mem.WriteMem(ChildStartMemAddr, ParentCtx.GetMemSize(), ParentMem);
+        // const char* ParentMem[Proc.ThreadTable.at(ParentPID).GetMemSize()];
+        // Mem.ReadMem(ParentCtx.GetMemStartAddr(), Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem );
+        // Mem.WriteMem(ChildStartMemAddr, Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem);
 
+        /* Make the child the new active process */
+        Proc.SetActivePID(ChildPID);
 
         /* 
          * ===========================================================================================
@@ -99,19 +72,25 @@ struct RevFork {
          * ===========================================================================================
          */
 
-        RegFile.RV64[10] = ParentCtx.GetPID();
+        Proc.ThreadTable.at(ParentPID).GetRegFile().RV64[10] = ParentPID;
+        // RegFile.RV64[10] = ParentPID;
         // RegFile.RV64_PC += Inst.instSize;
         // Proc.GetActiveCtx().GetRegFile().RV64[10] = 0;
-        std::cout << "Parent's a0 Register:" << ParentCtx.GetPID() << std::endl;
         std::cout << "New Active PID: " << Proc.GetActivePID() << std::endl;
 
+        Proc.GetHWThreadToExecRegFile() = Proc.ThreadTable.at(Proc.GetActivePID()).GetRegFile();
       // Return 0 to signify we are in the child process
+      std::cout << "RETURNING 0" << std::endl;
       return 0;
     }
+
       else {
-        return -1;
+        std::cout << "CHILD PID = " << ChildPID << std::endl;
+        return 0;
       }
     }
+
+    std::cout << "RETURNING -1" << std::endl;
     return -1;
   }
 };

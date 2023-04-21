@@ -1,4 +1,8 @@
 set(SysCallSrcs
   RevChdir.h
-  RevMkdirat.h
+  RevFork.h
+  RevWrite.h
+  RevRTSigProcMask.h
+  RevExit.h
+  # RevMkdirat.h
 )
