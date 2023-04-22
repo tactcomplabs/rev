@@ -1784,7 +1784,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     ExecPC = GetPC();
   }
 
-  if( (!RegFile[threadToExec].trigger) && !Halted && (threadToExec != _REV_INVALID_THREAD_ID) && THREAD_CTE[threadToExec]){
+  if( ( (threadToExec != _REV_INVALID_THREAD_ID) && !RegFile[threadToExec].trigger) && !Halted && THREAD_CTE[threadToExec]){
     // trigger the next instruction
     // threadToExec = threadToDecode;
     RegFile[threadToExec].trigger = true;
