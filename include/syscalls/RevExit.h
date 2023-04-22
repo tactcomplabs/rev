@@ -10,7 +10,7 @@ struct RevExit{
   template<typename RiscvArchType>
   static int ECall(RevProc& Proc){
     RevMem& Mem = Proc.GetMem();
-    RevRegFile& RegFile = Proc.GetHWThreadToExecRegFile();
+    RevRegFile& RegFile = Proc.GetActiveCtx().RegFile;
 
     SST::Output *output = new SST::Output("[RevCPU @t]: ", 0, 0, SST::Output::STDOUT);
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
@@ -32,7 +32,7 @@ struct RevExit{
       } else {
         std::cout << "Retiring software thread: " <<  Proc.GetActivePID() << " and transitioning control to parent"<< std::endl;
         Proc.GetActiveCtx().SetState(ThreadState::Retired);
-        Proc.SetActivePID(Proc.GetActiveCtx().GetParentPID());
+        Proc.LoadCtx(Proc.GetActiveCtx().GetParentPID());
         RevThreadCtx& ParentCtx = Proc.GetActiveCtx();
         RegFile = ParentCtx.GetRegFile();
         std::cout << "New active software thread: " <<  Proc.GetActivePID() << std::endl;

@@ -37,19 +37,19 @@ enum class ThreadState {
   Waiting,
   Terminated,
   Aborted,
-  Retired // TODO: Should this be a state
+  Retired,
 };
 
 class RevThreadCtx {
 public:
-  RevThreadCtx(uint32_t pid, uint32_t parentPID, 
-               ThreadState initialState, RevRegFile regFile,
-               uint64_t memInfoStartAddr, uint64_t memInfoSize); // : State(initialState) {}
-  // RevThreadCtx(RevThreadCtx &&) = default;
+  // RevThreadCtx(uint32_t pid, uint32_t parentPID, 
+  //              ThreadState initialState, RevRegFile regFile,
+  //              uint64_t memInfoStartAddr, uint64_t memInfoSize); 
+  // RevThreadCtx() = default;
   // RevThreadCtx(const RevThreadCtx &) = default;
   // RevThreadCtx &operator=(RevThreadCtx &&) = default;
   // RevThreadCtx &operator=(const RevThreadCtx &) = default;
-  ~RevThreadCtx();
+  // ~RevThreadCtx();
 
   uint32_t GetPID() { return PID; }
   void SetPID(uint32_t NewPID) { PID = NewPID; }
@@ -77,18 +77,22 @@ public:
   bool isTerminated(){ return (State == ThreadState::Terminated); }
   bool isAborted(){ return (State == ThreadState::Aborted); }
 
-private:
+
+  /*
+  * HART
+  * Ex. 
+  */
+// private:
   uint32_t PID;
-  std::vector<uint32_t> ChildrenPIDs;
   uint32_t ParentPID;
-  uint64_t MemInfoStartAddr;
-  uint64_t MemInfoSize;
+
   ThreadState State;
   RevRegFile RegFile;
-  bool hasParent = false; 
 
-  uint64_t PC;
-  
+  uint64_t MemInfoStartAddr;
+  uint64_t MemInfoSize;
+
+  std::vector<uint32_t> ChildrenPIDs = {};
 };
 
 

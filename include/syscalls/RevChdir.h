@@ -17,7 +17,7 @@ struct RevChdir{
 
     std::cout << "ECALL: Inside Chdir" << std::endl;
     RevMem& Mem = Proc.GetMem();
-    RevRegFile& RegFile = Proc.GetHWThreadToExecRegFile();
+    RevRegFile& RegFile = Proc.GetActiveCtx().RegFile;
 
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
       std::string path = "";

@@ -2,15 +2,14 @@
 #include <algorithm>
 #include <iostream>
 
-RevThreadCtx::RevThreadCtx(uint32_t pid, uint32_t parentPID, 
-              ThreadState initialState, RevRegFile regFile,
-              uint64_t memInfoStartAddr, uint64_t memInfoSize) // : State(initialState) {}
-: PID(pid), ParentPID(parentPID), MemInfoStartAddr(memInfoStartAddr),
-  MemInfoSize(memInfoSize),  State(ThreadState::Ready), RegFile(regFile){}
+// RevThreadCtx::RevThreadCtx(uint32_t pid, uint32_t parentPID, 
+//               ThreadState initialState, RevRegFile regFile,
+//               uint64_t memInfoStartAddr, uint64_t memInfoSize) // : State(initialState) {}
+// : PID(pid), ParentPID(parentPID), MemInfoStartAddr(memInfoStartAddr),
+//   MemInfoSize(memInfoSize),  State(ThreadState::Ready), RegFile(regFile){}
 
 
-RevThreadCtx::~RevThreadCtx() {
-}
+
 
 
 bool RevThreadCtx::AddChildPID(uint32_t pid){

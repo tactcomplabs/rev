@@ -167,6 +167,9 @@ namespace SST {
       /// RevMem: Randomly assign a memory cost
       unsigned RandCost( unsigned Min, unsigned Max );
 
+      /// FIXME: Not permanent
+      uint64_t DefaultThreadMemSize = 4*1024*1024;
+
     class RevMemStats {
     public:
       uint32_t floatsRead;

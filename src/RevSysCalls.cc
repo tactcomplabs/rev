@@ -6,6 +6,7 @@
 #include "../include/syscalls/RevRTSigProcMask.h"
 // #include "../include/syscalls/RevClone.h"
 #include "../include/syscalls/RevExit.h"
+#include "../include/syscalls/Rev99.h"
 // #include "../include/syscalls/RevGetPID.h"
 #include "../include/RevSysCalls.h"
 
@@ -32,6 +33,7 @@ std::unordered_map<int, systemcall_t> SystemCalls::jump_table64 = {
   // { RevClone::value, RevClone::ECall<Riscv64> },
   { RevExit::value, RevExit::ECall<Riscv64> },
   { RevFork::value, RevFork::ECall<Riscv64> },
-  { RevRTSigProcMask::value, RevRTSigProcMask::ECall<Riscv64> }
+  { RevRTSigProcMask::value, RevRTSigProcMask::ECall<Riscv64> },
+  { Rev99::value, Rev99::ECall<Riscv64> }
   // { RevGetPID::value, RevGetPID::ECall<Riscv64> }
 };

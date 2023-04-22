@@ -15,7 +15,7 @@ struct RevWrite{
   template<typename RiscvArchType>
   static int ECall(RevProc& Proc) {
     RevMem& Mem = Proc.GetMem();
-    RevRegFile& RegFile = Proc.GetHWThreadToExecRegFile();
+    RevRegFile& RegFile = Proc.GetActiveCtx().RegFile;
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
     }
     else if (std::is_same<RiscvArchType, Riscv64>::value){

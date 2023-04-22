@@ -29,12 +29,12 @@
 #define _REV_MAX_REGCLASS_ 3
 #endif
 
-#ifndef _REV_THREAD_COUNT
-#define _REV_THREAD_COUNT_ 1
+#ifndef _REV_HART_COUNT
+#define _REV_HART_COUNT_ 1
 #endif
 
-#ifndef _REV_INVALID_THREAD_ID_
-#define _REV_INVALID_THREAD_ID ~(uint16_t(0))
+#ifndef _REV_INVALID_HART_ID_
+#define _REV_INVALID_HART_ID_ ~(uint16_t(0))
 #endif
 
 // Masks
@@ -271,8 +271,8 @@ namespace SST{
       unsigned Entry;                   ///< RevRegFile: Instruction entry
     }RevRegFile;                        ///< RevProc: register file construct
 
-    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+    static std::bitset<_REV_HART_COUNT_>  HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+    static std::bitset<_REV_HART_COUNT_>  HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
     typedef enum{
       RVTypeUNKNOWN = 0,  ///< RevInstf: Unknown format

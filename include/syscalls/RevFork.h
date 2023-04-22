@@ -4,6 +4,15 @@
 
 #include <unistd.h>
 
+
+/* 
+ * Fork should
+ * - Create the new Ctx
+ * - Add the new Ctx to the Table 
+ * - ??? Check if there is an available HART??? 
+ *       This could be done in ClockTick after ECALL EXCEPTION 
+ */
+
 struct RevFork {
   // ecall (a7 = 2) -> fork
   static const int value = 220; 
@@ -11,7 +20,7 @@ struct RevFork {
   template<typename RiscvArchType>
   static int ECall(RevProc& Proc) {
     RevMem& Mem = Proc.GetMem();
-    RevRegFile& RegFile = Proc.GetHWThreadToExecRegFile();
+    // RevRegFile& RegFile = Proc.GetHWThreadToExecRegFile();
     std::cout << "INSIDE FORK with PROC ACTIVE PID = " << Proc.GetActivePID() << std::endl;
 
       // .at(Proc.GetActivePID*()];
@@ -28,13 +37,16 @@ struct RevFork {
       
       // TODO: Make a better way of allocating the kids starting mem address (Arg 4)
       // TODO: Move Mem Calculation Function to RevMem
-      uint64_t ChildStartMemAddr = ParentCtx.GetMemStartAddr() + (ParentCtx.GetMemSize() * 2);
+      // uint64_t ChildStartMemAddr = ParentCtx.GetMemStartAddr() + (ParentCtx.GetMemSize() * 2);
       // TODO: Need to change this to use a global counter
       std::vector<uint32_t> PIDs = Proc.GetPIDs();
 
       uint32_t ParentPID = Proc.GetActivePID();
       std::cout << "ParentPID = " << ParentPID << std::endl;
+
+      // Create New Ctx 
       uint32_t ChildPID = Proc.CreateChildCtx();
+
       std::cout << "CHILD PID BEFORE IF: " << ChildPID << std::endl;
       if( ChildPID > 0 ){
 
@@ -49,7 +61,7 @@ struct RevFork {
         // Mem.WriteMem(ChildStartMemAddr, Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem);
 
         /* Make the child the new active process */
-        Proc.SetActivePID(ChildPID);
+        // Proc.SetActivePID(ChildPID);
 
         /* 
          * ===========================================================================================
@@ -78,7 +90,7 @@ struct RevFork {
         // Proc.GetActiveCtx().GetRegFile().RV64[10] = 0;
         std::cout << "New Active PID: " << Proc.GetActivePID() << std::endl;
 
-        Proc.GetHWThreadToExecRegFile() = Proc.ThreadTable.at(Proc.GetActivePID()).GetRegFile();
+        // Proc.GetHWThreadToExecRegFile() = Proc.ThreadTable.at(Proc.GetActivePID()).GetRegFile();
       // Return 0 to signify we are in the child process
       std::cout << "RETURNING 0" << std::endl;
       return 0;
@@ -86,6 +98,7 @@ struct RevFork {
 
       else {
         std::cout << "CHILD PID = " << ChildPID << std::endl;
+        // Proc.GetHWThreadToExecRegFile().RV64[10] = 0;
         return 0;
       }
     }

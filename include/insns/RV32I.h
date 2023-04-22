@@ -835,19 +835,19 @@ namespace SST{
         return true;  // temporarily disabled
       }
 
-      static bool sret(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
-        if( F->IsRV32() ){
-          // Set PC to instruction that raised exception (ie. ECALL)
-          R->RV32_PC = R->RV32_SEPC;
-          // technically should also update previous mode and all that jazz 
-          // but that's for another day
-          R->RV32_PC += Inst.instSize;
-        }
-        else{
-          R->RV64_PC = R->RV64_SEPC;
-          R->RV64_PC += Inst.instSize;
-        }
-      }
+      // static bool sret(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+      //   if( F->IsRV32() ){
+      //     // Set PC to instruction that raised exception (ie. ECALL)
+      //     R->RV32_PC = R->RV32_SEPC;
+      //     // technically should also update previous mode and all that jazz 
+      //     // but that's for another day
+      //     R->RV32_PC += Inst.instSize;
+      //   }
+      //   else{
+      //     R->RV64_PC = R->RV64_SEPC;
+      //     R->RV64_PC += Inst.instSize;
+      //   }
+      // }
 
       static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
         // Save PC of Ecall to *epc register
@@ -869,13 +869,17 @@ namespace SST{
           R->RV64_SEPC = R->RV64_PC; // Save PC of instruction that raised exception
           R->RV64_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
           R->RV64_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
-          // Trap Handler is not implemented because we only have one exception 
-          // So we don't have to worry about setting `mtvec` reg
-          R->RV64_PC += Inst.instSize;
+          /*
+           * Trap Handler is not implemented because we only have one exception 
+           * So we don't have to worry about setting `mtvec` reg
+           */
+          R->RV64_PC += Inst.instSize; // TODO: Verify this needs to happen
           // R->RV64_PC += Inst.instSize;
         } 
         return true;
       }
+
+      // PREVIOUS ECALL IMPL
       // static bool ecall(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
       //   // x17 (a7) is the code for ecall
       //   if( F->IsRV32() ){
