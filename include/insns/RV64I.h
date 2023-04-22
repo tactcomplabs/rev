@@ -45,8 +45,8 @@ namespace SST{
         // c.ld %rd, %rs1, $imm = ld %rd, %rs1, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*8);
-        std::cout << "ld src = 0x" << std::hex << R->RV64[Inst.rs1] << std::dec << std::endl;
+        //Inst.imm = ((Inst.imm&0b11111)*8);
+        Inst.imm = (Inst.imm&0b11111111); //8-bit immd, zero-extended, scaled at decode
         return ld(F,R,M,Inst);
       }
 
@@ -55,7 +55,8 @@ namespace SST{
         // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b111111)*8);
+        //Inst.imm = ((Inst.imm&0b111111)*8);
+        Inst.imm = (Inst.imm&0b1111111); //imm is 8-bits, zero extended, decoder pre-aligns bits, no scaling needed
 
         return sd(F,R,M,Inst);
       }

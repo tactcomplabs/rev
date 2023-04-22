@@ -46,7 +46,8 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.lwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
-        Inst.imm = ((Inst.imm & 0b111111)*4);
+        //Inst.imm = ((Inst.imm & 0b111111)*4);
+        Inst.imm = (Inst.imm & 0b11111111); // Immd is 8 bits -  bits placed correctly in decode, no need to scale
 
         return lw(F,R,M,Inst);
       }
@@ -55,7 +56,8 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
-        Inst.imm = ((Inst.imm & 0b111111)*4);
+        //Inst.imm = ((Inst.imm & 0b111111)*4);
+        Inst.imm = (Inst.imm & 0b11111111); // Immd is 8 bits - zero extended, bits placed correctly in decode, no need to scale
 
         return sw(F,R,M,Inst);
       }
@@ -65,7 +67,8 @@ namespace SST{
         // c.lw rd, rs1, $imm = lw rd, $imm(rs1)
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm & 0b11111)*4);
+        //Inst.imm = ((Inst.imm & 0b11111)*4);
+        Inst.imm = (Inst.imm & 0b1111111); // Immd is 7 bits, zero extended, bits placed correctly in decode, no need to scale
 
         return lw(F,R,M,Inst);
       }
@@ -75,7 +78,8 @@ namespace SST{
         // c.sw rs2, rs1, $imm = sw rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm & 0b11111)*4);
+        //Inst.imm = ((Inst.imm & 0b11111)*4);
+        Inst.imm = (Inst.imm & 0b1111111); //Immd is 7-bits, zero extended, bits placed correctly in decode, no need to scale
 
         return sw(F,R,M,Inst);
       }
@@ -150,7 +154,8 @@ namespace SST{
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
         //Inst.imm = Inst.offset;
-        Inst.imm = Inst.offset & 0b111111;
+        //Inst.imm = Inst.offset & 0b111111;
+        SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
         //SEXT(Inst.imm, Inst.offset, 6);
 
         return beq(F,R,M,Inst);
@@ -162,8 +167,9 @@ namespace SST{
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
         //Inst.imm = Inst.offset;
-        Inst.imm = Inst.offset & 0b111111;
+        //Inst.imm = Inst.offset & 0b111111;
         //SEXT(Inst.imm, Inst.offset, 6);
+        SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
 
         return bne(F,R,M,Inst);
       }
@@ -181,7 +187,8 @@ namespace SST{
         if( Inst.rd == 2 ){
           // c.addi16sp
            //SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
-           SEXT(Inst.imm, (Inst.imm & 0b111111)*16, 6);
+           //SEXT(Inst.imm, (Inst.imm & 0b111111)*16, 6);
+           SEXT(Inst.imm, (Inst.imm & 0b1111111111), 10); // Immd is 10 bits, sign extended and scaled in decode
           return addi(F,R,M,Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
@@ -227,6 +234,7 @@ namespace SST{
         // c.andi %rd, $imm = sandi %rd, %rd, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = Inst.rd;
+        SEXT(Inst.imm, (Inst.imm & 0b0111111), 6);  //immd is 6 bits, sign extended no scaling needed
         return andi(F,R,M,Inst);
       }
 
