@@ -176,8 +176,8 @@ namespace SST{
       unsigned fault_width;     ///< RevProc: the width of the target fault
       unsigned id;              ///< RevProc: processor id
       uint64_t ExecPC;          ///< RevProc: executing PC
-      uint8_t HartToDecode;   ///< RevProc: Current executing ThreadID
-      uint8_t HartToExec;     ///< RevProc: Thread to dispatch instruction
+      uint16_t HartToDecode;   ///< RevProc: Current executing ThreadID
+      uint16_t HartToExec;     ///< RevProc: Thread to dispatch instruction
       uint64_t Retired;         ///< RevProc: number of retired instructions
 
       RevOpts *opts;            ///< RevProc: options object

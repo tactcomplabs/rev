@@ -60,7 +60,7 @@ public:
   ThreadState GetState() const { return State; }
   void SetState(ThreadState newState) { State = newState; }
 
-  RevRegFile& GetRegFile() { return RegFile; }
+  RevRegFile* GetRegFile() { return RegFile; }
 
   uint64_t GetMemStartAddr() const { return MemInfoStartAddr; }
   void SetMemStartAddr(uint64_t newMemStartAddr) { MemInfoStartAddr = newMemStartAddr; }
@@ -87,7 +87,7 @@ public:
   uint32_t ParentPID;
 
   ThreadState State;
-  RevRegFile RegFile;
+  RevRegFile *RegFile;
 
   uint64_t MemInfoStartAddr;
   uint64_t MemInfoSize;

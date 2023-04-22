@@ -17,7 +17,7 @@ struct RevChdir{
 
     std::cout << "ECALL: Inside Chdir" << std::endl;
     RevMem& Mem = Proc.GetMem();
-    RevRegFile& RegFile = Proc.GetActiveCtx().RegFile;
+    RevRegFile* RegFile = Proc.GetActiveCtx().RegFile;
 
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
       std::string path = "";
@@ -27,7 +27,7 @@ struct RevChdir{
       // at a time and search for the string terminator character '\0'
       do {
         char dirchar;
-        Mem.ReadMem(RegFile.RV32[10] + sizeof(char)*i, sizeof(char), &dirchar);
+        Mem.ReadMem(RegFile->RV32[10] + sizeof(char)*i, sizeof(char), &dirchar);
         // Proc.mem.ReadMem(Proc.RegFile[Proc.GetThreadToExec()].RV32[10] + sizeof(char)*i, sizeof(char), &dirchar);
 // RegFile[threadToExec]
         path = path + dirchar;
@@ -46,7 +46,7 @@ struct RevChdir{
       // at a time and search for the string terminator character '\0'
       do {
         char dirchar;
-        Mem.ReadMem(RegFile.RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
+        Mem.ReadMem(RegFile->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
         path = path + dirchar;
         i++;
       } while( path.back() != '\0');

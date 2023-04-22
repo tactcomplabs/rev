@@ -60,7 +60,6 @@ RevProc::RevProc( unsigned Id,
 
   // Initialize ThreadTable
   uint32_t ActivePID = InitThreadTable();
-  ActivePIDs.push_back(ActivePID);
 
   std::cout << "ActivePID : AKA Return Value from InitThreadTable" << ActivePID << std::endl;
   if( ActivePID < 0 )
@@ -1698,7 +1697,6 @@ void RevProc::DependencyClear(uint16_t threadID, RevInst* Inst){
 }
 
 uint16_t RevProc::GetThreadID(){
-  if(HART_CTS.none()) { return HartToDecode;};
 
   uint16_t nextID = HartToDecode;
   if(HART_CTS[HartToDecode]){
@@ -1781,7 +1779,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     ExecPC = GetPC();
   }
 
-  if( (!RegFiles.at(HartToExec)->trigger) && !Halted && (HartToExec != _REV_INVALID_HART_ID_) && HART_CTE[HartToExec]){
+
+  if( (HartToExec != _REV_INVALID_HART_ID_) && !Halted &&  HART_CTE[HartToExec] && (!RegFiles.at(HartToExec)->trigger)){
     // trigger the next instruction
     // HartToExec = HartToDecode;
     RegFiles.at(HartToExec)->trigger = true;
@@ -2039,7 +2038,7 @@ uint32_t RevProc::InitThreadTable(){
   std::cout << "Initializing ThreadTable" << std::endl;
   std::cout << "First PID = " << FirstActivePID <<  std::endl;
 
-  RevRegFile RegFile;
+  RevRegFile *RegFile = new RevRegFile();
 
   uint64_t InitMemSize = 1024*1024*4;
 
@@ -2050,26 +2049,14 @@ uint32_t RevProc::InitThreadTable(){
      ThreadState::Running,
      RegFile, // RevRegFile
      StartingMemAddr,
-      InitMemSize
-    };
+     InitMemSize
+  };
 
-
-  // ThreadTable.emplace(FirstActivePID, RevThreadCtx{
-  //   FirstActivePID, //PID
-  //   {}, // Children
-  //   ParentPID, //ParentPID
-  //   ThreadState::Running,
-  //   {}, // RevRegFile
-  //   StartingMemAddr,
-  //   StartingMemSize
-  // });
-  //
   ThreadTable.emplace(FirstActivePID, DefaultCtx);
 
   ActivePIDs.push_back(FirstActivePID);
   
-  // RegFiles.push_back(&ThreadTable.at(FirstActivePID).RegFile);
-  RegFiles.push_back(&DefaultCtx.RegFile);
+  RegFiles.push_back(RegFile);
 
   return FirstActivePID;
 }
@@ -2126,7 +2113,8 @@ uint32_t RevProc::CreateChildCtx(){
 
   // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
   RevThreadCtx& ParentCtx = GetActiveCtx();
-  RevRegFile ChildRegFile = ParentCtx.RegFile;
+  RevRegFile *ChildRegFile = new RevRegFile(*ParentCtx.RegFile);
+  // *ChildRegFile = *ParentCtx.RegFile;
   uint32_t ParentPID = ParentCtx.PID;
   uint32_t ChildPID = ParentPID + 1;
   uint64_t ChildStartMemStartAddr = ParentCtx.MemInfoStartAddr + ParentCtx.MemInfoSize;
@@ -2175,7 +2163,7 @@ bool RevProc::LoadCtx(uint32_t pid){
   /* Get the context that's being loaded */
   RevThreadCtx& Ctx = GetCtx(pid);
   /* Change the regfile being pointed to by that Hart's pointer */
-  RegFiles.at(HartToExec) = &Ctx.RegFile;
+  RegFiles.at(HartToExec) = Ctx.RegFile;
   /* Update ActivePID of that hart */
   ActivePIDs.at(HartToExec) = pid;
 

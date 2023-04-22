@@ -84,7 +84,7 @@ struct RevFork {
          * ===========================================================================================
          */
 
-        Proc.ThreadTable.at(ParentPID).GetRegFile().RV64[10] = ParentPID;
+        Proc.ThreadTable.at(ParentPID).GetRegFile()->RV64[10] = ParentPID;
         // RegFile.RV64[10] = ParentPID;
         // RegFile.RV64_PC += Inst.instSize;
         // Proc.GetActiveCtx().GetRegFile().RV64[10] = 0;
