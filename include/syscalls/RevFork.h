@@ -21,7 +21,7 @@ struct RevFork {
   static int ECall(RevProc& Proc) {
     RevMem& Mem = Proc.GetMem();
     // RevRegFile& RegFile = Proc.GetHWThreadToExecRegFile();
-    std::cout << "INSIDE FORK with PROC ACTIVE PID = " << Proc.GetActivePID() << std::endl;
+    std::cout << "FORK: Inside Fork with PROC ACTIVE PID = " << Proc.GetActivePID() << std::endl;
 
       // .at(Proc.GetActivePID*()];
     if constexpr (std::is_same<RiscvArchType, Riscv32>::value){
@@ -32,14 +32,14 @@ struct RevFork {
       RevThreadCtx& ParentCtx = Proc.GetCtx(Proc.GetActivePID());
       std::cout << "ParentCtx.GetPID() = "<< ParentCtx.GetPID() << std::endl;
 
-      ParentCtx.SetPID(Proc.GetActivePID());
+
+      // ParentCtx.SetPID(Proc.GetActivePID());
       // std::cout << "Hello from Software Thread: " << ParentCtx.GetPID() << std::endl;
       
       // TODO: Make a better way of allocating the kids starting mem address (Arg 4)
       // TODO: Move Mem Calculation Function to RevMem
       // uint64_t ChildStartMemAddr = ParentCtx.GetMemStartAddr() + (ParentCtx.GetMemSize() * 2);
       // TODO: Need to change this to use a global counter
-      std::vector<uint32_t> PIDs = Proc.GetPIDs();
 
       uint32_t ParentPID = Proc.GetActivePID();
       std::cout << "ParentPID = " << ParentPID << std::endl;
@@ -47,18 +47,16 @@ struct RevFork {
       // Create New Ctx 
       uint32_t ChildPID = Proc.CreateChildCtx();
 
-      std::cout << "CHILD PID BEFORE IF: " << ChildPID << std::endl;
       if( ChildPID > 0 ){
-
-
         /* Set Parent to Waiting (NOTE: This will change in the future once we support simultaneous multithreading) */
-        Proc.GetCtx(Proc.GetActivePID()).SetState(ThreadState::Waiting);
         
  
         /* Create a copy of Parents Memory Space */
+        // std::cout << "FORK: About to duplicate parent's memory" << std::endl;
         // const char* ParentMem[Proc.ThreadTable.at(ParentPID).GetMemSize()];
         // Mem.ReadMem(ParentCtx.GetMemStartAddr(), Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem );
-        // Mem.WriteMem(ChildStartMemAddr, Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem);
+        // Mem.WriteMem(Proc.GetCtx(ChildPID).MemInfoStartAddr, Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem);
+        // std::cout << "FORK: Finished mem duplication" << std::endl;
 
         /* Make the child the new active process */
         // Proc.SetActivePID(ChildPID);
@@ -88,16 +86,23 @@ struct RevFork {
         // RegFile.RV64[10] = ParentPID;
         // RegFile.RV64_PC += Inst.instSize;
         // Proc.GetActiveCtx().GetRegFile().RV64[10] = 0;
-        std::cout << "New Active PID: " << Proc.GetActivePID() << std::endl;
 
-        // Proc.GetHWThreadToExecRegFile() = Proc.ThreadTable.at(Proc.GetActivePID()).GetRegFile();
-      // Return 0 to signify we are in the child process
-      std::cout << "RETURNING 0" << std::endl;
-      return 0;
-    }
+        /*
+          * Alert the Proc there needs to be a Ctx switch
+          * Pass the PID that will be switched to once the 
+          * current pipeline is executed until completion
+        */
+
+        std::cout << "Setting CtxSwitch = True & Switching to ChildPID = " << ChildPID << " once current pipeline empty" << std::endl; 
+        Proc.CtxSwitchAlert(ChildPID);
+        std::cout << "FORK: Returning ParentPID = " << ParentPID << std::endl; 
+        
+        return ParentPID;
+      }
 
       else {
         std::cout << "CHILD PID = " << ChildPID << std::endl;
+
         // Proc.GetHWThreadToExecRegFile().RV64[10] = 0;
         return 0;
       }

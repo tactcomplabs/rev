@@ -1720,6 +1720,19 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
 
+
+  if( Pipeline.empty() && PendingCtxSwitch ){
+    std::cout << "CTX SWITCH: PID = " << GetActivePID() << " -> " << NextPID << std::endl;
+    std::cout << "OLD PC = " << std::hex << GetPC() << std::endl;
+    LoadCtx(NextPID);
+    PendingCtxSwitch = false;
+    std::cout << "SWITCHED CTX" << std::endl;
+
+    std::cout << "NEW PC = " << std::hex << GetPC() << std::endl;
+    SetPC(GetPC());
+      
+    // ResetInst(&Inst);
+  } 
   /*
    * HARTUpdateThreadCtx
    */
@@ -1781,6 +1794,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
 
   if( (HartToExec != _REV_INVALID_HART_ID_) && !Halted &&  HART_CTE[HartToExec] && (!RegFiles.at(HartToExec)->trigger)){
+
+
     // trigger the next instruction
     // HartToExec = HartToDecode;
     RegFiles.at(HartToExec)->trigger = true;
@@ -1788,8 +1803,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Thread %d; Executing PC= 0x%" PRIx64 "\n",
-                    id, HartToExec, ExecPC);
+                    "Core %d ; Hart %d; Thread %d; Executing PC= 0x%" PRIx64 "\n",
+                    id, HartToExec, ActivePIDs[HartToExec], ExecPC);
 
     // attempt to execute the instruction as long as it is NOT
     // the firmware jump PC
@@ -1838,9 +1853,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         }
       }
 
-      
+      if( !PendingCtxSwitch )
+        Pipeline.push(std::make_pair(HartToExec, Inst));
+      else 
+        std::cout << "Not adding to pipeline" << std::endl;
 
-      Pipeline.push(std::make_pair(HartToExec, Inst));
       bool isFloat = false;
       if( (Ext->GetName() == "RV32F") ||
           (Ext->GetName() == "RV32D") ||
@@ -1922,6 +1939,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         RegFiles.at(tID)->cost = 0;
       }
   }
+  // Write a fibonacci sequence function
+  
+  //
+  //
   /*for(int tID = 0; tID < _REV_HART_COUNT_; tID ++){
     //A thread that has successfully decoded an instruction AND has no dependencies will have
       // a cost > 0 as set by the decode stage
@@ -2114,16 +2135,18 @@ uint32_t RevProc::CreateChildCtx(){
   // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
   RevThreadCtx& ParentCtx = GetActiveCtx();
   RevRegFile *ChildRegFile = new RevRegFile(*ParentCtx.RegFile);
+  // FIXME: I don't think this applies outside of Fork
+  ChildRegFile->RV64[10] = 0;
   // *ChildRegFile = *ParentCtx.RegFile;
   uint32_t ParentPID = ParentCtx.PID;
   uint32_t ChildPID = ParentPID + 1;
-  uint64_t ChildStartMemStartAddr = ParentCtx.MemInfoStartAddr + ParentCtx.MemInfoSize;
+  // uint64_t ChildStartMemStartAddr = ParentCtx.MemInfoStartAddr + ParentCtx.MemInfoSize;
 
   RevThreadCtx ChildCtx{ ChildPID,     // NewPID
                          ParentPID,   // ParentPID
                          ThreadState::Ready, // Starting State
                          ChildRegFile, // RegFile (Duplicate of Parents)
-                         ChildStartMemStartAddr
+                         ParentCtx.MemInfoStartAddr // FIXME: This means the child & Parent share
   };
 
   ThreadTable.emplace(ChildPID, ChildCtx);
@@ -2166,6 +2189,10 @@ bool RevProc::LoadCtx(uint32_t pid){
   RegFiles.at(HartToExec) = Ctx.RegFile;
   /* Update ActivePID of that hart */
   ActivePIDs.at(HartToExec) = pid;
+
+  if( Ctx.ParentPID != 0 ){
+    NextPID = Ctx.ParentPID;
+  }
 
   return true;
 }

@@ -8,4 +8,4 @@ src/librevcpu.so
 src/src/librevcpu.so
 
 *.o
-src/pyrevcpu.inc
+*.inc

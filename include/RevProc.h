@@ -165,6 +165,8 @@ namespace SST{
       RevThreadCtx& GetCtx(uint32_t PID){ return ThreadTable.at(PID); }
       RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(ActivePIDs.at(HartToExec));}; ///< RevProc: Get the active ThreadCtx of HartToExec
       RevThreadCtx& GetActiveCtx(uint8_t HartID){return ThreadTable.at(ActivePIDs.at(HartID)); } ///< RevProc: Get the active ThreadCtx of HartID
+
+      void CtxSwitchAlert(uint32_t NewPID) { NextPID=NewPID;PendingCtxSwitch = true; }
       
 
     private:
@@ -179,6 +181,8 @@ namespace SST{
       uint16_t HartToDecode;   ///< RevProc: Current executing ThreadID
       uint16_t HartToExec;     ///< RevProc: Thread to dispatch instruction
       uint64_t Retired;         ///< RevProc: number of retired instructions
+      bool PendingCtxSwitch = false;           ///< RevProc: determines if the core is halted
+      uint32_t NextPID = 0; 
 
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
