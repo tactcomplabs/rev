@@ -109,7 +109,7 @@ namespace SST{
       void HandleALUFault(unsigned width);
 
       /// RevProc: Initialize ThreadTable & First Thread
-      uint32_t InitThreadTable();
+      bool InitThreadTable();
 
       class RevProcStats {
         public:

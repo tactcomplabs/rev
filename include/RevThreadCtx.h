@@ -1,27 +1,18 @@
+//
+// _RevThreadCtx_h_
+//
+// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+// All Rights Reserved
+// contact@tactcomplabs.com
+//
+// See LICENSE in the top level directory for licensing details
+//
+//
+
 /***
-ThreadCtx 
-- PID
-- Process State (running, ready, waiting, terminated)
-- Program Counter
-- MemInfo (Address & Size)
-- TODO: Scheduling Info
-- File Descriptors: A list of open files and associated metadata relevant to the process
-- I/O status information: Details about the I/O devices being used by the process
-- IPC Info: Data related to communication between processes such as message queues, pipes, shared mem
-- ParentPID? 
+RevThreadCtx 
 
-------
-Methods to Implement (RevCPU):
-- AddCtx(Ctx, bool clone_vm)
-- GetCtx(pid)
-- RetireCtx(pid)
-- SaveRegFiles(RevRegFile)
-- GetThreadState(pid)
-- PauseThread(pid)
-- ReadyThread(pid)
-...
-
-Memory Stuff? 
+Memory Actions:
 - RelinquishMem
 - ShareMem
 ***/
@@ -41,15 +32,10 @@ enum class ThreadState {
 };
 
 class RevThreadCtx {
+
 public:
-  // RevThreadCtx(uint32_t pid, uint32_t parentPID, 
-  //              ThreadState initialState, RevRegFile regFile,
-  //              uint64_t memInfoStartAddr, uint64_t memInfoSize); 
-  // RevThreadCtx() = default;
-  // RevThreadCtx(const RevThreadCtx &) = default;
-  // RevThreadCtx &operator=(RevThreadCtx &&) = default;
-  // RevThreadCtx &operator=(const RevThreadCtx &) = default;
-  // ~RevThreadCtx();
+  // NOTE: These Getters/Setters are currently unecessary as everything 
+  //       they Get/Set is public. This may change in the future
 
   uint32_t GetPID() { return PID; }
   void SetPID(uint32_t NewPID) { PID = NewPID; }
@@ -77,17 +63,12 @@ public:
   bool isTerminated(){ return (State == ThreadState::Terminated); }
   bool isAborted(){ return (State == ThreadState::Aborted); }
 
-
-  /*
-  * HART
-  * Ex. 
-  */
-// private:
+  // FIXME: Maybe make this private? 
   uint32_t PID;
   uint32_t ParentPID;
 
-  ThreadState State;
-  RevRegFile *RegFile;
+  ThreadState State = ThreadState::Ready;
+  RevRegFile *RegFile; // Actual RegFile lives in RevProc
 
   uint64_t MemInfoStartAddr;
   uint64_t MemInfoSize;

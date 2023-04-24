@@ -10,6 +10,7 @@
 
 #include "../include/RevMem.h"
 #include <math.h>
+#include <mutex>
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
                 RevMemCtrl *Ctrl, SST::Output *Output )
@@ -492,6 +493,31 @@ void RevMem::WriteDouble( uint64_t Addr, double Value ){
   memStats.doublesWritten++;
   if( !WriteMem(Addr,8,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (DOUBLE)");
+}
+
+/*
+* Func: GetNewThreadPID
+* - This function is used to interact with the global 
+*   PID counter inside of RevMem
+* - When a new RevThreadCtx is created, it is assigned 
+*   the value of PIDCount++
+* - This ensures no collisions because all RevProcs access
+*   the same RevMem instance
+*/
+uint32_t RevMem::GetNewThreadPID(){
+
+  #if _REV_DEBUG_
+  std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl; 
+  #endif _REV_DEBUG_
+  /*
+  * NOTE: A mutex is acquired solely to prevent race conditions
+  *       if multiple RevProc's create new Ctx objects at the 
+  *       same time
+  */
+  std::unique_lock<std::mutex> lock(m_mtx);
+  PIDCount++;
+  lock.unlock();
+  return PIDCount;
 }
 
 // EOF
