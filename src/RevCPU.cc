@@ -2411,45 +2411,4 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   return rtn;
 }
 
-uint32_t RevCPU::GenRandomPID(){
-  std::mt19937 rng(std::random_device{}()); 
-  std::uniform_int_distribution<uint32_t> distribution(0, std::numeric_limits<uint32_t>::max());
-  uint32_t PossiblePID = distribution(rng);
-  return PossiblePID;
-}
-
-
-
-/*
- * Generate a new pid 
- * - Locks all the RevProcs ThreadTables 
- * - Generates a random uint32_t
- * - Searches all of the pids across all procs
- * - If PID exists, it generates a new random number
- * - Else it unlocks the ProcThreadTables and returns the new pid
-*/
-uint32_t RevCPU::GetNewPID(){
-  bool PIDExists = true; 
-  uint32_t NewPID;
-  std::shared_lock<std::shared_mutex> lock(ProcTableMtx);
-  do {
-    NewPID = GenRandomPID();
-    std::vector<uint32_t> ProcPIDs;
-    for( const auto& Proc : Procs ){
-      // for( const auto& ThreadPIDs : Proc->GetPIDs() ) {
-      ProcPIDs = Proc->GetPIDs();
-      if( std::find(ProcPIDs.begin(), ProcPIDs.end(), NewPID) != ProcPIDs.end() ){
-        PIDExists = true;
-        break;
-      } else {
-        PIDExists = false;
-        continue;
-      }
-    }
-  } while ( PIDExists );
-
-  // NOTE: Lock is automatically freed 
-  return NewPID;
-}
-
 // EOF
