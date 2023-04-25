@@ -68,30 +68,6 @@ namespace SST {
       /// RevCPU: test harness clock tick function
       bool clockTickPANTest( SST::Cycle_t currentCycle );
 
-      uint32_t GenRandomPID();
-      uint32_t GetNewPID();
-//       Methods to Implement (RevCPU):
-// - AddCtx(Ctx, bool clone_vm)
-// - GetCtx(pid)
-// - RetireCtx(pid)
-// - SaveRegFiles(RevRegFile)
-// - GetThreadState(pid)
-// - PauseThread(pid)
-// - ReadyThread(pid)
-// // .
-//       // Returns pid of new child
-//       uint32_t AddCtx(RevThreadCtx Ctx, bool clone_vm);
-//   
-//       // Used to get ctx object 
-//       RevThreadCtx FetchCtx(uint32_t pid);
-
-//       // Returns pid of new child
-//       uint32_t RemoveCtx(uint32_t pid);
-
-      // Saves register file of current proc to thread
-    
-  
-
       // -------------------------------------------------------
       // RevCPU Component Registration Data
       // -------------------------------------------------------
