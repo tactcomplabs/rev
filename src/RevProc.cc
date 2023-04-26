@@ -1362,6 +1362,10 @@ bool RevProc::PrefetchInst(){
     return false;
   }
 
+  if( PC == 0x4bd38ull ){
+    std::cout << "PretetchInst: 0x4bd38" << std::endl;
+  }
+
   return sfetch->IsAvail(PC);
 }
 

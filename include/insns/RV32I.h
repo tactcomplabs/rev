@@ -106,18 +106,23 @@ namespace SST{
       static bool CRFUNC_1000(RevFeature *F, RevRegFile *R,
                               RevMem *M, RevInst Inst){
         if( Inst.rs2 != 0 ){
+          std::cout << "<<<Executing C.MV>>>" << std::endl;
           return cmv(F,R,M,Inst);
         }
+        std::cout << "<<<Executing C.JR>>>" << std::endl;
         return cjr(F,R,M,Inst);
       }
 
       static bool CRFUNC_1001(RevFeature *F, RevRegFile *R,
                               RevMem *M, RevInst Inst){
         if( (Inst.rs1 == 0) && (Inst.rd == 0) ){
+          std::cout << "<<<Executing C.EBREAK>>>" << std::endl;
           return ebreak(F,R,M,Inst);
         }else if( (Inst.rs1 == 0) && (Inst.rd != 0) ){
+          std::cout << "<<<Executing C.JALR>>>" << std::endl;
           return jalr(F,R,M,Inst);
         }else{
+          std::cout << "<<<Executing C.ADD>>>" << std::endl;
           return add(F,R,M,Inst);
         }
       }
@@ -188,11 +193,13 @@ namespace SST{
           // c.addi16sp
            //SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
            //SEXT(Inst.imm, (Inst.imm & 0b111111)*16, 6);
-           SEXT(Inst.imm, (Inst.imm & 0b1111111111), 10); // Immd is 10 bits, sign extended and scaled in decode
+          SEXT(Inst.imm, (Inst.imm & 0b1111111111), 10); // Immd is 10 bits, sign extended and scaled in decode
+          std::cout << "<<<Executing C.ADDI16SP>>>" << std::endl;
           return addi(F,R,M,Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
           SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
+          std::cout << "<<<Executing C.LUI>>>" << std::endl;
           return lui(F,R,M,Inst);
         }
       }
