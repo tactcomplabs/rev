@@ -131,7 +131,7 @@ namespace SST{
       /* Software Process Table */
       /* NOTE: Not all of these are needed/work */
       bool AddCtx(RevThreadCtx& Ctx);
-      uint32_t CreateChildCtx();
+      RevThreadCtx& CreateChildCtx();
       ThreadState GetThreadState(uint32_t pid);
       bool SetState(ThreadState, uint32_t pid);
       bool PauseThread(uint32_t pid);
@@ -165,6 +165,15 @@ namespace SST{
     //   RevThreadCtx& GetActiveCtx(uint8_t HartID){return ThreadTable.at(ActivePIDs.at(HartID)); } ///< RevProc: Get the active ThreadCtx of HartID
 
       void CtxSwitchAlert(uint32_t NewPID) { NextPID=NewPID;PendingCtxSwitch = true; }
+
+      uint32_t HartToExecActivePID();
+      uint32_t HartToDecodeActivePID();
+
+      RevThreadCtx& HartToExecActiveCtx();
+      RevThreadCtx& HartToDecodeActiveCtx();
+
+      RevRegFile& HartToExecRegFile();
+      RevRegFile& HartToDecodeRegFile();
       
 
     private:
@@ -194,7 +203,9 @@ namespace SST{
   
       // PhysRegFile.at(HART-ID) = Regfile
       // std::vector<RevRegFile*> RegFiles; // TODO: Maybe rename
-      RevRegFile& RegFiles(uint16_t HartID);
+      RevRegFile& RegFile(uint16_t HartID);
+      // Return current executing HART regfile
+      RevRegFile& RegFile();
       
       std::vector<uint32_t> ActivePIDs;
 

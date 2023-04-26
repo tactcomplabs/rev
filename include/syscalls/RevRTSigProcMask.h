@@ -13,7 +13,12 @@ struct RevRTSigProcMask {
   
   template<typename RiscvArchType>
   static int ECall(RevProc& Proc) {
-    return 0;
+    if constexpr( std::is_same<RiscvArchType, Riscv32>::value){
+      return 0;
+    }
+    else if( std::is_same<RiscvArchType, Riscv64>::value ){
+      return 0;
+    }
   }
 };
 // struct RevClone {

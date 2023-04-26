@@ -208,55 +208,55 @@ bool RevProc::SeedInstTable(){
   if( feature->IsModeEnabled(RV_I) ){
     if( feature->GetXlen() == 64 ){
       // load RV32I & RV64; no optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFiles(0),mem,output)),false);
-      EnableExt(static_cast<RevExt *>(new RV64I(feature,RegFiles(0),mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile(0),mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64I(feature,RegFile(0),mem,output)),false);
     }else{
       // load RV32I w/ optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFiles(0),mem,output)),true);
+      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile(0),mem,output)),true);
     }
   }
 
   // M-Extension
   if( feature->IsModeEnabled(RV_M) ){
-    EnableExt(static_cast<RevExt *>(new RV32M(feature,RegFiles(0),mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV32M(feature,RegFile(0),mem,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64M(feature,RegFiles(0),mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64M(feature,RegFile(0),mem,output)),false);
     }
   }
 
   // A-Extension
   if( feature->IsModeEnabled(RV_A) ){
-    EnableExt(static_cast<RevExt *>(new RV32A(feature,RegFiles(0),mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV32A(feature,RegFile(0),mem,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64A(feature,RegFiles(0),mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64A(feature,RegFile(0),mem,output)),false);
     }
   }
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
     if( (!feature->IsModeEnabled(RV_D)) && (feature->GetXlen() == 32) ){
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFiles(0),mem,output)),true);
+      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile(0),mem,output)),true);
     }else{
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFiles(0),mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile(0),mem,output)),false);
     }
 #if 0
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFiles(0),mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile(0),mem,output)));
     }
 #endif
   }
 
   // D-Extension
   if( feature->IsModeEnabled(RV_D) ){
-    EnableExt(static_cast<RevExt *>(new RV32D(feature,RegFiles(0),mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV32D(feature,RegFile(0),mem,output)),false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFiles(0),mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile(0),mem,output)),false);
     }
   }
 
   // PAN Extension
   if( feature->IsModeEnabled(RV_P) ){
-    EnableExt(static_cast<RevExt *>(new RV64P(feature,RegFiles(0),mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV64P(feature,RegFile(0),mem,output)),false);
   }
 
   return true;
@@ -402,33 +402,33 @@ bool RevProc::LoadInstructionTable(){
 bool RevProc::Reset(){
   // reset the register file
   for (int t=0;  t < _REV_HART_COUNT_; t++){
-    RegFiles(t).RV32_PC = 0x00l;
-    RegFiles(t).RV64_PC = 0x00ull;
+    RegFile(t).RV32_PC = 0x00l;
+    RegFile(t).RV64_PC = 0x00ull;
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      RegFiles(t).RV32[i] = 0x00l;
-      RegFiles(t).RV64[i] = 0x00ull;
-      RegFiles(t).SPF[i]  = 0.f;
-      RegFiles(t).DPF[i]  = 0.f;
-      RegFiles(t).RV32_Scoreboard[i] = false;
-      RegFiles(t).RV64_Scoreboard[i] = false;
-      RegFiles(t).SPF_Scoreboard[i] = false;
-      RegFiles(t).DPF_Scoreboard[i] = false;
+      RegFile(t).RV32[i] = 0x00l;
+      RegFile(t).RV64[i] = 0x00ull;
+      RegFile(t).SPF[i]  = 0.f;
+      RegFile(t).DPF[i]  = 0.f;
+      RegFile(t).RV32_Scoreboard[i] = false;
+      RegFile(t).RV64_Scoreboard[i] = false;
+      RegFile(t).SPF_Scoreboard[i] = false;
+      RegFile(t).DPF_Scoreboard[i] = false;
     }
 
     // initialize all the relevant program registers
     // -- x2 : stack pointer
-    RegFiles(t).RV32[2] = (uint32_t)(mem->GetStackTop());
-    RegFiles(t).RV64[2] = mem->GetStackTop();
+    RegFile(t).RV32[2] = (uint32_t)(mem->GetStackTop());
+    RegFile(t).RV64[2] = mem->GetStackTop();
 
     // -- x3 : global pointer
-    RegFiles(t).RV32[3] = (uint32_t)(loader->GetSymbolAddr("__global_pointer$"));
-    RegFiles(t).RV64[3] = loader->GetSymbolAddr("__global_pointer$");
+    RegFile(t).RV32[3] = (uint32_t)(loader->GetSymbolAddr("__global_pointer$"));
+    RegFile(t).RV64[3] = loader->GetSymbolAddr("__global_pointer$");
 
     // -- x8 : frame pointer
-    RegFiles(t).RV32[8] = RegFiles(t).RV32[3];
-    RegFiles(t).RV64[8] = RegFiles(t).RV64[3];
+    RegFile(t).RV32[8] = RegFile(t).RV32[3];
+    RegFile(t).RV64[8] = RegFile(t).RV64[3];
 
-    RegFiles(t).cost = 0;
+    RegFile(t).cost = 0;
 
     while(!Pipeline.empty()){
       Pipeline.pop();
@@ -457,8 +457,8 @@ bool RevProc::Reset(){
     }
   }
   for (int t=0;  t < _REV_HART_COUNT_; t++){
-    RegFiles(t).RV32_PC = (uint32_t)(StartAddr);
-    RegFiles(t).RV64_PC = StartAddr;
+    RegFile(t).RV32_PC = (uint32_t)(StartAddr);
+    RegFile(t).RV64_PC = StartAddr;
   }
   HART_CTS.set();
 
@@ -479,7 +479,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -501,7 +501,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -594,7 +594,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -637,7 +637,7 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -671,7 +671,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -734,7 +734,7 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -763,7 +763,7 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -785,7 +785,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -835,7 +835,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
   RevInst CompInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -944,9 +944,9 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
 
   }
 
-  RegFiles(HartToDecode).Entry = Entry;
+  RegFile(HartToDecode).Entry = Entry;
 
-  RegFiles(HartToDecode).trigger = false;
+  RegFile(HartToDecode).trigger = false;
 
   switch( InstTable[Entry].format ){
   case RVCTypeCR:
@@ -987,7 +987,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
   RevInst DInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1045,7 +1045,7 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry){
   RevInst DInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1089,7 +1089,7 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry){
   RevInst DInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1133,7 +1133,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry){
   RevInst DInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1169,7 +1169,7 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
   RevInst DInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1212,7 +1212,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry){
   RevInst DInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1252,7 +1252,7 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry){
   RevInst DInst;
 
   // cost
-  RegFiles(HartToDecode).cost  = InstTable[Entry].cost;
+  RegFile(HartToDecode).cost  = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1300,10 +1300,10 @@ bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value){
     return false;
   }
   if( feature->GetXlen() == 32 ){
-    *Value = RegFiles(HartToExec).RV32[Idx];
+    *Value = RegFile(HartToExec).RV32[Idx];
     return true;
   }else{
-    *Value = RegFiles(HartToExec).RV64[Idx];
+    *Value = RegFile(HartToExec).RV64[Idx];
     return true;
   }
 }
@@ -1315,36 +1315,36 @@ bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value){
     return false;
   }
   if( feature->GetXlen() == 32 ){
-    RegFiles(HartToExec).RV32[Idx] = (uint32_t)(Value&0xFFFFFFFF);
+    RegFile(HartToExec).RV32[Idx] = (uint32_t)(Value&0xFFFFFFFF);
     return true;
   }else{
-    RegFiles(HartToExec).RV64[Idx] = Value;
+    RegFile(HartToExec).RV64[Idx] = Value;
     return true;
   }
 }
 
 uint64_t RevProc::GetPC(){
   if( feature->GetXlen() == 32 ){
-    return (uint64_t)(RegFiles(HartToDecode).RV32_PC);
+    return (uint64_t)(RegFile(HartToDecode).RV32_PC);
   }else{
-    return RegFiles(HartToDecode).RV64_PC;
+    return RegFile(HartToDecode).RV64_PC;
   }
 }
 
 void RevProc::SetPC(uint64_t PC){
   if( feature->GetXlen() == 32 ){
-    RegFiles(HartToDecode).RV32_PC = (uint32_t)(PC);
+    RegFile(HartToDecode).RV32_PC = (uint32_t)(PC);
   }else{
-    RegFiles(HartToDecode).RV64_PC = PC;
+    RegFile(HartToDecode).RV64_PC = PC;
   }
 }
 
 bool RevProc::PrefetchInst(){
   uint64_t PC   = 0x00ull;
   if( feature->GetXlen() == 32 ){
-    PC = (uint64_t)(RegFiles(HartToDecode).RV32_PC);
+    PC = (uint64_t)(RegFile(HartToDecode).RV32_PC);
   }else{
-    PC = RegFiles(HartToDecode).RV64_PC;
+    PC = RegFile(HartToDecode).RV64_PC;
   }
 
   // These are addresses that we can't decode
@@ -1365,9 +1365,9 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 1: Retrieve the instruction
   if( feature->GetXlen() == 32 ){
-    PC = (uint64_t)(RegFiles(HartToDecode).RV32_PC);
+    PC = (uint64_t)(RegFile(HartToDecode).RV32_PC);
   }else{
-    PC = RegFiles(HartToDecode).RV64_PC;
+    PC = RegFile(HartToDecode).RV64_PC;
   }
 
   if( !sfetch->InstFetch(PC, Fetched, Inst) ){
@@ -1488,9 +1488,9 @@ RevInst RevProc::DecodeInst(){
 
   }
 
-  RegFiles(HartToDecode).Entry = Entry;
+  RegFile(HartToDecode).Entry = Entry;
 
-  RegFiles(HartToDecode).trigger = false;
+  RegFile(HartToDecode).trigger = false;
 
   // Stage 8: Do a full deocode using the target format
   switch( InstTable[Entry].format ){
@@ -1559,7 +1559,7 @@ void RevProc::HandleRegFault(unsigned width){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "x" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&RegFiles(HartToExec).RV32[i])));
+                                      (void *)(&RegFile(HartToExec).RV32[i])));
     }
   }else{
     // rv64
@@ -1568,7 +1568,7 @@ void RevProc::HandleRegFault(unsigned width){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "x" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&RegFiles(HartToExec).RV64[i])));
+                                      (void *)(&RegFile(HartToExec).RV64[i])));
     }
   }
 
@@ -1576,13 +1576,13 @@ void RevProc::HandleRegFault(unsigned width){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "f" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&RegFiles(HartToExec).SPF[i])));
+                                      (void *)(&RegFile(HartToExec).SPF[i])));
     }
   }else if( feature->IsModeEnabled(RV_D) ){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "f" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&RegFiles(HartToExec).DPF[i])));
+                                      (void *)(&RegFile(HartToExec).DPF[i])));
     }
   }
 
@@ -1632,23 +1632,23 @@ bool RevProc::DependencyCheck(uint16_t threadID, RevInst* I){
 
       if(feature->IsRV32()){
         if(isFloat){
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFiles(threadID).SPF_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFiles(threadID).SPF_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFiles(threadID).SPF_Scoreboard[I->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID).SPF_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID).SPF_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID).SPF_Scoreboard[I->rs3] || depFound : depFound;
         }else{
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFiles(threadID).RV32_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFiles(threadID).RV32_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFiles(threadID).RV32_Scoreboard[I->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID).RV32_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID).RV32_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID).RV32_Scoreboard[I->rs3] || depFound : depFound;
         }
       }else {
         if(isFloat){
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFiles(threadID).DPF_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFiles(threadID).DPF_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFiles(threadID).DPF_Scoreboard[I->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID).DPF_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID).DPF_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID).DPF_Scoreboard[I->rs3] || depFound : depFound;
         }else{
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFiles(threadID).RV64_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFiles(threadID).RV64_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFiles(threadID).RV64_Scoreboard[I->rs3] || depFound : depFound;
+          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID).RV64_Scoreboard[I->rs1] || depFound : depFound;
+          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID).RV64_Scoreboard[I->rs2] || depFound : depFound;
+          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID).RV64_Scoreboard[I->rs3] || depFound : depFound;
         }
       }
     return depFound;
@@ -1659,15 +1659,15 @@ void RevProc::DependencySet(uint16_t threadID, RevInst* Inst){
         bool isFloat = IsFloat(Inst->entry);
         if(feature->IsRV32()){
           if(isFloat){
-            RegFiles(threadID).SPF_Scoreboard[Inst->rd] = true;
+            RegFile(threadID).SPF_Scoreboard[Inst->rd] = true;
           }else{
-            RegFiles(threadID).RV32_Scoreboard[Inst->rd] = true;
+            RegFile(threadID).RV32_Scoreboard[Inst->rd] = true;
           }
       }else{
           if(isFloat){
-            RegFiles(threadID).DPF_Scoreboard[Inst->rd] = true;
+            RegFile(threadID).DPF_Scoreboard[Inst->rd] = true;
           }else{
-            RegFiles(threadID).RV64_Scoreboard[Inst->rd] = true;
+            RegFile(threadID).RV64_Scoreboard[Inst->rd] = true;
           }
       }
     }
@@ -1678,21 +1678,56 @@ void RevProc::DependencyClear(uint16_t threadID, RevInst* Inst){
     bool isFloat = IsFloat(Inst->entry);
     if(feature->IsRV32()){
       if(isFloat){
-        RegFiles(threadID).SPF_Scoreboard[Inst->rd] = false;
+        RegFile(threadID).SPF_Scoreboard[Inst->rd] = false;
       }else{
-        RegFiles(threadID).RV32_Scoreboard[Inst->rd] = false;
+        RegFile(threadID).RV32_Scoreboard[Inst->rd] = false;
       }
     }else{
       if(isFloat){
-        RegFiles(threadID).DPF_Scoreboard[Inst->rd] = false;
+        RegFile(threadID).DPF_Scoreboard[Inst->rd] = false;
       }else{
-        RegFiles(threadID).RV64_Scoreboard[Inst->rd] = false;
+        RegFile(threadID).RV64_Scoreboard[Inst->rd] = false;
       }
     }
   }
 }
 
-RevRegFile& RevProc::RegFiles(uint16_t HartID){
+uint32_t RevProc::HartToExecActivePID(){
+  uint32_t ActivePID  = ActivePIDs.at(HartToExec);
+  return ActivePID;
+}
+
+uint32_t RevProc::HartToDecodeActivePID(){
+  uint32_t ActivePID  = ActivePIDs.at(HartToDecode);
+  return ActivePID;
+}
+
+RevThreadCtx& RevProc::HartToExecActiveCtx(){
+  uint32_t ActivePID  = HartToExecActivePID();
+  RevThreadCtx& ActiveCtx = ThreadTable.at(ActivePID);
+  return ActiveCtx;
+}
+
+RevThreadCtx& RevProc::HartToDecodeActiveCtx(){
+  uint32_t ActivePID  = HartToExecActivePID();
+  RevThreadCtx& ActiveCtx = ThreadTable.at(ActivePID);
+  return ActiveCtx;
+}
+
+RevRegFile& RevProc::HartToExecRegFile(){
+  RevThreadCtx& ActiveCtx = HartToExecActiveCtx();
+  RevRegFile& ActiveRegFile = ActiveCtx.GetRegFile();
+  return ActiveRegFile;
+}
+
+RevRegFile& RevProc::HartToDecodeRegFile(){
+  RevThreadCtx& ActiveCtx = HartToDecodeActiveCtx();
+  RevRegFile& ActiveRegFile = ActiveCtx.GetRegFile();
+  return ActiveRegFile;
+}
+
+
+RevRegFile& RevProc::RegFile(uint16_t HartID){
   uint32_t ActivePID  = ActivePIDs.at(HartID);
   RevRegFile& ActiveRegFile = ThreadTable.at(ActivePID).GetRegFile();
   return ActiveRegFile;
@@ -1735,10 +1770,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else, wait until the counter is decremented to zero to retire the instruction
   //
   for (int tID = 0; tID < _REV_HART_COUNT_; tID++){
-    HART_CTS[tID] = (RegFiles(tID).cost == 0);
+    HART_CTS[tID] = (RegFile(tID).cost == 0);
   }
 
-  if( HART_CTS.any() && (!Halted)) { // && (RegFiles(threadID].cost == 0)){
+  if( HART_CTS.any() && (!Halted)) { // && (RegFile(threadID].cost == 0)){
     // fetch the next instruction
     //
     ResetInst(&Inst);
@@ -1758,12 +1793,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // We do not want to retire this instruction until we're ready
     if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
       Inst = DecodeInst();
-      Inst.entry = RegFiles(HartToDecode).Entry;
+      Inst.entry = RegFile(HartToDecode).Entry;
     }
 
     //Now that we have decoded the instruction, check for pipeline hazards
     if(Stalled || DependencyCheck(HartToDecode, &Inst)) {
-      RegFiles(HartToDecode).cost = 0; // We failed dependency check, so set cost to 0 - this will
+      RegFile(HartToDecode).cost = 0; // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
       HartToExec = _REV_INVALID_HART_ID_;
@@ -1772,18 +1807,18 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       HART_CTE[HartToDecode] = true;
       HartToExec = HartToDecode;
     };
-    Inst.cost = RegFiles(HartToDecode).cost;
-    Inst.entry = RegFiles(HartToDecode).Entry;
+    Inst.cost = RegFile(HartToDecode).cost;
+    Inst.entry = RegFile(HartToDecode).Entry;
     rtn = true;
     ExecPC = GetPC();
   }
 
 
   if( (HartToExec != _REV_INVALID_HART_ID_) && !Halted 
-      && HART_CTE[HartToExec] && (!RegFiles(HartToExec).trigger)){
+      && HART_CTE[HartToExec] && (!RegFile(HartToExec).trigger)){
 
     // trigger the next instruction
-    // RegFiles(HartToExec).trigger = true;
+    // RegFile(HartToExec).trigger = true;
 
     // pull the PC
     // output->verbose(CALL_INFO, 6, 0,
@@ -1796,7 +1831,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
       // Find the instruction extension
       std::map<unsigned,std::pair<unsigned,unsigned>>::iterator it;
-      it = EntryToExt.find(RegFiles(HartToExec).Entry);
+      it = EntryToExt.find(RegFile(HartToExec).Entry);
       if( it == EntryToExt.end() ){
         // failed to find the extension
         output->fatal(CALL_INFO, -1,
@@ -1818,11 +1853,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
        * - Currently this is only for ecall
       */
       
-      if( RegFiles(HartToExec).RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE || RegFiles(HartToExec).RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE ){ // Ecall found
+      if( RegFile(HartToExec).RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE || RegFile(HartToExec).RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE ){ // Ecall found
         // x17 (a7) is the code for ecall
 
         if( feature->IsRV32() ){
-          uint32_t code = RegFiles(HartToExec).RV32[17];
+          uint32_t code = RegFile(HartToExec).RV32[17];
 
           #if _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << "found ecall with code: " << code << std::endl;
@@ -1836,11 +1871,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           #endif
 
           /* exception handled... zero the cause register */
-          RegFiles(HartToDecode).RV32_SCAUSE = 0;
+          RegFile(HartToDecode).RV32_SCAUSE = 0;
         } else {
-          uint64_t code = RegFiles(HartToExec).RV64[17];
+          uint64_t code = RegFile(HartToExec).RV64[17];
           uint64_t rc = SystemCalls::jump_table64.at(code)(*this);
-          RegFiles(HartToDecode).RV64_SCAUSE = 0;
+          RegFile(HartToDecode).RV64_SCAUSE = 0;
           #if _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << "found ecall with code: " << code << std::endl;
           #endif
@@ -1883,24 +1918,24 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
             (Ext->GetName() == "RV32D") ){
           // write an rv32 float rd
           uint32_t rval = rand() % (2^(fault_width));
-          uint32_t tmp = (uint32_t)(RegFiles(HartToExec).SPF[Inst.rd]);
+          uint32_t tmp = (uint32_t)(RegFile(HartToExec).SPF[Inst.rd]);
           tmp |= rval;
-          RegFiles(HartToExec).SPF[Inst.rd] = (float)(tmp);
+          RegFile(HartToExec).SPF[Inst.rd] = (float)(tmp);
         }else if( (Ext->GetName() == "RV64F") ||
                   (Ext->GetName() == "RV64D") ){
           // write an rv64 float rd
           uint64_t rval = rand() % (2^(fault_width));
-          uint64_t tmp = (uint64_t)(RegFiles(HartToExec).DPF[Inst.rd]);
+          uint64_t tmp = (uint64_t)(RegFile(HartToExec).DPF[Inst.rd]);
           tmp |= rval;
-          RegFiles(HartToExec).DPF[Inst.rd] = (double)(tmp);
+          RegFile(HartToExec).DPF[Inst.rd] = (double)(tmp);
         }else if( feature->GetXlen() == 32 ){
           // write an rv32 gpr rd
           uint32_t rval = rand() % (2^(fault_width));
-          RegFiles(HartToExec).RV32[Inst.rd] |= rval;
+          RegFile(HartToExec).RV32[Inst.rd] |= rval;
         }else{
           // write an rv64 gpr rd
           uint64_t rval = rand() % (2^(fault_width));
-          RegFiles(HartToExec).RV64[Inst.rd] |= rval;
+          RegFile(HartToExec).RV64[Inst.rd] |= rval;
         }
 
         // clear the fault
@@ -1941,21 +1976,21 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       RevInst retiredInst = Pipeline.front().second;
       DependencyClear(tID, &retiredInst);
       Pipeline.pop();
-      RegFiles(tID).cost = 0;
+      RegFile(tID).cost = 0;
     }
   }
 
   /*for(int tID = 0; tID < _REV_HART_COUNT_; tID ++){
     //A thread that has successfully decoded an instruction AND has no dependencies will have
       // a cost > 0 as set by the decode stage
-      if(RegFiles(tID].cost > 0){   
-        RegFiles(tID].cost = RegFiles(tID].cost - 1;
-        if( RegFiles(tID].cost == 0 ){
+      if(RegFile(tID].cost > 0){   
+        RegFile(tID].cost = RegFile(tID].cost - 1;
+        if( RegFile(tID].cost == 0 ){
             output->verbose(CALL_INFO, 6, 0,
                       "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
                       id, tID, ExecPC);
             Retired++;
-            RegFiles(tID].trigger = false;
+            RegFile(tID].trigger = false;
         }
       }
   }*/
@@ -1977,7 +2012,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     //     output->fatal(CALL_INFO, -1, "RETIRE AND SWAP FAILED");
     //   } else {
     //     std::cout << "SWAPPED TO PID = " << ActivePIDs.at(HartToExec);
-    //     SetPC(RegFiles(HartToDecode).RV64_SEPC);
+    //     SetPC(RegFile(HartToDecode).RV64_SEPC);
     //   }
     //   
     // } else{
@@ -2102,26 +2137,27 @@ std::vector<uint32_t> RevProc::GetPIDs(){
  * - FIXME: - Default ChildMemSize = _DEFAULT_THREAD_MEM_SIZE (Maybe make it equal to ParentMemSize?)
  * - FIXME: - Starting Mem Address of the child = ParentsAddr + ParentsSize 
 */
-// uint32_t RevProc::CreateChildCtx(){
+RevThreadCtx& RevProc::CreateChildCtx(){
 
-//   // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
-//   RevThreadCtx& ParentCtx = GetActiveCtx();
-//   // Child RegFile is duplicate of Parent Regfile
-//   RevRegFile *ChildRegFile = new RevRegFile(*ParentCtx.RegFile);
+  // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
+  RevThreadCtx& ParentCtx = HartToExecActiveCtx();
+  // Child RegFile is duplicate of Parent Regfile
+  RevRegFile ChildRegFile = RevRegFile(ParentCtx.GetRegFile());
 
-//   uint32_t ChildPID = mem->GetNewThreadPID();
+  uint32_t ChildPID = mem->GetNewThreadPID();
 
-//   RevThreadCtx ChildCtx{ ChildPID,     // NewPID
-//                          ParentCtx.GetPID(),   // ParentPID
-//                          ThreadState::Waiting, // Starting State
-//                          ChildRegFile, // RegFile (Duplicate of Parents)
-//                          ParentCtx.MemInfoStartAddr // FIXME: This means the child & Parent share
-//   };
+  RevThreadCtx ChildCtx{ ChildPID,     // NewPID
+                         ChildRegFile, // RegFile (Duplicate of Parents)
+                         HartToExecActivePID(),   // ParentPID
+                         // ThreadState::Waiting, // Starting State
+                         ParentCtx.GetMemStartAddr(), // FIXME: This means the child & Parent share
+                         ParentCtx.GetMemSize() // FIXME: This means the child & Parent share
+  };
 
-//   /* Add child to ThreadTable */
-//   ThreadTable.emplace(ChildPID, ChildCtx);
-//   return ChildCtx.GetPID();
-// }
+  /* Add child to ThreadTable */
+  ThreadTable.emplace(ChildPID, ChildCtx);
+  return ThreadTable.at(ChildPID);
+}
 
 /* Get state of thread (pid) from ThreadTable */
 ThreadState RevProc::GetThreadState(uint32_t pid){
@@ -2141,7 +2177,7 @@ ThreadState RevProc::GetThreadState(uint32_t pid){
 //   /* Get the context that's being loaded */
 //   RevThreadCtx& Ctx = GetCtx(pid);
 //   /* Change the regfile being pointed to by that Hart's pointer */
-//   *RegFiles(HartToExec) = Ctx.GetRegFile();
+//   *RegFile(HartToExec) = Ctx.GetRegFile();
 //   /* Update ActivePID of that hart */
 //   ActivePIDs.at(HartToExec) = pid;
 
