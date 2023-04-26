@@ -127,14 +127,11 @@ namespace SST{
       RevProcStats GetStats();
 
       RevMem& GetMem(){ return *mem; }
-      // RevRegFile& GetHWThreadToExecRegFile(){ return RegFiles.at(HartToExec); }
 
       /* Software Process Table */
-      /* NOTE: Not all of these needed/work */
+      /* NOTE: Not all of these are needed/work */
       bool AddCtx(RevThreadCtx& Ctx);
       uint32_t CreateChildCtx();
-      bool RetireThread(uint32_t pid);
-      bool SaveRegFiles(RevRegFile);
       ThreadState GetThreadState(uint32_t pid);
       bool SetState(ThreadState, uint32_t pid);
       bool PauseThread(uint32_t pid);
@@ -145,10 +142,11 @@ namespace SST{
       /* Returns the active pid for HartID */
       uint32_t GetActivePID(const uint32_t HartID){ return ActivePIDs.at(HartID); } 
 
-      // RevRegFile& GetActiveRegFile(uint8_t HartID){ return RegFiles.at(HartID); } 
-      // uint32_t SetActivePID(uint32_t NewActivePID){ ActivePID = NewActivePID; }
+      /* Returns the current HartToExec active pid */
+      // void UpdateRegFile(const uint32_t NewPID){ RegFiles.at(HartToExec) = ThreadTable.at(NewPID).GetRegFile();}
 
-      // RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(ActivePID); }
+      /* Returns the active pid for HartID */
+      // RevRegFile* GetRegFile(uint32_t pid){ return ThreadTable.at(pid).RegFile; }
 
       const char&& GetThreadMemRef(uint32_t pid);
   
@@ -162,9 +160,9 @@ namespace SST{
       
       bool LoadCtx(uint32_t pid);
     
-      RevThreadCtx& GetCtx(uint32_t PID){ return ThreadTable.at(PID); }
-      RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(ActivePIDs.at(HartToExec));}; ///< RevProc: Get the active ThreadCtx of HartToExec
-      RevThreadCtx& GetActiveCtx(uint8_t HartID){return ThreadTable.at(ActivePIDs.at(HartID)); } ///< RevProc: Get the active ThreadCtx of HartID
+    //   RevThreadCtx& GetCtx(uint32_t PID){ return ThreadTable.at(PID); }
+    //   RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(ActivePIDs.at(HartToExec));}; ///< RevProc: Get the active ThreadCtx of HartToExec
+    //   RevThreadCtx& GetActiveCtx(uint8_t HartID){return ThreadTable.at(ActivePIDs.at(HartID)); } ///< RevProc: Get the active ThreadCtx of HartID
 
       void CtxSwitchAlert(uint32_t NewPID) { NextPID=NewPID;PendingCtxSwitch = true; }
       
@@ -181,7 +179,7 @@ namespace SST{
       uint16_t HartToDecode;   ///< RevProc: Current executing ThreadID
       uint16_t HartToExec;     ///< RevProc: Thread to dispatch instruction
       uint64_t Retired;         ///< RevProc: number of retired instructions
-      bool PendingCtxSwitch = false;           ///< RevProc: determines if the core is halted
+      bool PendingCtxSwitch = false; ///< RevProc: determines if the core is halted
       uint32_t NextPID = 0; 
 
       RevOpts *opts;            ///< RevProc: options object
@@ -193,13 +191,13 @@ namespace SST{
       RevProcStats Stats;       ///< RevProc: collection of performance stats
       RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
-      // RevRegFile& ActiveRegFile;
-      // RevRegFile RegFile[_REV_HART_COUNT_];      ///< RevProc: register file
   
       // PhysRegFile.at(HART-ID) = Regfile
-      std::vector<RevRegFile*> RegFiles; // TODO: Maybe rename
-      std::vector<uint32_t> ActivePIDs; // TODO: Maybe rename
-  //
+      // std::vector<RevRegFile*> RegFiles; // TODO: Maybe rename
+      RevRegFile& RegFiles(uint16_t HartID);
+      
+      std::vector<uint32_t> ActivePIDs;
+
       RevInst Inst;             ///< RevProc: instruction payload
 
       std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
@@ -316,7 +314,7 @@ namespace SST{
       void ResetInst(RevInst *Inst);
 
       /// RevProc: Determine next thread to execute
-      uint16_t GetThreadID();
+      uint16_t GetHartID();
 
       /// RevProc: Check scoreboard for pipeline hazards
       bool DependencyCheck(uint16_t threadID, RevInst* Inst);

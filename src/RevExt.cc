@@ -12,12 +12,12 @@
 
 RevExt::RevExt( std::string Name,
                 RevFeature *Feature,
-                RevRegFile *RegFile,
+                RevRegFile &RegFile,
                 RevMem *RevMem,
                 SST::Output *Output )
-  : feature(Feature), mem(RevMem), name(Name),
-    output(Output) {
-  regFile = RegFile;
+  : feature(Feature), regFile(RegFile), mem(RevMem),
+    name(Name), output(Output){
+  // regFile = RegFile;
 }
 
 RevExt::~RevExt(){
@@ -46,7 +46,7 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint8_t threadID){
   }
 
   bool (*func)(RevFeature *,
-               RevRegFile *,
+               RevRegFile &,
                RevMem *,
                RevInst) = nullptr;
   if( payload.compressed ){
@@ -80,7 +80,7 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint8_t threadID){
   }
 
   // execute the instruction
-  if( !(*func)(feature,&(regFile[threadID]),mem,payload) )
+  if( !(*func)(feature,(regFile),mem,payload) )
     return false;
 
 #if 0

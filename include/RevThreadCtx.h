@@ -24,18 +24,36 @@ Memory Actions:
 
 enum class ThreadState {
   Running,
-  Ready,  
   Waiting,
-  Terminated,
-  Aborted,
-  Retired,
+  Sleeping,
+  Dead,
 };
 
 class RevThreadCtx {
 
+private: 
+  // FIXME: Maybe make this private? 
+  uint32_t PID;
+  uint32_t ParentPID;
+
+  ThreadState State = ThreadState::Waiting;
+  RevRegFile RegFile; 
+
+  uint64_t MemStartAddr;
+  uint64_t MemSize;
+
+  std::vector<uint32_t> ChildrenPIDs = {};
+
 public:
-  // NOTE: These Getters/Setters are currently unecessary as everything 
-  //       they Get/Set is public. This may change in the future
+  // Constructor that takes a RevRegFile object and a uint32_t ParentPID
+  RevThreadCtx(const uint32_t inputPID, const RevRegFile& inputRevRegFile, uint32_t inputParentPID,
+               uint64_t inputMemStartAddr, uint64_t inputMemSize )
+      : PID(inputPID), ParentPID(inputParentPID), RegFile(inputRevRegFile), 
+        MemStartAddr(inputMemStartAddr), MemSize(inputMemSize)
+  {
+  }
+
+  RevRegFile& GetRegFile() { return RegFile; }
 
   uint32_t GetPID() { return PID; }
   void SetPID(uint32_t NewPID) { PID = NewPID; }
@@ -46,34 +64,18 @@ public:
   ThreadState GetState() const { return State; }
   void SetState(ThreadState newState) { State = newState; }
 
-  RevRegFile* GetRegFile() { return RegFile; }
-
-  uint64_t GetMemStartAddr() const { return MemInfoStartAddr; }
-  void SetMemStartAddr(uint64_t newMemStartAddr) { MemInfoStartAddr = newMemStartAddr; }
-
-  uint64_t GetMemSize() const { return MemInfoSize; }
-  void SetMemSize(uint64_t newMemSize) { MemInfoSize = newMemSize; }
+  uint64_t GetMemSize() { return MemSize; }
+  uint64_t GetMemStartAddr() { return MemStartAddr; }
 
   bool AddChildPID(uint32_t pid);
   bool RemoveChildPID(uint32_t pid);
 
   bool isRunning(){ return ( State == ThreadState::Running ); }
-  bool isReady(){ return (State == ThreadState::Ready); }
+  // bool isReady(){ return (State == ThreadState::Ready); }
   bool isWaiting(){ return (State == ThreadState::Waiting); }
-  bool isTerminated(){ return (State == ThreadState::Terminated); }
-  bool isAborted(){ return (State == ThreadState::Aborted); }
+  // bool isTerminated(){ return (State == ThreadState::Terminated); }
+  bool isDead(){ return (State == ThreadState::Dead); }
 
-  // FIXME: Maybe make this private? 
-  uint32_t PID;
-  uint32_t ParentPID;
-
-  ThreadState State = ThreadState::Ready;
-  RevRegFile *RegFile; // Actual RegFile lives in RevProc
-
-  uint64_t MemInfoStartAddr;
-  uint64_t MemInfoSize;
-
-  std::vector<uint32_t> ChildrenPIDs = {};
 };
 
 

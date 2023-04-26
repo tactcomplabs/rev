@@ -11,6 +11,7 @@
 #ifndef _SST_REVCPU_RV64P_H_
 #define _SST_REVCPU_RV64P_H_
 
+#include "../RevExt.h"
 #include "../RevInstTable.h"
 
 using namespace SST::RevCPU;
@@ -19,27 +20,27 @@ namespace SST{
   namespace RevCPU{
     class RV64P : public RevExt {
 
-      static bool future(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( M->SetFuture(( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
-          R->RV64[Inst.rd] = 0x01ll;
+      static bool future(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+        if( M->SetFuture(( (uint64_t)(R.RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
+          R.RV64[Inst.rd] = 0x01ll;
         else
-          R->RV64[Inst.rd] = 0x00ll;
+          R.RV64[Inst.rd] = 0x00ll;
         return true;
       }
 
-      static bool rfuture(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( M->RevokeFuture(( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
-          R->RV64[Inst.rd] = 0x01ll;
+      static bool rfuture(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+        if( M->RevokeFuture(( (uint64_t)(R.RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
+          R.RV64[Inst.rd] = 0x01ll;
         else
-          R->RV64[Inst.rd] = 0x00ll;
+          R.RV64[Inst.rd] = 0x00ll;
         return true;
       }
 
-      static bool sfuture(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( M->StatusFuture(( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
-          R->RV64[Inst.rd] = 0x01ll;
+      static bool sfuture(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+        if( M->StatusFuture(( (uint64_t)(R.RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
+          R.RV64[Inst.rd] = 0x01ll;
         else
-          R->RV64[Inst.rd] = 0x00ll;
+          R.RV64[Inst.rd] = 0x00ll;
         return true;
       }
 
@@ -67,7 +68,7 @@ namespace SST{
     public:
       /// RV64P: standard constructor
       RV64P( RevFeature *Feature,
-             RevRegFile *RegFile,
+             RevRegFile &RegFile,
              RevMem *RevMem,
              SST::Output *Output )
         : RevExt( "RV64P", Feature, RegFile, RevMem, Output ) {
