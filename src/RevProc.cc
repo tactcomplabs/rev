@@ -1816,7 +1816,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
       HartToExec = _REV_INVALID_HART_ID_;
-    }else {                 
+    }else {
       Stats.cyclesBusy++;
       HART_CTE[HartToDecode] = true;
       HartToExec = HartToDecode;
@@ -1828,7 +1828,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   }
 
 
-  if( (HartToExec != _REV_INVALID_HART_ID_) && !Halted 
+  if( (HartToExec != _REV_INVALID_HART_ID_) && !Halted
       && HART_CTE[HartToExec] && (!RegFile(HartToExec).trigger)){
 
     // trigger the next instruction
@@ -1862,45 +1862,47 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
 
-      /* 
+      /*
        * Exception Handling
        * - Currently this is only for ecall
       */
-      
-      if( RegFile(HartToExec).RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE || RegFile(HartToExec).RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE ){ // Ecall found
+      if( (RegFile(HartToExec).RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ||
+          (RegFile(HartToExec).RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){ // Ecall found
         // x17 (a7) is the code for ecall
 
         if( feature->IsRV32() ){
           uint32_t code = RegFile(HartToExec).RV32[17];
 
-          #if _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << "found ecall with code: " << code << std::endl;
+          #ifdef _REV_DEBUG_
+          std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
           #endif
 
           /* Execute system call on this RevProc */
           uint32_t rc = SystemCalls::jump_table32.at(code)(*this);
 
-          #if _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << "returned from ecall with code: " << rc << std::endl;
+          #ifdef _REV_DEBUG_
+          std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
           #endif
 
           /* exception handled... zero the cause register */
           RegFile(HartToDecode).RV32_SCAUSE = 0;
+          PendingCtxSwitch = false;
         } else {
           uint64_t code = RegFile(HartToExec).RV64[17];
           RegFile(HartToExec).RV64[10] = SystemCalls::jump_table64.at(code)(*this);
-          #if _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << "found ecall with code: " << code << std::endl;
-          #endif
-
-          RegFile(HartToExec).RV64_SCAUSE = 0;
-          /* Execute system call on this RevProc */
-
-          #if _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << "returned from ecall with code: " << rc << std::endl;
+          #ifdef _REV_DEBUG_
+          std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
           #endif
 
           /* exception handled... zero the cause register */
+          RegFile(HartToExec).RV64_SCAUSE = 0;
+
+          /* Execute system call on this RevProc */
+
+          #ifdef _REV_DEBUG_
+          std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
+          #endif
+          PendingCtxSwitch = false;
         }
       }
 
@@ -1919,7 +1921,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
       DependencySet(HartToExec, &Inst);
 
+      // -------------------------------------------
       // inject the ALU fault
+      // -------------------------------------------
       if( ALUFault ){
         // inject ALU fault
         RevExt *Ext = Extensions[EToE.first];
@@ -1950,6 +1954,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         // clear the fault
         ALUFault = false;
       }
+      // -------------------------------------------
     }
 
 
@@ -2014,9 +2019,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
      * If it is, we know we are actually done
      * Else: Transition control back to ParentPID 
     */
-    
-    
-      // look for more work on the execution queue
+
+
+    // look for more work on the execution queue
       // if no work is found, don't update the PC
       // just wait and spin
       bool done = true;

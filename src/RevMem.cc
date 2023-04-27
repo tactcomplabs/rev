@@ -506,7 +506,7 @@ void RevMem::WriteDouble( uint64_t Addr, double Value ){
 */
 uint32_t RevMem::GetNewThreadPID(){
 
-  #if _REV_DEBUG_
+  #ifdef _REV_DEBUG_
   std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl; 
   #endif _REV_DEBUG_
   /*
