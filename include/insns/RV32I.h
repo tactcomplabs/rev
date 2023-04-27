@@ -842,6 +842,7 @@ namespace SST{
           R.RV32_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
           R.RV32_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
           
+          R.RV32_PC += Inst.instSize;
         }
         else {
           /* 

@@ -1726,7 +1726,6 @@ RevRegFile& RevProc::HartToDecodeRegFile(){
   return ActiveRegFile;
 }
 
-
 RevRegFile& RevProc::RegFile(uint16_t HartID){
   uint32_t ActivePID  = ActivePIDs.at(HartID);
   RevRegFile& ActiveRegFile = ThreadTable.at(ActivePID).GetRegFile();
@@ -1756,6 +1755,21 @@ uint16_t RevProc::GetHartID(){
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
+
+  if( PendingCtxSwitch ){
+    if( Pipeline.empty() ) {
+      if( !ChangeActivePID(NextPID) ){
+        std::cout << "Failed to change active PID" << std::endl;
+      } else {
+        std::cout << "Successfully Updated Hart " << HartToExec << "to PID = " << NextPID << std::endl;
+        PendingCtxSwitch = false;
+        // ResetInst(&Inst);
+        RegFile(HartToExec).RV64_SCAUSE = 0;
+        // RegFile(HartToDecode).RV64_SCAUSE = 0;
+        NextPID = 0;
+      }
+    }
+  }
 
   #ifdef _REV_DEBUG_
   if((currentCycle % 100000000) == 0){
@@ -1874,12 +1888,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           RegFile(HartToDecode).RV32_SCAUSE = 0;
         } else {
           uint64_t code = RegFile(HartToExec).RV64[17];
-          uint64_t rc = SystemCalls::jump_table64.at(code)(*this);
-          RegFile(HartToDecode).RV64_SCAUSE = 0;
+          RegFile(HartToExec).RV64[10] = SystemCalls::jump_table64.at(code)(*this);
           #if _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << "found ecall with code: " << code << std::endl;
           #endif
 
+          RegFile(HartToExec).RV64_SCAUSE = 0;
           /* Execute system call on this RevProc */
 
           #if _REV_DEBUG_
@@ -1890,14 +1904,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         }
       }
 
-      // if( Pipeline.empty() && PendingCtxSwitch ){
-      //   std::cout << "CTX: Old PID = " << ActivePIDs.at(HartToExec) << std::endl;
-      //   LoadCtx(NextPID);
-      //   // DependencyClear(HartToExec, &Inst);
-      //   std::cout << "CTX: New PID = " << ActivePIDs.at(HartToExec)  <<  std::endl;
-      // }
-
+      // if( !PendingCtxSwitch ){
       Pipeline.push(std::make_pair(HartToExec, Inst));
+      // }
 
       bool isFloat = false;
       if( (Ext->GetName() == "RV32F") ||
@@ -1970,8 +1979,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if(Pipeline.front().second.cost == 0){
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
-                    id, tID, ExecPC);
+                    "Core %d ; HartID %d; PID %d, Retiring PC= 0x%" PRIx64 "\n",
+                    id, tID, HartToExecActivePID(), ExecPC);
       Retired++;
       RevInst retiredInst = Pipeline.front().second;
       DependencyClear(tID, &retiredInst);
@@ -2007,16 +2016,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     */
     
     
-    // if( GetActiveCtx().GetParentPID() != 0 ){
-    //   if( !LoadCtx(GetActiveCtx().GetParentPID() ) ){
-    //     output->fatal(CALL_INFO, -1, "RETIRE AND SWAP FAILED");
-    //   } else {
-    //     std::cout << "SWAPPED TO PID = " << ActivePIDs.at(HartToExec);
-    //     SetPC(RegFile(HartToDecode).RV64_SEPC);
-    //   }
-    //   
-    // } else{
-
       // look for more work on the execution queue
       // if no work is found, don't update the PC
       // just wait and spin
@@ -2116,6 +2115,61 @@ bool RevProc::InitThreadTable(){
   return true;
 }
 
+
+/*
+ * This function changes the active pid of HartToExec
+ *
+ * Returns:
+ * - True if successfully changed
+ * - False if not (ie. PID doesn't exist)
+ *
+ *
+ * NOTES:
+ * - This function automatically sets the new Ctx state to Running
+ * - This function automatically sets old Ctx state to Waiting
+ */
+bool RevProc::ChangeActivePID(uint32_t PID){
+  auto NewActiveCtx = ThreadTable.find(PID);
+  if( NewActiveCtx != ThreadTable.end() ){
+    NewActiveCtx->second.SetState(ThreadState::Running);
+    NewActiveCtx->second.GetRegFile().RV64_PC = HartToExecRegFile().RV64_SEPC + Inst.instSize;
+    ActivePIDs.at(HartToExec) = PID;
+    return true;
+  }else{
+    /* TODO: Maybe don't output fatal? */
+    output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", PID, HartToExec); 
+    return false;
+  }
+}
+
+/*
+ * This function changes the active pid of HartID
+ *
+ * Returns:
+ * - True if successfully changed
+ * - False if not (ie. PID doesn't exist)
+ *
+ * NOTES:
+ * - This function automatically sets the new Ctx state to Running
+ * - This function automatically sets old Ctx state to Waiting
+ */
+bool RevProc::ChangeActivePID(uint32_t PID, uint16_t HartID){
+  auto NewActiveCtx = ThreadTable.find(PID);
+  if( NewActiveCtx != ThreadTable.end() ){
+    if( ActivePIDs.size() >= HartID ){
+      ActivePIDs.at(HartToExec) = PID;
+      return true;
+    } else {
+    /* TODO: Maybe don't output fatal? */
+      output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because Hart does not exist", PID, HartToExec); 
+      return false;
+    }
+  }else{
+    /* TODO: Maybe don't output fatal? */
+    output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", PID, HartToExec); 
+    return false;
+  }
+}
 
 /* GetPIDS()
  * - Returns vector of all PIDs in the ThreadTable 

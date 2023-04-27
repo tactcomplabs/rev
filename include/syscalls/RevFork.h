@@ -20,7 +20,7 @@ struct RevFork {
   template<typename RiscvArchType>
   static int ECall(RevProc& Proc) {
     RevThreadCtx& ParentCtx = Proc.HartToExecActiveCtx();
-    RevMem& Mem = Proc.GetMem();
+    // RevMem& Mem = Proc.GetMem();
     std::cout << "FORK: Inside Fork with PROC ACTIVE PID = " << Proc.GetActivePID() << std::endl;
 
       // .at(Proc.GetActivePID*()];
@@ -36,12 +36,10 @@ struct RevFork {
       // uint64_t ChildStartMemAddr = ParentCtx.GetMemStartAddr() + (ParentCtx.GetMemSize() * 2);
       // TODO: Need to change this to use a global counter
 
-      if( ParentCtx.GetState() == ThreadState::Running ){
-        /* Set Parent to Waiting (NOTE: This will change in the future once we support simultaneous multithreading) */
-        
-        RevThreadCtx& ChildCtx = Proc.CreateChildCtx();
-        ChildCtx.GetRegFile().RV64[10] = 0;
- 
+      RevThreadCtx& ChildCtx = Proc.CreateChildCtx();
+      // TODO: Fix this
+      ChildCtx.GetRegFile().RV64[10] = 0;
+
         /* Create a copy of Parents Memory Space */
         // std::cout << "FORK: About to duplicate parent's memory" << std::endl;
         // const char* ParentMem[Proc.ThreadTable.at(ParentPID).GetMemSize()];
@@ -80,7 +78,9 @@ struct RevFork {
           * Pass the PID that will be switched to once the 
           * current pipeline is executed until completion
         */
-      }
+      // }
+      Proc.CtxSwitchAlert(ChildCtx.GetPID());
+      return ParentCtx.GetPID();
     }
 
     std::cout << "RETURNING -1" << std::endl;

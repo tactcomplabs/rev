@@ -175,6 +175,8 @@ namespace SST{
       RevRegFile& HartToExecRegFile();
       RevRegFile& HartToDecodeRegFile();
       
+      bool ChangeActivePID(uint32_t PID); ///< RevProc: Change HartToExec active pid
+      bool ChangeActivePID(uint32_t PID, uint16_t HartID); ///< RevProc: Change HartID active pid
 
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
