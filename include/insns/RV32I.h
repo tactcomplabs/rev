@@ -167,12 +167,14 @@ namespace SST{
 
       static bool CIFUNC(RevFeature *F, RevRegFile &R,
                        RevMem *M, RevInst Inst) {
+        std::cout << "INST OUTPUT ---- PID = " << R.PID << std::endl;
         if( Inst.rd == 2 ){
           // c.addi16sp
            SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
           return addi(F,R,M,Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
+          std::cout << "INST OUTPUT ---- PID = " << R.PID << std::endl;
           return lui(F,R,M,Inst);
         }
       }
@@ -826,6 +828,7 @@ namespace SST{
       }
 
       static bool fencei(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+        std::cout << "INST OUTPUT ---- PID = " << R.PID << std::endl;
         if( F->IsRV32() ){
           R.RV32_PC += Inst.instSize;
         }else{
@@ -835,12 +838,12 @@ namespace SST{
       }
 
       static bool ecall(RevFeature *F, RevRegFile &R, RevMem *M, RevInst Inst){
+        std::cout << "INST OUTPUT ---- PID = " << R.PID << std::endl;
         // Save PC of Ecall to *epc register
         if( F->IsRV32() ){
           R.RV32_SEPC = R.RV32_PC; // Save PC of instruction that raised exception
           R.RV32_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
           R.RV32_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
-          
           R.RV32_PC += Inst.instSize;
         }
         else {
