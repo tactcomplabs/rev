@@ -9,3 +9,4 @@ src/src/librevcpu.so
 
 *.o
 *.inc
+.vscode*

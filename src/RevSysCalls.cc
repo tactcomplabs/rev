@@ -17,11 +17,11 @@ std::unordered_map<int, systemcall_t> SystemCalls::jump_table32 = {
   // { RevMkdirat::value, RevMkdirat::ECall<Riscv32> },
   { RevWrite::value, RevWrite::ECall<Riscv32> },
   // { RevPwrite::value, RevPwrite::ECall<Riscv32> },
-  // { RevFork::value, RevFork::ECall<Riscv32> },
   // { RevClone::value, RevClone::ECall<Riscv32> },
   { RevExit::value, RevExit::ECall<Riscv32> },
   { RevFork::value, RevFork::ECall<Riscv32> },
-  { RevRTSigProcMask::value, RevRTSigProcMask::ECall<Riscv32> }
+  { RevRTSigProcMask::value, RevRTSigProcMask::ECall<Riscv32> },
+  { Rev99::value, Rev99::ECall<Riscv32> }
   // { RevGetPID::value, RevGetPID::ECall<Riscv32> }
 };
 std::unordered_map<int, systemcall_t> SystemCalls::jump_table64 = {
@@ -29,7 +29,6 @@ std::unordered_map<int, systemcall_t> SystemCalls::jump_table64 = {
   // { RevMkdirat::value, RevMkdirat::ECall<Riscv64> },
   { RevWrite::value, RevWrite::ECall<Riscv64> },
   // { RevPwrite::value, RevPwrite::ECall<Riscv64> },
-  // { RevFork::value, RevFork::ECall<Riscv64> },
   // { RevClone::value, RevClone::ECall<Riscv64> },
   { RevExit::value, RevExit::ECall<Riscv64> },
   { RevFork::value, RevFork::ECall<Riscv64> },
