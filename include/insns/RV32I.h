@@ -167,7 +167,7 @@ namespace SST{
 
       static bool CIFUNC(RevFeature *F, RevRegFile &R,
                        RevMem *M, RevInst Inst) {
-        std::cout << "INST OUTPUT ---- PID = " << R.PID << std::endl;
+        std::cout << "INST OUTPUT ---- PID = " << std::hex << R.PID << std::endl;
         if( Inst.rd == 2 ){
           // c.addi16sp
            SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);

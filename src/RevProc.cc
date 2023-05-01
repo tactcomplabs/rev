@@ -63,8 +63,6 @@ RevProc::RevProc( unsigned Id,
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the ThreadTable for core=%d\n", id );
 
-
-
   // load the instruction tables
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
@@ -1693,40 +1691,47 @@ void RevProc::DependencyClear(uint16_t threadID, RevInst* Inst){
 }
 
 uint32_t RevProc::HartToExecActivePID(){
+  // std::cout << "RevProc::HartToExecActivePID(" << HartToExec << ")" << std::endl;
   uint32_t ActivePID  = ActivePIDs.at(HartToExec);
   return ActivePID;
 }
 
 uint32_t RevProc::HartToDecodeActivePID(){
+  // std::cout << "RevProc::HartToDecodeActivePID(" << HartToDecode << ")" << std::endl;
   uint32_t ActivePID  = ActivePIDs.at(HartToDecode);
   return ActivePID;
 }
 
 RevThreadCtx& RevProc::HartToExecActiveCtx(){
+  // std::cout << "RevProc::HartToExecActiveCtx(" << HartToExec << ")" << std::endl;
   uint32_t ActivePID  = HartToExecActivePID();
   RevThreadCtx& ActiveCtx = ThreadTable.at(ActivePID);
   return ActiveCtx;
 }
 
 RevThreadCtx& RevProc::HartToDecodeActiveCtx(){
+  // std::cout << "RevProc::HartToDecodeActiveCtx(" << HartToDecode << ")" << std::endl;
   uint32_t ActivePID  = HartToExecActivePID();
   RevThreadCtx& ActiveCtx = ThreadTable.at(ActivePID);
   return ActiveCtx;
 }
 
 RevRegFile& RevProc::HartToExecRegFile(){
+  // std::cout << "RevProc::HartToExecRegFile(" << HartToExec << ")" << std::endl;
   RevThreadCtx& ActiveCtx = HartToExecActiveCtx();
   RevRegFile& ActiveRegFile = ActiveCtx.GetRegFile();
   return ActiveRegFile;
 }
 
 RevRegFile& RevProc::HartToDecodeRegFile(){
+  // std::cout << "RevProc::HartToDecodeRegFile(" << HartToDecode << ")" << std::endl;
   RevThreadCtx& ActiveCtx = HartToDecodeActiveCtx();
   RevRegFile& ActiveRegFile = ActiveCtx.GetRegFile();
   return ActiveRegFile;
 }
 
 RevRegFile& RevProc::RegFile(uint16_t HartID){
+  // std::cout << "RevProc::Regfile(HartID= " << HartID << ")" << std::endl;
   uint32_t ActivePID  = ActivePIDs.at(HartID);
   RevRegFile& ActiveRegFile = ThreadTable.at(ActivePID).GetRegFile();
   return ActiveRegFile;
@@ -1734,9 +1739,9 @@ RevRegFile& RevProc::RegFile(uint16_t HartID){
 
 uint16_t RevProc::GetHartID(){
 
-  uint16_t nextID = HartToDecode;
-  if(HART_CTS[HartToDecode]){
-    nextID = HartToDecode;
+  uint16_t nextID = HartToExec;
+  if(HART_CTS[HartToExec]){
+    nextID = HartToExec;
   }else{
     for(int tID = 0; tID < _REV_HART_COUNT_; tID++){
       nextID++;
@@ -1746,8 +1751,8 @@ uint16_t RevProc::GetHartID(){
       if(HART_CTS[nextID]){ break; };
     }
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Thread switch from %d to %d \n",
-                    id, HartToDecode, nextID);
+                    "Core %d ; Hart switch from %d to %d \n",
+                    id, HartToExec, nextID);
   }
   return nextID;
 }
@@ -1756,6 +1761,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
 
+  for( auto Ctx : ThreadTable ){
+    std::cout << "ThreadTable ===> PID: " << Ctx.second.GetRegFile().PID << " has RV64_PC = " << std::hex << Ctx.second.GetRegFile().RV64_PC << std::endl;
+  }
   if( PendingCtxSwitch ){
     if( Pipeline.empty() ) {
       if( !ChangeActivePID(NextPID) ){
@@ -1855,6 +1863,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // found the instruction extension
       std::pair<unsigned,unsigned> EToE = it->second;
       RevExt *Ext = Extensions[EToE.first];
+      Ext->SetRegFile(HartToExecRegFile());
 
       // execute the instruction
       if( !Ext->Execute(EToE.second, Inst, HartToExec) ){
@@ -1902,13 +1911,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
           #endif
-          PendingCtxSwitch = false;
+          // PendingCtxSwitch = false;
         }
       }
 
-      // if( !PendingCtxSwitch ){
+      if( !PendingCtxSwitch ){
       Pipeline.push(std::make_pair(HartToExec, Inst));
-      // }
+      }
 
       bool isFloat = false;
       if( (Ext->GetName() == "RV32F") ||
@@ -2103,18 +2112,18 @@ bool RevProc::InitThreadTable(){
     RevRegFile InitRegFile;
 
     RevThreadCtx DefaultCtx = 
-      RevThreadCtx{
+
+      RevThreadCtx(
         FirstActivePID,
         InitRegFile,
         ParentPID,
         StartingMemAddr,
-        StartingMemSize
-    };
+        StartingMemSize);
 
-    ActivePIDs.push_back(FirstActivePID);
+    DefaultCtx.SetPID(FirstActivePID);
+    ActivePIDs.emplace_back(FirstActivePID);
     /* Add to ThreadTable */
     ThreadTable.emplace(FirstActivePID, DefaultCtx);
-
   }
 
   return true;
@@ -2133,16 +2142,15 @@ bool RevProc::InitThreadTable(){
  * - This function automatically sets the new Ctx state to Running
  * - This function automatically sets old Ctx state to Waiting
  */
-bool RevProc::ChangeActivePID(uint32_t PID){
-  auto NewActiveCtx = ThreadTable.find(PID);
+bool RevProc::ChangeActivePID(uint32_t NewPID){
+  auto NewActiveCtx = ThreadTable.find(NewPID);
   if( NewActiveCtx != ThreadTable.end() ){
     NewActiveCtx->second.SetState(ThreadState::Running);
-    NewActiveCtx->second.GetRegFile().RV64_PC = HartToExecRegFile().RV64_SEPC + Inst.instSize;
-    ActivePIDs.at(HartToExec) = PID;
+    ActivePIDs.at(HartToExec) = NewPID;
     return true;
   }else{
     /* TODO: Maybe don't output fatal? */
-    output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", PID, HartToExec); 
+    output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", NewPID, HartToExec); 
     return false;
   }
 }
@@ -2196,34 +2204,71 @@ std::vector<uint32_t> RevProc::GetPIDs(){
  * - FIXME: - Default ChildMemSize = _DEFAULT_THREAD_MEM_SIZE (Maybe make it equal to ParentMemSize?)
  * - FIXME: - Starting Mem Address of the child = ParentsAddr + ParentsSize 
 */
-RevThreadCtx& RevProc::CreateChildCtx(){
+// RevThreadCtx& RevProc::CreateChildCtx(){
 
+//   // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
+//   RevThreadCtx& ParentCtx = HartToExecActiveCtx();
+
+//   // Child RegFile is duplicate of Parent Regfile
+//   RevRegFile ChildRegFile = RevRegFile();
+
+//   uint32_t ChildPID = mem->GetNewThreadPID();
+//   std::cout << "New ChildPID = " << ChildPID << std::endl;
+
+//   RevRegFile TmpRegFile = RevRegFile();
+//   TmpRegFile = ParentCtx.GetRegFile();
+//   ChildRegFile = TmpRegFile;
+//   RevThreadCtx TmpThreadCtx = RevThreadCtx(ParentCtx);
+
+//   RevThreadCtx ChildCtx = TmpThreadCtx;
+//   ChildCtx.SetPID(ChildPID);
+//   ChildCtx.SetParentPID(TmpThreadCtx.GetPID());
+//   ChildCtx.SetMemSize(ParentCtx.GetMemSize());
+//   ChildCtx.SetMemStartAddr(TmpThreadCtx.GetMemStartAddr());
+//   ChildCtx.SetRegFile(TmpRegFile);
+
+//   ChildCtx.GetRegFile().PID = ChildPID;
+//   /* Add child to ThreadTable */
+//   ThreadTable.emplace(ChildPID, ChildCtx);
+//   return ThreadTable.at(ChildPID);
+// }
+
+// /* Get state of thread (pid) from ThreadTable */
+// ThreadState RevProc::GetThreadState(uint32_t pid){
+//   return ThreadTable.find(pid)->second.GetState();
+// }
+
+
+RevThreadCtx& RevProc::CreateChildCtx() {
   // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
   RevThreadCtx& ParentCtx = HartToExecActiveCtx();
+
   // Child RegFile is duplicate of Parent Regfile
-  RevRegFile ChildRegFile = RevRegFile(ParentCtx.GetRegFile());
+  RevRegFile ChildRegFile = ParentCtx.GetRegFile();
 
   uint32_t ChildPID = mem->GetNewThreadPID();
+  std::cout << "New ChildPID = " << ChildPID << std::endl;
 
-  RevThreadCtx ChildCtx{ ChildPID,     // NewPID
-                         ChildRegFile, // RegFile (Duplicate of Parents)
-                         HartToExecActivePID(),   // ParentPID
-                         // ThreadState::Waiting, // Starting State
-                         ParentCtx.GetMemStartAddr(), // FIXME: This means the child & Parent share
-                         ParentCtx.GetMemSize() // FIXME: This means the child & Parent share
-  };
+  // Create ChildCtx as a copy of ParentCtx
+  RevThreadCtx ChildCtx = ParentCtx;
 
-  /* Add child to ThreadTable */
+  // Update the ChildCtx properties
+  ChildCtx.SetPID(ChildPID);
+  ChildCtx.SetParentPID(HartToExecActivePID());
+  ChildCtx.SetMemSize(ParentCtx.GetMemSize());
+  ChildCtx.SetMemStartAddr(ParentCtx.GetMemStartAddr());
+  ChildCtx.SetRegFile(ChildRegFile);
+  ChildCtx.GetRegFile().PID = ChildPID;
+
+  // Add child to ThreadTable
   ThreadTable.emplace(ChildPID, ChildCtx);
+
   return ThreadTable.at(ChildPID);
 }
 
-/* Get state of thread (pid) from ThreadTable */
-ThreadState RevProc::GetThreadState(uint32_t pid){
-  return ThreadTable.find(pid)->second.GetState();
-}
 
 /*
+ *
  * =========================================================
  * FIXME: LoadCtx (BROKEN)
  * =========================================================

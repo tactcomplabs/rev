@@ -203,7 +203,6 @@ namespace SST {
       RevMem *Mem;                        ///< RevCPU: RISC-V main memory object
       RevLoader *Loader;                  ///< RevCPU: RISC-V loader
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
-      // std::vector<std::unordered_map<uint32_t, RevThreadCtx>&>& ProcThreadTables; ///< RevCPU: RISC-V process table of context objects
       mutable std::shared_mutex ProcTableMtx; ///< RevCPU: Mutex for operating on ProcThreadTables
 
       bool *Enabled;                      ///< RevCPU: Completion structure

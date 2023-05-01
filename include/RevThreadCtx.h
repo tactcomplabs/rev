@@ -54,9 +54,10 @@ public:
   }
 
   RevRegFile& GetRegFile() { return RegFile; }
+  void SetRegFile(RevRegFile r) { RegFile = r; }
 
   uint32_t GetPID() { return PID; }
-  void SetPID(uint32_t NewPID) { PID = NewPID; }
+  void SetPID(uint32_t NewPID) { PID = NewPID; RegFile.PID = PID; }
 
   uint32_t GetParentPID() const { return ParentPID; }
   void SetParentPID(uint32_t parent_pid) { ParentPID = parent_pid; }
@@ -66,6 +67,9 @@ public:
 
   uint64_t GetMemSize() { return MemSize; }
   uint64_t GetMemStartAddr() { return MemStartAddr; }
+
+  void SetMemSize(uint64_t memSize) { MemSize = memSize; }
+  void SetMemStartAddr(uint64_t memStartAddr) { MemStartAddr = memStartAddr; }
 
   bool AddChildPID(uint32_t pid);
   bool RemoveChildPID(uint32_t pid);
