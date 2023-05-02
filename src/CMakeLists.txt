@@ -19,7 +19,7 @@ set(RevCPUSrcs
   RevOpts.cc
   RevProc.cc
   RevThreadCtx.cc
-  RevSysCalls.cc
+  # RevSysCalls.cc
   librevcpu.cc
   RevPrefetcher.cc
   )
@@ -27,7 +27,7 @@ set(RevCPUSrcs
 add_library(revcpu SHARED ${RevCPUSrcs})
 target_include_directories(revcpu PRIVATE ${REVCPU_INCLUDE_PATH})
 target_include_directories(revcpu PUBLIC ${SST_INSTALL_DIR}/include)
-target_include_directories(revcpu PUBLIC ${SST_INSTALL_DIR}/include/syscalls)
+# target_include_directories(revcpu PUBLIC ${SST_INSTALL_DIR}/include/syscalls)
 
 
 install(TARGETS revcpu DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})

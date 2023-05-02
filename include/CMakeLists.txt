@@ -6,5 +6,5 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-add_subdirectory(insns)
-add_subdirectory(syscalls)
+# add_subdirectory(insns)
+# add_subdirectory(syscalls)
