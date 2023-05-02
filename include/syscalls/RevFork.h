@@ -28,8 +28,6 @@ struct RevFork {
     }
    
     else if (std::is_same<RiscvArchType, Riscv64>::value){
-      std::cout << "ParentCtx.GetPID() = "<< ParentCtx.GetPID() << std::endl;
-
 
       // TODO: Make a better way of allocating the kids starting mem address (Arg 4)
       // TODO: Move Mem Calculation Function to RevMem

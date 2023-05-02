@@ -53,11 +53,13 @@ public:
   {
   }
 
+  // RevThreadCtx&
+
   RevRegFile& GetRegFile() { return RegFile; }
   void SetRegFile(RevRegFile r) { RegFile = r; }
 
   uint32_t GetPID() { return PID; }
-  void SetPID(uint32_t NewPID) { PID = NewPID; RegFile.PID = PID; }
+  void SetPID(uint32_t NewPID) { PID = NewPID; RegFile.PID = NewPID; }
 
   uint32_t GetParentPID() const { return ParentPID; }
   void SetParentPID(uint32_t parent_pid) { ParentPID = parent_pid; }

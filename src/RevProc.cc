@@ -1761,18 +1761,29 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
 
-  for( auto Ctx : ThreadTable ){
-    std::cout << "ThreadTable ===> PID: " << Ctx.second.GetRegFile().PID << " has RV64_PC = " << std::hex << Ctx.second.GetRegFile().RV64_PC << std::endl;
+  if( currentCycle > 10 ){
+    for( auto Ctx : ThreadTable ){
+      std::cout << "ThreadTable ===> PID: " << Ctx.second.GetRegFile().PID << " has RV64_PC = " << std::hex << Ctx.second.GetRegFile().RV64_PC << std::endl;
+      if( Ctx.first != Ctx.second.GetRegFile().PID ){
+      }
+
+      std::cout << "=============== THREAD TABLE PID LIST After Updating HART ChildCtx.SetPID =============== " << std::endl; 
+      std::cout << "|" << "Ctx.first" << "|" << "Ctx.second.GetRegFile().PID |"  << std::endl;
+      std::cout << "|" << Ctx.first << "|" << Ctx.second.GetRegFile().PID << "|"  << std::endl;
+    }
+
   }
   if( PendingCtxSwitch ){
     if( Pipeline.empty() ) {
+      DependencyClear(HartToDecode, &Inst);
       if( !ChangeActivePID(NextPID) ){
         std::cout << "Failed to change active PID" << std::endl;
       } else {
-        std::cout << "Successfully Updated Hart " << HartToExec << "to PID = " << NextPID << std::endl;
+        std::cout << "Successfully Updated Hart " << HartToExec << "to PID = " << HartToExecRegFile().PID << std::endl;
+        ExecPC = GetPC();
         PendingCtxSwitch = false;
         // ResetInst(&Inst);
-        RegFile(HartToExec).RV64_SCAUSE = 0;
+        HartToExecRegFile().RV64_SCAUSE = 0;
         // RegFile(HartToDecode).RV64_SCAUSE = 0;
         NextPID = 0;
       }
@@ -1829,11 +1840,19 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       HART_CTE[HartToDecode] = true;
       HartToExec = HartToDecode;
     };
+
+    // std::cout << "THREAD TABLE PID LIST @ RevProc::1841 =============== " << std::endl; 
+    // std::cout << "|" << "Ctx.first" << "|" << "Ctx.second.GetRegFile().PID |"  << std::endl;
+    // for( auto Ctx : ThreadTable ){
+    //   std::cout << "|" << Ctx.first << "|" << Ctx.second.GetRegFile().PID << "|"  << std::endl;
+    // }
     Inst.cost = RegFile(HartToDecode).cost;
     Inst.entry = RegFile(HartToDecode).Entry;
     rtn = true;
     ExecPC = GetPC();
   }
+
+
 
 
   if( (HartToExec != _REV_INVALID_HART_ID_) && !Halted
@@ -1898,20 +1917,19 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           PendingCtxSwitch = false;
         } else {
           uint64_t code = RegFile(HartToExec).RV64[17];
-          RegFile(HartToExec).RV64[10] = SystemCalls::jump_table64.at(code)(*this);
+          HartToExecRegFile().RV64[10] = SystemCalls::jump_table64.at(code)(*this);
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
           #endif
 
           /* exception handled... zero the cause register */
-          RegFile(HartToExec).RV64_SCAUSE = 0;
+          HartToExecRegFile().RV64_SCAUSE = 0;
 
           /* Execute system call on this RevProc */
 
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
           #endif
-          // PendingCtxSwitch = false;
         }
       }
 
@@ -2147,6 +2165,7 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
   if( NewActiveCtx != ThreadTable.end() ){
     NewActiveCtx->second.SetState(ThreadState::Running);
     ActivePIDs.at(HartToExec) = NewPID;
+    ActivePIDs.at(HartToDecode) = NewPID;
     return true;
   }else{
     /* TODO: Maybe don't output fatal? */
@@ -2244,24 +2263,43 @@ RevThreadCtx& RevProc::CreateChildCtx() {
   RevThreadCtx& ParentCtx = HartToExecActiveCtx();
 
   // Child RegFile is duplicate of Parent Regfile
-  RevRegFile ChildRegFile = ParentCtx.GetRegFile();
+  RevRegFile TmpRegFile;// = ParentCtx.GetRegFile();
+  
+  RevRegFile ParentRegfile = ParentCtx.GetRegFile();
+  TmpRegFile = ParentRegfile;
 
   uint32_t ChildPID = mem->GetNewThreadPID();
   std::cout << "New ChildPID = " << ChildPID << std::endl;
 
   // Create ChildCtx as a copy of ParentCtx
-  RevThreadCtx ChildCtx = ParentCtx;
+  RevThreadCtx TmpCtx = {ParentCtx};
+
+  TmpCtx.GetRegFile().PID = ChildPID;
+  TmpCtx.SetParentPID(TmpCtx.GetPID());
+
+  RevThreadCtx ChildCtx = RevThreadCtx(TmpCtx);
+  // ChildCtx = TmpCtx;
 
   // Update the ChildCtx properties
-  ChildCtx.SetPID(ChildPID);
+  
   ChildCtx.SetParentPID(HartToExecActivePID());
   ChildCtx.SetMemSize(ParentCtx.GetMemSize());
   ChildCtx.SetMemStartAddr(ParentCtx.GetMemStartAddr());
-  ChildCtx.SetRegFile(ChildRegFile);
-  ChildCtx.GetRegFile().PID = ChildPID;
+
+  ChildCtx.SetRegFile(TmpRegFile);
+  // ChildCtx.GetRegFile().PID = ChildPID;
 
   // Add child to ThreadTable
   ThreadTable.emplace(ChildPID, ChildCtx);
+
+  std::cout << "CREATECHILD --- CHILD PID = " << ChildPID; 
+  ThreadTable.at(ChildPID).SetPID(ChildPID);
+  // std::cout << "THREAD TABLE PID LIST AFTER ChildCtx.SetPID =============== " << std::endl; 
+  // std::cout << "|" << "Ctx.first" << "|" << "Ctx.second.GetRegFile().PID |"  << std::endl;
+  // for( auto Ctx : ThreadTable ){
+  //   std::cout << "|" << Ctx.first << "|" << Ctx.second.GetRegFile().PID << "|"  << std::endl;
+  // }
+
 
   return ThreadTable.at(ChildPID);
 }
