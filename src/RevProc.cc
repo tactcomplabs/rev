@@ -20,6 +20,7 @@
 #include <optional>
 #include <utility>
 
+
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
@@ -67,6 +68,16 @@ RevProc::RevProc( unsigned Id,
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
                   "Error : failed to load instruction table for core=%d\n", id );
+  
+  // Initialize EcallTable 
+  InitEcallTable();
+
+  // Initialize ThreadTable (NOTE: Default PID = 1024 + ProcID)
+  if( !InitThreadTable() )
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to initialize the ThreadTable for core=%d\n", id );
+
+
 
   // reset the core
   if( !Reset() )
@@ -1896,41 +1907,33 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       */
       if( (RegFile(HartToExec).RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ||
           (RegFile(HartToExec).RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){ // Ecall found
-        // x17 (a7) is the code for ecall
-
-        if( feature->IsRV32() ){
-          uint32_t code = RegFile(HartToExec).RV32[17];
-
+        
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
           #endif
 
           /* Execute system call on this RevProc */
-          uint32_t rc = SystemCalls::jump_table32.at(code)(*this);
+          ExecEcall(); 
 
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
           #endif
 
-          /* exception handled... zero the cause register */
-          RegFile(HartToDecode).RV32_SCAUSE = 0;
-          PendingCtxSwitch = false;
-        } else {
-          uint64_t code = RegFile(HartToExec).RV64[17];
-          HartToExecRegFile().RV64[10] = SystemCalls::jump_table64.at(code)(*this);
+        // } else {
+        //   ExecEcall();
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
           #endif
 
           /* exception handled... zero the cause register */
-          HartToExecRegFile().RV64_SCAUSE = 0;
+          // HartToExecRegFile().RV64_SCAUSE = 0;
 
           /* Execute system call on this RevProc */
 
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
           #endif
-        }
+        // }
       }
 
       if( !PendingCtxSwitch ){
@@ -2304,6 +2307,67 @@ RevThreadCtx& RevProc::CreateChildCtx() {
   return ThreadTable.at(ChildPID);
 }
 
+
+void RevProc::ECALL_clone(){
+  std::cout << "ECALL_clone called" << std::endl;
+}
+
+void RevProc::ECALL_chdir(){
+  std::cout << "ECALL_chdir called" << std::endl;
+}
+
+void RevProc::ECALL_mkdir(){
+  std::cout << "ECALL_mkdir called" << std::endl;
+}
+
+void RevProc::ECALL_exit(){
+  std::cout << "ECALL_exit called" << std::endl;
+}
+
+void RevProc::ECALL_sigprocrtmask(){
+  std::cout << "ECALL_sigprocrtmask called" << std::endl;
+}
+
+void RevProc::ECALL_rev99(){
+  std::cout << "ECALL_rev99 called" << std::endl;
+}
+
+void RevProc::ECALL_write(){
+  std::cout << "ECALL_rev99 called" << std::endl;
+}
+
+void RevProc::InitEcallTable(){
+  Ecalls = {
+    { 49,  &RevProc::ECALL_chdir },
+    { 64,  &RevProc::ECALL_write },
+    { 93,  &RevProc::ECALL_exit },
+    { 135, &RevProc::ECALL_sigprocrtmask },
+    { 220, &RevProc::ECALL_clone }
+  };
+}
+
+void RevProc::ExecEcall(){
+  // a7 register = ecall code
+  uint64_t EcallCode;
+  if( feature->IsRV32() )
+    EcallCode = (uint64_t)HartToExecRegFile().RV32[17];
+  else if( feature->IsRV64() ) 
+    EcallCode = HartToExecRegFile().RV64[17];
+  else {
+    return;
+  }
+  
+  auto it = Ecalls.find(EcallCode);
+  if( it != Ecalls.end() ){
+    /* call the function */
+    (it->second)(this);
+    /* Trap handled... 0 cause registers */
+    HartToExecRegFile().RV64_SCAUSE = 0;
+    HartToExecRegFile().RV32_SCAUSE = 0;
+  } else {
+    output->fatal(CALL_INFO, -1, "Ecall Not Found");
+  }
+}
 
 /*
  *

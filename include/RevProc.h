@@ -28,6 +28,7 @@
 #include <queue>
 #include <optional>
 #include <inttypes.h>
+#include <functional>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -202,7 +203,22 @@ namespace SST{
       RevProcStats Stats;       ///< RevProc: collection of performance stats
       RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
-  
+      /*
+      * New Ecall Stuff
+      */
+      void ECALL_clone();
+      void ECALL_chdir();
+      void ECALL_mkdir();
+      void ECALL_write();
+      void ECALL_exit();
+      void ECALL_sigprocrtmask(); // FIXME: Double check name
+      void ECALL_rev99(); // FIXME: Figure out what this actually is (ie. what syscall has code = 99)
+
+      std::unordered_map<uint32_t, std::function<void(RevProc*)>> Ecalls;
+      void InitEcallTable();
+      void ExecEcall();
+
+      
       // PhysRegFile.at(HART-ID) = Regfile
       // std::vector<RevRegFile*> RegFiles; // TODO: Maybe rename
       RevRegFile& RegFile(uint16_t HartID);
