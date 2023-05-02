@@ -1,9 +1,17 @@
+#ifndef _SST_REVCPU_REVWRITE_H_
+#define _SST_REVCPU_REVWRITE_H_
+
 #define _SYSCALL_DEBUG_ 1
 #include "../RevSysCalls.h"
 #include "../RevSysCallInterface.h"
 #include <filesystem>
 
 #include <unistd.h>
+
+using namespace SST::RevCPU;
+
+namespace SST{
+  namespace RevCPU{
 
 struct RevWrite{
 
@@ -51,3 +59,7 @@ struct RevWrite{
     return -1;
   }
 };
+
+}}
+
+#endif

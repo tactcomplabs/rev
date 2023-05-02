@@ -9,6 +9,11 @@
 //       for more info
 // -------------------------------------------------------------------
 
+using namespace SST::RevCPU;
+
+namespace SST{
+  namespace RevCPU{
+
 struct RevGetPID{
   // ecall (a7 = 49) -> chdir
   static const int value = 172; 
@@ -29,3 +34,5 @@ struct RevGetPID{
     return -1;
   }
 };
+
+}}

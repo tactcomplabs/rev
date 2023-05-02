@@ -9,6 +9,11 @@
 //       for more info
 // -------------------------------------------------------------------
 
+using namespace SST::RevCPU;
+
+namespace SST{
+  namespace RevCPU{
+
 struct RevMkdirat{
   // ecall (a7 = 49) -> chdir
   static const int value = 34;
@@ -68,3 +73,5 @@ struct RevMkdirat{
     return -1;
   }
 };
+
+}}

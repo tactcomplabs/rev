@@ -40,6 +40,8 @@ if(NOT (EXISTS "${SST_INSTALL_DIR}"))
 endif()
 
 include_directories(SST_SRC ${SST_INSTALL_DIR})
+message(SST_INSTALL_DIR="${SST_INSTALL_DIR}")
+
 # find_package(SST REQUIRED CONFIG) # NOTE: Pipe dream for when SST has coherent CMake support
 
 #------------------------------------------------------------------------
@@ -69,8 +71,8 @@ execute_process(COMMAND sst-config --ELEMENT_CXXFLAGS
   OUTPUT_VARIABLE SST_CXXFLAGS
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-set(CXXFLAGS "${SST_CXXFLAGS}  -fno-stack-protector")
-message (CXXFLAGS="${CXXFLAGS}")
+#set(CXXFLAGS "${SST_CXXFLAGS}  -fno-stack-protector")
+#message (CXXFLAGS="${CXXFLAGS}")
 
 execute_process(COMMAND sst-config --ELEMENT_LDFLAGS
   OUTPUT_VARIABLE SST_LDFLAGS
@@ -82,9 +84,15 @@ message (LDFLAGS="${LDFLAGS}")
 #------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
-set(CMAKE_CXX_FLAGS "-g -O2 -Wall ${CMAKE_CXX_FLAGS} -std=c++17 -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
+#set(CMAKE_CXX_FLAGS "-g -O2 -Wall ${CMAKE_CXX_FLAGS} -std=c++17 -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+SET(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -D_REV_DEBUG_ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+
+#set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
+#message (CMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS}")
+
 
 #------------------------------------------------------------------------
 #-- FIND PACKAGES

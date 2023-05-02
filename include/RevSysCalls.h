@@ -7,10 +7,11 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-#pragma once
-#ifndef __SYSTEMCALLS_H__
-#define __SYSTEMCALLS_H__
+#pragma once      /// THIS WILL ALMOST NEVER WORK
 
+
+#ifndef _SST_REVCPU_SYSCALLS_H_
+#define _SST_REVCPU_SYSCALLS_H_
 
 #include <unordered_map>
 #include <type_traits>
@@ -21,9 +22,12 @@
 #include <unistd.h>
 #include <filesystem>
 #include <variant>
+
 #include "RevInstTable.h"
 #include "RevSysCallInterface.h"
 #include "RevMem.h"
+
+using namespace SST::RevCPU;
 
 namespace SST { namespace RevCPU {
 
@@ -48,5 +52,5 @@ class SystemCalls {
 
 } /* end namespace RevCPU */ } // end namespace SST
 
-#endif
+#endif  // end _SST_REVCPU_SYSCALLS_H_
 // EOF

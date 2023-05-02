@@ -10,8 +10,7 @@
 // #include "../include/syscalls/RevGetPID.h"
 #include "../include/RevSysCalls.h"
 
-// #define _SYSCALL_DEBUG_ 1 
-
+// #define _SYSCALL_DEBUG_ 1
 std::unordered_map<int, systemcall_t> SystemCalls::jump_table32 = {
   { RevChdir::value, RevChdir::ECall<Riscv32> },
   // { RevMkdirat::value, RevMkdirat::ECall<Riscv32> },
@@ -36,3 +35,4 @@ std::unordered_map<int, systemcall_t> SystemCalls::jump_table64 = {
   { Rev99::value, Rev99::ECall<Riscv64> }
   // { RevGetPID::value, RevGetPID::ECall<Riscv64> }
 };
+
