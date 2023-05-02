@@ -1,13 +1,3 @@
-#include "../include/syscalls/RevChdir.h"
-// #include "../include/syscalls/RevMkdirat.h"
-#include "../include/syscalls/RevWrite.h"
-// #include "../include/syscalls/RevPwrite.h"
-#include "../include/syscalls/RevFork.h"
-#include "../include/syscalls/RevRTSigProcMask.h"
-// #include "../include/syscalls/RevClone.h"
-#include "../include/syscalls/RevExit.h"
-#include "../include/syscalls/Rev99.h"
-// #include "../include/syscalls/RevGetPID.h"
 #include "../include/RevSysCalls.h"
 
 // #define _SYSCALL_DEBUG_ 1

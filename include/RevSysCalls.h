@@ -27,6 +27,17 @@
 #include "RevSysCallInterface.h"
 #include "RevMem.h"
 
+#include "syscalls/RevChdir.h"
+#include "syscalls/RevWrite.h"
+#include "syscalls/RevFork.h"
+#include "syscalls/RevRTSigProcMask.h"
+#include "syscalls/RevExit.h"
+#include "syscalls/Rev99.h"
+// #include "../include/syscalls/RevGetPID.h"
+// #include "../include/syscalls/RevMkdirat.h"
+// #include "../include/syscalls/RevPwrite.h"
+// #include "../include/syscalls/RevClone.h"
+
 using namespace SST::RevCPU;
 
 namespace SST { namespace RevCPU {
