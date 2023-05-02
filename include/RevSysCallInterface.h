@@ -1,8 +1,6 @@
-#pragma once      // THIS WILL ALMOST NEVER WORK
-
-
-#ifndef _SST_REVCPU_SYSCALL_INTERFACE_H_
-#define _SST_REVCPU_SYSCALL_INTERFACE_H_
+#pragma once
+#ifndef _REV_SYSCALL_INTERFACE
+#define _REV_SYSCALL_INTERFACE
 
 
 #define _SYSCALL_DEBUG_ 1 
@@ -123,6 +121,4 @@ static void DumpRegisters(const uint64_t RegFile[32], const char& RegType){
 using systemcall_t = std::function<int(RevProc&)>;
 
 } /* end namespace RevCPU */ } // end namespace SST
-#endif // end _SST_REVCPU_SYSCALL_INTERFACE_H_
-
-// EOF
+#endif // !_REV_SYSCALL_INTERFACE

@@ -1,14 +1,7 @@
-#ifndef _SST_REVCPU_REVEXIT_H_
-#define _SST_REVCPU_REVEXIT_H_
-
 #include "../RevSysCalls.h"
 #include "../RevSysCallInterface.h"
 #include <string>
 
-using namespace SST::RevCPU;
-
-namespace SST{
-  namespace RevCPU{
 
 struct RevExit{
   // ecall (a7 = 93) -> exit
@@ -39,7 +32,3 @@ struct RevExit{
     return -1;
   }
 };
-
-}}
-
-#endif

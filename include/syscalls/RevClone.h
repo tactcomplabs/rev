@@ -4,11 +4,6 @@
 
 #include <unistd.h>
 
-using namespace SST::RevCPU;
-
-namespace SST{
-  namespace RevCPU{
-
 struct RevClone {
   // ecall (a7 = 2) -> fork
   static const int value = 17; 
@@ -122,5 +117,3 @@ struct RevClone {
 //     return -1;
 //   }
 // };
-
-}}

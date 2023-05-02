@@ -1,6 +1,3 @@
-#ifndef _SST_REVCPU_REVFORK_H_
-#define _SST_REVCPU_REVFORK_H_
-
 #include "../RevSysCalls.h"
 #include "../RevSysCallInterface.h"
 #include <filesystem>
@@ -15,11 +12,6 @@
  * - ??? Check if there is an available HART??? 
  *       This could be done in ClockTick after ECALL EXCEPTION 
  */
-
-using namespace SST::RevCPU;
-
-namespace SST{
-  namespace RevCPU{
 
 struct RevFork {
   // ecall (a7 = 2) -> fork
@@ -93,7 +85,3 @@ struct RevFork {
     return -1;
   }
 };
-
-}}
-
-#endif

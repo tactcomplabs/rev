@@ -1,4 +1,6 @@
 #include "../include/RevThreadCtx.h"
+#include <algorithm>
+#include <iostream>
 
 bool RevThreadCtx::AddChildPID(uint32_t pid){
   if( std::find(ChildrenPIDs.begin(), ChildrenPIDs.end(), pid) != ChildrenPIDs.end() ){

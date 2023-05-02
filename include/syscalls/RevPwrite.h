@@ -1,16 +1,8 @@
-#ifndef _SST_REVCPU_REVPWRITE_H_
-#define _SST_REVCPU_REVPWRITE_H_
-
 #include "../RevSysCalls.h"
 #include "../RevSysCallInterface.h"
 #include <filesystem>
 
 #include <unistd.h>
-
-using namespace SST::RevCPU;
-
-namespace SST{
-  namespace RevCPU{
 
 struct RevPwrite{
   // ecall (a7 = 68) -> pwrite
@@ -41,7 +33,3 @@ struct RevPwrite{
     return -1;
   }
 };
-
-}}
-
-#endif

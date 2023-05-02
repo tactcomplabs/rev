@@ -1928,7 +1928,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           /* Execute system call on this RevProc */
 
           #ifdef _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << HartToExecRegFile().RV64[10] << std::endl;
+          std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
           #endif
         }
       }

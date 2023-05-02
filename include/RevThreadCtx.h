@@ -17,15 +17,9 @@ Memory Actions:
 - ShareMem
 ***/
 
-#ifndef _SST_REVCPU_REVTHREADCTX_H_
-#define _SST_REVCPU_REVTHREADCTX_H_
-
 #include <cstdint>
 #include <vector>
-#include <iostream>
-#include <algorithm>
-
-#include "RevMem.h"
+#include "../include/RevMem.h"
 #include "RevInstTable.h"
 
 enum class ThreadState {
@@ -90,6 +84,4 @@ public:
 
 };
 
-#endif // end _SST_REVCPU_REVTHREADCTX_H_
 
-// EOF

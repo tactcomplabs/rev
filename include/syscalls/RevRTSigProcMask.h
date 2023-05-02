@@ -1,16 +1,10 @@
-#ifndef _SST_REVCPU_REVRTSIGPROCMASK_H_
-#define _SST_REVCPU_REVRTSIGPROCMASK_H_
-
 #include "../RevSysCalls.h"
 #include "../RevSysCallInterface.h"
 #include <filesystem>
 
 #include <unistd.h>
 
-using namespace SST::RevCPU;
 
-namespace SST{
-  namespace RevCPU{
 
 // NOTE: This is not implemented at all... there is a call to ECALL 135 in fork.s 
 struct RevRTSigProcMask {
@@ -27,7 +21,6 @@ struct RevRTSigProcMask {
     }
   }
 };
-}}
 // struct RevClone {
 //   // ecall (a7 = 120) -> clone
 //   static const int value = 120; 
@@ -61,5 +54,3 @@ struct RevRTSigProcMask {
 //     return -1;
 //   }
 // };
-
-#endif

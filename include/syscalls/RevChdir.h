@@ -1,6 +1,3 @@
-#ifndef _SST_REVCPU_REVCHDIR_H_
-#define _SST_REVCPU_REVCHDIR_H_
-
 #include "../RevSysCalls.h"
 #include <filesystem>
 
@@ -9,11 +6,6 @@
 //       or any syscall please see ../../test/syscalls/chdir/chdir.c
 //       for more info
 // -------------------------------------------------------------------
-
-using namespace SST::RevCPU;
-
-namespace SST{
-  namespace RevCPU{
 
 struct RevChdir{
   // ecall (a7 = 49) -> chdir
@@ -69,7 +61,3 @@ struct RevChdir{
     return -1;
   }
 };
-
-}}
-
-#endif
