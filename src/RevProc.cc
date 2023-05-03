@@ -9,17 +9,16 @@
 //
 //
 
+#define _DEFAULT_THREAD_MEM_SIZE_ 4*1024*1024 // 4 MB
+
 #include "RevInstTable.h"
-// #define _DEFAULT_THREAD_MEM_SIZE 4*1024*1024 // 4 MB
 
 #include "../include/RevProc.h"
-// #include "../include/RevSysCallInterface.h"
-// #include "../include/RevSysCalls.h"
 #include <bitset>
 #include <cstdint>
 #include <optional>
 #include <utility>
-
+#include <filesystem>
 
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
@@ -71,6 +70,9 @@ RevProc::RevProc( unsigned Id,
   
   // Initialize EcallTable 
   InitEcallTable();
+  if( Ecalls.size() <= 0 )
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to initialize the Ecall Table for core=%d\n", id );
 
   // Initialize ThreadTable (NOTE: Default PID = 1024 + ProcID)
   if( !InitThreadTable() )
@@ -1772,29 +1774,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
 
-  if( currentCycle > 10 ){
-    for( auto Ctx : ThreadTable ){
-      std::cout << "ThreadTable ===> PID: " << Ctx.second.GetRegFile().PID << " has RV64_PC = " << std::hex << Ctx.second.GetRegFile().RV64_PC << std::endl;
-      if( Ctx.first != Ctx.second.GetRegFile().PID ){
-      }
-
-      std::cout << "=============== THREAD TABLE PID LIST After Updating HART ChildCtx.SetPID =============== " << std::endl; 
-      std::cout << "|" << "Ctx.first" << "|" << "Ctx.second.GetRegFile().PID |"  << std::endl;
-      std::cout << "|" << Ctx.first << "|" << Ctx.second.GetRegFile().PID << "|"  << std::endl;
-    }
-
-  }
   if( PendingCtxSwitch ){
     if( Pipeline.empty() ) {
-      DependencyClear(HartToDecode, &Inst);
       if( !ChangeActivePID(NextPID) ){
         std::cout << "Failed to change active PID" << std::endl;
       } else {
         std::cout << "Successfully Updated Hart " << HartToExec << "to PID = " << HartToExecRegFile().PID << std::endl;
+        HartToDecodeRegFile().RV64_PC += Inst.instSize;
         ExecPC = GetPC();
         PendingCtxSwitch = false;
         // ResetInst(&Inst);
-        HartToExecRegFile().RV64_SCAUSE = 0;
+        // HartToExecRegFile().RV64_SCAUSE = 0;
         // RegFile(HartToDecode).RV64_SCAUSE = 0;
         NextPID = 0;
       }
@@ -2310,10 +2300,82 @@ RevThreadCtx& RevProc::CreateChildCtx() {
 
 void RevProc::ECALL_clone(){
   std::cout << "ECALL_clone called" << std::endl;
+  RevThreadCtx& ParentCtx = HartToExecActiveCtx();
+  // RevMem& Mem = Proc.GetMem();
+  std::cout << "FORK: Inside Fork with PROC ACTIVE PID = " << HartToExecActivePID() << std::endl;
+
+  RevThreadCtx& ChildCtx = CreateChildCtx();
+  // TODO: Fix this
+  ChildCtx.GetRegFile().RV64[10] = 0;
+
+  /* Create a copy of Parents Memory Space */
+  // std::cout << "FORK: About to duplicate parent's memory" << std::endl;
+  // const char* ParentMem[Proc.ThreadTable.at(ParentPID).GetMemSize()];
+  // Mem.ReadMem(ParentCtx.GetMemStartAddr(), Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem );
+  // Mem.WriteMem(Proc.GetCtx(ChildPID).MemInfoStartAddr, Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem);
+  // std::cout << "FORK: Finished mem duplication" << std::endl;
+
+  /* Make the child the new active process */
+  // Proc.SetActivePID(ChildPID);
+
+  /* 
+   * ===========================================================================================
+   * Register File
+   * ===========================================================================================
+   * We need to duplicate the parent's RegFile to to the Childs
+   * - NOTE: when we return from this function, the return value will 
+   *         be automatically stored in the Proc.RegFile[threadToExec]'s a0 
+   *         register. In a traditional fork code this looks like:
+   *         
+   *         pid_t pid = fork()
+   *         if pid < 0: // Error
+   *         else if pid = 0: // New Child Process
+   *         else: // Parent Process
+   *        
+   *         In this case, the value of pid is the value thats returned to a0
+   *         It follows that 
+   *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
+   *         - The Parent's a0 register MUST have its PID in it 
+   * ===========================================================================================
+   */
+    // RegFile = ChildCtx.RegFile;
+    // Proc.ThreadTable.at(ParentPID).GetRegFile()->RV64[10] = ParentPID;
+
+    /*
+      * Alert the Proc there needs to be a Ctx switch
+      * Pass the PID that will be switched to once the 
+      * current pipeline is executed until completion
+    */
+  // }
+  CtxSwitchAlert(ChildCtx.GetPID());
+
+  /* Parent's return value is its own PID */
+  ParentCtx.GetRegFile().RV64[10] = HartToExecActivePID();
+  /* Child's return value is 0 */
+  ChildCtx.GetRegFile().RV64[10] = 0;
+  ChildCtx.GetRegFile().RV64_PC += Inst.instSize;
 }
 
 void RevProc::ECALL_chdir(){
   std::cout << "ECALL_chdir called" << std::endl;
+  
+  std::string path = "";
+  unsigned i=0;
+  
+  // we don't know how long the path string is so read a byte (char)
+  // at a time and search for the string terminator character '\0'
+  do {
+    char dirchar;
+    mem->ReadMem(HartToExecRegFile().RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
+    path = path + dirchar;
+    i++;
+  } while( path.back() != '\0');
+
+  std::cout << "Current Directory: " << std::filesystem::current_path().string() << std::endl;
+  const int rc = chdir(path.data());
+  std::cout << "New Directory: " << std::filesystem::current_path().string() << std::endl;
+  std::cout << "Return Code: " << rc << std::endl;
+  HartToExecRegFile().RV64[10] = rc;
 }
 
 void RevProc::ECALL_mkdir(){
@@ -2322,6 +2384,20 @@ void RevProc::ECALL_mkdir(){
 
 void RevProc::ECALL_exit(){
   std::cout << "ECALL_exit called" << std::endl;
+  RevRegFile& RegFile = HartToExecRegFile();
+  RevThreadCtx& CurrCtx = HartToExecActiveCtx();
+
+  /* If the current ctx has ParentPID = 0, it has no parent and we should terminate the sim */
+  if( CurrCtx.GetParentPID() == 0 ){
+    const uint64_t status = RegFile.RV64[10];
+    const std::string ExitString = "ECALL: Encountered exit code with status = " + std::to_string(status) + "\n";
+    output->fatal(CALL_INFO, -1, "%s", ExitString.c_str());
+  } else {
+    /* Parent exists & Child is exiting... switch back to parent */ 
+    CtxSwitchAlert(CurrCtx.GetParentPID());
+    return;
+  }
+  return;
 }
 
 void RevProc::ECALL_sigprocrtmask(){
@@ -2333,7 +2409,24 @@ void RevProc::ECALL_rev99(){
 }
 
 void RevProc::ECALL_write(){
-  std::cout << "ECALL_rev99 called" << std::endl;
+  std::cout << "ECALL_write called" << std::endl;
+  
+  int fildes = HartToExecRegFile().RV64[10];
+
+  std::size_t nbytes = HartToExecRegFile().RV64[12];
+
+  char buf[nbytes];
+  char bufchar;
+
+  for (unsigned i=0; i<nbytes; i++){
+    mem->ReadMem(HartToExecRegFile().RV64[11]+sizeof(char)*i, sizeof(char), &bufchar);
+  }
+  mem->ReadMem(HartToExecRegFile().RV64[11], sizeof(buf), &buf);
+
+  const int rc = write(fildes, buf, nbytes);
+  // std::cout << "ERROR CODE : " << strerror(errno) << std::endl;
+  // DumpRegisters(regFile.RV64, 'a');
+  HartToExecRegFile().RV64[10] = rc;
 }
 
 void RevProc::InitEcallTable(){
