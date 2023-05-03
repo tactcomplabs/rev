@@ -409,7 +409,7 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
     BaseMem = &physMem[adjPhysAddr];
     if( ctrl ){
       unsigned Cur = (Len-span);
-      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, Target+Cur, flags);
+      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, flags);
     }else{
       unsigned Cur = (Len-span);
       for( unsigned i=0; i< span; i++ ){
@@ -430,7 +430,6 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
     }
   }
 
-  memStats.bytesRead += Len;
   memStats.bytesRead += Len;
   return true;
 }

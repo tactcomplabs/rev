@@ -794,7 +794,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
   //swizzle: offset[8|4:3]  offset[7:6|2:1|5]
   std::bitset<16> tmp(0);
   // handle c.beqz/c.bnez offset
-  if( (CompInst.opcode = 0b01) && (CompInst.funct3 >= 0b110) ){
+  if( (CompInst.opcode == 0b01) && (CompInst.funct3 >= 0b110) ){
     std::bitset<16> o(CompInst.offset);
     tmp[0] = o[1];
     tmp[1] = o[2];
@@ -804,18 +804,15 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
     tmp[5] = o[3];
     tmp[6] = o[4];
     tmp[7] = o[7];
-  }else {
-    std::bitset<16> o(CompInst.imm);
-    tmp[0] = o[2];
-    tmp[1] = o[3];
-    tmp[2] = o[4];
-    tmp[3] = o[5];
-    tmp[4] = o[6];
-    tmp[5] = o[12];
+  } else if( (CompInst.opcode == 0b01) && (CompInst.funct3 == 0b100)) { 
+    //We have a shift or a andi 
+    CompInst.rd = CompInst.rs1;
   }
 
   CompInst.offset = ((uint16_t)tmp.to_ulong()) << 1; // scale to corrrect position to be consistent with other compressed ops
-  CompInst.imm = tmp.to_ulong();
+  CompInst.imm = ((Inst & 0b01111100) >> 2);
+  CompInst.imm |= ((Inst & 0b01000000000000) >> 7);
+
 
 /*  // handle c.beqz/c.bnez offset
   if( (CompInst.opcode = 0b01) && (CompInst.funct3 >= 0b110) ){

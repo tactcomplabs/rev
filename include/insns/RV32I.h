@@ -118,8 +118,9 @@ namespace SST{
         if( (Inst.rs1 == 0) && (Inst.rd == 0) ){
           std::cout << "<<<Executing C.EBREAK>>>" << std::endl;
           return ebreak(F,R,M,Inst);
-        }else if( (Inst.rs1 == 0) && (Inst.rd != 0) ){
+        }else if( (Inst.rs2 == 0) && (Inst.rd != 0) ){
           std::cout << "<<<Executing C.JALR>>>" << std::endl;
+          Inst.rd = 1;  //C.JALR expands to jalr x1, 0(rs1), so force update of x1 / ra
           return jalr(F,R,M,Inst);
         }else{
           std::cout << "<<<Executing C.ADD>>>" << std::endl;
@@ -136,6 +137,7 @@ namespace SST{
 
       static bool cmv(RevFeature *F, RevRegFile *R,
                       RevMem *M, RevInst Inst) {
+        Inst.rs1 = 0;  // expands to add rd, x0, rs2, so force rs1 to zero
         return add(F,R,M,Inst);
       }
 
