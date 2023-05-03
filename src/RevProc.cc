@@ -898,10 +898,10 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
       funct3 = l3;
     }else if( (l3 > 0b011) && (l3 < 0b101) ){
       // middle portion: arithmetics
-      funct2 = ((TmpInst & 0b110000000000) >> 10);
-      if( funct2 == 0b11 ){
+      uint8_t opSelect = ((TmpInst & 0b110000000000) >> 10);
+      if( opSelect == 0b11 ){
         funct6 = ((TmpInst & 0b1111110000000000) >> 10);
-        funct2 = 0b00;
+        funct2 = ((TmpInst & 0b01100000) >> 5 );
       }else{
         funct3 = l3;
       }
