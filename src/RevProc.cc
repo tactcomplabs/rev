@@ -68,8 +68,8 @@ RevProc::RevProc( unsigned Id,
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
                   "Error : failed to load instruction table for core=%d\n", id );
-  
-  // Initialize EcallTable 
+
+  // Initialize EcallTable
   InitEcallTable();
   if( Ecalls.size() <= 0 )
     output->fatal(CALL_INFO, -1,
@@ -1722,7 +1722,7 @@ RevRegFile& RevProc::RegFile(){
 
 RevRegFile& RevProc::RegFile(uint16_t HartID){
   // std::cout << "RevProc::Regfile(HartID= " << HartID << ")" << std::endl;
-  return ThreadTable.at(ActivePIDs.at(HartID)).GetRegFile(); 
+  return ThreadTable.at(ActivePIDs.at(HartID)).GetRegFile();
 }
 
 uint16_t RevProc::GetHartID(){
@@ -2095,7 +2095,7 @@ bool RevProc::InitThreadTable(){
    * We need to create the first Ctx for each HART which will have the following attributes: 
    * - ParentPID = 0 : (Only the first thread on every RevProc has ParentPID = 0)
    * - MemStartAddr : Top of stack
-   * - MemStartSize : 
+   * - MemStartSize :
   */
 
   for( unsigned HartID=0; HartID<_REV_HART_COUNT_; HartID++){
@@ -2105,8 +2105,10 @@ bool RevProc::InitThreadTable(){
     uint64_t StartingMemSize = mem->DefaultThreadMemSize;
 
     RevRegFile InitRegFile;
+    std::cout << "ADDRESS OF THE INIT REG FILE = 0x"
+              << std::hex << (uint64_t)(&InitRegFile) << std::dec << std::endl;
 
-    RevThreadCtx DefaultCtx = 
+    RevThreadCtx DefaultCtx =
 
       RevThreadCtx(
         FirstActivePID,
@@ -2118,7 +2120,15 @@ bool RevProc::InitThreadTable(){
     DefaultCtx.SetPID(FirstActivePID);
     ActivePIDs.emplace_back(FirstActivePID);
     /* Add to ThreadTable */
-    ThreadTable.insert({FirstActivePID, DefaultCtx});
+    //ThreadTable.insert({FirstActivePID, DefaultCtx});
+    ThreadTable.emplace(FirstActivePID, DefaultCtx);
+    RevRegFile tmp = ThreadTable.at(FirstActivePID).GetRegFile();
+    std::cout << "================== InitThreadTable ==================" << std::endl;
+    std::cout << "FirstActivePID = " << FirstActivePID << std::endl;
+    std::cout << "Address of DefaultCtx.RegFile = 0x" << std::hex << &DefaultCtx.GetRegFile() << std::dec << std::endl;
+    std::cout << "Address of Ctx.RegFile from ThreadTable = 0x"
+              << &tmp << std::endl;
+    std::cout << "=====================================================" << std::endl;
   }
 
   return true;
