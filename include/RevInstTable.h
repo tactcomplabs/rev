@@ -254,10 +254,7 @@ namespace SST{
       uint32_t RV32_SCAUSE;
       uint32_t RV32_STVAL;
       uint32_t RV32_STVEC;
-
       uint32_t PID;
-
-      
 
       bool RV32_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
       bool RV64_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
