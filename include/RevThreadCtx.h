@@ -35,7 +35,6 @@ enum class ThreadState {
 class RevThreadCtx {
 
 private: 
-  // FIXME: Maybe make this private? 
   uint32_t PID;
   uint32_t ParentPID;
 

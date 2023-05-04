@@ -885,6 +885,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   uint32_t Enc    = 0x00ul;
   uint64_t PC     = GetPC();
 
+
   // decode the opcode
   opc = (TmpInst & 0b11);
   l3  = ((TmpInst & 0b1110000000000000)>>13);
@@ -1699,50 +1700,29 @@ void RevProc::DependencyClear(uint16_t threadID, RevInst* Inst){
 }
 
 uint32_t RevProc::HartToExecActivePID(){
-  // std::cout << "RevProc::HartToExecActivePID(" << HartToExec << ")" << std::endl;
-  uint32_t ActivePID  = ActivePIDs.at(HartToExec);
-  return ActivePID;
+  return ActivePIDs.at(HartToExec);
 }
 
 uint32_t RevProc::HartToDecodeActivePID(){
-  // std::cout << "RevProc::HartToDecodeActivePID(" << HartToDecode << ")" << std::endl;
-  uint32_t ActivePID  = ActivePIDs.at(HartToDecode);
-  return ActivePID;
+  // TODO: Verify if GetHartID would provide benefit/drawback compared to HartToExec
+  return ActivePIDs.at(GetHartID());
 }
 
 RevThreadCtx& RevProc::HartToExecActiveCtx(){
-  // std::cout << "RevProc::HartToExecActiveCtx(" << HartToExec << ")" << std::endl;
-  uint32_t ActivePID  = HartToExecActivePID();
-  RevThreadCtx& ActiveCtx = ThreadTable.at(ActivePID);
-  return ActiveCtx;
+  return ThreadTable.at(HartToExec);
 }
 
 RevThreadCtx& RevProc::HartToDecodeActiveCtx(){
-  // std::cout << "RevProc::HartToDecodeActiveCtx(" << HartToDecode << ")" << std::endl;
-  uint32_t ActivePID  = HartToDecodeActivePID();
-  RevThreadCtx& ActiveCtx = ThreadTable.at(ActivePID);
-  return ActiveCtx;
+  return ThreadTable.at(ActivePIDs.at(HartToDecode));
 }
 
 RevRegFile& RevProc::RegFile(){
-  // std::cout << "RevProc::HartToExecRegFile(" << HartToExec << ")" << std::endl;
-  RevThreadCtx& ActiveCtx = HartToExecActiveCtx();
-  RevRegFile& ActiveRegFile = ActiveCtx.GetRegFile();
-  return ActiveRegFile;
+  return ThreadTable.at(ActivePIDs.at(GetHartID())).GetRegFile();
 }
-
-// RevRegFile& RevProc::RegFile(){
-//   // std::cout << "RevProc::HartToDecodeRegFile(" << HartToDecode << ")" << std::endl;
-//   RevThreadCtx& ActiveCtx = HartToDecodeActiveCtx();
-//   RevRegFile& ActiveRegFile = ActiveCtx.GetRegFile();
-//   return ActiveRegFile;
-// }
 
 RevRegFile& RevProc::RegFile(uint16_t HartID){
   // std::cout << "RevProc::Regfile(HartID= " << HartID << ")" << std::endl;
-  uint32_t ActivePID  = ActivePIDs.at(HartID);
-  RevRegFile& ActiveRegFile = ThreadTable.at(ActivePID).GetRegFile();
-  return ActiveRegFile;
+  return ThreadTable.at(ActivePIDs.at(HartID)).GetRegFile(); 
 }
 
 uint16_t RevProc::GetHartID(){
@@ -1770,33 +1750,19 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   Stats.totalCycles++;
 
   if( PendingCtxSwitch ){
+    std::cout << "PendingCtxSwitch TRUE" << std::endl;
     if( Pipeline.empty() ) {
       if( !ChangeActivePID(NextPID) ){
         std::cout << "Failed to change active PID" << std::endl;
       } else {
         std::cout << "Successfully Updated Hart " << HartToExec << "to PID = " << RegFile().PID << std::endl;
         ExecPC = GetPC();
-        // PendingCtxSwitch = false;
-        // ResetInst(&Inst);
-        // RegFile().RV64_SCAUSE = 0;
-        // RegFile(HartToDecode).RV64_SCAUSE = 0;
-        NextPID = 0;
         RegFile().trigger = false;
-        // ResetInst(&Inst);
-
-        // ExecPC = GetPC();
-
-        // // If the next instruction is our special bounce address
-        // // DO NOT decode it.  It will decode to a bogus instruction.
-        // // We do not want to retire this instruction until we're ready
-        // if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
-        //   Inst = DecodeInst();
-        //   Inst.entry = RegFile(HartToDecode).Entry;
-        // }
-
         RegFile().RV64_SCAUSE = 0;
-
         PendingCtxSwitch = false;
+        /* DELETE ME */
+        NextPID = 0;
+
       }
     }
   }
@@ -1895,6 +1861,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       std::pair<unsigned,unsigned> EToE = it->second;
       RevExt *Ext = Extensions[EToE.first];
       Ext->SetRegFile(RegFile());
+      std::cout << "SetRegFile" << std::endl;
 
       // execute the instruction
       if( !Ext->Execute(EToE.second, Inst, HartToExec) ){
@@ -1995,11 +1962,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Halted = true;
     }
 
-if( currentCycle >= 14 ){
-  for( auto Ctx : ThreadTable){
-    std::cout << "PID: " << Ctx.first << "|" << Ctx.second.GetRegFile().PID << std::endl;
+  if( currentCycle >= 14 ){
+    for( auto Ctx : ThreadTable){
+      std::cout << "PID: " << Ctx.first << "|" << Ctx.second.GetRegFile().PID << std::endl;
+      std::cout << "ADDRESS OF REGFILE = " << &Ctx.second.GetRegFile() << std::endl;
+    }
   }
-}
     rtn = true;
   }else{
     // wait until the counter has been decremented
@@ -2267,70 +2235,51 @@ std::vector<uint32_t> RevProc::GetPIDs(){
 // }
 
 
-RevThreadCtx& RevProc::CreateChildCtx() {
+uint32_t RevProc::CreateChildCtx() {
   // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
-  RevThreadCtx& ParentCtx = HartToExecActiveCtx();
+  RevThreadCtx& ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
 
-  // Child RegFile is duplicate of Parent Regfile
-  RevRegFile TmpRegFile;// = ParentCtx.GetRegFile();
-  
-  RevRegFile ParentRegfile = ParentCtx.GetRegFile();
-  TmpRegFile = ParentRegfile;
+  // NOTE: This is unecessary and only for debugging why regfile errors
+  RevRegFile& ParentRegfile = ParentCtx.GetRegFile();
+  RevRegFile ChildRegFile = ParentRegfile;
 
   uint32_t ChildPID = mem->GetNewThreadPID();
   std::cout << "New ChildPID = " << ChildPID << std::endl;
+  ChildRegFile.PID = ChildPID;
 
   // Create ChildCtx as a copy of ParentCtx
-  RevThreadCtx TmpCtx = {ParentCtx};
+  RevThreadCtx ChildCtx = RevThreadCtx(ChildPID,
+                                       ChildRegFile,
+                                       ActivePIDs.at(HartToExec),
+                                       ParentCtx.GetMemStartAddr(),
+                                       ParentCtx.GetMemSize());
 
-  TmpCtx.GetRegFile().PID = ChildPID;
-  TmpCtx.SetParentPID(TmpCtx.GetPID());
-
-  RevThreadCtx ChildCtx = RevThreadCtx(TmpCtx);
-  // ChildCtx = TmpCtx;
-
-  // Update the ChildCtx properties
-  
-  ChildCtx.SetParentPID(HartToExecActivePID());
-  ChildCtx.SetMemSize(ParentCtx.GetMemSize());
-  ChildCtx.SetMemStartAddr(ParentCtx.GetMemStartAddr());
-
-  ChildCtx.SetRegFile(TmpRegFile);
-
-  // Add child to ThreadTable
-  ThreadTable.emplace(ChildPID, ChildCtx);
-
-  std::cout << "CREATECHILD --- CHILD PID = " << ChildPID; 
-  ThreadTable.at(ChildPID).SetPID(ChildPID);
+  std::cout << "Func: CreateChildCtx (RevProc @ 2264) --- CHILD PID = " << ChildPID; 
   // std::cout << "THREAD TABLE PID LIST AFTER ChildCtx.SetPID =============== " << std::endl; 
   // std::cout << "|" << "Ctx.first" << "|" << "Ctx.second.GetRegFile().PID |"  << std::endl;
   // for( auto Ctx : ThreadTable ){
   //   std::cout << "|" << Ctx.first << "|" << Ctx.second.GetRegFile().PID << "|"  << std::endl;
   // }
-
-
-  return ThreadTable.at(ChildPID);
+  ThreadTable.emplace(ChildPID, ChildCtx);
+  return ChildPID;
 }
 
 
 void RevProc::ECALL_clone(){
   std::cout << "ECALL_clone called" << std::endl;
-  RevThreadCtx& ParentCtx = HartToExecActiveCtx();
+  RevThreadCtx& ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
   std::cout << "FORK: Inside Fork with PROC ACTIVE PID = " << HartToExecActivePID() << std::endl;
 
-  RevThreadCtx& ChildCtx = CreateChildCtx();
+  uint32_t ChildPID = CreateChildCtx();
   // TODO: Fix this
-  ChildCtx.GetRegFile().RV64[10] = 0;
 
   /* Create a copy of Parents Memory Space */
+  /* TODO: Implement this */
   // std::cout << "FORK: About to duplicate parent's memory" << std::endl;
   // const char* ParentMem[Proc.ThreadTable.at(ParentPID).GetMemSize()];
   // Mem.ReadMem(ParentCtx.GetMemStartAddr(), Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem );
   // Mem.WriteMem(Proc.GetCtx(ChildPID).MemInfoStartAddr, Proc.ThreadTable.at(ParentPID).GetMemSize(), ParentMem);
   // std::cout << "FORK: Finished mem duplication" << std::endl;
-
-  /* Make the child the new active process */
-  // Proc.SetActivePID(ChildPID);
 
   /* 
    * ===========================================================================================
@@ -2352,6 +2301,7 @@ void RevProc::ECALL_clone(){
    *         - The Parent's a0 register MUST have its PID in it 
    * ===========================================================================================
    */
+  ThreadTable.at(ChildPID).GetRegFile().RV64[10] = 0;
     // RegFile = ChildCtx.RegFile;
     // Proc.ThreadTable.at(ParentPID).GetRegFile()->RV64[10] = ParentPID;
 
@@ -2361,13 +2311,12 @@ void RevProc::ECALL_clone(){
       * current pipeline is executed until completion
     */
   // }
-  CtxSwitchAlert(ChildCtx.GetPID());
+  CtxSwitchAlert(ChildPID);
 
   /* Parent's return value is its own PID */
-  ParentCtx.GetRegFile().RV64[10] = HartToExecActivePID();
+  ParentCtx.GetRegFile().RV64[10] = ActivePIDs.at(HartToExec);
   /* Child's return value is 0 */
-  ChildCtx.GetRegFile().RV64[10] = 0;
-  // ChildCtx.GetRegFile().RV64_PC += Inst.instSize;
+  return;
 }
 
 void RevProc::ECALL_chdir(){

@@ -132,7 +132,7 @@ namespace SST{
       /* Software Process Table */
       /* NOTE: Not all of these are needed/work */
       bool AddCtx(RevThreadCtx& Ctx);
-      RevThreadCtx& CreateChildCtx();
+      uint32_t CreateChildCtx(); // returns the childs pid
       ThreadState GetThreadState(uint32_t pid);
       bool SetState(ThreadState, uint32_t pid);
       bool PauseThread(uint32_t pid);
