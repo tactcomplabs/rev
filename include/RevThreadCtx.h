@@ -9,6 +9,9 @@
 //
 //
 
+#ifndef _SST_REVCPU_REVTHREADCTX_H_
+#define _SST_REVCPU_REVTHREADCTX_H_
+
 /***
 RevThreadCtx 
 
@@ -39,8 +42,8 @@ private:
   ThreadState State = ThreadState::Waiting;
   RevRegFile RegFile; 
 
-  uint64_t MemStartAddr;
-  uint64_t MemSize;
+  uint64_t MemStartAddr; 
+  uint64_t MemSize; 
 
   std::vector<uint32_t> ChildrenPIDs = {};
 
@@ -71,6 +74,7 @@ public:
   uint64_t GetMemStartAddr() { return MemStartAddr; }
 
   void SetMemSize(uint64_t memSize) { MemSize = memSize; }
+
   void SetMemStartAddr(uint64_t memStartAddr) { MemStartAddr = memStartAddr; }
 
   bool AddChildPID(uint32_t pid);
@@ -85,3 +89,4 @@ public:
 };
 
 
+#endif

@@ -218,8 +218,6 @@ namespace SST{
       void InitEcallTable();
       void ExecEcall();
 
-      
-      // PhysRegFile.at(HART-ID) = Regfile
       // std::vector<RevRegFile*> RegFiles; // TODO: Maybe rename
       RevRegFile& RegFile(uint16_t HartID);
       // Return current executing HART regfile
