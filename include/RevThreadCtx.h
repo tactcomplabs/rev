@@ -65,7 +65,7 @@ public:
   // RevThreadCtx&
 
   bool DuplicateRegFile(RevRegFile& regToDup);
-  RevRegFile& GetRegFile() { return RegFile; }
+  RevRegFile* GetRegFile() { return &RegFile; }
   void SetRegFile(RevRegFile r) { RegFile = r; }
 
   uint32_t GetPID() { return PID; }

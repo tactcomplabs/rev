@@ -173,8 +173,8 @@ namespace SST{
       std::shared_ptr<RevThreadCtx> HartToExecActiveCtx();
       std::shared_ptr<RevThreadCtx> HartToDecodeActiveCtx();
 
-      RevRegFile& HartToExecRegFile();
-      RevRegFile& HartToDecodeRegFile();
+      RevRegFile* HartToExecRegFile();
+      RevRegFile* HartToDecodeRegFile();
       
       bool ChangeActivePID(uint32_t PID); ///< RevProc: Change HartToExec active pid
       bool ChangeActivePID(uint32_t PID, uint16_t HartID); ///< RevProc: Change HartID active pid
@@ -219,9 +219,9 @@ namespace SST{
       void ExecEcall();
 
       // std::vector<RevRegFile*> RegFiles; // TODO: Maybe rename
-      RevRegFile& RegFile(uint16_t HartID);
+      RevRegFile* RegFile(uint16_t HartID);
       // Return current executing HART regfile
-      RevRegFile& RegFile();
+      RevRegFile* RegFile();
       
       std::vector<uint32_t> ActivePIDs;
 

@@ -430,7 +430,7 @@ namespace SST{
         RevInstF format;      ///< RevInstEntry: instruction format
 
         /// RevInstEntry: Instruction implementation function
-        bool (*func)(RevFeature *, RevRegFile &, RevMem *, RevInst);
+        bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst);
 
         bool compressed;      ///< RevInstEntry: compressed instruction
       } RevInstEntry;
@@ -486,7 +486,7 @@ namespace SST{
       RevInstEntryBuilder& SetCompressed(bool c)        {InstEntry.compressed = c; return *this;};
 
       RevInstEntryBuilder& SetImplFunc(bool (*func)(RevFeature *,
-                                                    RevRegFile &,
+                                                    RevRegFile *,
                                                     RevMem *,
                                                     RevInst)){
         InstEntry.func = func; return *this;};

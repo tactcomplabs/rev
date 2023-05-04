@@ -60,13 +60,13 @@ bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
 
   RegFile.RV64_SSTATUS = regToDup.RV64_SSTATUS;
   RegFile.RV64_SEPC    = regToDup.RV64_SEPC;
-  RegFile.RV64_SCAUSE  = regToDup.RV64_SCAUSE;
+  RegFile.RV64_SCAUSE  = 0;
   RegFile.RV64_STVAL   = regToDup.RV64_STVAL;
   RegFile.RV64_STVEC   = regToDup.RV64_STVEC;
 
   RegFile.RV32_SSTATUS = regToDup.RV32_SSTATUS;
   RegFile.RV32_SEPC    = regToDup.RV32_SEPC;
-  RegFile.RV32_SCAUSE  = regToDup.RV32_SCAUSE;
+  RegFile.RV32_SCAUSE  = 0;
   RegFile.RV32_STVAL   = regToDup.RV32_STVAL;
   RegFile.RV32_STVEC   = regToDup.RV32_STVEC;
 

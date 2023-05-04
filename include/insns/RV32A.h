@@ -20,237 +20,237 @@ namespace SST{
   namespace RevCPU{
     class RV32A : public RevExt {
 
-      static bool lrw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool lrw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R.RV32[Inst.rd],M->ReadU32( (uint64_t)(R.RV32[Inst.rs1])), 32 );
-          if( !M->LR(F->GetHart(), (uint64_t)(R.RV32[Inst.rs1])) )
+          SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
+          if( !M->LR(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1])) )
             return false;
-          R.RV32_PC += Inst.instSize;
+          R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R.RV64[Inst.rd],M->ReadU32( (uint64_t)(R.RV64[Inst.rs1])), 64 );
-          if( !M->LR(F->GetHart(), (uint64_t)(R.RV64[Inst.rs1])) )
+          SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
+          if( !M->LR(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1])) )
             return false;
-          R.RV64_PC += Inst.instSize;
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool scw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool scw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          if( M->SC(F->GetHart(), (uint64_t)(R.RV32[Inst.rs1])) ){
+          if( M->SC(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1])) ){
             // successfully cleared the reservation
-            M->WriteU32( (uint64_t)(R.RV32[Inst.rs1]), (uint32_t)(R.RV32[Inst.rs2]) );
-            R.RV32[Inst.rd] = 0;
+            M->WriteU32( (uint64_t)(R->RV32[Inst.rs1]), (uint32_t)(R->RV32[Inst.rs2]) );
+            R->RV32[Inst.rd] = 0;
             return true;
           }else{
             // failed to clear the reservation
-            R.RV32[Inst.rd] = 1;
+            R->RV32[Inst.rd] = 1;
             return true;
           }
         }else{
-          if( M->SC(F->GetHart(), (uint64_t)(R.RV64[Inst.rs1])) ){
+          if( M->SC(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1])) ){
             // successfully cleared the reservation
-            M->WriteU32( (uint64_t)(R.RV64[Inst.rs1]), (uint32_t)(R.RV64[Inst.rs2]) );
-            R.RV64[Inst.rd] = 0;
+            M->WriteU32( (uint64_t)(R->RV64[Inst.rs1]), (uint32_t)(R->RV64[Inst.rs2]) );
+            R->RV64[Inst.rd] = 0;
             return true;
           }else{
             // failed to clear the reservation
-            R.RV64[Inst.rd] = 1;
+            R->RV64[Inst.rd] = 1;
             return true;
           }
         }
       }
 
-      static bool amoswapw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amoswapw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R.RV32[Inst.rd],M->ReadU32( (uint64_t)(R.RV32[Inst.rs1])), 32 );
-          M->WriteU32((uint64_t)(R.RV32[Inst.rs1]), (uint32_t)(R.RV32[Inst.rs2]));
-          R.RV32_PC += Inst.instSize;
+          SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
+          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]), (uint32_t)(R->RV32[Inst.rs2]));
+          R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R.RV64[Inst.rd],M->ReadU32( (uint64_t)(R.RV64[Inst.rs1])), 64 );
-          M->WriteU32((uint64_t)(R.RV64[Inst.rs1]), (uint32_t)(R.RV64[Inst.rs2]));
-          R.RV64_PC += Inst.instSize;
+          SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
+          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]), (uint32_t)(R->RV64[Inst.rs2]));
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amoaddw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amoaddw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV32[Inst.rd],32))+
-                             (int32_t)(td_u32(R.RV32[Inst.rs2],32)),32));
-          R.RV32_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))+
+                             (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
+          R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV64[Inst.rd],32))+
-                             (int32_t)(td_u32(R.RV64[Inst.rs2],32)),32));
-          R.RV64_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))+
+                             (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amoxorw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amoxorw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV32[Inst.rd],32))^
-                             (int32_t)(td_u32(R.RV32[Inst.rs2],32)),32));
-          R.RV32_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))^
+                             (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
+          R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV64[Inst.rd],32))^
-                             (int32_t)(td_u32(R.RV64[Inst.rs2],32)),32));
-          R.RV64_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))^
+                             (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amoandw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amoandw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV32[Inst.rd],32))&
-                             (int32_t)(td_u32(R.RV32[Inst.rs2],32)),32));
-          R.RV32_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))&
+                             (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
+          R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV64[Inst.rd],32))&
-                             (int32_t)(td_u32(R.RV64[Inst.rs2],32)),32));
-          R.RV64_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))&
+                             (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amoorw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amoorw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV32[Inst.rd],32))|
-                             (int32_t)(td_u32(R.RV32[Inst.rs2],32)),32));
-          R.RV32_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))|
+                             (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
+          R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                      dt_u32((int32_t)(td_u32(R.RV64[Inst.rd],32))|
-                             (int32_t)(td_u32(R.RV64[Inst.rs2],32)),32));
-          R.RV64_PC += Inst.instSize;
+          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                      dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))|
+                             (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amominw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amominw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R.RV32[Inst.rd],M->ReadU32( (uint64_t)(R.RV32[Inst.rs1])), 32 );
-          if( (int32_t)(td_u32(R.RV32[Inst.rd],32)) < (int32_t)(td_u32(R.RV32[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rd]));
+          SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
+          if( (int32_t)(td_u32(R->RV32[Inst.rd],32)) < (int32_t)(td_u32(R->RV32[Inst.rs2],32)) ){
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rs2]));
           }
-          R.RV32_PC += Inst.instSize;
+          R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R.RV64[Inst.rd],M->ReadU32( (uint64_t)(R.RV64[Inst.rs1])), 64 );
-          if( (int32_t)(td_u32(R.RV64[Inst.rd],32)) < (int32_t)(td_u32(R.RV64[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rd]));
+          SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
+          if( (int32_t)(td_u32(R->RV64[Inst.rd],32)) < (int32_t)(td_u32(R->RV64[Inst.rs2],32)) ){
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rs2]));
           }
-          R.RV64_PC += Inst.instSize;
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amomaxw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amomaxw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R.RV32[Inst.rd],M->ReadU32( (uint64_t)(R.RV32[Inst.rs1])), 32 );
-          if( (int32_t)(td_u32(R.RV32[Inst.rd],32)) > (int32_t)(td_u32(R.RV32[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rd]));
+          SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
+          if( (int32_t)(td_u32(R->RV32[Inst.rd],32)) > (int32_t)(td_u32(R->RV32[Inst.rs2],32)) ){
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rs2]));
           }
-          R.RV32_PC += Inst.instSize;
+          R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R.RV64[Inst.rd],M->ReadU32( (uint64_t)(R.RV64[Inst.rs1])), 64 );
-          if( (int32_t)(td_u32(R.RV64[Inst.rd],32)) > (int32_t)(td_u32(R.RV64[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rd]));
+          SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
+          if( (int32_t)(td_u32(R->RV64[Inst.rd],32)) > (int32_t)(td_u32(R->RV64[Inst.rs2],32)) ){
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rs2]));
           }
-          R.RV64_PC += Inst.instSize;
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amominuw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amominuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R.RV32[Inst.rd],M->ReadU32( (uint64_t)(R.RV32[Inst.rs1])), 32 );
-          if( (uint32_t)(R.RV32[Inst.rd]) < (uint32_t)(R.RV32[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rd]));
+          SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
+          if( (uint32_t)(R->RV32[Inst.rd]) < (uint32_t)(R->RV32[Inst.rs2]) ){
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rs2]));
           }
-          R.RV32_PC += Inst.instSize;
+          R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R.RV64[Inst.rd],M->ReadU32( (uint64_t)(R.RV64[Inst.rs1])), 64 );
-          if( (uint32_t)(R.RV64[Inst.rd]) < (uint32_t)(R.RV64[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rd]));
+          SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
+          if( (uint32_t)(R->RV64[Inst.rd]) < (uint32_t)(R->RV64[Inst.rs2]) ){
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rs2]));
           }
-          R.RV64_PC += Inst.instSize;
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amomaxuw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool amomaxuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R.RV32[Inst.rd],M->ReadU32( (uint64_t)(R.RV32[Inst.rs1])), 32 );
-          if( (uint32_t)(R.RV32[Inst.rd]) > (uint32_t)(R.RV32[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rd]));
+          SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
+          if( (uint32_t)(R->RV32[Inst.rd]) > (uint32_t)(R->RV32[Inst.rs2]) ){
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV32[Inst.rs1]),
-                        (uint32_t)(R.RV32[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+                        (uint32_t)(R->RV32[Inst.rs2]));
           }
-          R.RV32_PC += Inst.instSize;
+          R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R.RV64[Inst.rd],M->ReadU32( (uint64_t)(R.RV64[Inst.rs1])), 64 );
-          if( (uint32_t)(R.RV64[Inst.rd]) > (uint32_t)(R.RV64[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rd]));
+          SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
+          if( (uint32_t)(R->RV64[Inst.rd]) > (uint32_t)(R->RV64[Inst.rs2]) ){
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R.RV64[Inst.rs1]),
-                        (uint32_t)(R.RV64[Inst.rs2]));
+            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+                        (uint32_t)(R->RV64[Inst.rs2]));
           }
-          R.RV64_PC += Inst.instSize;
+          R->RV64_PC += Inst.instSize;
         }
         // update the cost
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
@@ -280,7 +280,7 @@ namespace SST{
     public:
       /// RV32A: standard constructor
       RV32A( RevFeature *Feature,
-             RevRegFile &RegFile,
+             RevRegFile *RegFile,
              RevMem *RevMem,
              SST::Output *Output )
         : RevExt( "RV32A", Feature, RegFile, RevMem, Output) {

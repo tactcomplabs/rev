@@ -21,7 +21,7 @@ namespace SST{
     class RV32F : public RevExt {
 
       // Compressed instructions
-      static bool cflwsp(RevFeature *F, RevRegFile &R,
+      static bool cflwsp(RevFeature *F, RevRegFile *R,
                         RevMem *M, RevInst Inst) {
         // c.flwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
@@ -29,7 +29,7 @@ namespace SST{
         return flw(F,R,M,Inst);
       }
 
-      static bool cfswsp(RevFeature *F, RevRegFile &R,
+      static bool cfswsp(RevFeature *F, RevRegFile *R,
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
@@ -37,7 +37,7 @@ namespace SST{
         return fsw(F,R,M,Inst);
       }
 
-      static bool cflw(RevFeature *F, RevRegFile &R,
+      static bool cflw(RevFeature *F, RevRegFile *R,
                        RevMem *M, RevInst Inst) {
         // c.flw %rd, %rs1, $imm = flw %rd, %rs1, $imm
         Inst.rd  = CRegMap[Inst.rd];
@@ -46,7 +46,7 @@ namespace SST{
         return flw(F,R,M,Inst);
       }
 
-      static bool cfsw(RevFeature *F, RevRegFile &R,
+      static bool cfsw(RevFeature *F, RevRegFile *R,
                       RevMem *M, RevInst Inst) {
         // c.fsw rs2, rs1, $imm = fsw rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
@@ -56,683 +56,683 @@ namespace SST{
       }
 
       // Standard instructions
-      static bool flw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool flw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            //R.DPF[Inst.rd] = M->ReadFloat((uint64_t)(R.RV32[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R.RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    (float *)(&R.DPF[Inst.rd]),
+            //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    (float *)(&R->DPF[Inst.rd]),
                     REVMEM_FLAGS(0));
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            //R.DPF[Inst.rd] = M->ReadFloat((uint64_t)(R.RV64[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R.RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    (float *)(&R.DPF[Inst.rd]),
+            //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    (float *)(&R->DPF[Inst.rd]),
                     REVMEM_FLAGS(0));
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            //R.SPF[Inst.rd] = M->ReadFloat((uint64_t)(R.RV32[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R.RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    &R.SPF[Inst.rd],
+            //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    &R->SPF[Inst.rd],
                     REVMEM_FLAGS(0));
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            //R.SPF[Inst.rd] = M->ReadFloat((uint64_t)(R.RV64[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R.RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    &R.SPF[Inst.rd],
+            //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
+            M->ReadVal<float>((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+                    &R->SPF[Inst.rd],
                     REVMEM_FLAGS(0));
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
-        R.cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool fsw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fsw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            M->WriteFloat((uint64_t)(R.RV32[Inst.rs1]+Inst.imm), (float)(R.DPF[Inst.rs2]));
-            R.RV32_PC += Inst.instSize;
+            M->WriteFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm), (float)(R->DPF[Inst.rs2]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            M->WriteFloat((uint64_t)(R.RV64[Inst.rs1]+Inst.imm), (float)(R.DPF[Inst.rs2]));
-            R.RV64_PC += Inst.instSize;
+            M->WriteFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm), (float)(R->DPF[Inst.rs2]));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            M->WriteFloat((uint64_t)(R.RV32[Inst.rs1]+Inst.imm), (float)(R.SPF[Inst.rs2]));
-            R.RV32_PC += Inst.instSize;
+            M->WriteFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm), (float)(R->SPF[Inst.rs2]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            M->WriteFloat((uint64_t)(R.RV64[Inst.rs1]+Inst.imm), (float)(R.SPF[Inst.rs2]));
-            R.RV64_PC += Inst.instSize;
+            M->WriteFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm), (float)(R->SPF[Inst.rs2]));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fmadds(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fmadds(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((float)(R.DPF[Inst.rs1]) *
-                                   (float)(R.DPF[Inst.rs2]) +
-                                   (float)(R.DPF[Inst.rs3]));
+          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) *
+                                   (float)(R->DPF[Inst.rs2]) +
+                                   (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = R.SPF[Inst.rs1] * R.SPF[Inst.rs2] + R.SPF[Inst.rs3];
+          R->SPF[Inst.rd] = R->SPF[Inst.rs1] * R->SPF[Inst.rs2] + R->SPF[Inst.rs3];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fmsubs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fmsubs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((float)(R.DPF[Inst.rs1]) *
-                                    (float)(R.DPF[Inst.rs2]) -
-                                    (float)(R.DPF[Inst.rs3]));
+          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) *
+                                    (float)(R->DPF[Inst.rs2]) -
+                                    (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = R.SPF[Inst.rs1] * R.SPF[Inst.rs2] - R.SPF[Inst.rs3];
+          R->SPF[Inst.rd] = R->SPF[Inst.rs1] * R->SPF[Inst.rs2] - R->SPF[Inst.rs3];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fnmsubs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fnmsubs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((-(float)(R.DPF[Inst.rs1])) *
-                                    (float)(R.DPF[Inst.rs2]) -
-                                    (float)(R.DPF[Inst.rs3]));
+          R->DPF[Inst.rd] = (float)((-(float)(R->DPF[Inst.rs1])) *
+                                    (float)(R->DPF[Inst.rs2]) -
+                                    (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = (-R.SPF[Inst.rs1]) * R.SPF[Inst.rs2] - R.SPF[Inst.rs3];
+          R->SPF[Inst.rd] = (-R->SPF[Inst.rs1]) * R->SPF[Inst.rs2] - R->SPF[Inst.rs3];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fnmadds(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fnmadds(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((-(float)(R.DPF[Inst.rs1])) *
-                                    (float)(R.DPF[Inst.rs2]) +
-                                    (float)(R.DPF[Inst.rs3]));
+          R->DPF[Inst.rd] = (float)((-(float)(R->DPF[Inst.rs1])) *
+                                    (float)(R->DPF[Inst.rs2]) +
+                                    (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = (-R.SPF[Inst.rs1]) * R.SPF[Inst.rs2] + R.SPF[Inst.rs3];
+          R->SPF[Inst.rd] = (-R->SPF[Inst.rs1]) * R->SPF[Inst.rs2] + R->SPF[Inst.rs3];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fadds(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fadds(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((float)(R.DPF[Inst.rs1]) +
-                                    (float)(R.DPF[Inst.rs2]));
+          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) +
+                                    (float)(R->DPF[Inst.rs2]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = R.SPF[Inst.rs1] + R.SPF[Inst.rs2];
+          R->SPF[Inst.rd] = R->SPF[Inst.rs1] + R->SPF[Inst.rs2];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fsubs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fsubs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((float)(R.DPF[Inst.rs1]) -
-                                    (float)(R.DPF[Inst.rs2]));
+          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) -
+                                    (float)(R->DPF[Inst.rs2]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = R.SPF[Inst.rs1] - R.SPF[Inst.rs2];
+          R->SPF[Inst.rd] = R->SPF[Inst.rs1] - R->SPF[Inst.rs2];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fmuls(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fmuls(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((float)(R.DPF[Inst.rs1]) *
-                                    (float)(R.DPF[Inst.rs2]));
+          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) *
+                                    (float)(R->DPF[Inst.rs2]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = R.SPF[Inst.rs1] * R.SPF[Inst.rs2];
+          R->SPF[Inst.rd] = R->SPF[Inst.rs1] * R->SPF[Inst.rs2];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fdivs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fdivs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)((float)(R.DPF[Inst.rs1]) /
-                                    (float)(R.DPF[Inst.rs2]));
+          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) /
+                                    (float)(R->DPF[Inst.rs2]));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = R.SPF[Inst.rs1] / R.SPF[Inst.rs2];
+          R->SPF[Inst.rd] = R->SPF[Inst.rs1] / R->SPF[Inst.rs2];
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fsqrts(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fsqrts(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R.DPF[Inst.rd] = (float)(sqrt((float)(R.DPF[Inst.rs1])));
+          R->DPF[Inst.rd] = (float)(sqrt((float)(R->DPF[Inst.rs1])));
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          R.SPF[Inst.rd] = sqrt(R.SPF[Inst.rs1]);
+          R->SPF[Inst.rd] = sqrt(R->SPF[Inst.rs1]);
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fsgnjs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fsgnjs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint32_t tmp = 0;
         uint32_t tmp2 = 0;
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&tmp,&R.DPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.DPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.DPF[Inst.rd],&tmp,sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&tmp,&R.DPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.DPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.DPF[Inst.rd],&tmp,sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&tmp,&R.SPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.SPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.SPF[Inst.rd],&tmp,sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&tmp,&R.SPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.SPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.SPF[Inst.rd],&tmp,sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fsgnjns(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fsgnjns(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint32_t tmp = 0;
         uint32_t tmp2 = 0;
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&tmp,&R.DPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.DPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
             tmp2 ^= ~(1<<31);
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.DPF[Inst.rd],&tmp,sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&tmp,&R.DPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.DPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
             tmp2 ^= ~(1<<31);
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.DPF[Inst.rd],&tmp,sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&tmp,&R.SPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.SPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp2 ^= ~(1<<31);
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.SPF[Inst.rd],&tmp,sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&tmp,&R.SPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.SPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp2 ^= ~(1<<31);
             tmp |= (tmp2&(1<<31));
-            std::memcpy(&R.SPF[Inst.rd],&tmp,sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fsgnjxs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fsgnjxs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint32_t tmp = 0;
         uint32_t tmp2 = 0;
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&tmp,&R.DPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.DPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
             tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
-            std::memcpy(&R.DPF[Inst.rd],&tmp,sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&tmp,&R.DPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.DPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
             tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
-            std::memcpy(&R.DPF[Inst.rd],&tmp,sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&tmp,&R.SPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.SPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
-            std::memcpy(&R.SPF[Inst.rd],&tmp,sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&tmp,&R.SPF[Inst.rs1],sizeof(uint32_t));
+            std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
-            std::memcpy(&tmp2,&R.SPF[Inst.rs2],sizeof(uint32_t));
+            std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
-            std::memcpy(&R.SPF[Inst.rd],&tmp,sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fmins(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fmins(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         float tmp1;
         float tmp2;
         if( F->IsRV32D() ){
-          tmp1 = (float)(R.DPF[Inst.rs1]);
-          tmp2 = (float)(R.DPF[Inst.rs2]);
+          tmp1 = (float)(R->DPF[Inst.rs1]);
+          tmp2 = (float)(R->DPF[Inst.rs2]);
           if( tmp1 < tmp2 ){
-            R.DPF[Inst.rd] = tmp1;
+            R->DPF[Inst.rd] = tmp1;
           }else{
-            R.DPF[Inst.rd] = tmp2;
+            R->DPF[Inst.rd] = tmp2;
           }
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          tmp1 = (float)(R.SPF[Inst.rs1]);
-          tmp2 = (float)(R.SPF[Inst.rs2]);
+          tmp1 = (float)(R->SPF[Inst.rs1]);
+          tmp2 = (float)(R->SPF[Inst.rs2]);
           if( tmp1 < tmp2 ){
-            R.SPF[Inst.rd] = tmp1;
+            R->SPF[Inst.rd] = tmp1;
           }else{
-            R.SPF[Inst.rd] = tmp2;
+            R->SPF[Inst.rd] = tmp2;
           }
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fmaxs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fmaxs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         float tmp1;
         float tmp2;
         if( F->IsRV32D() ){
-          tmp1 = (float)(R.DPF[Inst.rs1]);
-          tmp2 = (float)(R.DPF[Inst.rs2]);
+          tmp1 = (float)(R->DPF[Inst.rs1]);
+          tmp2 = (float)(R->DPF[Inst.rs2]);
           if( tmp1 > tmp2 ){
-            R.DPF[Inst.rd] = tmp1;
+            R->DPF[Inst.rd] = tmp1;
           }else{
-            R.DPF[Inst.rd] = tmp2;
+            R->DPF[Inst.rd] = tmp2;
           }
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
-          tmp1 = (float)(R.SPF[Inst.rs1]);
-          tmp2 = (float)(R.SPF[Inst.rs2]);
+          tmp1 = (float)(R->SPF[Inst.rs1]);
+          tmp2 = (float)(R->SPF[Inst.rs2]);
           if( tmp1 > tmp2 ){
-            R.SPF[Inst.rd] = tmp1;
+            R->SPF[Inst.rd] = tmp1;
           }else{
-            R.SPF[Inst.rd] = tmp2;
+            R->SPF[Inst.rd] = tmp2;
           }
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fcvtws(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fcvtws(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            R.RV32[Inst.rd] = (int32_t)((float)(R.DPF[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->RV32[Inst.rd] = (int32_t)((float)(R->DPF[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64[Inst.rd] = (int32_t)((float)(R.DPF[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->RV64[Inst.rd] = (int32_t)((float)(R->DPF[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            R.RV32[Inst.rd] = (int32_t)((float)(R.SPF[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->RV32[Inst.rd] = (int32_t)((float)(R->SPF[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64[Inst.rd] = (int32_t)((float)(R.SPF[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->RV64[Inst.rd] = (int32_t)((float)(R->SPF[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fcvtwus(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fcvtwus(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            R.RV32[Inst.rd] = (uint32_t)((float)(R.DPF[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->RV32[Inst.rd] = (uint32_t)((float)(R->DPF[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64[Inst.rd] = (uint32_t)((float)(R.DPF[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->RV64[Inst.rd] = (uint32_t)((float)(R->DPF[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            R.RV32[Inst.rd] = (uint32_t)((float)(R.SPF[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->RV32[Inst.rd] = (uint32_t)((float)(R->SPF[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64[Inst.rd] = (uint32_t)((float)(R.SPF[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->RV64[Inst.rd] = (uint32_t)((float)(R->SPF[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fmvxw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fmvxw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&R.RV32[Inst.rd],&R.DPF[Inst.rs1],sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->RV32[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R.RV64[Inst.rd],&R.DPF[Inst.rs1],sizeof(float));
-            SEXTI(R.RV64[Inst.rd],32);
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            SEXTI(R->RV64[Inst.rd],32);
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&R.RV32[Inst.rd],&R.SPF[Inst.rs1],sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->RV32[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R.RV64[Inst.rd],&R.SPF[Inst.rs1],sizeof(float));
-            SEXTI(R.RV64[Inst.rd],32);
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->RV64[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            SEXTI(R->RV64[Inst.rd],32);
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool feqs(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool feqs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            if( R.DPF[Inst.rs1] == R.DPF[Inst.rs1] ){
-              R.RV32[Inst.rd] = 1;
+            if( R->DPF[Inst.rs1] == R->DPF[Inst.rs1] ){
+              R->RV32[Inst.rd] = 1;
             }else{
-              R.RV32[Inst.rd] = 0;
+              R->RV32[Inst.rd] = 0;
             }
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            if( R.DPF[Inst.rs1] == R.DPF[Inst.rs1] ){
-              R.RV64[Inst.rd] = 1;
+            if( R->DPF[Inst.rs1] == R->DPF[Inst.rs1] ){
+              R->RV64[Inst.rd] = 1;
             }else{
-              R.RV64[Inst.rd] = 0;
+              R->RV64[Inst.rd] = 0;
             }
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            if( R.SPF[Inst.rs1] == R.SPF[Inst.rs1] ){
-              R.RV32[Inst.rd] = 1;
+            if( R->SPF[Inst.rs1] == R->SPF[Inst.rs1] ){
+              R->RV32[Inst.rd] = 1;
             }else{
-              R.RV32[Inst.rd] = 0;
+              R->RV32[Inst.rd] = 0;
             }
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            if( R.SPF[Inst.rs1] == R.SPF[Inst.rs1] ){
-              R.RV64[Inst.rd] = 1;
+            if( R->SPF[Inst.rs1] == R->SPF[Inst.rs1] ){
+              R->RV64[Inst.rd] = 1;
             }else{
-              R.RV64[Inst.rd] = 0;
+              R->RV64[Inst.rd] = 0;
             }
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool flts(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool flts(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            if( R.DPF[Inst.rs1] < R.DPF[Inst.rs1] ){
-              R.RV32[Inst.rd] = 1;
+            if( R->DPF[Inst.rs1] < R->DPF[Inst.rs1] ){
+              R->RV32[Inst.rd] = 1;
             }else{
-              R.RV32[Inst.rd] = 0;
+              R->RV32[Inst.rd] = 0;
             }
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            if( R.DPF[Inst.rs1] < R.DPF[Inst.rs1] ){
-              R.RV64[Inst.rd] = 1;
+            if( R->DPF[Inst.rs1] < R->DPF[Inst.rs1] ){
+              R->RV64[Inst.rd] = 1;
             }else{
-              R.RV64[Inst.rd] = 0;
+              R->RV64[Inst.rd] = 0;
             }
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            if( R.SPF[Inst.rs1] < R.SPF[Inst.rs1] ){
-              R.RV32[Inst.rd] = 1;
+            if( R->SPF[Inst.rs1] < R->SPF[Inst.rs1] ){
+              R->RV32[Inst.rd] = 1;
             }else{
-              R.RV32[Inst.rd] = 0;
+              R->RV32[Inst.rd] = 0;
             }
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            if( R.SPF[Inst.rs1] < R.SPF[Inst.rs1] ){
-              R.RV64[Inst.rd] = 1;
+            if( R->SPF[Inst.rs1] < R->SPF[Inst.rs1] ){
+              R->RV64[Inst.rd] = 1;
             }else{
-              R.RV64[Inst.rd] = 0;
+              R->RV64[Inst.rd] = 0;
             }
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fles(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fles(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            if( R.DPF[Inst.rs1] <= R.DPF[Inst.rs1] ){
-              R.RV32[Inst.rd] = 1;
+            if( R->DPF[Inst.rs1] <= R->DPF[Inst.rs1] ){
+              R->RV32[Inst.rd] = 1;
             }else{
-              R.RV32[Inst.rd] = 0;
+              R->RV32[Inst.rd] = 0;
             }
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            if( R.DPF[Inst.rs1] <= R.DPF[Inst.rs1] ){
-              R.RV64[Inst.rd] = 1;
+            if( R->DPF[Inst.rs1] <= R->DPF[Inst.rs1] ){
+              R->RV64[Inst.rd] = 1;
             }else{
-              R.RV64[Inst.rd] = 0;
+              R->RV64[Inst.rd] = 0;
             }
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            if( R.SPF[Inst.rs1] <= R.SPF[Inst.rs1] ){
-              R.RV32[Inst.rd] = 1;
+            if( R->SPF[Inst.rs1] <= R->SPF[Inst.rs1] ){
+              R->RV32[Inst.rd] = 1;
             }else{
-              R.RV32[Inst.rd] = 0;
+              R->RV32[Inst.rd] = 0;
             }
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            if( R.SPF[Inst.rs1] <= R.SPF[Inst.rs1] ){
-              R.RV64[Inst.rd] = 1;
+            if( R->SPF[Inst.rs1] <= R->SPF[Inst.rs1] ){
+              R->RV64[Inst.rd] = 1;
             }else{
-              R.RV64[Inst.rd] = 0;
+              R->RV64[Inst.rd] = 0;
             }
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fclasss(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fclasss(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         // see: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            R.RV32_PC += Inst.instSize;
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.RV64_PC += Inst.instSize;
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fcvtsw(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fcvtsw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            R.DPF[Inst.rd] = (float)((int32_t)(R.RV32[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->DPF[Inst.rd] = (float)((int32_t)(R->RV32[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.DPF[Inst.rd] = (float)((int32_t)(R.RV64[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->DPF[Inst.rd] = (float)((int32_t)(R->RV64[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            R.SPF[Inst.rd] = (float)((int32_t)(R.RV32[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->SPF[Inst.rd] = (float)((int32_t)(R->RV32[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.SPF[Inst.rd] = (float)((int32_t)(R.RV64[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->SPF[Inst.rd] = (float)((int32_t)(R->RV64[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fcvtswu(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fcvtswu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            R.DPF[Inst.rd] = (float)((uint32_t)(R.RV32[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->DPF[Inst.rd] = (float)((uint32_t)(R->RV32[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.DPF[Inst.rd] = (float)((uint32_t)(R.RV64[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->DPF[Inst.rd] = (float)((uint32_t)(R->RV64[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            R.SPF[Inst.rd] = (float)((uint32_t)(R.RV32[Inst.rs1]));
-            R.RV32_PC += Inst.instSize;
+            R->SPF[Inst.rd] = (float)((uint32_t)(R->RV32[Inst.rs1]));
+            R->RV32_PC += Inst.instSize;
           }else{
-            R.SPF[Inst.rd] = (float)((uint32_t)(R.RV64[Inst.rs1]));
-            R.RV64_PC += Inst.instSize;
+            R->SPF[Inst.rd] = (float)((uint32_t)(R->RV64[Inst.rs1]));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
       }
 
-      static bool fmvwx(RevFeature *F, RevRegFile &R,RevMem *M,RevInst Inst) {
+      static bool fmvwx(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&R.RV32[Inst.rd],&R.DPF[Inst.rs1],sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->RV32[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R.RV64[Inst.rd],&R.DPF[Inst.rs1],sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&R.RV32[Inst.rd],&R.SPF[Inst.rs1],sizeof(float));
-            R.RV32_PC += Inst.instSize;
+            std::memcpy(&R->RV32[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R.RV64[Inst.rd],&R.SPF[Inst.rs1],sizeof(float));
-            R.RV64_PC += Inst.instSize;
+            std::memcpy(&R->RV64[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            R->RV64_PC += Inst.instSize;
           }
         }
         return true;
@@ -796,7 +796,7 @@ namespace SST{
     public:
       /// RV32F: standard constructor
       RV32F( RevFeature *Feature,
-             RevRegFile &RegFile,
+             RevRegFile *RegFile,
              RevMem *RevMem,
              SST::Output *Output )
         : RevExt( "RV32F", Feature, RegFile, RevMem, Output) {
