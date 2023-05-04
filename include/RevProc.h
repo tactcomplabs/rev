@@ -157,7 +157,7 @@ namespace SST{
       
       bool UpdateCtx(); // FIXME: This will change when RegFiles get changed to pointers
       
-      std::unordered_map<uint32_t, RevThreadCtx> ThreadTable; ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
+      std::unordered_map<uint32_t, std::shared_ptr<RevThreadCtx>> ThreadTable; ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
       
       bool LoadCtx(uint32_t pid);
     
@@ -170,8 +170,8 @@ namespace SST{
       uint32_t HartToExecActivePID();
       uint32_t HartToDecodeActivePID();
 
-      RevThreadCtx& HartToExecActiveCtx();
-      RevThreadCtx& HartToDecodeActiveCtx();
+      std::shared_ptr<RevThreadCtx> HartToExecActiveCtx();
+      std::shared_ptr<RevThreadCtx> HartToDecodeActiveCtx();
 
       RevRegFile& HartToExecRegFile();
       RevRegFile& HartToDecodeRegFile();

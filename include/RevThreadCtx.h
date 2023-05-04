@@ -48,50 +48,23 @@ private:
 
 public:
   // Constructor that takes a RevRegFile object and a uint32_t ParentPID
-  RevThreadCtx(const uint32_t inputPID, const RevRegFile& inputRevRegFile, uint32_t inputParentPID,
+  RevThreadCtx(const uint32_t inputPID,  uint32_t inputParentPID,
                uint64_t inputMemStartAddr, uint64_t inputMemSize )
-      : PID(inputPID), ParentPID(inputParentPID), //RegFile(inputRevRegFile),
+      : PID(inputPID), ParentPID(inputParentPID), 
         MemStartAddr(inputMemStartAddr), MemSize(inputMemSize)
-  {
-    std::cout << "ADDRESS OF INCOMING REGISTER FILE = 0x"
-              << std::hex << (uint64_t)(&inputRevRegFile) << std::dec << std::endl;
-    std::cout << "ADDRESS OF NEW REGISTER FILE = 0x"
-              << std::hex << (uint64_t)(&RegFile) << std::dec << std::endl;
-
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      RegFile.RV32[i] = inputRevRegFile.RV32[i];
-      RegFile.RV64[i] = inputRevRegFile.RV64[i];
-      RegFile.SPF[i] = inputRevRegFile.SPF[i];
-      RegFile.DPF[i] = inputRevRegFile.DPF[i];
-
-      RegFile.RV32_Scoreboard[i] = inputRevRegFile.RV32_Scoreboard[i];
-      RegFile.RV64_Scoreboard[i] = inputRevRegFile.RV64_Scoreboard[i];
-      RegFile.SPF_Scoreboard[i] = inputRevRegFile.SPF_Scoreboard[i];
-      RegFile.DPF_Scoreboard[i] = inputRevRegFile.DPF_Scoreboard[i];
-    }
-
-    RegFile.RV64_SSTATUS = inputRevRegFile.RV64_SSTATUS;
-    RegFile.RV64_SEPC    = inputRevRegFile.RV64_SEPC;
-    RegFile.RV64_SCAUSE  = inputRevRegFile.RV64_SCAUSE;
-    RegFile.RV64_STVAL   = inputRevRegFile.RV64_STVAL;
-    RegFile.RV64_STVEC   = inputRevRegFile.RV64_STVEC;
-
-    RegFile.RV32_SSTATUS = inputRevRegFile.RV32_SSTATUS;
-    RegFile.RV32_SEPC    = inputRevRegFile.RV32_SEPC;
-    RegFile.RV32_SCAUSE  = inputRevRegFile.RV32_SCAUSE;
-    RegFile.RV32_STVAL   = inputRevRegFile.RV32_STVAL;
-    RegFile.RV32_STVEC   = inputRevRegFile.RV32_STVEC;
-
-    RegFile.RV32_PC = inputRevRegFile.RV32_PC;
-    RegFile.RV64_PC = inputRevRegFile.RV64_PC;
-    RegFile.FCSR    = inputRevRegFile.FCSR;
-    RegFile.cost    = inputRevRegFile.cost;
-    RegFile.trigger = inputRevRegFile.trigger;
-    RegFile.Entry   = inputRevRegFile.Entry;
+  { 
+    RegFile = RevRegFile(); 
+    std::cout << "================================================== " << std::endl;
+    std::cout << "RevThreadCtx Constructor: " << std::endl;
+    std::cout << "- Creating new RegFile with address = 0x" << std::hex << &RegFile << std::endl;
+    std::cout << "================================================== " << std::endl;
+    RegFile.PID = inputPID;
   }
 
+    
   // RevThreadCtx&
 
+  bool DuplicateRegFile(RevRegFile& regToDup);
   RevRegFile& GetRegFile() { return RegFile; }
   void SetRegFile(RevRegFile r) { RegFile = r; }
 
