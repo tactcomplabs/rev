@@ -508,7 +508,7 @@ uint32_t RevMem::GetNewThreadPID(){
 
   #ifdef _REV_DEBUG_
   std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl; 
-  #endif _REV_DEBUG_
+  #endif
   /*
   * NOTE: A mutex is acquired solely to prevent race conditions
   *       if multiple RevProc's create new Ctx objects at the 
