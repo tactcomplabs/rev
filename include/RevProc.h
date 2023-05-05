@@ -192,6 +192,7 @@ namespace SST{
       uint16_t HartToExec;     ///< RevProc: Thread to dispatch instruction
       uint64_t Retired;         ///< RevProc: number of retired instructions
       bool PendingCtxSwitch = false; ///< RevProc: determines if the core is halted
+      bool SwapToParent = false; ///< RevProc: determines if the core is halted
       uint32_t NextPID = 0; 
 
       RevOpts *opts;            ///< RevProc: options object

@@ -1397,8 +1397,8 @@ RevInst RevProc::DecodeInst(){
 #endif
 
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %d ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
-                  id, HartToDecode, PC, Inst);
+                  "Core %d ; Hart %d; PID %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
+                  id, HartToDecode, ActivePIDs.at(HartToDecode), PC, Inst);
 
   // Stage 1a: handle the crack fault injection
   if( CrackFault ){
@@ -1772,21 +1772,20 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       } else {
         std::cout << "Successfully Updated Hart " << HartToExec << "to PID = " << RegFile()->PID << std::endl;
         RegFile()->RV64_SCAUSE = 0;
-        HartToDecode = GetHartID();
-        // ResetInst(&Inst);
-        // std::cout << "==============" << std::endl;
-        // std::cout << "SCAUSE REGISTER = " << ThreadTable.at(ActivePIDs.at(HartToDecode))->GetRegFile()->RV64_SCAUSE << std::endl;
-        // std::cout << "==============" << std::endl;
-
-        ExecPC = GetPC();
+        if( !SwapToParent ){
+          ExecPC = GetPC();
+        } else {
+          // RegFile()->RV64_PC = RegFile()->RV64_SEPC;
+          // RegFile()->RV64_SEPC = 0;
+          ExecPC = GetPC();
+        }
         std::cout << "=================" << std::endl;
         std::cout << "PC = 0x" << std::hex << ExecPC << std::endl;
         std::cout << "=================" << std::endl;
+        RegFile(HartToDecode)->trigger = 0;
         PendingCtxSwitch = false;
         /* DELETE ME */
         NextPID = 0;
-        RegFile(HartToDecode)->cost = 0;
-
       }
     }
   }
@@ -1848,11 +1847,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     ExecPC = GetPC();
   }
 
-
-
-
-  if( (HartToExec != _REV_INVALID_HART_ID_) && !Halted
-      && HART_CTE[HartToExec] && (!RegFile(HartToExec)->trigger)){
+  std::cout << "+-------------------------------------------+" << std::endl;
+  if (HartToExec != _REV_INVALID_HART_ID_){
+    std::cout << "+---- HartToExec != Invalid ID " << std::endl;
+    if( !Halted ){
+      std::cout << "+---- NOT HALTED " << std::endl;
+      if(!HART_CTE[HartToExec]){
+        std::cout << "HART_CTE[HartToExec] is False!" << std::endl;
+        std::cout << "-- HartToExec = " << HartToExec << std::endl;
+      } else {
+        if (!RegFile(HartToExec)->trigger){
+        std::cout << "RegFile(HartToExec)->trigger is false! (Which is good)" << std::endl;
 
     // trigger the next instruction
     RegFile(HartToExec)->trigger = true;
@@ -1978,6 +1983,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
       // -------------------------------------------
     }
+        }}}
 
 
     // if this is a singlestep, clear the singlestep and halt
@@ -2084,6 +2090,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }else if( GetPC() == 0x00ull ) {
         // PAN execution contexts not enabled, this is our last PC
 
+      /* 
+       * The following block is used for 
+       */
       uint32_t ParentPID = ThreadTable.at(ActivePIDs.at(HartToExec))->GetParentPID();
       if(ParentPID != 0 ){
         done = false;
@@ -2091,9 +2100,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         std::cout << "THREAD EVENT: PID " << ActivePIDs.at(HartToExec) << "COMPLETED EXECUTION" << std::endl;
         std::cout << "============================================ "<< std::endl;
         CtxSwitchAlert(ParentPID);
+        SwapToParent = true;
         ThreadTable.at(ActivePIDs.at(HartToExec))->SetState(ThreadState::Dead);
-        DependencyClear(GetHartID(), &Inst);
-        // SetPC(ThreadTable.at(ParentPID)->GetRegFile()->RV64_SEPC);
       } else {
         done = true;
       }
@@ -2188,6 +2196,10 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
     std::cout << "=============================================" << std::endl;
     std::cout << "Address of new RegFile = 0x" << std::hex << NewCtx->GetRegFile() << std::endl;
     std::cout << "=============================================" << std::endl;
+    if( SwapToParent ){
+      std::cout << "Removing ThreadCtx w/ PID = " << ActivePIDs.at(HartToExec) << " from the ThreadTable" << std::endl;
+      ThreadTable.erase(ActivePIDs.at(HartToExec));  
+    }
     ActivePIDs.at(HartToExec) = NewPID;
     ActivePIDs.at(HartToDecode) = NewPID;
     return true;
@@ -2279,6 +2291,8 @@ void RevProc::ECALL_clone(){
   std::cout << "ECALL_clone called" << std::endl;
   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
   std::cout << "FORK: Inside Fork with PROC ACTIVE PID = " << HartToExecActivePID() << std::endl;
+
+  ParentCtx->GetRegFile()->cost = 0;
 
   uint32_t ChildPID = CreateChildCtx();
   std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
