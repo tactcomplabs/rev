@@ -55,6 +55,76 @@ bool RevLoader::IsRVBig( const Elf64_Ehdr eh64 ){
   return false;
 }
 
+// breaks the write into cache line chunks
+bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
+  if( Len == 0 ){
+    // nothing to do here, move along
+    return true;
+  }
+
+  // calculate the cache line size
+  unsigned lineSize = mem->getLineSize();
+  if( lineSize == 0 ){
+    // default to 64byte cache lines
+    lineSize = 64;
+  }
+
+  // begin writing the data, if we have a small write
+  // then dispatch the write as normal.  Otherwise,
+  // block the writes as cache lines
+  if( Len < lineSize ){
+    // one cache line to write, dispatch it
+    return mem->WriteMem(Addr,Len,Data);
+  }
+
+  // calculate the base address of the first cache line
+  size_t Total = 0;
+  bool done = false;
+  uint64_t BaseCacheAddr = Addr;
+  while( !done ){
+    if( (BaseCacheAddr%(uint64_t)(lineSize)) == 0 ){
+      done = true;
+    }else{
+      BaseCacheAddr-=1;
+    }
+  }
+
+  // write the first cache line
+  size_t TmpSize = (size_t)((BaseCacheAddr+lineSize)-Addr);
+  uint64_t TmpData = (uint64_t)(Data);
+  uint64_t TmpAddr = Addr;
+  if( !mem->WriteMem(TmpAddr,TmpSize,(void *)(TmpData)) ){
+    output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
+  }
+
+  TmpAddr += (uint64_t)(TmpSize);
+  TmpData += TmpSize;
+  Total += TmpSize;
+
+  // no perform the remainder of the writes
+  do{
+    if( (Len-Total) > lineSize ){
+      // setup another full cache line write
+      TmpSize = lineSize;
+    }else{
+      // this is probably the final write operation
+      TmpSize = (Len-Total);
+    }
+
+    if( !mem->WriteMem(TmpAddr, TmpSize, (void *)(TmpData)) ){
+      output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
+    }
+
+    // incrememnt the temp counters
+    TmpAddr += (uint64_t)(TmpSize);
+    TmpData += TmpSize;
+    Total += TmpSize;
+
+  }while( Total < Len );
+
+  return true;
+}
+
 // Elf32_Ehdr, Elf32_Phdr, Elf32_Shdr, Elf32_Sym, from_le
 bool RevLoader::LoadElf32(char *membuf, size_t sz){
   std::vector<uint8_t> zeros;
@@ -70,7 +140,8 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf32_Phdr);
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
+  //mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
+  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
   for( unsigned i=0; i<eh->e_phnum; i++ ){
@@ -78,12 +149,22 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
       if( ph[i].p_filesz ){
         if( sz < ph[i].p_offset + ph[i].p_filesz )
           output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
+#if 0
         mem->WriteMem(ph[i].p_paddr,
+                      ph[i].p_filesz,
+                      (uint8_t*)(membuf+ph[i].p_offset));
+#endif
+        WriteCacheLine(ph[i].p_paddr,
                       ph[i].p_filesz,
                       (uint8_t*)(membuf+ph[i].p_offset));
       }
       zeros.resize(ph[i].p_memsz - ph[i].p_filesz);
+#if 0
       mem->WriteMem(ph[i].p_paddr + ph[i].p_filesz,
+                    ph[i].p_memsz - ph[i].p_filesz,
+                    &zeros[0]);
+#endif
+      WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,
                     ph[i].p_memsz - ph[i].p_filesz,
                     &zeros[0]);
     }
@@ -150,7 +231,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
+  //mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
+  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
 
@@ -159,12 +241,22 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
       if( ph[i].p_filesz ){
         if( sz < ph[i].p_offset + ph[i].p_filesz )
           output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
+#if 0
         mem->WriteMem(ph[i].p_paddr,
+                      ph[i].p_filesz,
+                      (uint8_t*)(membuf+ph[i].p_offset));
+#endif
+        WriteCacheLine(ph[i].p_paddr,
                       ph[i].p_filesz,
                       (uint8_t*)(membuf+ph[i].p_offset));
       }
       zeros.resize(ph[i].p_memsz - ph[i].p_filesz);
+#if 0
       mem->WriteMem(ph[i].p_paddr + ph[i].p_filesz,
+                    ph[i].p_memsz - ph[i].p_filesz,
+                    &zeros[0]);
+#endif
+      WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,
                     ph[i].p_memsz - ph[i].p_filesz,
                     &zeros[0]);
     }
@@ -242,7 +334,8 @@ bool RevLoader::LoadProgramArgs(){
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
     mem->SetStackTop(sp-(uint64_t)(len));
-    mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));
+    //mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));
+    WriteCacheLine(mem->GetStackTop(),len,(void *)(&tmpc));
   }
 
   return true;

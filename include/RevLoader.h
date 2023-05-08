@@ -230,8 +230,11 @@ namespace SST {
       /// Loads a 64bit Elf binary
       bool LoadElf64(char *MemBuf, size_t Size);
 
-      ///< RevOpts; splits a string into tokens
+      ///< Splits a string into tokens
       void splitStr(const std::string& s,char c,std::vector<std::string>& v);
+
+      ///< Breaks bulk writes into cache lines
+      bool WriteCacheLine(uint64_t Addr, size_t Len, void *Data);
 
     }; // class Loader
   } // namespace RevCPU

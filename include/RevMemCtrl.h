@@ -264,6 +264,9 @@ namespace SST {
       /// RevMemCtrl: handle RevMemCtrl flags for write responses
       virtual void handleFlagResp(RevMemOp *op) = 0;
 
+      /// RevMemCtrl: returns the cache line size
+      virtual unsigned getLineSize() = 0;
+
     protected:
       SST::Output *output;        ///< RevMemCtrl: sst output object
     }; // class RevMemCtrl
@@ -365,7 +368,10 @@ namespace SST {
       virtual bool clockTick(Cycle_t cycle);
 
       /// RevBasicMemCtrl: determines if outstanding requests exist
-      bool outstandingRqsts();
+      bool outstandingRqsts() override;
+
+      /// RevBasicMemCtrl: returns the cache line size
+      unsigned getLineSize() override { return lineSize; }
 
       /// RevBasicMemCtrl: memory event processing handler
       void processMemEvent(StandardMem::Request* ev);
