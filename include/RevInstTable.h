@@ -34,7 +34,7 @@
 #endif
 
 #ifndef _REV_INVALID_HART_ID_
-#define _REV_INVALID_HART_ID_ ~(uint16_t(0))
+#define _REV_INVALID_HART_ID_ (uint16_t)~(uint16_t(0))
 #endif
 
 // Masks
