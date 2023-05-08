@@ -1818,7 +1818,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
-      #define __REV_DEEP_TRACE__
+      //#define __REV_DEEP_TRACE__
       #ifdef __REV_DEEP_TRACE__
       if(feature->IsRV32()){
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC \

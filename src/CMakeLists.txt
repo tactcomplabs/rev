@@ -27,6 +27,6 @@ target_include_directories(revcpu PRIVATE ${REVCPU_INCLUDE_PATH})
 target_include_directories(revcpu PUBLIC ${SST_INSTALL_DIR}/include)
 
 install(TARGETS revcpu DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
-install (CODE "execute_process(COMMAND sst-register revcpu -revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR})")
+install (CODE "execute_process(COMMAND sst-register revcpu revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR})")
 
 # EOF
