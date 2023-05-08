@@ -1345,9 +1345,9 @@ void RevProc::SetPC(uint64_t PC){
 }
 
 bool RevProc::PrefetchInst(){
-  std::cout << "=========================" << std::endl;
-  std::cout << "PrefetchInst " << std::endl;
-  std::cout << "=========================" << std::endl;
+  // std::cout << "=========================" << std::endl;
+  // std::cout << "PrefetchInst " << std::endl;
+  // std::cout << "=========================" << std::endl;
 
   uint64_t PC   = 0x00ull;
   if( feature->GetXlen() == 32 ){
@@ -1356,7 +1356,7 @@ bool RevProc::PrefetchInst(){
     PC = RegFile(HartToDecode)->RV64_PC;
   }
 
-  std::cout << "- PC = 0x" << std::hex << PC << std::endl;
+  // std::cout << "- PC = 0x" << std::hex << PC << std::endl;
 
 
   // These are addresses that we can't decode
@@ -1668,7 +1668,7 @@ bool RevProc::DependencyCheck(uint16_t threadID, RevInst* I){
 }
 
 void RevProc::DependencySet(uint16_t threadID, RevInst* Inst){
-      if(Inst->rd < _REV_NUM_REGS_){
+      if(Inst->rd > 0 && Inst->rd < _REV_NUM_REGS_){
         bool isFloat = IsFloat(Inst->entry);
         if(feature->IsRV32()){
           if(isFloat){
@@ -1762,27 +1762,21 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     std::cout << "=============================================" << std::endl;
     std::cout << "PendingCtxSwitch TRUE" << std::endl;
     std::cout << "=============================================" << std::endl;
-    std::cout << "Address of Parents RegFile = 0x" << std::hex << ThreadTable.at(ActivePIDs.at(HartToExec))->GetRegFile() << std::endl;
-    std::cout << "Address of Childs RegFile = 0x" << std::hex << ThreadTable.at(NextPID)->GetRegFile() << std::endl;
+    std::cout << "Address of Old RegFile = 0x" << std::hex << ThreadTable.at(ActivePIDs.at(HartToExec))->GetRegFile() << std::endl;
+    std::cout << "Address of New RegFile = 0x" << std::hex << ThreadTable.at(NextPID)->GetRegFile() << std::endl;
     std::cout << "=============================================" << std::endl;
 
     if( Pipeline.empty() ) {
+      ResetInst(&Inst);
       if( !ChangeActivePID(NextPID) ){
         std::cout << "Failed to change active PID" << std::endl;
       } else {
-        std::cout << "Successfully Updated Hart " << HartToExec << "to PID = " << RegFile()->PID << std::endl;
+        std::cout << "Successfully Updated Hart " << HartToExec << " to PID = " << RegFile()->PID << std::endl;
         RegFile()->RV64_SCAUSE = 0;
-        if( !SwapToParent ){
-          ExecPC = GetPC();
-        } else {
-          // RegFile()->RV64_PC = RegFile()->RV64_SEPC;
-          // RegFile()->RV64_SEPC = 0;
-          ExecPC = GetPC();
-        }
-        std::cout << "=================" << std::endl;
-        std::cout << "PC = 0x" << std::hex << ExecPC << std::endl;
-        std::cout << "=================" << std::endl;
         RegFile(HartToDecode)->trigger = 0;
+        RegFile(HartToDecode)->cost = 0;
+        RegFile(HartToDecode)->RV64_SCAUSE = 0;
+        ExecPC = GetPC();
         PendingCtxSwitch = false;
         /* DELETE ME */
         NextPID = 0;
@@ -1847,17 +1841,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     ExecPC = GetPC();
   }
 
+  /* This block is where an instruction actually gets executed */
   std::cout << "+-------------------------------------------+" << std::endl;
-  if (HartToExec != _REV_INVALID_HART_ID_){
-    std::cout << "+---- HartToExec != Invalid ID " << std::endl;
-    if( !Halted ){
-      std::cout << "+---- NOT HALTED " << std::endl;
-      if(!HART_CTE[HartToExec]){
-        std::cout << "HART_CTE[HartToExec] is False!" << std::endl;
-        std::cout << "-- HartToExec = " << HartToExec << std::endl;
-      } else {
-        if (!RegFile(HartToExec)->trigger){
-        std::cout << "RegFile(HartToExec)->trigger is false! (Which is good)" << std::endl;
+  if ((HartToExec != _REV_INVALID_HART_ID_) && !Halted && 
+      HART_CTE[HartToExec] && !RegFile(HartToExec)->trigger){
 
     // trigger the next instruction
     RegFile(HartToExec)->trigger = true;
@@ -1983,8 +1970,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
       // -------------------------------------------
     }
-        }}}
-
 
     // if this is a singlestep, clear the singlestep and halt
     if( SingleStep ){
@@ -2097,7 +2082,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if(ParentPID != 0 ){
         done = false;
         std::cout << "============================================ " << std::endl;
-        std::cout << "THREAD EVENT: PID " << ActivePIDs.at(HartToExec) << "COMPLETED EXECUTION" << std::endl;
+        std::cout << "THREAD EVENT:" << std::endl;
+        std::cout << " - PID " << ActivePIDs.at(HartToExec) << " COMPLETED EXECUTION" << std::endl;
+        std::cout << " - NewPID: " << ActivePIDs.at(HartToExec) << std::endl;
         std::cout << "============================================ "<< std::endl;
         CtxSwitchAlert(ParentPID);
         SwapToParent = true;
@@ -2292,8 +2279,6 @@ void RevProc::ECALL_clone(){
   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
   std::cout << "FORK: Inside Fork with PROC ACTIVE PID = " << HartToExecActivePID() << std::endl;
 
-  ParentCtx->GetRegFile()->cost = 0;
-
   uint32_t ChildPID = CreateChildCtx();
   std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
   // TODO: Fix this
@@ -2372,6 +2357,11 @@ void RevProc::ECALL_mkdir(){
   std::cout << "ECALL_mkdir called" << std::endl;
 }
 
+void RevProc::ECALL_chown(){
+  std::cout << "ECALL_chown called" << std::endl;
+}
+
+
 void RevProc::ECALL_exit(){
   std::cout << "ECALL_exit called" << std::endl;
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecActiveCtx();
@@ -2397,6 +2387,14 @@ void RevProc::ECALL_rev99(){
   std::cout << "ECALL_rev99 called" << std::endl;
 }
 
+void RevProc::ECALL_getcwd(){
+  std::cout << "ECALL_getcwd called" << std::endl;
+}
+
+void RevProc::ECALL_sync(){
+  std::cout << "ECALL_sync called" << std::endl;
+}
+
 void RevProc::ECALL_write(){
   std::cout << "ECALL_write called" << std::endl;
   
@@ -2412,8 +2410,8 @@ void RevProc::ECALL_write(){
   }
   mem->ReadMem(RegFile()->RV64[11], sizeof(buf), &buf);
 
-  const int rc = write(fildes, buf, nbytes);
-  // std::cout << "ERROR CODE : " << strerror(errno) << std::endl;
+  const int rc = write(STDOUT_FILENO, buf, nbytes);
+  std::cout << "ERROR CODE : " << strerror(errno) << std::endl;
   // DumpRegisters(regFile.RV64, 'a');
   RegFile()->RV64[10] = rc;
 }
@@ -2423,8 +2421,11 @@ void RevProc::InitEcallTable(){
     { 49,  &RevProc::ECALL_chdir },
     { 64,  &RevProc::ECALL_write },
     { 93,  &RevProc::ECALL_exit },
+    { 94,  &RevProc::ECALL_chown },
+    { 79,  &RevProc::ECALL_getcwd },
     { 99,  &RevProc::ECALL_rev99 },
     { 135, &RevProc::ECALL_sigprocrtmask },
+    { 162, &RevProc::ECALL_sync },
     { 220, &RevProc::ECALL_clone }
   };
 }
