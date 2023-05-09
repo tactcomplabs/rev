@@ -144,6 +144,41 @@ set_tests_properties(TEST_DEP_CHECK
     LABELS "all;rv32"
 )
 
+add_test(NAME TEST_CACHE_1 COMMAND run_cache_test1.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cache_test1" ) # cache_test1
+set_tests_properties(TEST_CACHE_1
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv32"
+)
+
+add_test(NAME TEST_CACHE_2 COMMAND run_cache_test2.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cache_test2" ) # cache_test
+set_tests_properties(TEST_CACHE_2
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME TEST_STRLEN_C COMMAND run_strlen_c.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/strlen_c" ) # strlen_c
+set_tests_properties(TEST_STRLEN_C
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME TEST_STRLEN_CXX COMMAND run_strlen_cxx.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/strlen_cxx" ) # strlen_cxx
+set_tests_properties(TEST_STRLEN_CXX
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
 
 # -- PROCESS CTest Config Variables
 if(NOT CTEST_BLAS_REQUIRED_TESTS)
