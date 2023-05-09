@@ -22,9 +22,10 @@ namespace SST{
       // Compressed instructions
       static bool cldsp(RevFeature *F, RevRegFile *R,
                         RevMem *M, RevInst Inst) {
-        // c.lwsp rd, $imm = lw rd, x2, $imm
+        // c.ldsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
-        ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        Inst.imm = ((Inst.imm & 0b111111)*8);
 
         return ld(F,R,M,Inst);
       }
@@ -33,7 +34,8 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
-        ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
+        Inst.imm = ((Inst.imm & 0b111111)*8);
 
         return sd(F,R,M,Inst);
       }
@@ -43,8 +45,8 @@ namespace SST{
         // c.ld %rd, %rs1, $imm = ld %rd, %rs1, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*8);
-
+        //Inst.imm = ((Inst.imm&0b11111)*8);
+        Inst.imm = (Inst.imm&0b11111111); //8-bit immd, zero-extended, scaled at decode
         return ld(F,R,M,Inst);
       }
 
@@ -53,7 +55,8 @@ namespace SST{
         // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = ((Inst.imm&0b11111)*8);
+        //Inst.imm = ((Inst.imm&0b111111)*8);
+        Inst.imm = (Inst.imm&0b1111111); //imm is 8-bits, zero extended, decoder pre-aligns bits, no scaling needed
 
         return sd(F,R,M,Inst);
       }
@@ -62,6 +65,8 @@ namespace SST{
                          RevMem *M, RevInst Inst) {
         // c.addiw %rd, $imm = addiw %rd, %rd, $imm
         Inst.rs1 = Inst.rd;
+        uint64_t tmp = Inst.imm & 0b111111;
+        SEXT(Inst.imm, tmp, 6);
 
         return addiw(F,R,M,Inst);
       }

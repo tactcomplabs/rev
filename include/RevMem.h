@@ -73,6 +73,9 @@ namespace SST {
       /// RevMem: initiate a memory fence
       bool FenceMem();
 
+      /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
+      unsigned getLineSize(){ if( ctrl ){return ctrl->getLineSize();}else{return 64;} }
+
       // ----------------------------------------------------
       // ---- Base Memory Interfaces
       // ----------------------------------------------------

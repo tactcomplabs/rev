@@ -424,6 +424,7 @@ bool RevProc::Reset(){
     output->fatal(CALL_INFO, -1,
                   "Error: failed to init the start address for core=%d\n", id);
   std::string StartSymbol = "main";
+  //std::string StartSymbol = "_start";
   if( StartAddr == 0x00ull ){
     if( !opts->GetStartSymbol( id, StartSymbol ) )
       output->fatal(CALL_INFO, -1,
@@ -434,6 +435,7 @@ bool RevProc::Reset(){
   if( StartAddr == 0x00ull ){
     // load "main" symbol
     StartAddr = loader->GetSymbolAddr("main");
+    //StartAddr = loader->GetSymbolAddr("_start");
     if( StartAddr == 0x00ull ){
       output->fatal(CALL_INFO, -1,
                     "Error: failed to auto discover address for <main> for core=%d\n", id);
@@ -724,16 +726,26 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
   CompInst.funct3  = InstTable[Entry].funct3;
 
   // registers
-  CompInst.rs2     = ((Inst & 0b11100) >> 2);
-  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
+  CompInst.rs2     = ((Inst & 0b011100) >> 2);
+  CompInst.rs1     = ((Inst & 0b01110000000) >> 7);
 
+  // The immd is pre-scaled in this instruction format
   if(CompInst.funct3 == 0b110){
-    CompInst.imm     = ((Inst & 0b0100000) >> 1);         //offset[6]
-    CompInst.imm    |= ((Inst & 0b1110000000000) >> 6);   //offset[5:3]
-    CompInst.imm    |= ((Inst & 0b1000000) >> 6);          //offset[2]
+    //c.sw
+    CompInst.imm     = ((Inst & 0b0100000) << 1);         //offset[6]
+    CompInst.imm    |= ((Inst & 0b01110000000000) >> 6);   //offset[5:3]
+    CompInst.imm    |= ((Inst & 0b01000000) >> 4);          //offset[2]
   }else{
-    CompInst.imm     = ((Inst & 0b1100000) >> 2);
-    CompInst.imm    |= ((Inst & 0b1110000000000) >> 10);
+    if(feature->GetXlen() == 32){
+      //c.fsw
+      CompInst.imm     = ((Inst & 0b00100000) << 1);         //imm[6]
+      CompInst.imm     = ((Inst & 0b01000000) << 4);         //imm[2]
+      CompInst.imm    |= ((Inst & 0b01110000000000) >> 7); //imm[5:3]
+    }else{
+      //c.sd
+      CompInst.imm     = ((Inst & 0b01100000) << 1);         //imm[7:6]
+      CompInst.imm    |= ((Inst & 0b01110000000000) >> 7); //imm[5:3]
+    }
   }
 
   CompInst.instSize = 2;
@@ -781,19 +793,28 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
 
   //swizzle: offset[8|4:3]  offset[7:6|2:1|5]
   std::bitset<16> tmp(0);
-  std::bitset<16> o(CompInst.offset);
-  tmp[0] = o[1];
-  tmp[1] = o[2];
-  tmp[2] = o[5];
-  tmp[3] = o[6];
-  tmp[4] = o[0];
-  tmp[5] = o[3];
-  tmp[6] = o[4];
-  tmp[7] = o[7];
-
-  CompInst.offset = (uint16_t)tmp.to_ulong();
-
   // handle c.beqz/c.bnez offset
+  if( (CompInst.opcode == 0b01) && (CompInst.funct3 >= 0b110) ){
+    std::bitset<16> o(CompInst.offset);
+    tmp[0] = o[1];
+    tmp[1] = o[2];
+    tmp[2] = o[5];
+    tmp[3] = o[6];
+    tmp[4] = o[0];
+    tmp[5] = o[3];
+    tmp[6] = o[4];
+    tmp[7] = o[7];
+  } else if( (CompInst.opcode == 0b01) && (CompInst.funct3 == 0b100)) { 
+    //We have a shift or a andi 
+    CompInst.rd = CompInst.rs1;
+  }
+
+  CompInst.offset = ((uint16_t)tmp.to_ulong()) << 1; // scale to corrrect position to be consistent with other compressed ops
+  CompInst.imm = ((Inst & 0b01111100) >> 2);
+  CompInst.imm |= ((Inst & 0b01000000000000) >> 7);
+
+
+/*  // handle c.beqz/c.bnez offset
   if( (CompInst.opcode = 0b01) && (CompInst.funct3 >= 0b110) ){
     CompInst.offset = 0;  // reset it
     CompInst.offset = ((Inst & 0b11000) >> 2);          // [2:1]
@@ -806,7 +827,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
       // sign extend
       CompInst.offset |= 0b11111111100000000;
     }
-  }
+  }*/
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -876,10 +897,10 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
       funct3 = l3;
     }else if( (l3 > 0b011) && (l3 < 0b101) ){
       // middle portion: arithmetics
-      funct2 = ((TmpInst & 0b110000000000) >> 10);
-      if( funct2 == 0b11 ){
+      uint8_t opSelect = ((TmpInst & 0b110000000000) >> 10);
+      if( opSelect == 0b11 ){
         funct6 = ((TmpInst & 0b1111110000000000) >> 10);
-        funct2 = 0b00;
+        funct2 = ((TmpInst & 0b01100000) >> 5 );
       }else{
         funct3 = l3;
       }
@@ -1415,6 +1436,10 @@ RevInst RevProc::DecodeInst(){
     if( (inst42 == 0b011) || (inst42 == 0b100) || (inst42 == 0b110) ){
       // R-Type encodings
       Funct7 = ((Inst >> 25) & 0b1111111);
+      //Atomics have a smaller funct7 field - trim out the aq and rl fields
+      if(Opcode == 0b0101111){
+          Funct7 = (Funct7 &0b01111100) >> 2;
+      }
     }
   }else if((inst65== 0b10) && (inst42 == 0b100)){
       // R-Type encodings
@@ -1638,7 +1663,7 @@ bool RevProc::DependencyCheck(uint16_t threadID, RevInst* I){
 }
 
 void RevProc::DependencySet(uint16_t threadID, RevInst* Inst){
-      if(Inst->rd < _REV_NUM_REGS_){
+      if(Inst->rd != 0 && Inst->rd < _REV_NUM_REGS_){
         bool isFloat = IsFloat(Inst->entry);
         if(feature->IsRV32()){
           if(isFloat){
@@ -1755,7 +1780,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     ExecPC = GetPC();
   }
 
-  if( (!RegFile[threadToExec].trigger) && !Halted && (threadToExec != _REV_INVALID_THREAD_ID) && THREAD_CTE[threadToExec]){
+  if( ( (threadToExec != _REV_INVALID_THREAD_ID) && !RegFile[threadToExec].trigger) && !Halted && THREAD_CTE[threadToExec]){
     // trigger the next instruction
     // threadToExec = threadToDecode;
     RegFile[threadToExec].trigger = true;
@@ -1788,6 +1813,27 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
+      //#define __REV_DEEP_TRACE__
+      #ifdef __REV_DEEP_TRACE__
+      if(feature->IsRV32()){
+        std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
+                                      << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
+                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[threadToExec].RV32[Inst.rd] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[threadToExec].RV32[Inst.rs1] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[threadToExec].RV32[Inst.rs2] \
+                                      << " imm = "                << std::hex << Inst.imm \
+                                      << std::endl;
+
+      }else{
+        std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
+                                      << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
+                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[threadToExec].RV64[Inst.rd] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[threadToExec].RV64[Inst.rs1] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[threadToExec].RV64[Inst.rs2] \
+                                      << " imm = "                << std::hex << Inst.imm \
+                                      << std::endl;
+      }
+      #endif
 
       Pipeline.push(std::make_pair(threadToExec, Inst));
       bool isFloat = false;

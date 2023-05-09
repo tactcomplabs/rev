@@ -12,10 +12,7 @@
 
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 
-  // note: this logic does not consider compressed instructions
-  //       however, it should work for what we need.  we only need
-  //       to know whether an instruction as been filled
-
+  // note: this logic now considers compressed instructions
   uint64_t lastAddr = 0x00ull;
   for( unsigned i=0; i<baseAddr.size(); i++ ){
     lastAddr = baseAddr[i] + (depth*4);
@@ -187,6 +184,7 @@ void RevPrefetcher::Fill(uint64_t Addr){
     mem->ReadVal( Addr+(y*4),
                   (uint32_t *)(&iStack[x][y]),
                   REVMEM_FLAGS(0x00) );
+
   }
 }
 
