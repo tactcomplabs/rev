@@ -1663,7 +1663,7 @@ bool RevProc::DependencyCheck(uint16_t threadID, RevInst* I){
 }
 
 void RevProc::DependencySet(uint16_t threadID, RevInst* Inst){
-      if(Inst->rd < _REV_NUM_REGS_){
+      if(Inst->rd != 0 && Inst->rd < _REV_NUM_REGS_){
         bool isFloat = IsFloat(Inst->entry);
         if(feature->IsRV32()){
           if(isFloat){
