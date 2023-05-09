@@ -13,10 +13,6 @@
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 
   // note: this logic now considers compressed instructions
-  if( Addr == 0x4bd38ull ){
-    std::cout << "Checking 0x4bd38" << std::endl;
-  }
-
   uint64_t lastAddr = 0x00ull;
   for( unsigned i=0; i<baseAddr.size(); i++ ){
     lastAddr = baseAddr[i] + (depth*4);
@@ -39,10 +35,6 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
         return false;
       }
 
-      if( Addr == 0x4bd38ull ){
-        std::cout << "not stalled" << std::endl;
-      }
-
       // we may be short of instruction width in our current stream
       // determine if an adjacent stream has the payload
       if( lastAddr-Addr < 4 ){
@@ -61,10 +53,6 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
       // the instruction is available in the stream cache
       return true;
     }
-  }
-
-  if( Addr == 0x4bd38ull ){
-    std::cout << "Filling 0x4bd38" << std::endl;
   }
 
   // if we reach this point, then the instruction hasn't even triggered
@@ -174,16 +162,8 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
 
 void RevPrefetcher::Fill(uint64_t Addr){
 
-  if( Addr == 0x4bd38ull ){
-    std::cout << "inside Fill" << std::endl;
-  }
-
   // determine if the address is 32bit aligned
   if((Addr%4)!=0){
-    if( Addr == 0x4bd38ull ){
-      std::cout << "address not aligned" << std::endl;
-      std::cout << "filling at 0x" << std::hex << (Addr&0xFFFFFFFFFFFFFFFC) << std::dec << std::endl;
-    }
     // not 32bit aligned, adjust the base address by 2 bytes
     Fill(Addr&0xFFFFFFFFFFFFFFFC);
     return;
@@ -201,17 +181,10 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // now fill it
   for( unsigned y=0; y<depth; y++ ){
-    if( Addr == 0x4bd38ull ){
-      std::cout << "Filling 0x" << std::hex << (Addr+(y*4)) << std::dec << std::endl;
-      std::cout << "Before 0x" << std::hex << iStack[x][y] << std::dec << std::endl;
-    }
     mem->ReadVal( Addr+(y*4),
                   (uint32_t *)(&iStack[x][y]),
                   REVMEM_FLAGS(0x00) );
 
-    if( Addr == 0x4bd38ull ){
-      std::cout << "Filled 0x" << std::hex << iStack[x][y] << std::dec << std::endl;
-    }
   }
 }
 

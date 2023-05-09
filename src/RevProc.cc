@@ -865,7 +865,6 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
   target[10] = offsetBits[10];
   CompInst.jumpTarget = ((u_int16_t)target.to_ulong()) << 1;
   //CompInst.jumpTarget = ((u_int16_t)target.to_ulong());
-  std::cout << "jumpTarget = " << std::hex << CompInst.jumpTarget << std::dec << std::endl;
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -1357,10 +1356,6 @@ bool RevProc::PrefetchInst(){
   if( (PC == 0x00ull) ||
       (PC == _PAN_FWARE_JUMP_) ){
     return false;
-  }
-
-  if( PC == 0x4bd38ull ){
-    std::cout << "PretetchInst: 0x4bd38" << std::endl;
   }
 
   return sfetch->IsAvail(PC);

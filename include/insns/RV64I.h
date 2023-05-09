@@ -109,10 +109,6 @@ namespace SST{
                     REVMEM_FLAGS(0x00));
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;
-        if( R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)) == 0x88d08 ){
-          std::cout << "Loading from 0x88d08" << std::endl;
-          std::cout << "x[" << Inst.rd << "] = 0x" << std::hex << R->RV64[Inst.rd] << std::dec << std::endl;
-        }
         return true;
       }
 
