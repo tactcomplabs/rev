@@ -13,13 +13,13 @@
 .PHONY: src
 
 EXAMPLE=clone
-CC=riscv64-unknown-linux-gnu-gcc
+CC=riscv64-unknown-elf-gcc
 #ARCH=rv64g
 ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
+	$(CC) $(CFLAGS) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

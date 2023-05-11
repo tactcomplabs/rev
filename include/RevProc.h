@@ -208,6 +208,7 @@ namespace SST{
       * New Ecall Stuff
       */
       void ECALL_clone();
+      void ECALL_getpid();
       void ECALL_sync();
       void ECALL_chown();
       void ECALL_getcwd();
