@@ -2273,6 +2273,49 @@ uint32_t RevProc::CreateChildCtx() {
 }
 
 
+/* ======================================================= */
+/* System Call (ecall) Implementations Below
+/* ======================================================= */
+void RevProc::InitEcallTable(){
+  Ecalls = {
+    {17,  &RevProc::ECALL_getcwd},          // Not implemented
+    {23,  &RevProc::ECALL_dup},             // Not implemented
+    {24,  &RevProc::ECALL_dup3},            // Not implemented
+    {34,  &RevProc::ECALL_mkdirat},         // Not implemented
+    {49,  &RevProc::ECALL_chdir},          
+    {54,  &RevProc::ECALL_fchownat},        // Not implemented
+    {55,  &RevProc::ECALL_fchown},          // Not implemented
+    {57,  &RevProc::ECALL_close},           // Not implemented
+    {63,  &RevProc::ECALL_read},            // Not implemented
+    {64,  &RevProc::ECALL_write},          
+    {65,  &RevProc::ECALL_openat},          // Not implemented
+    {77,  &RevProc::ECALL_tee},             // Not implemented
+    {81,  &RevProc::ECALL_sync},            // Not implemented
+    {82,  &RevProc::ECALL_fsync},           // Not implemented
+    {83,  &RevProc::ECALL_fdatasync},       // Not implemented
+    {93,  &RevProc::ECALL_exit},           
+    {94,  &RevProc::ECALL_exit_group},      // Not implemented
+    {95,  &RevProc::ECALL_waitid},          // Not implemented
+    {99,  &RevProc::ECALL_set_robust_list}, // Not implemented
+    {100, &RevProc::ECALL_get_robust_list}, // Not implementedt
+    {101, &RevProc::ECALL_nanosleep},       // Not implemented
+    {107, &RevProc::ECALL_timer_create},    // Not implemented
+    {110, &RevProc::ECALL_timer_delete},    // Not implemented
+    {135, &RevProc::ECALL_rt_sigprocmask},  // Not implemented
+    {169, &RevProc::ECALL_gettimeofday},    // Not implemented
+    {170, &RevProc::ECALL_settimeofday},    // Not implemented
+    {172, &RevProc::ECALL_getpid},         
+    {173, &RevProc::ECALL_getppid},        
+    {178, &RevProc::ECALL_gettid},          // Not implemented
+    {220, &RevProc::ECALL_clone},           // Fork functionality works but not clone3
+    {222, &RevProc::ECALL_mmap},            // Not implemented
+    {403, &RevProc::ECALL_clock_gettime},   // Not implemented
+    {404, &RevProc::ECALL_clock_settime},   // Not implemented
+    {408, &RevProc::ECALL_timer_gettime},   // Not implemented
+    {409, &RevProc::ECALL_timer_settime},   // Not implemented
+    };
+}
+
 void RevProc::ECALL_clone(){
 
   std::cout << "=======================================" << std::endl;
@@ -2281,8 +2324,8 @@ void RevProc::ECALL_clone(){
   uint64_t CloneArgsAddr = RegFile()->RV64[10];
   size_t SizeOfCloneArgs = RegFile()->RV64[11];
   
-  // std::cout << "Address of clone_args = 0x" << std::hex << CloneArgsAddr << std::endl;
-  // std::cout << "Size of clone_args = 0x" << std::hex << SizeOfCloneArgs << std::endl;
+  std::cout << "Address of clone_args = 0x" << std::hex << (uint64_t)CloneArgsAddr << std::endl;
+  std::cout << "Size of clone_args = 0x" << std::hex << SizeOfCloneArgs << std::endl;
 
   struct clone_args;
 
@@ -2349,7 +2392,10 @@ void RevProc::ECALL_clone(){
   return;
 }
 
+/*  */
 void RevProc::ECALL_chdir(){
+  RevRegFile& regFile = *RegFile();
+
   std::cout << "ECALL_chdir called" << std::endl;
   
   std::string path = "";
@@ -2359,26 +2405,34 @@ void RevProc::ECALL_chdir(){
   // at a time and search for the string terminator character '\0'
   do {
     char dirchar;
-    mem->ReadMem(RegFile()->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
+    mem->ReadMem(regFile.RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
     path = path + dirchar;
     i++;
   } while( path.back() != '\0');
 
-  std::cout << "Current Directory: " << std::filesystem::current_path().string() << std::endl;
   const int rc = chdir(path.data());
-  std::cout << "New Directory: " << std::filesystem::current_path().string() << std::endl;
-  std::cout << "Return Code: " << rc << std::endl;
   RegFile()->RV64[10] = rc;
 }
 
 void RevProc::ECALL_mkdir(){
+  RevRegFile& regFile = *RegFile();
+
   std::cout << "ECALL_mkdir called" << std::endl;
-}
 
-void RevProc::ECALL_chown(){
-  std::cout << "ECALL_chown called" << std::endl;
-}
+  std::string path = "";
+  unsigned i=0;
+  
+  // we don't know how long the path string is so read a byte (char)
+  // at a time and search for the string terminator character '\0'
+  do {
+    char dirchar;
+    mem->ReadMem(regFile.RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
+    path = path + dirchar;
+    i++;
+  } while( path.back() != '\0');
 
+  const int rc = chdir(path.data());
+}
 
 void RevProc::ECALL_exit(){
   std::cout << "ECALL_exit called" << std::endl;
@@ -2397,22 +2451,11 @@ void RevProc::ECALL_exit(){
   return;
 }
 
-void RevProc::ECALL_sigprocrtmask(){
-  std::cout << "ECALL_sigprocrtmask called" << std::endl;
-}
-
-void RevProc::ECALL_rev99(){
-  std::cout << "ECALL_rev99 called" << std::endl;
-}
-
 void RevProc::ECALL_getcwd(){
   std::cout << "ECALL_getcwd called" << std::endl;
 }
 
-void RevProc::ECALL_sync(){
-  std::cout << "ECALL_sync called" << std::endl;
-}
-
+/* TODO: Implement error handling */
 void RevProc::ECALL_getpid(){
   std::cout << "ECALL_getpid called" << std::endl;
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
@@ -2420,6 +2463,17 @@ void RevProc::ECALL_getpid(){
   CurrentCtx->GetRegFile()->RV64[10] = ActivePIDs.at(HartToExec);
   return;
 }
+
+/* TODO: Implement error handling */
+void RevProc::ECALL_getppid(){
+  std::cout << "ECALL_getppid called" << std::endl;
+  uint32_t CurrentPID = ActivePIDs.at(HartToExec);
+  auto CurrentCtx = ThreadTable.at(CurrentPID);
+  uint32_t ParentPID = CurrentCtx->GetParentPID();
+  RegFile()->RV64[10] = ParentPID;
+  return;
+}
+
 
 void RevProc::ECALL_write(){
   std::cout << "ECALL_write called" << std::endl;
@@ -2441,20 +2495,147 @@ void RevProc::ECALL_write(){
   RegFile()->RV64[10] = rc;
 }
 
-void RevProc::InitEcallTable(){
-  Ecalls = {
-    { 49,  &RevProc::ECALL_chdir },
-    { 64,  &RevProc::ECALL_write },
-    { 93,  &RevProc::ECALL_exit },
-    { 94,  &RevProc::ECALL_chown },
-    { 79,  &RevProc::ECALL_getcwd },
-    { 250,  &RevProc::ECALL_getpid },
-    { 99,  &RevProc::ECALL_rev99 },
-    { 135, &RevProc::ECALL_sigprocrtmask },
-    { 162, &RevProc::ECALL_sync },
-    { 220, &RevProc::ECALL_clone }
-  };
+
+void RevProc::ECALL_timer_settime(){
+  std::cout << "ECALL: timer_settime called" << std::endl;
+  return;
 }
+
+void RevProc::ECALL_timer_gettime(){
+  std::cout << "ECALL: timer_gettime called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_clock_settime(){
+  std::cout << "ECALL: clock_settime called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_clock_gettime(){
+  std::cout << "ECALL: clock_gettime called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_mmap(){
+  std::cout << "ECALL: mmap called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_gettid(){
+  std::cout << "ECALL: gettid called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_settimeofday(){
+  std::cout << "ECALL: settimeofday called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_gettimeofday(){
+  std::cout << "ECALL: gettimeofday called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_rt_sigprocmask(){
+  std::cout << "ECALL: rt_sigprocmask called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_timer_delete(){
+  std::cout << "ECALL: timer_delete called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_timer_create(){
+  std::cout << "ECALL: timer_create called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_nanosleep(){
+  std::cout << "ECALL: nanosleep called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_get_robust_list(){
+  std::cout << "ECALL: get_robust_list called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_set_robust_list(){
+  std::cout << "ECALL: set_robust_list called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_waitid(){
+  std::cout << "ECALL: waitid called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_exit_group(){
+  std::cout << "ECALL: exit_group called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_fdatasync(){
+  std::cout << "ECALL: fdatasync called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_fsync(){
+  std::cout << "ECALL: fsync called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_sync(){
+  std::cout << "ECALL: sync called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_tee(){
+  std::cout << "ECALL: tee called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_openat(){
+  std::cout << "ECALL: openat called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_read(){
+  std::cout << "ECALL: read called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_close(){
+  std::cout << "ECALL: close called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_fchown(){
+  std::cout << "ECALL: fchown called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_fchownat(){
+  std::cout << "ECALL: fchownat called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_mkdirat(){
+  std::cout << "ECALL: mkdirat called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_dup3(){
+  std::cout << "ECALL: dup3 called" << std::endl;
+  return;
+}
+
+void RevProc::ECALL_dup(){
+  std::cout << "ECALL: dup called" << std::endl;
+  return;
+}
+
 
 void RevProc::ExecEcall(){
   // a7 register = ecall code

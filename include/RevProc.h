@@ -207,17 +207,43 @@ namespace SST{
       /*
       * New Ecall Stuff
       */
-      void ECALL_clone();
-      void ECALL_getpid();
-      void ECALL_sync();
-      void ECALL_chown();
-      void ECALL_getcwd();
-      void ECALL_chdir();
-      void ECALL_mkdir();
-      void ECALL_write();
-      void ECALL_exit();
-      void ECALL_sigprocrtmask(); // FIXME: Double check name
-      void ECALL_rev99(); // FIXME: Figure out what this actually is (ie. what syscall has code = 99)
+      void ECALL_clone(); // 220
+      void ECALL_gettimeofday(); // 169
+      void ECALL_settimeofday(); // 170
+      void ECALL_getpid(); // 172
+      void ECALL_getppid(); // 173
+      void ECALL_gettid();  // 178
+      void ECALL_tee(); // 77
+      void ECALL_sync(); // 81
+      void ECALL_fsync(); // 82
+      void ECALL_fdatasync(); // 83
+      void ECALL_fchownat(); // 54
+      void ECALL_fchown(); // 55
+      void ECALL_getcwd(); // 17
+      void ECALL_chdir(); // 49
+      void ECALL_mkdir(); // Uses mkdirat under the hood
+      void ECALL_mkdirat();
+      void ECALL_read(); // 63
+      void ECALL_write(); // 64
+      void ECALL_waitid(); // 95
+      void ECALL_open(); // uses open under the hood
+      void ECALL_openat(); // 65
+      void ECALL_close(); // 57
+      void ECALL_mmap(); // 222
+      void ECALL_dup(); // 23 
+      void ECALL_dup3(); // 24
+      void ECALL_exit(); // 93
+      void ECALL_exit_group(); // 94
+      void ECALL_rt_sigprocmask(); // 135
+      void ECALL_set_robust_list(); // 99
+      void ECALL_get_robust_list(); // 100
+      void ECALL_nanosleep(); // 101
+      void ECALL_timer_create(); // 107
+      void ECALL_timer_delete(); // 110
+      void ECALL_clock_gettime(); // 403
+      void ECALL_clock_settime(); // 404
+      void ECALL_timer_gettime(); // 408
+      void ECALL_timer_settime(); // 409
 
       std::unordered_map<uint32_t, std::function<void(RevProc*)>> Ecalls;
       void InitEcallTable();
