@@ -53,10 +53,9 @@ namespace SST{
       static bool csd(RevFeature *F, RevRegFile *R,
                       RevMem *M, RevInst Inst) {
         // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
-        Inst.rs2 = CRegMap[Inst.rd];
+        Inst.rs2 = CRegMap[Inst.rs2];
         Inst.rs1 = CRegMap[Inst.rs1];
-        //Inst.imm = ((Inst.imm&0b111111)*8);
-        Inst.imm = (Inst.imm&0b1111111); //imm is 8-bits, zero extended, decoder pre-aligns bits, no scaling needed
+        Inst.imm = (Inst.imm&0b11111111); //imm is 8-bits, zero extended, decoder pre-aligns bits, no scaling needed
 
         return sd(F,R,M,Inst);
       }

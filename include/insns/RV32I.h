@@ -505,6 +505,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFF;
           R->RV32_PC += Inst.instSize;
         }else{
           //ZEXT(R->RV64[Inst.rd],M->ReadU8( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
@@ -512,6 +513,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFFFFFF000000FF;
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -526,6 +528,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint16_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFF;
           R->RV32_PC += Inst.instSize;
         }else{
           //ZEXT(R->RV64[Inst.rd],M->ReadU16( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
@@ -533,6 +536,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint16_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFFFFFF0000FFFF;
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -578,6 +582,9 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((int32_t)(td_u32(R->RV32[Inst.rs1],32)) + (int32_t)(td_u32(Inst.imm,12)),32);
           R->RV32_PC += Inst.instSize;
         }else{
+          if(R->RV64_PC == 0x101b0 ){
+            int blah_junk= 0;
+          }
           R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],64) + td_u64(Inst.imm,12),64);
           R->RV64_PC += Inst.instSize;
         }
