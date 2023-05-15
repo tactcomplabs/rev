@@ -68,4 +68,11 @@ asm volatile("test_%0:" : :"I"(testnum)); \
       ASM_GEN_SEXT(inst, x14, x1, imm); \
     )
 
+#define TEST_LD_OP( testnum, inst, result, offset, base ) \
+  TEST_CASE( testnum, x14, result, \
+    ASM_GEN(li  x15, result);  \
+    ASM_GEN(la  x1, base); \
+    ASM_GEN(inst x14, offset(x1)); \
+  )
+
 #endif
