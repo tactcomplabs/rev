@@ -1,8 +1,10 @@
+
+#include "../../../common/syscalls.h"
 #include "unistd.h"
 
 int main(){
-  pid_t pid = getpid();
-  if( pid<0){
+  pid_t pid = rev_getpid();
+  if( pid < 0){
     return 1;
   }
   return 0;
