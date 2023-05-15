@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
+#include "../../syscalls.h"
 
 int main() {
   /* 
@@ -8,7 +9,7 @@ int main() {
    *       This is a known issue with Text data in assembly 
   */
   const char dir[5] = "/tmp";
-  int result = chdir(&dir[0]);
+  int result = rev_chdir(&dir[0]);
 
   if (result != 0) {
     return 1;
