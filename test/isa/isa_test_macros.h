@@ -3,6 +3,8 @@
 #ifndef __ISA_TEST_MACROS_H
 #define __ISA_TEST_MACROS_H
 
+#define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
+
 #define MASK_XLEN(x) ((x) & ((1 << (__riscv_xlen - 1) << 1) - 1))
 #define SEXT_IMM(x) ((x) | (-(((x) >> 11) & 1) << 11))
 

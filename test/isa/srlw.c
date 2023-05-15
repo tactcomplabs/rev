@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "isa_test_macros.h"
 
 int main(int argc, char **argv){
@@ -62,24 +63,12 @@ int main(int argc, char **argv){
   TEST_RR_SRC12_EQ_DEST( 24, srlw, 0, 7 );
 
 
-int p = 0;
-int f = 0;
-int n = 0;
-
-char msg[10] = "TEST PASS";
-size_t msg_len = 10; // Length of the message string, including the newline character
-  
 asm volatile(" bne x0, gp, pass;");
 asm volatile("pass:" ); 
-     asm volatile("ADDI a1, zero, %1" : "=r"(p) :  "I"(10));
-      ssize_t bytes_written = write(STDOUT_FILENO, msg, msg_len);
      asm volatile("j continue");
 
 asm volatile("fail:" ); 
-     asm volatile("ADDI a0, zero, %1" : "=r"(f) :  "I"(10));
-    const char msg2[5] = "FAIL";
-    size_t msg_len2 = 5; // Length of the message string, including the newline character
-     ssize_t bytes_written2 = write(STDOUT_FILENO, msg2, msg_len2);
+     assert(false);
 
 asm volatile("continue:");
 asm volatile("li ra, 0x0");
