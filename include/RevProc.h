@@ -245,6 +245,8 @@ namespace SST{
       void ECALL_timer_gettime(); // 408
       void ECALL_timer_settime(); // 409
 
+
+      void DumpARegs(bool is32);
       std::unordered_map<uint32_t, std::function<void(RevProc*)>> Ecalls;
       void InitEcallTable();
       void ExecEcall();

@@ -9,6 +9,7 @@
 //
 //
 
+#include <sys/stat.h>
 #define _DEFAULT_THREAD_MEM_SIZE_ 4*1024*1024 // 4 MB
 
 #include "RevInstTable.h"
@@ -2272,6 +2273,28 @@ uint32_t RevProc::CreateChildCtx() {
   return ChildPID;
 }
 
+/* ONLY FOR DEBUG PURPOSES */
+void RevProc::DumpARegs(bool is32){
+  RevRegFile& regFile = *RegFile();
+  std::cout << " ======================================== " << std::endl;
+  std::cout << "ECALL - Register Dump: " << std::endl;
+
+  if( !is32 ){
+    /* 64-bit */
+    std::cout << " RV64 a registers " << std::endl;
+    for( unsigned a = 10; a < 18; a++ ){
+      std::cout << "- a" << a-10 << ": 0x" << std::hex << regFile.RV64[a] << std::endl;
+    }
+  }
+  else {
+    std::cout << " RV32 a registers " << std::endl;
+    for( unsigned a = 10; a < 18; a++ ){
+      std::cout << "- a" << a << ": 0x" << std::hex << regFile.RV32[a] << std::endl;
+    }
+  }
+  std::cout << " ======================================== " << std::endl;
+}
+
 
 /* ======================================================= */
 /* System Call (ecall) Implementations Below
@@ -2317,6 +2340,7 @@ void RevProc::InitEcallTable(){
 }
 
 void RevProc::ECALL_clone(){
+  std::cout << "ECALL_clone called" << std::endl;
 
   std::cout << "=======================================" << std::endl;
   std::cout << "CLONE: " << std::endl;
@@ -2392,11 +2416,11 @@ void RevProc::ECALL_clone(){
   return;
 }
 
-/*  */
+
 void RevProc::ECALL_chdir(){
+  std::cout << "ECALL_chdir called" << std::endl;
   RevRegFile& regFile = *RegFile();
 
-  std::cout << "ECALL_chdir called" << std::endl;
   
   std::string path = "";
   unsigned i=0;
@@ -2415,9 +2439,9 @@ void RevProc::ECALL_chdir(){
 }
 
 void RevProc::ECALL_mkdir(){
+  std::cout << "ECALL_mkdir called" << std::endl;
   RevRegFile& regFile = *RegFile();
 
-  std::cout << "ECALL_mkdir called" << std::endl;
 
   std::string path = "";
   unsigned i=0;
@@ -2479,12 +2503,12 @@ void RevProc::ECALL_write(){
   std::cout << "ECALL_write called" << std::endl;
   
   int fildes = RegFile()->RV64[10];
-
   std::size_t nbytes = RegFile()->RV64[12];
+
+  DumpARegs(false);
 
   char buf[nbytes];
   char bufchar;
-  uint64_t MemOffset = ThreadTable.at(ActivePIDs.at(HartToExec))->GetMemStartAddr();
   for (unsigned i=0; i<nbytes; i++){
     mem->ReadMem(RegFile()->RV64[11] + sizeof(char)*i, sizeof(char), &bufchar);
     std::cout << "WRITE: Char Found: " << bufchar << std::endl; 
@@ -2568,46 +2592,61 @@ void RevProc::ECALL_set_robust_list(){
 
 void RevProc::ECALL_waitid(){
   std::cout << "ECALL: waitid called" << std::endl;
+  RevRegFile& regFile = *RegFile();
   return;
 }
 
 void RevProc::ECALL_exit_group(){
   std::cout << "ECALL: exit_group called" << std::endl;
+  RevRegFile& regFile = *RegFile();
   return;
 }
 
 void RevProc::ECALL_fdatasync(){
   std::cout << "ECALL: fdatasync called" << std::endl;
+  RevRegFile& regFile = *RegFile();
   return;
 }
 
 void RevProc::ECALL_fsync(){
   std::cout << "ECALL: fsync called" << std::endl;
+  RevRegFile& regFile = *RegFile();
   return;
 }
 
 void RevProc::ECALL_sync(){
   std::cout << "ECALL: sync called" << std::endl;
+  RevRegFile& regFile = *RegFile();
   return;
 }
 
 void RevProc::ECALL_tee(){
   std::cout << "ECALL: tee called" << std::endl;
+  RevRegFile& regFile = *RegFile();
   return;
 }
 
 void RevProc::ECALL_openat(){
   std::cout << "ECALL: openat called" << std::endl;
+  RevRegFile& regFile = *RegFile();
+  DumpARegs(false);
   return;
 }
 
 void RevProc::ECALL_read(){
   std::cout << "ECALL: read called" << std::endl;
+  RevRegFile& regFile = *RegFile();
+  
   return;
 }
 
 void RevProc::ECALL_close(){
   std::cout << "ECALL: close called" << std::endl;
+  DumpARegs(false);
+  RevRegFile& regFile = *RegFile();
+  unsigned fd = regFile.RV64[10];
+  uint64_t rc = close(fd);
+  regFile.RV64[10] = rc;
   return;
 }
 
@@ -2622,7 +2661,27 @@ void RevProc::ECALL_fchownat(){
 }
 
 void RevProc::ECALL_mkdirat(){
-  std::cout << "ECALL: mkdirat called" << std::endl;
+  RevRegFile& regFile = *RegFile();
+  DumpARegs(false);
+
+  std::cout << "ECALL_mkdirat called" << std::endl;
+
+  unsigned fd = regFile.RV64[10];
+  unsigned Mode = regFile.RV64[12];
+
+  std::string path = "";
+  unsigned i=0;
+  
+  // we don't know how long the path string is so read a byte (char)
+  // at a time and search for the string terminator character '\0'
+  do {
+    char dirchar;
+    mem->ReadMem(regFile.RV64[11] + sizeof(char)*i, sizeof(char), &dirchar);
+    path = path + dirchar;
+    i++;
+  } while( path.back() != '\0');
+
+  const int rc = mkdirat(fd, path.data(), Mode);
   return;
 }
 
@@ -2637,6 +2696,13 @@ void RevProc::ECALL_dup(){
 }
 
 
+/*
+ * This is the function that is called when an ECALL exception is detected inside ClockTick
+ * - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
+ *
+ * Eventually this will be integrated into a TrapHandler however since ECALLs are the only
+ * supported exceptions at this point there is no need just yet. 
+ */
 void RevProc::ExecEcall(){
   // a7 register = ecall code
   uint64_t EcallCode;
