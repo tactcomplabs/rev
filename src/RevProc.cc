@@ -1421,7 +1421,7 @@ RevInst RevProc::DecodeInst(){
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
                     "Core %d ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
-                    id, threadToDecode, PC, Inst);
+                    id, HartToDecode, PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
                   "Error: Core %d failed to decode instruction at PC=0x%" PRIx64 "; Inst=%d\n",
@@ -1781,9 +1781,9 @@ uint16_t RevProc::GetHartID(){
       }
       if(HART_CTS[nextID]){ break; };
     }
-    output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Hart switch from %d to %d \n",
-                    id, HartToExec, nextID);
+    // output->verbose(CALL_INFO, 6, 0,
+    //                 "Core %d ; Hart switch from %d to %d \n",
+    //                 id, HartToExec, nextID);
   }
   return nextID;
 }
@@ -1794,7 +1794,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   if( PendingCtxSwitch ){
     // std::cout << "=============================================" << std::endl;
-    std::cout << "THREAD EVENT: PendingCtxSwitch TRUE" << std::endl;
+    // std::cout << "THREAD EVENT: PendingCtxSwitch TRUE" << std::endl;
     // std::cout << "=============================================" << std::endl;
     // std::cout << "Address of Old RegFile = 0x" << std::hex << ThreadTable.at(ActivePIDs.at(HartToExec))->GetRegFile() << std::endl;
     // std::cout << "Address of New RegFile = 0x" << std::hex << ThreadTable.at(NextPID)->GetRegFile() << std::endl;
@@ -1803,16 +1803,18 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( Pipeline.empty() ) {
       ResetInst(&Inst);
       if( !ChangeActivePID(NextPID) ){
-        std::cout << "Failed to change active PID" << std::endl;
+        output->fatal(CALL_INFO, 0, 0, 
+                      "Core %d ; Hart %u; PID %d Failed to change active PID to %u\n",
+                      id, HartToDecode, GetActivePID(), NextPID);
       } else {
-        std::cout << "Successfully Updated Hart " << HartToExec << " to PID = " << RegFile()->PID << std::endl;
-        RegFile()->RV64_SCAUSE = 0;
+        output->fatal(CALL_INFO, 0, 0, 
+                      "Core %d ; Hart %u; Changed to PID %d \n",
+                      id, HartToDecode, GetActivePID());
         RegFile(HartToDecode)->trigger = 0;
         RegFile(HartToDecode)->cost = 0;
         RegFile(HartToDecode)->RV64_SCAUSE = 0;
         ExecPC = GetPC();
         PendingCtxSwitch = false;
-        /* DELETE ME */
         NextPID = 0;
       }
     }
@@ -1905,11 +1907,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       RevExt *Ext = Extensions[EToE.first];
       std::shared_ptr<RevThreadCtx> ActiveCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
 
-      // std::cout << "-----------------------------------------" << std::endl;
-      // std::cout << "Ext->SetRegFile" << std::endl;
-      // std::cout << "- Being passed a RegFile w/ Address = 0x" << ActiveCtx->GetRegFile()  << std::endl;
-      // std::cout << "-----------------------------------------" << std::endl;
-      
+      // Update RegFile (in case of prior context switch)
       Ext->SetRegFile(ActiveCtx->GetRegFile());
 
       // execute the instruction
@@ -1922,18 +1920,18 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if(feature->IsRV32()){
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
                                       << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
-                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[threadToExec].RV32[Inst.rd] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[threadToExec].RV32[Inst.rs1] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[threadToExec].RV32[Inst.rs2] \
+                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[HartToExec].RV32[Inst.rd] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[HartToExec].RV32[Inst.rs1] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[HartToExec].RV32[Inst.rs2] \
                                       << " imm = "                << std::hex << Inst.imm \
                                       << std::endl;
 
       }else{
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
                                       << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
-                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[threadToExec].RV64[Inst.rd] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[threadToExec].RV64[Inst.rs1] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[threadToExec].RV64[Inst.rs2] \
+                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[HartToExec].RV64[Inst.rd] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[HartToExec].RV64[Inst.rs1] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[HartToExec].RV64[Inst.rs2] \
                                       << " imm = "                << std::hex << Inst.imm \
                                       << std::endl;
       }
@@ -1946,6 +1944,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if( (RegFile()->RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ||
           (RegFile()->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){ // Ecall found
         
+          output->verbose(CALL_INFO, 6, 0,
+                  "Core %d; HartID %d; PID %d - Exception Raised: ECALL with code = %lu\n", 
+                  id, HartToExec, GetActivePID(), RegFile()->RV64[17]);
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
           #endif
@@ -1963,10 +1964,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
           #endif
 
-          /* exception handled... zero the cause register */
+          /* exception handled... zero the cause registers */
           RegFile()->RV64_SCAUSE = 0;
-
-          /* Execute system call on this RevProc */
+          RegFile()->RV32_SCAUSE = 0;
 
           #ifdef _REV_DEBUG_
           std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
@@ -1975,7 +1975,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
 
       if( !PendingCtxSwitch ){
-      Pipeline.push(std::make_pair(HartToExec, Inst));
+        Pipeline.push(std::make_pair(HartToExec, Inst));
       }
 
       bool isFloat = false;
@@ -2031,12 +2031,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Halted = true;
     }
 
-  if( currentCycle >= 14 ){
-    for( auto Ctx : ThreadTable){
-      std::cout << "PID: " << Ctx.first << "|" << Ctx.second->GetRegFile()->PID << std::endl;
-      std::cout << "ADDRESS OF REGFILE = " << Ctx.second->GetRegFile() << std::endl;
-    }
-  }
     rtn = true;
   }else{
     // wait until the counter has been decremented
@@ -2435,7 +2429,7 @@ void RevProc::ECALL_clone(){
    * ===========================================================================================
    * We need to duplicate the parent's RegFile to to the Childs
    * - NOTE: when we return from this function, the return value will 
-   *         be automatically stored in the Proc.RegFile[threadToExec]'s a0 
+   *         be automatically stored in the Proc.RegFile[HartToExec]'s a0 
    *         register. In a traditional fork code this looks like:
    *         
    *         pid_t pid = fork()
@@ -2554,18 +2548,19 @@ void RevProc::ECALL_getppid(){
 
 
 void RevProc::ECALL_write(){
+
+  #ifdef DEBUG
+  DumpARegs(false);
   std::cout << "ECALL_write called" << std::endl;
+  #endif // DEBUG
   
   int fildes = RegFile()->RV64[10];
   std::size_t nbytes = RegFile()->RV64[12];
-
-  DumpARegs(false);
 
   char buf[nbytes];
   char bufchar;
   for (unsigned i=0; i<nbytes; i++){
     mem->ReadMem(RegFile()->RV64[11] + sizeof(char)*i, sizeof(char), &bufchar);
-    std::cout << "WRITE: Char Found: " << bufchar << std::endl; 
   }
   mem->ReadMem(RegFile()->RV64[11], sizeof(buf), &buf);
 
@@ -2578,6 +2573,7 @@ void RevProc::ECALL_timer_settime(){
   std::cout << "ECALL: timer_settime called" << std::endl;
   return;
 }
+
 
 void RevProc::ECALL_timer_gettime(){
   std::cout << "ECALL: timer_gettime called" << std::endl;
@@ -2716,7 +2712,7 @@ void RevProc::ECALL_fchownat(){
 
 void RevProc::ECALL_mkdirat(){
   RevRegFile& regFile = *RegFile();
-  DumpARegs(false);
+  
 
   std::cout << "ECALL_mkdirat called" << std::endl;
 
@@ -2776,7 +2772,7 @@ void RevProc::ExecEcall(){
     RegFile()->RV64_SCAUSE = 0;
     RegFile()->RV32_SCAUSE = 0;
   } else {
-    output->fatal(CALL_INFO, -1, "Ecall Code = %d not found", EcallCode);
+    output->fatal(CALL_INFO, -1, "Ecall Code = %ul not found", EcallCode);
   }
 }
 
