@@ -6,3 +6,4 @@
 # See LICENSE in the top level directory for licensing details
 #
 add_subdirectory(include)
+add_subdirectory(syscalls)
