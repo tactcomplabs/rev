@@ -1,5 +1,5 @@
 /*
- * lh.c
+ * lb.c
  *
  * RISC-V ISA: RV32I
  *
@@ -20,10 +20,10 @@
 int main(int argc, char **argv){
 
   asm volatile("tdat:");
-  asm volatile("tdat1:  .half 0x00ff");
-  asm volatile("tdat2:  .half 0xff00");
-  asm volatile("tdat3:  .half 0x0ff0");
-  asm volatile("tdat4:  .half 0xf00f");
+  asm volatile("tdat1:  .byte 0xff");
+  asm volatile("tdat2:  .byte 0x00");
+  asm volatile("tdat3:  .byte 0xf0");
+  asm volatile("tdat4:  .byte 0x0f");
 
 
 
@@ -31,32 +31,32 @@ int main(int argc, char **argv){
  // # Basic tests
  // #-------------------------------------------------------------
  //
-
-  TEST_LD_OP( 2, lh, 0x00000000000000ff, 0,  tdat );
-  TEST_LD_OP( 3, lh, 0xffffffffffffff00, 2,  tdat );
-  TEST_LD_OP( 4, lh, 0x0000000000000ff0, 4,  tdat );
-  TEST_LD_OP( 5, lh, 0xfffffffffffff00f, 6, tdat );
+  TEST_LD_OP( 2, lb, 0xffffffffffffffff, 0,  tdat );
+  TEST_LD_OP( 3, lb, 0x0000000000000000, 1,  tdat );
+  TEST_LD_OP( 4, lb, 0xfffffffffffffff0, 2,  tdat );
+  TEST_LD_OP( 5, lb, 0x000000000000000f, 3, tdat );
 
   //# Test with negative offset
 
-  TEST_LD_OP( 6, lh, 0x00000000000000ff, -6,  tdat4 );
-  TEST_LD_OP( 7, lh, 0xffffffffffffff00, -4,  tdat4 );
-  TEST_LD_OP( 8, lh, 0x0000000000000ff0, -2,  tdat4 );
-  TEST_LD_OP( 9, lh, 0xfffffffffffff00f,  0, tdat4 );
+  TEST_LD_OP( 6, lb, 0xffffffffffffffff, -3, tdat4 );
+  TEST_LD_OP( 7, lb, 0x0000000000000000, -2,  tdat4 );
+  TEST_LD_OP( 8, lb, 0xfffffffffffffff0, -1,  tdat4 );
+  TEST_LD_OP( 9, lb, 0x000000000000000f, 0,   tdat4 );
 
+  //# Test with a negative base
 
-  TEST_CASE( 10, x5, 0x00000000000000ff, \
+  TEST_CASE( 10, x5, 0xffffffffffffffff, \
     ASM_GEN(la  x1, tdat); \
     ASM_GEN(addi x1, x1, -32); \
-    ASM_GEN(lh x5, 32(x1)); \
+    ASM_GEN(lb x5, 32(x1)); \
   )
 
- // # Test with unaligned base - currently fails
+  //# Test with unaligned base
 
-  TEST_CASE( 11, x5, 0xffffffffffffff00, \
+  TEST_CASE( 11, x5, 0x0000000000000000, \
     ASM_GEN(la  x1, tdat); \
-    ASM_GEN(addi x1, x1, -5); \
-    ASM_GEN(lh x5, 7(x1)); \
+    ASM_GEN(addi x1, x1, -6); \
+    ASM_GEN(lb x5, 7(x1)); \
   )
 
 
