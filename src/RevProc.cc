@@ -2393,21 +2393,92 @@ void RevProc::ECALL_clone(){
   std::cout << "=======================================" << std::endl;
   std::cout << "CLONE: " << std::endl;
   
+  DumpARegs(false);
   uint64_t CloneArgsAddr = RegFile()->RV64[10];
   size_t SizeOfCloneArgs = RegFile()->RV64[11];
   
-  std::cout << "Address of clone_args = 0x" << std::hex << (uint64_t)CloneArgsAddr << std::endl;
-  std::cout << "Size of clone_args = 0x" << std::hex << SizeOfCloneArgs << std::endl;
-
-  struct clone_args;
-
   uint64_t flags;
-
   mem->ReadMem(CloneArgsAddr, sizeof(uint64_t), &flags);
 
   std::cout << "- Flags = " << flags << std::endl;
-
-  
+  for( uint64_t bit=1; bit != 0; bit <<= 1 ){
+    switch (flags & bit) {
+      case CLONE_VM:
+        std::cout << "CLONE_VM is true" << std::endl;
+        break;
+      case CLONE_FS: /* Set if fs info shared between processes */
+        std::cout << "CLONE_FS is true" << std::endl;
+        break;
+      case CLONE_FILES: /* Set if open files shared between processes */
+        std::cout << "CLONE_FILES is true" << std::endl;
+        break;
+      case CLONE_SIGHAND: /* Set if signal handlers shared */
+        std::cout << "CLONE_SIGHAND is true" << std::endl;
+        break;
+      case CLONE_PIDFD: /* Set if a pidfd should be placed in the parent */
+        std::cout << "CLONE_PIDFD is true" << std::endl;
+        break;
+      case CLONE_PTRACE: /* Set if tracing continues on the child */
+        std::cout << "CLONE_PTRACE is true" << std::endl;
+        break;
+      case CLONE_VFORK: /* Set if the parent wants the child to wake it up on mm_release */
+        std::cout << "CLONE_VFORK is true" << std::endl;
+        break;
+      case CLONE_PARENT: /* Set if we want to have the same parent as the cloner */
+        std::cout << "CLONE_PARENT is true" << std::endl;
+        break;
+      case CLONE_THREAD: /* Set to add to same thread group */
+        std::cout << "CLONE_THREAD is true" << std::endl;
+        break;
+      case CLONE_NEWNS: /* Set to create new namespace */
+        std::cout << "CLONE_NEWNS is true" << std::endl;
+        break;
+      case CLONE_SYSVSEM: /* Set to shared SVID SEM_UNDO semantics */
+        std::cout << "CLONE_SYSVSEM is true" << std::endl;
+        break;
+      case CLONE_SETTLS: /* Set TLS info */
+        std::cout << "CLONE_SETTLS is true" << std::endl;
+        break;
+      case CLONE_PARENT_SETTID: /* Store TID in userlevel buffer before MM copy */
+        std::cout << "CLONE_PARENT_SETTID is true" << std::endl;
+        break;
+      case CLONE_CHILD_CLEARTID: /* Register exit futex and memory location to clear */
+        std::cout << "CLONE_CHILD_CLEARTID is true" << std::endl;
+        break;
+      case CLONE_DETACHED: /* Create clone detached */
+        std::cout << "CLONE_DETACHED is true" << std::endl;
+        break;
+      case CLONE_UNTRACED: /* Set if the tracing process can't force CLONE_PTRACE on this clone */
+        std::cout << "CLONE_UNTRACED is true" << std::endl;
+        break;
+      case CLONE_CHILD_SETTID: /* New cgroup namespace */
+        std::cout << "CLONE_CHILD_SETTID is true" << std::endl;
+        break;
+      case CLONE_NEWCGROUP: /* New cgroup namespace */
+        std::cout << "CLONE_NEWCGROUP is true" << std::endl;
+        break;
+      case CLONE_NEWUTS: /* New utsname group */
+        std::cout << "CLONE_NEWUTS is true" << std::endl;
+        break;
+      case CLONE_NEWIPC: /* New ipcs */
+        std::cout << "CLONE_NEWIPC is true" << std::endl;
+        break;
+      case CLONE_NEWUSER: /* New user namespace */
+        std::cout << "CLONE_NEWUSER is true" << std::endl;
+        break;
+      case CLONE_NEWPID: /* New pid namespace */
+        std::cout << "CLONE_NEWPID is true" << std::endl;
+        break;
+      case CLONE_NEWNET: /* New network namespace */
+        std::cout << "CLONE_NEWNET is true" << std::endl;
+        break;
+      case CLONE_IO: /* Clone I/O Context */
+        std::cout << "CLONE_IO is true" << std::endl;
+        break;
+      default:
+        break;
+    }
+  }
 
   /* Get the parent ctx (Current active, executing PID) */
   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
