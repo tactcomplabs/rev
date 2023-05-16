@@ -12,17 +12,18 @@
 
 .PHONY: src
 
-EXAMPLE=add
-CC="${RVCC}"
-#CC=riscv64-unknown-linux-gnu-gcc
+CC=${RVCC}
 ARCH=rv64imafdc
-#ABI=lp64
 
-all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).c
-	#$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
+ISA_SOURCES := $(wildcard *.c)
+ISA_HEADERS := $(wildcard *.h)
+ISA_EXES=$(ISA_SOURCES:.c=.exe)
+
+all:$(ISA_EXES)
+$(ISA_TESTS): $(ISA_EXES)
+%.exe:%.c $(ISA_HEADERS)
+	$(CC) -march=$(ARCH) -O0 -o $@ $< -static
 clean:
-	rm -Rf $(EXAMPLE).exe
+	rm -Rf *.exe
 
 #-- EOF
