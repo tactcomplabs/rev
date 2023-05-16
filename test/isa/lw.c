@@ -19,11 +19,7 @@
 
 int main(int argc, char **argv){
 
-  asm volatile("tdat:");
-  asm volatile("tdat1:  .word 0x00ff00ff");
-  asm volatile("tdat2:  .word 0xff00ff00");
-  asm volatile("tdat3:  .word 0x0ff00ff0");
-  asm volatile("tdat4:  .word 0xf00ff00f");
+
 
 
 
@@ -72,3 +68,12 @@ asm volatile("li ra, 0x0");
 
   return 0;
 }
+
+  asm(".data");
+RVTEST_DATA_BEGIN
+  asm ("tdat:");
+  asm ("tdat1:  .word 0x00ff00ff");
+  asm ("tdat2:  .word 0xff00ff00");
+  asm ("tdat3:  .word 0x0ff00ff0");
+  asm ("tdat4:  .word 0xf00ff00f");
+RVTEST_DATA_END
