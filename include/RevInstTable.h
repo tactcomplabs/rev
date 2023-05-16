@@ -78,14 +78,14 @@
                     (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register
 #define ZEXT(r,x,b) do {\
-                    (r) = (x) | (((1UL) << (b)) - 1);\
+                    (r) = (x) & (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register
 
 #define SEXTI(r,b)  do {\
                     (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register inline
 #define ZEXTI(r,b)  do {\
-                    (r) = (r) | (((1UL) << (b)) - 1);\
+                    (r) = (r) & (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
 // Swizzle Macro
