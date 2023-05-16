@@ -13,6 +13,7 @@
 #define XSTR(s) STR(s)
 
 #define ASM_GEN(...) asm volatile(#__VA_ARGS__);
+#define ASM_GEN_NV(...) asm (#__VA_ARGS__);
 
 #define ASM_GEN_MASK(a, v) asm volatile("li " #a ", " XSTR(MASK_XLEN(v))) 
 #define ASM_GEN_SEXT(inst, d, a, v) asm volatile(#inst " " #d ", " #a "," XSTR(SEXT_IMM(v))) 
@@ -74,5 +75,28 @@ asm volatile("test_%0:" : :"I"(testnum)); \
     ASM_GEN(la  x1, base); \
     ASM_GEN(inst x14, offset(x1)); \
   )
+
+#define TEST_ST_OP( testnum, load_inst, store_inst, result, offset, base ) \
+    TEST_CASE( testnum, x14, result, \
+      ASM_GEN(la  x1, base); \
+      ASM_GEN(li  x2, result); \
+      ASM_GEN(la  x15, 7f);  \
+      ASM_GEN(store_inst x2, offset(x1)); \
+      ASM_GEN(load_inst x14, offset(x1)); \
+      ASM_GEN(j 8f); \
+      asm volatile("7:");    \
+      ASM_GEN(mv x14, x2); \
+      asm volatile("8:");    \
+  )
+
+#define RVTEST_DATA_BEGIN                                               \
+        ASM_GEN_NV(.pushsection .tohost,"aw",@progbits);                            \
+        ASM_GEN_NV(.align 6; .global tohost; tohost: .dword 0; .size tohost, 8);    \
+        ASM_GEN_NV(.align 6; .global fromhost; fromhost: .dword 0; .size fromhost, 8);\
+        ASM_GEN_NV(.popsection);                                                    \
+        ASM_GEN_NV(.align 4; .global begin_signature; begin_signature:);
+
+#define RVTEST_DATA_END \
+       ASM_GEN_NV(.align 4; .global end_signature; end_signature:);
 
 #endif
