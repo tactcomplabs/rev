@@ -567,7 +567,7 @@ namespace SST{
         return true;
       }
 
-      // RISCV writes the full 32/64-bit sign-extended values even though this is a half-word store
+      // RISCV writes the full 32-bit sign-extended values even though this is a half-word store
       static bool sh(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         int64_t tmp = 0;
         if( F->IsRV32() ){

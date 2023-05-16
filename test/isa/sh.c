@@ -73,14 +73,14 @@ asm volatile("li ra, 0x0");
   asm(".data");
 RVTEST_DATA_BEGIN
   asm ("tdat:");
-  asm ("tdat1:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat2:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat3:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat4:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat5:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat6:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat7:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat8:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat9:   .dword 0xdeadbeefdeadbeef");
-  asm ("tdat10:  .dword 0xdeadbeefdeadbeef");
+  asm ("tdat1:   .half 0xbeef");
+  asm ("tdat2:   .half 0xbeef");
+  asm ("tdat3:   .half 0xbeef");
+  asm ("tdat4:   .half 0xbeef");
+  asm ("tdat5:   .half 0xbeef");
+  asm ("tdat6:   .half 0xbeef");
+  asm ("tdat7:   .half 0xbeef");
+  asm ("tdat8:   .half 0xbeef");
+  asm ("tdat9:   .half 0xbeef");
+  asm ("tdat10:  .half 0xbeef");
 RVTEST_DATA_END
