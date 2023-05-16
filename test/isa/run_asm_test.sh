@@ -9,4 +9,4 @@ if [ -f $RVASM.exe ]; then
 else
   echo "Test ASM: File not found - likely build failed"
   exit 1
-fi 
+fi
