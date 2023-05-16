@@ -1,5 +1,5 @@
 /*
- * sd.c
+ * sh.c
  *
  * RISC-V ISA: RV32I
  *
@@ -22,38 +22,38 @@ int main(int argc, char **argv){
  // #-------------------------------------------------------------
  // # Basic tests
  // #-------------------------------------------------------------
- //
-  TEST_ST_OP( 2, ld, sd, 0x00aa00aa00aa00aa, 0,  tdat );
-  TEST_ST_OP( 3, ld, sd, 0xaa00aa00aa00aa00, 8,  tdat );
-  TEST_ST_OP( 4, ld, sd, 0x0aa00aa00aa00aa0, 16,  tdat );
-  TEST_ST_OP( 5, ld, sd, 0xa00aa00aa00aa00a, 24, tdat );
+ 
+  TEST_ST_OP( 2, lh, sh, 0x00000000000000aa, 0, tdat );
+  TEST_ST_OP( 3, lh, sh, 0xffffffffffffaa00, 2, tdat );
+  TEST_ST_OP( 4, lw, sh, 0xffffffffbeef0aa0, 4, tdat );
+  TEST_ST_OP( 5, lh, sh, 0xffffffffffffa00a, 6, tdat );
 
-  //# Test with negative offset
+  // # Test with negative offset
 
-  TEST_ST_OP( 6, ld, sd, 0x00aa00aa00aa00aa, -24, tdat8 );
-  TEST_ST_OP( 7, ld, sd, 0xaa00aa00aa00aa00, -16, tdat8 );
-  TEST_ST_OP( 8, ld, sd, 0x0aa00aa00aa00aa0, -8,  tdat8 );
-  TEST_ST_OP( 9, ld, sd, 0xa00aa00aa00aa00a, 0,   tdat8 );
+  TEST_ST_OP( 6, lh, sh, 0x00000000000000aa, -6, tdat8 );
+  TEST_ST_OP( 7, lh, sh, 0xffffffffffffaa00, -4, tdat8 );
+  TEST_ST_OP( 8, lh, sh, 0x0000000000000aa0, -2, tdat8 );
+  TEST_ST_OP( 9, lh, sh, 0xffffffffffffa00a, 0,  tdat8 );
+  
  
  //# Test with a negative base
 
-  TEST_CASE( 10, x5, 0x1234567812345678, \
+  TEST_CASE( 10, x5, 0x5678, \
     ASM_GEN(la  x1, tdat9); \
-    ASM_GEN(li  x2, 0x1234567812345678); \
+    ASM_GEN(li  x2, 0x12345678); \
     ASM_GEN(addi x4, x1, -32); \
-    ASM_GEN(sd x2, 32(x4)); \
-    ASM_GEN(ld x5, 0(x1)); \
+    ASM_GEN(sh x2, 32(x4)); \
+    ASM_GEN(lh x5, 0(x1)); \
   )
 
-  //# Test with unaligned base
-
-  TEST_CASE( 11, x5, 0x5821309858213098, \
+  //# Test with unaligned base - fails, store gets correct value but incorrect address. Load returns 0
+  TEST_CASE( 11, x5, 0x3098, \
     ASM_GEN(la  x1, tdat9); \
-    ASM_GEN(li  x2, 0x5821309858213098); \
-    ASM_GEN(addi x1, x1, -3); \
-    ASM_GEN(sd x2, 11(x1)); \
+    ASM_GEN(li  x2, 0x00003098); \
+    ASM_GEN(addi x1, x1, -5); \
+    ASM_GEN(sh x2, 7(x1)); \
     ASM_GEN(la  x4, tdat10); \
-    ASM_GEN(ld x5, 0(x4)); \
+    ASM_GEN(lh x5, 0(x4)); \
   )
 
 
