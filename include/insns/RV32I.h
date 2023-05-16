@@ -38,7 +38,8 @@ namespace SST{
           }
           return true;
         }
-        Inst.imm = (Inst.imm & 0b011111111)*4;
+        //Inst.imm = (Inst.imm & 0b011111111)*4;
+        Inst.imm = (Inst.imm & 0b11111111)*4;
         return addi(F,R,M,Inst);
       }
 
@@ -46,6 +47,8 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.lwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
+        //Inst.imm = ((Inst.imm & 0b111111)*4);
+        Inst.imm = (Inst.imm & 0b11111111); // Immd is 8 bits -  bits placed correctly in decode, no need to scale
 
         return lw(F,R,M,Inst);
       }
@@ -54,6 +57,8 @@ namespace SST{
                         RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
+        //Inst.imm = ((Inst.imm & 0b111111)*4);
+        Inst.imm = (Inst.imm & 0b11111111); // Immd is 8 bits - zero extended, bits placed correctly in decode, no need to scale
 
         return sw(F,R,M,Inst);
       }
@@ -63,6 +68,8 @@ namespace SST{
         // c.lw rd, rs1, $imm = lw rd, $imm(rs1)
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
+        //Inst.imm = ((Inst.imm & 0b11111)*4);
+        Inst.imm = (Inst.imm & 0b1111111); // Immd is 7 bits, zero extended, bits placed correctly in decode, no need to scale
 
         return lw(F,R,M,Inst);
       }
@@ -72,6 +79,8 @@ namespace SST{
         // c.sw rs2, rs1, $imm = sw rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
+        //Inst.imm = ((Inst.imm & 0b11111)*4);
+        Inst.imm = (Inst.imm & 0b1111111); //Immd is 7-bits, zero extended, bits placed correctly in decode, no need to scale
 
         return sw(F,R,M,Inst);
       }
@@ -80,7 +89,8 @@ namespace SST{
                      RevMem *M, RevInst Inst) {
         // c.j $imm = jal x0, $imm
         Inst.rd = 0; // x0
-        Inst.imm = Inst.jumpTarget;
+        //Inst.imm = Inst.jumpTarget;
+        SEXT(Inst.imm, Inst.jumpTarget&0b111111111111, 12); 
 
         return jal(F,R,M,Inst);
       }
@@ -96,8 +106,9 @@ namespace SST{
 
       static bool CRFUNC_1000(RevFeature *F, RevRegFile *R,
                               RevMem *M, RevInst Inst){
-        if( Inst.rs2 != 0 )
+        if( Inst.rs2 != 0 ){
           return cmv(F,R,M,Inst);
+        }
         return cjr(F,R,M,Inst);
       }
 
@@ -105,7 +116,8 @@ namespace SST{
                               RevMem *M, RevInst Inst){
         if( (Inst.rs1 == 0) && (Inst.rd == 0) ){
           return ebreak(F,R,M,Inst);
-        }else if( (Inst.rs1 == 0) && (Inst.rd != 0) ){
+        }else if( (Inst.rs2 == 0) && (Inst.rd != 0) ){
+          Inst.rd = 1;  //C.JALR expands to jalr x1, 0(rs1), so force update of x1 / ra
           return jalr(F,R,M,Inst);
         }else{
           return add(F,R,M,Inst);
@@ -121,6 +133,7 @@ namespace SST{
 
       static bool cmv(RevFeature *F, RevRegFile *R,
                       RevMem *M, RevInst Inst) {
+        Inst.rs1 = 0;  // expands to add rd, x0, rs2, so force rs1 to zero
         return add(F,R,M,Inst);
       }
 
@@ -143,7 +156,10 @@ namespace SST{
         // c.beqz %rs1, $imm = beq %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = Inst.offset;
+        //Inst.imm = Inst.offset;
+        //Inst.imm = Inst.offset & 0b111111;
+        SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
+        //SEXT(Inst.imm, Inst.offset, 6);
 
         return beq(F,R,M,Inst);
       }
@@ -153,7 +169,10 @@ namespace SST{
         // c.bnez %rs1, $imm = bne %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
-        Inst.imm = Inst.offset;
+        //Inst.imm = Inst.offset;
+        //Inst.imm = Inst.offset & 0b111111;
+        //SEXT(Inst.imm, Inst.offset, 6);
+        SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
 
         return bne(F,R,M,Inst);
       }
@@ -162,6 +181,7 @@ namespace SST{
                       RevMem *M, RevInst Inst) {
         // c.li %rd, $imm = addi %rd, x0, $imm
         Inst.rs1 = 0;
+        SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
         return addi(F,R,M,Inst);
       }
 
@@ -169,10 +189,13 @@ namespace SST{
                        RevMem *M, RevInst Inst) {
         if( Inst.rd == 2 ){
           // c.addi16sp
-           SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
+           //SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
+           //SEXT(Inst.imm, (Inst.imm & 0b111111)*16, 6);
+          SEXT(Inst.imm, (Inst.imm & 0b1111111111), 10); // Immd is 10 bits, sign extended and scaled in decode
           return addi(F,R,M,Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
+          SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
           return lui(F,R,M,Inst);
         }
       }
@@ -180,6 +203,8 @@ namespace SST{
       static bool caddi(RevFeature *F, RevRegFile *R,
                        RevMem *M, RevInst Inst) {
         // c.addi %rd, $imm = addi %rd, %rd, $imm
+        uint32_t tmp = Inst.imm & 0b111111;
+        SEXT(Inst.imm, tmp, 6);
         Inst.rs1 = Inst.rd;
         return addi(F,R,M,Inst);
       }
@@ -212,6 +237,7 @@ namespace SST{
         // c.andi %rd, $imm = sandi %rd, %rd, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = Inst.rd;
+        SEXT(Inst.imm, (Inst.imm & 0b0111111), 6);  //immd is 6 bits, sign extended no scaling needed
         return andi(F,R,M,Inst);
       }
 
@@ -259,7 +285,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           R->RV64[Inst.rd] = 0x00;
-          SEXT(R->RV64[Inst.rd], Inst.imm << 12, 32); 
+          SEXT(R->RV64[Inst.rd], Inst.imm << 12, 32);
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -432,12 +458,16 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
+          R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFF;
+          SEXTI(R->RV32[Inst.rd], 8);
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],M->ReadU8( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
           M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFF;
+          SEXTI(R->RV64[Inst.rd], 8);
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -451,12 +481,16 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint16_t *)(&R->RV32[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
+          R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFFFF;
+          SEXTI(R->RV32[Inst.rd], 16);
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],M->ReadU16( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
           M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint16_t *)(&R->RV64[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFF;
+          SEXT(R->RV64[Inst.rd], R->RV64[Inst.rd], 16);
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -470,12 +504,16 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint32_t *)(&R->RV32[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
+          R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFFFFFFFF;
+          SEXTI(R->RV32[Inst.rd], 32);
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
           M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint32_t *)(&R->RV64[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFFFFFF;
+          SEXT(R->RV64[Inst.rd], R->RV64[Inst.rd], 32);
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -490,6 +528,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFF;
           R->RV32_PC += Inst.instSize;
         }else{
           //ZEXT(R->RV64[Inst.rd],M->ReadU8( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
@@ -497,6 +536,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFF;
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -511,6 +551,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint16_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFF;
           R->RV32_PC += Inst.instSize;
         }else{
           //ZEXT(R->RV64[Inst.rd],M->ReadU16( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
@@ -518,6 +559,7 @@ namespace SST{
           M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint16_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(0));
+          R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFF;
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -536,12 +578,18 @@ namespace SST{
         return true;
       }
 
+      // RISCV writes the full 32-bit sign-extended values even though this is a half-word store
       static bool sh(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        int64_t tmp = 0;
         if( F->IsRV32() ){
-          M->WriteU16((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(R->RV32[Inst.rs2]));
+          tmp =  (uint32_t)(R->RV32[Inst.rs2]);
+          SEXTI(tmp, 16);
+          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU16((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(R->RV64[Inst.rs2]));
+          tmp =  (uint32_t)(R->RV64[Inst.rs2]);
+          SEXTI(tmp, 16);
+          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -563,6 +611,9 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((int32_t)(td_u32(R->RV32[Inst.rs1],32)) + (int32_t)(td_u32(Inst.imm,12)),32);
           R->RV32_PC += Inst.instSize;
         }else{
+          if(R->RV64_PC == 0x101b0 ){
+            int blah_junk= 0;
+          }
           R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],64) + td_u64(Inst.imm,12),64);
           R->RV64_PC += Inst.instSize;
         }

@@ -43,6 +43,7 @@ namespace SST{
             // successfully cleared the reservation
             M->WriteU32( (uint64_t)(R->RV32[Inst.rs1]), (uint32_t)(R->RV32[Inst.rs2]) );
             R->RV32[Inst.rd] = 0;
+            R->RV32_PC += Inst.instSize;
             return true;
           }else{
             // failed to clear the reservation
@@ -54,6 +55,7 @@ namespace SST{
             // successfully cleared the reservation
             M->WriteU32( (uint64_t)(R->RV64[Inst.rs1]), (uint32_t)(R->RV64[Inst.rs2]) );
             R->RV64[Inst.rd] = 0;
+            R->RV64_PC += Inst.instSize;
             return true;
           }else{
             // failed to clear the reservation
