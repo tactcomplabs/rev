@@ -7,6 +7,6 @@ make
 if [ -f cache_test2.exe ]; then
   sst ./rev-test-cache2.py
 else
-  echo "Test CACHE-TEST2: cache_test2.exe not Found - likely build failed"
+  echo "Test TEST_CACHE2: cache_test2.exe not Found - likely build failed"
   exit 1
-fi 
+fi
