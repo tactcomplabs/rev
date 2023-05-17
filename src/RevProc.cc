@@ -15,6 +15,7 @@
 #include "RevInstTable.h"
 
 #include "../include/RevProc.h"
+#include "../../common/syscalls/CloneFlags.h"
 #include <bitset>
 #include <cstdint>
 #include <optional>
@@ -1793,6 +1794,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   Stats.totalCycles++;
 
   if( PendingCtxSwitch ){
+    DumpARegs(false);
     // std::cout << "=============================================" << std::endl;
     // std::cout << "THREAD EVENT: PendingCtxSwitch TRUE" << std::endl;
     // std::cout << "=============================================" << std::endl;
@@ -2399,10 +2401,13 @@ void RevProc::ECALL_clone(){
   
   uint64_t flags;
   mem->ReadMem(CloneArgsAddr, sizeof(uint64_t), &flags);
+  /* Fetch the clone_args */
+  struct clone_args args;
+  mem->ReadMem(CloneArgsAddr, sizeof(uint64_t), &args);
 
-  std::cout << "- Flags = " << flags << std::endl;
+  /* Parse clone flags */
   for( uint64_t bit=1; bit != 0; bit <<= 1 ){
-    switch (flags & bit) {
+    switch (args.flags & bit) {
       case CLONE_VM:
         std::cout << "CLONE_VM is true" << std::endl;
         break;
@@ -2575,6 +2580,7 @@ void RevProc::ECALL_mkdir(){
   } while( path.back() != '\0');
 
   const int rc = chdir(path.data());
+  RegFile()->RV64[10] = rc;
 }
 
 void RevProc::ECALL_exit(){
@@ -2596,6 +2602,16 @@ void RevProc::ECALL_exit(){
 
 void RevProc::ECALL_getcwd(){
   std::cout << "ECALL_getcwd called" << std::endl;
+  uint64_t BufAddr = RegFile()->RV64[10];
+  uint64_t size = RegFile()->RV64[11];
+  std::cout << "SIZE = " << size << std::endl;
+  std::string CWD = std::filesystem::current_path().c_str();
+  mem->WriteMem(BufAddr, size, &CWD);
+
+  /* Returns null-terminated string in buf */
+  RegFile()->RV64[10] = BufAddr;
+
+  return;
 }
 
 /* TODO: Implement error handling */
