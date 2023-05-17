@@ -275,14 +275,15 @@ uint64_t rev_gettid(void){
     return 0;
 }
 
-// uint64_t rev_fork() {
 
-//     asm volatile (
-//         "li a7, 220\n\t"     // load the value 220 into a7
-//         "ecall\n\t"       // execute the ecall instruction
-//     );
-//     return 0;
-// }
+uint64_t rev_fork() {
+
+    asm volatile (
+        "li a7, 220\n\t"     // load the value 220 into a7
+        "ecall\n\t"       // execute the ecall instruction
+    );
+    return 0;
+}
 
 uint64_t rev_clone3(struct clone_args* args, size_t args_size) {
 
