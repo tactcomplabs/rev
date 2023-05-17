@@ -1739,8 +1739,24 @@ void RevProc::DependencyClear(uint16_t threadID, RevInst* Inst){
   }
 }
 
-uint32_t RevProc::HartToExecActivePID(){
-  return ActivePIDs.at(HartToExec);
+uint32_t RevProc::HartToExecPID(){
+  if( ActivePIDs.size() <= HartToExec )
+    return ActivePIDs.at(HartToExec);
+  else{
+    output->fatal(CALL_INFO, 0, 0,
+                  "Tried to get active PID for HartToExec = %d but there is no ActivePID for that Hart", HartToExec);
+    return 1;
+  }
+}
+
+uint32_t RevProc::HartToDecodePID(){
+  if( ActivePIDs.size() <= HartToDecode )
+    return ActivePIDs.at(HartToDecode);
+  else{
+    output->fatal(CALL_INFO, 0, 0,
+                  "Tried to get active PID for HartToDecode = %d but there is no ActivePID for that Hart", HartToExec);
+    return 1;
+  }
 }
 
 RevRegFile* RevProc::RegFile(){
@@ -1754,7 +1770,9 @@ RevRegFile* RevProc::RegFile(){
     output->fatal(CALL_INFO, -1,
                   "Failed to find RegFile for PID = %d on Hart = %d \n", ActivePIDs.at(HartID), HartID);
   }
+  return 0;
 }
+
 
 RevRegFile* RevProc::RegFile(uint16_t HartID){
   auto it = ThreadTable.find(ActivePIDs.at(HartID));
@@ -1766,7 +1784,9 @@ RevRegFile* RevProc::RegFile(uint16_t HartID){
     output->fatal(CALL_INFO, -1,
                   "Failed to find RegFile for PID = %d on Hart = %d \n", ActivePIDs.at(HartID), HartID);
   }
+  return 0;
 }
+
 
 uint16_t RevProc::GetHartID(){
 
@@ -1801,6 +1821,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // std::cout << "Address of New RegFile = 0x" << std::hex << ThreadTable.at(NextPID)->GetRegFile() << std::endl;
     // std::cout << "=============================================" << std::endl;
 
+    uint64_t PrevPID = ActivePIDs.at(HartToDecode); 
     if( Pipeline.empty() ) {
       ResetInst(&Inst);
       if( !ChangeActivePID(NextPID) ){
@@ -2585,6 +2606,7 @@ void RevProc::ECALL_mkdir(){
 void RevProc::ECALL_exit(){
   std::cout << "ECALL_exit called" << std::endl;
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecActiveCtx();
+  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
 
   /* If the current ctx has ParentPID = 0, it has no parent and we should terminate the sim */
   if( CurrCtx->GetParentPID() == 0 ){
@@ -2683,6 +2705,9 @@ void RevProc::ECALL_mmap(){
 
 void RevProc::ECALL_gettid(){
   std::cout << "ECALL: gettid called" << std::endl;
+  RevRegFile* regFile = RegFile();
+  /* RC = Currently Executing Hart */
+  regFile->RV64[10] = HartToExec;
   return;
 }
 
