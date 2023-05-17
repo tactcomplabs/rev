@@ -2787,10 +2787,38 @@ void RevProc::ECALL_tee(){
   return;
 }
 
+/* =================================================================== */
+/* int openat(int dirfd, const char *pathname, int flags, mode_t mode) */
+/* =================================================================== */
 void RevProc::ECALL_openat(){
   std::cout << "ECALL: openat called" << std::endl;
   RevRegFile& regFile = *RegFile();
-  DumpARegs(false);
+
+  int dfd = regFile.RV64[10];
+  int filenameAddr = regFile.RV64[11];
+  int flags = regFile.RV64[12];
+  unsigned short mode = regFile.RV64[13];
+  
+  std::string filename;
+
+  unsigned i = 0;
+  do {
+    char filenameChar;
+    mem->ReadMem(regFile.RV64[10] + sizeof(char)*i, sizeof(char), &filenameChar);
+    filename = filename + filenameChar;
+    i++;
+  } while( filename.back() != '\0');
+
+  std::cout << "============================================================ " << std::endl;
+  std::cout << "OPENAT: Filename - " << std::endl;
+  std::cout << "============================================================ " << std::endl;
+  int fd = openat(dfd, filename.c_str(), flags, mode);
+
+  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+  CurrCtx->AddFD(fd);
+
+  regFile.RV64[10] = fd;
+
   return;
 }
 
@@ -2798,15 +2826,64 @@ void RevProc::ECALL_read(){
   std::cout << "ECALL: read called" << std::endl;
   RevRegFile& regFile = *RegFile();
   
+  uint64_t fd = regFile.RV64[10];
+  uint64_t BufAddr = regFile.RV64[11];
+  size_t BufSize = regFile.RV64[12];
+
+  /* Check if Current Ctx has access to the fd */
+  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+
+  if( !CurrCtx->FindFD(fd) ){
+    output->fatal(CALL_INFO, 0, 0,
+                  "Core %d; Hart %d; PID %ul tried to read from file descriptor: %ul but did not have access to it\n",
+                  id, HartToExec, HartToExecPID(), fd);
+    return;
+  }
+
+  
+  /*
+   * This buffer is an intermediate buffer for storing the data read from host 
+   * for later use in writing to RevMem
+  */
+  char TmpBuf[BufSize];
+  
+  /* 
+   * Read nbytes of fd from host 
+   * 
+   * NOTE: Because the fd is in the Ctx's fildes vector, we can reasonably
+   *       assume the file is already open on the host system because we 
+   *       try to maintain parity between those
+   */
+  /* Do the read on the host */
+  uint64_t rc = read(fd, &TmpBuf, BufSize);
+
+  /* Write that data to the buffer inside of Rev */
+  mem->WriteMem(BufAddr, BufSize, &TmpBuf);
+
+  regFile.RV64[10] = rc;
   return;
 }
+
 
 void RevProc::ECALL_close(){
   std::cout << "ECALL: close called" << std::endl;
   DumpARegs(false);
   RevRegFile& regFile = *RegFile();
   unsigned fd = regFile.RV64[10];
+  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+
+  /* 
+   * Attempt to close the fd 
+   * - If 
+   */
+  if( !CurrCtx->FindFD(fd) ){
+    output->fatal(CALL_INFO, 0, 0,
+                  "Core %d; Hart %d; PID %ul tried to close file descriptor %ul but did not have access to it\n",
+                  id, HartToExec, HartToExecPID(), fd);
+    return;
+  }
   uint64_t rc = close(fd);
+  CurrCtx->RemoveFD(fd);
   regFile.RV64[10] = rc;
   return;
 }
@@ -2843,6 +2920,7 @@ void RevProc::ECALL_mkdirat(){
   } while( path.back() != '\0');
 
   const int rc = mkdirat(fd, path.data(), Mode);
+  regFile.RV64[10] = rc;
   return;
 }
 
