@@ -1673,52 +1673,51 @@ void RevProc::HandleALUFault(unsigned width){
 }
 
 bool RevProc::DependencyCheck(uint16_t threadID, RevInst* I){
+  bool depFound = false;
+  bool isFloat = IsFloat(I->entry);
 
-      bool depFound = false;
-      bool isFloat = IsFloat(I->entry);
-
-
-      if(feature->IsRV32()){
-        if(isFloat){
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->SPF_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->SPF_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->SPF_Scoreboard[I->rs3] || depFound : depFound;
-        }else{
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV32_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV32_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV32_Scoreboard[I->rs3] || depFound : depFound;
-        }
-      }else {
-        if(isFloat){
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->DPF_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->DPF_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->DPF_Scoreboard[I->rs3] || depFound : depFound;
-        }else{
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV64_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV64_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV64_Scoreboard[I->rs3] || depFound : depFound;
-        }
-      }
-    return depFound;
+  if(feature->IsRV32()){
+    if(isFloat){
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->SPF_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->SPF_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->SPF_Scoreboard[I->rs3] || depFound : depFound;
+    }else{
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV32_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV32_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV32_Scoreboard[I->rs3] || depFound : depFound;
+    }
+  }else{
+    if(isFloat){
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->DPF_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->DPF_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->DPF_Scoreboard[I->rs3] || depFound : depFound;
+    }else{
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV64_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV64_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? RegFile(threadID)->RV64_Scoreboard[I->rs3] || depFound : depFound;
+    }
+  }
+return depFound;
 }
 
+
 void RevProc::DependencySet(uint16_t threadID, RevInst* Inst){
-      if(Inst->rd != 0 && Inst->rd < _REV_NUM_REGS_){
-        bool isFloat = IsFloat(Inst->entry);
-        if(feature->IsRV32()){
-          if(isFloat){
-            RegFile(threadID)->SPF_Scoreboard[Inst->rd] = true;
-          }else{
-            RegFile(threadID)->RV32_Scoreboard[Inst->rd] = true;
-          }
+  if(Inst->rd != 0 && Inst->rd < _REV_NUM_REGS_){
+    bool isFloat = IsFloat(Inst->entry);
+    if(feature->IsRV32()){
+      if(isFloat){
+        RegFile(threadID)->SPF_Scoreboard[Inst->rd] = true;
       }else{
-          if(isFloat){
-            RegFile(threadID)->DPF_Scoreboard[Inst->rd] = true;
-          }else{
-            RegFile(threadID)->RV64_Scoreboard[Inst->rd] = true;
-          }
+        RegFile(threadID)->RV32_Scoreboard[Inst->rd] = true;
+      }
+  }else{
+      if(isFloat){
+        RegFile(threadID)->DPF_Scoreboard[Inst->rd] = true;
+      }else{
+        RegFile(threadID)->RV64_Scoreboard[Inst->rd] = true;
       }
     }
+  }
 }
 
 void RevProc::DependencyClear(uint16_t threadID, RevInst* Inst){
