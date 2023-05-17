@@ -549,14 +549,14 @@ namespace SST{
       static bool feqs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            if( R->DPF[Inst.rs1] == R->DPF[Inst.rs1] ){
+            if( R->DPF[Inst.rs1] == R->DPF[Inst.rs2] ){
               R->RV32[Inst.rd] = 1;
             }else{
               R->RV32[Inst.rd] = 0;
             }
             R->RV32_PC += Inst.instSize;
           }else{
-            if( R->DPF[Inst.rs1] == R->DPF[Inst.rs1] ){
+            if( R->DPF[Inst.rs1] == R->DPF[Inst.rs2] ){
               R->RV64[Inst.rd] = 1;
             }else{
               R->RV64[Inst.rd] = 0;
@@ -565,14 +565,14 @@ namespace SST{
           }
         }else{
           if( F->IsRV32() ){
-            if( R->SPF[Inst.rs1] == R->SPF[Inst.rs1] ){
+            if( R->SPF[Inst.rs1] == R->SPF[Inst.rs2] ){
               R->RV32[Inst.rd] = 1;
             }else{
               R->RV32[Inst.rd] = 0;
             }
             R->RV32_PC += Inst.instSize;
           }else{
-            if( R->SPF[Inst.rs1] == R->SPF[Inst.rs1] ){
+            if( R->SPF[Inst.rs1] == R->SPF[Inst.rs2] ){
               R->RV64[Inst.rd] = 1;
             }else{
               R->RV64[Inst.rd] = 0;
@@ -623,14 +623,14 @@ namespace SST{
       static bool fles(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            if( R->DPF[Inst.rs1] <= R->DPF[Inst.rs1] ){
+            if( R->DPF[Inst.rs1] <= R->DPF[Inst.rs2] ){
               R->RV32[Inst.rd] = 1;
             }else{
               R->RV32[Inst.rd] = 0;
             }
             R->RV32_PC += Inst.instSize;
           }else{
-            if( R->DPF[Inst.rs1] <= R->DPF[Inst.rs1] ){
+            if( R->DPF[Inst.rs1] <= R->DPF[Inst.rs2] ){
               R->RV64[Inst.rd] = 1;
             }else{
               R->RV64[Inst.rd] = 0;
@@ -639,14 +639,14 @@ namespace SST{
           }
         }else{
           if( F->IsRV32() ){
-            if( R->SPF[Inst.rs1] <= R->SPF[Inst.rs1] ){
+            if( R->SPF[Inst.rs1] <= R->SPF[Inst.rs2] ){
               R->RV32[Inst.rd] = 1;
             }else{
               R->RV32[Inst.rd] = 0;
             }
             R->RV32_PC += Inst.instSize;
           }else{
-            if( R->SPF[Inst.rs1] <= R->SPF[Inst.rs1] ){
+            if( R->SPF[Inst.rs1] <= R->SPF[Inst.rs2] ){
               R->RV64[Inst.rd] = 1;
             }else{
               R->RV64[Inst.rd] = 0;
