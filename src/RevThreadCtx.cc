@@ -79,3 +79,27 @@ bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
   return true;
 
 }
+
+bool RevThreadCtx::FindFD(uint64_t fd){
+  /* Check if the fd is owned by the current ctx */
+  auto it = std::find(fildes.begin(), fildes.end(), fd);
+  if( it != fildes.end() ){
+    return true;
+  }
+  return false;
+}
+
+bool RevThreadCtx::RemoveFD(uint64_t fd){
+  /* Check if the fd is owned by the current ctx */
+  auto it = std::find(fildes.begin(), fildes.end(), fd);
+
+  if( it != fildes.end() ){
+    /* fd found, return true */
+    fildes.erase(it);
+    return true;
+  }
+  /* Not found, return false */
+  return false;  
+}
+
+

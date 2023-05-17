@@ -46,6 +46,9 @@ private:
 
   std::vector<uint32_t> ChildrenPIDs = {};
 
+  /* Initial fildes are STDOUT, STDIN, and STDERR */
+  std::vector<uint64_t> fildes = {0, 1, 2};
+
 public:
   // Constructor that takes a RevRegFile object and a uint32_t ParentPID
   RevThreadCtx(const uint32_t inputPID,  uint32_t inputParentPID,
@@ -62,7 +65,10 @@ public:
   }
 
     
-  // RevThreadCtx&
+  void AddFD(uint64_t fd){ fildes.push_back(fd); }
+  bool RemoveFD(uint64_t fd);
+  bool FindFD(uint64_t fd);
+  std::vector<uint64_t> GetFildes(){ return fildes; }
 
   bool DuplicateRegFile(RevRegFile& regToDup);
   RevRegFile* GetRegFile() { return &RegFile; }
