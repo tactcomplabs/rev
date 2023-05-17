@@ -198,6 +198,15 @@ set_tests_properties(TEST_STRLEN_CXX
     LABELS "all;rv64"
 )
 
+add_test(NAME TEST_MEMSET COMMAND run_memset.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/memset" ) # memset
+set_tests_properties(TEST_MEMSET
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 # -- PROCESS CTest Config Variables
 if(NOT CTEST_BLAS_REQUIRED_TESTS)
   set_tests_properties (TEST_DOT_SINGLE PROPERTIES DISABLED True)
