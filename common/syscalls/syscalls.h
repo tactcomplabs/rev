@@ -1,3 +1,14 @@
+//
+// _SYSCALLS_H_
+//
+// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+// All Rights Reserved
+// contact@tactcomplabs.com
+//
+// See LICENSE in the top level directory for licensing details
+//
+//
+
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
