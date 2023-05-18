@@ -207,6 +207,7 @@ namespace SST{
       /*
       * New Ecall Stuff
       */
+      void ECALL_setxattr(); // 5
       void ECALL_clone(); // 220
       void ECALL_gettimeofday(); // 169
       void ECALL_settimeofday(); // 170

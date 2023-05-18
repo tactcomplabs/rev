@@ -53,6 +53,15 @@ struct clone_args {
     uint64_t cgroup;       /* File descriptor for target cgroup of child (since Linux 5.7) */
 };
 
+uint64_t rev_setxattr(const char *path, const char *name, const void *value, size_t size, int flags){
+  uint64_t rc;
+    asm volatile (
+      "li a7, 5\n\t"
+      "ecall \n\t"
+      "mv %0, a0" : "=r" (rc)
+    );
+    return rc;
+}
 
 uint64_t rev_getcwd(char *buf, unsigned long size){          
   uint64_t rc;

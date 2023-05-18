@@ -81,7 +81,7 @@ bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
 }
 
 void RevThreadCtx::AddFD(uint64_t fd){
-  std::cout << "Inside of AddFD with fd = " << fd << std::endl;
+  // std::cout << "Inside of AddFD with fd = " << fd << std::endl;
   fildes.push_back(fd);
 }
 bool RevThreadCtx::FindFD(uint64_t fd){

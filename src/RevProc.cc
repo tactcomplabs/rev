@@ -9,10 +9,12 @@
 //
 //
 
+#define _DEFAULT_THREAD_MEM_SIZE_ 4*1024*1024 // 4 MB
+
 #include <cstdlib>
 #include <memory>
 #include <sys/stat.h>
-#define _DEFAULT_THREAD_MEM_SIZE_ 4*1024*1024 // 4 MB
+#include <sys/xattr.h>
 
 #include "RevInstTable.h"
 
@@ -2386,6 +2388,7 @@ void RevProc::DumpARegs(bool is32){
 /* ======================================================= */
 void RevProc::InitEcallTable(){
   Ecalls = {
+    {5,   &RevProc::ECALL_setxattr},        // Not implemented
     {17,  &RevProc::ECALL_getcwd},          // Not implemented
     {23,  &RevProc::ECALL_dup},             // Not implemented
     {24,  &RevProc::ECALL_dup3},            // Not implemented
@@ -2422,6 +2425,19 @@ void RevProc::InitEcallTable(){
     {408, &RevProc::ECALL_timer_gettime},   // Not implemented
     {409, &RevProc::ECALL_timer_settime},   // Not implemented
     };
+}
+
+void RevProc::ECALL_setxattr(){
+  RevRegFile& regFile = *RegFile();
+  const char *path = (char*)regFile.RV64[10];
+  const char *name = (char*)regFile.RV64[11];
+  const void *value = (void*)regFile.RV64[12];
+  size_t size = regFile.RV64[13];
+  uint64_t flags = regFile.RV64[14];
+
+  uint64_t rc = setxattr(path, name, value, size, flags);
+  regFile.RV64[10] = rc;
+  return;
 }
 
 void RevProc::ECALL_clone(){
@@ -2820,16 +2836,16 @@ void RevProc::ECALL_tee(){
 /* int openat(int dirfd, const char *pathname, int flags, mode_t mode) */
 /* =================================================================== */
 void RevProc::ECALL_openat(){
-  std::cout << "ECALL: openat called" << std::endl;
+  // std::cout << "ECALL: openat called" << std::endl;
   RevRegFile& regFile = *RegFile();
 
   //DumpARegs(false);
   int dfd = regFile.RV64[10];
-  std::cout << "DFD = " << dfd << std::endl;
+  // std::cout << "DFD = " << dfd << std::endl;
   if( dfd  ){
-    std::cout << "ABOUT TO OPEN ON HOST" << dfd << std::endl;
+    // std::cout << "ABOUT TO OPEN ON HOST" << dfd << std::endl;
     dfd = open(std::filesystem::current_path().string().c_str(), O_RDONLY);
-    std::cout << "CURRENT DIRECTORY FD = " << dfd << std::endl;
+    // std::cout << "CURRENT DIRECTORY FD = " << dfd << std::endl;
   }
   int filenameAddr = regFile.RV64[11];
   int flags = regFile.RV64[12];
@@ -2840,29 +2856,21 @@ void RevProc::ECALL_openat(){
   unsigned i = 0;
   do {
     char filenameChar;
-    mem->ReadMem(regFile.RV64[10] + sizeof(char)*i, sizeof(char), &filenameChar);
+    mem->ReadMem(filenameAddr + sizeof(char)*i, sizeof(char), &filenameChar);
     filename = filename + filenameChar;
-    std::cout << "OPENAT: filechar  " << filenameChar << std::endl;
     i++;
   } while( filename.back() != '\0');
 
-  std::cout << "============================================================ " << std::endl;
-  std::cout << "OPENAT: Filename - " << filename << std::endl;
-  int fd = openat(AT_FDCWD, "test.txt",  O_RDONLY);
-  std::cout << "OPENAT: COMPLETED OPENAT with fd = " << fd << std::endl;
+  int fd = openat(dfd, filename.c_str(),  O_RDONLY);
 
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
-  std::cout << "Got the Ctx" << std::endl;
   CurrCtx->AddFD(fd);
-
-  std::cout << "Added the fd" << std::endl;
   regFile.RV64[10] = fd;
-
   return;
 }
 
 void RevProc::ECALL_read(){
-  std::cout << "ECALL: read called" << std::endl;
+  // std::cout << "ECALL: read called" << std::endl;
   RevRegFile& regFile = *RegFile();
   
   //DumpARegs(false);
@@ -2895,9 +2903,8 @@ void RevProc::ECALL_read(){
    *       try to maintain parity between those
    */
   /* Do the read on the host */
-  std::cout << "About to read fd = " << fd << " on Host " << std::endl;
+  // std::cout << "About to read fd = " << fd << " on Host " << std::endl;
   uint64_t rc = read(fd, &TmpBuf, BufSize);
-  std::cout << "About to read fd = " << fd << " on Host " << std::endl;
 
   /* Write that data to the buffer inside of Rev */
   mem->WriteMem(BufAddr, BufSize, &TmpBuf);
@@ -2908,7 +2915,7 @@ void RevProc::ECALL_read(){
 
 
 void RevProc::ECALL_close(){
-  std::cout << "ECALL: close called" << std::endl;
+  // std::cout << "ECALL: close called" << std::endl;
   //DumpARegs(false);
   RevRegFile& regFile = *RegFile();
   unsigned fd = regFile.RV64[10];
