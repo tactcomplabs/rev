@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=fork
-CC=riscv64-unknown-linux-gnu-gcc
+CC=riscv64-unknown-elf-gcc
 #ARCH=rv64g
 ARCH=rv64imafdc
 

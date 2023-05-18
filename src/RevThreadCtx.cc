@@ -38,13 +38,13 @@ bool RevThreadCtx::RemoveChildPID(uint32_t pid){
 }
 
 bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
-  std::cout << "================================================== " << std::endl;
-  std::cout << "Duplicating Register File: " << std::endl;
-  std::cout << "================================================== " << std::endl;
-  std::cout << "ADDRESS OF INCOMING REGISTER FILE = 0x"
-            << std::hex << (uint64_t)(&regToDup) << std::dec << std::endl;
-  std::cout << "ADDRESS OF NEW REGISTER FILE = 0x"
-            << std::hex << (uint64_t)(&RegFile) << std::dec << std::endl;
+  // std::cout << "================================================== " << std::endl;
+  // std::cout << "Duplicating Register File: " << std::endl;
+  // std::cout << "================================================== " << std::endl;
+  // std::cout << "ADDRESS OF INCOMING REGISTER FILE = 0x"
+  //           << std::hex << (uint64_t)(&regToDup) << std::dec << std::endl;
+  // std::cout << "ADDRESS OF NEW REGISTER FILE = 0x"
+  //           << std::hex << (uint64_t)(&RegFile) << std::dec << std::endl;
 
   for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
     RegFile.RV32[i] = regToDup.RV32[i];
@@ -80,6 +80,10 @@ bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
 
 }
 
+void RevThreadCtx::AddFD(uint64_t fd){
+  std::cout << "Inside of AddFD with fd = " << fd << std::endl;
+  fildes.push_back(fd);
+}
 bool RevThreadCtx::FindFD(uint64_t fd){
   /* Check if the fd is owned by the current ctx */
   auto it = std::find(fildes.begin(), fildes.end(), fd);

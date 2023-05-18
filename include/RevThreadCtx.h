@@ -57,15 +57,15 @@ public:
         MemStartAddr(inputMemStartAddr), MemSize(inputMemSize)
   { 
     RegFile = RevRegFile(); 
-    std::cout << "================================================== " << std::endl;
-    std::cout << "RevThreadCtx Constructor: " << std::endl;
-    std::cout << "- Creating new RegFile with address = 0x" << std::hex << &RegFile << std::endl;
-    std::cout << "================================================== " << std::endl;
+    // std::cout << "================================================== " << std::endl;
+    // std::cout << "RevThreadCtx Constructor: " << std::endl;
+    // std::cout << "- Creating new RegFile with address = 0x" << std::hex << &RegFile << std::endl;
+    // std::cout << "================================================== " << std::endl;
     RegFile.PID = inputPID;
   }
 
     
-  void AddFD(uint64_t fd){ fildes.push_back(fd); }
+  void AddFD(uint64_t fd);
   bool RemoveFD(uint64_t fd);
   bool FindFD(uint64_t fd);
   std::vector<uint64_t> GetFildes(){ return fildes; }
