@@ -167,11 +167,11 @@ namespace SST{
 
       void CtxSwitchAlert(uint32_t NewPID) { NextPID=NewPID;PendingCtxSwitch = true; }
 
-      uint32_t HartToExecActivePID();
-      uint32_t HartToDecodeActivePID();
+      uint32_t HartToExecPID();
+      uint32_t HartToDecodePID();
 
-      std::shared_ptr<RevThreadCtx> HartToExecActiveCtx();
-      std::shared_ptr<RevThreadCtx> HartToDecodeActiveCtx();
+      std::shared_ptr<RevThreadCtx> HartToExecCtx();
+      std::shared_ptr<RevThreadCtx> HartToDecodeCtx();
 
       RevRegFile* HartToExecRegFile();
       RevRegFile* HartToDecodeRegFile();
