@@ -903,6 +903,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
         funct2 = ((TmpInst & 0b01100000) >> 5 );
       }else{
         funct3 = l3;
+        funct2 = opSelect;
       }
     }else{
       // lower power: jumps/branches
