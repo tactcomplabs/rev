@@ -9,6 +9,7 @@
 //
 //
 
+#include <cstring>
 #define _DEFAULT_THREAD_MEM_SIZE_ 4*1024*1024 // 4 MB
 
 #include <cstdlib>
@@ -18,8 +19,8 @@
 
 #include "RevInstTable.h"
 
-#include "../include/RevProc.h"
 #include "../../common/syscalls/CloneFlags.h"
+#include "../include/RevProc.h"
 #include <bitset>
 #include <cstdint>
 #include <optional>
@@ -69,7 +70,6 @@ RevProc::RevProc( unsigned Id,
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the ThreadTable for core=%d\n", id );
 
-  std::cout << "ThreadTable.size()" << ThreadTable.size() << std::endl;
   // load the instruction tables
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
@@ -2271,7 +2271,7 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
     // std::cout << "Address of new RegFile = 0x" << std::hex << NewCtx->GetRegFile() << std::endl;
     // std::cout << "=============================================" << std::endl;
     if( SwapToParent ){
-      std::cout << "Removing ThreadCtx w/ PID = " << ActivePIDs.at(HartToExec) << " from the ThreadTable" << std::endl;
+      output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %d from the ThreadTable\n", ActivePIDs.at(HartToExec));
       ThreadTable.erase(ActivePIDs.at(HartToExec));  
     }
     ActivePIDs.at(HartToExec) = NewPID;
@@ -2690,6 +2690,7 @@ void RevProc::ECALL_getppid(){
 }
 
 
+
 void RevProc::ECALL_write(){
   #ifdef DEBUG
   //// DumpARegs(false);
@@ -2706,7 +2707,14 @@ void RevProc::ECALL_write(){
   }
   mem->ReadMem(RegFile()->RV64[11], sizeof(buf), &buf);
 
-  const int rc = write(fildes, buf, nbytes);
+  std::cout << "WRITE: BUF = " << buf << std::endl;
+  std::cout << "WRITE: FD = " << fildes << std::endl;
+  // const int fd = openat(AT_FDCWD, "test.txt", O_RDWR);
+  // std::cout << "WRITE: FD = " << fd << std::endl;
+
+  const int rc = write(fildes +1 , buf, nbytes);
+  std::cout << "WRITE: rc = " << rc << std::endl;
+  std::cout << strerror(errno) << std::endl;
   RegFile()->RV64[10] = rc;
 }
 
@@ -2865,6 +2873,8 @@ void RevProc::ECALL_openat(){
 
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
   CurrCtx->AddFD(fd);
+
+  std::cout << "OPENAT FD = " << fd << std::endl;
   regFile.RV64[10] = fd;
   return;
 }
