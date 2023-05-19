@@ -103,6 +103,7 @@ namespace SST {
         {"enable_pan_stats","Enable PAN network statistics",                "1"},
         {"enable_memH",     "Enable memHierarchy",                          "0"},
         {"enableRDMAMbox",  "Enable the RDMA mailbox",                      "1"},
+        {"enableCoProc",    "Enable an attached coProcessor for all cores", "0"},
         {"enable_faults",   "Enable the fault injection logic",             "0"},
         {"faults",          "Enable specific faults",                       "decode,mem,reg,alu"},
         {"fault_width",     "Specify the bit width of potential faults",    "single,word,N"},
@@ -224,6 +225,7 @@ namespace SST {
       bool EnableRDMAMBox;                ///< RevCPU: Enable the RDMA Mailbox
 
       bool EnableMemH;                    ///< RevCPU: Enable memHierarchy
+      bool EnableCoProc;                  ///< RevCPU: Enable a co-processor attached to all cores
 
       bool EnableFaults;                  ///< RevCPU: Enable fault injection logic
       bool EnableCrackFaults;             ///< RevCPU: Enable Crack+Decode Faults

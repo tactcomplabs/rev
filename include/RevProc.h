@@ -128,7 +128,7 @@ namespace SST{
 
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
-      RevCoProc* coProc;
+      RevCoProc* coProc;        ///< RevProc: attached co-processor
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
       RevFeature *feature;      ///< RevProc: feature handler

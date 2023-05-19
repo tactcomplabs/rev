@@ -20,7 +20,7 @@ RevProc::RevProc( unsigned Id,
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), threadToDecode(0), threadToExec(0), Retired(0x00ull),
-    opts(Opts), mem(Mem), coProc(CoProc), loader(Loader), output(Output),
+    opts(Opts), mem(Mem), loader(Loader), output(Output),
     feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
@@ -33,6 +33,12 @@ RevProc::RevProc( unsigned Id,
   unsigned MaxCost = 0;
 
   Opts->GetMemCost(Id,MinCost,MaxCost);
+
+  if(CoProc){
+    coProc = CoProc;
+  }else{
+    coProc = NULL;
+  }
 
   feature = new RevFeature(Machine,output,MinCost,MaxCost,Id);
   if( !feature )
@@ -417,7 +423,6 @@ bool RevProc::Reset(){
     while(!Pipeline.empty()){
       Pipeline.pop();
     }
-    
 
   }
   // set the pc
@@ -1476,6 +1481,7 @@ RevInst RevProc::DecodeInst(){
   Enc |= (Imm12<<18);
 
   // Stage 7: Look up the value in the table
+  bool isCoProcInst = false;
   std::map<uint32_t,unsigned>::iterator it;
   it = EncToEntry.find(Enc);
    if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
@@ -1488,6 +1494,7 @@ RevInst RevProc::DecodeInst(){
     Enc |= (Imm12<<18);
     it = EncToEntry.find(Enc);
     if( it == EncToEntry.end() ){
+       
       // failed to decode the instruction
       output->fatal(CALL_INFO, -1,
                   "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
@@ -1497,6 +1504,9 @@ RevInst RevProc::DecodeInst(){
 
   }
 
+  if(coProc){
+    coProc->IssueInst(Inst);
+  }
   unsigned Entry = it->second;
 
   if( Entry > (InstTable.size()-1) ){
@@ -1511,7 +1521,6 @@ RevInst RevProc::DecodeInst(){
 
   RegFile[threadToDecode].trigger = false;
 
-  coProc->IssueInst(Inst);
 
   // Stage 8: Do a full deocode using the target format
   switch( InstTable[Entry].format ){
