@@ -35,6 +35,7 @@
 #include "RevNIC.h"
 #include "PanNet.h"
 #include "PanExec.h"
+#include "RevCoProc.h"
 
 // -- PAN Common Headers
 #include "../common/include/PanAddr.h"
@@ -124,7 +125,8 @@ namespace SST {
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
         {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
-        {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"}
+        {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
+        {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"}
       )
 
       // -------------------------------------------------------
@@ -239,6 +241,8 @@ namespace SST {
       panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
       PanExec *PExec;                     ///< RevCPU: PAN execution context
       RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
+
+      std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
 
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>

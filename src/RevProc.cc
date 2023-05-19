@@ -15,11 +15,12 @@ RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
                   RevLoader *Loader,
+                  RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), threadToDecode(0), threadToExec(0), Retired(0x00ull),
-    opts(Opts), mem(Mem), loader(Loader), output(Output),
+    opts(Opts), mem(Mem), coProc(CoProc), loader(Loader), output(Output),
     feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
@@ -416,6 +417,7 @@ bool RevProc::Reset(){
     while(!Pipeline.empty()){
       Pipeline.pop();
     }
+    
 
   }
   // set the pc
@@ -1508,6 +1510,8 @@ RevInst RevProc::DecodeInst(){
   RegFile[threadToDecode].Entry = Entry;
 
   RegFile[threadToDecode].trigger = false;
+
+  coProc->IssueInst(Inst);
 
   // Stage 8: Do a full deocode using the target format
   switch( InstTable[Entry].format ){

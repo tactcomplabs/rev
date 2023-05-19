@@ -37,6 +37,7 @@
 #include "RevInstTables.h"
 #include "PanExec.h"
 #include "RevPrefetcher.h"
+#include "RevCoProc.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
@@ -53,7 +54,7 @@ namespace SST{
     public:
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
-               SST::Output *Output );
+               RevCoProc* CoProc, SST::Output *Output );
 
       /// RevProc: standard desctructor
       ~RevProc();
@@ -127,6 +128,7 @@ namespace SST{
 
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
+      RevCoProc* coProc;
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
       RevFeature *feature;      ///< RevProc: feature handler
