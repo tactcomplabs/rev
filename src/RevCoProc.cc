@@ -52,6 +52,7 @@ RevSimpleCoProc::~RevSimpleCoProc(){
 
 bool RevSimpleCoProc::IssueInst(uint32_t Inst){
     InstQ.push(Inst);
+    return true;
 }
 
 void RevSimpleCoProc::registerStats(){
