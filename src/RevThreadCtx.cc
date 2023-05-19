@@ -20,7 +20,6 @@ bool RevThreadCtx::AddChildPID(uint32_t pid){
     return true;
   }
   else{
-    std::cout << "Child process with id = " << pid << "already exists" << std::endl;
     return false;
   }
 }

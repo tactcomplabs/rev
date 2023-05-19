@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
-#include "../../../common/syscalls.h"
+#include "../../../common/syscalls/syscalls.h"
 
 int main() {
   /* 
