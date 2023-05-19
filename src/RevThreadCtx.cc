@@ -25,6 +25,7 @@ bool RevThreadCtx::AddChildPID(uint32_t pid){
   }
 }
 
+/* */
 bool RevThreadCtx::RemoveChildPID(uint32_t pid){
   auto ChildToErase = std::find(ChildrenPIDs.begin(), ChildrenPIDs.end(), pid); 
   if (ChildToErase != ChildrenPIDs.end() ){
@@ -37,15 +38,8 @@ bool RevThreadCtx::RemoveChildPID(uint32_t pid){
   }
 }
 
+/* Used for duplicating register files (currently only in ECALL_clone)*/
 bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
-  // std::cout << "================================================== " << std::endl;
-  // std::cout << "Duplicating Register File: " << std::endl;
-  // std::cout << "================================================== " << std::endl;
-  // std::cout << "ADDRESS OF INCOMING REGISTER FILE = 0x"
-  //           << std::hex << (uint64_t)(&regToDup) << std::dec << std::endl;
-  // std::cout << "ADDRESS OF NEW REGISTER FILE = 0x"
-  //           << std::hex << (uint64_t)(&RegFile) << std::dec << std::endl;
-
   for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
     RegFile.RV32[i] = regToDup.RV32[i];
     RegFile.RV64[i] = regToDup.RV64[i];
@@ -60,7 +54,7 @@ bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
 
   RegFile.RV64_SSTATUS = regToDup.RV64_SSTATUS;
   RegFile.RV64_SEPC    = regToDup.RV64_SEPC;
-  RegFile.RV64_SCAUSE  = 0;
+  RegFile.RV64_SCAUSE  = regToDup.RV64_SCAUSE;
   RegFile.RV64_STVAL   = regToDup.RV64_STVAL;
   RegFile.RV64_STVEC   = regToDup.RV64_STVEC;
 
@@ -77,15 +71,17 @@ bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
   RegFile.trigger = regToDup.trigger;
   RegFile.Entry   = regToDup.Entry;
   return true;
-
 }
 
-void RevThreadCtx::AddFD(uint64_t fd){
-  // std::cout << "Inside of AddFD with fd = " << fd << std::endl;
+/* Add new file descriptor */
+void RevThreadCtx::AddFD(int fd){
   fildes.push_back(fd);
 }
-bool RevThreadCtx::FindFD(uint64_t fd){
+
+/* See if file descriptor exists/is owned by Ctx */
+bool RevThreadCtx::FindFD(int fd){
   /* Check if the fd is owned by the current ctx */
+  std::cout << "FD = " << fd << std::endl;
   auto it = std::find(fildes.begin(), fildes.end(), fd);
   if( it != fildes.end() ){
     return true;
@@ -93,7 +89,8 @@ bool RevThreadCtx::FindFD(uint64_t fd){
   return false;
 }
 
-bool RevThreadCtx::RemoveFD(uint64_t fd){
+/* Remove file descriptor from Ctx (ie. rev_close) */
+bool RevThreadCtx::RemoveFD(int fd){
   /* Check if the fd is owned by the current ctx */
   auto it = std::find(fildes.begin(), fildes.end(), fd);
 

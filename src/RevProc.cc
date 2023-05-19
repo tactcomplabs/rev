@@ -15,11 +15,12 @@
 #include <cstdlib>
 #include <memory>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/xattr.h>
 
 #include "RevInstTable.h"
 
-#include "../../common/syscalls/CloneFlags.h"
+#include "../common/syscalls/SysFlags.h"
 #include "../include/RevProc.h"
 #include <bitset>
 #include <cstdint>
@@ -1373,19 +1374,12 @@ void RevProc::SetPC(uint64_t PC){
 }
 
 bool RevProc::PrefetchInst(){
-  // std::cout << "=========================" << std::endl;
-  // std::cout << "PrefetchInst " << std::endl;
-  // std::cout << "=========================" << std::endl;
-
   uint64_t PC   = 0x00ull;
   if( feature->GetXlen() == 32 ){
     PC = (uint64_t)(RegFile(HartToDecode)->RV32_PC);
   }else{
     PC = RegFile(HartToDecode)->RV64_PC;
   }
-
-  // std::cout << "- PC = 0x" << std::hex << PC << std::endl;
-
 
   // These are addresses that we can't decode
   // Return false back to the main program loop
@@ -1826,31 +1820,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   Stats.totalCycles++;
 
   if( PendingCtxSwitch ){
-    //DumpARegs(false);
-    // std::cout << "=============================================" << std::endl;
-    // std::cout << "THREAD EVENT: PendingCtxSwitch TRUE" << std::endl;
-    // std::cout << "=============================================" << std::endl;
-    // std::cout << "Address of Old RegFile = 0x" << std::hex << ThreadTable.at(ActivePIDs.at(HartToExec))->GetRegFile() << std::endl;
-    // std::cout << "Address of New RegFile = 0x" << std::hex << ThreadTable.at(NextPID)->GetRegFile() << std::endl;
-    // std::cout << "=============================================" << std::endl;
-
-    uint64_t PrevPID = ActivePIDs.at(HartToDecode); 
+    /*
+     * There was a ctx switch event triggered
+     * - Either a call to fork/clone
+     * - Child process finished executing 
+     */
     if( Pipeline.empty() ) {
-      ResetInst(&Inst);
       if( !ChangeActivePID(NextPID) ){
         output->fatal(CALL_INFO, 0, 0, 
                       "Core %d ; Hart %u; PID %d Failed to change active PID to %u\n",
                       id, HartToDecode, GetActivePID(), NextPID);
       } else {
-        if( SwapToParent ){
-          SetPC(RegFile()->RV64_PC);
-          RegFile()->RV64[10] = PrevPID;
-          SwapToParent = false;
-        }
-        //DumpARegs(false);
-        // output->fatal(CALL_INFO, 0, 0, 
-        //               "Core %d ; Hart %u; Changed to PID %d \n",
-        //               id, HartToDecode, GetActivePID());
         RegFile(HartToDecode)->trigger = 0;
         RegFile(HartToDecode)->cost = 0;
         ExecPC = GetPC();
@@ -2203,7 +2183,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                                         Retired);
         return false;
       }
-    // }
   }
 
   return rtn;
@@ -2212,20 +2191,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 bool RevProc::InitThreadTable(){
   /*
    * We need to create the first Ctx for each HART which will have the following attributes: 
+   * - PID = 1024 + However many already initialized Ctx objects there are
    * - ParentPID = 0 : (Only the first thread on every RevProc has ParentPID = 0)
-   * - MemStartAddr : Top of stack
-   * - MemStartSize :
+   * - MemStartAddr : Top of stack (NOTE: No functionality yet)
+   * - MemStartSize : _DEFAULT_THREAD_MEM_SIZE_ (NOTE: No functionality yet)
   */
 
   for( unsigned HartID=0; HartID<_REV_HART_COUNT_; HartID++){
     uint32_t ParentPID = 0;
     uint32_t FirstActivePID = mem->GetNewThreadPID();
-    uint64_t StartingMemAddr = mem->GetStackTop(); // TODO: Verify this is okay
+    uint64_t StartingMemAddr = mem->GetStackTop(); 
     uint64_t StartingMemSize = mem->DefaultThreadMemSize;
-
-    // RevRegFile InitRegFile;
-    // std::cout << "ADDRESS OF THE INIT REG FILE = 0x"
-    //           << std::hex << (uint64_t)(&InitRegFile) << std::dec << std::endl;
 
     std::shared_ptr<RevThreadCtx> DefaultCtx = std::make_shared<RevThreadCtx>(
         FirstActivePID,
@@ -2237,26 +2213,19 @@ bool RevProc::InitThreadTable(){
     ActivePIDs.emplace_back(FirstActivePID);
     /* Add to ThreadTable */
     ThreadTable.emplace(FirstActivePID, DefaultCtx);
-    // RevRegFile tmp = 
-    // std::cout << "================== InitThreadTable ==================" << std::endl;
-    // std::cout << "FirstActivePID = " << FirstActivePID << std::endl;
-    // std::cout << "Address of DefaultCtx.RegFile = 0x" << std::hex << DefaultCtx->GetRegFile() << std::dec << std::endl;
-    // std::cout << "Address of Ctx.RegFile from ThreadTable = 0x"
-    //           << std::shared_ptr<RevThreadCtx>(ThreadTable.at(FirstActivePID))->GetRegFile() << std::endl;
-    // std::cout << "=====================================================" << std::endl;
   }
-
   return true;
 }
 
 
-/*
+/* =====================================================
+ * ChangeActivePID(NewPID)
+ * =====================================================
  * This function changes the active pid of HartToExec
  *
  * Returns:
  * - True if successfully changed
  * - False if not (ie. PID doesn't exist)
- *
  *
  * NOTES:
  * - This function automatically sets the new Ctx state to Running
@@ -2266,11 +2235,7 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
   auto it = ThreadTable.find(NewPID);
   if( it != ThreadTable.end() ){
     std::shared_ptr<RevThreadCtx> NewCtx = it->second;
-    // std::cout << "=============================================" << std::endl;
-    // std::cout << "ChangeActivePID" << std::endl;
-    // std::cout << "=============================================" << std::endl;
-    // std::cout << "Address of new RegFile = 0x" << std::hex << NewCtx->GetRegFile() << std::endl;
-    // std::cout << "=============================================" << std::endl;
+    /* If switching to parent, output the child is being removed from the ThreadTable */
     if( SwapToParent ){
       output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %d from the ThreadTable\n", ActivePIDs.at(HartToExec));
       ThreadTable.erase(ActivePIDs.at(HartToExec));  
@@ -2285,7 +2250,8 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
   }
 }
 
-/*
+/* NOTE: This is currently not used but will once more complex scheduling is supported */
+/* ChangeActivePID(PID, HartID)
  * This function changes the active pid of HartID
  *
  * Returns:
@@ -2314,9 +2280,7 @@ bool RevProc::ChangeActivePID(uint32_t PID, uint16_t HartID){
   }
 }
 
-/* GetPIDS()
- * - Returns vector of all PIDs in the ThreadTable 
- */
+/* Returns vector of all PIDs in the ThreadTable */
 std::vector<uint32_t> RevProc::GetPIDs(){
   std::vector<uint32_t> PIDs;
   for( const auto& Thread : ThreadTable ){
@@ -2331,35 +2295,42 @@ std::vector<uint32_t> RevProc::GetPIDs(){
  * - The child duplicates the parents RegFile
  * - Automatically adds ChildCtx to the current Procs ThreadTable  
  * - The new Child will start with ThreadState::Ready
- * - FIXME: - Default ChildMemSize = _DEFAULT_THREAD_MEM_SIZE (Maybe make it equal to ParentMemSize?)
- * - FIXME: - Starting Mem Address of the child = ParentsAddr + ParentsSize 
 */
-
 uint32_t RevProc::CreateChildCtx() {
-  // NOTE: Calling GetActiveCtx with no arguments returns the current HartToExec's Ctx
+  /* We get the currently executing PID's context as this is assumed to be the parent */
   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
 
-  RevRegFile* ParentRegfile = ParentCtx->GetRegFile();
-  std::shared_ptr<RevRegFile> ChildRegFile; 
-
+  /* Get new PID from global counter in RevMem */
   uint32_t ChildPID = mem->GetNewThreadPID();
-  // std::cout << "New ChildPID = " << ChildPID << std::endl;
 
-  // Create ChildCtx as a copy of ParentCtx
+  /* Create ChildCtx as a copy of ParentCtx */
   auto ChildCtx = std::make_shared<RevThreadCtx>(ChildPID,
                                        ActivePIDs.at(HartToExec),
                                        ParentCtx->GetMemStartAddr(),
                                        ParentCtx->GetMemSize());
 
-  ChildCtx->DuplicateRegFile(*ThreadTable.at(ActivePIDs.at(HartToExec))->GetRegFile());
+  /* Child's Regfile is the same as the parent's with the exception of return value */
+  ChildCtx->DuplicateRegFile(*RegFile());
 
-  // std::cout << "Func: CreateChildCtx (RevProc @ 2264) --- CHILD PID = " << ChildPID; 
+  /* Add child to Proc's ThreadTable */
   ThreadTable.emplace(ChildPID, ChildCtx);
-  ThreadTable.at(ChildPID)->GetRegFile()->PID = ChildPID;
-  ThreadTable.at(ChildPID)->GetRegFile()->RV64_SCAUSE = 0;
-  ThreadTable.at(ChildPID)->GetRegFile()->RV32_SCAUSE = 0;
+
+  /* Get Child's regfile so we can make the below modifications */
+  RevRegFile* ChildRegFile = ChildCtx->GetRegFile();
+
+  /* Zero the childs cause registers as they have no exceptions raised */
+  ChildRegFile->RV64_SCAUSE = 0;
+  ChildRegFile->RV32_SCAUSE = 0;
+
+  /* The child's return value from fork/clone is 0 */
+  ChildRegFile->RV64[10] = 0;
+
+  /* Add ChildPID to list of Parent's Children */
+  ParentCtx->AddChildPID(ChildPID); /* NOTE: This has no functionality at this point */
+
   return ChildPID;
 }
+
 
 /* ONLY FOR DEBUG PURPOSES */
 void RevProc::DumpARegs(bool is32){
@@ -2384,23 +2355,23 @@ void RevProc::DumpARegs(bool is32){
 }
 
 
-/* ======================================================= */
-/* System Call (ecall) Implementations Below
-/* ======================================================= */
+/* ========================================= */
+/* System Call (ecall) Implementations Below */
+/* ========================================= */
 void RevProc::InitEcallTable(){
   Ecalls = {
-    {5,   &RevProc::ECALL_setxattr},        // Not implemented
+    {5,   &RevProc::ECALL_setxattr},        
     {17,  &RevProc::ECALL_getcwd},          // Not implemented
     {23,  &RevProc::ECALL_dup},             // Not implemented
     {24,  &RevProc::ECALL_dup3},            // Not implemented
-    {34,  &RevProc::ECALL_mkdirat},         // Not implemented
+    {34,  &RevProc::ECALL_mkdirat},         
     {49,  &RevProc::ECALL_chdir},          
     {54,  &RevProc::ECALL_fchownat},        // Not implemented
     {55,  &RevProc::ECALL_fchown},          // Not implemented
     {57,  &RevProc::ECALL_close},           // Not implemented
     {63,  &RevProc::ECALL_read},            // Not implemented
     {64,  &RevProc::ECALL_write},          
-    {65,  &RevProc::ECALL_openat},          // Not implemented
+    {65,  &RevProc::ECALL_openat},          
     {77,  &RevProc::ECALL_tee},             // Not implemented
     {81,  &RevProc::ECALL_sync},            // Not implemented
     {82,  &RevProc::ECALL_fsync},           // Not implemented
@@ -2418,7 +2389,7 @@ void RevProc::InitEcallTable(){
     {170, &RevProc::ECALL_settimeofday},    // Not implemented
     {172, &RevProc::ECALL_getpid},         
     {173, &RevProc::ECALL_getppid},        
-    {178, &RevProc::ECALL_gettid},          // Not implemented
+    {178, &RevProc::ECALL_gettid},          
     {220, &RevProc::ECALL_clone},           // Fork functionality works but not clone3
     {222, &RevProc::ECALL_mmap},            // Not implemented
     {403, &RevProc::ECALL_clock_gettime},   // Not implemented
@@ -2428,6 +2399,10 @@ void RevProc::InitEcallTable(){
     };
 }
 
+/* ======================================================= */
+/* rev_setxattr(const char *path, const char *name,        */
+/*              const void *value, size_t size, int flags) */
+/*======================================================== */
 void RevProc::ECALL_setxattr(){
   RevRegFile& regFile = *RegFile();
   const char *path = (char*)regFile.RV64[10];
@@ -2442,16 +2417,9 @@ void RevProc::ECALL_setxattr(){
 }
 
 void RevProc::ECALL_clone(){
-  // std::cout << "ECALL_clone called" << std::endl;
-
-  // std::cout << "=======================================" << std::endl;
-  // std::cout << "CLONE: " << std::endl;
-  
-  //// DumpARegs(false);
   uint64_t CloneArgsAddr = RegFile()->RV64[10];
-  size_t SizeOfCloneArgs = RegFile()->RV64[11];
+  // size_t SizeOfCloneArgs = RegFile()->RV64[11];
 
-  
   /* Fetch the clone_args */
   struct clone_args args;
   mem->ReadMem(CloneArgsAddr, sizeof(uint64_t), &args);
@@ -2541,16 +2509,12 @@ void RevProc::ECALL_clone(){
 
   /* Get the parent ctx (Current active, executing PID) */
   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
-  RevRegFile* ParentRegFile = ParentCtx->GetRegFile();
 
   /* Create the child ctx */
   uint32_t ChildPID = CreateChildCtx();
   std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
 
-  /* Create a copy of Parents Memory Space */
-  // const char* ParentMem[ParentCtx->GetMemSize()];
-  // mem->ReadMem(ParentCtx->GetMemStartAddr(), ParentCtx->GetMemSize(), ParentMem);
-  // mem->WriteMem(ChildCtx->GetMemStartAddr(), ParentCtx->GetMemSize(), ParentMem);
+  /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
 
   /* 
    * ===========================================================================================
@@ -2572,33 +2536,30 @@ void RevProc::ECALL_clone(){
    *         - The Parent's a0 register MUST have its PID in it 
    * ===========================================================================================
    */
-    ChildCtx->GetRegFile()->RV64[10] = 0;
-    ChildCtx->GetRegFile()->RV64_SCAUSE = 0;
-    // RegFile = ChildCtx.RegFile;
-    // Proc.ThreadTable.at(ParentPID).GetRegFile()->RV64[10] = ParentPID;
 
-    /*
-      * Alert the Proc there needs to be a Ctx switch
-      * Pass the PID that will be switched to once the 
-      * current pipeline is executed until completion
-    */
-  // }
+  /*
+   Alert the Proc there needs to be a Ctx switch
+   Pass the PID that will be switched to once the 
+   current pipeline is executed until completion
+  */
   CtxSwitchAlert(ChildPID);
 
-  /* Parent's return value is its own PID */
+  /* Parent's return value is the child's PID */
   RegFile()->RV64[10] = ChildPID;
-  ChildCtx->GetRegFile()->RV64[10] = 0;
+  
   /* Child's return value is 0 */
-  std::cout << "=======================================" << std::endl;
+  ChildCtx->GetRegFile()->RV64[10] = 0;
+
   return;
 }
 
 
+/* =============================== */
+/* rev_chdir(const char *filename) */
+/* =============================== */
 void RevProc::ECALL_chdir(){
-  std::cout << "ECALL_chdir called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL_chdir called\n"); 
   RevRegFile& regFile = *RegFile();
-
-  
   std::string path = "";
   unsigned i=0;
   
@@ -2615,11 +2576,12 @@ void RevProc::ECALL_chdir(){
   RegFile()->RV64[10] = rc;
 }
 
+/* ============================================================ */
+/* rev_mkdirat(int dfd, const char * path, unsigned short mode) */
+/* ============================================================ */
 void RevProc::ECALL_mkdir(){
-  std::cout << "ECALL_mkdir called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL_mkdir called\n"); 
   RevRegFile& regFile = *RegFile();
-
-
   std::string path = "";
   unsigned i=0;
   
@@ -2636,17 +2598,21 @@ void RevProc::ECALL_mkdir(){
   RegFile()->RV64[10] = rc;
 }
 
+
+
+/* ======================== */
+/* rev_exit(int error_code) */
+/* ======================== */
 void RevProc::ECALL_exit(){
-  // std::cout << "ECALL_exit called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL_exit called\n"); 
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
   const uint64_t status = RegFile()->RV64[10];
+
   /* If the current ctx has ParentPID = 0, it has no parent and we should terminate the sim */
   if( CurrCtx->GetParentPID() == 0 ){
-    // const std::string ExitString = "ECALL: Encountered exit code with status = " + std::to_string(status) + "\n";
     output->verbose(CALL_INFO, 0, 0, 
                     "Process %u exiting with status %lu\n", CurrCtx->GetPID(), status );
     exit(status);
-    // output->fatal(CALL_INFO, -1, "%s", ExitString.c_str());
   } else {
     /* Parent exists & Child is exiting... switch back to parent */ 
     CtxSwitchAlert(CurrCtx->GetParentPID());
@@ -2657,11 +2623,12 @@ void RevProc::ECALL_exit(){
   return;
 }
 
+/* ========================================= */
+/* rev_getcwd(char *buf, unsigned long size) */
+/* ========================================= */
 void RevProc::ECALL_getcwd(){
-  std::cout << "ECALL_getcwd called" << std::endl;
   uint64_t BufAddr = RegFile()->RV64[10];
   uint64_t size = RegFile()->RV64[11];
-  std::cout << "SIZE = " << size << std::endl;
   std::string CWD = std::filesystem::current_path().c_str();
   mem->WriteMem(BufAddr, size, &CWD);
 
@@ -2671,18 +2638,24 @@ void RevProc::ECALL_getcwd(){
   return;
 }
 
-/* TODO: Implement error handling */
+/* ================ */
+/* rev_getpid(void) */
+/* ================ */
 void RevProc::ECALL_getpid(){
-  std::cout << "ECALL_getpid called" << std::endl;
+  /* TODO: Implement error handling */
+  output->verbose(CALL_INFO, 2, 0, "ECALL_getpid called\n"); 
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
   CurrentCtx->GetRegFile()->RV64[10] = ActivePIDs.at(HartToExec);
   return;
 }
 
-/* TODO: Implement error handling */
+/* ================= */
+/* rev_getppid(void) */
+/* ================= */
 void RevProc::ECALL_getppid(){
-  std::cout << "ECALL_getppid called" << std::endl;
+/* TODO: Implement error handling */
+  output->verbose(CALL_INFO, 2, 0, "ECALL_getppid called\n"); 
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
   uint32_t ParentPID = CurrentCtx->GetParentPID();
@@ -2690,14 +2663,11 @@ void RevProc::ECALL_getppid(){
   return;
 }
 
-
-
+/* ========================================================== */
+/* rev_write(unsigned int fd, const char *buf, size_t nbytes) */
+/* ========================================================== */
 void RevProc::ECALL_write(){
-  #ifdef DEBUG
-  //// DumpARegs(false);
-  std::cout << "ECALL_write called" << std::endl;
-  #endif // DEBUG
-  
+  output->verbose(CALL_INFO, 2, 0, "ECALL_write called\n"); 
   int fildes = RegFile()->RV64[10];
   std::size_t nbytes = RegFile()->RV64[12];
 
@@ -2708,122 +2678,171 @@ void RevProc::ECALL_write(){
   }
   mem->ReadMem(RegFile()->RV64[11], sizeof(buf), &buf);
 
-  std::cout << "WRITE: BUF = " << buf << std::endl;
-  std::cout << "WRITE: FD = " << fildes << std::endl;
-  // const int fd = openat(AT_FDCWD, "test.txt", O_RDWR);
-  // std::cout << "WRITE: FD = " << fd << std::endl;
+  /* Perform the write on the host system */
+  const int rc = write(fildes, buf, nbytes);
 
-  const int rc = write(fildes +1 , buf, nbytes);
-  std::cout << "WRITE: rc = " << rc << std::endl;
-  std::cout << strerror(errno) << std::endl;
+  /* write returns the number of bytes written */
   RegFile()->RV64[10] = rc;
 }
 
 
+/* ======================================================================================================================================== */
+/* rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting) */
+/* ======================================================================================================================================== */
 void RevProc::ECALL_timer_settime(){
-  std::cout << "ECALL: timer_settime called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_settime called\n"); 
   return;
 }
 
 
+/* ======================================================================== */
+/* rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec *setting) */
+/* ======================================================================== */
 void RevProc::ECALL_timer_gettime(){
-  std::cout << "ECALL: timer_gettime called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_gettime called\n"); 
   return;
 }
 
+/* ============================================================================ */
+/* rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec *tp) */
+/* ============================================================================ */
 void RevProc::ECALL_clock_settime(){
-  std::cout << "ECALL: clock_settime called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: clock_settime called\n"); 
   return;
 }
 
+/* ============================================================ */
+/* rev_clock_gettime(clockid_t which_clock, struct timeval *tp) */
+/* ============================================================ */
 void RevProc::ECALL_clock_gettime(){
-  std::cout << "ECALL: clock_gettime called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: clock_gettime called\n"); 
   return;
 }
 
+
+/* ====================================== */
+/* rev_mmap(struct mmap_arg_struct *args) */
+/* ====================================== */
 void RevProc::ECALL_mmap(){
-  std::cout << "ECALL: mmap called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n"); 
   return;
 }
 
+/* ================ */ 
+/* rev_gettid(void) */
+/* ================ */ 
 void RevProc::ECALL_gettid(){
-  std::cout << "ECALL: gettid called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: gettid called\n"); 
   RevRegFile* regFile = RegFile();
 
-  /* RC = Currently Executing Hart */
+  /* rc = Currently Executing Hart */
   regFile->RV64[10] = HartToExec;
   return;
 }
 
+/* ========================================================= */ 
+/* rev_settimeofday(struct timeval *tv, struct timezone *tz) */
+/* ========================================================= */ 
 void RevProc::ECALL_settimeofday(){
-  std::cout << "ECALL: settimeofday called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: settimeofday called\n"); 
   return;
 }
 
+/* ============================================================= */
+/* int rev_gettimeofday(struct timeval *tv, struct timezone *tz) */
+/* ============================================================= */
 void RevProc::ECALL_gettimeofday(){
-  std::cout << "ECALL: gettimeofday called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: gettimeofday called\n"); 
   return;
 }
 
+
+/* ============================================================================= */
+/* rev_rt_sigprocmask(int how, sigset_t *set, sigset_t *oset, size_t sigsetsize) */
+/* ============================================================================= */
 void RevProc::ECALL_rt_sigprocmask(){
-  std::cout << "ECALL: rt_sigprocmask called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: rt_sigprocmask called\n"); 
   return;
 }
 
+/* ================================== */
+/* rev_timer_delete(timer_t timer_id) */
+/* ================================== */
 void RevProc::ECALL_timer_delete(){
-  std::cout << "ECALL: timer_delete called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_delete called\n"); 
   return;
 }
 
+/* ===================================================================================================== */
+/* rev_timer_create(clockid_t which_clock, struct sigevent *timer_event_spec, timer_t *created_timer_id) */
+/* ===================================================================================================== */
 void RevProc::ECALL_timer_create(){
-  std::cout << "ECALL: timer_create called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_create called\n"); 
   return;
 }
 
+
+/* ============================================================================= */
+/* rev_nanosleep(struct __kernel_timespec *rqtp, struct __kernel_timespec *rmtp) */
+/* ============================================================================= */
 void RevProc::ECALL_nanosleep(){
-  std::cout << "ECALL: nanosleep called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: nanosleep called\n"); 
   return;
 }
 
+/* ================================================================================ */
+/* rev_get_robust_list(int pid, struct robust_list_head *head_ptr, size_t *len_ptr) */ 
+/* ================================================================================ */
 void RevProc::ECALL_get_robust_list(){
-  std::cout << "ECALL: get_robust_list called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: get_robust_list called\n"); 
   return;
 }
 
+/* ============================================================== */
+/* rev_set_robust_list(struct robust_list_head *head, size_t len) */
+/* ============================================================== */
 void RevProc::ECALL_set_robust_list(){
-  std::cout << "ECALL: set_robust_list called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: set_robust_list called\n"); 
   return;
 }
 
+/* ========================================================================================= */
+/* rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru) */
+/* ========================================================================================= */
 void RevProc::ECALL_waitid(){
-  std::cout << "ECALL: waitid called" << std::endl;
-  RevRegFile& regFile = *RegFile();
+  output->verbose(CALL_INFO, 2, 0, "ECALL: waitid called\n"); 
   return;
 }
 
+/* ============================== */
+/* rev_exit_group(int error_code) */
+/* ============================== */
 void RevProc::ECALL_exit_group(){
-  std::cout << "ECALL: exit_group called" << std::endl;
-  RevRegFile& regFile = *RegFile();
+  output->verbose(CALL_INFO, 2, 0, "ECALL: exit_group called\n"); 
   return;
 }
 
+/* ============================== */
+/* rev_fdatasync(unsigned int fd) */
+/* ============================== */
 void RevProc::ECALL_fdatasync(){
-  std::cout << "ECALL: fdatasync called" << std::endl;
-  RevRegFile& regFile = *RegFile();
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fdatasync called\n"); 
   return;
 }
 
+/* ========================== */
+/* rev_fsync(unsigned int fd) */
+/* ========================== */
 void RevProc::ECALL_fsync(){
-  std::cout << "ECALL: fsync called" << std::endl;
-  RevRegFile& regFile = *RegFile();
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fsync called\n"); 
   return;
 }
 
-/* =================================================================== */
-/*  tee(int fd_in, int fd_out, size_t len, unsigned int flags) */
-/* =================================================================== */
+/* ============== */
+/* rev_sync(void) */
+/* ============== */
 void RevProc::ECALL_sync(){
-  std::cout << "ECALL: sync called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: sync called\n"); 
   RevRegFile& regFile = *RegFile();
   return;
 }
@@ -2832,7 +2851,7 @@ void RevProc::ECALL_sync(){
 /*  ssize_t tee(int fd_in, int fd_out, size_t len, unsigned int flags) */
 /* =================================================================== */
 void RevProc::ECALL_tee(){
-  std::cout << "ECALL: tee called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: tee called\n"); 
   RevRegFile& regFile = *RegFile();
   int fd_in      = regFile.RV64[10];
   int fd_out     = regFile.RV64[11];
@@ -2845,23 +2864,21 @@ void RevProc::ECALL_tee(){
 /* int openat(int dirfd, const char *pathname, int flags, mode_t mode) */
 /* =================================================================== */
 void RevProc::ECALL_openat(){
-  // std::cout << "ECALL: openat called" << std::endl;
   RevRegFile& regFile = *RegFile();
-
-  //DumpARegs(false);
   int dfd = regFile.RV64[10];
-  // std::cout << "DFD = " << dfd << std::endl;
-  if( dfd  ){
-    // std::cout << "ABOUT TO OPEN ON HOST" << dfd << std::endl;
-    dfd = open(std::filesystem::current_path().string().c_str(), O_RDONLY);
-    // std::cout << "CURRENT DIRECTORY FD = " << dfd << std::endl;
-  }
   int filenameAddr = regFile.RV64[11];
-  int flags = regFile.RV64[12];
-  unsigned short mode = regFile.RV64[13];
+  int flags = regFile.RV64[12]; /* NOTE: Unused for now */
+  uint64_t mode = regFile.RV64[13];
   
-  std::string filename = "";
+  /*
+   * NOTE: this is currently only opening files in the current directory 
+   *       because of some oddities in parsing the arguments & flags
+   *       but this will be fixed in the near future 
+  */
 
+
+  /* Read the filename from memory one character at a time until we find '\0' */
+  std::string filename = "";
   unsigned i = 0;
   do {
     char filenameChar;
@@ -2869,22 +2886,26 @@ void RevProc::ECALL_openat(){
     filename = filename + filenameChar;
     i++;
   } while( filename.back() != '\0');
+  std::cout << filename << std::endl;
 
-  int fd = openat(dfd, filename.c_str(),  O_RDONLY);
+  dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
 
-  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
-  CurrCtx->AddFD(fd);
+  /* Do the openat on the host */
+  int fd = openat(dfd, filename.c_str(), O_RDWR);
 
-  std::cout << "OPENAT FD = " << fd << std::endl;
+  HartToExecCtx()->AddFD(fd);
+
+  /* openat returns the file descriptor of the opened file */
   regFile.RV64[10] = fd;
   return;
 }
 
+/* =================================================== */
+/* rev_read(unsigned int fd, char *buf, size_t nbytes) */
+/* =================================================== */
 void RevProc::ECALL_read(){
-  // std::cout << "ECALL: read called" << std::endl;
   RevRegFile& regFile = *RegFile();
   
-  //DumpARegs(false);
   uint64_t fd = regFile.RV64[10];
   uint64_t BufAddr = regFile.RV64[11];
   size_t BufSize = regFile.RV64[12];
@@ -2898,8 +2919,6 @@ void RevProc::ECALL_read(){
                   id, HartToExec, HartToExecPID(), fd);
     return;
   }
-
-  
   /*
    * This buffer is an intermediate buffer for storing the data read from host 
    * for later use in writing to RevMem
@@ -2913,8 +2932,8 @@ void RevProc::ECALL_read(){
    *       assume the file is already open on the host system because we 
    *       try to maintain parity between those
    */
+
   /* Do the read on the host */
-  // std::cout << "About to read fd = " << fd << " on Host " << std::endl;
   uint64_t rc = read(fd, &TmpBuf, BufSize);
 
   /* Write that data to the buffer inside of Rev */
@@ -2925,44 +2944,56 @@ void RevProc::ECALL_read(){
 }
 
 
+/* ========================== */
+/* rev_close(unsigned int fd) */
+/* ========================== */
 void RevProc::ECALL_close(){
-  // std::cout << "ECALL: close called" << std::endl;
-  //DumpARegs(false);
-  RevRegFile& regFile = *RegFile();
-  unsigned fd = regFile.RV64[10];
+  RevRegFile* regFile = RegFile();
+  int fd = regFile->RV64[10];
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
 
-  /* 
-   * Attempt to close the fd 
-   * - If 
-   */
+  /* Check if CurrCtx has fd in fildes vector */
   if( !CurrCtx->FindFD(fd) ){
     output->fatal(CALL_INFO, 0, 0,
                   "Core %d; Hart %d; PID %ul tried to close file descriptor %ul but did not have access to it\n",
                   id, HartToExec, HartToExecPID(), fd);
     return;
   }
+  /* Close file on host */
   uint64_t rc = close(fd);
+  
+  /* Remove from Ctx's fildes */
   CurrCtx->RemoveFD(fd);
-  regFile.RV64[10] = rc;
+
+  /* rc is propogated to rev from host */
+  regFile->RV64[10] = rc;
+
   return;
 }
 
+/* ====================================================================== */
+/* rev_fchown(unsigned int fd, unsigned short user, unsigned short group) */         
+/* ====================================================================== */
 void RevProc::ECALL_fchown(){
-  std::cout << "ECALL: fchown called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fchown called"); 
   return;
 }
 
+/* ==================================================================================== */
+/* rev_fchownat(int dfd, const char *filename, unsigned user, unsigned group, int flag) */
+/* ==================================================================================== */
 void RevProc::ECALL_fchownat(){
-  std::cout << "ECALL: fchownat called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fchownat called"); 
   return;
 }
 
+/* ======================================================================*/
+/* rev_mkdirat(int dfd, const char * path, unsigned short mode)          */
+/* ======================================================================*/
 void RevProc::ECALL_mkdirat(){
   RevRegFile& regFile = *RegFile();
-  
 
-  std::cout << "ECALL_mkdirat called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL_mkdirat called"); 
 
   unsigned fd = regFile.RV64[10];
   unsigned Mode = regFile.RV64[12];
@@ -2984,18 +3015,25 @@ void RevProc::ECALL_mkdirat(){
   return;
 }
 
+/* =========================================================== */
+/* rev_dup3(unsigned int oldfd, unsigned int newfd, int flags) */
+/* =========================================================== */
 void RevProc::ECALL_dup3(){
-  std::cout << "ECALL: dup3 called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: dup3 called"); 
   return;
 }
 
+
+/* =========================================================== */
+/* rev_dup(unsigned int fildes)                                */
+/* =========================================================== */
 void RevProc::ECALL_dup(){
-  std::cout << "ECALL: dup called" << std::endl;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: dup called"); 
   return;
 }
 
 
-/*
+/* 
  * This is the function that is called when an ECALL exception is detected inside ClockTick
  * - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
  *
@@ -3021,7 +3059,7 @@ void RevProc::ExecEcall(){
     RegFile()->RV64_SCAUSE = 0;
     RegFile()->RV32_SCAUSE = 0;
   } else {
-    output->fatal(CALL_INFO, -1, "Ecall Code = %ul not found", EcallCode);
+    output->fatal(CALL_INFO, -1, "Ecall Code = %lu not found", EcallCode);
   }
 }
 

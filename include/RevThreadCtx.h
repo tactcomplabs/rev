@@ -47,7 +47,7 @@ private:
   std::vector<uint32_t> ChildrenPIDs = {};
 
   /* Initial fildes are STDOUT, STDIN, and STDERR */
-  std::vector<uint64_t> fildes = {0, 1, 2};
+  std::vector<int> fildes = {0, 1, 2};
 
 public:
   // Constructor that takes a RevRegFile object and a uint32_t ParentPID
@@ -65,10 +65,10 @@ public:
   }
 
     
-  void AddFD(uint64_t fd);
-  bool RemoveFD(uint64_t fd);
-  bool FindFD(uint64_t fd);
-  std::vector<uint64_t> GetFildes(){ return fildes; }
+  void AddFD(int fd);
+  bool RemoveFD(int fd);
+  bool FindFD(int fd);
+  std::vector<int> GetFildes(){ return fildes; }
 
   bool DuplicateRegFile(RevRegFile& regToDup);
   RevRegFile* GetRegFile() { return &RegFile; }

@@ -40,21 +40,22 @@
 #define CLONE_IO             0x80000000 /* Clone I/O Context */
 
 struct clone_args {
-    uint64_t flags;        /* Flags bit mask */
-    uint64_t pidfd;        /* Where to store PID file descriptor (int *) */
-    uint64_t child_tid;    /* Where to store child TID, in child's memory (pid_t *) */
-    uint64_t parent_tid;   /* Where to store child TID, in parent's memory (pid_t *) */
-    uint64_t exit_signal;  /* Signal to deliver to parent on child termination */
-    uint64_t stack;        /* Pointer to lowest byte of stack */
-    uint64_t stack_size;   /* Size of stack */
-    uint64_t tls;          /* Location of new TLS */
-    uint64_t set_tid;      /* Pointer to a pid_t array (since Linux 5.5) */
-    uint64_t set_tid_size; /* Number of elements in set_tid (since Linux 5.5) */
-    uint64_t cgroup;       /* File descriptor for target cgroup of child (since Linux 5.7) */
+    int flags;        /* Flags bit mask */
+    int pidfd;        /* Where to store PID file descriptor (int *) */
+    int child_tid;    /* Where to store child TID, in child's memory (pid_t *) */
+    int parent_tid;   /* Where to store child TID, in parent's memory (pid_t *) */
+    int exit_signal;  /* Signal to deliver to parent on child termination */
+    int stack;        /* Pointer to lowest byte of stack */
+    int stack_size;   /* Size of stack */
+    int tls;          /* Location of new TLS */
+    int set_tid;      /* Pointer to a pid_t array (since Linux 5.5) */
+    int set_tid_size; /* Number of elements in set_tid (since Linux 5.5) */
+    int cgroup;       /* File descriptor for target cgroup of child (since Linux 5.7) */
 };
 
-uint64_t rev_setxattr(const char *path, const char *name, const void *value, size_t size, int flags){
-  uint64_t rc;
+// int rev_snprintf(char *)
+int rev_setxattr(const char *path, const char *name, const void *value, size_t size, int flags){
+  int rc;
     asm volatile (
       "li a7, 5\n\t"
       "ecall \n\t"
@@ -63,8 +64,8 @@ uint64_t rev_setxattr(const char *path, const char *name, const void *value, siz
     return rc;
 }
 
-uint64_t rev_getcwd(char *buf, unsigned long size){          
-  uint64_t rc;
+int rev_getcwd(char *buf, unsigned long size){          
+  int rc;
     asm volatile (
       "li a7, 17\n\t"
       "ecall \n\t"
@@ -73,8 +74,8 @@ uint64_t rev_getcwd(char *buf, unsigned long size){
     return rc;
 }
 
-uint64_t rev_dup(unsigned int fildes){             
-  uint64_t rc;
+int rev_dup(unsigned int fildes){             
+  int rc;
     asm volatile (
       "li a7, 23\n\t"
       "ecall \n\t"
@@ -83,8 +84,8 @@ uint64_t rev_dup(unsigned int fildes){
     return rc;
 }
 
-uint64_t rev_dup3(unsigned int oldfd, unsigned int newfd, int flags){            
-  uint64_t rc;
+int rev_dup3(unsigned int oldfd, unsigned int newfd, int flags){            
+  int rc;
     asm volatile (
       "li a7, 24\n\t"
       "ecall \n\t"
@@ -93,8 +94,8 @@ uint64_t rev_dup3(unsigned int oldfd, unsigned int newfd, int flags){
     return rc;
 }
 
-uint64_t rev_mkdirat(int dfd, const char * path, unsigned short mode){         
-  uint64_t rc;
+int rev_mkdirat(int dfd, const char * path, unsigned short mode){         
+  int rc;
     asm volatile (
       "li a7, 34\n\t"
       "ecall \n\t"
@@ -103,8 +104,8 @@ uint64_t rev_mkdirat(int dfd, const char * path, unsigned short mode){
     return rc;
 }
 
-uint64_t rev_chdir(const char *filename){
-  uint64_t rc;
+int rev_chdir(const char *filename){
+  int rc;
   
   asm volatile (
     "li a7, 49\n\t"
@@ -114,8 +115,8 @@ uint64_t rev_chdir(const char *filename){
   return rc;
 }
 
-uint64_t rev_fchownat(int dfd, const char *filename, unsigned user, unsigned group, int flag){        
-  uint64_t rc;
+int rev_fchownat(int dfd, const char *filename, unsigned user, unsigned group, int flag){        
+  int rc;
     asm volatile (
       "li a7, 54\n\t"
       "ecall \n\t"
@@ -124,8 +125,8 @@ uint64_t rev_fchownat(int dfd, const char *filename, unsigned user, unsigned gro
   return rc;
 }
 
-uint64_t rev_fchown(unsigned int fd, unsigned short user, unsigned short group){          
-  uint64_t rc;
+int rev_fchown(unsigned int fd, unsigned short user, unsigned short group){          
+  int rc;
     asm volatile (
       "li a7, 55\n\t"
       "ecall \n\t"
@@ -134,8 +135,8 @@ uint64_t rev_fchown(unsigned int fd, unsigned short user, unsigned short group){
   return rc;
 }
 
-uint64_t rev_close(unsigned int fd){
-  uint64_t rc;
+int rev_close(unsigned int fd){
+  int rc;
     asm volatile (
       "li a7, 57\n\t"
       "ecall \n\t"
@@ -144,8 +145,8 @@ uint64_t rev_close(unsigned int fd){
   return rc;
 }
 
-uint64_t rev_read(unsigned int fd, char *buf, size_t nbytes){
-  uint64_t rc;
+int rev_read(unsigned int fd, char *buf, size_t nbytes){
+  int rc;
     asm volatile (
       "li a7, 63\n\t"
       "ecall \n\t"
@@ -154,8 +155,8 @@ uint64_t rev_read(unsigned int fd, char *buf, size_t nbytes){
   return rc;
 }
 
-uint64_t rev_write(unsigned int fd, const char *buf, size_t nbytes){          
-  uint64_t rc;
+int rev_write(unsigned int fd, const char *buf, size_t nbytes){          
+  int rc;
     asm volatile (
       "li a7, 64\n\t"
       "ecall \n\t"
@@ -164,8 +165,8 @@ uint64_t rev_write(unsigned int fd, const char *buf, size_t nbytes){
     return rc;
 }
 
-uint64_t rev_openat(int dfd, const char *filename,  unsigned short mode){          
-  uint64_t rc;
+int rev_openat(int dfd, const char *filename,  unsigned short mode){          
+  int rc;
     asm volatile (
       "li a7, 65\n\t"
       "ecall \n\t"
@@ -174,8 +175,8 @@ uint64_t rev_openat(int dfd, const char *filename,  unsigned short mode){
     return rc;
 }
 
-uint64_t rev_tee(int fdin, int fdout, size_t len, unsigned int flags){             
-  uint64_t rc;
+int rev_tee(int fdin, int fdout, size_t len, unsigned int flags){             
+  int rc;
     asm volatile (
       "li a7, 77\n\t"
       "ecall \n\t"
@@ -184,8 +185,8 @@ uint64_t rev_tee(int fdin, int fdout, size_t len, unsigned int flags){
     return rc;
 }
 
-uint64_t rev_sync(void){            
-  uint64_t rc;
+int rev_sync(void){            
+  int rc;
     asm volatile (
       "li a7, 81\n\t"
       "ecall \n\t"
@@ -194,8 +195,8 @@ uint64_t rev_sync(void){
     return rc;
 }
 
-uint64_t rev_fsync(unsigned int fd){           
-  uint64_t rc;
+int rev_fsync(unsigned int fd){           
+  int rc;
     asm volatile (
       "li a7, 82\n\t"
       "ecall \n\t"
@@ -204,8 +205,8 @@ uint64_t rev_fsync(unsigned int fd){
     return rc;
 }
 
-uint64_t rev_fdatasync(unsigned int fd){       
-  uint64_t rc;
+int rev_fdatasync(unsigned int fd){       
+  int rc;
     asm volatile (
       "li a7, 83\n\t"
       "ecall \n\t"
@@ -214,8 +215,8 @@ uint64_t rev_fdatasync(unsigned int fd){
     return rc;
 }
 
-uint64_t rev_exit(int error_code){           
-  uint64_t rc;
+int rev_exit(int error_code){           
+  int rc;
     asm volatile (
       "li a7, 93\n\t"
       "ecall \n\t"
@@ -224,8 +225,8 @@ uint64_t rev_exit(int error_code){
     return rc;
 }
 
-uint64_t rev_exit_group(int error_code){      
-  uint64_t rc;
+int rev_exit_group(int error_code){      
+  int rc;
     asm volatile (
       "li a7, 94\n\t"
       "ecall \n\t"
@@ -234,8 +235,8 @@ uint64_t rev_exit_group(int error_code){
     return rc;
 }
 
-uint64_t rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru){          
-  uint64_t rc;
+int rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru){          
+  int rc;
     asm volatile (
       "li a7, 95\n\t"
       "ecall \n\t"
@@ -244,8 +245,8 @@ uint64_t rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, s
     return rc;
 }
 
-uint64_t rev_set_robust_list(struct robust_list_head *head, size_t len){ 
-  uint64_t rc;
+int rev_set_robust_list(struct robust_list_head *head, size_t len){ 
+  int rc;
     asm volatile (
       "li a7, 99\n\t"
       "ecall \n\t"
@@ -254,8 +255,8 @@ uint64_t rev_set_robust_list(struct robust_list_head *head, size_t len){
     return rc;
 }
 
-uint64_t rev_get_robust_list(int pid, struct robust_list_head *head_ptr, size_t *len_ptr){ 
-  uint64_t rc;
+int rev_get_robust_list(int pid, struct robust_list_head *head_ptr, size_t *len_ptr){ 
+  int rc;
     asm volatile (
       "li a7, 100\n\t"
       "ecall \n\t"
@@ -264,8 +265,8 @@ uint64_t rev_get_robust_list(int pid, struct robust_list_head *head_ptr, size_t 
     return rc;
 }
 
-uint64_t rev_nanosleep(struct __kernel_timespec *rqtp, struct __kernel_timespec *rmtp){
-  uint64_t rc;
+int rev_nanosleep(struct __kernel_timespec *rqtp, struct __kernel_timespec *rmtp){
+  int rc;
     asm volatile (
       "li a7, 101\n\t"
       "ecall \n\t"
@@ -274,8 +275,8 @@ uint64_t rev_nanosleep(struct __kernel_timespec *rqtp, struct __kernel_timespec 
     return rc;
 }
 
-uint64_t rev_timer_create(clockid_t which_clock, struct sigevent *timer_event_spec, timer_t *created_timer_id){
-  uint64_t rc;
+int rev_timer_create(clockid_t which_clock, struct sigevent *timer_event_spec, timer_t *created_timer_id){
+  int rc;
     asm volatile (
       "li a7, 107\n\t"
       "ecall \n\t"
@@ -284,8 +285,8 @@ uint64_t rev_timer_create(clockid_t which_clock, struct sigevent *timer_event_sp
     return rc;
 }
 
-uint64_t rev_timer_delete(timer_t timer_id){    
-  uint64_t rc;
+int rev_timer_delete(timer_t timer_id){    
+  int rc;
     asm volatile (
       "li a7, 110\n\t"
       "ecall \n\t"
@@ -294,9 +295,9 @@ uint64_t rev_timer_delete(timer_t timer_id){
     return rc;
 }
 
-uint64_t rev_rt_sigprocmask(int how, sigset_t *set,
+int rev_rt_sigprocmask(int how, sigset_t *set,
                             sigset_t *oset, size_t sigsetsize){  
-  uint64_t rc;
+  int rc;
   asm volatile (
     "li a7, 135\n\t"
     "ecall \n\t"
@@ -305,8 +306,8 @@ uint64_t rev_rt_sigprocmask(int how, sigset_t *set,
   return rc;
 }
 
-uint64_t rev_gettimeofday(struct timeval *tv, struct timezone *tz){    
-  uint64_t rc;
+int rev_gettimeofday(struct timeval *tv, struct timezone *tz){    
+  int rc;
     asm volatile (
       "li a7, 169\n\t"
       "ecall \n\t"
@@ -315,8 +316,8 @@ uint64_t rev_gettimeofday(struct timeval *tv, struct timezone *tz){
     return rc;
 }
 
-uint64_t rev_settimeofday(struct timeval *tv, struct timezone *tz){    
-  uint64_t rc;
+int rev_settimeofday(struct timeval *tv, struct timezone *tz){    
+  int rc;
     asm volatile (
       "li a7, 170\n\t"
       "ecall \n\t"
@@ -326,8 +327,8 @@ uint64_t rev_settimeofday(struct timeval *tv, struct timezone *tz){
 }
 
 
-uint64_t rev_getpid(void){         
-  uint64_t rc;
+int rev_getpid(void){         
+  int rc;
     asm volatile (
       "li a7, 172\n\t"
       "ecall \n\t"
@@ -337,8 +338,8 @@ uint64_t rev_getpid(void){
 }
 
 
-uint64_t rev_getppid(void){        
-  uint64_t rc;
+int rev_getppid(void){        
+  int rc;
     asm volatile (
       "li a7, 173\n\t"
       "ecall \n\t"
@@ -348,8 +349,8 @@ uint64_t rev_getppid(void){
 }
 
 
-uint64_t rev_gettid(void){          
-  uint64_t rc;
+int rev_gettid(void){          
+  int rc;
     asm volatile (
       "li a7, 178\n\t"
       "ecall \n\t"
@@ -359,8 +360,8 @@ uint64_t rev_gettid(void){
 }
 
 
-uint64_t rev_fork() {
-  uint64_t rc;
+int rev_fork() {
+  int rc;
   asm volatile (
       "li a7, 220\n\t"     // load the value 220 into a7
       "ecall\n\t"       // execute the ecall instruction
@@ -369,8 +370,8 @@ uint64_t rev_fork() {
   return rc;
 }
 
-uint64_t rev_clone3(struct clone_args* args, size_t args_size) {
-  uint64_t rc;
+int rev_clone3(struct clone_args* args, size_t args_size) {
+  int rc;
 
     asm volatile (
         "li a7, 220\n\t"     // load the value 220 into a7
@@ -380,8 +381,8 @@ uint64_t rev_clone3(struct clone_args* args, size_t args_size) {
     return rc;
 }
 
-uint64_t rev_mmap(struct mmap_arg_struct *args){            
-  uint64_t rc;
+int rev_mmap(struct mmap_arg_struct *args){            
+  int rc;
     asm volatile (
       "li a7, 222\n\t"
         "ecall \n\t"
@@ -390,8 +391,8 @@ uint64_t rev_mmap(struct mmap_arg_struct *args){
     return rc;
 }
 
-uint64_t rev_clock_gettime(clockid_t which_clock, struct timeval *tp){
-  uint64_t rc;
+int rev_clock_gettime(clockid_t which_clock, struct timeval *tp){
+  int rc;
     asm volatile (
       "li a7, 403\n\t"
         "ecall \n\t"
@@ -400,8 +401,8 @@ uint64_t rev_clock_gettime(clockid_t which_clock, struct timeval *tp){
     return rc;
 }
 
-uint64_t rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec *tp){   
-  uint64_t rc;
+int rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec *tp){   
+  int rc;
     asm volatile (
       "li a7, 404\n\t"
         "ecall \n\t"
@@ -410,8 +411,8 @@ uint64_t rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec
     return rc;
 }
 
-uint64_t rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec *setting){   
-  uint64_t rc;
+int rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec *setting){   
+  int rc;
     asm volatile (
       "li a7, 408\n\t"
         "ecall \n\t"
@@ -420,8 +421,8 @@ uint64_t rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec *setting
     return rc;
 }
 
-uint64_t rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting){   
-  uint64_t rc;
+int rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting){   
+  int rc;
     asm volatile (
       "li a7, 409\n\t"
         "ecall \n\t"
