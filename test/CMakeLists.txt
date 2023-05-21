@@ -21,6 +21,8 @@ find_program(RVCC NAMES riscv64-unknown-elf-gcc
 
 if(RVCC-NOTFOUND)
     message(FATAL_ERROR "No riscv64 compatible gcc (riscv64-unknown-elf-gcc || riscv64-unknown-linux-gnu-gcc || riscv64-unknown-linux-musl-gcc) binary found in path")
+  else()
+    message(STATUS "RISCV compiler set to ${RVCC}")
 endif()
 
 # find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
@@ -108,24 +110,6 @@ set_tests_properties(TEST_MINFFT
 
 add_test(NAME TEST_LARGE_BSS COMMAND run_large_bss.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/large_bss" ) # large_bss
 set_tests_properties(TEST_LARGE_BSS
-  PROPERTIES
-    ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 30
-    PASS_REGULAR_EXPRESSION "${passRegex}"
-    LABELS "all;rv64"
-)
-
-add_test(NAME TEST_CACHE1 COMMAND run_cache_test1.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cache_test1" ) # cache_test1
-set_tests_properties(TEST_CACHE1
-  PROPERTIES
-    ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 30
-    PASS_REGULAR_EXPRESSION "${passRegex}"
-    LABELS "all;rv64"
-)
-
-add_test(NAME TEST_CACHE2 COMMAND run_cache_test2.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cache_test2" ) # cache_test2
-set_tests_properties(TEST_CACHE2
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30

@@ -1940,18 +1940,18 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if(feature->IsRV32()){
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
                                       << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
-                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[HartToExec].RV32[Inst.rd] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[HartToExec].RV32[Inst.rs1] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[HartToExec].RV32[Inst.rs2] \
+                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile(HartToExec)->RV32[Inst.rd] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile(HartToExec)->RV32[Inst.rs1] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile(HartToExec)->RV32[Inst.rs2] \
                                       << " imm = "                << std::hex << Inst.imm \
                                       << std::endl;
 
       }else{
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
                                       << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
-                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile[HartToExec].RV64[Inst.rd] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile[HartToExec].RV64[Inst.rs1] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile[HartToExec].RV64[Inst.rs2] \
+                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile(HartToExec)->RV64[Inst.rd] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile(HartToExec)->RV64[Inst.rs1] \
+                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile(HartToExec)->RV64[Inst.rs2] \
                                       << " imm = "                << std::hex << Inst.imm \
                                       << std::endl;
       }
