@@ -416,20 +416,10 @@ namespace SST{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
-          std::cout << "================================" << std::endl;
-          std::cout << "BLTU: " << std::endl;
-          std::cout << "Inst.rs1 = : "<< (uint64_t)Inst.rs1 << std::endl;
-          std::cout << "Inst.rs2 = : "<< (uint64_t)Inst.rs2 << std::endl;
           if( R->RV64[Inst.rs1] < R->RV64[Inst.rs2] ){
-            std::cout << "RS1 LESS THAN RS2" << std::endl;
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
-            std::cout << "NEW PC = 0x" << R->RV64_PC << std::endl;
-            std::cout << "================================" << std::endl;
           }else{
-            std::cout << "RS1 NOT LESS THAN RS2" << std::endl;
             R->RV64_PC = R->RV64_PC + Inst.instSize;
-            std::cout << "NEW PC = 0x" << std::hex << R->RV64_PC << std::endl;
-            std::cout << "================================" << std::endl;
           }
         }
         return true;
