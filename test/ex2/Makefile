@@ -19,7 +19,7 @@ ARCH=rv64imafd
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

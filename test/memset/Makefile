@@ -14,15 +14,11 @@
 
 EXAMPLE=memset
 CC="${RVCC}"
-CXX=riscv64-unknown-elf-g++
-#ARCH=rv32i
 ARCH=rv64imfd
-#ABI=ilp32
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	#$(CXX) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
-	$(CXX) -march=$(ARCH) -O0 -static -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -O0 -static -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

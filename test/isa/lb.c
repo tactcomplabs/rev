@@ -19,11 +19,7 @@
 
 int main(int argc, char **argv){
 
-  asm volatile("tdat:");
-  asm volatile("tdat1:  .byte 0xff");
-  asm volatile("tdat2:  .byte 0x00");
-  asm volatile("tdat3:  .byte 0xf0");
-  asm volatile("tdat4:  .byte 0x0f");
+
 
 
 
@@ -72,3 +68,12 @@ asm volatile("li ra, 0x0");
 
   return 0;
 }
+
+asm(".data");
+RVTEST_DATA_BEGIN
+  asm ("tdat:");
+  asm ("tdat1:  .byte 0xff");
+  asm ("tdat2:  .byte 0x00");
+  asm ("tdat3:  .byte 0xf0");
+  asm ("tdat4:  .byte 0x0f");
+RVTEST_DATA_END

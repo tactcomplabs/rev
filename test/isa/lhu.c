@@ -19,11 +19,6 @@
 
 int main(int argc, char **argv){
 
-  asm volatile("tdat:");
-  asm volatile("tdat1:  .half 0x00ff");
-  asm volatile("tdat2:  .half 0xff00");
-  asm volatile("tdat3:  .half 0x0ff0");
-  asm volatile("tdat4:  .half 0xf00f");
 
 
 
@@ -73,3 +68,13 @@ asm volatile("li ra, 0x0");
 
   return 0;
 }
+
+
+asm(".data");
+RVTEST_DATA_BEGIN
+  asm ("tdat:");
+  asm ("tdat1:  .half 0x00ff");
+  asm ("tdat2:  .half 0xff00");
+  asm ("tdat3:  .half 0x0ff0");
+  asm ("tdat4:  .half 0xf00f");
+RVTEST_DATA_END
