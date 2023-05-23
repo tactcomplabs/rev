@@ -11,10 +11,8 @@
  *
  */
 
-#include <cstdint>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdbool.h>
 #include "isa_test_macros.h"
 
 int main(int argc, char **argv){
