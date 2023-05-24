@@ -21,9 +21,10 @@
 #include <vector>
 #include <string>
 
-namespace SST::RevCPU {
+namespace SST{
+  namespace RevCPU {
   class RevOpts;
-}
+}}
 
 using namespace SST::RevCPU;
 

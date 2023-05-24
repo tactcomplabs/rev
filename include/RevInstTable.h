@@ -88,17 +88,31 @@
                     (r) = (r) & (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
+#define SEXT64(r,x,b) do {\
+                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register
+#define ZEXT64(r,x,b) do {\
+                    (r) = (x) & (((1ULL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register
+
+#define SEXTI64(r,b)  do {\
+                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register inline
+#define ZEXTI64(r,b)  do {\
+                    (r) = (r) & (((1ULL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register inline
+
 // Swizzle Macro
 #define SWIZZLE(q,in,start,dest ) q |= ((in >> start) & 1) << dest;
 
 /// td_u32: convert u32 in two's complement to decimal
-static uint32_t td_u32(uint32_t binary, unsigned bits){
+static inline uint32_t td_u32(uint32_t binary, unsigned bits){
   uint32_t tmp = binary;
   uint32_t i = 0;
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1UL<<(bits-1))) > 0 ){
     // sign extend to 32 bits
     for( i=bits; i<32; i++ ){
-      tmp |= (1<<i);
+      tmp |= (1UL<<i);
     }
 
     // invert all the bits
@@ -114,15 +128,15 @@ static uint32_t td_u32(uint32_t binary, unsigned bits){
 }
 
 /// td_u64: convert u64 in two's complement to decimal
-static uint64_t td_u64(uint64_t binary, unsigned bits){
+static inline uint64_t td_u64(uint64_t binary, unsigned bits){
   uint64_t tmp = binary;
   uint64_t sext = 0x00ull;
   uint64_t i = 0;
 
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1ULL<<(bits-1))) > 0 ){
     // sign extend to 64 bits
     for( i=0; i<bits; i++ ){
-      sext |= (1<<i);
+      sext |= (1ULL<<i);
     }
     sext = ~sext;
 
@@ -141,13 +155,13 @@ static uint64_t td_u64(uint64_t binary, unsigned bits){
 }
 
 /// dt_u32: convert u32 in decimal to two's complement
-static uint32_t dt_u32(int32_t binary, unsigned bits){
+static inline uint32_t dt_u32(int32_t binary, unsigned bits){
   uint32_t tmp = binary;
   uint32_t i = 0;
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1UL<<(bits-1))) > 0 ){
     // sign extend to 32 bits
     for( i=bits; i<32; i++ ){
-      tmp |= (1<<i);
+      tmp |= (1UL<<i);
     }
 
     // invert all the bits
@@ -163,13 +177,13 @@ static uint32_t dt_u32(int32_t binary, unsigned bits){
 }
 
 /// td_u64: convert u64 in decimal to two's complement
-static uint64_t dt_u64(int64_t binary, unsigned bits){
+static inline uint64_t dt_u64(int64_t binary, unsigned bits){
   uint64_t tmp = binary;
   uint64_t i = 0;
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1ULL<<(bits-1))) > 0 ){
     // sign extend to 32 bits
     for( i=bits; i<64; i++ ){
-      tmp |= (1<<i);
+      tmp |= (1ULL<<i);
     }
 
     // invert all the bits
@@ -184,6 +198,7 @@ static uint64_t dt_u64(int64_t binary, unsigned bits){
   return tmp;
 }
 
+#if 0
 static uint32_t twos_compl(uint32_t binary, int bits){
   uint32_t tmp = binary;
   uint32_t i = 0;
@@ -209,6 +224,7 @@ static uint32_t twos_compl(uint32_t binary, int bits){
   }
   return tmp;
 }
+#endif
 
 namespace SST{
   namespace RevCPU {

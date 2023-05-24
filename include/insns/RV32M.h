@@ -142,8 +142,8 @@ namespace SST{
         }else{
           uint64_t lhs = R->RV64[Inst.rs1];
           uint64_t rhs = R->RV64[Inst.rs2];
-          ZEXTI(lhs,64);
-          ZEXTI(rhs,64);
+          ZEXTI64(lhs,64);
+          ZEXTI64(rhs,64);
           if( rhs == 0 ){
             R->RV64[Inst.rd] = UINT64_MAX;
             return true;
@@ -202,8 +202,8 @@ namespace SST{
         }else{
           uint64_t lhs = R->RV64[Inst.rs1];
           uint64_t rhs = R->RV64[Inst.rs2];
-          ZEXTI(lhs,64);
-          ZEXTI(rhs,64);
+          ZEXTI64(lhs,64);
+          ZEXTI64(rhs,64);
           if( rhs == 0 ){
             SEXT(R->RV64[Inst.rd], R->RV64[Inst.rs1], 64);
             return true;

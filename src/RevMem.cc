@@ -13,7 +13,7 @@
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
                 RevMemCtrl *Ctrl, SST::Output *Output )
-  : memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output), physMem(nullptr),
+  : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output),
     stacktop(0x00ull) {
   // Note: this constructor assumes the use of the memHierarchy backend
   pageSize = 262144; //Page Size (in Bytes)
@@ -31,8 +31,8 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
 }
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
-  : memSize(MemSize), opts(Opts), ctrl(nullptr),output(Output),
-    physMem(nullptr), stacktop(0x00ull) {
+  : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output),
+    stacktop(0x00ull) {
 
   // allocate the backing memory
   physMem = new char [memSize];
@@ -125,7 +125,6 @@ bool RevMem::LR(unsigned Hart, uint64_t Addr){
 
 bool RevMem::SC(unsigned Hart, uint64_t Addr){
   // search the LRSC vector for the entry pair
-  std::pair<unsigned,uint64_t> Entry = std::make_pair(Hart,Addr);
   std::vector<std::pair<unsigned,uint64_t>>::iterator it;
 
   for( it = LRSC.begin(); it != LRSC.end(); ++it ){

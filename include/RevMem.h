@@ -35,10 +35,6 @@
 
 #define REVMEM_FLAGS(x) ((StandardMem::Request::flags_t)(x))
 
-namespace SST::RevCPU {
-  class RevMem;
-}
-
 using namespace SST::RevCPU;
 
 namespace SST {

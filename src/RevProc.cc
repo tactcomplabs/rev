@@ -874,7 +874,6 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
 
 RevInst RevProc::DecodeCompressed(uint32_t Inst){
   uint16_t TmpInst = (uint16_t)(Inst&0b1111111111111111);
-  RevInst CInst;
   uint8_t opc     = 0;
   uint8_t funct2  = 0;
   uint8_t funct3  = 0;
@@ -883,6 +882,9 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   uint8_t l3      = 0;
   uint32_t Enc    = 0x00ul;
   uint64_t PC     = GetPC();
+  RevInst TInst;
+
+  ResetInst(&TInst);
 
   // decode the opcode
   opc = (TmpInst & 0b11);
@@ -986,6 +988,10 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
                   "Error: failed to decode instruction format at PC=%" PRIx64 ".", PC );
     break;
   }
+
+  // we should never arrive here
+  // we return a null instruction in order to forego a compiler warning
+  return TInst;
 }
 
 RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
@@ -1196,7 +1202,6 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
   }
 
   // imm
-  //DInst.imm     = twos_compl((DECODE_RD(Inst) | (DECODE_FUNCT7(Inst)<<5)),12);
   DInst.imm =   (uint32_t)((Inst << 4)&0b100000000000)|   // [11]
                 (uint32_t)((Inst & 0b111100000000)>>7)|   // [4:1]
                 (uint32_t)((Inst >> 20)&0b11111100000)|   // [10:5]
@@ -1367,6 +1372,9 @@ RevInst RevProc::DecodeInst(){
   uint32_t Inst = 0x00ul;
   uint64_t PC   = 0x00ull;
   bool Fetched  = false;
+  RevInst TInst;
+
+  ResetInst(&TInst);
 
   // Stage 1: Retrieve the instruction
   if( feature->GetXlen() == 32 ){
@@ -1537,6 +1545,10 @@ RevInst RevProc::DecodeInst(){
                   "Error: failed to decode instruction format at PC=%" PRIx64 ".", PC );
     break;
   }
+
+  // we should never arrive here
+  // we return a null instruction to forego a compiler warning
+  return TInst;
 }
 
 void RevProc::ResetInst(RevInst *I){

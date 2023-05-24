@@ -19,9 +19,10 @@
 #include <cinttypes>
 #include <string>
 
-namespace SST::RevCPU {
+namespace SST{
+  namespace RevCPU {
   class RevFeature;
-}
+}}
 
 using namespace SST::RevCPU;
 

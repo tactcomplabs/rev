@@ -24,10 +24,6 @@
 #include "RevMem.h"
 #include "RevFeature.h"
 
-namespace SST::RevCPU{
-  class RevExt;
-}
-
 using namespace SST::RevCPU;
 
 namespace SST{

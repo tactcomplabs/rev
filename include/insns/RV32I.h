@@ -600,9 +600,6 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((int32_t)(td_u32(R->RV32[Inst.rs1],32)) + (int32_t)(td_u32(Inst.imm,12)),32);
           R->RV32_PC += Inst.instSize;
         }else{
-          if(R->RV64_PC == 0x101b0 ){
-            int blah_junk= 0;
-          }
           R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],64) + td_u64(Inst.imm,12),64);
           R->RV64_PC += Inst.instSize;
         }
@@ -824,7 +821,7 @@ namespace SST{
           SEXTI(R->RV32[Inst.rd],32);
           R->RV32_PC += Inst.instSize;
         }else{
-          ZEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111)),64);
+          ZEXT64(R->RV64[Inst.rd],(R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111)),64);
           SEXTI(R->RV64[Inst.rd],64);
           R->RV64_PC += Inst.instSize;
         }
@@ -897,7 +894,6 @@ namespace SST{
           }
           R->RV32_PC += Inst.instSize;
         }else{
-          uint64_t code = R->RV64[17];
           R->RV64_PC += Inst.instSize;
         }
         return true;

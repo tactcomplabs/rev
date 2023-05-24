@@ -39,10 +39,6 @@
 #define SHT_NOBITS 8
 #endif
 
-namespace SST::RevCPU {
-  class RevLoader;
-}
-
 using namespace SST::RevCPU;
 
 template<typename T> static inline T from_le(T n) { return n; }

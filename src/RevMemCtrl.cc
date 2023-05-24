@@ -1018,7 +1018,7 @@ void RevBasicMemCtrl::handleFlagResp(RevMemOp *op){
      ZEXTI(*target,32);
    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_ZEXT64)) ){
      uint64_t *target = (uint64_t *)(op->getTarget());
-     ZEXTI(*target,64);
+     ZEXTI64(*target,63);
    }
 }
 
