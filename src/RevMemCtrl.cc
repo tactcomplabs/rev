@@ -116,7 +116,7 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
 }
 
 RevBasicMemCtrl::~RevBasicMemCtrl(){
-  for( auto i=0; i<rqstQ.size(); i++ ){
+  for( unsigned i=0; i<rqstQ.size(); i++ ){
     delete rqstQ[i];
   }
   rqstQ.clear();
@@ -294,13 +294,16 @@ void RevBasicMemCtrl::processMemEvent(StandardMem::Request* ev){
 void RevBasicMemCtrl::init(unsigned int phase){
   memIface->init(phase);
 
-  lineSize = memIface->getLineSize();
-  if( lineSize > 0 ){
-    output->verbose(CALL_INFO, 5, 0, "Detected cache layers; default line size=%d\n", lineSize);
-    hasCache = true;
-  }else{
-    output->verbose(CALL_INFO, 5, 0, "No cache detected; disabling caching\n");
-    hasCache = false;
+  // query the caching infrastructure
+  if( phase == 1 ){
+    lineSize = memIface->getLineSize();
+    if( lineSize > 0 ){
+      output->verbose(CALL_INFO, 5, 0, "Detected cache layers; default line size=%d\n", lineSize);
+      hasCache = true;
+    }else{
+      output->verbose(CALL_INFO, 5, 0, "No cache detected; disabling caching\n");
+      hasCache = false;
+    }
   }
 }
 
