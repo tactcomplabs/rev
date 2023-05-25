@@ -571,14 +571,12 @@ namespace SST{
       static bool sh(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         int64_t tmp = 0;
         if( F->IsRV32() ){
-          tmp =  (uint32_t)(R->RV32[Inst.rs2]);
-          SEXTI(tmp, 16);
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
+          tmp =  (uint16_t)(R->RV32[Inst.rs2]);
+          M->WriteU16((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(tmp));
           R->RV32_PC += Inst.instSize;
         }else{
-          tmp =  (uint32_t)(R->RV64[Inst.rs2]);
-          SEXTI(tmp, 16);
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
+          tmp =  (uint16_t)(R->RV64[Inst.rs2]);
+          M->WriteU16((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(tmp));
           R->RV64_PC += Inst.instSize;
         }
         return true;
