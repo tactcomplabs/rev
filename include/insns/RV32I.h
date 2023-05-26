@@ -879,21 +879,33 @@ namespace SST{
         return true;  // temporarily disabled
       }
 
-      static bool ecall(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        // x17 (a7) is the code for ecall
+      static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+        // Save PC of Ecall to *epc register
         if( F->IsRV32() ){
-          uint32_t code = R->RV32[17];
-          switch( code ){
-          case 4: 
-            // execute the getc syscall
-            break;
-          default:
-            break;
-          }
+          R->RV32_SEPC = R->RV32_PC; // Save PC of instruction that raised exception
+          R->RV32_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV32_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
           R->RV32_PC += Inst.instSize;
-        }else{
-          R->RV64_PC += Inst.instSize;
         }
+        else {
+          /* 
+          * In reality this should be getting/setting a LOT of bits inside the 
+          * CSRs however because we are only concerned with ecall right now it's 
+          * not a concern.
+          * NOTE: Normally you would have to check if you are currently executing in 
+          *       Supervisor mode already and set RV64_MEPC instead but we don't need 
+          *       to worry about machine mode with the ecalls we are supporting
+          */
+          // R->RV64_PC += Inst.instSize; // TODO: Verify this needs to happen
+          R->RV64_SEPC = R->RV64_PC; // Save PC of instruction that raised exception
+          R->RV64_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV64_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
+          /*
+           * Trap Handler is not implemented because we only have one exception 
+           * So we don't have to worry about setting `mtvec` reg
+           */
+          R->RV64_PC += Inst.instSize;
+        } 
         return true;
       }
 

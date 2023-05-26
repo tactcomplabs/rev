@@ -18,6 +18,7 @@ set(RevCPUSrcs
   RevNIC.cc
   RevOpts.cc
   RevProc.cc
+  RevThreadCtx.cc
   librevcpu.cc
   RevPrefetcher.cc
   )

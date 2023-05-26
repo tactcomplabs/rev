@@ -51,7 +51,7 @@ namespace SST{
       std::string GetName() { return name; }
 
       /// RevExt: baseline execution function
-      bool Execute(unsigned Inst, RevInst Payload, uint8_t threadID);
+      bool Execute(unsigned Inst, RevInst Payload, uint16_t threadID);
 
       /// RevExt: retrieves the extension's instruction table
       std::vector<RevInstEntry> GetInstTable() { return table; }
@@ -61,6 +61,8 @@ namespace SST{
 
       /// RevExt: retrieves the extension's optional instruction table
       std::vector<RevInstEntry> GetOInstTable() { return otable; }
+
+      void SetRegFile(RevRegFile* RegFile) { regFile = RegFile; }
 
     protected:
       RevFeature *feature;  ///< RevExt: feature object

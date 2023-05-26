@@ -35,7 +35,7 @@ void RevExt::SetOTable(std::vector<RevInstEntry> InstVect){
   otable = InstVect;
 }
 
-bool RevExt::Execute(unsigned Inst, RevInst payload, uint8_t threadID){
+bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
 
   // ensure that the target instruction is within scope
   if( Inst > (table.size()-1) ){
@@ -80,7 +80,7 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint8_t threadID){
   }
 
   // execute the instruction
-  if( !(*func)(feature,&(regFile[threadID]),mem,payload) )
+  if( !(*func)(feature,(regFile),mem,payload) )
     return false;
 
 #if 0
