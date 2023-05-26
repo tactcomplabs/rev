@@ -50,8 +50,9 @@ RevSimpleCoProc::~RevSimpleCoProc(){
 
 };
 
-bool RevSimpleCoProc::IssueInst(uint32_t Inst){
-    InstQ.push(Inst);
+bool RevSimpleCoProc::IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){
+    RevCoProcInst inst = RevCoProcInst(Inst, F, R, M);
+    InstQ.push(inst);
     return true;
 }
 
@@ -69,7 +70,7 @@ bool RevSimpleCoProc::Reset(){
 bool RevSimpleCoProc::ClockTick(SST::Cycle_t cycle){
 
   if(!InstQ.empty()){
-    uint32_t inst = InstQ.front();
+    uint32_t inst = InstQ.front().Inst;
     num_instRetired->addData(1);
     InstQ.pop();
     std::cout << "CoProcessor to execute instruction: " << std::hex << inst << std::endl; 

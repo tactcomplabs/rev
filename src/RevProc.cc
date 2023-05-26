@@ -943,7 +943,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   std::map<uint32_t,unsigned>::iterator it = CEncToEntry.find(Enc);
   if( it == CEncToEntry.end() ){
       if(coProc){
-        isCoProcInst = coProc->IssueInst(Inst);
+        isCoProcInst = coProc->IssueInst(feature, &RegFile[threadToExec], mem, Inst);
       }
       if(isCoProcInst){ 
         //Create NOP - ADDI x0, x0 0
@@ -1508,7 +1508,7 @@ RevInst RevProc::DecodeInst(){
     it = EncToEntry.find(Enc);
     if( it == EncToEntry.end() ){
       if(coProc){
-        isCoProcInst = coProc->IssueInst(Inst);
+        isCoProcInst = coProc->IssueInst(feature, &RegFile[threadToExec], mem, Inst);
       }
       if(isCoProcInst){ 
         //Create NOP - ADDI x0, x0 0
@@ -1532,7 +1532,7 @@ RevInst RevProc::DecodeInst(){
 
   if( Entry > (InstTable.size()-1) ){
       if(coProc){
-        isCoProcInst = coProc->IssueInst(Inst);
+        isCoProcInst = coProc->IssueInst(feature, &RegFile[threadToExec], mem, Inst);
       }
       if(isCoProcInst){ 
         //Create NOP - ADDI x0, x0 0

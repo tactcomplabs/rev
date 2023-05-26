@@ -720,18 +720,18 @@ namespace SST{
       static bool fmvwx(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&R->RV32[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->DPF[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->DPF[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&R->RV32[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->SPF[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->RV64[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->SPF[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }

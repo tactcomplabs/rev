@@ -29,6 +29,9 @@
 
 // -- RevCPU Headers
 #include "RevOpts.h"
+#include "RevFeature.h"
+#include "RevMem.h"
+#include "RevInstTable.h"
 
 namespace SST::RevCPU {
   class RevCoProc;
@@ -54,7 +57,7 @@ namespace SST {
 
       /// RevCoProc: default destructor
       virtual ~RevCoProc();                               /// RevCoProc: Destructor
-      virtual bool IssueInst(uint32_t inst) = 0;          /// RevCoProc: Instruction Interface to RevCore
+      virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst) = 0;          /// RevCoProc: Instruction Interface to RevCore
       virtual bool Reset() = 0;                           /// RevCoProc: Reset - called on startup
       virtual bool Teardown() = 0;                        /// RevCoProc: Teardown - called when associated RevProc completes 
       virtual bool ClockTick(SST::Cycle_t cycle) = 0;     /// RevCoProc: Clock - can be called by SST or by overriding RevCPU
@@ -108,7 +111,7 @@ namespace SST {
       void registerStats();
 
       /// RevSimpleCoProc: Enqueue Inst into the InstQ and return
-      virtual bool IssueInst(uint32_t Inst);
+      virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst);
 
       /// RevSimpleCoProc: Reset the co-processor by emmptying the InstQ
       virtual bool Reset();
@@ -120,11 +123,28 @@ namespace SST {
 
       private:
        
+       class RevCoProcInst {
+        public:
+        RevCoProcInst() : Inst(0), Feature(nullptr), RegFile(nullptr), Mem(nullptr) {};
+        RevCoProcInst(uint32_t inst, RevFeature* F, RevRegFile* R, RevMem* M) : 
+            Inst(inst), Feature(F), RegFile(R), Mem(M) {};
+        RevCoProcInst(const RevCoProcInst& rhs){
+          Inst    = rhs.Inst;
+          Feature = rhs.Feature;
+          RegFile = rhs.RegFile;
+          Mem     = rhs.Mem;
+        };
+        uint32_t      Inst;
+        RevFeature*   Feature;
+        RevRegFile*   RegFile;
+        RevMem*       Mem;
+       };
+
        /// RevSimpleCoProc: Total number of instructions retired
        Statistic<uint64_t>* num_instRetired;                       
 
        /// Queue of instructions sent from attached RevProc
-       std::queue<uint32_t> InstQ;
+       std::queue<RevCoProcInst> InstQ;
 
     }; //class RevSimpleCoProc
   };//namespace RevCPU
