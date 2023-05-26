@@ -13,7 +13,8 @@
 .PHONY: src
 
 EXAMPLE=file-io
-CC=riscv64-unknown-elf-gcc
+#CC=riscv64-unknown-elf-gcc
+CC="${RVCC}"
 #ARCH=rv64g
 ARCH=rv64imafdc
 
