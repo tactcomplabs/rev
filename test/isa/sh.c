@@ -28,17 +28,22 @@ int main(int argc, char **argv){
   TEST_ST_OP( 4, lw, sh, 0xffffffffbeef0aa0, 4, tdat );
   TEST_ST_OP( 5, lh, sh, 0xffffffffffffa00a, 6, tdat );
 
+  TEST_ST_OP( 6, lhu, sh, 0x0000000000002345,  0, tdat4 );
+  TEST_ST_OP( 7, lwu, sh, 0x0000000023456789, -2, tdat4 ); 
+  TEST_ST_OP( 8, lhu, sh, 0x0000000000001337,  2, tdat4 );
+  TEST_ST_OP( 9, ld, sh,  0xBEEF133723456789,  -2, tdat4 );  
+  
   // # Test with negative offset
 
-  TEST_ST_OP( 6, lh, sh, 0x00000000000000aa, -6, tdat8 );
-  TEST_ST_OP( 7, lh, sh, 0xffffffffffffaa00, -4, tdat8 );
-  TEST_ST_OP( 8, lh, sh, 0x0000000000000aa0, -2, tdat8 );
-  TEST_ST_OP( 9, lh, sh, 0xffffffffffffa00a, 0,  tdat8 );
+  TEST_ST_OP( 10, lh, sh, 0x00000000000000aa, -6, tdat8 );
+  TEST_ST_OP( 11, lh, sh, 0xffffffffffffaa00, -4, tdat8 );
+  TEST_ST_OP( 12, lh, sh, 0x0000000000000aa0, -2, tdat8 );
+  TEST_ST_OP( 13, lh, sh, 0xffffffffffffa00a, 0,  tdat8 );
   
  
  //# Test with a negative base
 
-  TEST_CASE( 10, x5, 0x5678, \
+  TEST_CASE( 14, x5, 0x5678, \
     ASM_GEN(la  x1, tdat9); \
     ASM_GEN(li  x2, 0x12345678); \
     ASM_GEN(addi x4, x1, -32); \
@@ -47,7 +52,7 @@ int main(int argc, char **argv){
   )
 
   //# Test with unaligned base 
-  TEST_CASE( 11, x5, 0x3098, \
+  TEST_CASE( 15, x5, 0x3098, \
     ASM_GEN(la  x1, tdat9); \
     ASM_GEN(li  x2, 0x00003098); \
     ASM_GEN(addi x1, x1, -5); \
