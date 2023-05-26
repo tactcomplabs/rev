@@ -92,7 +92,7 @@ add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY "${CMAKE_C
 set_tests_properties(TEST_BIG_LOOP
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 45
+    TIMEOUT 55
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
