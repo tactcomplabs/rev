@@ -191,9 +191,9 @@ namespace SST{
         uint64_t tmp2 = 0x00ull;
 
         std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint64_t));
-        tmp &= ~(1<<63);
+        tmp &= ~(1ULL<<63);
         std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint64_t));
-        tmp |= (tmp2&(1<<63));
+        tmp |= (tmp2&(1ULL<<63));
         std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(double));
 
         if( F->IsRV32() ){
@@ -209,10 +209,10 @@ namespace SST{
         uint64_t tmp2 = 0x00ull;
 
         std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint64_t));
-        tmp &= ~(1<<63);
+        tmp &= ~(1ULL<<63);
         std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint64_t));
-        tmp2 ^= ~(1<<63);
-        tmp |= (tmp2&(1<<63));
+        tmp2 ^= ~(1ULL<<63);
+        tmp |= (tmp2&(1ULL<<63));
         std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(double));
 
         if( F->IsRV32() ){
@@ -228,9 +228,9 @@ namespace SST{
         uint64_t tmp2 = 0x00ull;
 
         std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint64_t));
-        tmp &= ~(1<<63);
+        tmp &= ~(1ULL<<63);
         std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint64_t));
-        tmp |= ((tmp & (1<<63) )^(tmp2 & (1<<63)));
+        tmp |= ((tmp & (1ULL<<63) )^(tmp2 & (1ULL<<63)));
         std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(double));
 
         if( F->IsRV32() ){

@@ -277,7 +277,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   unsigned symtabidx = 0;
 
   for( unsigned i=0; i<eh->e_shnum; i++ ){
-    unsigned maxlen = sh[eh->e_shstrndx].sh_size - sh[i].sh_name;
     if( sh[i].sh_type & SHT_NOBITS )
       continue;
     if( sz < sh[i].sh_offset + sh[i].sh_size )

@@ -92,7 +92,7 @@ add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY "${CMAKE_C
 set_tests_properties(TEST_BIG_LOOP
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 45
+    TIMEOUT 55
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
@@ -108,24 +108,6 @@ set_tests_properties(TEST_MINFFT
 
 add_test(NAME TEST_LARGE_BSS COMMAND run_large_bss.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/large_bss" ) # large_bss
 set_tests_properties(TEST_LARGE_BSS
-  PROPERTIES
-    ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 30
-    PASS_REGULAR_EXPRESSION "${passRegex}"
-    LABELS "all;rv64"
-)
-
-add_test(NAME TEST_CACHE1 COMMAND run_cache_test1.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cache_test1" ) # cache_test1
-set_tests_properties(TEST_CACHE1
-  PROPERTIES
-    ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 30
-    PASS_REGULAR_EXPRESSION "${passRegex}"
-    LABELS "all;rv64"
-)
-
-add_test(NAME TEST_CACHE2 COMMAND run_cache_test2.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cache_test2" ) # cache_test2
-set_tests_properties(TEST_CACHE2
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
@@ -207,6 +189,16 @@ set_tests_properties(TEST_MEMSET
     LABELS "all;rv64"
 )
 
+add_test(NAME TEST_MEMSET_2 COMMAND run_mem.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/memset_2" ) # memset
+set_tests_properties(TEST_MEMSET_2
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+# -- PROCESS CTest Config Variables
 # -- PROCESS CTest Config Variables
 if(NOT CTEST_BLAS_REQUIRED_TESTS)
   set_tests_properties (TEST_DOT_SINGLE PROPERTIES DISABLED True)

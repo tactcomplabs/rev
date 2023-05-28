@@ -223,7 +223,6 @@ bool RevOpts::GetInstTable( unsigned Core, std::string &Table ){
 }
 
 bool RevOpts::GetMemCost( unsigned Core, unsigned &Min, unsigned &Max ){
-  std::pair<unsigned,unsigned> Tmp;
   if( Core > numCores )
     return false;
 

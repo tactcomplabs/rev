@@ -1876,9 +1876,6 @@ bool RevCPU::PANProcessRDMAMailbox(){
   unsigned iter = 0;
   uint64_t Addr = PrevAddr;
   uint64_t Payload[3];
-  uint64_t CmdBuf;
-  uint64_t Buf = 0x00ull;
-  panNicEvent *TEvent = nullptr;
 
   while( !done ){
 
@@ -1967,8 +1964,6 @@ void RevCPU::ExecPANTest(){
   int dest = 1;
   uint64_t BASE = 0x00000080ull;
   uint64_t Buf = 0x00ull;
-  uint64_t Addr = _PAN_COMPLETION_ADDR_;
-  uint64_t Payload = 0x01ull;
   panNicEvent *TEvent = nullptr;
 
   switch( testStage ){

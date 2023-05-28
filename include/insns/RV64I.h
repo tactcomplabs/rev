@@ -95,7 +95,9 @@ namespace SST{
         M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &val,
                     REVMEM_FLAGS(RevCPU::RevFlag::F_ZEXT64));
-        ZEXT(R->RV64[Inst.rd], (uint64_t)val, 64);
+        R->RV64[Inst.rd] = 0x00ULL;
+        R->RV64[Inst.rd] |= (uint64_t)(val);
+        //ZEXT64(R->RV64[Inst.rd], (uint64_t)val, 64);
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;
         return true;
@@ -135,9 +137,21 @@ namespace SST{
       }
 
       static bool srliw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        // catch the special case where IMM == 0x00; RD = RS1
+        if( (Inst.imm&0b111111) == 0x00 ){
+          R->RV64[Inst.rd] = 0x00ULL;
+          R->RV64[Inst.rd] |= (R->RV64[Inst.rs1]&0xffffffff);
+          SEXTI64(R->RV64[Inst.rd],32);
+          R->RV64_PC += Inst.instSize;
+          return true;
+        }
+
         uint32_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit unsigned value
-        ZEXT(R->RV64[Inst.rd],(srcTrunc >> (Inst.imm&0b111111))&MASK32,64);
-        SEXTI(R->RV64[Inst.rd],32);
+        uint32_t dest = (srcTrunc >> (Inst.imm&0b111111));
+        R->RV64[Inst.rd] = 0x00ULL;
+        R->RV64[Inst.rd] |= (uint64_t)(dest);
+        //ZEXT64(R->RV64[Inst.rd],(srcTrunc >> (Inst.imm&0b111111))&MASK32,64);
+        //SEXTI64(R->RV64[Inst.rd],32);
         R->RV64_PC += Inst.instSize;
         return true;
       }

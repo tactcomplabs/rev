@@ -571,14 +571,12 @@ namespace SST{
       static bool sh(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         int64_t tmp = 0;
         if( F->IsRV32() ){
-          tmp =  (uint32_t)(R->RV32[Inst.rs2]);
-          SEXTI(tmp, 16);
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
+          tmp =  (uint16_t)(R->RV32[Inst.rs2]);
+          M->WriteU16((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(tmp));
           R->RV32_PC += Inst.instSize;
         }else{
-          tmp =  (uint32_t)(R->RV64[Inst.rs2]);
-          SEXTI(tmp, 16);
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
+          tmp =  (uint16_t)(R->RV64[Inst.rs2]);
+          M->WriteU16((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(tmp));
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -600,9 +598,6 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((int32_t)(td_u32(R->RV32[Inst.rs1],32)) + (int32_t)(td_u32(Inst.imm,12)),32);
           R->RV32_PC += Inst.instSize;
         }else{
-          if(R->RV64_PC == 0x101b0 ){
-            int blah_junk= 0;
-          }
           R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],64) + td_u64(Inst.imm,12),64);
           R->RV64_PC += Inst.instSize;
         }
@@ -824,7 +819,7 @@ namespace SST{
           SEXTI(R->RV32[Inst.rd],32);
           R->RV32_PC += Inst.instSize;
         }else{
-          ZEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111)),64);
+          ZEXT64(R->RV64[Inst.rd],(R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111)),64);
           SEXTI(R->RV64[Inst.rd],64);
           R->RV64_PC += Inst.instSize;
         }
@@ -884,22 +879,33 @@ namespace SST{
         return true;  // temporarily disabled
       }
 
-      static bool ecall(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        // x17 (a7) is the code for ecall
+      static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+        // Save PC of Ecall to *epc register
         if( F->IsRV32() ){
-          uint32_t code = R->RV32[17];
-          switch( code ){
-          case 4: 
-            // execute the getc syscall
-            break;
-          default:
-            break;
-          }
+          R->RV32_SEPC = R->RV32_PC; // Save PC of instruction that raised exception
+          R->RV32_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV32_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
           R->RV32_PC += Inst.instSize;
-        }else{
-          uint64_t code = R->RV64[17];
-          R->RV64_PC += Inst.instSize;
         }
+        else {
+          /* 
+          * In reality this should be getting/setting a LOT of bits inside the 
+          * CSRs however because we are only concerned with ecall right now it's 
+          * not a concern.
+          * NOTE: Normally you would have to check if you are currently executing in 
+          *       Supervisor mode already and set RV64_MEPC instead but we don't need 
+          *       to worry about machine mode with the ecalls we are supporting
+          */
+          // R->RV64_PC += Inst.instSize; // TODO: Verify this needs to happen
+          R->RV64_SEPC = R->RV64_PC; // Save PC of instruction that raised exception
+          R->RV64_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV64_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
+          /*
+           * Trap Handler is not implemented because we only have one exception 
+           * So we don't have to worry about setting `mtvec` reg
+           */
+          R->RV64_PC += Inst.instSize;
+        } 
         return true;
       }
 
