@@ -198,6 +198,15 @@ set_tests_properties(TEST_MEMSET_2
     LABELS "all;rv64"
 )
 
+add_test(NAME MANY_CORE COMMAND run_many_core.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/many_core" ) # memset
+set_tests_properties(MANY_CORE
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 # -- PROCESS CTest Config Variables
 # -- PROCESS CTest Config Variables
 if(NOT CTEST_BLAS_REQUIRED_TESTS)

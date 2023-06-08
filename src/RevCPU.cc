@@ -67,6 +67,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   numCores = params.find<unsigned>("numCores", "1");
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
+  output.verbose(CALL_INFO, 1, 0, "Building Rev with %d cores\n", numCores);
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");

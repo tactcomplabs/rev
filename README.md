@@ -146,6 +146,20 @@ text space.  However, keep in mind, that Rev assumes no prior state when startin
 As a result, the user cannot assume that the Rev model will prepopulate any memory or register state 
 outside of what is provided when executing from ``main()``.
 
+### Multicore Execution
+As mentioned above, Rev has the ability to execute multiple, heterogeneous cores in the same 
+simulation.  However, if users seek to execute multiple, homogeneous cores, there is 
+an additional configuration option for doing so.  For example, if you seek to 
+simulate 8 homogeneous cores, set `numCores` to 8 and use the following 
+configuration parameter for the `machine` option: 
+
+    "machine" : "[CORES:RV64G]"
+
+This `CORES` option sets all 8 cores to `RV64G`.  Similarly, if you seek to start
+all the cores at the same `startAddr`, you can use the same option as follows:
+
+    "startAddr : "[CORES:0x00000000]"
+
 ### Sample Execution
 
 Executing one of the included sample tests can be performed as follows:
