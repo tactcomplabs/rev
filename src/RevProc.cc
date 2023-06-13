@@ -2412,7 +2412,12 @@ void RevProc::ECALL_setxattr(){
   size_t size = RegFile->RV64[13];
   uint64_t flags = RegFile->RV64[14];
 
+#ifdef __APPLE__
+  uint32_t position = 0;
+  uint64_t rc = setxattr(path, name, value, size, position, flags);
+#else
   uint64_t rc = setxattr(path, name, value, size, flags);
+#endif
   RegFile->RV64[10] = rc;
   return;
 }
