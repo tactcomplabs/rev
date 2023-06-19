@@ -20,6 +20,9 @@ while [ -n "$COMPLETE" ]; do
   COMPLETE=`squeue -u builduser | grep ${SLURM_ID}`
 done
 
+#-- echo the result to the log
+cat rev.jenkins.${SLURM_ID}.out
+
 #-- job has completed, test for status
 STATE=`cat slurm-${SLURM_ID}.out | grep "FAILED"`
 
