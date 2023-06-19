@@ -23,10 +23,14 @@ done
 #-- job has completed, test for status
 STATE=`cat slurm-${SLURM_ID}.out | grep "FAILED"`
 
-if [ "$STATE" ]; do
+if [ -z "$STATE" ]
+then
+  echo "TEST PASSED FOR JOB_ID = ${JOB_ID}; SLURM_JOB=${SLURM_ID}"
+  exit 0
+else
   echo "TEST FAILED FOR JOB_ID = ${JOB_ID}; SLURM_JOB=${SLURM_ID}"
   exit -1
-done;
+fi;
 
 exit 0
 #-- EOF
