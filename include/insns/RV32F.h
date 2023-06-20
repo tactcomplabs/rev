@@ -113,8 +113,8 @@ namespace SST{
 
       static bool fmadds(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) *
-                                   (float)(R->DPF[Inst.rs2]) +
+          R->DPF[Inst.rd] = (float)(((float)(R->DPF[Inst.rs1]) *
+                                   (float)(R->DPF[Inst.rs2])) +
                                    (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
@@ -122,7 +122,7 @@ namespace SST{
             R->RV64_PC += Inst.instSize;
           }
         }else{
-          R->SPF[Inst.rd] = R->SPF[Inst.rs1] * R->SPF[Inst.rs2] + R->SPF[Inst.rs3];
+          R->SPF[Inst.rd] = (R->SPF[Inst.rs1] * R->SPF[Inst.rs2]) + R->SPF[Inst.rs3];
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
           }else{
