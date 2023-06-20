@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# scripts/slurm/build.sh
+# scripts/slurm/build-gcc11.sh
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
