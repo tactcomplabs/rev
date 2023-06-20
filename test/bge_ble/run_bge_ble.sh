@@ -7,6 +7,6 @@ make
 if [ -f bge_ble.exe ]; then
   sst ./rev-bge-ble.py
 else
-  echo "Test LARGE-BSS: bge_ble.exe not Found - likely build failed"
+  echo "Test BGE_BLE: bge_ble.exe not Found - likely build failed"
   exit 1
 fi
