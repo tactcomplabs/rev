@@ -63,10 +63,12 @@ namespace SST{
         uint64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
         if( rhs == 0 ){
           R->RV64[Inst.rd] = UINT32_MAX;
+          R->RV64_PC += Inst.instSize;
           return true;
         }else if( (lhs == INT32_MIN) &&
                   ((int32_t)(rhs) == -1) ){
           R->RV64[Inst.rd] = dt_u64(lhs & MASK32,32);
+          R->RV64_PC += Inst.instSize;
           return true;
         }
         R->RV64[Inst.rd] = dt_u64((lhs/rhs)&MASK32,32);

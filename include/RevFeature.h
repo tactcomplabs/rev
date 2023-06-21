@@ -88,6 +88,9 @@ namespace SST{
       /// RevFeature: Does the device support RV64D?
       bool IsRV64D();
 
+      /// RevFeature: Returns whether RV32 or RV64 "C" is enabled
+      bool HasCompressed();
+
       /// RevFeature: Retrieve the hart of the target object
       unsigned GetHart() { return Hart; }
 

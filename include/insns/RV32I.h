@@ -381,7 +381,10 @@ namespace SST{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
+          std::cout << "RS1 = 0x" << std::hex << R->RV64[Inst.rs1] << std::dec << std::endl;
+          std::cout << "RS2 = 0x" << std::hex << R->RV64[Inst.rs2] << std::dec << std::endl;
           if( (int64_t)(R->RV64[Inst.rs1]) < (int64_t)(R->RV64[Inst.rs2]) ){
+            std::cout << "this is less than" << std::endl;
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
@@ -392,13 +395,13 @@ namespace SST{
 
       static bool bge(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          if( (int32_t)(R->RV32[Inst.rs1]) > (int32_t)(R->RV32[Inst.rs2]) ){
+          if( (int32_t)(R->RV32[Inst.rs1]) >= (int32_t)(R->RV32[Inst.rs2]) ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
-          if( (int64_t)(R->RV64[Inst.rs1]) > (int64_t)(R->RV64[Inst.rs2]) ){
+          if( (int64_t)(R->RV64[Inst.rs1]) >= (int64_t)(R->RV64[Inst.rs2]) ){
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;

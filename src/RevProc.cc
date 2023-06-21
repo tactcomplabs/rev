@@ -900,6 +900,13 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   uint64_t PC     = GetPC();
   RevInst TInst;
 
+  if( !feature->HasCompressed() ){
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Compressed instructions not enabled!\n",
+                  PC);
+
+  }
+
   ResetInst(&TInst);
 
   // decode the opcode
