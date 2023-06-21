@@ -155,8 +155,8 @@ namespace SST{
 
       static bool fnmsubs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R->DPF[Inst.rd] = (float)((-(float)(R->DPF[Inst.rs1])) *
-                                    (float)(R->DPF[Inst.rs2]) -
+          R->DPF[Inst.rd] = (float)((-((float)(R->DPF[Inst.rs1])) *
+                                    (float)(R->DPF[Inst.rs2])) +
                                     (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
@@ -164,7 +164,7 @@ namespace SST{
             R->RV64_PC += Inst.instSize;
           }
         }else{
-          R->SPF[Inst.rd] = (-R->SPF[Inst.rs1]) * R->SPF[Inst.rs2] - R->SPF[Inst.rs3];
+        R->SPF[Inst.rd] = (-(R->SPF[Inst.rs1]) * R->SPF[Inst.rs2]) + R->SPF[Inst.rs3];
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
           }else{
@@ -176,8 +176,8 @@ namespace SST{
 
       static bool fnmadds(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R->DPF[Inst.rd] = (float)((-(float)(R->DPF[Inst.rs1])) *
-                                    (float)(R->DPF[Inst.rs2]) +
+          R->DPF[Inst.rd] = (float)(-(((float)(R->DPF[Inst.rs1])) *
+                                    (float)(R->DPF[Inst.rs2]) ) -
                                     (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
@@ -185,7 +185,7 @@ namespace SST{
             R->RV64_PC += Inst.instSize;
           }
         }else{
-          R->SPF[Inst.rd] = (-R->SPF[Inst.rs1]) * R->SPF[Inst.rs2] + R->SPF[Inst.rs3];
+          R->SPF[Inst.rd] = (-(R->SPF[Inst.rs1]) * R->SPF[Inst.rs2]) - R->SPF[Inst.rs3];
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
           }else{
@@ -526,19 +526,19 @@ namespace SST{
       static bool fmvxw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&R->DPF[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->RV32[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->DPF[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
             SEXTI(R->RV64[Inst.rd],32);
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&R->SPF[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->RV32[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->SPF[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->RV64[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
             SEXTI(R->RV64[Inst.rd],32);
             R->RV64_PC += Inst.instSize;
           }
@@ -720,18 +720,18 @@ namespace SST{
       static bool fmvwx(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&R->RV32[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->DPF[Inst.rd],&R->RV32[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->DPF[Inst.rd],&R->RV64[Inst.rs1],sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&R->RV32[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->SPF[Inst.rd],&R->RV32[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->RV64[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->SPF[Inst.rd],&R->RV64[Inst.rs1],sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }
