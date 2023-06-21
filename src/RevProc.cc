@@ -2377,10 +2377,10 @@ void RevProc::InitEcallTable(){
     {49,  &RevProc::ECALL_chdir},          
     {54,  &RevProc::ECALL_fchownat},        // Not implemented
     {55,  &RevProc::ECALL_fchown},          // Not implemented
+    {56,  &RevProc::ECALL_openat},          
     {57,  &RevProc::ECALL_close},           // Not implemented
     {63,  &RevProc::ECALL_read},            // Not implemented
     {64,  &RevProc::ECALL_write},          
-    {65,  &RevProc::ECALL_openat},          
     {77,  &RevProc::ECALL_tee},             // Not implemented
     {81,  &RevProc::ECALL_sync},            // Not implemented
     {82,  &RevProc::ECALL_fsync},           // Not implemented

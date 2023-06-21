@@ -209,6 +209,7 @@ namespace SST{
       void ECALL_fdatasync(); // 83
       void ECALL_fchownat(); // 54
       void ECALL_fchown(); // 55
+      void ECALL_openat(); // 56
       void ECALL_getcwd(); // 17
       void ECALL_chdir(); // 49
       void ECALL_mkdir(); // Uses mkdirat under the hood
@@ -217,7 +218,6 @@ namespace SST{
       void ECALL_write(); // 64
       void ECALL_waitid(); // 95
       void ECALL_open(); // uses open under the hood
-      void ECALL_openat(); // 65
       void ECALL_close(); // 57
       void ECALL_mmap(); // 222
       void ECALL_dup(); // 23 
