@@ -75,6 +75,16 @@ asm volatile("test_%0:" : :"I"(testnum)); \
       ASM_GEN_MASK(x1, val1); \
       ASM_GEN_SEXT(inst, x1, x1, imm); \
     )
+
+#define TEST_FP_OP_1S_INTERNAL( testnum, flags, result, val1, code... ) \
+  asm volatile("test_%0:" : :"I"(testnum)); \
+  asm volatile("li  gp, %0;" : : "I"(testnum)); \
+  asm volatile("la  a0, test_%0_data;" : : "I"(testnum)) ;\
+  ASM_GEN(flw f0, 0(a0)); \
+  ASM_GEN(lw a3, 4(a0)); \
+  code; \
+  ASM_GEN(bne a0, a3, fail); 
+
 #define TEST_FP_OP_2S_INTERNAL( testnum, flags, result, val1, val2, code... ) \
   asm volatile("test_%0:" : :"I"(testnum)); \
   asm volatile("li  gp, %0;" : : "I"(testnum)); \
@@ -85,13 +95,6 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   code; \
   ASM_GEN(bne a0, a3, fail); 
 
-  //auipc      a0, %got_pcrel_hi(symbol) // R_RISCV_GOT_HI20
-	//addi       a0, a0, %pcrel_lo(label)  // R_RISCV_PCREL_LO12_I
- // lui        a0, %hi(symbol)     // R_RISCV_HI20
-//	addi       a0, a0, %lo(symbol) // R_RISCV_LO12_I
-  //asm volatile("auipc  a0, %%pcrel_hi(test_%0_data);" : : "I"(testnum)) ;
-  //asm volatile("addi  a0, a0, %%pcrel_lo(test_%0_data);" : : "I"(testnum)) ;
-  //asm volatile("la  a0, test_%0_data;" : : "I"(testnum)) ;
 #define TEST_FP_OP_3S_INTERNAL( testnum, flags, result, val1, val2, val3, code... ) \
   asm volatile("test_%0:" : :"I"(testnum)); \
   asm volatile("li  gp, %0;" : : "I"(testnum)); \
@@ -119,11 +122,22 @@ asm volatile("test_%0:" : :"I"(testnum)); \
 #define TEST_FP_OP_DATA_END \
   ASM_GEN_NV(.popsection);
 
+  #define TEST_FP_OP_DATA1(testnum, result, val1) \
+  ASM_TEST_NUM_GEN(testnum); \
+  ASM_GEN_NV(.float val1); \
+  ASM_GEN_NV(.float result); \
+
   #define TEST_FP_OP_DATA2(testnum, result, val1, val2) \
   ASM_TEST_NUM_GEN(testnum); \
   ASM_GEN_NV(.float val1); \
   ASM_GEN_NV(.float val2); \
   ASM_GEN_NV(.float result); \
+
+  #define TEST_FP_OP_DATA2_CMP(testnum, result, val1, val2) \
+  ASM_TEST_NUM_GEN(testnum); \
+  ASM_GEN_NV(.float val1); \
+  ASM_GEN_NV(.float val2); \
+  ASM_GEN_NV(.dword result); \
 
   #define TEST_FP_OP_DATA3(testnum, result, val1, val2, val3) \
   ASM_TEST_NUM_GEN(testnum); \
@@ -132,6 +146,10 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   ASM_GEN_NV(.float val3); \
   ASM_GEN_NV(.float result); \
 
+#define TEST_FP_OP1_S( testnum, inst, flags, result, val1 ) \
+  TEST_FP_OP_1S_INTERNAL( testnum, flags, float result, val1, \
+                    ASM_GEN(inst f3, f0); \
+                    ASM_GEN(fmv.x.s a0, f3));
 
 #define TEST_FP_OP2_S( testnum, inst, flags, result, val1, val2 ) \
   TEST_FP_OP_2S_INTERNAL( testnum, flags, float result, val1, val2, \
@@ -142,6 +160,10 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   TEST_FP_OP_3S_INTERNAL( testnum, flags, float result, val1, val2, val3, \
                     ASM_GEN(inst f3, f0, f1, f2); \
                     ASM_GEN(fmv.x.s a0, f3));
+
+#define TEST_FP_CMP_OP_S( testnum, inst, flags, result, val1, val2 ) \
+  TEST_FP_OP_2S_INTERNAL( testnum, flags, word result, val1, val2, \
+                    ASM_GEN(inst a0, f0, f1));
 
 #define TEST_LD_OP( testnum, inst, result, offset, base ) \
   TEST_CASE( testnum, x14, result, \
@@ -172,16 +194,5 @@ asm volatile("test_%0:" : :"I"(testnum)); \
 
 #define RVTEST_DATA_END \
        ASM_GEN_NV(.align 4; .global end_signature; end_signature:);
-
-#define RVTEST_DATA_NAMED_BEGIN(name)                                               \
-        ASM_GEN_NV(.space 1024) \
-        ASM_GEN_NV(.pushsection .name ,"aw",@progbits);                            \
-        ASM_GEN_NV(.align 6; .global name; name: .dword 0; .size name, 8);    \
-        ASM_GEN_NV(.align 6; .global fromhost7; fromhost7: .dword 0; .size fromhost7, 8);\
-        ASM_GEN_NV(.popsection);                                                    \
-        ASM_GEN_NV(.align 4; .global begin_signature7; begin_signature7:);
-
-#define RVTEST_DATA_NAMED_END(name) \
-       ASM_GEN_NV(.align 4; .global end_signature7; end_signature7:);
 
 #endif
