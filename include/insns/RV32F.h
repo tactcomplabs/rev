@@ -530,7 +530,8 @@ namespace SST{
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
-            SEXTI(R->RV64[Inst.rd],32);
+            ZEXTI64(R->RV64[Inst.rd],32);
+            SEXTI64(R->RV64[Inst.rd],32);
             R->RV64_PC += Inst.instSize;
           }
         }else{
@@ -539,7 +540,8 @@ namespace SST{
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&R->RV64[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
-            SEXTI(R->RV64[Inst.rd],32);
+            ZEXTI64(R->RV64[Inst.rd],32);
+            SEXTI64(R->RV64[Inst.rd],32);
             R->RV64_PC += Inst.instSize;
           }
         }
