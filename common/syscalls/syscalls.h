@@ -168,7 +168,7 @@ int rev_write(unsigned int fd, const char *buf, size_t nbytes){
 int rev_openat(int dfd, const char *filename,  unsigned short mode){          
   int rc;
     asm volatile (
-      "li a7, 65\n\t"
+      "li a7, 56\n\t"
       "ecall \n\t"
       "mv %0, a0" : "=r" (rc)
     );
