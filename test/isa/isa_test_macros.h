@@ -127,6 +127,11 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   ASM_GEN_NV(.float val1); \
   ASM_GEN_NV(.float result); \
 
+  #define TEST_INT_FP_OP_DATA1(testnum, result, val1) \
+  ASM_TEST_NUM_GEN(testnum); \
+  ASM_GEN_NV(.float val1); \
+  ASM_GEN_NV(.dword result); \
+
   #define TEST_FP_OP_DATA2(testnum, result, val1, val2) \
   ASM_TEST_NUM_GEN(testnum); \
   ASM_GEN_NV(.float val1); \
@@ -189,6 +194,10 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   ASM_GEN(inst f0, a0); \
   ASM_GEN(fmv.x.s a0, f0); \
   ASM_GEN(bne a0, a3, fail); 
+
+#define TEST_FP_INT_OP_S( testnum, inst, flags, result, val1, rm ) \
+  TEST_FP_OP_1S_INTERNAL( testnum, flags, word result, val1,  \
+                    ASM_GEN(inst a0, f0, rm));
 
 #define TEST_LD_OP( testnum, inst, result, offset, base ) \
   TEST_CASE( testnum, x14, result, \

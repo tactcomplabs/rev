@@ -24,7 +24,7 @@ all:$(ISA_EXES)
 $(ISA_TESTS): $(ISA_EXES)
 %.exe:%.c $(ISA_HEADERS)
 	#$(CC) -march=$(ARCH) -O0 -o $@ $< -T ./test.ld -static -lm
-	$(CC) $(RISCV_GCC_OPTS)  -o $@ $< -T ./test.ld -static -nostdlib -lm
+	$(CC) $(RISCV_GCC_OPTS)  -o $@ $< -T ./test.ld -static -nostdlib -lm --entry main
 clean:
 	rm -Rf *.exe
 

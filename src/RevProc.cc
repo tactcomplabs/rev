@@ -235,6 +235,8 @@ bool RevProc::SeedInstTable(){
       EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),true);
     }else{
       EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64F(feature,RegFile,mem,output)),false);
+
     }
 #if 0
     if( feature->GetXlen() == 64 ){
@@ -278,6 +280,8 @@ uint32_t RevProc::CompressEncoding(RevInstEntry Entry){
   Value |= (uint32_t)((uint32_t)(Entry.funct3)<<8);
   Value |= (uint32_t)((uint32_t)(Entry.funct7)<<11);
   Value |= (uint32_t)((uint32_t)(Entry.imm12)<<18);
+  Value |= (uint32_t)((uint32_t)(Entry.fpcvtOp)<<30);  //this is a 5 bit field, but only the lower two bits are used, so it *just* fits 
+                                                          //without going to a uint64
 
   return Value;
 }
@@ -1494,6 +1498,12 @@ RevInst RevProc::DecodeInst(){
       Funct7 = ((Inst >> 26) & 0b1111111);
   }
 
+  uint32_t fcvtOp = 0;
+  //Special encodings for FCVT instructions
+  if( (0b1010011 == Opcode) && ((0b1100000 == Funct7) || (0b1101000 == Funct7)) ){
+      fcvtOp =  DECODE_RS2(Inst);
+  }
+
   // Stage 5: Determine if we have an imm12 field
   uint32_t Imm12 = 0x00ul;
   if( (inst42 == 0b100) && (inst65 == 0b11)  && (Funct3 == 0)){
@@ -1505,6 +1515,7 @@ RevInst RevProc::DecodeInst(){
   Enc |= (Funct3<<8);
   Enc |= (Funct7<<11);
   Enc |= (Imm12<<18);
+  Enc |= (fcvtOp<<30);
 
   // Stage 7: Look up the value in the table
   std::map<uint32_t,unsigned>::iterator it;
@@ -1517,6 +1528,7 @@ RevInst RevProc::DecodeInst(){
     Enc |= Opcode;
     Enc |= (Funct7<<11);
     Enc |= (Imm12<<18);
+    Enc |= (fcvtOp<<30);
     it = EncToEntry.find(Enc);
     if( it == EncToEntry.end() ){
       // failed to decode the instruction
