@@ -342,16 +342,18 @@ namespace SST{
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1 << 31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1 << 31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
@@ -360,16 +362,18 @@ namespace SST{
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1 << 31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1<<31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
@@ -383,32 +387,34 @@ namespace SST{
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
+            tmp2 &= (1<<31);
+            tmp2 = (tmp & (1 << 31)) ^ tmp2;
+            tmp = (tmp & ~(1<<31)) | tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
+            tmp2 &= (1<<31);
+            tmp2 = (tmp & (1 << 31)) ^ tmp2;
+            tmp = (tmp & ~(1<<31)) | tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
-            tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
+            tmp2 &= (1<<31);
+            tmp2 = (tmp & (1 << 31)) ^ tmp2;
+            tmp = (tmp & ~(1<<31)) | tmp2;
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
