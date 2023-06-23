@@ -220,6 +220,8 @@ namespace SST{
       void ECALL_open(); // uses open under the hood
       void ECALL_close(); // 57
       void ECALL_mmap(); // 222
+      void ECALL_brk(); // 213
+      void ECALL_munmap(); // 214
       void ECALL_dup(); // 23 
       void ECALL_dup3(); // 24
       void ECALL_exit(); // 93

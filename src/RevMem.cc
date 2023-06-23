@@ -153,12 +153,18 @@ unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
   return R;
 }
 
+void RevMem::FlushTLB(){
+  TLB.clear();
+  LRUQueue.clear();
+  return;
+}
+
 uint64_t RevMem::SearchTLB(uint64_t vAddr){
   auto it = TLB.find(vAddr);
   if (it == TLB.end()) {
       // TLB Miss :(
       memStats.TLBMisses++;
-      return -1;
+      return _INVALID_ADDR_;
   } else {
     memStats.TLBHits++;
     // Move the accessed vAddr to the front of the LRU list
@@ -196,7 +202,7 @@ void RevMem::AddToTLB(uint64_t vAddr, uint64_t physAddr){
 
 uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   uint64_t physAddr = SearchTLB(vAddr);
-  if( physAddr == -1 ){
+  if( physAddr == _INVALID_ADDR_ ){
     if(pageMap.count(pageNum) == 0){
       // First touch of this page, mark it as in use
       pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
