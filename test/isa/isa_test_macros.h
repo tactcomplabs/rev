@@ -199,6 +199,12 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   TEST_FP_OP_1S_INTERNAL( testnum, flags, word result, val1,  \
                     ASM_GEN(inst a0, f0, rm));
 
+#define TEST_FCLASS_S(testnum, correct, input) \
+  TEST_CASE(testnum, a0, correct, \
+        ASM_GEN(li a0, input); \
+        ASM_GEN(fmv.s.x fa0, a0); \
+        ASM_GEN(fclass.s a0, fa0); )
+
 #define TEST_LD_OP( testnum, inst, result, offset, base ) \
   TEST_CASE( testnum, x14, result, \
     ASM_GEN(li  x15, result);  \

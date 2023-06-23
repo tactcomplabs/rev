@@ -13,6 +13,7 @@
 
 #include "../RevInstTable.h"
 #include "../RevExt.h"
+#include <cmath>
 
 using namespace SST::RevCPU;
 
@@ -661,16 +662,39 @@ namespace SST{
 
       static bool fclasss(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         // see: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
+        uint32_t fpclass = 0;
+        float val = R->SPF[Inst.rs1];
+        switch (std::fpclassify(val)){
+          case FP_INFINITE:
+            fpclass = std::signbit(val) ? 1 : (1 << 7);
+            break;
+          case FP_NAN:
+            fpclass = (1 << 8);  //this should distinguish between sNaN and qNaN... but doesn't. Sorry.
+            break;
+          case FP_NORMAL:
+            fpclass = std::signbit(val) ? (1 << 1) : (1 << 6);
+            break;
+          case FP_SUBNORMAL:
+            fpclass = std::signbit(val) ? (1 << 2) : (1 << 5);
+            break;
+          case FP_ZERO:
+            fpclass = std::signbit(val) ? (1 << 3) : (1 << 4);
+            break;
+        }
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
+            R->RV32[Inst.rd] = fpclass; 
             R->RV32_PC += Inst.instSize;
           }else{
+            R->RV64[Inst.rd] = (uint64_t)(fpclass); 
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
+            R->RV32[Inst.rd] = fpclass; 
             R->RV32_PC += Inst.instSize;
           }else{
+            R->RV64[Inst.rd] = (uint64_t)(fpclass); 
             R->RV64_PC += Inst.instSize;
           }
         }
