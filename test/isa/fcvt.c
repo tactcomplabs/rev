@@ -51,17 +51,17 @@ asm volatile("li ra, 0x0");
 
 asm(".data");
 RVTEST_DATA_BEGIN       
-  TEST_FP_OP_DATA1( 2,  2.0,  2);
-  TEST_FP_OP_DATA1( 3,                 -2.0, -2);
+  TEST_FP_INT_OP_DATA1( 2,  2.0,  2);
+  TEST_FP_INT_OP_DATA1( 3,                 -2.0, -2);
 
-  TEST_FP_OP_DATA1( 4,                 2.0,  2);
-  TEST_FP_OP_DATA1( 5,         4.2949673e9, -2);
+  TEST_FP_INT_OP_DATA1( 4,                 2.0,  2);
+  TEST_FP_INT_OP_DATA1( 5,         4.2949673e9, -2);
 
-  TEST_FP_OP_DATA1( 6,                  2.0,  2);
-  TEST_FP_OP_DATA1( 7,                 -2.0, -2);
+  TEST_FP_INT_OP_DATA1( 6,                  2.0,  2);
+  TEST_FP_INT_OP_DATA1( 7,                 -2.0, -2);
 
-  TEST_FP_OP_DATA1( 8,                 2.0,  2);
-  TEST_FP_OP_DATA1( 9,        1.8446744e19, -2);
+  TEST_FP_INT_OP_DATA1( 8,                 2.0,  2);
+  TEST_FP_INT_OP_DATA1( 9,        1.8446744e19, -2);
 RVTEST_DATA_END
 
 
