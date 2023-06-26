@@ -80,7 +80,6 @@ void RevThreadCtx::AddFD(int fd){
 /* See if file descriptor exists/is owned by Ctx */
 bool RevThreadCtx::FindFD(int fd){
   /* Check if the fd is owned by the current ctx */
-  std::cout << "FD = " << fd << std::endl;
   auto it = std::find(fildes.begin(), fildes.end(), fd);
   if( it != fildes.end() ){
     return true;

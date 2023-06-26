@@ -2906,7 +2906,6 @@ void RevProc::ECALL_openat(){
     filename = filename + filenameChar;
     i++;
   } while( filename.back() != '\0');
-  std::cout << filename << std::endl;
 
   dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
 
