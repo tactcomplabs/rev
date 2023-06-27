@@ -16,7 +16,6 @@
 #include <sst/core/component.h>
 #include <sst/core/statapi/stataccumulator.h>
 
-
 // -- Standard Headers
 #include <iostream>
 #include <fstream>
@@ -116,55 +115,59 @@ namespace SST{
 
       RevMem& GetMem(){ return *mem; }
 
-      /* Software Process Table */
-      /* NOTE: Not all of these are needed/work */
-      bool AddCtx(RevThreadCtx& Ctx);
-      uint32_t CreateChildCtx(); // returns the childs pid
+      /// RevProc: Add a RevThreadCtx to the Proc's ThreadTable
+      bool AddCtx(RevThreadCtx& Ctx); 
+  
+      /// RevProc: Create a new RevThreadCtx w/ Parent is currently executing thread
+      uint32_t CreateChildCtx(); 
+
+      /// RevProc: Get the ThreadState of a thread (pid) from the ThreadTable (Unused)
       ThreadState GetThreadState(uint32_t pid);
+  
+      /// RevProc: Set the ThreadState of a thread (pid) from the ThreadTable (Unused)
       bool SetState(ThreadState, uint32_t pid);
+
+      /// RevProc: Used to pause RevThreadCtx w/ PID = pid (Unused)
       bool PauseThread(uint32_t pid);
+  
+      /// RevProc: Used to ready RevThreadCtx w/ PID = pid (Unused)
       bool ReadyThread(uint32_t pid);
 
-      /* Returns the current HartToExec active pid */
+      /// RevProc: Returns the current HartToExec active pid 
       uint32_t GetActivePID(){ return ActivePIDs.at(HartToExec); } 
-      /* Returns the active pid for HartID */
+
+      /// RevProc: Returns the active pid for HartID 
       uint32_t GetActivePID(const uint32_t HartID){ return ActivePIDs.at(HartID); } 
 
-      /* Returns the current HartToExec active pid */
-      // void UpdateRegFile(const uint32_t NewPID){ RegFiles.at(HartToExec) = ThreadTable.at(NewPID).GetRegFile();}
-
-      /* Returns the active pid for HartID */
-      // RevRegFile* GetRegFile(uint32_t pid){ return ThreadTable.at(pid).RegFile; }
-
-      const char&& GetThreadMemRef(uint32_t pid);
-  
+      /// RevProc: Returns full list of PIDs (keys in ThreadTable) 
       std::vector<uint32_t> GetPIDs();
 
+      /// RevProc: Retires currently executing thread & then swaps to its parent. If no parent terminates program
       uint32_t RetireAndSwap(); // Returns new pid
-      
-      bool UpdateCtx(); // FIXME: This will change when RegFiles get changed to pointers
-      
-      std::unordered_map<uint32_t, std::shared_ptr<RevThreadCtx>> ThreadTable; ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
-      
-      bool LoadCtx(uint32_t pid);
-    
-    //   RevThreadCtx& GetCtx(uint32_t PID){ return ThreadTable.at(PID); }
-    //   RevThreadCtx& GetActiveCtx(){ return ThreadTable.at(ActivePIDs.at(HartToExec));}; ///< RevProc: Get the active ThreadCtx of HartToExec
-    //   RevThreadCtx& GetActiveCtx(uint8_t HartID){return ThreadTable.at(ActivePIDs.at(HartID)); } ///< RevProc: Get the active ThreadCtx of HartID
-
+  
+      /// RevProc: Used to raise an exception indicating a thread switch is coming (NewPID = PID of Ctx to switch to)
       void CtxSwitchAlert(uint32_t NewPID) { NextPID=NewPID;PendingCtxSwitch = true; }
 
       uint32_t HartToExecPID();
       uint32_t HartToDecodePID();
 
+      ///< RevProc: Returns pointer to current ctx loaded into HartToExec
       std::shared_ptr<RevThreadCtx> HartToExecCtx();
+  
+      ///< RevProc: Returns pointer to current ctx loaded into HartToDecode
       std::shared_ptr<RevThreadCtx> HartToDecodeCtx();
-
-      bool ChangeActivePID(uint32_t PID); ///< RevProc: Change HartToExec active pid
-      bool ChangeActivePID(uint32_t PID, uint16_t HartID); ///< RevProc: Change HartID active pid
+  
+      ///< RevProc: Change HartToExec active pid
+      bool ChangeActivePID(uint32_t PID); 
+  
+      ///< RevProc: Change HartID active pid
+      bool ChangeActivePID(uint32_t PID, uint16_t HartID); 
 
       bool UpdateRegFile();
-      bool UpdateRegFile(uint16_t HartID);
+      // bool UpdateRegFile(uint16_t HartID);
+
+      ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
+      std::unordered_map<uint32_t, std::shared_ptr<RevThreadCtx>> ThreadTable; 
 
     private:
       bool Halted;              ///< RevProc: determines if the core is halted
@@ -191,10 +194,10 @@ namespace SST{
       RevProcStats Stats;       ///< RevProc: collection of performance stats
       RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
-      RevRegFile* RegFile = nullptr;
+      RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
       /*
-      * New Ecall Stuff
+      * ECALLs 
       */
       void ECALL_setxattr(); // 5
       void ECALL_clone(); // 220
@@ -236,16 +239,19 @@ namespace SST{
       void ECALL_timer_settime(); // 409
 
 
-      void DumpARegs(bool is32);
+      /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
       std::unordered_map<uint32_t, std::function<void(RevProc*)>> Ecalls;
+      
+      /// RevProc: Initialize all of the ecalls inside the above table
       void InitEcallTable();
+      
+      /// RevProc: Execute the Ecall based on the code loaded in RegFile->RV64_SCAUSE
       void ExecEcall();
 
-      // std::vector<RevRegFile*> RegFiles; // TODO: Maybe rename
+      /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
       RevRegFile* GetRegFile(uint16_t HartID);
-      // Return current executing HART regfile
-      // RevRegFile* RegFile();
       
+      /// RevProc: Vector of PIDs where index of ActivePIDs is the pid of the RevThreadCtx loaded into Hart #Idx
       std::vector<uint32_t> ActivePIDs;
 
       RevInst Inst;             ///< RevProc: instruction payload

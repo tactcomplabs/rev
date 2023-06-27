@@ -231,20 +231,20 @@ namespace SST{
 
     /* Ref: RISC-V Priviledged Spec (pg. 39) */
     enum EXCEPTION_CAUSE {
-      MISALIGNED_INST_ADDR = 0,
-      INST_ACCESS_FAULT = 1,
-      ILLEGAL_INST = 2,
-      BREAKPOINT = 3,
-      LOAD_ADDR_MISALIGNED = 4,
-      LOAD_ACCESS_FAULT = 5,
+      MISALIGNED_INST_ADDR      = 0,
+      INST_ACCESS_FAULT         = 1,
+      ILLEGAL_INST              = 2,
+      BREAKPOINT                = 3,
+      LOAD_ADDR_MISALIGNED      = 4,
+      LOAD_ACCESS_FAULT         = 5,
       STORE_AMO_ADDR_MISALIGNED = 6,
-      STORE_AMO_ACCESS_FAULT = 7,
-      ECALL_USER_MODE = 8,
-      ECALL_SUPERVISOR_MODE = 9,
-      ECALL_MACHINE_MODE = 11,
-      INST_PAGE_FAULT = 12,
-      LOAD_PAGE_FAULT = 13,
-      STORE_AMO_PAGE_FAULT = 15
+      STORE_AMO_ACCESS_FAULT    = 7,
+      ECALL_USER_MODE           = 8,
+      ECALL_SUPERVISOR_MODE     = 9,
+      ECALL_MACHINE_MODE        = 11,
+      INST_PAGE_FAULT           = 12,
+      LOAD_PAGE_FAULT           = 13,
+      STORE_AMO_PAGE_FAULT      = 15
     };
 
     typedef struct{
@@ -252,10 +252,6 @@ namespace SST{
       uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
       float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
       double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
-  
-      // uint32_t RV32_CSR[_REV_NUM_REGS_];    ///< RevRegFile: RV32 CSR register file (Incomplete)
-      // uint64_t RV64_CSR[_REV_NUM_REGS_];    ///< RevRegFile: RV64 CSR register file (Incomplete)
-      // FIXME: Not bothering with specific indices for csr registers at first 
 
       /* Supervisor Mode CSRs */
       uint64_t RV64_SSTATUS; // During ecall, previous priviledge mode is saved in this register (Incomplete)
@@ -269,7 +265,6 @@ namespace SST{
       uint32_t RV32_SCAUSE;
       uint32_t RV32_STVAL;
       uint32_t RV32_STVEC;
-      uint32_t PID;
 
       bool RV32_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
       bool RV64_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
@@ -285,8 +280,8 @@ namespace SST{
       unsigned Entry;                   ///< RevRegFile: Instruction entry
     }RevRegFile;                        ///< RevProc: register file construct
 
-    static std::bitset<_REV_HART_COUNT_>  HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-    static std::bitset<_REV_HART_COUNT_>  HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+    static std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+    static std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
     typedef enum{
       RVTypeUNKNOWN = 0,  ///< RevInstf: Unknown format
@@ -512,7 +507,7 @@ namespace SST{
                                                     RevInst)){
         InstEntry.func = func; return *this;};
 
-    };// class RevInstEntryBuilder;
+    }; // class RevInstEntryBuilder;
 
   } // namespace RevCPU
 } // namespace SST

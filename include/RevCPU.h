@@ -240,7 +240,6 @@ namespace SST {
       PanExec *PExec;                     ///< RevCPU: PAN execution context
       RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
 
-
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
       std::queue<std::pair<uint32_t,char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size,Data>
       std::list<std::pair<uint8_t,int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag,Dest>
@@ -477,6 +476,7 @@ namespace SST {
       ///         Does not push onto the send mailbox
       void PANBuildBasicSuccess(panNicEvent *event, panNicEvent *rtn);
 
+      /// RevCPU: updates sst statistics on a per core basis
       void UpdateCoreStatistics(uint16_t coreNum);
 
     }; // class RevCPU

@@ -167,8 +167,11 @@ namespace SST {
       /// RevMem: Randomly assign a memory cost
       unsigned RandCost( unsigned Min, unsigned Max );
 
+      /// RevMem: Used to access & incremenet the global software PID counter
       uint32_t GetNewThreadPID();
-      uint64_t DefaultThreadMemSize = 4*1024*1024;    ///< RevMem: default memory size allocated to new threads
+  
+      ///< RevMem: default memory size allocated to new threads (Unimplemented)
+      uint64_t DefaultThreadMemSize = 4*1024*1024;    
 
     class RevMemStats {
     public:
