@@ -30,7 +30,7 @@ REV_INCS := $(patsubst %.py,%.inc,$(wildcard *.py))
 
 all: librevcpu.so
 
-debug: CXXFLAGS += -DDEBUG -g
+debug: CXXFLAGS += -DDEBUG -g -D_REV_DEBUG_
 debug: librevcpu.so
 
 librevcpu.so: $(REV_INCS) $(REV_OBJS)
@@ -39,6 +39,8 @@ librevcpu.so: $(REV_INCS) $(REV_OBJS)
 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -c $<
 %.inc:%.py
 	od -v -t x1 < $< | sed -e 's/^[^ ]*[ ]*//g' -e '/^\s*$$/d' -e 's/\([0-9a-f]*\)[ $$]*/0x\1,/g' > $@
+uninstall:
+	sst-register -u revcpu
 install: librevcpu.so
 	sst-register revcpu revcpu_LIBDIR=$(CURDIR)
 clean:

@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "PanExec.h"
+#include "../include/PanExec.h"
 
 using namespace SST;
 using namespace RevCPU;

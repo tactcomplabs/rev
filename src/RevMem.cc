@@ -8,21 +8,41 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevMem.h"
+#include "../include/RevMem.h"
 #include <math.h>
+#include <mutex>
+
+RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
+                RevMemCtrl *Ctrl, SST::Output *Output )
+  : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output),
+    stacktop(0x00ull) {
+  // Note: this constructor assumes the use of the memHierarchy backend
+  pageSize = 262144; //Page Size (in Bytes)
+  addrShift = int(log(pageSize) / log(2.0));
+  nextPage = 0;
+
+  stacktop = _REVMEM_BASE_ + memSize;
+
+  memStats.bytesRead = 0;
+  memStats.bytesWritten = 0;
+  memStats.doublesRead = 0;
+  memStats.doublesWritten = 0;
+  memStats.floatsRead = 0;
+  memStats.floatsWritten = 0;
+}
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
-  : memSize(MemSize), opts(Opts), output(Output), physMem(nullptr), stacktop(0x00ull) {
+  : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output),
+    stacktop(0x00ull) {
 
   // allocate the backing memory
   physMem = new char [memSize];
   pageSize = 262144; //Page Size (in Bytes)
-  //pageSize = 65536; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
   nextPage = 0;
 
   if( !physMem )
-    output->fatal(CALL_INFO, -1, "Error: could not allocate backing memory");
+    output->fatal(CALL_INFO, -1, "Error: could not allocate backing memory\n");
 
   // zero the memory
   for( unsigned long i=0; i<memSize; i++ ){
@@ -40,7 +60,17 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
 }
 
 RevMem::~RevMem(){
-  delete[] physMem;
+  if( physMem )
+    delete[] physMem;
+}
+
+bool RevMem::outstandingRqsts(){
+  if( ctrl ){
+    return ctrl->outstandingRqsts();
+  }
+
+  // RevMemCtrl is not enabled; no outstanding requests
+  return false;
 }
 
 void RevMem::HandleMemFault(unsigned width){
@@ -96,7 +126,6 @@ bool RevMem::LR(unsigned Hart, uint64_t Addr){
 
 bool RevMem::SC(unsigned Hart, uint64_t Addr){
   // search the LRSC vector for the entry pair
-  std::pair<unsigned,uint64_t> Entry = std::make_pair(Hart,Addr);
   std::vector<std::pair<unsigned,uint64_t>>::iterator it;
 
   for( it = LRSC.begin(); it != LRSC.end(); ++it ){
@@ -126,10 +155,10 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t Addr){
     // First touch of this page, mark it as in use
     pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
     physAddr = (nextPage << addrShift) + ((pageSize - 1) & Addr);
-    nextPage++;
 #ifdef _REV_DEBUG_
     std::cout << "First Touch for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
 #endif
+    nextPage++;
   }else if(pageMap.count(pageNum) == 1){
     //We've accessed this page before, just get the physical address 
     physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & Addr);
@@ -141,6 +170,87 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t Addr){
   }
   return physAddr;
 }
+
+bool RevMem::FenceMem(){
+  if( ctrl ){
+    return ctrl->sendFENCE();
+  }
+  return true;  // base RevMem support does nothing here
+}
+
+bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data,
+                       StandardMem::Request::flags_t flags){
+#ifdef _REV_DEBUG_
+  std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+#endif
+
+  if(Addr == 0xDEADBEEF){
+    std::cout << "Found special write. Val = " << std::hex << *(int*)(Data) << std::dec << std::endl;
+  }
+  RevokeFuture(Addr); // revoke the future if it is present; ignore the return
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Data);
+  if((physAddr + Len) > endOfPage){
+    uint32_t span = (physAddr + Len) - endOfPage;
+    adjPageNum = ((Addr+Len)-span) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, ((Addr+Len)-span));
+#ifdef _REV_DEBUG_
+    std::cout << "Warning: Writing off end of page... " << std::endl;
+#endif
+    if( ctrl ){
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             DataMem,
+                             flags);
+    }else{
+      for( unsigned i=0; i< (Len-span); i++ ){
+        BaseMem[i] = DataMem[i];
+      }
+    }
+    BaseMem = &physMem[adjPhysAddr];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      unsigned Cur = (Len-span);
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             &(DataMem[Cur]),
+                             flags);
+    }else{
+      // write the memory using the internal RevMem model
+      unsigned Cur = (Len-span);
+      for( unsigned i=0; i< span; i++ ){
+        BaseMem[i] = DataMem[Cur];
+        Cur++;
+      }
+    }
+  }else{
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             DataMem,
+                             flags);
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i<Len; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
+    }
+  }
+  memStats.bytesWritten += Len;
+  return true;
+}
+
 
 bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
@@ -158,34 +268,85 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
   uint32_t adjPageNum = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  char *BaseMem = &physMem[physAddr]; 
+  char *BaseMem = &physMem[physAddr];
   char *DataMem = (char *)(Data);
   if((physAddr + Len) > endOfPage){
-    adjPageNum = (physAddr + Len) >> addrShift;
-    adjPhysAddr = CalcPhysAddr(adjPageNum, (physAddr + Len));
     uint32_t span = (physAddr + Len) - endOfPage;
-    std::cout << "Warning: Writing off end of page... " << std::endl;
-    for( unsigned i=0; i< (Len-span); i++ ){
-      BaseMem[i] = DataMem[i];
+    adjPageNum = ((Addr+Len)-span) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, ((Addr+Len)-span));
+
+#ifdef _REV_DEBUG_
+    std::cout << "ENDOFPAGE = " << std::hex << endOfPage << std::dec << std::endl;
+    for( unsigned i=0; i<(Len-span); i++ ){
+        std::cout << "WRITE TO: " << std::hex << (uint64_t)(&BaseMem[i]) << std::dec
+                  << "; FROM LOGICAL PHYS=" << std::hex << physAddr + i << std::dec
+                  << "; DATA=" << std::hex << (uint8_t)(BaseMem[i]) << std::dec
+                  << "; VIRTUAL ADDR=" << std::hex << Addr+i << std::dec << std::endl;
     }
-    BaseMem = &physMem[adjPhysAddr]; 
-    for( unsigned i=0; i< span; i++ ){
-      BaseMem[i] = DataMem[i];
+
+    std::cout << "TOTAL WRITE = " << Len << " Bytes" << std::endl;
+    std::cout << "PHYS Writing " << Len-span << " Bytes Starting at 0x" << std::hex << physAddr << std::dec
+              << "; translates to: " << std::hex << (uint64_t)(BaseMem) << std::dec << std::endl;
+    std::cout << "ADJ PHYS Writing " << span << " Bytes Starting at 0x" << std::hex << adjPhysAddr << std::dec
+              << "; translates to: " << std::hex << (uint64_t)(&physMem[adjPhysAddr]) << std::dec << std::endl;
+    std::cout << "Warning: Writing off end of page... " << std::endl;
+#endif
+    if( ctrl ){
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             DataMem,
+                             0x00);
+    }else{
+      for( unsigned i=0; i< (Len-span); i++ ){
+        BaseMem[i] = DataMem[i];
+      }
+    }
+    BaseMem = &physMem[adjPhysAddr];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      unsigned Cur = (Len-span);
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             &(DataMem[Cur]),
+                             0x00);
+    }else{
+      // write the memory using the internal RevMem model
+      unsigned Cur = (Len-span);
+      for( unsigned i=0; i< span; i++ ){
+        BaseMem[i] = DataMem[Cur];
+#ifdef _REV_DEBUG_
+        std::cout << "ADJ WRITE TO: " << std::hex << (uint64_t)(&BaseMem[i]) << std::dec
+                  << "; FROM LOGICAL PHYS=" << std::hex << adjPhysAddr + i << std::dec
+                  << "; DATA=" << std::hex << (uint8_t)(BaseMem[i]) << std::dec
+                  << "; VIRTUAL ADDR=" << std::hex << Addr+Cur << std::dec << std::endl;
+#endif
+        Cur++;
+      }
     }
   }else{
-    for( unsigned i=0; i<Len; i++ ){
-      BaseMem[i] = DataMem[i];
+    if( ctrl ){
+      // write the memory using RevMemCtrl
+      ctrl->sendWRITERequest(Addr,
+                             (uint64_t)(BaseMem),
+                             Len,
+                             DataMem,
+                             0x00);
+    }else{
+      // write the memory using the internal RevMem model
+      for( unsigned i=0; i<Len; i++ ){
+        BaseMem[i] = DataMem[i];
+      }
     }
   }
   memStats.bytesWritten += Len;
   return true;
 }
 
-
-
 bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
-  std::cout << "Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+  std::cout << "OLD READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
@@ -194,18 +355,19 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
   uint32_t adjPageNum = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  char *BaseMem = &physMem[physAddr]; 
+  char *BaseMem = &physMem[physAddr];
   char *DataMem = (char *)(Data);
   if((physAddr + Len) > endOfPage){
-    adjPageNum = (physAddr + Len) >> addrShift;
-    adjPhysAddr = CalcPhysAddr(adjPageNum, (physAddr + Len));
     uint32_t span = (physAddr + Len) - endOfPage;
+    adjPageNum = ((Addr+Len)-span) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, ((Addr+Len)-span));
     for( unsigned i=0; i< (Len-span); i++ ){
       DataMem[i] = BaseMem[i];
     }
-    BaseMem = &physMem[adjPhysAddr]; 
+    BaseMem = &physMem[adjPhysAddr];
+    unsigned Cur = (Len-span);
     for( unsigned i=0; i< span; i++ ){
-      DataMem[i] = BaseMem[i];
+      DataMem[Cur] = BaseMem[i];
     }
 #ifdef _REV_DEBUG_
     std::cout << "Warning: Reading off end of page... " << std::endl;
@@ -213,6 +375,58 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
   }else{
     for( unsigned i=0; i<Len; i++ ){
       DataMem[i] = BaseMem[i];
+    }
+  }
+
+  memStats.bytesRead += Len;
+  return true;
+}
+
+bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
+                     StandardMem::Request::flags_t flags){
+#ifdef _REV_DEBUG_
+  std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+#endif
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Target);
+  if((physAddr + Len) > endOfPage){
+    uint32_t span = (physAddr + Len) - endOfPage;
+    adjPageNum = ((Addr+Len)-span) >> addrShift;
+    adjPhysAddr = CalcPhysAddr(adjPageNum, ((Addr+Len)-span));
+    if( ctrl ){
+      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, Target, flags);
+    }else{
+      for( unsigned i=0; i< (Len-span); i++ ){
+        DataMem[i] = BaseMem[i];
+      }
+    }
+    BaseMem = &physMem[adjPhysAddr];
+    if( ctrl ){
+      unsigned Cur = (Len-span);
+      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, flags);
+    }else{
+      unsigned Cur = (Len-span);
+      for( unsigned i=0; i< span; i++ ){
+        DataMem[Cur] = BaseMem[i];
+        Cur++;
+      }
+    }
+#ifdef _REV_DEBUG_
+    std::cout << "Warning: Reading off end of page... " << std::endl;
+#endif
+  }else{
+    if( ctrl ){
+      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, Target, flags);
+    }else{
+      for( unsigned i=0; i<Len; i++ ){
+        DataMem[i] = BaseMem[i];
+      }
     }
   }
 
@@ -306,6 +520,31 @@ void RevMem::WriteDouble( uint64_t Addr, double Value ){
   memStats.doublesWritten++;
   if( !WriteMem(Addr,8,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (DOUBLE)");
+}
+
+/*
+* Func: GetNewThreadPID
+* - This function is used to interact with the global 
+*   PID counter inside of RevMem
+* - When a new RevThreadCtx is created, it is assigned 
+*   the value of PIDCount++
+* - This ensures no collisions because all RevProcs access
+*   the same RevMem instance
+*/
+uint32_t RevMem::GetNewThreadPID(){
+
+  #ifdef _REV_DEBUG_
+  std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl; 
+  #endif
+  /*
+  * NOTE: A mutex is acquired solely to prevent race conditions
+  *       if multiple RevProc's create new Ctx objects at the 
+  *       same time
+  */
+  std::unique_lock<std::mutex> lock(m_mtx);
+  PIDCount++;
+  lock.unlock();
+  return PIDCount;
 }
 
 // EOF

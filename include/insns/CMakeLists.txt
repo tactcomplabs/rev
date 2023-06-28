@@ -1,0 +1,13 @@
+set(InstructionSrcs
+  RV32A.h
+  RV32D.h
+  RV32F.h
+  RV32I.h
+  RV32M.h
+  RV64A.h
+  RV64D.h
+  RV64F.h
+  RV64I.h
+  RV64M.h
+  RV64P.h
+)

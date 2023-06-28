@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "PanNet.h"
+#include "../include/PanNet.h"
 
 using namespace SST;
 using namespace RevCPU;
@@ -550,6 +550,7 @@ PanNet::PanNet(ComponentId_t id, Params& params)
 }
 
 PanNet::~PanNet(){
+  delete output;
 }
 
 void PanNet::setMsgHandler(Event::HandlerBase* handler){

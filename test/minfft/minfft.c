@@ -24,7 +24,7 @@ void (*s_cx_1d_t)
 inline static void
 mkcx (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a, s_cx_1d_t s_1d) {
   volatile int* rev = 0xDEADBEEF;
-  *rev = 0x0BBB0004;
+//  *rev = 0x0BBB0004;
 	if (a->sub2==NULL)
 		(*s_1d)(x,y,sy,a);
 	else {

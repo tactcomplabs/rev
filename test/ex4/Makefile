@@ -13,13 +13,13 @@
 .PHONY: src
 
 EXAMPLE=ex4
-CC=riscv64-unknown-elf-gcc
+CC=${RVCC}
 ARCH=rv32ic
 ABI=ilp32
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -mabi=$(ABI) -static -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=ex5
-CC=riscv64-unknown-elf-gcc
+CC=${RVCC}
 ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe

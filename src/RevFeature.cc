@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevFeature.h"
+#include "../include/RevFeature.h"
 
 RevFeature::RevFeature( std::string Machine,
                         SST::Output *Output,
@@ -28,6 +28,12 @@ RevFeature::RevFeature( std::string Machine,
 }
 
 RevFeature::~RevFeature(){
+}
+
+bool RevFeature::HasCompressed(){
+  if( IsModeEnabled(RV_C) )
+    return true;
+  return false;
 }
 
 bool RevFeature::IsRV32C(){

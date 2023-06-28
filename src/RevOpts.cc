@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevOpts.h"
+#include "../include/RevOpts.h"
 
 RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   : numCores(NumCores), verbosity(Verbosity) {
@@ -23,11 +23,13 @@ RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   // -- pipeLine = 5
   // -- table = internal
   // -- memCosts[core] = 0:10
+  // -- prefetch depth = 16
   for( unsigned i=0; i<numCores; i++ ){
     startAddr.insert( std::pair<unsigned,uint64_t>(i,(uint64_t)(0x00000000)) );
     machine.insert( std::pair<unsigned,std::string>(i,"G") );
     table.insert( std::pair<unsigned,std::string>(i,"_REV_INTERNAL_") );
     memCosts.push_back(InitialPair);
+    prefetchDepth.insert( std::pair<unsigned,unsigned>(i,16) );
   }
 }
 
@@ -50,8 +52,48 @@ void RevOpts::splitStr(const std::string& s,
   }
 }
 
+bool RevOpts::InitPrefetchDepth( std::vector<std::string> Depths ){
+  std::vector<std::string> vstr;
+  for(unsigned i=0; i<Depths.size(); i++ ){
+    std::string s = Depths[i];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    if( Core > numCores )
+      return false;
+
+    std::string::size_type sz = 0;
+    unsigned Depth = (unsigned)(std::stoul(vstr[1],&sz,0));
+
+    prefetchDepth.find(Core)->second = Depth;
+    vstr.clear();
+  }
+  return true;
+}
+
 bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
   std::vector<std::string> vstr;
+
+  // check to see if we expand into multiple cores
+  if( StartAddrs.size() == 1 ){
+    std::string s = StartAddrs[0];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    if( vstr[0] == "CORES" ){
+      // set all cores to the target machine model
+      std::string::size_type sz = 0;
+      uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
+      for( unsigned i=0; i<numCores; i++ ){
+        startAddr.find(i)->second = Addr;
+      }
+      return true;
+    }
+  }
+
   for(unsigned i=0; i<StartAddrs.size(); i++ ){
     std::string s = StartAddrs[i];
     splitStr(s,':',vstr);
@@ -91,6 +133,24 @@ bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
 
 bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
   std::vector<std::string> vstr;
+
+  // check to see if we expand into multiple cores
+  if( Machines.size() == 1 ){
+    std::string s = Machines[0];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    if( vstr[0] == "CORES" ){
+      // set all cores to the target machine model
+      for( unsigned i=0; i<numCores; i++ ){
+        machine.at(i) = vstr[1];
+      }
+      return true;
+    }
+  }
+
+  // parse individual core configs
   for( unsigned i=0; i<Machines.size(); i++ ){
     std::string s = Machines[i];
     splitStr(s,':',vstr);
@@ -148,6 +208,17 @@ bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
   return true;
 }
 
+bool RevOpts::GetPrefetchDepth( unsigned Core, unsigned &Depth ){
+  if( Core > numCores )
+    return false;
+
+  if( prefetchDepth.find(Core) == prefetchDepth.end() )
+    return false;
+
+  Depth = prefetchDepth.at(Core);
+  return true;
+}
+
 bool RevOpts::GetStartAddr( unsigned Core, uint64_t &StartAddr ){
   if( Core > numCores )
     return false;
@@ -165,6 +236,7 @@ bool RevOpts::GetStartSymbol( unsigned Core, std::string &Symbol ){
 
   if( startSym.find(Core) == startSym.end() ){
     Symbol = "main";
+    //Symbol = "_start";
   }else{
     Symbol = startSym.at(Core);
   }
@@ -188,7 +260,6 @@ bool RevOpts::GetInstTable( unsigned Core, std::string &Table ){
 }
 
 bool RevOpts::GetMemCost( unsigned Core, unsigned &Min, unsigned &Max ){
-  std::pair<unsigned,unsigned> Tmp;
   if( Core > numCores )
     return false;
 

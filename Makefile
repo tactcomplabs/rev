@@ -12,7 +12,12 @@
 
 .PHONY: src
 
-all: src
+all: deprecation
+deprecation:
+	@echo "------------------------------------------"
+	@echo "!!! GNU MAKEFILE SUPPORT IS DEPRECATED !!!"
+	@echo "!!! Please switch to CMake             !!!"
+	@echo "------------------------------------------"
 doc:
 	doxygen ./doxygen/Rev.conf
 debug:

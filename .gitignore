@@ -1,0 +1,6 @@
+build
+src/librevcpu.so
+*.exe
+*.csv
+.cache/clangd/index
+.vscode
