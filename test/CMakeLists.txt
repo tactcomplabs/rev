@@ -180,6 +180,15 @@ set_tests_properties(TEST_STRLEN_CXX
     LABELS "all;rv64"
 )
 
+add_test(NAME TEST_STRSTR COMMAND run_strstr.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/strstr" ) # strlen_cxx
+set_tests_properties(TEST_STRSTR
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 add_test(NAME TEST_MEMSET COMMAND run_memset.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/memset" ) # memset
 set_tests_properties(TEST_MEMSET
   PROPERTIES
