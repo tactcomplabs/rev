@@ -14,6 +14,7 @@
 #include <iostream>
 #include <type_traits>
 
+        //typename std::is_integral<DType>::type,
 namespace SST{
   namespace RevCPU {
 
@@ -29,8 +30,9 @@ namespace SST{
   template <typename DType, int T_MaxElem>
   class RevRF {
 
-   using is_valid_dtype = typename is_valid<DType>::type;
-   static_assert(is_valid_dtype::value, "invalide DType");
+public:
+   using is_valid_dtype = typename is_valid<DType>::result_type;
+   static_assert(is_valid_dtype::value, "invalid DType");
 
       RevRF() {};
       ~RevRF(){};

@@ -155,7 +155,6 @@ int main( int argc, char* argv[] )
 
   // Check the results
   int v = verify( DATA_SIZE, input_data, verify_data );
-  printf("V= %d", v);
   assert(0 == v);
   return v;
 }
