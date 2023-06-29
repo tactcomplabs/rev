@@ -234,6 +234,32 @@ set_tests_properties(TOWERS
     LABELS "all;rv64"
 )
 
+add_test(NAME QSORT COMMAND run_qsort.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/qsort" ) # qsort
+set_tests_properties(QSORT
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME MEMCPY COMMAND run_memcpy.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/memcpy" ) # memcpy
+set_tests_properties(MEMCPY
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME X0 COMMAND run_x0.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/x0" ) # x0
+set_tests_properties(X0
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
 
 
 # -- PROCESS CTest Config Variables
