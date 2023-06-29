@@ -14,7 +14,6 @@
 #include <iostream>
 #include <type_traits>
 
-        //typename std::is_integral<DType>::type,
 namespace SST{
   namespace RevCPU {
 
