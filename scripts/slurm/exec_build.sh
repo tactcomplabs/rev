@@ -25,7 +25,7 @@ done
 cat rev.jenkins.${SLURM_ID}.out
 
 #-- job has completed, test for status
-STATE=`cat slurm-${SLURM_ID}.out | grep "FAILED"`
+STATE=`cat slurm-${SLURM_ID}.out | grep "Failed"`
 
 if [ -z "$STATE" ]
 then
