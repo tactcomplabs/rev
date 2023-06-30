@@ -613,7 +613,7 @@ namespace SST{
           }
           R->RV32_PC += Inst.instSize;
         }else{
-          if( (int64_t)(td_u32(R->RV64[Inst.rs1],32)) < (int64_t)(td_u64(Inst.imm,12)) ){
+          if( (int64_t)(td_u64(R->RV64[Inst.rs1],64)) < (int64_t)(td_u64(Inst.imm,12)) ){
             R->RV64[Inst.rd] = 1;
           }else{
             R->RV64[Inst.rd] = 0;
