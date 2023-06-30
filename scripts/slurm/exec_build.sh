@@ -13,7 +13,7 @@
 
 #-- execute the job
 SCRIPT=$1
-SLURM_ID=`sbatch -N1 --export=ALL ./scripts/slurm/$SCRIPT | awk '{print $4}'`
+SLURM_ID=`sbatch -N1 --export=ALL $SCRIPT | awk '{print $4}'`
 
 #-- wait for completion
 COMPLETE=`squeue -u builduser | grep ${SLURM_ID}`
