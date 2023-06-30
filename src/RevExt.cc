@@ -81,8 +81,6 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
 
   // execute the instruction
   if( !(*func)(feature,(regFile),mem,payload) ){
-    regFile->RV32[0] = 0x00l;
-    regFile->RV64[0] = 0x00ull;
     return false;
   }
 
@@ -106,8 +104,6 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
   }
 #endif
 
-  regFile->RV32[0] = 0x00l;
-  regFile->RV64[0] = 0x00ull;
   return true;
 }
 

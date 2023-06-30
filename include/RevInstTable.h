@@ -15,6 +15,7 @@
 #include <map>
 #include "RevMem.h"
 #include "RevFeature.h"
+#include "RevRF.hpp"
 
 #ifndef _REV_NUM_REGS_
 #define _REV_NUM_REGS_ 32
@@ -248,8 +249,8 @@ namespace SST{
     };
 
     typedef struct{
-      uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
-      uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
+      RevRF<uint32_t, _REV_NUM_REGS_> RV32;    ///< RevRegFile: RV32I register file
+      RevRF<uint64_t, _REV_NUM_REGS_> RV64;    ///< RevRegFile: RV32I register file
       float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
       double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
 
