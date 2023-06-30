@@ -36,6 +36,8 @@
 
 #define REVMEM_FLAGS(x) ((StandardMem::Request::flags_t)(x))
 
+#define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
+
 using namespace SST::RevCPU;
 
 namespace SST {
@@ -175,6 +177,8 @@ namespace SST {
 
     class RevMemStats {
     public:
+      uint64_t TLBHits;
+      uint64_t TLBMisses;
       uint32_t floatsRead;
       uint32_t floatsWritten;
       uint32_t doublesWritten;
@@ -189,15 +193,21 @@ namespace SST {
       char *physMem;                          ///< RevMem: memory container
 
     private:
-      unsigned long memSize;    ///< RevMem: size of the target memory
-      RevOpts *opts;            ///< RevMem: options object
-      RevMemCtrl *ctrl;         ///< RevMem: memory controller object
-      SST::Output *output;      ///< RevMem: output handler
+      std::unordered_map<uint64_t, std::pair<uint64_t, std::list<uint64_t>::iterator>> TLB;
+      std::list<uint64_t> LRUQueue; ///< RevMem: List ordered by last access for implementing LRU policy when TLB fills up
+      unsigned long memSize;        ///< RevMem: size of the target memory
+      unsigned tlbSize;             ///< RevMem: size of the target memory
+      RevOpts *opts;                ///< RevMem: options object
+      RevMemCtrl *ctrl;             ///< RevMem: memory controller object
+      SST::Output *output;          ///< RevMem: output handler
 
-      uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t Addr);
+      uint64_t SearchTLB(uint64_t vAddr);                       ///< RevMem: Used to check the TLB for an entry
+      void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
+      void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
+      uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
 
-      std::mutex m_mtx;         ///< RevMem: used for incrementing ThreadCtx PID counter
-      uint32_t PIDCount = 1023; ///< RevMem: Monotonically increasing PID counter for assigning new PIDs without conflicts
+      std::mutex pid_mtx;         ///< RevMem: Used for incrementing ThreadCtx PID counter
+      uint32_t PIDCount = 1023;   ///< RevMem: Monotonically increasing PID counter for assigning new PIDs without conflicts
 
       //c++11 should guarentee that these are all zero-initializaed
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>

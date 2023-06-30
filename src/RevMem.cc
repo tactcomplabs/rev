@@ -29,6 +29,8 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   memStats.doublesWritten = 0;
   memStats.floatsRead = 0;
   memStats.floatsWritten = 0;
+  memStats.TLBHits = 0;
+  memStats.TLBMisses = 0;
 }
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
@@ -57,6 +59,8 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
   memStats.doublesWritten = 0;
   memStats.floatsRead = 0;
   memStats.floatsWritten = 0;
+  memStats.TLBHits = 0;
+  memStats.TLBMisses = 0;
 }
 
 RevMem::~RevMem(){
@@ -149,24 +153,74 @@ unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
   return R;
 }
 
-uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t Addr){
-  uint64_t physAddr = 0;
-  if(pageMap.count(pageNum) == 0){
-    // First touch of this page, mark it as in use
-    pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
-    physAddr = (nextPage << addrShift) + ((pageSize - 1) & Addr);
+void RevMem::FlushTLB(){
+  TLB.clear();
+  LRUQueue.clear();
+  return;
+}
+
+uint64_t RevMem::SearchTLB(uint64_t vAddr){
+  auto it = TLB.find(vAddr);
+  if (it == TLB.end()) {
+      // TLB Miss :(
+      memStats.TLBMisses++;
+      return _INVALID_ADDR_;
+  } else {
+    memStats.TLBHits++;
+    // Move the accessed vAddr to the front of the LRU list
+    LRUQueue.erase(it->second.second);
+    LRUQueue.push_front(vAddr);
+    // Update the second of the pair in the tlbMap to point to the new location in LRU list
+    it->second.second = LRUQueue.begin();
+    // Return the physAddr
+    return it->second.first;
+  }
+}
+
+void RevMem::AddToTLB(uint64_t vAddr, uint64_t physAddr){
+  auto it = TLB.find(vAddr); 
+  if (it != TLB.end()) {
+    // If the vAddr is already present in the TLB, then this is a page update, not a miss
+    // Move the vAddr to the front of LRU list
+    LRUQueue.erase(it->second.second);
+    LRUQueue.push_front(vAddr);
+    // Update the pair in the TLB
+    it->second.first = physAddr;
+    it->second.second = LRUQueue.begin();
+  } else {
+    // If cache is full, remove the least recently used vAddr from both cache and LRU list
+    if (LRUQueue.size() == tlbSize) {
+      uint64_t LRUvAddr = LRUQueue.back();
+      LRUQueue.pop_back();
+      TLB.erase(LRUvAddr);
+    }
+    // Insert the vAddr and physAddr into the TLB and LRU list
+    LRUQueue.push_front(vAddr);
+    TLB.insert({vAddr, {physAddr, LRUQueue.begin()}});
+  }
+}
+
+uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
+  uint64_t physAddr = SearchTLB(vAddr);
+  if( physAddr == _INVALID_ADDR_ ){
+    if(pageMap.count(pageNum) == 0){
+      // First touch of this page, mark it as in use
+      pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
+      physAddr = (nextPage << addrShift) + ((pageSize - 1) & vAddr);
 #ifdef _REV_DEBUG_
-    std::cout << "First Touch for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+      std::cout << "First Touch for page:" << pageNum << " addrShift:" << addrShift << " vAddr: 0x" << std::hex << vAddr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
 #endif
-    nextPage++;
-  }else if(pageMap.count(pageNum) == 1){
-    //We've accessed this page before, just get the physical address 
-    physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & Addr);
+      nextPage++;
+    }else if(pageMap.count(pageNum) == 1){
+      //We've accessed this page before, just get the physical address 
+      physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & vAddr);
 #ifdef _REV_DEBUG_
-    std::cout << "Access for page:" << pageNum << " addrShift:" << addrShift << " Addr: 0x" << std::hex << Addr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+      std::cout << "Access for page:" << pageNum << " addrShift:" << addrShift << " vAddr: 0x" << std::hex << vAddr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
 #endif
-  }else{
-    output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
+    }else{
+      output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
+    }
+    AddToTLB(vAddr, physAddr);
   }
   return physAddr;
 }
@@ -541,7 +595,7 @@ uint32_t RevMem::GetNewThreadPID(){
   *       if multiple RevProc's create new Ctx objects at the 
   *       same time
   */
-  std::unique_lock<std::mutex> lock(m_mtx);
+  std::unique_lock<std::mutex> lock(pid_mtx);
   PIDCount++;
   lock.unlock();
   return PIDCount;

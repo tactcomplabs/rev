@@ -188,6 +188,10 @@ namespace SST {
         {"BytesRead",           "Total bytes read",                                     "count",  1},
         {"BytesWritten",        "Total bytes written",                                  "count",  1},
         {"FloatsExec",          "Total SP or DP float instructions executed",           "count",  1},
+        {"TLBHits",             "TLB hits",                                             "count",  1},
+        {"TLBMisses",           "TLB misses",                                           "count",  1},
+        {"TLBHitsPerCore",      "TLB hits per core",                                    "count",  1},
+        {"TLBMissesPerCore",    "TLB misses per core",                                  "count",  1},
       )
 
     private:
@@ -318,6 +322,8 @@ namespace SST {
       std::vector<Statistic<uint64_t>*> BytesRead;
       std::vector<Statistic<uint64_t>*> BytesWritten;
       std::vector<Statistic<uint64_t>*> FloatsExec;
+      std::vector<Statistic<uint64_t>*> TLBMissesPerCore;
+      std::vector<Statistic<uint64_t>*> TLBHitsPerCore;
 
       //-------------------------------------------------------
       // -- FUNCTIONS

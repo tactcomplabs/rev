@@ -96,6 +96,8 @@ RevProc::RevProcStats RevProc::GetStats(){
   Stats.memStats.doublesWritten = mem->memStats.doublesWritten;
   Stats.memStats.floatsRead     = mem->memStats.floatsRead;
   Stats.memStats.floatsWritten  = mem->memStats.floatsWritten;
+  Stats.memStats.TLBMisses      = mem->memStats.TLBMisses;
+  Stats.memStats.TLBHits        = mem->memStats.TLBHits;
   return Stats;
 }
 
@@ -2130,12 +2132,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64 " Idle Cycles: %" PRIu64 " Eff: %f\n",
                       Stats.totalCycles, Stats.cyclesBusy,
                       Stats.cyclesIdle_Total, Stats.percentEff);
-      output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d  Floats Exec: %" PRIu64 " Inst Retired: %" PRIu64 "\n", \
+      output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d Floats Exec: %" PRIu64 " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n", \
                                       mem->memStats.bytesRead, \
                                       mem->memStats.bytesWritten, \
                                       mem->memStats.floatsRead, \
                                       mem->memStats.doublesRead, \
-                                      Stats.floatsExec,
+                                      Stats.floatsExec, \
+                                      mem->memStats.TLBHits, \
+                                      mem->memStats.TLBMisses, \
                                       Retired);
       return false;
     }
@@ -2383,6 +2387,8 @@ void RevProc::InitEcallTable(){
     {172, &RevProc::ECALL_getpid},         
     {173, &RevProc::ECALL_getppid},        
     {178, &RevProc::ECALL_gettid},          
+    {214, &RevProc::ECALL_brk},             // Not implemented
+    {215, &RevProc::ECALL_munmap},          
     {220, &RevProc::ECALL_clone},           // Fork functionality works but not clone3
     {222, &RevProc::ECALL_mmap},            // Not implemented
     {403, &RevProc::ECALL_clock_gettime},   // Not implemented
@@ -2410,6 +2416,16 @@ void RevProc::ECALL_setxattr(){
   uint64_t rc = setxattr(path, name, value, size, flags);
 #endif
   RegFile->RV64[10] = rc;
+  return;
+}
+
+// void RevProc::ECALL_sbrk(){
+//   uint64_t CloneArgsAddr = RegFile->RV64[10];
+//   return;
+// }
+
+void RevProc::ECALL_brk(){
+  uint64_t CloneArgsAddr = RegFile->RV64[10];
   return;
 }
 
@@ -2725,6 +2741,12 @@ void RevProc::ECALL_mmap(){
   output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n"); 
   return;
 }
+
+void RevProc::ECALL_munmap(){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n"); 
+  return;
+}
+
 
 /* ================ */ 
 /* rev_gettid(void) */

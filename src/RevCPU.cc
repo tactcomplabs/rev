@@ -233,6 +233,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   BytesRead.reserve(BytesRead.size() + numCores);
   BytesWritten.reserve(BytesWritten.size() + numCores);
   FloatsExec.reserve(FloatsExec.size() + numCores);
+  TLBHitsPerCore.reserve(TLBHitsPerCore.size() + numCores);
+  TLBMissesPerCore.reserve(TLBMissesPerCore.size() + numCores);
 
   for(int s = 0; s < numCores; s++){
     TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
@@ -244,6 +246,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
     BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
     FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
+    TLBHitsPerCore.push_back( registerStatistic<uint64_t>("TLBHitsPerCore", "core_" + std::to_string(s)));
+    TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
   }
 
   // setup the PAN execution contexts
@@ -2318,6 +2322,8 @@ void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
   BytesRead[coreNum]->addData(stats.memStats.bytesRead);
   BytesWritten[coreNum]->addData(stats.memStats.bytesWritten);
   FloatsExec[coreNum]->addData(stats.floatsExec);
+  TLBHitsPerCore[coreNum]->addData(stats.memStats.TLBHits);
+  TLBMissesPerCore[coreNum]->addData(stats.memStats.TLBMisses);
 }
 
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
