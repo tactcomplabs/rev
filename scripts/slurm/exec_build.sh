@@ -25,16 +25,20 @@ done
 cat rev.jenkins.${SLURM_ID}.out
 
 #-- job has completed, test for status
-STATE=`cat rev.jenkins.${SLURM_ID}.out | grep "Failed"`
+STATE=`cat rev.jenkins.${SLURM_ID}.out | grep "tests failed out of"`
+NUM_FAILED=`cat rev.jenkins.${SLURM_ID}.out | grep "tests failed out of" | awk '{print $4}'`
 
-if [ -z "$STATE" ]
+
+if [ "$NUM_FAILED" -eq "0" ];
 then
   echo "TEST PASSED FOR JOB_ID = ${JOB_ID}; SLURM_JOB=${SLURM_ID}"
+  echo $STATE
   exit 0
 else
   echo "TEST FAILED FOR JOB_ID = ${JOB_ID}; SLURM_JOB=${SLURM_ID}"
+  echo $STATE
   exit -1
-fi;
+fi
 
 exit 0
 #-- EOF
