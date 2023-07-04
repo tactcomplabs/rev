@@ -178,9 +178,10 @@ uint64_t RevMem::SearchTLB(uint64_t vAddr){
 }
 
 void RevMem::AddToTLB(uint64_t vAddr, uint64_t physAddr){
-  auto it = TLB.find(vAddr); 
+  auto it = TLB.find(vAddr);
   if (it != TLB.end()) {
-    // If the vAddr is already present in the TLB, then this is a page update, not a miss
+    // If the vAddr is already present in the TLB,
+    // then this is a page update, not a miss
     // Move the vAddr to the front of LRU list
     LRUQueue.erase(it->second.second);
     LRUQueue.push_front(vAddr);
@@ -188,7 +189,8 @@ void RevMem::AddToTLB(uint64_t vAddr, uint64_t physAddr){
     it->second.first = physAddr;
     it->second.second = LRUQueue.begin();
   } else {
-    // If cache is full, remove the least recently used vAddr from both cache and LRU list
+    // If cache is full, remove the least recently used
+    // vAddr from both cache and LRU list
     if (LRUQueue.size() == tlbSize) {
       uint64_t LRUvAddr = LRUQueue.back();
       LRUQueue.pop_back();
@@ -208,14 +210,20 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
       physAddr = (nextPage << addrShift) + ((pageSize - 1) & vAddr);
 #ifdef _REV_DEBUG_
-      std::cout << "First Touch for page:" << pageNum << " addrShift:" << addrShift << " vAddr: 0x" << std::hex << vAddr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+      std::cout << "First Touch for page:" << pageNum << " addrShift:"
+                << addrShift << " vAddr: 0x" << std::hex << vAddr
+                << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: "
+                << nextPage << std::endl;
 #endif
       nextPage++;
     }else if(pageMap.count(pageNum) == 1){
-      //We've accessed this page before, just get the physical address 
+      //We've accessed this page before, just get the physical address
       physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & vAddr);
 #ifdef _REV_DEBUG_
-      std::cout << "Access for page:" << pageNum << " addrShift:" << addrShift << " vAddr: 0x" << std::hex << vAddr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
+      std::cout << "Access for page:" << pageNum << " addrShift:"
+                << addrShift << " vAddr: 0x" << std::hex << vAddr
+                << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: "
+                << nextPage << std::endl;
 #endif
     }else{
       output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");

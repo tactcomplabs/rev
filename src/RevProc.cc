@@ -1793,7 +1793,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
 #ifdef _REV_DEBUG_
   if((currentCycle % 100000000) == 0){
-    std::cout << "Current Cycle: " << currentCycle <<  " PC: " << std::hex << ExecPC << std::dec << std::endl;
+    std::cout << "Current Cycle: " << currentCycle <<  " PC: "
+              << std::hex << ExecPC << std::dec << std::endl;
   }
 #endif
 
@@ -1808,11 +1809,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     /*
      * There was a ctx switch event triggered
      * - Either a call to fork/clone
-     * - Child process finished executing 
+     * - Child process finished executing
      */
     if( Pipeline.empty() ) {
       if( !ChangeActivePID(NextPID) ){
-        output->fatal(CALL_INFO, 0, 0, 
+        output->fatal(CALL_INFO, -1,
                       "Core %d ; Hart %u; PID %d Failed to change active PID to %u\n",
                       id, HartToDecode, GetActivePID(), NextPID);
       } else {
@@ -1908,22 +1909,30 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       //#define __REV_DEEP_TRACE__
       #ifdef __REV_DEEP_TRACE__
       if(feature->IsRV32()){
-        std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
-                                      << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
-                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile(HartToExec)->RV32[Inst.rd] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile(HartToExec)->RV32[Inst.rs1] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile(HartToExec)->RV32[Inst.rs2] \
-                                      << " imm = "                << std::hex << Inst.imm \
-                                      << std::endl;
+        std::cout << "RDT: Executed PC = " << std::hex << ExecPC
+                  << " Inst: " << std::setw(23)
+                  << InstTable[Inst.entry].mnemonic
+                  << " r" << std::dec << (uint32_t)Inst.rd  << "= "
+                  << std::hex << RegFile(HartToExec)->RV32[Inst.rd]
+                  << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
+                  << std::hex << RegFile(HartToExec)->RV32[Inst.rs1]
+                  << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
+                  << std::hex << RegFile(HartToExec)->RV32[Inst.rs2]
+                  << " imm = " << std::hex << Inst.imm
+                  << std::endl;
 
       }else{
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
-                                      << " Inst: " << std::setw(23) << InstTable[Inst.entry].mnemonic \ 
-                                      << " r" << std::dec << (uint32_t)Inst.rd  << "= " << std::hex << RegFile(HartToExec)->RV64[Inst.rd] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs1 << "= " << std::hex << RegFile(HartToExec)->RV64[Inst.rs1] \
-                                      << " r" << std::dec << (uint32_t)Inst.rs2 << "= " << std::hex << RegFile(HartToExec)->RV64[Inst.rs2] \
-                                      << " imm = "                << std::hex << Inst.imm \
-                                      << std::endl;
+                  << " Inst: " << std::setw(23)
+                  << InstTable[Inst.entry].mnemonic
+                  << " r" << std::dec << (uint32_t)Inst.rd  << "= "
+                  << std::hex << RegFile(HartToExec)->RV64[Inst.rd]
+                  << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
+                  << std::hex << RegFile(HartToExec)->RV64[Inst.rs1]
+                  << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
+                  << std::hex << RegFile(HartToExec)->RV64[Inst.rs2]
+                  << " imm = " << std::hex << Inst.imm
+                  << std::endl;
       }
       #endif
 
@@ -1932,35 +1941,39 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
        * - Currently this is only for ecall
       */
       if( (RegFile->RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ||
-          (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){ // Ecall found
-        
-          output->verbose(CALL_INFO, 6, 0,
+          (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
+        // Ecall found
+        output->verbose(CALL_INFO, 6, 0,
                   "Core %d; HartID %d; PID %d - Exception Raised: ECALL with code = %lu\n", 
                   id, HartToExec, GetActivePID(), RegFile->RV64[17]);
-          #ifdef _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
-          #endif
+        #ifdef _REV_DEBUG_
+        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+                  << code << std::endl;
+        #endif
 
-          /* Execute system call on this RevProc */
-          ExecEcall(); 
+        /* Execute system call on this RevProc */
+        ExecEcall();
 
-          #ifdef _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
-          #endif
+        #ifdef _REV_DEBUG_
+        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+                  << rc << std::endl;
+        #endif
 
         // } else {
         //   ExecEcall();
-          #ifdef _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << " found ecall with code: " << code << std::endl;
-          #endif
+        #ifdef _REV_DEBUG_
+        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+                  << code << std::endl;
+        #endif
 
-          /* exception handled... zero the cause registers */
-          RegFile->RV64_SCAUSE = 0;
-          RegFile->RV32_SCAUSE = 0;
+        /* exception handled... zero the cause registers */
+        RegFile->RV64_SCAUSE = 0;
+        RegFile->RV32_SCAUSE = 0;
 
-          #ifdef _REV_DEBUG_
-          std::cout << "Hart "<< HartToExec << " returned from ecall with code: " << rc << std::endl;
-          #endif
+        #ifdef _REV_DEBUG_
+        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+                  << rc << std::endl;
+        #endif
         // }
       }
 
@@ -2106,7 +2119,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       done = false;
     }
 
-    
     if( HartToExec != _REV_INVALID_HART_ID_ ){
       if( ActivePIDs.size() > HartToExec ) {
         uint32_t CurrPID = ActivePIDs.at(HartToExec);
@@ -2115,7 +2127,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       "Thread %u completed execution.\n", CurrPID);
         if(ParentPID != 0 ){
           done = false;
-          output->verbose(CALL_INFO, 2, 0, "Switching from thread with PID = %u to its parent PID = %u\n", ActivePIDs.at(HartToExec), ParentPID);
+          output->verbose(CALL_INFO, 2, 0,
+                          "Switching from thread with PID = %u to its parent PID = %u\n",
+                          ActivePIDs.at(HartToExec), ParentPID);
           CtxSwitchAlert(ParentPID);
           SwapToParent = true;
           ThreadTable.at(ActivePIDs.at(HartToExec))->SetState(ThreadState::Dead);
@@ -2132,14 +2146,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64 " Idle Cycles: %" PRIu64 " Eff: %f\n",
                       Stats.totalCycles, Stats.cyclesBusy,
                       Stats.cyclesIdle_Total, Stats.percentEff);
-      output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d Floats Exec: %" PRIu64 " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n", \
-                                      mem->memStats.bytesRead, \
-                                      mem->memStats.bytesWritten, \
-                                      mem->memStats.floatsRead, \
-                                      mem->memStats.doublesRead, \
-                                      Stats.floatsExec, \
-                                      mem->memStats.TLBHits, \
-                                      mem->memStats.TLBMisses, \
+      output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d Floats Exec: %" PRIu64 " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
+                                      mem->memStats.bytesRead,
+                                      mem->memStats.bytesWritten,
+                                      mem->memStats.floatsRead,
+                                      mem->memStats.doublesRead,
+                                      Stats.floatsExec,
+                                      mem->memStats.TLBHits,
+                                      mem->memStats.TLBMisses,
                                       Retired);
       return false;
     }
@@ -2171,8 +2185,9 @@ uint32_t RevProc::HartToDecodePID(){
   if( ActivePIDs.size() <= HartToDecode )
     return ActivePIDs.at(HartToDecode);
   else{
-    output->fatal(CALL_INFO, 0, 0,
-                  "Tried to get active PID for HartToDecode = %d but there is no ActivePID for that Hart", HartToExec);
+    output->fatal(CALL_INFO, -1,
+                  "Tried to get active PID for HartToDecode = %d but there is no ActivePID for that Hart\n",
+                  HartToExec);
     return 1;
   }
 }
@@ -2219,8 +2234,6 @@ bool RevProc::InitThreadTable(){
   for( unsigned HartID=0; HartID<_REV_HART_COUNT_; HartID++){
     uint32_t ParentPID = 0;
     uint32_t FirstActivePID = mem->GetNewThreadPID();
-    uint64_t StartingMemAddr = mem->GetStackTop(); 
-    uint64_t StartingMemSize = mem->DefaultThreadMemSize;
 
     std::shared_ptr<RevThreadCtx> DefaultCtx = std::make_shared<RevThreadCtx>(
         FirstActivePID,
@@ -2258,8 +2271,9 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
     std::shared_ptr<RevThreadCtx> NewCtx = it->second;
     /* If switching to parent, output the child is being removed from the ThreadTable */
     if( SwapToParent ){
-      output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %d from the ThreadTable\n", ActivePIDs.at(HartToExec));
-      ThreadTable.erase(ActivePIDs.at(HartToExec));  
+      output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %d from the ThreadTable\n",
+                      ActivePIDs.at(HartToExec));
+      ThreadTable.erase(ActivePIDs.at(HartToExec));
     }
     ActivePIDs.at(HartToExec) = NewPID;
     ActivePIDs.at(HartToDecode) = NewPID;
@@ -2267,7 +2281,9 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
     return true;
   }else{
     /* TODO: Maybe don't output fatal? */
-    output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", NewPID, HartToExec); 
+    output->fatal(CALL_INFO, -1,
+                  "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable\n",
+                  NewPID, HartToExec);
     return false;
   }
 }
@@ -2292,12 +2308,15 @@ bool RevProc::ChangeActivePID(uint32_t PID, uint16_t HartID){
       return true;
     } else {
     /* TODO: Maybe don't output fatal? */
-      output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because Hart does not exist", PID, HartToExec); 
+      output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because Hart does not exist",
+                    PID, HartToExec);
       return false;
     }
   }else{
     /* TODO: Maybe don't output fatal? */
-    output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", PID, HartToExec); 
+    output->fatal(CALL_INFO, -1,
+                  "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", 
+                  PID, HartToExec);
     return false;
   }
 }
@@ -2532,24 +2551,24 @@ void RevProc::ECALL_clone(){
 
   /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
 
-  /* 
+  /*
    * ===========================================================================================
    * Register File
    * ===========================================================================================
    * We need to duplicate the parent's RegFile to to the Childs
-   * - NOTE: when we return from this function, the return value will 
-   *         be automatically stored in the Proc.RegFile[HartToExec]'s a0 
+   * - NOTE: when we return from this function, the return value will
+   *         be automatically stored in the Proc.RegFile[HartToExec]'s a0
    *         register. In a traditional fork code this looks like:
-   *         
+   *
    *         pid_t pid = fork()
    *         if pid < 0: // Error
    *         else if pid = 0: // New Child Process
    *         else: // Parent Process
-   *        
+   *
    *         In this case, the value of pid is the value thats returned to a0
-   *         It follows that 
+   *         It follows that
    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
-   *         - The Parent's a0 register MUST have its PID in it 
+   *         - The Parent's a0 register MUST have its PID in it
    * ===========================================================================================
    */
 
@@ -2562,7 +2581,7 @@ void RevProc::ECALL_clone(){
 
   /* Parent's return value is the child's PID */
   RegFile->RV64[10] = ChildPID;
-  
+
   /* Child's return value is 0 */
   ChildCtx->GetRegFile()->RV64[10] = 0;
 
@@ -2574,10 +2593,10 @@ void RevProc::ECALL_clone(){
 /* rev_chdir(const char *filename) */
 /* =============================== */
 void RevProc::ECALL_chdir(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL_chdir called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL_chdir called\n");
   std::string path = "";
   unsigned i=0;
-  
+
   // we don't know how long the path string is so read a byte (char)
   // at a time and search for the string terminator character '\0'
   do {
@@ -2595,10 +2614,10 @@ void RevProc::ECALL_chdir(){
 /* rev_mkdirat(int dfd, const char * path, unsigned short mode) */
 /* ============================================================ */
 void RevProc::ECALL_mkdir(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL_mkdir called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL_mkdir called\n");
   std::string path = "";
   unsigned i=0;
-  
+
   // we don't know how long the path string is so read a byte (char)
   // at a time and search for the string terminator character '\0'
   do {
@@ -2618,20 +2637,23 @@ void RevProc::ECALL_mkdir(){
 /* rev_exit(int error_code) */
 /* ======================== */
 void RevProc::ECALL_exit(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL_exit called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL_exit called\n");
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
   const uint64_t status = RegFile->RV64[10];
 
-  /* If the current ctx has ParentPID = 0, it has no parent and we should terminate the sim */
+  /* If the current ctx has ParentPID = 0,
+     it has no parent and we should terminate the sim */
   if( CurrCtx->GetParentPID() == 0 ){
-    output->verbose(CALL_INFO, 0, 0, 
-                    "Process %u exiting with status %lu\n", CurrCtx->GetPID(), status );
+    output->verbose(CALL_INFO, 0, 0,
+                    "Process %u exiting with status %lu\n",
+                    CurrCtx->GetPID(), status );
     exit(status);
   } else {
-    /* Parent exists & Child is exiting... switch back to parent */ 
+    /* Parent exists & Child is exiting... switch back to parent */
     CtxSwitchAlert(CurrCtx->GetParentPID());
-    output->verbose(CALL_INFO, 0, 0, 
-                    "Process %u exiting with status %lu\n", CurrCtx->GetPID(), status );
+    output->verbose(CALL_INFO, 0, 0,
+                    "Process %u exiting with status %lu\n",
+                    CurrCtx->GetPID(), status );
     return;
   }
   return;
@@ -2657,7 +2679,7 @@ void RevProc::ECALL_getcwd(){
 /* ================ */
 void RevProc::ECALL_getpid(){
   /* TODO: Implement error handling */
-  output->verbose(CALL_INFO, 2, 0, "ECALL_getpid called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL_getpid called\n");
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
   RegFile->RV64[10] = ActivePIDs.at(HartToExec);
@@ -2669,7 +2691,7 @@ void RevProc::ECALL_getpid(){
 /* ================= */
 void RevProc::ECALL_getppid(){
 /* TODO: Implement error handling */
-  output->verbose(CALL_INFO, 2, 0, "ECALL_getppid called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL_getppid called\n");
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
   uint32_t ParentPID = CurrentCtx->GetParentPID();
@@ -2681,7 +2703,7 @@ void RevProc::ECALL_getppid(){
 /* rev_write(unsigned int fd, const char *buf, size_t nbytes) */
 /* ========================================================== */
 void RevProc::ECALL_write(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL_write called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL_write called\n");
   int fildes = RegFile->RV64[10];
   std::size_t nbytes = RegFile->RV64[12];
 
@@ -2700,11 +2722,13 @@ void RevProc::ECALL_write(){
 }
 
 
-/* ======================================================================================================================================== */
-/* rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting) */
-/* ======================================================================================================================================== */
+/* ========================================================================== */
+/* rev_timer_settime(timer_t timer_id, int flags, */
+/*   const struct __kernel_itimerspec  *new_setting, */
+/*   struct __kernel_itimerspec  *old_setting) */
+/* ========================================================================== */
 void RevProc::ECALL_timer_settime(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_settime called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_settime called\n");
   return;
 }
 
@@ -2713,15 +2737,16 @@ void RevProc::ECALL_timer_settime(){
 /* rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec *setting) */
 /* ======================================================================== */
 void RevProc::ECALL_timer_gettime(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_gettime called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_gettime called\n");
   return;
 }
 
-/* ============================================================================ */
-/* rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec *tp) */
-/* ============================================================================ */
+/* ========================================================================== */
+/* rev_clock_settime(clockid_t which_clock, */
+/* const struct __kernel_timespec *tp) */
+/* ========================================================================== */
 void RevProc::ECALL_clock_settime(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: clock_settime called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: clock_settime called\n");
   return;
 }
 
@@ -2729,7 +2754,7 @@ void RevProc::ECALL_clock_settime(){
 /* rev_clock_gettime(clockid_t which_clock, struct timeval *tp) */
 /* ============================================================ */
 void RevProc::ECALL_clock_gettime(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: clock_gettime called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: clock_gettime called\n");
   return;
 }
 
@@ -2738,21 +2763,21 @@ void RevProc::ECALL_clock_gettime(){
 /* rev_mmap(struct mmap_arg_struct *args) */
 /* ====================================== */
 void RevProc::ECALL_mmap(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n");
   return;
 }
 
 void RevProc::ECALL_munmap(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n");
   return;
 }
 
 
-/* ================ */ 
+/* ================ */
 /* rev_gettid(void) */
-/* ================ */ 
+/* ================ */
 void RevProc::ECALL_gettid(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: gettid called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: gettid called\n");
   RevRegFile* regFile = RegFile;
 
   /* rc = Currently Executing Hart */
@@ -2760,11 +2785,11 @@ void RevProc::ECALL_gettid(){
   return;
 }
 
-/* ========================================================= */ 
+/* ========================================================= */
 /* rev_settimeofday(struct timeval *tv, struct timezone *tz) */
-/* ========================================================= */ 
+/* ========================================================= */
 void RevProc::ECALL_settimeofday(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: settimeofday called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: settimeofday called\n");
   return;
 }
 
@@ -2772,16 +2797,17 @@ void RevProc::ECALL_settimeofday(){
 /* int rev_gettimeofday(struct timeval *tv, struct timezone *tz) */
 /* ============================================================= */
 void RevProc::ECALL_gettimeofday(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: gettimeofday called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: gettimeofday called\n");
   return;
 }
 
 
-/* ============================================================================= */
-/* rev_rt_sigprocmask(int how, sigset_t *set, sigset_t *oset, size_t sigsetsize) */
-/* ============================================================================= */
+/* ========================================================================== */
+/* rev_rt_sigprocmask(int how, sigset_t *set, sigset_t *oset, */
+/* size_t sigsetsize) */
+/* ========================================================================== */
 void RevProc::ECALL_rt_sigprocmask(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: rt_sigprocmask called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: rt_sigprocmask called\n");
   return;
 }
 
@@ -2789,32 +2815,35 @@ void RevProc::ECALL_rt_sigprocmask(){
 /* rev_timer_delete(timer_t timer_id) */
 /* ================================== */
 void RevProc::ECALL_timer_delete(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_delete called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_delete called\n");
   return;
 }
 
-/* ===================================================================================================== */
-/* rev_timer_create(clockid_t which_clock, struct sigevent *timer_event_spec, timer_t *created_timer_id) */
-/* ===================================================================================================== */
+/* ===========================================================================*/
+/* rev_timer_create(clockid_t which_clock, struct sigevent *timer_event_spec, */
+/*   timer_t *created_timer_id) */
+/* ===========================================================================*/
 void RevProc::ECALL_timer_create(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_create called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: timer_create called\n");
   return;
 }
 
 
-/* ============================================================================= */
-/* rev_nanosleep(struct __kernel_timespec *rqtp, struct __kernel_timespec *rmtp) */
-/* ============================================================================= */
+/* ========================================================================== */
+/* rev_nanosleep(struct __kernel_timespec *rqtp, */
+/* struct __kernel_timespec *rmtp) */
+/* ========================================================================== */
 void RevProc::ECALL_nanosleep(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: nanosleep called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: nanosleep called\n");
   return;
 }
 
-/* ================================================================================ */
-/* rev_get_robust_list(int pid, struct robust_list_head *head_ptr, size_t *len_ptr) */ 
-/* ================================================================================ */
+/* ========================================================================== */
+/* rev_get_robust_list(int pid, struct robust_list_head *head_ptr, */
+/*   size_t *len_ptr) */
+/* ========================================================================== */
 void RevProc::ECALL_get_robust_list(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: get_robust_list called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: get_robust_list called\n");
   return;
 }
 
@@ -2822,15 +2851,16 @@ void RevProc::ECALL_get_robust_list(){
 /* rev_set_robust_list(struct robust_list_head *head, size_t len) */
 /* ============================================================== */
 void RevProc::ECALL_set_robust_list(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: set_robust_list called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: set_robust_list called\n");
   return;
 }
 
-/* ========================================================================================= */
-/* rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru) */
-/* ========================================================================================= */
+/* ========================================================================== */
+/* rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, */
+/*   struct rusage  *ru) */
+/* ==========================================================================*/
 void RevProc::ECALL_waitid(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: waitid called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: waitid called\n");
   return;
 }
 
@@ -2838,7 +2868,7 @@ void RevProc::ECALL_waitid(){
 /* rev_exit_group(int error_code) */
 /* ============================== */
 void RevProc::ECALL_exit_group(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: exit_group called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: exit_group called\n");
   return;
 }
 
@@ -2846,7 +2876,7 @@ void RevProc::ECALL_exit_group(){
 /* rev_fdatasync(unsigned int fd) */
 /* ============================== */
 void RevProc::ECALL_fdatasync(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: fdatasync called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fdatasync called\n");
   return;
 }
 
@@ -2854,7 +2884,7 @@ void RevProc::ECALL_fdatasync(){
 /* rev_fsync(unsigned int fd) */
 /* ========================== */
 void RevProc::ECALL_fsync(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: fsync called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fsync called\n");
   return;
 }
 
@@ -2862,7 +2892,7 @@ void RevProc::ECALL_fsync(){
 /* rev_sync(void) */
 /* ============== */
 void RevProc::ECALL_sync(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: sync called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: sync called\n");
   return;
 }
 
@@ -2870,11 +2900,14 @@ void RevProc::ECALL_sync(){
 /*  ssize_t tee(int fd_in, int fd_out, size_t len, unsigned int flags) */
 /* =================================================================== */
 void RevProc::ECALL_tee(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: tee called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: tee called\n");
+#if 0
+  // commented out to remove warnings
   int fd_in      = RegFile->RV64[10];
   int fd_out     = RegFile->RV64[11];
   size_t len     = RegFile->RV64[12];
   uint64_t flags = RegFile->RV64[13];
+#endif
   return;
 }
 
@@ -2886,11 +2919,11 @@ void RevProc::ECALL_openat(){
   int filenameAddr = RegFile->RV64[11];
   int flags = RegFile->RV64[12]; /* NOTE: Unused for now */
   uint64_t mode = RegFile->RV64[13];
-  
+
   /*
-   * NOTE: this is currently only opening files in the current directory 
+   * NOTE: this is currently only opening files in the current directory
    *       because of some oddities in parsing the arguments & flags
-   *       but this will be fixed in the near future 
+   *       but this will be fixed in the near future
   */
 
 
@@ -2920,7 +2953,6 @@ void RevProc::ECALL_openat(){
 /* rev_read(unsigned int fd, char *buf, size_t nbytes) */
 /* =================================================== */
 void RevProc::ECALL_read(){
-  
   uint64_t fd = RegFile->RV64[10];
   uint64_t BufAddr = RegFile->RV64[11];
   size_t BufSize = RegFile->RV64[12];
@@ -2929,8 +2961,8 @@ void RevProc::ECALL_read(){
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
 
   if( !CurrCtx->FindFD(fd) ){
-    output->fatal(CALL_INFO, 0, 0,
-                  "Core %d; Hart %d; PID %ul tried to read from file descriptor: %ul but did not have access to it\n",
+    output->fatal(CALL_INFO, -1,
+                  "Core %d; Hart %d; PID %" PRIu32 " tried to read from file descriptor: %" PRIu64 " but did not have access to it\n",
                   id, HartToExec, HartToExecPID(), fd);
     return;
   }
@@ -2939,10 +2971,10 @@ void RevProc::ECALL_read(){
    * for later use in writing to RevMem
   */
   char TmpBuf[BufSize];
-  
-  /* 
-   * Read nbytes of fd from host 
-   * 
+
+  /*
+   * Read nbytes of fd from host
+   *
    * NOTE: Because the fd is in the Ctx's fildes vector, we can reasonably
    *       assume the file is already open on the host system because we 
    *       try to maintain parity between those
@@ -2968,14 +3000,14 @@ void RevProc::ECALL_close(){
 
   /* Check if CurrCtx has fd in fildes vector */
   if( !CurrCtx->FindFD(fd) ){
-    output->fatal(CALL_INFO, 0, 0,
-                  "Core %d; Hart %d; PID %ul tried to close file descriptor %ul but did not have access to it\n",
+    output->fatal(CALL_INFO, -1,
+                  "Core %d; Hart %d; PID %" PRIu32 " tried to close file descriptor %d but did not have access to it\n",
                   id, HartToExec, HartToExecPID(), fd);
     return;
   }
   /* Close file on host */
   uint64_t rc = close(fd);
-  
+
   /* Remove from Ctx's fildes */
   CurrCtx->RemoveFD(fd);
 
@@ -3041,29 +3073,29 @@ void RevProc::ECALL_dup3(){
 /* rev_dup(unsigned int fildes)                                */
 /* =========================================================== */
 void RevProc::ECALL_dup(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: dup called"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: dup called");
   return;
 }
 
 
-/* 
+/*
  * This is the function that is called when an ECALL exception is detected inside ClockTick
  * - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
  *
  * Eventually this will be integrated into a TrapHandler however since ECALLs are the only
- * supported exceptions at this point there is no need just yet. 
+ * supported exceptions at this point there is no need just yet.
  */
 void RevProc::ExecEcall(){
   // a7 register = ecall code
   uint64_t EcallCode;
   if( feature->IsRV32() )
     EcallCode = (uint64_t)RegFile->RV32[17];
-  else if( feature->IsRV64() ) 
+  else if( feature->IsRV64() )
     EcallCode = RegFile->RV64[17];
   else {
     return;
   }
-  
+
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
     /* call the function */

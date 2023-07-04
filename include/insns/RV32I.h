@@ -291,7 +291,7 @@ namespace SST{
       }
 
       static bool auipc(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t tmp;
+        uint64_t tmp = 0x00ull;
         if( F->IsRV32() ){
           R->RV32[Inst.rd] = 0x00;
           R->RV32[Inst.rd] = (Inst.imm << 12) + dt_u32(R->RV32_PC,32);
