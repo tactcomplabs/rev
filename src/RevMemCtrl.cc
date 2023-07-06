@@ -430,7 +430,15 @@ unsigned RevBasicMemCtrl::getNumCacheLines(uint64_t Addr, uint32_t Size){
     return 1;
 
   if( Addr%lineSize ){
-    return ((Size/lineSize)+(Addr%lineSize > 1));
+    if( (uint64_t)(Size) <= (lineSize-(Addr%lineSize)) ){
+      return 1;
+    }else if( Size < lineSize ){
+      // this request is less than a cache line but
+      // due to the offset, it spans two cache lines
+      return 2;
+    }else{
+      return ((Size/lineSize)+(Addr%lineSize > 1));
+    }
   }else{
     // address is aligned already
     if( Size <= lineSize ){
@@ -451,7 +459,8 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
 #ifdef _REV_DEBUG_
   std::cout << "building caching mem request for addr=0x"
             << std::hex << op->getAddr() << std::dec
-            << "; NumLines = " << NumLines << std::endl;
+            << "; NumLines = " << NumLines
+            << "; Size = " << op->getSize() << std::endl;
 #endif
 
   // first determine if we have enough request slots to service all the cache lines
@@ -539,6 +548,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
 
   switch(op->getOp()){
   case RevMemOp::MemOp::MemOpREAD:
+#ifdef _REV_DEBUG_
+    std::cout << "<<<< READ REQUEST >>>>" << std::endl;
+#endif
     rqst = new Interfaces::StandardMem::Read(op->getAddr(),
                                              (uint64_t)(BaseCacheLineSize),
                                              TmpFlags);
@@ -549,6 +561,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
     num_read++;
     break;
   case RevMemOp::MemOp::MemOpWRITE:
+#ifdef _REV_DEBUG_
+    std::cout << "<<<< WRITE REQUEST >>>>" << std::endl;
+#endif
     for( unsigned i=0; i<BaseCacheLineSize; i++ ){
       newBuf.push_back(tmpBuf[i]);
     }

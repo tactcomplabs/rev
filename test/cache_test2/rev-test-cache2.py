@@ -62,7 +62,7 @@ l1cache.addParams({
     "replacement_policy" : "lru",
     "coherence_protocol" : "MESI",
     "associativity" : "4",
-    "cache_line_size" : "128",
+    "cache_line_size" : "64",
     "debug" : 1,
     "debug_level" : DEBUG_LEVEL,
     "verbose" : VERBOSE,
