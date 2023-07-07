@@ -211,6 +211,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
       output.verbose(CALL_INFO, 1, 0, "Warning: memory faults cannot be enabled with memHierarchy support\n");
   }
 
+  // Set TLB Size
+  const unsigned long tlbSize = params.find<unsigned long>("tlbSize", 512);
+  Mem->SetTLBSize(tlbSize);
+
   // Load the binary into memory
   Loader = new RevLoader( Exe, Args, Mem, &output );
   if( !Loader ){

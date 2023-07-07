@@ -171,6 +171,9 @@ namespace SST {
 
       /// RevMem: Used to access & incremenet the global software PID counter
       uint32_t GetNewThreadPID();
+
+      /// RevMem: Used to set the size of the TLBSize
+      void SetTLBSize(unsigned numEntries){ tlbSize = numEntries; }
   
       ///< RevMem: default memory size allocated to new threads (Unimplemented)
       uint64_t DefaultThreadMemSize = 4*1024*1024;    
