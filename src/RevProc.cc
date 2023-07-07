@@ -2953,7 +2953,7 @@ void RevProc::ECALL_openat(){
 /* rev_read(unsigned int fd, char *buf, size_t nbytes) */
 /* =================================================== */
 void RevProc::ECALL_read(){
-  uint64_t fd = RegFile->RV64[10];
+  int fd = RegFile->RV64[10];
   uint64_t BufAddr = RegFile->RV64[11];
   size_t BufSize = RegFile->RV64[12];
 
