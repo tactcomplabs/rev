@@ -2613,23 +2613,23 @@ void RevProc::ECALL_chdir(){
 /* ============================================================ */
 /* rev_mkdirat(int dfd, const char * path, unsigned short mode) */
 /* ============================================================ */
-void RevProc::ECALL_mkdir(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL_mkdir called\n");
-  std::string path = "";
-  unsigned i=0;
+// void RevProc::ECALL_mkdir(){
+//   output->verbose(CALL_INFO, 2, 0, "ECALL_mkdir called\n");
+//   std::string path = "";
+//   unsigned i=0;
 
-  // we don't know how long the path string is so read a byte (char)
-  // at a time and search for the string terminator character '\0'
-  do {
-    char dirchar;
-    mem->ReadMem(RegFile->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
-    path = path + dirchar;
-    i++;
-  } while( path.back() != '\0');
+//   // we don't know how long the path string is so read a byte (char)
+//   // at a time and search for the string terminator character '\0'
+//   do {
+//     char dirchar;
+//     mem->ReadMem(RegFile->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
+//     path = path + dirchar;
+//     i++;
+//   } while( path.back() != '\0');
 
-  const int rc = chdir(path.data());
-  RegFile->RV64[10] = rc;
-}
+//   const int rc = chdir(path.data());
+//   RegFile->RV64[10] = rc;
+// }
 
 
 
