@@ -27,7 +27,7 @@ endif
 all:$(ISA_EXES)
 $(ISA_TESTS): $(ISA_EXES)
 %.exe:%.c $(ISA_HEADERS)
-	@echo "RISCV_GCC_OPTS = $(RISCV_GCC_OPTS)"
+#	@echo "RISCV_GCC_OPTS = $(RISCV_GCC_OPTS)"
 	$(CC) $(RISCV_GCC_OPTS)  -o $@ $< -T ./test.ld -static -nostdlib -lm -Wl,-e,main
 clean:
 	rm -Rf *.exe

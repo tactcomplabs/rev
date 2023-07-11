@@ -8,6 +8,6 @@ make
 if [ -f $RVASM.exe ]; then
   sst --model-options=$RVASM.exe ./rev-isa-test.py
 else
-  echo "Test ASM: File not found - likely build failed"
+  echo "Test $RVASM ASM: File not found - likely build failed"
   exit 1
 fi

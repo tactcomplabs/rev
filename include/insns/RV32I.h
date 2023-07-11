@@ -299,7 +299,7 @@ namespace SST{
         }else{
           SEXT(tmp, Inst.imm << 12, 32);
           R->RV64[Inst.rd] = 0x00;
-          R->RV64[Inst.rd] = (Inst.imm << 12) + dt_u64(R->RV64_PC,64);
+          R->RV64[Inst.rd] = tmp + dt_u64(R->RV64_PC,64);
           R->RV64_PC += Inst.instSize;
         }
         return true;

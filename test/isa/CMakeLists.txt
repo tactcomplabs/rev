@@ -36,7 +36,7 @@ foreach(testSrc ${TEST_SRCS})
     COMMAND ./run_asm_test.sh)
   set_tests_properties( ${testName}
 	PROPERTIES
-    ENVIRONMENT "RVASM=${testName}"
+  ENVIRONMENT "RVASM=${testName}; RVCC=${RVCC}"
 		PASS_REGULAR_EXPRESSION "${passRegex}")
 endforeach(testSrc)
 endif()
