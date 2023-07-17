@@ -232,6 +232,9 @@ namespace SST {
       ///< Breaks bulk writes into cache lines
       bool WriteCacheLine(uint64_t Addr, size_t Len, void *Data);
 
+      ///< RevLoader: Replaces first MemSegment (initialized to entire memory space) with the static memory
+      void InitStaticMem();
+
     }; // class Loader
   } // namespace RevCPU
 } // namespace SST

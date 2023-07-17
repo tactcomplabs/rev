@@ -16,6 +16,7 @@ RevLoader::RevLoader( std::string Exe, std::string Args,
     RV32Entry(0x00l), RV64Entry(0x00ull) {
   if( !LoadElf() )
     output->fatal(CALL_INFO, -1, "Error: failed to load executable into memory\n");
+  InitStaticMem();
 }
 
 RevLoader::~RevLoader(){
@@ -420,6 +421,26 @@ uint64_t RevLoader::GetSymbolAddr(std::string Symbol){
     tmp = symtable[Symbol];
   }
   return tmp;
+}
+
+void RevLoader::InitStaticMem(){
+  if( mem->GetMemSegs().size() != 1 ){
+    output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however there is either more or less than 1 memory segment\n");
+    return;
+  } else {
+    uint64_t StaticDataEnd = GetSymbolAddr("__BSS_END__");
+    if( StaticDataEnd <= 0 ){
+      output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however __BSS_END__ = 0x%lx\n", StaticDataEnd);
+      return;
+    } else {
+      mem->SetHeapStart(StaticDataEnd + 1);
+      mem->GetMemSegs().at(0)->setSize(StaticDataEnd);
+      // Add data from stacktop -> memSize
+      mem->AddMemSeg(mem->GetStackTop(), mem->GetMemSize()-mem->GetStackTop());
+      mem->SetHeapEnd(StaticDataEnd + 1);
+      return;
+    }
+  }
 }
 
 // EOF
