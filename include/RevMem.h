@@ -65,7 +65,6 @@ namespace SST {
                     } // Permissions(permissions) {}
 
           uint64_t getTopAddr() const { return BaseAddr + Size; }
-
           uint64_t getBaseAddr() const { return BaseAddr; }
           uint64_t getSize() const { return Size; }
 
@@ -80,14 +79,15 @@ namespace SST {
           bool isFree(){ return IsFree; }
           void setIsFree(bool freeState){ IsFree = freeState; }
 
-      // This is the method to define your custom print
+
+      // Custom Print Function
       friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
         std::string State = "| Free |";
         if( !obj.IsFree ){
           State = "| Allocated | "; 
         }
         std::cout << "---------------------------------------------------------------" << std::endl;
-        return os << State << " | 0x" << obj.getBaseAddr() << "| 0x" << obj.getTopAddr() << "| Size = " << obj.getSize() << std::endl;;
+        return os << State << " | 0x" << obj.getBaseAddr() << " | 0x" << obj.getTopAddr() << "| Size = " << obj.getSize();
       }
 
       private:
@@ -224,6 +224,9 @@ namespace SST {
       /// RevMem: Used to set the size of the TLBSize
       void SetTLBSize(unsigned numEntries){ tlbSize = numEntries; }
 
+      /// RevMem: Used to set the size of the TLBSize
+      void SetMaxHeapSize(const unsigned MaxHeapSize){ maxHeapSize = MaxHeapSize; }
+
       /// RevMem: Get memSize value set in .py file
       const uint64_t GetMemSize(){ return memSize; }
   
@@ -237,7 +240,10 @@ namespace SST {
       uint64_t AddMemSeg(const uint64_t SegSize);
 
       /// RevMem: Removes or shrinks segment
-      uint64_t UnallocMemSeg(uint64_t BaseAddr, uint64_t Size);
+      uint64_t DeallocMem(uint64_t BaseAddr, uint64_t Size);
+
+      /// RevMem: Removes or shrinks segment
+      uint64_t AllocMem(uint64_t Size);
 
       /// RevMem: Shrinks segment (Only moves top addr & marks upper part as free)
       uint64_t ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize);
@@ -274,6 +280,7 @@ namespace SST {
       std::vector<std::shared_ptr<MemSegment>> MemSegs;
       unsigned long memSize;        ///< RevMem: size of the target memory
       unsigned tlbSize;             ///< RevMem: size of the target memory
+      unsigned maxHeapSize;             ///< RevMem: size of the target memory
       RevOpts *opts;                ///< RevMem: options object
       RevMemCtrl *ctrl;             ///< RevMem: memory controller object
       SST::Output *output;          ///< RevMem: output handler
