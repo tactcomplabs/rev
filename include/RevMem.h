@@ -94,7 +94,7 @@ namespace SST {
           State = "| Allocated | "; 
         }
         std::cout << "---------------------------------------------------------------" << std::endl;
-        return os << State << " | 0x" << obj.getBaseAddr() << " | 0x" << obj.getTopAddr() << " | Size = " << obj.getSize();
+        return os << State << " | 0x" << std::hex << obj.getBaseAddr() << " | 0x" << std::hex << obj.getTopAddr() << " | Size = " << std::dec << obj.getSize();
       }
 
       private:
@@ -239,12 +239,15 @@ namespace SST {
   
       ///< RevMem: default memory size allocated to new threads (Unimplemented)
       std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
-      
-      /// RevMem: Add new MemSegment (starting at BaseAddr)
-      uint64_t AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize);
 
       /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
       uint64_t AddMemSeg(const uint64_t SegSize);
+
+      /// RevMem: Add new MemSegment (starting at BaseAddr)
+      uint64_t AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize);
+
+      /// RevMem: Add new MemSegment (starting at BaseAddr) and round it up to the nearest page
+      uint64_t AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, const bool roundUpToPage);
 
       /// RevMem: Removes or shrinks segment
       uint64_t DeallocMem(uint64_t BaseAddr, uint64_t Size);
