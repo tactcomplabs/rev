@@ -151,7 +151,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
       output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
     }
     uint32_t SegSize = (ph[i].p_memsz < __PAGE_SIZE__) ? __PAGE_SIZE__ : ph[i].p_memsz;
-    mem->AddMemSeg(ph[i].p_paddr, SegSize);
+    mem->AddMemSeg(ph[i].p_paddr, SegSize, true);
   }
 
   // Check that the ELF file is valid
@@ -222,8 +222,8 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   // If the string table index and symbol table index are valid (NonZero)
   if( strtabidx && symtabidx ){
     // If there is a string table and symbol table, add them as valid memory
-    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size);
-    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size);
+    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size, true);
+    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size, true);
     // Parse the string table
     char *strtab = membuf + sh[strtabidx].sh_offset;
     Elf32_Sym* sym = (Elf32_Sym*)(membuf + sh[symtabidx].sh_offset);
@@ -240,10 +240,10 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     }
   }
 
-  std::cout << "Memory Segments: " << std::endl;
-  for(auto Seg : mem->GetMemSegs() ){
-    std::cout << *Seg << std::endl;
-  }
+  // std::cout << "Memory Segments: " << std::endl;
+  // for(auto Seg : mem->GetMemSegs() ){
+  //   std::cout << *Seg << std::endl;
+  // }
   return true;
 }
 
@@ -270,8 +270,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
-    uint64_t SegSize = (ph[i].p_memsz < __PAGE_SIZE__) ? __PAGE_SIZE__ : ph[i].p_memsz;
-    mem->AddMemSeg(ph[i].p_paddr, SegSize);
+    mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
   // Check that the ELF file is valid
@@ -342,8 +341,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   // If the string table index and symbol table index are valid (NonZero)
   if( strtabidx && symtabidx ){
     // If there is a string table and symbol table, add them as valid memory
-    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size);
-    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size);
+    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size, true);
+    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size, true);
     // Parse the string table
     char *strtab = membuf + sh[strtabidx].sh_offset;
     Elf64_Sym* sym = (Elf64_Sym*)(membuf + sh[symtabidx].sh_offset);

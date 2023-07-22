@@ -296,6 +296,19 @@ uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize){
   return BaseAddr;
 }
 
+uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, const bool roundUpToPage){
+  // Calculate the number of pages needed to fit the segment
+  uint64_t NumPages = SegSize / __PAGE_SIZE__;
+  std::cout << "Adding Memory Segment of size " << SegSize << " Bytes" << std::endl;
+  if( SegSize % __PAGE_SIZE__ != 0 ){
+    NumPages++;
+  }
+  std::cout << "This will require " << NumPages << " pages" << std::endl;
+  MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, NumPages*__PAGE_SIZE__));
+  return BaseAddr;
+}
+
+
 
 uint64_t RevMem::AllocMem(const uint64_t SegSize){
   output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap", SegSize);
