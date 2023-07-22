@@ -11,6 +11,8 @@
 #ifndef _SST_REVCPU_REVMEM_H_
 #define _SST_REVCPU_REVMEM_H_
 
+#define __PAGE_SIZE__ 4096
+
 // -- C++ Headers
 #include <ctime>
 #include <vector>
@@ -68,7 +70,12 @@ namespace SST {
           uint64_t getBaseAddr() const { return BaseAddr; }
           uint64_t getSize() const { return Size; }
 
-          void setBaseAddr(uint64_t baseAddr) { BaseAddr = baseAddr; }
+          void setBaseAddr(uint64_t baseAddr) { 
+            BaseAddr = baseAddr;
+            if( Size ){
+              TopAddr = Size + BaseAddr;
+            }
+          }
           void setSize(uint64_t size) { Size = size; TopAddr = BaseAddr + size; }
 
           /// MemSegment: Check if vAddr is included in this segment
@@ -87,7 +94,7 @@ namespace SST {
           State = "| Allocated | "; 
         }
         std::cout << "---------------------------------------------------------------" << std::endl;
-        return os << State << " | 0x" << obj.getBaseAddr() << " | 0x" << obj.getTopAddr() << "| Size = " << obj.getSize();
+        return os << State << " | 0x" << obj.getBaseAddr() << " | 0x" << obj.getTopAddr() << " | Size = " << obj.getSize();
       }
 
       private:

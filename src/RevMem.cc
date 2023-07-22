@@ -39,7 +39,7 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
    * memory ends (ie. __BSS_END__) at which point we replace this first segment with 
    * a segment representing the static memory (0 -> __BSS_END__)
    */
-  AddMemSeg(0, memSize);
+  // AddMemSeg(0, memSize+1);
 }
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
@@ -72,7 +72,7 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
   memStats.TLBHits = 0;
   memStats.TLBMisses = 0;
 
-  AddMemSeg(0, memSize);
+  // AddMemSeg(0, memSize);
 }
 
 RevMem::~RevMem(){
@@ -218,6 +218,12 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   /* Check if vAddr is in the TLB */
   uint64_t physAddr = SearchTLB(vAddr);
 
+  std::cout << "Searching for vAddr = 0x" << vAddr << std::endl;
+
+  // for( auto Seg : GetMemSegs() ){
+  //   std::cout << *Seg << std::endl;
+  // }
+
   /* If not in TLB, physAddr will equal _INVALID_ADDR_ */
   if( physAddr == _INVALID_ADDR_ ){
     /* Check if vAddr is a valid address before translating to physAddr */
@@ -243,6 +249,13 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
     }
     else {
       /* vAddr not a valid address */
+
+
+      for( auto Seg : MemSegs ){
+        std::cout << *Seg << std::endl;
+      }
+
+      std::cout << "ABOUT TO SEGFAULT" << std::endl;
       
       output->fatal(CALL_INFO, 11, 
                     "Segmentation Fault: Virtual address 0x%lx was not found in any mem segments\n",
@@ -274,7 +287,6 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   if( vAddr >= heapstart && vAddr <= heapend ){
     return true;
   }
-  // PrintMemBounds();
   return false;
 }
 
