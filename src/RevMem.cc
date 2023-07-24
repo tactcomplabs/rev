@@ -218,7 +218,7 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   /* Check if vAddr is in the TLB */
   uint64_t physAddr = SearchTLB(vAddr);
 
-  std::cout << "Searching for vAddr = 0x" << vAddr << std::endl;
+  // std::cout << "Searching for vAddr = 0x" << vAddr << std::endl;
 
   // for( auto Seg : GetMemSegs() ){
   //   std::cout << *Seg << std::endl;
@@ -251,11 +251,11 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       /* vAddr not a valid address */
 
 
-      for( auto Seg : MemSegs ){
-        std::cout << *Seg << std::endl;
-      }
+      // for( auto Seg : MemSegs ){
+      //   std::cout << *Seg << std::endl;
+      // }
 
-      std::cout << "ABOUT TO SEGFAULT" << std::endl;
+      // std::cout << "ABOUT TO SEGFAULT" << std::endl;
       
       output->fatal(CALL_INFO, 11, 
                     "Segmentation Fault: Virtual address 0x%lx was not found in any mem segments\n",
@@ -299,11 +299,11 @@ uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize){
 uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, const bool roundUpToPage){
   // Calculate the number of pages needed to fit the segment
   uint64_t NumPages = SegSize / __PAGE_SIZE__;
-  std::cout << "Adding Memory Segment of size " << SegSize << " Bytes" << std::endl;
+  // std::cout << "Adding Memory Segment of size " << SegSize << " Bytes" << std::endl;
   if( SegSize % __PAGE_SIZE__ != 0 ){
     NumPages++;
   }
-  std::cout << "This will require " << NumPages << " pages" << std::endl;
+  // std::cout << "This will require " << NumPages << " pages" << std::endl;
   MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, NumPages*__PAGE_SIZE__));
   return BaseAddr;
 }
@@ -794,7 +794,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
           auto PrevSeg = MemSegs.at(i-1);
           if( PrevSeg->isFree() ){
             if( PrevSeg->getTopAddr() == (CurrSeg->getBaseAddr() - 1) ){
-              std::cout << "Combining Memory Segments" << std::endl;
+              // std::cout << "Combining Memory Segments" << std::endl;
               // We need to do the following:
               // - Set the previous segments size to the combined size
               //   (setSize function automatically adjusts `TopAddr`)
