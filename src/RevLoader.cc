@@ -144,7 +144,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   // Add memory segments for each program header
   for (unsigned i = 0; i < eh->e_phnum; i++) {
     // Print information about the program header
-    std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
+    // std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
 
     // Add a memory segment for the program header
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
@@ -153,6 +153,14 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     uint32_t SegSize = (ph[i].p_memsz < __PAGE_SIZE__) ? __PAGE_SIZE__ : ph[i].p_memsz;
     mem->AddMemSeg(ph[i].p_paddr, SegSize, true);
   }
+
+  // Add memory segments for each section header
+  for (unsigned i = 0; i < eh->e_shnum; i++) {
+    // Print information about the program header
+    std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
+    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+  }
+
 
   // Check that the ELF file is valid
   if( sz < eh->e_phoff + eh->e_phnum * sizeof(*ph) )
@@ -264,13 +272,20 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   // Add memory segments for each program header
   for (unsigned i = 0; i < eh->e_phnum; i++) {
     // Print information about the program header
-    std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
+    // std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
 
     // Add a memory segment for the program header
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
     mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
+  }
+
+  // Add memory segments for each section header
+  for (unsigned i = 0; i < eh->e_shnum; i++) {
+    // Print information about the program header
+    std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
+    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
   }
 
   // Check that the ELF file is valid
@@ -325,11 +340,13 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // Iterate over every section header
   for( unsigned i=0; i<eh->e_shnum; i++ ){
+    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
     // If the section header is empty, skip it
     if( sh[i].sh_type & SHT_NOBITS )
       continue;
-    if( sz < sh[i].sh_offset + sh[i].sh_size )
+    if( sz < sh[i].sh_offset + sh[i].sh_size ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
+    }
     // Find the string table index
     if( strcmp(shstrtab + sh[i].sh_name, ".strtab") == 0 )
       strtabidx = i;
