@@ -290,11 +290,28 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   return false;
 }
 
+
 uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize){
   // TODO: Check to make sure there's no overlap
-  MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
-  return BaseAddr;
+  uint64_t TopAddr = BaseAddr + SegSize;
+
+  // Check if memory segment is already allocated (We are okay with overlap... for now per ZMAGIC but not duplicate segments)
+  for( auto Seg : MemSegs ){
+    if( Seg->contains(BaseAddr, SegSize) ){
+      if( Seg->isFree() ){
+        // If the segment is free, we can shrink it to fit the new segment
+        ShrinkMemSeg(Seg, SegSize);
+      }
+      else {
+        // TODO: Eventually add more checks once permissions are implemented
+        output->verbose(CALL_INFO, 10, 99, 
+        "Warning: Memory segment already allocated at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
+        return BaseAddr;
+      }
+    }
+  } 
 }
+
 
 uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, const bool roundUpToPage){
   // Calculate the number of pages needed to fit the segment
@@ -303,8 +320,26 @@ uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, con
   if( SegSize % __PAGE_SIZE__ != 0 ){
     NumPages++;
   }
-  // std::cout << "This will require " << NumPages << " pages" << std::endl;
-  MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, NumPages*__PAGE_SIZE__));
+
+  uint64_t RoundedTopAddr = NumPages*__PAGE_SIZE__;
+
+  // Check if memory segment is already allocated (We are okay with overlap... for now per ZMAGIC but not duplicate segments)
+  for( auto Seg : MemSegs ){
+    if( Seg->contains(BaseAddr, RoundedTopAddr) ){
+      if( Seg->isFree() ){
+        // If the segment is free, we can shrink it to fit the new segment
+        ShrinkMemSeg(Seg, RoundedTopAddr);
+      }
+      else {
+        // TODO: Eventually add more checks once permissions are implemented
+        output->verbose(CALL_INFO, 10, 99, 
+        "Warning: Memory segment already allocated at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
+        return BaseAddr;
+      }
+    }
+  } 
+
+  MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedTopAddr));
   return BaseAddr;
 }
 

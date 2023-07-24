@@ -79,8 +79,14 @@ namespace SST {
           void setSize(uint64_t size) { Size = size; TopAddr = BaseAddr + size; }
 
           /// MemSegment: Check if vAddr is included in this segment
-          bool contains(uint64_t vAddr){
+          bool contains(const uint64_t vAddr){
             return (vAddr >= BaseAddr && vAddr <= TopAddr);
+          };
+
+          // Check if a given range is inside a segment
+          bool contains(const uint64_t vBaseAddr, const uint64_t Size){
+            uint64_t vTopAddr = vBaseAddr + Size;
+            return (this->contains(vBaseAddr) && this->contains(vTopAddr));
           };
 
           bool isFree(){ return IsFree; }
