@@ -93,8 +93,8 @@ namespace SST{
       }
 
       static bool remw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
-        uint64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
+        int64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
+        int64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
         if( rhs == 0 ){
           // division by zero remainder = rs1
           R->RV64[Inst.rd] = R->RV64[Inst.rs1];
@@ -114,9 +114,8 @@ namespace SST{
       static bool remuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint64_t lhs = R->RV64[Inst.rs1] & MASK32;
         uint64_t rhs = R->RV64[Inst.rs2] & MASK32;
-        ZEXTI(lhs,64);
-        ZEXTI(rhs,64);
-        if( rhs == 0 ){
+        uint64_t signRhs = (R->RV64[Inst.rs2] & 0x8000000000000000) >> 63;
+        if(( rhs == 0 ) || (signRhs > 0)){
           // division by zero remainder = rs1
           //SEXT(R->RV64[Inst.rd], R->RV64[Inst.rs1]&MASK32, 32);
           R->RV64[Inst.rd] = R->RV64[Inst.rs1];
