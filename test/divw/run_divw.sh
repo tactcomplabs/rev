@@ -5,7 +5,7 @@ make
 
 # Check that the exec was built...
 if [ -f divw.exe ]; then
-  sst ./rev-divw.py
+  sst --add-lib-path=../../src/ ./rev-divw.py
 else
   echo "Test DIVW: dviw.exe not Found - likely build failed"
   exit 1

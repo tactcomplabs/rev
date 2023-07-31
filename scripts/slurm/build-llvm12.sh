@@ -39,7 +39,7 @@ cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug ../ >> ../rev.jenkins.${SL
 make clean >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make uninstall >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make -j >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-make install >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+#make install >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 
 #-- Stage 4: test everything
 make test >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
