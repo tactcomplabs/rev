@@ -862,6 +862,7 @@ namespace SST{
       }
 
       static bool fence(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        M->FenceMem();
         if( F->IsRV32() ){
           R->RV32_PC += Inst.instSize;
         }else{
@@ -871,6 +872,7 @@ namespace SST{
       }
 
       static bool fencei(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        M->FenceMem();
         if( F->IsRV32() ){
           R->RV32_PC += Inst.instSize;
         }else{
