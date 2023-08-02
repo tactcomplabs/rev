@@ -157,7 +157,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   // Add memory segments for each section header
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // Print information about the program header
-    std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
+    // std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
   }
 
@@ -176,9 +176,9 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   mem->SetStackTop(sp);
 
   // Print information about each memory segment
-  for( auto Seg : mem->GetMemSegs() ){
-    std::cout << "Segment: " << Seg->getBaseAddr() << ", Size: " << Seg->getSize() << std::endl;
-  }
+  // for( auto Seg : mem->GetMemSegs() ){
+  //   std::cout << "Segment: " << Seg->getBaseAddr() << ", Size: " << Seg->getSize() << std::endl;
+  // }
 
   // Load each program header into memory
   for( unsigned i=0; i<eh->e_phnum; i++ ){
@@ -283,8 +283,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // Add memory segments for each section header
   for (unsigned i = 0; i < eh->e_shnum; i++) {
-    // Print information about the program header
-    std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
   }
 
@@ -301,12 +299,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
-  // Print information about each memory segment
-  for( auto Seg : mem->GetMemSegs() ){
-    std::cout << "Segment: " << Seg->getBaseAddr() << ", Size: " << Seg->getSize() << std::endl;
-  }
-
-  // Load each program header into memory
   for( unsigned i=0; i<eh->e_phnum; i++ ){
     // Look for the loadable program headers
     if( ph[i].p_type == PT_LOAD && ph[i].p_memsz ){
@@ -376,10 +368,10 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     }
   }
 
-  std::cout << "Memory Segments: " << std::endl;
-  for(auto Seg : mem->GetMemSegs() ){
-    std::cout << *Seg << std::endl;
-  }
+  // std::cout << "Memory Segments: " << std::endl;
+  // for(auto Seg : mem->GetMemSegs() ){
+  //   std::cout << *Seg << std::endl;
+  // }
   return true;
 }
 
@@ -491,7 +483,6 @@ bool RevLoader::LoadElf(){
   // infrastructure is loaded
   mem->FenceMem();
 
-  std::cout << "LOADED ELF" << std::endl;
   return true;
 }
 
@@ -508,7 +499,6 @@ void RevLoader::InitStaticMem(){
   //   output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however there is either more or less than 1 memory segment\n");
   //   return;
   // } else {
-  std::cout << "ELF ENTRY = 0x" << std::hex << elfinfo.entry << std::endl;
   uint64_t StaticDataEnd = GetSymbolAddr("__BSS_END__");
   if( StaticDataEnd <= 0 ){
     StaticDataEnd = GetSymbolAddr("_tbss_end");
@@ -517,10 +507,8 @@ void RevLoader::InitStaticMem(){
     }
     return;
   } else {
-    std::cout << "BSS_END = 0x" << std::hex << StaticDataEnd << std::endl;
 
 
-  //   // std::cout << "TBSS_END = 0x" << std::hex << StaticDataEnd << std::endl;
   mem->SetHeapStart(StaticDataEnd + 1);
   mem->SetHeapEnd(StaticDataEnd + 1);
   //   return;
