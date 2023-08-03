@@ -22,47 +22,39 @@ namespace SST{
 
       static bool lrw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
-          if( !M->LR(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1])) )
-            return false;
+          M->LR(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
+                (uint32_t *)(&R->RV32[Inst.rd]),
+                Inst.aq, Inst.rl,
+                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
           R->RV32_PC += Inst.instSize;
         }else{
-          SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-          if( !M->LR(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1])) )
-            return false;
+          M->LR(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
+                (uint32_t *)(&R->RV64[Inst.rd]),
+                Inst.aq, Inst.rl,
+                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
           R->RV64_PC += Inst.instSize;
         }
-        // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
       static bool scw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          if( M->SC(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1])) ){
-            // successfully cleared the reservation
-            M->WriteU32( (uint64_t)(R->RV32[Inst.rs1]), (uint32_t)(R->RV32[Inst.rs2]) );
-            R->RV32[Inst.rd] = 0;
-            R->RV32_PC += Inst.instSize;
-            return true;
-          }else{
-            // failed to clear the reservation
-            R->RV32[Inst.rd] = 1;
-            return true;
-          }
+          M->SC(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
+                (uint32_t *)(&R->RV32[Inst.rs2]),
+                (uint32_t *)(&R->RV32[Inst.rd]),
+                Inst.aq, Inst.rl,
+                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
+          R->RV32_PC += Inst.instSize;
         }else{
-          if( M->SC(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1])) ){
-            // successfully cleared the reservation
-            M->WriteU32( (uint64_t)(R->RV64[Inst.rs1]), (uint32_t)(R->RV64[Inst.rs2]) );
-            R->RV64[Inst.rd] = 0;
-            R->RV64_PC += Inst.instSize;
-            return true;
-          }else{
-            // failed to clear the reservation
-            R->RV64[Inst.rd] = 1;
-            return true;
-          }
+          M->SC(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
+                (uint32_t *)(&R->RV64[Inst.rs2]),
+                (uint32_t *)(&R->RV64[Inst.rd]),
+                Inst.aq, Inst.rl,
+                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+          R->RV64_PC += Inst.instSize;
         }
+        return true;
       }
 
       static bool amoswapw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {

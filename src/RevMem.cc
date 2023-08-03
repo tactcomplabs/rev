@@ -122,23 +122,110 @@ bool RevMem::StatusFuture(uint64_t Addr){
   return false;
 }
 
-bool RevMem::LR(unsigned Hart, uint64_t Addr){
-  std::pair<unsigned,uint64_t> Entry = std::make_pair(Hart,Addr);
-  LRSC.push_back(Entry);
+bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
+                    void *Target, uint8_t aq, uint8_t rl,
+                    StandardMem::Request::flags_t flags){
+  std::vector<std::tuple<unsigned,uint64_t,unsigned,uint64_t*>>::iterator it;
+
+  for( it = LRSC.begin(); it != LRSC.end(); ++it ){
+    if( (Hart == std::get<LRSC_HART>(*it)) &&
+        (Addr == std::get<LRSC_ADDR>(*it)) ){
+      // existing reservation; return w/ error
+      uint32_t *Tmp = (uint32_t *)(Target);
+      Tmp[0] = 0x01ul;
+      return false;
+    }else if( (Hart != std::get<LRSC_HART>(*it)) &&
+              (Addr == std::get<LRSC_ADDR>(*it)) ){
+      // existing reservation; return w/ error
+      uint32_t *Tmp = (uint32_t *)(Target);
+      Tmp[0] = 0x01ul;
+      return false;
+    }
+  }
+
+  // didn't find a colliding object; add it
+  LRSC.push_back(std::tuple<unsigned,uint64_t,
+                 unsigned,uint64_t*>(Hart,Addr,(unsigned)(aq|(rl<<1)),
+                                     (uint64_t *)(Target)));
+
+  // now handle the memory operation
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Target);
+
+  if( ctrl ){
+    ctrl->sendREADLOCKRequest(Addr, (uint64_t)(BaseMem), Len, Target, flags);
+  }else{
+    for( unsigned i=0; i<Len; i++ ){
+      DataMem[i] = BaseMem[i];
+    }
+  }
+
   return true;
 }
 
-bool RevMem::SC(unsigned Hart, uint64_t Addr){
-  // search the LRSC vector for the entry pair
-  std::vector<std::pair<unsigned,uint64_t>>::iterator it;
+bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
+                    void *Data, void *Target, uint8_t aq, uint8_t rl,
+                    StandardMem::Request::flags_t flags){
+  std::vector<std::tuple<unsigned,uint64_t,unsigned,uint64_t*>>::iterator it;
 
   for( it = LRSC.begin(); it != LRSC.end(); ++it ){
-    if( (Hart == std::get<0>(*it)) &&
-        (Addr == std::get<1>(*it)) ){
+    if( (Hart == std::get<LRSC_HART>(*it)) &&
+        (Addr == std::get<LRSC_ADDR>(*it)) ){
+      // existing reservation; test to see if the value matches
+      uint64_t *TmpTarget = std::get<LRSC_VAL>(*it);
+      uint64_t *TmpData = (uint64_t *)(Data);
+
+      if( Len == 32 ){
+        uint32_t A;
+        uint32_t B;
+        for( unsigned i=0; i<Len; i++ ){
+          A |= ((uint32_t)(TmpTarget[i]) << i);
+          B |= ((uint32_t)(TmpData[i]) << i);
+        }
+        if( (A & B) == 0 ){
+          uint32_t *Tmp = (uint32_t *)(Target);
+          Tmp[0] = 0x1;
+          return false;
+        }
+      }else{
+        uint64_t A;
+        uint64_t B;
+        for( unsigned i=0; i<Len; i++ ){
+          A |= ((uint64_t)(TmpTarget[i]) << i);
+          B |= ((uint64_t)(TmpData[i]) << i);
+        }
+        if( (A & B) == 0 ){
+          uint64_t *Tmp = (uint64_t *)(Target);
+          Tmp[0] = 0x1;
+          return false;
+        }
+      }
+
+      // everything has passed so far,
+      // write the value back to memory
+      WriteMem(Addr,Len,Data,flags);
+
+      // write zeros to target
+      for( unsigned i=0; i<Len; i++ ){
+        uint64_t *Tmp = (uint64_t *)(Target);
+        Tmp[i] = 0x0;
+      }
+
+      // erase the entry
       LRSC.erase(it);
       return true;
     }
   }
+
+  // failed, write a nonzero value to target
+  uint32_t *Tmp = (uint32_t *)(Target);
+  Tmp[0] = 0x1;
 
   return false;
 }

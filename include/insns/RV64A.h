@@ -21,24 +21,25 @@ namespace SST{
     class RV64A : public RevExt {
 
       static bool lrd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        SEXT(R->RV64[Inst.rd],M->ReadU64( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-        if( !M->LR(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1])) )
-          return false;
+
+        M->LR(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
+                (uint64_t *)(&R->RV64[Inst.rd]),
+                Inst.aq, Inst.rl,
+                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+
         R->RV64_PC += Inst.instSize;
         return true;
       }
 
       static bool scd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( M->SC(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1])) ){
-          // successfully cleared the reservation
-          M->WriteU64( (uint64_t)(R->RV64[Inst.rs1]), (uint64_t)(R->RV64[Inst.rs2]) );
-          R->RV64[Inst.rd] = 0;
-          return true;
-        }else{
-          // failed to clear the reservation
-          R->RV64[Inst.rd] = 1;
-          return true;
-        }
+
+        M->SC(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
+                (uint64_t *)(&R->RV64[Inst.rs2]),
+                (uint64_t *)(&R->RV64[Inst.rd]),
+                Inst.aq, Inst.rl,
+                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+        R->RV64_PC += Inst.instSize;
+        return true;
       }
 
       static bool amoswapd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {

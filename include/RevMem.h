@@ -20,6 +20,7 @@
 #include <time.h>
 #include <random>
 #include <mutex>
+#include <tuple>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -103,6 +104,22 @@ namespace SST {
         return ReadMem(Addr, sizeof(T), (void *)(Target), flags);
       }
 
+      ///  RevMem: template LOAD RESERVE memory interface
+      template <typename T>
+      bool LR( unsigned Hart, uint64_t Addr, T *Target,
+               uint8_t aq, uint8_t rl,
+               StandardMem::Request::flags_t flags){
+        return LRBase(Hart, Addr, sizeof(T), (void *)(Target), aq, rl, flags);
+      }
+
+      ///  RevMem: template STORE CONDITIONAL memory interface
+      template <typename T>
+      bool SC( unsigned Hart, uint64_t Addr, T *Data, T *Target,
+               uint8_t aq, uint8_t rl,
+               StandardMem::Request::flags_t flags){
+        return SCBase(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), aq, rl, flags);
+      }
+
       /// RevMem: DEPRECATED: Read uint8 from the target memory location
       [[deprecated("Simple RevMem interfaces have been deprecated")]]
       uint8_t ReadU8( uint64_t Addr );
@@ -152,10 +169,14 @@ namespace SST {
       // ---- Atomic/Future/LRSC Interfaces
       // ----------------------------------------------------
       /// RevMem: Add a memory reservation for the target address
-      bool LR(unsigned Hart, uint64_t Addr);
+      bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
+                  void *Data, uint8_t aq, uint8_t rl,
+                  StandardMem::Request::flags_t flags);
 
       /// RevMem: Clear a memory reservation for the target address
-      bool SC(unsigned Hart, uint64_t Addr);
+      bool SCBase(unsigned Hart, uint64_t Addr, size_t Len,
+                  void *Data, void *Target, uint8_t aq, uint8_t rl,
+                  StandardMem::Request::flags_t flags);
 
       /// RevMem: Initiates a future operation [RV64P only]
       bool SetFuture( uint64_t Addr );
@@ -223,7 +244,13 @@ namespace SST {
 
       std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 
-      std::vector<std::pair<unsigned,uint64_t>> LRSC;   ///< RevMem: load reserve/store conditional vector
+      // these are LRSC tuple index macros
+      #define LRSC_HART 0
+      #define LRSC_ADDR 1
+      #define LRSC_AQRL 2
+      #define LRSC_VAL  3
+      std::vector<std::tuple<unsigned,uint64_t,
+                             unsigned,uint64_t*>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
     }; // class RevMem
   } // namespace RevCPU
