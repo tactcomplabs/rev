@@ -16,6 +16,7 @@ RevLoader::RevLoader( std::string Exe, std::string Args,
     RV32Entry(0x00l), RV64Entry(0x00ull) {
   if( !LoadElf() )
     output->fatal(CALL_INFO, -1, "Error: failed to load executable into memory\n");
+  InitStaticMem();
 }
 
 RevLoader::~RevLoader(){
@@ -127,50 +128,78 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
 
 // Elf32_Ehdr, Elf32_Phdr, Elf32_Shdr, Elf32_Sym, from_le
 bool RevLoader::LoadElf32(char *membuf, size_t sz){
-  std::vector<uint8_t> zeros;
+  // Parse the ELF header
   Elf32_Ehdr *eh = (Elf32_Ehdr *)(membuf);
+
+  // Parse the program headers
   Elf32_Phdr *ph = (Elf32_Phdr *)(membuf + eh->e_phoff);
+
+  // Parse the section headers
+  Elf32_Shdr* sh = (Elf32_Shdr*)(membuf + eh->e_shoff);
+  char *shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
+
+  // Store the entry point of the program
   RV32Entry = eh->e_entry;
+
+  // Add memory segments for each program header
+  for (unsigned i = 0; i < eh->e_phnum; i++) {
+    // Print information about the program header
+    // std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
+
+    // Add a memory segment for the program header
+    if( sz < ph[i].p_offset + ph[i].p_filesz ){
+      output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
+    }
+    uint32_t SegSize = (ph[i].p_memsz < __PAGE_SIZE__) ? __PAGE_SIZE__ : ph[i].p_memsz;
+    mem->AddMemSeg(ph[i].p_paddr, SegSize, true);
+  }
+
+  // Add memory segments for each section header
+  for (unsigned i = 0; i < eh->e_shnum; i++) {
+    // Print information about the program header
+    // std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
+    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+  }
+
+
+  // Check that the ELF file is valid
   if( sz < eh->e_phoff + eh->e_phnum * sizeof(*ph) )
     output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
 
-  // write the program header
+  // Write the program headers to memory
   elfinfo.phnum = eh->e_phnum;
   elfinfo.phent = sizeof(Elf32_Phdr);
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf32_Phdr);
-  uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  //mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
+  uint32_t sp = mem->GetStackTop() - (uint32_t)(elfinfo.phdr_size);
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
+  // Print information about each memory segment
+  // for( auto Seg : mem->GetMemSegs() ){
+  //   std::cout << "Segment: " << Seg->getBaseAddr() << ", Size: " << Seg->getSize() << std::endl;
+  // }
+
+  // Load each program header into memory
   for( unsigned i=0; i<eh->e_phnum; i++ ){
+    // Look for the loadable program headers
     if( ph[i].p_type == PT_LOAD && ph[i].p_memsz ){
       if( ph[i].p_filesz ){
-        if( sz < ph[i].p_offset + ph[i].p_filesz )
+        if( sz < ph[i].p_offset + ph[i].p_filesz ){
           output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
-#if 0
-        mem->WriteMem(ph[i].p_paddr,
-                      ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
-#endif
+        }
         WriteCacheLine(ph[i].p_paddr,
                       ph[i].p_filesz,
                       (uint8_t*)(membuf+ph[i].p_offset));
       }
-      zeros.resize(ph[i].p_memsz - ph[i].p_filesz);
-#if 0
-      mem->WriteMem(ph[i].p_paddr + ph[i].p_filesz,
-                    ph[i].p_memsz - ph[i].p_filesz,
-                    &zeros[0]);
-#endif
+      std::vector<uint8_t> zeros(ph[i].p_memsz - ph[i].p_filesz);
       WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,
-                    ph[i].p_memsz - ph[i].p_filesz,
-                    &zeros[0]);
+                     ph[i].p_memsz - ph[i].p_filesz,
+                     &zeros[0]);
     }
   }
 
-  Elf32_Shdr* sh = (Elf32_Shdr*)(membuf + eh->e_shoff);
+  // Check that the ELF file is valid
   if( sz < eh->e_shoff + eh->e_shnum * sizeof(*sh) )
     output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
 
@@ -180,89 +209,115 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   if( sz < sh[eh->e_shstrndx].sh_offset + sh[eh->e_shstrndx].sh_size )
     output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
 
-  char *shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
   unsigned strtabidx = 0;
   unsigned symtabidx = 0;
 
+  // Iterate over every section header
   for( unsigned i=0; i<eh->e_shnum; i++ ){
-    unsigned maxlen = sh[eh->e_shstrndx].sh_size - sh[i].sh_name;
-    if( sh[i].sh_name >= sh[eh->e_shstrndx].sh_size )
-      output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
-    if( strnlen(shstrtab + sh[i].sh_name, maxlen) >= maxlen )
-      output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
+    // If the section header is empty, skip it
     if( sh[i].sh_type & SHT_NOBITS )
       continue;
     if( sz < sh[i].sh_offset + sh[i].sh_size )
       output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
+    // Find the string table index
     if( strcmp(shstrtab + sh[i].sh_name, ".strtab") == 0 )
       strtabidx = i;
+    // Find the symbol table index
     if( strcmp(shstrtab + sh[i].sh_name, ".symtab") == 0 )
       symtabidx = i;
   }
 
+  // If the string table index and symbol table index are valid (NonZero)
   if( strtabidx && symtabidx ){
+    // If there is a string table and symbol table, add them as valid memory
+    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size, true);
+    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size, true);
+    // Parse the string table
     char *strtab = membuf + sh[strtabidx].sh_offset;
     Elf32_Sym* sym = (Elf32_Sym*)(membuf + sh[symtabidx].sh_offset);
+    // Iterate over every symbol in the symbol table
     for( unsigned i=0; i<sh[symtabidx].sh_size/sizeof(Elf32_Sym); i++ ){
+      // Calculate the maximum length of the symbol
       unsigned maxlen = sh[strtabidx].sh_size - sym[i].st_name;
       if( sym[i].st_name >= sh[strtabidx].sh_size )
         output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
       if( strnlen(strtab + sym[i].st_name, maxlen) >= maxlen )
         output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
+      // Add the symbol to the symbol table
       symtable[strtab+sym[i].st_name] = sym[i].st_value;
     }
   }
 
+  // std::cout << "Memory Segments: " << std::endl;
+  // for(auto Seg : mem->GetMemSegs() ){
+  //   std::cout << *Seg << std::endl;
+  // }
   return true;
 }
 
 bool RevLoader::LoadElf64(char *membuf, size_t sz){
-  std::vector<uint8_t> zeros;
+  // Parse the ELF header
   Elf64_Ehdr *eh = (Elf64_Ehdr *)(membuf);
+
+  // Parse the program headers
   Elf64_Phdr *ph = (Elf64_Phdr *)(membuf + eh->e_phoff);
+
+  // Parse the section headers
+  Elf64_Shdr* sh = (Elf64_Shdr*)(membuf + eh->e_shoff);
+  char *shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
+
+  // Store the entry point of the program
   RV64Entry = eh->e_entry;
+
+  // Add memory segments for each program header
+  for (unsigned i = 0; i < eh->e_phnum; i++) {
+    // Print information about the program header
+    // std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
+
+    // Add a memory segment for the program header
+    if( sz < ph[i].p_offset + ph[i].p_filesz ){
+      output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
+    }
+    mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
+  }
+
+  // Add memory segments for each section header
+  for (unsigned i = 0; i < eh->e_shnum; i++) {
+    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+  }
+
+  // Check that the ELF file is valid
   if( sz < eh->e_phoff + eh->e_phnum * sizeof(*ph) )
     output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
 
-
-  // write the program header
+  // Write the program headers to memory
   elfinfo.phnum = eh->e_phnum;
   elfinfo.phent = sizeof(Elf64_Phdr);
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  //mem->WriteMem(sp,elfinfo.phdr_size,(void *)(ph));
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
-
   for( unsigned i=0; i<eh->e_phnum; i++ ){
+    // Look for the loadable program headers
     if( ph[i].p_type == PT_LOAD && ph[i].p_memsz ){
       if( ph[i].p_filesz ){
-        if( sz < ph[i].p_offset + ph[i].p_filesz )
+        if( sz < ph[i].p_offset + ph[i].p_filesz ){
           output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
-#if 0
-        mem->WriteMem(ph[i].p_paddr,
-                      ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
-#endif
+        }
         WriteCacheLine(ph[i].p_paddr,
                       ph[i].p_filesz,
                       (uint8_t*)(membuf+ph[i].p_offset));
       }
-      zeros.resize(ph[i].p_memsz - ph[i].p_filesz);
-#if 0
-      mem->WriteMem(ph[i].p_paddr + ph[i].p_filesz,
-                    ph[i].p_memsz - ph[i].p_filesz,
-                    &zeros[0]);
-#endif
+      std::vector<uint8_t> zeros(ph[i].p_memsz - ph[i].p_filesz);
       WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,
-                    ph[i].p_memsz - ph[i].p_filesz,
-                    &zeros[0]);
+                     ph[i].p_memsz - ph[i].p_filesz,
+                     &zeros[0]);
     }
   }
 
-  Elf64_Shdr* sh = (Elf64_Shdr*)(membuf + eh->e_shoff);
+  // Check that the ELF file is valid
   if( sz < eh->e_shoff + eh->e_shnum * sizeof(*sh) )
     output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
 
@@ -272,34 +327,51 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   if( sz < sh[eh->e_shstrndx].sh_offset + sh[eh->e_shstrndx].sh_size )
     output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
 
-  char *shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
   unsigned strtabidx = 0;
   unsigned symtabidx = 0;
 
+  // Iterate over every section header
   for( unsigned i=0; i<eh->e_shnum; i++ ){
+    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+    // If the section header is empty, skip it
     if( sh[i].sh_type & SHT_NOBITS )
       continue;
-    if( sz < sh[i].sh_offset + sh[i].sh_size )
+    if( sz < sh[i].sh_offset + sh[i].sh_size ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
+    }
+    // Find the string table index
     if( strcmp(shstrtab + sh[i].sh_name, ".strtab") == 0 )
       strtabidx = i;
+    // Find the symbol table index
     if( strcmp(shstrtab + sh[i].sh_name, ".symtab") == 0 )
       symtabidx = i;
   }
 
+  // If the string table index and symbol table index are valid (NonZero)
   if( strtabidx && symtabidx ){
+    // If there is a string table and symbol table, add them as valid memory
+    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size, true);
+    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size, true);
+    // Parse the string table
     char *strtab = membuf + sh[strtabidx].sh_offset;
     Elf64_Sym* sym = (Elf64_Sym*)(membuf + sh[symtabidx].sh_offset);
+    // Iterate over every symbol in the symbol table
     for( unsigned i=0; i<sh[symtabidx].sh_size/sizeof(Elf64_Sym); i++ ){
+      // Calculate the maximum length of the symbol
       unsigned maxlen = sh[strtabidx].sh_size - sym[i].st_name;
       if( sym[i].st_name >= sh[strtabidx].sh_size )
         output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
       if( strnlen(strtab + sym[i].st_name, maxlen) >= maxlen )
         output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
+      // Add the symbol to the symbol table
       symtable[strtab+sym[i].st_name] = sym[i].st_value;
     }
   }
 
+  // std::cout << "Memory Segments: " << std::endl;
+  // for(auto Seg : mem->GetMemSegs() ){
+  //   std::cout << *Seg << std::endl;
+  // }
   return true;
 }
 
@@ -420,6 +492,27 @@ uint64_t RevLoader::GetSymbolAddr(std::string Symbol){
     tmp = symtable[Symbol];
   }
   return tmp;
+}
+
+void RevLoader::InitStaticMem(){
+  // if( mem->GetMemSegs().size() != 1 ){
+  //   output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however there is either more or less than 1 memory segment\n");
+  //   return;
+  // } else {
+  uint64_t StaticDataEnd = GetSymbolAddr("__BSS_END__");
+  if( StaticDataEnd <= 0 ){
+    StaticDataEnd = GetSymbolAddr("_tbss_end");
+    if( StaticDataEnd <= 0 ){
+      output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however __BSS_END__ = 0x%lx\n", StaticDataEnd);
+    }
+    return;
+  } else {
+
+
+  mem->SetHeapStart(StaticDataEnd + 1);
+  mem->SetHeapEnd(StaticDataEnd + 1);
+  //   return;
+  }
 }
 
 // EOF
