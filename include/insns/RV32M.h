@@ -135,10 +135,9 @@ namespace SST{
         if( F->IsRV32() ){
           uint32_t lhs = R->RV32[Inst.rs1];
           uint32_t rhs = R->RV32[Inst.rs2];
-          ZEXTI(lhs,32);
-          ZEXTI(rhs,32);
           if( rhs == 0 ){
             R->RV32[Inst.rd] = UINT32_MAX;
+            R->RV32_PC += Inst.instSize;
             return true;
           }
           SEXT(R->RV32[Inst.rd], lhs/rhs, 32);
@@ -146,10 +145,9 @@ namespace SST{
         }else{
           uint64_t lhs = R->RV64[Inst.rs1];
           uint64_t rhs = R->RV64[Inst.rs2];
-          ZEXTI64(lhs,64);
-          ZEXTI64(rhs,64);
           if( rhs == 0 ){
             R->RV64[Inst.rd] = UINT64_MAX;
+            R->RV64_PC += Inst.instSize;
             return true;
           }
           SEXT(R->RV64[Inst.rd], lhs/rhs, 64);
