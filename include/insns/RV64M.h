@@ -53,7 +53,8 @@ namespace SST{
       }
 
       static bool mulw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1]&MASK32,32) * td_u64(R->RV64[Inst.rs2]&MASK32,32),32);
+        R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],32) * td_u64(R->RV64[Inst.rs2],32),32)&MASK32;
+        SEXTI(R->RV64[Inst.rd],32);
         R->RV64_PC += Inst.instSize;
         return true;
       }
