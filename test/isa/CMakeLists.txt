@@ -17,6 +17,12 @@ if(BUILD_ASM_TESTING)
 
 set (passRegex "Simulation is complete")
 
+add_test(
+    NAME DUMMY
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND make clean
+)
+
 foreach(testSrc ${TEST_SRCS})
   # Extract the file name
   get_filename_component(testName ${testSrc} NAME_WE)
