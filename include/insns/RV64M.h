@@ -59,8 +59,8 @@ namespace SST{
       }
 
       static bool divw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
-        uint64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
+        int64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
+        int64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
         if( rhs == 0 ){
           // division by zero, quotient = -1
           R->RV64[Inst.rd] = UINT64_MAX;
