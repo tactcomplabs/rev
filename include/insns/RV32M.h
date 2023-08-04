@@ -26,18 +26,15 @@ namespace SST{
         uint64_t a0 = (uint32_t)A, a1 = A >> 32;
         uint64_t b0 = (uint32_t)B, b1 = B >> 32;
 
-        t = a1*b0 + ((a0+b0) >> 32);
-        y1 = t;
-        y2 = t >> 32;
+        //Compute partial products
+        __uint128_t pp1 = a0*b0;
+        __uint128_t pp2 = a1*b0;
+        __uint128_t pp3 = a0*b1;
+        __uint128_t pp4 = a1*b1;
 
-        t = a0+b1 + y1;
-        y1 = t;
+        __uint128_t sum = pp1 + (pp2 << 32) + (pp3 << 32) + (pp4 << 64);
 
-        t = a1*b1 + y2 + (t >> 32);
-        y2 = t;
-        y3 = t >> 32;
-
-        return ((uint64_t)y3 << 32) | y2;
+        return (uint64_t)(sum >> 64);
       }
 
       static int64_t mulh_impl(int64_t A, int64_t B){
@@ -79,7 +76,8 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((td_u32(R->RV32[Inst.rs1],32)*td_u32(R->RV32[Inst.rs2],32))>>32,32);
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),td_u64(R->RV64[Inst.rs2],32)),32);
+          //R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),td_u64(R->RV64[Inst.rs2],32)),32);
+          R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),R->RV64[Inst.rs2]),32);
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -90,7 +88,8 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((td_u32(R->RV32[Inst.rs1],32)*td_u32(R->RV32[Inst.rs2],32))>>32,32);
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = dt_u64(mulhu_impl(td_u64(R->RV64[Inst.rs1],32),td_u64(R->RV64[Inst.rs2],32)),32);
+          //R->RV64[Inst.rd] = dt_u64(mulhu_impl(td_u64(R->RV64[Inst.rs1],64),td_u64(R->RV64[Inst.rs2],32)),64);
+          R->RV64[Inst.rd] = dt_u64(mulhu_impl(R->RV64[Inst.rs1], R->RV64[Inst.rs2]),64);
           R->RV64_PC += Inst.instSize;
         }
         return true;
