@@ -80,14 +80,14 @@ namespace SST{
       static bool divuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint64_t lhs = R->RV64[Inst.rs1] & MASK32;
         uint64_t rhs = R->RV64[Inst.rs2] & MASK32;
-        ZEXTI(lhs,64);
-        ZEXTI(rhs,64);
         if( rhs == 0 ){
           // division by zero, quotient = 2^L-1
           R->RV64[Inst.rd] = UINT32_MAX;
+          SEXTI(R->RV64[Inst.rd], 32);
+          R->RV64_PC += Inst.instSize;
           return true;
         }
-        SEXT(R->RV64[Inst.rd], (lhs/rhs)&MASK32, 64);
+        SEXT(R->RV64[Inst.rd], (lhs/rhs)&MASK32, 32);
         R->RV64_PC += Inst.instSize;
         return true;
       }
