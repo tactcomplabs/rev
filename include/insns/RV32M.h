@@ -98,27 +98,31 @@ namespace SST{
 
       static bool div(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          uint32_t lhs = td_u32(R->RV32[Inst.rs1],32);
-          uint32_t rhs = td_u32(R->RV32[Inst.rs2],32);
+          int32_t lhs = td_u32(R->RV32[Inst.rs1],32);
+          int32_t rhs = td_u32(R->RV32[Inst.rs2],32);
           if( rhs == 0 ){
             R->RV32[Inst.rd] = UINT32_MAX;
+            R->RV32_PC += Inst.instSize;
             return true;
           }else if( (lhs == INT32_MIN) &&
                     ((int32_t)(rhs) == -1) ){
             R->RV32[Inst.rd] = dt_u32(lhs,32);
+            R->RV32_PC += Inst.instSize;
             return true;
           }
           R->RV32[Inst.rd] = dt_u32(lhs/rhs,32);
           R->RV32_PC += Inst.instSize;
         }else{
-          uint64_t lhs = td_u64(R->RV64[Inst.rs1],64);
-          uint64_t rhs = td_u64(R->RV64[Inst.rs2],64);
+          int64_t lhs = td_u64(R->RV64[Inst.rs1],64);
+          int64_t rhs = td_u64(R->RV64[Inst.rs2],64);
           if( rhs == 0 ){
             R->RV64[Inst.rd] = UINT64_MAX;
+            R->RV64_PC += Inst.instSize;
             return true;
           }else if( (lhs == INT64_MIN) &&
                     ((int64_t)(rhs) == -1) ){
             R->RV64[Inst.rd] = dt_u64(lhs,64);
+            R->RV64_PC += Inst.instSize;
             return true;
           }
           R->RV64[Inst.rd] = dt_u64(lhs/rhs,64);
