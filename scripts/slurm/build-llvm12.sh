@@ -20,7 +20,7 @@
 
 #-- Stage 1: load the necessary modules
 source /etc/profile.d/modules.sh
-module load riscv/gcc/12.2.0 sst/12.1.0 cmake/3.23.0 riscv-linux/gcc/12.2.0 sst/13.0.0 llvm/12.0.0
+module load riscv/gcc/12.2.0 cmake/3.23.0 riscv-linux/gcc/12.2.0 sst/13.0.0 llvm/12.0.0
 export CC=clang
 export CXX=clang++
 export RVCC=riscv64-unknown-elf-gcc
