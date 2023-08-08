@@ -5,7 +5,7 @@ make clean && make
 
 # Check that the exec was built...
 if [ -f strstr.exe ]; then
-  sst --add-lib-path=../../src/ ./rev-strstr.py
+  sst --add-lib-path=../../build/src/ ./rev-strstr.py
 else
   echo "Test STRSTR: strstr.exe not Found - likely build failed"
   exit 1

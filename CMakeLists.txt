@@ -60,6 +60,8 @@ set(REV_BASE "${CMAKE_CURRENT_SOURCE_DIR}")
 set(ENV{REV_BASE} "${REV_BASE}")
 message(STATUS "REV_BASE set to ${REV_BASE}")
 
+set(ENV{RVCC} "${RVCC}")
+
 #------------------------------------------------------------------------
 #-- DERIVE SST ENV
 #------------------------------------------------------------------------
