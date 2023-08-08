@@ -226,6 +226,15 @@ set_tests_properties(DIVW
     LABELS "all;rv64"
 )
 
+add_test(NAME DIVW2 COMMAND run_divw2.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/divw2" ) # divw2
+set_tests_properties(DIVW2
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 add_test(NAME TOWERS COMMAND run_towers.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/towers" ) # towers
 set_tests_properties(TOWERS
   PROPERTIES
