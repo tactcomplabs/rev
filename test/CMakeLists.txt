@@ -15,12 +15,12 @@ else()
 endif()
 
 # Check for RISCV Compiler
-find_program(RVCC NAMES riscv64-unknown-elf-gcc
-                        riscv64-unknown-linux-gnu-gcc
-                        riscv64-unknown-linux-musl-gcc)
+set(RVCC "${RVCC}")
 
-if(RVCC-NOTFOUND)
-    message(FATAL_ERROR "No riscv64 compatible gcc (riscv64-unknown-elf-gcc || riscv64-unknown-linux-gnu-gcc || riscv64-unknown-linux-musl-gcc) binary found in path")
+if(RVCC)
+  message(STATUS "RVCC set to ${RVCC}")
+else()
+    message(FATAL_ERROR "No RVCC compiler found: use -DRVCC=/path/to/compiler (gcc,clang)")
 endif()
 
 # find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)

@@ -39,9 +39,12 @@ Building the Rev SST component from source using CMake can be performed as follo
 
     git clone
     cd rev/build
-    cmake ..
+    cmake -DRVCC=/path/to/riscv/compiler/exe ..
     make -j
     make install
+
+Additional build options include:
+    * -DBUILD_ASM_TESTING=ON
 
 After a successful build you can test your install with:
 

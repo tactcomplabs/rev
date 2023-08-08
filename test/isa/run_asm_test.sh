@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #Build the test
-#make clean
 make
 
 # Check that the exec was built...
