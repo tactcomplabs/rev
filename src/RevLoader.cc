@@ -159,6 +159,9 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     // Print information about the program header
     // std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+//    if( sh[i].sh_name ){
+//      std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: " << sh[i].sh_size << ", Name: " << shstrtab + sh[i].sh_name << std::endl;
+//    }
   }
 
 
@@ -281,8 +284,15 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
+  uint64_t StaticDataEnd; 
   // Add memory segments for each section header
   for (unsigned i = 0; i < eh->e_shnum; i++) {
+    // check if the section header name is bss
+    if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
+      uint64_t StaticDataEnd = sh[i].sh_addr + sh[i].sh_size;
+      // Add a memory segment for the bss section
+      mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+    }
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
   }
 
@@ -372,6 +382,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   // for(auto Seg : mem->GetMemSegs() ){
   //   std::cout << *Seg << std::endl;
   // }
+  mem->SetHeapEnd(StaticDataEnd);
+  mem->SetHeapStart(StaticDataEnd);
   return true;
 }
 
@@ -499,20 +511,12 @@ void RevLoader::InitStaticMem(){
   //   output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however there is either more or less than 1 memory segment\n");
   //   return;
   // } else {
-  uint64_t StaticDataEnd = GetSymbolAddr("__BSS_END__");
-  if( StaticDataEnd <= 0 ){
-    StaticDataEnd = GetSymbolAddr("_tbss_end");
-    if( StaticDataEnd <= 0 ){
-      output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however __BSS_END__ = 0x%lx\n", StaticDataEnd);
-    }
+
+  //   mem->SetHeapStart(StaticDataEnd + 1);
+  //   mem->SetHeapEnd(StaticDataEnd + 1);
     return;
-  } else {
-
-
-  mem->SetHeapStart(StaticDataEnd + 1);
-  mem->SetHeapEnd(StaticDataEnd + 1);
-  //   return;
-  }
+  // }
 }
+
 
 // EOF
