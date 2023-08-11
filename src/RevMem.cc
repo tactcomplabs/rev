@@ -131,13 +131,13 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
     if( (Hart == std::get<LRSC_HART>(*it)) &&
         (Addr == std::get<LRSC_ADDR>(*it)) ){
       // existing reservation; return w/ error
-      uint32_t *Tmp = (uint32_t *)(Target);
+      uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
       Tmp[0] = 0x01ul;
       return false;
     }else if( (Hart != std::get<LRSC_HART>(*it)) &&
               (Addr == std::get<LRSC_ADDR>(*it)) ){
       // existing reservation; return w/ error
-      uint32_t *Tmp = (uint32_t *)(Target);
+      uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
       Tmp[0] = 0x01ul;
       return false;
     }
@@ -146,7 +146,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
   // didn't find a colliding object; add it
   LRSC.push_back(std::tuple<unsigned,uint64_t,
                  unsigned,uint64_t*>(Hart,Addr,(unsigned)(aq|(rl<<1)),
-                                     (uint64_t *)(Target)));
+                                     reinterpret_cast<uint64_t *>(Target)));
 
   // now handle the memory operation
   uint64_t pageNum = Addr >> addrShift;
@@ -179,7 +179,7 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
         (Addr == std::get<LRSC_ADDR>(*it)) ){
       // existing reservation; test to see if the value matches
       uint64_t *TmpTarget = std::get<LRSC_VAL>(*it);
-      uint64_t *TmpData = (uint64_t *)(Data);
+      uint64_t *TmpData = reinterpret_cast<uint64_t *>(Data);
 
       if( Len == 32 ){
         uint32_t A;
@@ -201,7 +201,7 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
           B |= ((uint64_t)(TmpData[i]) << i);
         }
         if( (A & B) == 0 ){
-          uint64_t *Tmp = (uint64_t *)(Target);
+          uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
           Tmp[0] = 0x1;
           return false;
         }
@@ -213,7 +213,7 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
 
       // write zeros to target
       for( unsigned i=0; i<Len; i++ ){
-        uint64_t *Tmp = (uint64_t *)(Target);
+        uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
         Tmp[i] = 0x0;
       }
 
@@ -224,7 +224,7 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
   }
 
   // failed, write a nonzero value to target
-  uint32_t *Tmp = (uint32_t *)(Target);
+  uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
   Tmp[0] = 0x1;
 
   return false;

@@ -39,6 +39,16 @@ RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
 }
 
 RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
+                   char *buffer, void *target, RevMemOp::MemOp Op,
+                   StandardMem::Request::flags_t flags )
+  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
+    SplitRqst(1), flags(flags), target(target){
+  for(unsigned i=0; i<(unsigned)(Size); i++ ){
+    membuf.push_back((uint8_t)(buffer[i]));
+  }
+}
+
+RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    void *target, unsigned CustomOpc, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
   : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
@@ -81,9 +91,9 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
   : RevMemCtrl(id,params), memIface(nullptr), stdMemHandlers(nullptr),
     hasCache(false), lineSize(0),
     max_loads(64), max_stores(64), max_flush(64), max_llsc(64),
-    max_readlock(64), max_writeunlock(64), max_custom(64), max_ops(2),
+    max_readlock(64), max_writeunlock(64), max_custom(64), max_amo(64), max_ops(2),
     num_read(0), num_write(0), num_flush(0), num_llsc(0), num_readlock(0),
-    num_writeunlock(0), num_custom(0), num_fence(0){
+    num_writeunlock(0), num_custom(0), num_fence(0), num_amo(0){
 
   stdMemHandlers = new RevBasicMemCtrl::RevStdMemHandlers(this,output);
 
@@ -96,6 +106,7 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
   max_readlock = params.find<unsigned>("max_readlock", 64);
   max_writeunlock = params.find<unsigned>("max_writeunlock", 64);
   max_custom = params.find<unsigned>("max_custom", 64);
+  max_amo = params.find<unsigned>("max_amo", 64);
   max_ops = params.find<unsigned>("ops_per_cycle", 2);
 
   rqstQ.reserve(max_ops);
@@ -146,11 +157,27 @@ void RevBasicMemCtrl::registerStats(){
   stats.push_back(registerStatistic<uint64_t>("CustomPending"));
   stats.push_back(registerStatistic<uint64_t>("CustomBytes"));
   stats.push_back(registerStatistic<uint64_t>("FencePending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOAddBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOAddPending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOXorBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOXorPending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOAndBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOAndPending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOOrBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOOrPending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMinBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMinPending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMaxBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMaxPending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMinuBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMinuPending"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMaxuBytes"));
+  stats.push_back(registerStatistic<uint64_t>("AMOMaxuPending"));
 }
 
 void RevBasicMemCtrl::recordStat(RevBasicMemCtrl::MemCtrlStats Stat,
                                  uint64_t Data){
-  if( Stat > RevBasicMemCtrl::MemCtrlStats::FencePending){
+  if( Stat > RevBasicMemCtrl::MemCtrlStats::AMOMaxuPending){
     // do nothing
     return ;
   }
@@ -194,6 +221,29 @@ bool RevBasicMemCtrl::sendWRITERequest(uint64_t Addr,
   RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpWRITE, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WritePending,1);
+  return true;
+}
+
+bool RevBasicMemCtrl::sendAMORequest(uint64_t Addr,
+                                     uint64_t PAddr,
+                                     uint32_t Size,
+                                     char *buffer,
+                                     void *target,
+                                     StandardMem::Request::flags_t flags){
+  if( Size == 0 )
+    return true;
+
+  // walk through the flags and ensure that this is an actual AMO
+  if(      ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD)) > 0 ){
+  }else if(((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR)) > 0 ){
+  }else if(((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND)) > 0 ){
+  }else if(((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR)) > 0 ){
+  }else if(((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN)) > 0 ){
+  }else if(((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX)) > 0 ){
+  }else if(((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU)) > 0 ){
+  }else if(((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU)) > 0 ){
+  } // else, this was not an amo request
+
   return true;
 }
 

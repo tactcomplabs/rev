@@ -60,10 +60,6 @@
                     (r) = (r) & (((1ULL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
-//namespace SST::RevCPU {
-//  class RevMemCtrl;
-//}
-
 using namespace SST::RevCPU;
 using namespace SST::Interfaces;
 
@@ -78,7 +74,17 @@ namespace SST {
       F_SEXT32 = 1 << 17,     /// sign extend the 32bit result
       F_SEXT64 = 1 << 18,     /// sign extend the 64bit result
       F_ZEXT32 = 1 << 19,     /// zero extend the 32bit result
-      F_ZEXT64 = 1 << 20      /// zero extend the 64bit result
+      F_ZEXT64 = 1 << 20,     /// zero extend the 64bit result
+      F_AMOADD = 1 << 21,     /// AMO Add
+      F_AMOXOR = 1 << 22,     /// AMO Xor
+      F_AMOAND = 1 << 23,     /// AMO And
+      F_AMOOR  = 1 << 24,     /// AMO Or
+      F_AMOMIN = 1 << 25,     /// AMO Min
+      F_AMOMAX = 1 << 26,     /// AMO Max
+      F_AMOMINU= 1 << 27,     /// AMO Minu
+      F_AMOMAXU= 1 << 28,     /// AMO Maxu
+      F_AQ     = 1 << 29,     /// AMO AQ Flag
+      F_RL     = 1 << 30      /// AMO RL Flag
     };
 
     // ----------------------------------------
@@ -95,7 +101,9 @@ namespace SST {
         MemOpLOADLINK       = 5,
         MemOpSTORECOND      = 6,
         MemOpCUSTOM         = 7,
-        MemOpFENCE          = 8
+        MemOpFENCE          = 8,
+        MemOpAMOREAD        = 9,
+        MemOpAMOWRITE       = 10
       }MemOp;
 
       /// RevMemOp constructor
@@ -108,6 +116,11 @@ namespace SST {
 
       /// RevMemOp overloaded constructor
       RevMemOp( uint64_t Addr, uint64_t PAddr, uint32_t Size, char *buffer,
+                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
+
+      /// RevMemOp overloaded constructor
+      RevMemOp( uint64_t Addr, uint64_t PAddr, uint32_t Size,
+                char *buffer, void *target,
                 RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
@@ -225,6 +238,11 @@ namespace SST {
                                     uint32_t Size, char *buffer,
                                     StandardMem::Request::flags_t flags) = 0;
 
+      /// RevMemCtrl: send an AMO request
+      virtual bool sendAMORequest(uint64_t Addr, uint64_t PAddr,
+                                  uint32_t Size, char *buffer, void *target,
+                                  StandardMem::Request::flags_t flags) = 0;
+
       /// RevMemCtrl: send a readlock request
       virtual bool sendREADLOCKRequest(uint64_t Addr, uint64_t PAddr,
                                        uint32_t Size, void *target,
@@ -290,12 +308,12 @@ namespace SST {
     // ----------------------------------------
     class RevBasicMemCtrl : public RevMemCtrl{
     public:
-      SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(RevBasicMemCtrl, "revcpu",
-                                            "RevBasicMemCtrl",
-                                            SST_ELI_ELEMENT_VERSION(1, 0, 0),
-                                            "RISC-V Rev basic memHierachy controller",
-                                            SST::RevCPU::RevMemCtrl
-                                           )
+      SST_ELI_REGISTER_SUBCOMPONENT(RevBasicMemCtrl, "revcpu",
+                                    "RevBasicMemCtrl",
+                                    SST_ELI_ELEMENT_VERSION(1, 0, 0),
+                                    "RISC-V Rev basic memHierachy controller",
+                                    SST::RevCPU::RevMemCtrl
+                                    )
 
       SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the memory controller",    "0" },
                               { "clock",          "Sets the clock frequency of the memory conroller",         "1Ghz" },
@@ -306,6 +324,7 @@ namespace SST {
                               { "max_readlock",   "Sets the maxmium number of outstanding readlock events",   "64"},
                               { "max_writeunlock","Sets the maximum number of outstanding writeunlock events","64"},
                               { "max_custom",     "Sets the maximum number of outstanding custom events",     "64"},
+                              { "max_amo",        "Sets the maximum number of outstanding AMO events",        "64"},
                               { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" }
       )
 
@@ -335,7 +354,23 @@ namespace SST {
         {"CustomInFlight",      "Counts the number of custom commands in flight",   "count", 1},
         {"CustomPending",       "Counts the number of custom commands pending",     "count", 1},
         {"CustomBytes",         "Counts the number of bytes in custom transactions","bytes", 1},
-        {"FencePending",        "Counts the number of fence operations pending",    "count", 1}
+        {"FencePending",        "Counts the number of fence operations pending",    "count", 1},
+        {"AMOAddBytes",         "Counts the number of bytes in AMOAdd transactions","bytes", 1},
+        {"AMOAddPending",       "Counts the number of AMOAdd operations pending",   "count", 1},
+        {"AMOXorBytes",         "Counts the number of bytes in AMOXor transactions","bytes", 1},
+        {"AMOXorPending",       "Counts the number of AMOXor operations pending",   "count", 1},
+        {"AMOAndBytes",         "Counts the number of bytes in AMOAnd transactions","bytes", 1},
+        {"AMOAndPending",       "Counts the number of AMOAnd operations pending",   "count", 1},
+        {"AMOOrBytes",          "Counts the number of bytes in AMOOr transactions", "bytes", 1},
+        {"AMOOrPending",        "Counts the number of AMOOr operations pending",    "count", 1},
+        {"AMOMinBytes",         "Counts the number of bytes in AMOMin transactions","bytes", 1},
+        {"AMOMinPending",       "Counts the number of AMOMin operations pending",   "count", 1},
+        {"AMOMaxBytes",         "Counts the number of bytes in AMOMax transactions","bytes", 1},
+        {"AMOMaxPending",       "Counts the number of AMOMax operations pending",   "count", 1},
+        {"AMOMinuBytes",        "Counts the number of bytes in AMOMinu transactions","bytes", 1},
+        {"AMOMinuPending",      "Counts the number of AMOMinu operations pending",   "count", 1},
+        {"AMOMaxuBytes",        "Counts the number of bytes in AMOMaxu transactions","bytes", 1},
+        {"AMOMaxuPending",      "Counts the number of AMOMaxu operations pending",   "count", 1}
       )
 
       typedef enum{
@@ -360,7 +395,23 @@ namespace SST {
         CustomInFlight      = 18,
         CustomPending       = 19,
         CustomBytes         = 20,
-        FencePending        = 21
+        FencePending        = 21,
+        AMOAddBytes         = 22,
+        AMOAddPending       = 23,
+        AMOXorBytes         = 24,
+        AMOXorPending       = 25,
+        AMOAndBytes         = 26,
+        AMOAndPending       = 27,
+        AMOOrBytes          = 28,
+        AMOOrPending        = 29,
+        AMOMinBytes         = 30,
+        AMOMinPending       = 31,
+        AMOMaxBytes         = 32,
+        AMOMaxPending       = 33,
+        AMOMinuBytes        = 34,
+        AMOMinuPending      = 35,
+        AMOMaxuBytes        = 36,
+        AMOMaxuPending      = 37
       }MemCtrlStats;
 
       /// RevBasicMemCtrl: constructor
@@ -404,6 +455,11 @@ namespace SST {
       virtual bool sendWRITERequest(uint64_t Addr, uint64_t PAddr,
                                     uint32_t Size, char *buffer,
                                     StandardMem::Request::flags_t flags = 0) override;
+
+      /// RevBasicMemCtrl: send an AMO request
+      virtual bool sendAMORequest(uint64_t Addr, uint64_t PAddr,
+                                  uint32_t Size, char *buffer, void *target,
+                                  StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a readlock request
       virtual bool sendREADLOCKRequest(uint64_t Addr, uint64_t PAddr,
@@ -544,6 +600,7 @@ namespace SST {
       unsigned max_readlock;                  ///< maximum number of oustanding readlock events
       unsigned max_writeunlock;               ///< maximum number of oustanding writelock events
       unsigned max_custom;                    ///< maximum number of oustanding custom events
+      unsigned max_amo;                       ///< maximum number of outstanding AMO events
       unsigned max_ops;                       ///< maximum number of ops to issue per cycle
 
       uint64_t num_read;                      ///< number of outstanding read requests
@@ -554,12 +611,19 @@ namespace SST {
       uint64_t num_writeunlock;               ///< number of oustanding writelock requests
       uint64_t num_custom;                    ///< number of outstanding custom requests
       uint64_t num_fence;                     ///< number of oustanding fence requests
+      uint64_t num_amo;                       ///< number of outstanding AMO request
 
       std::vector<StandardMem::Request::id_t> requests;               ///< outstanding StandardMem requests
       std::vector<RevMemOp *> rqstQ;                                  ///< queued memory requests
       std::map<StandardMem::Request::id_t,RevMemOp *> outstanding;    ///< map of outstanding requests
 
-      std::vector<Statistic<uint64_t>*> stats;                        ///< statistics vector
+#define AMOTABLE_HART   0
+#define AMOTABLE_FLAGS  1
+#define AMOTABLE_IN     2
+      std::map<uint64_t,
+        std::tuple<unsigned,StandardMem::Request::flags_t,bool>> AMOTable;  ///< map of amo operations to memory addresses
+
+      std::vector<Statistic<uint64_t>*> stats;  ///< statistics vector
 
     }; // RevBasicMemCtrl
   } // namespace RevCPU
