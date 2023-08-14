@@ -16,50 +16,56 @@ using namespace RevCPU;
 // ---------------------------------------------------------------
 // RevMemOp
 // ---------------------------------------------------------------
-RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
+RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    RevMemOp::MemOp Op, StandardMem::Request::flags_t flags )
-  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
+  : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false),
+    Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(nullptr){
 }
 
-RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size, void *target,
+RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
+                   uint32_t Size, void *target,
                    RevMemOp::MemOp Op, StandardMem::Request::flags_t flags )
-  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
+  : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false),
+    Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(target){
 }
 
-RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
+RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    char *buffer, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
-  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
+  : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size),
+    Inv(false), Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(nullptr){
   for(unsigned i=0; i<(unsigned)(Size); i++ ){
     membuf.push_back((uint8_t)(buffer[i]));
   }
 }
 
-RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
+RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    char *buffer, void *target, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
-  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op), CustomOpc(0),
+  : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size),
+    Inv(false), Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(target){
   for(unsigned i=0; i<(unsigned)(Size); i++ ){
     membuf.push_back((uint8_t)(buffer[i]));
   }
 }
 
-RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size,
+RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    void *target, unsigned CustomOpc, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
-  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
+  : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
     CustomOpc(CustomOpc), SplitRqst(1), flags(flags),
     target(target){
 }
 
-RevMemOp::RevMemOp(uint64_t Addr, uint64_t PAddr, uint32_t Size, char *buffer,
+RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
+                   uint32_t Size, char *buffer,
                    unsigned CustomOpc, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
-  : Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
+  : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
     CustomOpc(CustomOpc), SplitRqst(1), flags(flags), target(nullptr){
   for(unsigned i=0; i<(unsigned)(Size); i++ ){
     membuf.push_back((uint8_t)(buffer[i]));
@@ -184,47 +190,54 @@ void RevBasicMemCtrl::recordStat(RevBasicMemCtrl::MemCtrlStats Stat,
   stats[Stat]->addData(Data);
 }
 
-bool RevBasicMemCtrl::sendFLUSHRequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendFLUSHRequest(unsigned Hart,
+                                       uint64_t Addr,
                                        uint64_t PAddr,
                                        uint32_t Size,
                                        bool Inv,
                                        StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, RevMemOp::MemOp::MemOpFLUSH, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size,
+                              RevMemOp::MemOp::MemOpFLUSH, flags);
   Op->setInv(Inv);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::FlushPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendREADRequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendREADRequest(unsigned Hart,
+                                      uint64_t Addr,
                                       uint64_t PAddr,
                                       uint32_t Size,
                                       void *target,
                                       StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, target, RevMemOp::MemOp::MemOpREAD, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, target,
+                              RevMemOp::MemOp::MemOpREAD, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendWRITERequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendWRITERequest(unsigned Hart,
+                                       uint64_t Addr,
                                        uint64_t PAddr,
                                        uint32_t Size,
                                        char *buffer,
                                        StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpWRITE, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, buffer,
+                              RevMemOp::MemOp::MemOpWRITE, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WritePending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendAMORequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
+                                     uint64_t Addr,
                                      uint64_t PAddr,
                                      uint32_t Size,
                                      char *buffer,
@@ -247,58 +260,67 @@ bool RevBasicMemCtrl::sendAMORequest(uint64_t Addr,
   return true;
 }
 
-bool RevBasicMemCtrl::sendREADLOCKRequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendREADLOCKRequest(unsigned Hart,
+                                          uint64_t Addr,
                                           uint64_t PAddr,
                                           uint32_t Size,
                                           void *target,
                                           StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, target, RevMemOp::MemOp::MemOpREADLOCK, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, target,
+                              RevMemOp::MemOp::MemOpREADLOCK, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadLockPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendWRITELOCKRequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendWRITELOCKRequest(unsigned Hart,
+                                           uint64_t Addr,
                                            uint64_t PAddr,
                                            uint32_t Size,
                                            char *buffer,
                                            StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpWRITEUNLOCK, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, buffer,
+                              RevMemOp::MemOp::MemOpWRITEUNLOCK, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WriteUnlockPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendLOADLINKRequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendLOADLINKRequest(unsigned Hart,
+                                          uint64_t Addr,
                                           uint64_t PAddr,
                                           uint32_t Size,
                                           StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, RevMemOp::MemOp::MemOpLOADLINK, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size,
+                              RevMemOp::MemOp::MemOpLOADLINK, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::LoadLinkPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendSTORECONDRequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendSTORECONDRequest(unsigned Hart,
+                                           uint64_t Addr,
                                            uint64_t PAddr,
                                            uint32_t Size,
                                            char *buffer,
                                            StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, RevMemOp::MemOp::MemOpSTORECOND, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, buffer,
+                              RevMemOp::MemOp::MemOpSTORECOND, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::StoreCondPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendCUSTOMREADRequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendCUSTOMREADRequest(unsigned Hart,
+                                            uint64_t Addr,
                                             uint64_t PAddr,
                                             uint32_t Size,
                                             void *target,
@@ -306,13 +328,15 @@ bool RevBasicMemCtrl::sendCUSTOMREADRequest(uint64_t Addr,
                                             StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, target, Opc, RevMemOp::MemOp::MemOpCUSTOM, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, target, Opc,
+                              RevMemOp::MemOp::MemOpCUSTOM, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::CustomPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendCUSTOMWRITERequest(uint64_t Addr,
+bool RevBasicMemCtrl::sendCUSTOMWRITERequest(unsigned Hart,
+                                             uint64_t Addr,
                                              uint64_t PAddr,
                                              uint32_t Size,
                                              char *buffer,
@@ -320,14 +344,16 @@ bool RevBasicMemCtrl::sendCUSTOMWRITERequest(uint64_t Addr,
                                              StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
-  RevMemOp *Op = new RevMemOp(Addr, PAddr, Size, buffer, Opc, RevMemOp::MemOp::MemOpCUSTOM, flags);
+  RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, buffer, Opc,
+                              RevMemOp::MemOp::MemOpCUSTOM, flags);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::CustomPending,1);
   return true;
 }
 
-bool RevBasicMemCtrl::sendFENCE(){
-  RevMemOp *Op = new RevMemOp(0x00ull, 0x00ull, 0x00, RevMemOp::MemOp::MemOpFENCE, 0x00);
+bool RevBasicMemCtrl::sendFENCE(unsigned Hart){
+  RevMemOp *Op = new RevMemOp(Hart,0x00ull, 0x00ull, 0x00,
+                              RevMemOp::MemOp::MemOpFENCE, 0x00);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::FencePending,1);
   return true;
@@ -371,7 +397,8 @@ bool RevBasicMemCtrl::isMemOpAvail(RevMemOp *Op,
                                    unsigned &t_max_llsc,
                                    unsigned &t_max_readlock,
                                    unsigned &t_max_writeunlock,
-                                   unsigned &t_max_custom){
+                                   unsigned &t_max_custom,
+                                   unsigned &t_max_amo){
   switch(Op->getOp()){
   case RevMemOp::MemOp::MemOpREAD:
     if( t_max_loads < max_loads ){
@@ -1001,6 +1028,7 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
                                       unsigned &t_max_readlock,
                                       unsigned &t_max_writeunlock,
                                       unsigned &t_max_custom,
+                                      unsigned &t_max_amo,
                                       unsigned &t_max_ops){
   if( rqstQ.size() == 0 ){
     // nothing to do, saturate and exit this cycle
@@ -1020,7 +1048,8 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
                      t_max_llsc,
                      t_max_readlock,
                      t_max_writeunlock,
-                     t_max_custom) ){
+                     t_max_custom,
+                     t_max_amo) ){
       // op is good to execute, build a StandardMem packet
       t_max_ops++;
 
@@ -1310,11 +1339,12 @@ bool RevBasicMemCtrl::clockTick(Cycle_t cycle){
   unsigned t_max_readlock = 0;
   unsigned t_max_writeunlock = 0;
   unsigned t_max_custom = 0;
+  unsigned t_max_amo = 0;
 
   while( !done ){
     if( !processNextRqst(t_max_loads, t_max_stores, t_max_flush,
                          t_max_llsc, t_max_readlock, t_max_writeunlock,
-                         t_max_custom, t_max_ops) ){
+                         t_max_custom, t_max_amo, t_max_ops) ){
       // error occurred
       output->fatal(CALL_INFO, -1, "Error : failed to process next memory request");
     }

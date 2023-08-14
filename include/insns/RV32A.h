@@ -60,11 +60,11 @@ namespace SST{
       static bool amoswapw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]), (uint32_t)(R->RV32[Inst.rs2]));
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]), (uint32_t)(R->RV32[Inst.rs2]));
           R->RV32_PC += Inst.instSize;
         }else{
           SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]), (uint32_t)(R->RV64[Inst.rs2]));
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]), (uint32_t)(R->RV64[Inst.rs2]));
           R->RV64_PC += Inst.instSize;
         }
         // update the cost
@@ -74,12 +74,12 @@ namespace SST{
 
       static bool amoaddw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))+
                              (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))+
                              (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
           R->RV64_PC += Inst.instSize;
@@ -91,12 +91,12 @@ namespace SST{
 
       static bool amoxorw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))^
                              (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))^
                              (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
           R->RV64_PC += Inst.instSize;
@@ -108,12 +108,12 @@ namespace SST{
 
       static bool amoandw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))&
                              (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))&
                              (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
           R->RV64_PC += Inst.instSize;
@@ -125,12 +125,12 @@ namespace SST{
 
       static bool amoorw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV32[Inst.rd],32))|
                              (int32_t)(td_u32(R->RV32[Inst.rs2],32)),32));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       dt_u32((int32_t)(td_u32(R->RV64[Inst.rd],32))|
                              (int32_t)(td_u32(R->RV64[Inst.rs2],32)),32));
           R->RV64_PC += Inst.instSize;
@@ -144,20 +144,20 @@ namespace SST{
         if( F->IsRV32() ){
           SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
           if( (int32_t)(td_u32(R->RV32[Inst.rd],32)) < (int32_t)(td_u32(R->RV32[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rs2]));
           }
           R->RV32_PC += Inst.instSize;
         }else{
           SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
           if( (int32_t)(td_u32(R->RV64[Inst.rd],32)) < (int32_t)(td_u32(R->RV64[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rs2]));
           }
           R->RV64_PC += Inst.instSize;
@@ -171,20 +171,20 @@ namespace SST{
         if( F->IsRV32() ){
           SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
           if( (int32_t)(td_u32(R->RV32[Inst.rd],32)) > (int32_t)(td_u32(R->RV32[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rs2]));
           }
           R->RV32_PC += Inst.instSize;
         }else{
           SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
           if( (int32_t)(td_u32(R->RV64[Inst.rd],32)) > (int32_t)(td_u32(R->RV64[Inst.rs2],32)) ){
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rs2]));
           }
           R->RV64_PC += Inst.instSize;
@@ -198,20 +198,20 @@ namespace SST{
         if( F->IsRV32() ){
           SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
           if( (uint32_t)(R->RV32[Inst.rd]) < (uint32_t)(R->RV32[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rs2]));
           }
           R->RV32_PC += Inst.instSize;
         }else{
           SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
           if( (uint32_t)(R->RV64[Inst.rd]) < (uint32_t)(R->RV64[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rs2]));
           }
           R->RV64_PC += Inst.instSize;
@@ -225,20 +225,20 @@ namespace SST{
         if( F->IsRV32() ){
           SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1])), 32 );
           if( (uint32_t)(R->RV32[Inst.rd]) > (uint32_t)(R->RV32[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV32[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                         (uint32_t)(R->RV32[Inst.rs2]));
           }
           R->RV32_PC += Inst.instSize;
         }else{
           SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
           if( (uint32_t)(R->RV64[Inst.rd]) > (uint32_t)(R->RV64[Inst.rs2]) ){
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rd]));
           }else{
-            M->WriteU32((uint64_t)(R->RV64[Inst.rs1]),
+            M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                         (uint32_t)(R->RV64[Inst.rs2]));
           }
           R->RV64_PC += Inst.instSize;

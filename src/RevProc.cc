@@ -46,7 +46,7 @@ RevProc::RevProc( unsigned Id,
     Depth = 16;
   }
 
-  sfetch = new RevPrefetcher(Mem,Depth);
+  sfetch = new RevPrefetcher(Mem,feature,Depth);
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%d\n", id);
@@ -85,8 +85,8 @@ RevProc::RevProc( unsigned Id,
 RevProc::~RevProc(){
   for( unsigned i=0; i<Extensions.size(); i++ )
     delete Extensions[i];
-  delete feature;
   delete sfetch;
+  delete feature;
 }
 
 RevProc::RevProcStats RevProc::GetStats(){
@@ -1420,13 +1420,6 @@ RevInst RevProc::DecodeInst(){
                   PC);
   }
 
-#if 0
-  if( !mem->ReadMem( PC, 4, (void *)(&Inst)) ){
-    output->fatal(CALL_INFO, -1,
-                  "Error: failed to retrieve instruction at PC=0x%" PRIx64 ".", PC );
-  }
-#endif
-
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
                     "Core %d ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
@@ -2666,7 +2659,7 @@ void RevProc::ECALL_getcwd(){
   uint64_t BufAddr = RegFile->RV64[10];
   uint64_t size = RegFile->RV64[11];
   std::string CWD = std::filesystem::current_path().c_str();
-  mem->WriteMem(BufAddr, size, &CWD);
+  mem->WriteMem(feature->GetHart(), BufAddr, size, &CWD);
 
   /* Returns null-terminated string in buf */
   RegFile->RV64[10] = BufAddr;
@@ -2984,7 +2977,7 @@ void RevProc::ECALL_read(){
   uint64_t rc = read(fd, &TmpBuf, BufSize);
 
   /* Write that data to the buffer inside of Rev */
-  mem->WriteMem(BufAddr, BufSize, &TmpBuf);
+  mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf);
 
   RegFile->RV64[10] = rc;
   return;

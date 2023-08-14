@@ -71,7 +71,7 @@ namespace SST {
       void SetStackTop(uint64_t Addr) { stacktop = Addr; }
 
       /// RevMem: initiate a memory fence
-      bool FenceMem();
+      bool FenceMem(unsigned Hart);
 
       /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
       unsigned getLineSize(){ if( ctrl ){return ctrl->getLineSize();}else{return 64;} }
@@ -80,14 +80,14 @@ namespace SST {
       // ---- Base Memory Interfaces
       // ----------------------------------------------------
       /// RevMem: write to the target memory location
-      bool WriteMem( uint64_t Addr, size_t Len, void *Data );
+      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data );
 
       /// RevMem: write to the target memory location with the target flags
-      bool WriteMem( uint64_t Addr, size_t Len, void *Data,
+      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
                      StandardMem::Request::flags_t flags );
 
       /// RevMem: read data from the target memory location
-      bool ReadMem( uint64_t Addr, size_t Len, void *Target,
+      bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
                     StandardMem::Request::flags_t flags);
 
       /// RevMem: DEPRECATED: read data from the target memory location
@@ -99,9 +99,9 @@ namespace SST {
       // ----------------------------------------------------
       /// RevMem: template read memory interface
       template <typename T>
-      bool ReadVal( uint64_t Addr, T *Target,
+      bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
                     StandardMem::Request::flags_t flags){
-        return ReadMem(Addr, sizeof(T), (void *)(Target), flags);
+        return ReadMem(Hart, Addr, sizeof(T), (void *)(Target), flags);
       }
 
       ///  RevMem: template LOAD RESERVE memory interface
@@ -148,22 +148,22 @@ namespace SST {
       // ---- Write Memory Interfaces
       // ----------------------------------------------------
       /// RevMem: Write a uint8 to the target memory location
-      void WriteU8( uint64_t Addr, uint8_t Value );
+      void WriteU8( unsigned Hart, uint64_t Addr, uint8_t Value );
 
       /// RevMem: Write a uint16 to the target memory location
-      void WriteU16( uint64_t Addr, uint16_t Value );
+      void WriteU16( unsigned Hart, uint64_t Addr, uint16_t Value );
 
       /// RevMem: Write a uint32 to the target memory location
-      void WriteU32( uint64_t Addr, uint32_t Value );
+      void WriteU32( unsigned Hart, uint64_t Addr, uint32_t Value );
 
       /// RevMem: Write a uint64 to the target memory location
-      void WriteU64( uint64_t Addr, uint64_t Value );
+      void WriteU64( unsigned Hart, uint64_t Addr, uint64_t Value );
 
       /// RevMem: Write a float to the target memory location
-      void WriteFloat( uint64_t Addr, float Value );
+      void WriteFloat( unsigned Hart, uint64_t Addr, float Value );
 
       /// RevMem: Write a double to the target memory location
-      void WriteDouble( uint64_t Addr, double Value );
+      void WriteDouble( unsigned Hart, uint64_t Addr, double Value );
 
       // ----------------------------------------------------
       // ---- Atomic/Future/LRSC Interfaces

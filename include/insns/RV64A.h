@@ -44,7 +44,7 @@ namespace SST{
 
       static bool amoswapd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]), (uint64_t)(R->RV64[Inst.rs2]));
+        M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]), (uint64_t)(R->RV64[Inst.rs2]));
         R->RV64_PC += Inst.instSize;
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
@@ -53,7 +53,7 @@ namespace SST{
 
       static bool amoaddd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+        M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                     dt_u64((int64_t)(td_u64(R->RV64[Inst.rd],64))+
                            (int64_t)(td_u64(R->RV64[Inst.rs2],64)),64));
         R->RV64_PC += Inst.instSize;
@@ -64,7 +64,7 @@ namespace SST{
 
       static bool amoxord(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+        M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                     dt_u64((int64_t)(td_u64(R->RV64[Inst.rd],64))^
                            (int64_t)(td_u64(R->RV64[Inst.rs2],64)),64));
         R->RV64_PC += Inst.instSize;
@@ -75,7 +75,7 @@ namespace SST{
 
       static bool amoandd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+        M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                     dt_u64((int64_t)(td_u64(R->RV64[Inst.rd],64))&
                            (int64_t)(td_u64(R->RV64[Inst.rs2],64)),64));
         R->RV64_PC += Inst.instSize;
@@ -86,7 +86,7 @@ namespace SST{
 
       static bool amoord(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
-        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+        M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                     dt_u64((int64_t)(td_u64(R->RV64[Inst.rd],64))|
                            (int64_t)(td_u64(R->RV64[Inst.rs2],64)),64));
         R->RV64_PC += Inst.instSize;
@@ -99,10 +99,10 @@ namespace SST{
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
         if( (int64_t)(td_u64(R->RV64[Inst.rd],64)) <
             (int64_t)(td_u64(R->RV64[Inst.rs2],64)) ){
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rd]));
         }else{
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rs2]));
         }
         R->RV64_PC += Inst.instSize;
@@ -115,10 +115,10 @@ namespace SST{
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
         if( (int64_t)(td_u64(R->RV64[Inst.rd],64)) >
             (int64_t)(td_u64(R->RV64[Inst.rs2],64)) ){
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rd]));
         }else{
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rs2]));
         }
         R->RV64_PC += Inst.instSize;
@@ -130,10 +130,10 @@ namespace SST{
       static bool amominud(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
         if( (uint64_t)(R->RV64[Inst.rd]) < (uint64_t)(R->RV64[Inst.rs2]) ){
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rd]));
         }else{
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rs2]));
         }
         R->RV64_PC += Inst.instSize;
@@ -145,10 +145,10 @@ namespace SST{
       static bool amomaxud(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
         if( (uint64_t)(R->RV64[Inst.rd]) > (uint64_t)(R->RV64[Inst.rs2]) ){
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rd]));
         }else{
-          M->WriteU64((uint64_t)(R->RV64[Inst.rs1]),
+          M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                       (uint64_t)(R->RV64[Inst.rs2]));
         }
         R->RV64_PC += Inst.instSize;

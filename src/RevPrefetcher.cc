@@ -181,7 +181,7 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // now fill it
   for( unsigned y=0; y<depth; y++ ){
-    mem->ReadVal( Addr+(y*4),
+    mem->ReadVal( feature->GetHart(), Addr+(y*4),
                   (uint32_t *)(&iStack[x][y]),
                   REVMEM_FLAGS(0x00) );
 
