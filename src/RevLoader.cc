@@ -143,27 +143,24 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
 
   // Add memory segments for each program header
   for (unsigned i = 0; i < eh->e_phnum; i++) {
-    // Print information about the program header
-    // std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
-
-    // Add a memory segment for the program header
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
     }
-    uint32_t SegSize = (ph[i].p_memsz < __PAGE_SIZE__) ? __PAGE_SIZE__ : ph[i].p_memsz;
-    mem->AddMemSeg(ph[i].p_paddr, SegSize, true);
+    // Add a memory segment for the program header
+    mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
-  // Add memory segments for each section header
+  uint32_t StaticDataEnd = 0;
+  // Add memory segments for each section header 
+  // - This should automatically handle overlap and not add segments
+  //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
-    // Print information about the program header
-    // std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: "  << std::endl;
+    // check if the section header name is bss
+    if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
+      StaticDataEnd = sh[i].sh_addr + sh[i].sh_size;
+    }
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
-//    if( sh[i].sh_name ){
-//      std::cout << "Section Header " << i << ": " << sh[i].sh_type << ", Address: " << sh[i].sh_addr << ", Size: " << sh[i].sh_size << ", Name: " << shstrtab + sh[i].sh_name << std::endl;
-//    }
   }
-
 
   // Check that the ELF file is valid
   if( sz < eh->e_phoff + eh->e_phnum * sizeof(*ph) )
@@ -174,16 +171,13 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   elfinfo.phent = sizeof(Elf32_Phdr);
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf32_Phdr);
+
+  // set the first stack pointer
   uint32_t sp = mem->GetStackTop() - (uint32_t)(elfinfo.phdr_size);
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
-  // Print information about each memory segment
-  // for( auto Seg : mem->GetMemSegs() ){
-  //   std::cout << "Segment: " << Seg->getBaseAddr() << ", Size: " << Seg->getSize() << std::endl;
-  // }
-
-  // Load each program header into memory
+  // iterate over the program headers
   for( unsigned i=0; i<eh->e_phnum; i++ ){
     // Look for the loadable program headers
     if( ph[i].p_type == PT_LOAD && ph[i].p_memsz ){
@@ -251,10 +245,9 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     }
   }
 
-  // std::cout << "Memory Segments: " << std::endl;
-  // for(auto Seg : mem->GetMemSegs() ){
-  //   std::cout << *Seg << std::endl;
-  // }
+  // Initialize the heap
+  mem->InitHeap(StaticDataEnd);
+
   return true;
 }
 
@@ -274,24 +267,21 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // Add memory segments for each program header
   for (unsigned i = 0; i < eh->e_phnum; i++) {
-    // Print information about the program header
-    // std::cout << "Program Header " << i << ": " << ph[i].p_type << ", Address: " << ph[i].p_paddr << ", Size: "  << std::endl;
-
-    // Add a memory segment for the program header
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
+    // Add a memory segment for the program header
     mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
-  uint64_t StaticDataEnd; 
-  // Add memory segments for each section header
+  uint64_t StaticDataEnd = 0; 
+  // Add memory segments for each section header 
+  // - This should automatically handle overlap and not add segments
+  //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
-      uint64_t StaticDataEnd = sh[i].sh_addr + sh[i].sh_size;
-      // Add a memory segment for the bss section
-      mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+      StaticDataEnd = sh[i].sh_addr + sh[i].sh_size;
     }
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
   }
@@ -305,12 +295,15 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   elfinfo.phent = sizeof(Elf64_Phdr);
   elfinfo.phdr  = eh->e_phoff;
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
+
+  // set the first stack pointer
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
+  // iterate over the program headers
   for( unsigned i=0; i<eh->e_phnum; i++ ){
-    // Look for the loadable program headers
+    // Look for the loadable headers
     if( ph[i].p_type == PT_LOAD && ph[i].p_memsz ){
       if( ph[i].p_filesz ){
         if( sz < ph[i].p_offset + ph[i].p_filesz ){
@@ -378,12 +371,9 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     }
   }
 
-  // std::cout << "Memory Segments: " << std::endl;
-  // for(auto Seg : mem->GetMemSegs() ){
-  //   std::cout << *Seg << std::endl;
-  // }
-  mem->SetHeapEnd(StaticDataEnd);
-  mem->SetHeapStart(StaticDataEnd);
+  // Initialize the heap after the bss section header
+  mem->InitHeap(StaticDataEnd);
+
   return true;
 }
 
