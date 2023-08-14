@@ -150,16 +150,38 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
-  uint32_t StaticDataEnd = 0;
+  uint64_t StaticDataEnd = 0; 
+  uint64_t BSSEnd = 0; 
+  uint64_t DataEnd = 0; 
+  uint64_t TextEnd = 0; 
   // Add memory segments for each section header 
   // - This should automatically handle overlap and not add segments
   //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
-      StaticDataEnd = sh[i].sh_addr + sh[i].sh_size;
+      BSSEnd = sh[i].sh_addr + sh[i].sh_size;
+    }
+    if( strcmp(shstrtab + sh[i].sh_name, ".text") == 0 ){
+      TextEnd = sh[i].sh_addr + sh[i].sh_size;
+    }
+    if( strcmp(shstrtab + sh[i].sh_name, ".data") == 0 ){
+      DataEnd = sh[i].sh_addr + sh[i].sh_size;
     }
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+  }
+  // If BSS exists, static data ends after it
+  if( BSSEnd > 0 ){
+    StaticDataEnd = BSSEnd;
+  } else if ( DataEnd > 0 ){
+    // BSS Doesn't exist, but data does
+    StaticDataEnd = DataEnd;
+  } else if ( TextEnd > 0 ){
+    // Text is last resort 
+    StaticDataEnd = TextEnd;
+  } else {
+    // Can't find any (Text, BSS, or Data) sections
+    output->fatal(CALL_INFO, -1, "Error: No text, data, or bss sections --- RV64 Elf is unrecognizable\n" );
   }
 
   // Check that the ELF file is valid
@@ -275,15 +297,37 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   }
 
   uint64_t StaticDataEnd = 0; 
+  uint64_t BSSEnd = 0; 
+  uint64_t DataEnd = 0; 
+  uint64_t TextEnd = 0; 
   // Add memory segments for each section header 
   // - This should automatically handle overlap and not add segments
   //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
-      StaticDataEnd = sh[i].sh_addr + sh[i].sh_size;
+      BSSEnd = sh[i].sh_addr + sh[i].sh_size;
+    }
+    if( strcmp(shstrtab + sh[i].sh_name, ".text") == 0 ){
+      TextEnd = sh[i].sh_addr + sh[i].sh_size;
+    }
+    if( strcmp(shstrtab + sh[i].sh_name, ".data") == 0 ){
+      DataEnd = sh[i].sh_addr + sh[i].sh_size;
     }
     mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
+  }
+  // If BSS exists, static data ends after it
+  if( BSSEnd > 0 ){
+    StaticDataEnd = BSSEnd;
+  } else if ( DataEnd > 0 ){
+    // BSS Doesn't exist, but data does
+    StaticDataEnd = DataEnd;
+  } else if ( TextEnd > 0 ){
+    // Text is last resort 
+    StaticDataEnd = TextEnd;
+  } else {
+    // Can't find any (Text, BSS, or Data) sections
+    output->fatal(CALL_INFO, -1, "Error: No text, data, or bss sections --- RV64 Elf is unrecognizable\n" );
   }
 
   // Check that the ELF file is valid
@@ -299,7 +343,15 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   // set the first stack pointer
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
+
+  // Round the stack pointer down to the nearest 16-byte boundary
+  // - This is required by the ABI
+  sp &= ~0xF;
+  std::cout << "Stack Pointer: " << std::hex << sp << std::endl;
+  
+
   mem->SetStackTop(sp);
+
 
   // iterate over the program headers
   for( unsigned i=0; i<eh->e_phnum; i++ ){
