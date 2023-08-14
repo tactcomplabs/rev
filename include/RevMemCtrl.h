@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <random>
+#include <map>
+#include <tuple>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -83,8 +85,9 @@ namespace SST {
       F_AMOMAX = 1 << 26,     /// AMO Max
       F_AMOMINU= 1 << 27,     /// AMO Minu
       F_AMOMAXU= 1 << 28,     /// AMO Maxu
-      F_AQ     = 1 << 29,     /// AMO AQ Flag
-      F_RL     = 1 << 30      /// AMO RL Flag
+      F_AMOSWAP= 1 << 29,     /// AMO Swap
+      F_AQ     = 1 << 30,     /// AMO AQ Flag
+      F_RL     = 1 << 31      /// AMO RL Flag
     };
 
     // ----------------------------------------
@@ -122,6 +125,11 @@ namespace SST {
       /// RevMemOp overloaded constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                 char *buffer, void *target,
+                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
+
+      /// RevMemOp overloaded constructor
+      RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
+                std::vector<uint8_t> buffer,
                 RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
@@ -304,6 +312,9 @@ namespace SST {
       /// RevMemCtrl: handle RevMemCtrl flags for write responses
       virtual void handleFlagResp(RevMemOp *op) = 0;
 
+      /// RevMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
+      virtual void handleAMO(RevMemOp *op) = 0;
+
       /// RevMemCtrl: returns the cache line size
       virtual unsigned getLineSize() = 0;
 
@@ -378,7 +389,9 @@ namespace SST {
         {"AMOMinuBytes",        "Counts the number of bytes in AMOMinu transactions","bytes", 1},
         {"AMOMinuPending",      "Counts the number of AMOMinu operations pending",   "count", 1},
         {"AMOMaxuBytes",        "Counts the number of bytes in AMOMaxu transactions","bytes", 1},
-        {"AMOMaxuPending",      "Counts the number of AMOMaxu operations pending",   "count", 1}
+        {"AMOMaxuPending",      "Counts the number of AMOMaxu operations pending",   "count", 1},
+        {"AMOSwapBytes",        "Counts the number of bytes in AMOSwap transactions","bytes", 1},
+        {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1}
       )
 
       typedef enum{
@@ -419,7 +432,9 @@ namespace SST {
         AMOMinuBytes        = 34,
         AMOMinuPending      = 35,
         AMOMaxuBytes        = 36,
-        AMOMaxuPending      = 37
+        AMOMaxuPending      = 37,
+        AMOSwapBytes        = 38,
+        AMOSwapPending      = 39
       }MemCtrlStats;
 
       /// RevBasicMemCtrl: constructor
@@ -522,6 +537,9 @@ namespace SST {
       /// RevBasicMemCtrl: handle RevMemCtrl flags for write responses
       virtual void handleFlagResp(RevMemOp *op) override;
 
+      /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
+      virtual void handleAMO(RevMemOp *op) override;
+
     protected:
       // ----------------------------------------
       // RevStdMemHandlers
@@ -597,6 +615,11 @@ namespace SST {
       /// RevBasicMemCtrl: retrieve the number of outstanding requests on the wire
       unsigned getNumSplitRqsts(RevMemOp *op);
 
+      /// RevBasicMemCtrl: perform the MODIFY portion of the AMO (READ+MODIFY+WRITE)
+      void performAMO(std::tuple<unsigned,char *,void *,
+                                 StandardMem::Request::flags_t,
+                                 RevMemOp *,bool> Entry);
+
       // -- private data members
       StandardMem* memIface;                  ///< StandardMem memory interface
       RevStdMemHandlers* stdMemHandlers;      ///< StandardMem interface response handlers
@@ -627,10 +650,18 @@ namespace SST {
       std::map<StandardMem::Request::id_t,RevMemOp *> outstanding;    ///< map of outstanding requests
 
 #define AMOTABLE_HART   0
-#define AMOTABLE_FLAGS  1
-#define AMOTABLE_IN     2
-      std::map<uint64_t,
-        std::tuple<unsigned,StandardMem::Request::flags_t,bool>> AMOTable;  ///< map of amo operations to memory addresses
+#define AMOTABLE_BUFFER 1
+#define AMOTABLE_TARGET 2
+#define AMOTABLE_FLAGS  3
+#define AMOTABLE_MEMOP  4
+#define AMOTABLE_IN     5
+      std::multimap<uint64_t,
+        std::tuple<unsigned,
+                   char *,
+                   void *,
+                   StandardMem::Request::flags_t,
+                   RevMemOp *,
+                   bool>> AMOTable;  ///< map of amo operations to memory addresses
 
       std::vector<Statistic<uint64_t>*> stats;  ///< statistics vector
 
