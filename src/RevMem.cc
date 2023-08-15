@@ -835,8 +835,13 @@ uint64_t RevMem::ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t Ne
 /// @brief This function is called from the loader to initialize the heap
 /// @param EndOfStaticData: The address of the end of the static data section (ie. end of .bss section)
 void RevMem::InitHeap(const uint64_t& EndOfStaticData){
-  if( EndOfStaticData <= 0 ){
-    output->fatal(CALL_INFO, 7, "EndOfStaticData = 0x%lx which is less than or equal to 0. This is a bug.", EndOfStaticData);
+  if( EndOfStaticData == 0x00ull ){
+    // Program didn't contain .text, .data, or .bss sections
+    output->fatal(CALL_INFO, 7, 
+                  "The loader was unable"
+                  "to find a .text section in your executable. This is a bug."
+                  "EndOfStaticData = 0x%lx which is less than or equal to 0",
+                  EndOfStaticData);
   } else {
     heapend = EndOfStaticData;
     heapstart = EndOfStaticData;
