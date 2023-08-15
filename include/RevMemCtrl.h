@@ -597,6 +597,15 @@ namespace SST {
       /// RevBasicMemCtrl: build cache-aligned requests
       bool buildCacheMemRqst(RevMemOp *op, bool &Success);
 
+      /// RevBasicMemCtrl: determine if there are any pending AMOs that would prevent a request from dispatching
+      bool isPendingAMO(unsigned Slot);
+
+      /// RevBasicMemCtrl: determine if we need to utilize AQ ordering semantics
+      bool isAQ(unsigned Slot, unsigned Hart);
+
+      /// RevBasicMemCtrl: determine if we need to utilize RL ordering semantics
+      bool isRL(unsigned Slot, unsigned Hart);
+
       /// RevBasicMemCtrl: register statistics
       void registerStats();
 

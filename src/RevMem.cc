@@ -328,6 +328,87 @@ bool RevMem::FenceMem(unsigned Hart){
   return true;  // base RevMem support does nothing here
 }
 
+bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
+                    void *Data, void *Target,
+                    StandardMem::Request::flags_t flags){
+#ifdef _REV_DEBUG_
+  std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+#endif
+
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Target);
+
+  if( ctrl ){
+    // sending to the RevMemCtrl
+    ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem),
+                              Len, reinterpret_cast<char *>(Data),
+                              Target, flags);
+  }else{
+    // process the request locally
+    if( Len == 32 ){
+      // 32bit amo
+      int32_t *TmpTarget = reinterpret_cast<int32_t *>(Target);
+      uint32_t *TmpTargetU = reinterpret_cast<uint32_t *>(Target);
+      int32_t *TmpData = reinterpret_cast<int32_t *>(Data);
+      uint32_t *TmpDataU = reinterpret_cast<uint32_t *>(Data);
+
+      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
+        *TmpTarget += *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
+        *TmpTarget ^= *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
+        *TmpTarget &= *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
+        *TmpTarget |= *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
+        *TmpTarget = std::min(*TmpTarget,*TmpData);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
+        *TmpTarget = std::max(*TmpTarget,*TmpData);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
+        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
+        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
+        *TmpTarget = *TmpData;
+      }
+    }else{
+      // 64bit amo
+      int64_t *TmpTarget = reinterpret_cast<int64_t *>(Target);
+      uint64_t *TmpTargetU = reinterpret_cast<uint64_t *>(Target);
+      int64_t *TmpData = reinterpret_cast<int64_t *>(Data);
+      uint64_t *TmpDataU = reinterpret_cast<uint64_t *>(Data);
+
+      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
+        *TmpTarget += *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
+        *TmpTarget ^= *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
+        *TmpTarget &= *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
+        *TmpTarget |= *TmpData;
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
+        *TmpTarget = std::min(*TmpTarget,*TmpData);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
+        *TmpTarget = std::max(*TmpTarget,*TmpData);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
+        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
+        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
+        *TmpTarget = *TmpData;
+      }
+    }
+  }
+
+  return true;
+}
+
 bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
                        StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_

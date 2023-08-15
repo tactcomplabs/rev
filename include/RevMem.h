@@ -120,6 +120,13 @@ namespace SST {
         return SCBase(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), aq, rl, flags);
       }
 
+      /// RevMem: template AMO memory interface
+      template <typename T>
+      bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
+                   StandardMem::Request::flags_t flags){
+        return AMOMem(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), flags);
+      }
+
       /// RevMem: DEPRECATED: Read uint8 from the target memory location
       [[deprecated("Simple RevMem interfaces have been deprecated")]]
       uint8_t ReadU8( uint64_t Addr );
@@ -176,6 +183,11 @@ namespace SST {
       /// RevMem: Clear a memory reservation for the target address
       bool SCBase(unsigned Hart, uint64_t Addr, size_t Len,
                   void *Data, void *Target, uint8_t aq, uint8_t rl,
+                  StandardMem::Request::flags_t flags);
+
+      /// RevMem: Initiated an AMO request
+      bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
+                  void *Data, void *Target,
                   StandardMem::Request::flags_t flags);
 
       /// RevMem: Initiates a future operation [RV64P only]

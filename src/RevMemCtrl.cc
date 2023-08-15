@@ -444,6 +444,21 @@ bool RevBasicMemCtrl::isMemOpAvail(RevMemOp *Op,
                                    unsigned &t_max_writeunlock,
                                    unsigned &t_max_custom,
                                    unsigned &t_max_amo){
+
+  // Determine if this request is an AMO
+  auto it = AMOTable.find(Op->getAddr());
+  if( it != AMOTable.end() ){
+    auto range = AMOTable.equal_range(Op->getAddr());
+    for( auto i = range.first; i != range.second; ++ i ){
+      auto Entry = i->second;
+      // determine if we have an atomic request associated
+      // with this operation
+      if( std::get<AMOTABLE_MEMOP>(Entry) == Op ){
+        t_max_amo++;
+      }
+    }
+  }
+
   switch(Op->getOp()){
   case RevMemOp::MemOp::MemOpREAD:
     if( t_max_loads < max_loads ){
@@ -1066,6 +1081,58 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op,
   }
 }
 
+bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
+  if( AMOTable.size() == 0 ){
+    return false;
+  }else if( Slot == 0 ){
+    return false;
+  }
+
+  // search all preceding slots for an AMO from the same Hart
+  for( unsigned i=0; i<Slot; i++ ){
+    if( (((uint32_t)(rqstQ[i]->getFlags()) & (uint32_t)(0x1FE00000)) > 0) &&
+        (rqstQ[i]->getHart() == rqstQ[Slot]->getHart()) ){
+      if( ((uint32_t)(rqstQ[i]->getFlags()) &
+           (uint32_t)(RevCPU::RevFlag::F_AQ)) > 0 ){
+        // this implies that we found a preceding request in the request queue
+        // that was 1) an AMO and 2) came from the same HART as 'slot'
+        // and 3) had the AQ flag set;
+        // we must wait until this operation clears before this particular
+        // request can proceed
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool RevBasicMemCtrl::isRL(unsigned Slot, unsigned Hart){
+  if( AMOTable.size() == 0 ){
+    return false;
+  }else if( Slot == 0 ){
+    return false;
+  }
+
+  if( (((uint32_t)(rqstQ[Slot]->getFlags()) & (uint32_t)(0x1FE00000)) > 0) &&
+      (((uint32_t)(rqstQ[Slot]->getFlags()) & (uint32_t)(RevCPU::RevFlag::F_RL))>0) ){
+    // this is an AMO, check to see if there are other ops from the same
+    // HART in flight
+    for( unsigned i=0; i<Slot; i++ ){
+      if( rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
+        // this implies that the same Hart has preceding memory ops
+        // in which case, we can't dispatch this AMO until they clear
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool RevBasicMemCtrl::isPendingAMO(unsigned Slot){
+  return (isAQ(Slot,rqstQ[Slot]->getHart()) ||
+          isRL(Slot,rqstQ[Slot]->getHart()));
+}
+
 bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
                                       unsigned &t_max_stores,
                                       unsigned &t_max_flush,
@@ -1095,6 +1162,7 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
                      t_max_writeunlock,
                      t_max_custom,
                      t_max_amo) ){
+
       // op is good to execute, build a StandardMem packet
       t_max_ops++;
 
@@ -1106,6 +1174,15 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
         rqstQ.erase(rqstQ.begin()+i);
         num_fence+=1;
         delete op;
+        return true;
+      }
+
+      // determine if we have any AMOs that would prevent us
+      // from dispatching this request.  if this returns 'true'
+      // then we can't dispatch the request.  note that
+      // we do this after processing FENCE requests
+      if( isPendingAMO(i) ){
+        t_max_ops = max_ops;
         return true;
       }
 
@@ -1250,6 +1327,9 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,char *,void *,
                                             RevMemOp *,
                                             bool> Entry){
   RevMemOp *Tmp = std::get<AMOTABLE_MEMOP>(Entry);
+  if( Tmp == nullptr ){
+    output->fatal(CALL_INFO, -1, "Error : AMOTable entry is null\n" );
+  }
   void *Target = Tmp->getTarget();
 
   StandardMem::Request::flags_t flags = Tmp->getFlags();
@@ -1339,13 +1419,16 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,char *,void *,
 }
 
 void RevBasicMemCtrl::handleAMO(RevMemOp *op){
-    auto range = AMOTable.equal_range(op->getAddr());
-    for( auto i = range.first; i != range.second; ++i ){
-      auto Entry = i->second;
-      // perform the arithmetic operation and generate a WRITE request
+  auto range = AMOTable.equal_range(op->getAddr());
+  for( auto i = range.first; i != range.second; ++i ){
+    auto Entry = i->second;
+    // perform the arithmetic operation and generate a WRITE request
+    if( std::get<AMOTABLE_MEMOP>(Entry) == op ){
       performAMO(Entry);
       AMOTable.erase(i);  // erase the current entry so we can add a new one
+      return ;
     }
+  }
 }
 
 void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
@@ -1362,13 +1445,15 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     // walk the AMOTable and clear any matching AMO ops
     // note that we must match on both the target address and the RevMemOp pointer
     auto range = AMOTable.equal_range(op->getAddr());
-    for( auto i = range.first; i != range.second; ++i ){
+    for( auto i = range.first; i != range.second; ){
       auto Entry = i->second;
       // if the request matches the target,
       // then delete it
       if( std::get<AMOTABLE_MEMOP>(Entry) == op ){
-        AMOTable.erase(i);
+        AMOTable.erase(i++);
         num_amo--;
+      }else{
+        ++i;
       }
     }
 

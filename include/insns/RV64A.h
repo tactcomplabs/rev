@@ -52,11 +52,35 @@ namespace SST{
       }
 
       static bool amoaddd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+#if 0
         SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1])), 64 );
         M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                     dt_u64((int64_t)(td_u64(R->RV64[Inst.rd],64))+
                            (int64_t)(td_u64(R->RV64[Inst.rs2],64)),64));
         R->RV64_PC += Inst.instSize;
+#endif
+
+        uint32_t flags = 0x00ul;
+
+        if( Inst.aq && Inst.rl){
+          flags = (uint32_t)(RevCPU::RevFlag::F_AMOADD) |
+                  (uint32_t)(RevCPU::RevFlag::F_AQ) |
+                  (uint32_t)(RevCPU::RevFlag::F_RL);
+        }else if( Inst.aq ){
+          flags = (uint32_t)(RevCPU::RevFlag::F_AMOADD) |
+                  (uint32_t)(RevCPU::RevFlag::F_AQ);
+        }else if( Inst.rl ){
+          flags = (uint32_t)(RevCPU::RevFlag::F_AMOADD) |
+                  (uint32_t)(RevCPU::RevFlag::F_RL);
+        }
+
+        M->AMOVal(F->GetHart(),
+                  (uint64_t)(R->RV64[Inst.rs1]),
+                  (int64_t *)(&R->RV64[Inst.rs2]),
+                  (int64_t *)(&R->RV64[Inst.rd]),
+                  REVMEM_FLAGS(flags));
+         R->RV64_PC += Inst.instSize;
+
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
