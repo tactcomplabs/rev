@@ -38,6 +38,7 @@
 #include "PanExec.h"
 #include "RevPrefetcher.h"
 #include "RevThreadCtx.h"
+#include "RevTracer.h"
 #include "../common/syscalls/SysFlags.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
@@ -51,7 +52,7 @@ namespace SST{
     public:
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
-               SST::Output *Output );
+               SST::Output *Output, RevTracer *Tracer );
 
       /// RevProc: standard desctructor
       ~RevProc();
@@ -195,6 +196,8 @@ namespace SST{
       RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
       RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
+
+      RevTracer* tracer;          ///< RevProc: Tracer proof-of-concept
 
       /*
       * ECALLs 

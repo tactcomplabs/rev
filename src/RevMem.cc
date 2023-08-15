@@ -13,9 +13,10 @@
 #include <mutex>
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
-                RevMemCtrl *Ctrl, SST::Output *Output )
+                RevMemCtrl *Ctrl, SST::Output *Output,
+                RevTracer *Tracer )
   : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output),
-    stacktop(0x00ull) {
+    stacktop(0x00ull), tracer(Tracer) {
   // Note: this constructor assumes the use of the memHierarchy backend
   pageSize = 262144; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
@@ -42,9 +43,9 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   // AddMemSeg(0, memSize+1);
 }
 
-RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
+RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output, RevTracer *Tracer )
   : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output),
-    stacktop(0x00ull) {
+    stacktop(0x00ull), tracer(Tracer) {
 
   // allocate the backing memory
   physMem = new char [memSize];
@@ -449,6 +450,8 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+  if (tracer) 
+    tracer->memWrite(Addr,Len,Data);
 
   if(Addr == 0xDEADBEEF){
     std::cout << "Found special write. Val = " << std::hex << *(int*)(Data) << std::dec << std::endl;
@@ -580,6 +583,8 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+  if (tracer) tracer->memRead(Addr,Len,Target);
+
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
   //check to see if we're about to walk off the page....

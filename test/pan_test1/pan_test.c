@@ -19,10 +19,11 @@
 int main(int argc, char **argv){
   uint64_t *ptr  = (uint64_t *)(_PAN_COMPLETION_ADDR_);
   volatile uint64_t value = *ptr;
-
+  asm volatile("xor x0,x0,x0");  // trace off 0x4033
   while( value == 0x00ull){
     value = *ptr;
   }
+  asm volatile("xor x0,x0,x0");  // trace on 0x4033
 
   return 0;
 }

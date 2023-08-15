@@ -24,7 +24,35 @@
 #include "RevMem.h"
 #include "RevFeature.h"
 
+//kg prototype - would prefer a register file class to include this
+//             - overloading array [] operator another option (WIP)
+#include "RevTracer.h"
+
 using namespace SST::RevCPU;
+
+// Tracer macros --- TEMPORARY I HOPE ---
+#define __SST_REVCPU_TRACER_MACROS__
+#ifdef __SST_REVCPU_TRACER_MACROS__
+
+#define TRC32RD(reg0)         if (Tracer) Tracer->regRead(Inst.reg0, R->RV32[Inst.reg0]);
+#define TRC64RD(reg0)         if (Tracer) Tracer->regRead(Inst.reg0, R->RV64[Inst.reg0]);
+
+#define TRC32RD2(reg0,reg1)    if (Tracer) Tracer->regRead(Inst.reg0, R->RV32[Inst.reg0], Inst.reg1, R->RV32[Inst.reg1]);
+#define TRC64RD2(reg0,reg1)    if (Tracer) Tracer->regRead(Inst.reg0, R->RV64[Inst.reg0], Inst.reg1, R->RV64[Inst.reg1]);
+
+#define TRC32RD3(reg0,reg1,reg2)  if (Tracer) Tracer->regRead(Inst.reg0, R->RV32[Inst.reg0], Inst.reg1, R->RV32[Inst.reg1], Inst.reg2, R->RV32[Inst.reg2]);
+#define TRC64RD3(reg0,reg1,reg2)  if (Tracer) Tracer->regRead(Inst.reg0, R->RV64[Inst.reg0], Inst.reg1, R->RV64[Inst.reg1], Inst.reg2, R->RV64[Inst.reg2]);
+
+#define TRC32RD4MEM2(reg0,reg1) if (Tracer) Tracer->regRead4Mem(Inst.reg0,R->RV32[Inst.reg0], Inst.reg1,R->RV32[Inst.reg1])
+#define TRC64RD4MEM2(reg0,reg1) if (Tracer) Tracer->regRead4Mem(Inst.reg0,R->RV64[Inst.reg0], Inst.reg1,R->RV64[Inst.reg1])
+
+#define TRC32WR(reg0)          if (Tracer) Tracer->regWrite(Inst.reg0, R->RV32[Inst.reg0])
+#define TRC64WR(reg0)          if (Tracer) Tracer->regWrite(Inst.reg0, R->RV64[Inst.reg0])
+
+#define TRC32PC()              if (Tracer) Tracer->pcWrite(R->RV32_PC)
+#define TRC64PC()              if (Tracer) Tracer->pcWrite(R->RV64_PC)
+
+#endif
 
 namespace SST{
   namespace RevCPU{
@@ -66,6 +94,9 @@ namespace SST{
       ///         such that the currently executing RevThreadCtx is the one 
       ///         whose register file is operated on
       void SetRegFile(RevRegFile* RegFile) { regFile = RegFile; }
+
+      // Temporary convenience for tracing prototype
+      static RevTracer* Tracer;
 
     protected:
       RevFeature *feature;  ///< RevExt: feature object

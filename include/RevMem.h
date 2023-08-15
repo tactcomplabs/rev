@@ -31,6 +31,7 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 #include "RevMemCtrl.h"
+#include "RevTracer.h"
 
 #ifndef _REVMEM_BASE_
 #define _REVMEM_BASE_ 0x00000000
@@ -50,10 +51,10 @@ namespace SST {
     class RevMem {
     public:
       /// RevMem: standard constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output );
+      RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output, RevTracer *Tracer = nullptr );
 
       /// RevMem: standard memory controller constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
+      RevMem( unsigned long MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output, RevTracer *Tracer = nullptr );
 
       /// RevMem: standard destructor
       ~RevMem();
@@ -324,6 +325,8 @@ namespace SST {
       std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 
       std::vector<std::pair<unsigned,uint64_t>> LRSC;   ///< RevMem: load reserve/store conditional vector
+
+      RevTracer* tracer; //kg prototype convenience
 
     }; // class RevMem
   } // namespace RevCPU
