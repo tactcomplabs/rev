@@ -267,6 +267,7 @@ namespace SST {
       ///< RevMem: default memory size allocated to new threads
       uint64_t DefaultThreadMemSize = 4*1024*1024;    
 
+      void InitHeap(const uint64_t& EndOfStaticData);
       void SetHeapStart(uint64_t HeapStart){ heapstart = HeapStart; }
       void SetHeapEnd(uint64_t HeapEnd){ heapend = HeapEnd; }
       const uint64_t GetHeapEnd(){ return heapend; }

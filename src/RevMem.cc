@@ -218,12 +218,6 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   /* Check if vAddr is in the TLB */
   uint64_t physAddr = SearchTLB(vAddr);
 
-  // std::cout << "Searching for vAddr = 0x" << vAddr << std::endl;
-
-  // for( auto Seg : GetMemSegs() ){
-  //   std::cout << *Seg << std::endl;
-  // }
-
   /* If not in TLB, physAddr will equal _INVALID_ADDR_ */
   if( physAddr == _INVALID_ADDR_ ){
     /* Check if vAddr is a valid address before translating to physAddr */
@@ -251,15 +245,16 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       /* vAddr not a valid address */
 
 
-      // for( auto Seg : MemSegs ){
-      //   std::cout << *Seg << std::endl;
-      // }
+      #ifdef _REV_DEBUG_
+      for( auto Seg : MemSegs ){
+        std::cout << *Seg << std::endl;
+      }
+      #endif
 
-      // std::cout << "ABOUT TO SEGFAULT" << std::endl;
       
       output->fatal(CALL_INFO, 11, 
-                    "Segmentation Fault: Virtual address 0x%lx was not found in any mem segments\n",
-                    vAddr);
+                    "Segmentation Fault: Virtual address 0x%lx (PhysAddr = 0x%lx) was not found in any mem segments\n",
+                    vAddr, physAddr);
     }
   }
   return physAddr;
@@ -274,7 +269,7 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
       return !(MemSeg->isFree());      
     } 
   }
-  if( vAddr >= (stacktop - 1024*1024*sizeof(char)) ){
+  if( vAddr >= (stacktop - _STACK_SIZE_ ) ){
     if( vAddr < memSize ){
       return true;
     }
@@ -740,46 +735,6 @@ uint32_t RevMem::GetNewThreadPID(){
   return PIDCount;
 }
 
-// This function is used to allocate memory 
-//
-// To minimize memory footprint we will try to see if there exists a 
-// previously allocated segment (that is now free) and if we can fit 
-// the newly allocated data there
-//
-// If not, we will add a new memory segment and check if we have 
-// exceeded our max heap size
-// uint64_t RevMem::AllocMem(uint64_t Size){
-//   for( unsigned i=0; i<MemSegs.size(); i++ ){
-//     auto CurrSeg = MemSegs[i]; 
-//     if( CurrSeg->isFree() && (CurrSeg->getSize() >= Size) ){
-//       // We can fit our new data here
-//       if( CurrSeg->getSize() == Size ){
-//         // Entire segment is no longer free
-//         // We return the baseAddr of that segment
-//         CurrSeg->setIsFree(false);
-//         return CurrSeg->getBaseAddr();
-//       } 
-//       else {
-//         // CurrSeg is bigger than the data we need so we will only use 
-//         // part of it. We will do this by adding a new segment from 
-//         // from base address of current segment to Size... and then 
-//         // shrinking CurrSeg to start at Size+1
-//         const uint64_t OldBaseAddr = CurrSeg->getBaseAddr();
-//         const uint64_t OldSize = CurrSeg->getSize();
-//         const uint64_t OldTopAddr = CurrSeg->getTopAddr();
-//         MemSegs.emplace(MemSegs.begin()+i-1, std::make_shared<MemSegment>(OldBaseAddr, Size));
-//         // With new segment added we need to move the base address of CurrSeg to the
-//         // top of the new segment
-//         CurrSeg->setBaseAddr(OldBaseAddr + Size + 1);
-//         CurrSeg->setSize(OldBaseAddr + Size + 1);
-//         return OldBaseAddr;
-//       }
-//     } // Segment isn't free... can't allocate
-//   } 
-//   // Made it out of the loop without returning... need to make new segment
-//   return AddMemSeg(Size);  
-
-// }
  
 // This function is used to remove/shrink a memory segment
 // You *must* deallocate a chunk of memory that STARTS on a previously
@@ -877,6 +832,22 @@ uint64_t RevMem::ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t Ne
   }
 }
 
+/// @brief This function is called from the loader to initialize the heap
+/// @param EndOfStaticData: The address of the end of the static data section (ie. end of .bss section)
+void RevMem::InitHeap(const uint64_t& EndOfStaticData){
+  if( EndOfStaticData == 0x00ull ){
+    // Program didn't contain .text, .data, or .bss sections
+    output->fatal(CALL_INFO, 7, 
+                  "The loader was unable"
+                  "to find a .text section in your executable. This is a bug."
+                  "EndOfStaticData = 0x%lx which is less than or equal to 0",
+                  EndOfStaticData);
+  } else {
+    heapend = EndOfStaticData;
+    heapstart = EndOfStaticData;
+  }
+  return;
+}
 
 uint64_t RevMem::ExpandHeap(uint64_t Size){
   /* 
