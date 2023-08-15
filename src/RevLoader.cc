@@ -343,13 +343,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   // set the first stack pointer
   uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
-
-  // Round the stack pointer down to the nearest 16-byte boundary
-  // - This is required by the ABI
-  sp &= ~0xF;
-  std::cout << "Stack Pointer: " << std::hex << sp << std::endl;
-  
-
   mem->SetStackTop(sp);
 
 
@@ -458,7 +451,12 @@ bool RevLoader::LoadProgramArgs(){
     argv[i].copy(tmpc,argv[i].size()+1);
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
-    mem->SetStackTop(sp-(uint64_t)(len));
+    // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
+    sp -= (uint64_t)(len);
+    // Align stack pointer on a 16-byte boundary per the RISC-V ABI
+    sp &= ~0xF;
+    // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
+    mem->SetStackTop(sp);
     //mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));
     WriteCacheLine(mem->GetStackTop(),len,(void *)(&tmpc));
   }
