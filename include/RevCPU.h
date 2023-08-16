@@ -35,6 +35,7 @@
 #include "RevNIC.h"
 #include "PanNet.h"
 #include "PanExec.h"
+#include "RevTracer.h"
 
 // -- PAN Common Headers
 #include "../common/include/PanAddr.h"
@@ -324,6 +325,9 @@ namespace SST {
       std::vector<Statistic<uint64_t>*> FloatsExec;
       std::vector<Statistic<uint64_t>*> TLBMissesPerCore;
       std::vector<Statistic<uint64_t>*> TLBHitsPerCore;
+
+      /// --- instruction tracing
+      RevTracer* Tracer;
 
       //-------------------------------------------------------
       // -- FUNCTIONS

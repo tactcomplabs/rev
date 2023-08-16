@@ -10,6 +10,7 @@
 
 #include "../include/RevCPU.h"
 #include <cmath>
+#include "../include/kg_globals.h"
 
 const char *splash_msg = "\
 \n\
@@ -35,10 +36,11 @@ const char *pan_splash_msg = "\
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false), EnableMemH(false),
-    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr) {
+    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr),
+    Tracer(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
-
+  KG_GLOBAL::spinner(id);
   // Initialize the output handler
   output.init("RevCPU[" + getName() + ":@p:@t]: ", Verbosity, 0, SST::Output::STDOUT);
 
@@ -193,7 +195,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
   EnableMemH = params.find<bool>("enable_memH", 0);
   if( !EnableMemH ){
-    Mem = new RevMem( memSize, Opts,  &output );
+    Mem = new RevMem( memSize, Opts,  &output, Tracer );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
   }else{
@@ -204,7 +206,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     if( !Ctrl )
       output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");
 
-    Mem = new RevMem( memSize, Opts, Ctrl, &output );
+    Mem = new RevMem( memSize, Opts, Ctrl, &output, Tracer );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
 
@@ -229,7 +231,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   // Create the processor objects
   Procs.reserve(Procs.size() + numCores);
   for( unsigned i=0; i<numCores; i++ ){
-    Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
+    // Each core gets its very own tracer
+    RevTracer* trc = nullptr;
+    if (output.getVerboseLevel()>=5) { 
+      trc = new RevTracer(output.getVerboseLevel(), getName());
+      std::string diasmType;
+      Opts->GetMachineModel(0,diasmType); 
+      trc->SetDisassembler(diasmType);
+      trc->Reset();
+      trc->SetOutputEnable(true);
+    }
+    Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output, trc ) );
   }
 
   // setup the per-proc statistics
@@ -292,6 +304,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.verbose(CALL_INFO, 1, 0, "Initialization of PANTest harness complete.\n");
   else
     output.verbose(CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n");
+
 }
 
 RevCPU::~RevCPU(){

@@ -36,7 +36,7 @@ max_addr_gb = 1
 #-- HOST CPU
 host_cpu0 = sst.Component("cpu0", "revcpu.RevCPU")
 host_cpu0.addParams({
-	"verbose" : 5,                                # Verbosity
+	"verbose" : 5,                               # Verbosity
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes

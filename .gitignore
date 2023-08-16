@@ -3,5 +3,6 @@ src/librevcpu.so
 *.csv
 .cache/clangd/index
 .vscode
+*.dylib
 .#*
 *~

@@ -17,12 +17,13 @@ RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
                   RevLoader *Loader,
-                  SST::Output *Output )
+                  SST::Output *Output,
+                  RevTracer *Tracer )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
     opts(Opts), mem(Mem), loader(Loader), output(Output),
-    feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+    tracer(Tracer), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -1439,6 +1440,11 @@ RevInst RevProc::DecodeInst(){
                   Inst );
   }
 
+  // Trace capture fetched instruction 
+  // place after next code block to include injected fault
+  if (tracer)
+    tracer->SetFetchedInsn(PC, Inst);
+
   // Stage 1a: handle the crack fault injection
   if( CrackFault ){
     srand(time(NULL));
@@ -1900,12 +1906,27 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // Update RegFile (in case of prior context switch)
       Ext->SetRegFile(RegFile);
 
+      // Tracer context for execution
+      RevExt::Tracer = tracer;
 
       // execute the instruction
       if( !Ext->Execute(EToE.second, Inst, HartToExec) ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
+
+      // Conditionally trace
+      if (tracer) {
+        // Render instruction summary after execution
+        tracer->CheckUserControls();
+        if (tracer->OutputEnabled()) {
+          output->verbose(CALL_INFO, 5, 0,
+                "Core %d ; Thread %d]; *I %s\n", 
+                id, HartToExec, tracer->RenderOneLiner().c_str());
+        }
+        tracer->Reset(); // call after all rendering functions are done with data
+      }
+
       //#define __REV_DEEP_TRACE__
       #ifdef __REV_DEEP_TRACE__
       if(feature->IsRV32()){

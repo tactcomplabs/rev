@@ -5,7 +5,7 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-# rev-test-ex1.py
+# rev-test-tracer.py
 #
 
 import os
@@ -23,13 +23,13 @@ max_addr_gb = 1
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
 	"verbose" : 5,                                # Verbosity
-        "numCores" : 1,                               # Number of cores
+        "numCores" : 8,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
-        "machine" : "[0:RV32I]",                      # Core:Config; RV32I for core 0
+        "machine" : "[CORES:RV32I]",                  # Core:Config; RV32I for all
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "ex1.exe"),  # Target executable
+        "program" : os.getenv("REV_EXE", "tracer.exe"),  # Target executable
         "splash" : 1                                  # Display the splash message
 })
 comp_cpu.enableAllStatistics()

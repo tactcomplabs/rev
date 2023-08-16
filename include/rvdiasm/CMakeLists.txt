@@ -1,0 +1,29 @@
+set(DiasmSrcs
+  abstract_device.h
+  byteorder.h
+  cfg.h
+  common.h
+  config.h
+  csrs.h
+  debug_rom_defines.h
+  decode.h
+  decode_macros.h
+  disasm.h
+  encoding.h
+  entropy_source.h
+  extension.h
+  isa_parser.h
+  memif.h
+  memtracer.h
+  option_parser.h
+  platform.h
+  primitiveTypes.h
+  primitives.h
+  processor.h
+  softfloat.h
+  softfloat_types.h
+  specialize.h
+  trap.h
+  triggers.h
+  vector_unit.h
+)

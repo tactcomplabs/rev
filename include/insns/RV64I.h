@@ -90,6 +90,7 @@ namespace SST{
 
       // Standard instructions
       static bool lwu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst){
+        TRC64RD2(rs1,rd);
         //ZEXT(R->RV64[Inst.rd],M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
         uint32_t val = 0;
         M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
@@ -100,49 +101,60 @@ namespace SST{
         //ZEXT64(R->RV64[Inst.rd], (uint64_t)val, 64);
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool ld(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD2(rs1,rd);
         //R->RV64[Inst.rd] = M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
         M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->RV64[Inst.rd],
                     REVMEM_FLAGS(0x00));
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool sd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD4MEM2(rs1,rs2);
         int64_t tmp = td_u64(Inst.imm,12);
         M->WriteU64((uint64_t)(R->RV64[Inst.rs1]+tmp), (uint64_t)(R->RV64[Inst.rs2]));
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool addiw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD2(rs1,rd);
         R->RV64[Inst.rd] = dt_u32((int32_t)(td_u32(R->RV64[Inst.rs1],32)) + (int32_t)(td_u32(Inst.imm,12)),32);
         R->RV64[Inst.rd] &= MASK32;
         SEXTI( R->RV64[Inst.rd], 32 );
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool slliw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD2(rs1,rd);
         //SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (Inst.imm&0b111111))&MASK32,64);
         SEXT(R->RV64[Inst.rd], ((R->RV64[Inst.rs1]<< (Inst.imm & 0b0111111))&0xffffffff), 32);
         SEXTI(R->RV64[Inst.rd],64);
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool srliw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         // catch the special case where IMM == 0x00; RD = RS1
+        TRC64RD2(rs1,rd);
         if( (Inst.imm&0b111111) == 0x00 ){
           R->RV64[Inst.rd] = 0x00ULL;
           R->RV64[Inst.rd] |= (R->RV64[Inst.rs1]&0xffffffff);
           SEXTI64(R->RV64[Inst.rd],32);
           R->RV64_PC += Inst.instSize;
+          TRC64WR(rd);
           return true;
         }
 
@@ -153,10 +165,12 @@ namespace SST{
         //ZEXT64(R->RV64[Inst.rd],(srcTrunc >> (Inst.imm&0b111111))&MASK32,64);
         //SEXTI64(R->RV64[Inst.rd],32);
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool sraiw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD2(rs1,rd);
         uint64_t tmp = R->RV64[Inst.rs1] & int64_t(1<<31);  //Grab sign bit
         int32_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit signed value
         SEXT(R->RV64[Inst.rd],((srcTrunc >> (Inst.imm&0b1111111)))|tmp,32);
@@ -164,39 +178,49 @@ namespace SST{
         //replicate rs1[31] across all upper bits
         R->RV64[Inst.rd] = (R->RV64[Inst.rs1] & 0x80000000) ? (R->RV64[Inst.rd] & MASK32) | (0xFFFFFFFF00000000) : (R->RV64[Inst.rd] & MASK32) ;
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool addw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD3(rs1,rs2, rd);
         R->RV64[Inst.rd] = dt_u32(td_u32(R->RV64[Inst.rs1],32) + td_u32(R->RV64[Inst.rs2],32),32); //addw operates on and produces 32-bit results even on RV64I codes 
         SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool subw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD3(rs1,rs2, rd);
         R->RV64[Inst.rd] = dt_u32(td_u32(R->RV64[Inst.rs1],32) - td_u32(R->RV64[Inst.rs2],32),32);
         SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool sllw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD3(rs1,rs2, rd);
         SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b11111))&MASK32,64);
         SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool srlw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD3(rs1,rs2, rd);
         uint64_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit unsigned value, scale up to 64bit to avoid sign bit shift
         R->RV64[Inst.rd] = (srcTrunc >> (R->RV64[Inst.rs2]&0b11111));
         SEXTI(R->RV64[Inst.rd],32);
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 
       static bool sraw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        TRC64RD3(rs1,rs2, rd);
         uint64_t tmp = R->RV64[Inst.rs1] & (1<<31);
         int32_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit signed value
         SEXT(R->RV64[Inst.rd],((srcTrunc >> (R->RV64[Inst.rs2]&0b111111)))|tmp,32);
@@ -204,6 +228,7 @@ namespace SST{
         //replicate rs1[31] across all upper bits
         R->RV64[Inst.rd] = (R->RV64[Inst.rs1] & 0x80000000) ? (R->RV64[Inst.rd] & MASK32) | (0xFFFFFFFF00000000) : (R->RV64[Inst.rd] & MASK32) ;
         R->RV64_PC += Inst.instSize;
+        TRC64WR(rd);
         return true;
       }
 

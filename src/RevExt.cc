@@ -10,6 +10,9 @@
 
 #include "../include/RevExt.h"
 
+// assign to specific tracer before exec phase
+RevTracer* RevExt::Tracer = nullptr;
+
 RevExt::RevExt( std::string Name,
                 RevFeature *Feature,
                 RevRegFile *RegFile,

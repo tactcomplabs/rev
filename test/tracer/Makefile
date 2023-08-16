@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: pan_test
+# makefile: tracer
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,15 +12,16 @@
 
 .PHONY: src
 
-EXAMPLE=pan_test
-CC=riscv64-unknown-elf-gcc
+EXAMPLE=tracer
+CC="${RVCC}"
+
 ARCH=rv32i
-ABI=ilp32
-#ARCH=rv64g
+ABI=-mabi=ilp32
+//ARCH=rv64g
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -g -O0 -march=$(ARCH) $(ABI) -o  $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 
