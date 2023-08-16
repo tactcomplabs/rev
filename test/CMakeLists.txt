@@ -261,6 +261,43 @@ set_tests_properties(X0
     LABELS "all;rv64"
 )
 
+add_test(NAME AMOADD_C COMMAND run_amoadd_c.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_c" )
+set_tests_properties(AMOADD_C
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOADD_CXX COMMAND run_amoadd_cxx.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_cxx" )
+set_tests_properties(AMOADD_CXX
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOADD_C_MEMH COMMAND run_amoadd_c_memh.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_c_memh" )
+set_tests_properties(AMOADD_C_MEMH
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOADD_CXX_MEMH COMMAND run_amoadd_cxx_memh.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_cxx_memh" )
+set_tests_properties(AMOADD_CXX_MEMH
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+
 
 # -- PROCESS CTest Config Variables
 # -- PROCESS CTest Config Variables
