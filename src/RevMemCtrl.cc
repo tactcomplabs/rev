@@ -1335,7 +1335,7 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,char *,void *,
   StandardMem::Request::flags_t flags = Tmp->getFlags();
   std::vector<uint8_t> buffer = Tmp->getBuf();
 
-  if( Tmp->getSize() == 32 ){
+  if( Tmp->getSize() == 4 ){
     int32_t TmpBuf = 0x00ul;
     int32_t *TmpTarget = reinterpret_cast<int32_t *>(Target);
     uint32_t *TmpTargetU = reinterpret_cast<uint32_t *>(Target);
