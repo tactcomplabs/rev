@@ -53,14 +53,15 @@ namespace SST{
       }
 
       static bool mulw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1]&MASK32,32) * td_u64(R->RV64[Inst.rs2]&MASK32,32),32);
+        R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],32) * td_u64(R->RV64[Inst.rs2],32),32)&MASK32;
+        SEXTI(R->RV64[Inst.rd],32);
         R->RV64_PC += Inst.instSize;
         return true;
       }
 
       static bool divw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
-        uint64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
+        int64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
+        int64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
         if( rhs == 0 ){
           // division by zero, quotient = -1
           R->RV64[Inst.rd] = UINT64_MAX;
@@ -80,14 +81,14 @@ namespace SST{
       static bool divuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         uint64_t lhs = R->RV64[Inst.rs1] & MASK32;
         uint64_t rhs = R->RV64[Inst.rs2] & MASK32;
-        ZEXTI(lhs,64);
-        ZEXTI(rhs,64);
         if( rhs == 0 ){
           // division by zero, quotient = 2^L-1
           R->RV64[Inst.rd] = UINT32_MAX;
+          SEXTI(R->RV64[Inst.rd], 32);
+          R->RV64_PC += Inst.instSize;
           return true;
         }
-        SEXT(R->RV64[Inst.rd], (lhs/rhs)&MASK32, 64);
+        SEXT(R->RV64[Inst.rd], (lhs/rhs)&MASK32, 32);
         R->RV64_PC += Inst.instSize;
         return true;
       }

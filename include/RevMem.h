@@ -11,6 +11,8 @@
 #ifndef _SST_REVCPU_REVMEM_H_
 #define _SST_REVCPU_REVMEM_H_
 
+#define __PAGE_SIZE__ 4096
+
 // -- C++ Headers
 #include <ctime>
 #include <vector>
@@ -39,6 +41,8 @@
 
 #define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
 
+#define _STACK_SIZE_ (1024*1024*sizeof(char))
+
 using namespace SST::RevCPU;
 
 namespace SST {
@@ -55,6 +59,61 @@ namespace SST {
       /// RevMem: standard destructor
       ~RevMem();
 
+      /* Virtual Memory Blocks  */
+      class MemSegment {
+      public:
+          MemSegment(uint64_t baseAddr, uint64_t size)
+              : BaseAddr(baseAddr), Size(size) {
+                    TopAddr = baseAddr + size;
+                    } // Permissions(permissions) {}
+
+          uint64_t getTopAddr() const { return BaseAddr + Size; }
+          uint64_t getBaseAddr() const { return BaseAddr; }
+          uint64_t getSize() const { return Size; }
+
+          void setBaseAddr(uint64_t baseAddr) { 
+            BaseAddr = baseAddr;
+            if( Size ){
+              TopAddr = Size + BaseAddr;
+            }
+          }
+          void setSize(uint64_t size) { Size = size; TopAddr = BaseAddr + size; }
+
+          /// MemSegment: Check if vAddr is included in this segment
+          bool contains(const uint64_t vAddr){
+            return (vAddr >= BaseAddr && vAddr <= TopAddr);
+          };
+
+          // Check if a given range is inside a segment
+          bool contains(const uint64_t vBaseAddr, const uint64_t Size){
+            uint64_t vTopAddr = vBaseAddr + Size;
+            return (this->contains(vBaseAddr) && this->contains(vTopAddr));
+          };
+
+          bool isFree(){ return IsFree; }
+          void setIsFree(bool freeState){ IsFree = freeState; }
+
+
+      // Custom Print Function
+      friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
+        std::string State = "| Free |";
+        if( !obj.IsFree ){
+          State = "| Allocated | "; 
+        }
+        std::cout << "---------------------------------------------------------------" << std::endl;
+        return os << State << " | 0x" << std::hex << obj.getBaseAddr() << " | 0x" << std::hex << obj.getTopAddr() << " | Size = " << std::dec << obj.getSize();
+      }
+
+      private:
+          uint64_t BaseAddr;
+          uint64_t Size;
+          uint64_t TopAddr;
+          bool IsFree = false;
+          // Potentially add a pointer to the previous segment and next segment
+          // but this may not be needed if we have the vector that is allocated sequentially
+          // and when a segment is freed it's not removed, its freeness is 
+      };
+
       /// RevMem: determine if there are any outstanding requests
       bool outstandingRqsts();
 
@@ -69,6 +128,9 @@ namespace SST {
 
       /// RevMem: set the stack_top address
       void SetStackTop(uint64_t Addr) { stacktop = Addr; }
+ 
+      /// RevMem: get the stack_top address
+      uint64_t GetStackBottom() { return stacktop - _STACK_SIZE_; }
 
       /// RevMem: initiate a memory fence
       bool FenceMem(unsigned Hart);
@@ -208,8 +270,42 @@ namespace SST {
       /// RevMem: Used to set the size of the TLBSize
       void SetTLBSize(unsigned numEntries){ tlbSize = numEntries; }
 
+      /// RevMem: Used to set the size of the TLBSize
+      void SetMaxHeapSize(const unsigned MaxHeapSize){ maxHeapSize = MaxHeapSize; }
+
+      /// RevMem: Get memSize value set in .py file
+      const uint64_t GetMemSize(){ return memSize; }
+  
       ///< RevMem: default memory size allocated to new threads (Unimplemented)
-      uint64_t DefaultThreadMemSize = 4*1024*1024;
+      std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
+
+      /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
+      uint64_t AddMemSeg(const uint64_t SegSize);
+
+      /// RevMem: Add new MemSegment (starting at BaseAddr)
+      uint64_t AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize);
+
+      /// RevMem: Add new MemSegment (starting at BaseAddr) and round it up to the nearest page
+      uint64_t AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, const bool roundUpToPage);
+
+      /// RevMem: Removes or shrinks segment
+      uint64_t DeallocMem(uint64_t BaseAddr, uint64_t Size);
+
+      /// RevMem: Removes or shrinks segment
+      uint64_t AllocMem(uint64_t Size);
+
+      /// RevMem: Shrinks segment (Only moves top addr & marks upper part as free)
+      uint64_t ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize);
+      
+      ///< RevMem: default memory size allocated to new threads
+      uint64_t DefaultThreadMemSize = 4*1024*1024;    
+
+      void InitHeap(const uint64_t& EndOfStaticData);
+      void SetHeapStart(uint64_t HeapStart){ heapstart = HeapStart; }
+      void SetHeapEnd(uint64_t HeapEnd){ heapend = HeapEnd; }
+      const uint64_t GetHeapEnd(){ return heapend; }
+
+      uint64_t ExpandHeap(uint64_t Size);
 
     class RevMemStats {
     public:
@@ -231,8 +327,10 @@ namespace SST {
     private:
       std::unordered_map<uint64_t, std::pair<uint64_t, std::list<uint64_t>::iterator>> TLB;
       std::list<uint64_t> LRUQueue; ///< RevMem: List ordered by last access for implementing LRU policy when TLB fills up
+      std::vector<std::shared_ptr<MemSegment>> MemSegs;
       unsigned long memSize;        ///< RevMem: size of the target memory
       unsigned tlbSize;             ///< RevMem: size of the target memory
+      unsigned maxHeapSize;             ///< RevMem: size of the target memory
       RevOpts *opts;                ///< RevMem: options object
       RevMemCtrl *ctrl;             ///< RevMem: memory controller object
       SST::Output *output;          ///< RevMem: output handler
@@ -241,18 +339,21 @@ namespace SST {
       void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
       void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
       uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
+      bool isValidVirtAddr(const uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
 
+      std::mutex heap_mtx;         ///< RevMem: Used for incrementing ThreadCtx PID counter
       std::mutex pid_mtx;         ///< RevMem: Used for incrementing ThreadCtx PID counter
       uint32_t PIDCount = 1023;   ///< RevMem: Monotonically increasing PID counter for assigning new PIDs without conflicts
 
-      //c++11 should guarentee that these are all zero-initializaed
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
       uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
       uint32_t                                      addrShift; ///< RevMem: Bits to shift to caclulate page of address 
       uint32_t                                      nextPage;  ///< RevMem: next physical page to be allocated. Will result in index 
                                                                     /// nextPage * pageSize into physMem
 
-      uint64_t stacktop;        ///< RevMem: top of the stack
+    uint64_t heapend;        ///< RevMem: top of the stack
+    uint64_t heapstart;        ///< RevMem: top of the stack
+    uint64_t stacktop;        ///< RevMem: top of the stack
 
       std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 

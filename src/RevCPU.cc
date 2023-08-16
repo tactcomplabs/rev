@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevCPU.h"
+#include <cmath>
 
 const char *splash_msg = "\
 \n\
@@ -214,6 +215,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   // Set TLB Size
   const unsigned long tlbSize = params.find<unsigned long>("tlbSize", 512);
   Mem->SetTLBSize(tlbSize);
+
+  // Set max heap size
+  const unsigned long maxHeapSize = params.find<unsigned long>("maxHeapSize", std::floor((memSize/4)));
+  Mem->SetMaxHeapSize(maxHeapSize);
 
   // Load the binary into memory
   Loader = new RevLoader( Exe, Args, Mem, &output );

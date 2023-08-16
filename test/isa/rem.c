@@ -1,5 +1,5 @@
 /*
- * add.c
+ * rem.c
  *
  * RISC-V ISA: RV32I
  *

@@ -2402,7 +2402,7 @@ void RevProc::InitEcallTable(){
     {214, &RevProc::ECALL_brk},             // Not implemented
     {215, &RevProc::ECALL_munmap},          
     {220, &RevProc::ECALL_clone},           // Fork functionality works but not clone3
-    {222, &RevProc::ECALL_mmap},            // Not implemented
+    {222, &RevProc::ECALL_mmap},            // 
     {403, &RevProc::ECALL_clock_gettime},   // Not implemented
     {404, &RevProc::ECALL_clock_settime},   // Not implemented
     {408, &RevProc::ECALL_timer_gettime},   // Not implemented
@@ -2431,13 +2431,17 @@ void RevProc::ECALL_setxattr(){
   return;
 }
 
-// void RevProc::ECALL_sbrk(){
-//   uint64_t CloneArgsAddr = RegFile->RV64[10];
-//   return;
-// }
-
+/* Increments program break by n bytes  */
 void RevProc::ECALL_brk(){
-  uint64_t CloneArgsAddr = RegFile->RV64[10];
+  uint64_t Addr = RegFile->RV64[10];
+
+  const uint64_t heapend = mem->GetHeapEnd();
+  if( Addr > 0 && Addr > heapend ){
+    uint64_t Size = Addr - heapend;
+    mem->ExpandHeap(Size); 
+  } else {
+    output->fatal(CALL_INFO, 11, "Out of memory / Unable to expand system break (brk) to Addr = 0x%lx", Addr);
+  }
   return;
 }
 
@@ -2755,13 +2759,49 @@ void RevProc::ECALL_clock_gettime(){
 /* ====================================== */
 /* rev_mmap(struct mmap_arg_struct *args) */
 /* ====================================== */
+// void *mmap(void *addr, size_t length, int prot, int flags,
+//          int fd, off_t offset);
 void RevProc::ECALL_mmap(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n");
+  output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n"); 
+
+  uint64_t Addr = RegFile->RV64[10];
+  uint64_t Size = RegFile->RV64[11];
+  // uint64_t Prot = RegFile->RV64[12];
+  // uint64_t Flags = RegFile->RV64[13];
+  // uint64_t fd = RegFile->RV64[14];
+  // uint64_t offset = RegFile->RV64[15];
+
+  if( !Addr ){
+    // If address is NULL... We add it to MemSegs.end()->getTopAddr()+1
+    Addr = mem->AllocMem(Size+1);
+    // Addr = mem->AddMemSeg(Size); 
+  } else {
+    // We were passed an address... try to put a segment there.
+    // Currently there is no handling of getting it 'close' to the 
+    // suggested address... instead if it can't allocate a new segment 
+    // there it fails.
+    if( !mem->AddMemSeg(Addr, Size) ){
+      output->fatal(CALL_INFO, 11, "Failed to add mem segment\n");
+    }
+  }
+  // std::cout << "MMAP Returning Addr = 0x" << Addr << std::endl; 
+  RegFile->RV64[10] = Addr;
   return;
 }
 
+/* ================================== */
+/* munmap(void *addr, size_t length); */
+/* ================================== */
 void RevProc::ECALL_munmap(){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n");
+  output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n"); 
+  uint64_t Addr = RegFile->RV64[10];
+  uint64_t Size = RegFile->RV64[11];
+
+  if( !mem->DeallocMem(Addr, Size) ){
+    output->fatal(CALL_INFO, 11, 
+                  "Failed to perform munmap(Addr = 0x%lx, Size = 0x%lx)", 
+                  Addr, Size);
+  }
   return;
 }
 

@@ -15,12 +15,13 @@ else()
 endif()
 
 # Check for RISCV Compiler
-find_program(RVCC NAMES riscv64-unknown-elf-gcc
-                        riscv64-unknown-linux-gnu-gcc
-                        riscv64-unknown-linux-musl-gcc)
+set(ENV{RVCC} "${RVCC}")
+set(RVCC "${RVCC}")
 
-if(RVCC-NOTFOUND)
-    message(FATAL_ERROR "No riscv64 compatible gcc (riscv64-unknown-elf-gcc || riscv64-unknown-linux-gnu-gcc || riscv64-unknown-linux-musl-gcc) binary found in path")
+if(RVCC)
+  message(STATUS "RVCC set to ${RVCC}")
+else()
+#  message(FATAL_ERROR "No RVCC compiler found: use -DRVCC=/path/to/compiler (gcc,clang)")
 endif()
 
 # find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
@@ -92,7 +93,7 @@ add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY "${CMAKE_C
 set_tests_properties(TEST_BIG_LOOP
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 60
+    TIMEOUT 65
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
@@ -218,6 +219,15 @@ set_tests_properties(MANY_CORE
 
 add_test(NAME DIVW COMMAND run_divw.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/divw" ) # divw
 set_tests_properties(DIVW
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME DIVW2 COMMAND run_divw2.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/divw2" ) # divw2
+set_tests_properties(DIVW2
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30

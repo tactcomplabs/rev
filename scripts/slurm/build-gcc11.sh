@@ -20,7 +20,7 @@
 
 #-- Stage 1: load the necessary modules
 source /etc/profile.d/modules.sh
-module load riscv/gcc/12.2.0 sst/12.1.0 cmake/3.23.0 riscv-linux/gcc/12.2.0 sst/13.0.0
+module load riscv/gcc/12.2.0 cmake/3.23.0 riscv-linux/gcc/12.2.0 sst/13.0.0
 export CC=gcc-11
 export CXX=g++-11
 export RVCC=riscv64-unknown-elf-gcc
@@ -35,7 +35,7 @@ cd build
 rm -Rf ./*
 
 #-- Stage 3: initiate the build
-cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug ../ >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DRVCC=${RVCC} ../ >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make clean >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make uninstall >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make -j >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1

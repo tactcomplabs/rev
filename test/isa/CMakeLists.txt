@@ -17,6 +17,12 @@ if(BUILD_ASM_TESTING)
 
 set (passRegex "Simulation is complete")
 
+add_test(
+    NAME BUILD_CLEAN
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND make clean
+)
+
 foreach(testSrc ${TEST_SRCS})
   # Extract the file name
   get_filename_component(testName ${testSrc} NAME_WE)
@@ -36,7 +42,8 @@ foreach(testSrc ${TEST_SRCS})
     COMMAND ./run_asm_test.sh)
   set_tests_properties( ${testName}
 	PROPERTIES
-  ENVIRONMENT "RVASM=${testName}; RVCC=${RVCC}"
-		PASS_REGULAR_EXPRESSION "${passRegex}")
+        ENVIRONMENT "RVASM=${testName}; RVCC=${RVCC}"
+        LABELS "all;rv64"
+        PASS_REGULAR_EXPRESSION "${passRegex}")
 endforeach(testSrc)
 endif()
