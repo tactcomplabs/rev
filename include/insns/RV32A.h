@@ -80,6 +80,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -115,6 +116,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -150,6 +152,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -185,6 +188,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -220,6 +224,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -255,6 +260,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -290,6 +296,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -325,6 +332,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
@@ -360,6 +368,7 @@ namespace SST{
                     REVMEM_FLAGS(flags));
           R->RV32_PC += Inst.instSize;
         }else{
+          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     (uint64_t)(R->RV64[Inst.rs1]),
                     (int32_t *)(&R->RV64[Inst.rs2]),
