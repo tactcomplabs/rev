@@ -112,7 +112,8 @@ void SST::RevCPU::RevTracer::memRead(uint64_t adr, unsigned len, void *data)
 {
     if (!memTraceEnable) return;
     memTraceEnable=false;
-    traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,0)); 
+    uint64_t d = *((uint64_t*) data);
+    traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,d)); 
 }
 
 void SST::RevCPU::RevTracer::pcWrite(uint64_t newpc)

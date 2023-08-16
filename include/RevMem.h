@@ -51,10 +51,10 @@ namespace SST {
     class RevMem {
     public:
       /// RevMem: standard constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output, RevTracer *Tracer = nullptr );
+      RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output );
 
       /// RevMem: standard memory controller constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output, RevTracer *Tracer = nullptr );
+      RevMem( unsigned long MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
 
       /// RevMem: standard destructor
       ~RevMem();
@@ -137,6 +137,9 @@ namespace SST {
 
       /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
       unsigned getLineSize(){ if( ctrl ){return ctrl->getLineSize();}else{return 64;} }
+      
+      /// RevMem: Enable tracing of load and store instructions.
+      void SetTracer(RevTracer* tracer) { Tracer = tracer; }
 
       // ----------------------------------------------------
       // ---- Base Memory Interfaces
@@ -327,7 +330,7 @@ namespace SST {
 
       std::vector<std::pair<unsigned,uint64_t>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
-      RevTracer* tracer; //kg prototype convenience
+      RevTracer* Tracer; //kg prototype convenience
 
     }; // class RevMem
   } // namespace RevCPU

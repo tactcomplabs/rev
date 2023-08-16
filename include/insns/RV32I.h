@@ -320,6 +320,7 @@ namespace SST{
           R->RV32[Inst.rd] = R->RV32_PC + Inst.instSize;  // PC following return
           R->RV32_PC = (int32_t)(R->RV32_PC) + (int32_t)(td_u32(Inst.imm,20));
           R->RV32[0] = 0x00;  // ensure that x0 = 0
+          TRC32WR(rd);
           TRC32PC();
         }else{
           TRC64RD(rd);
@@ -327,6 +328,7 @@ namespace SST{
           R->RV64[Inst.rd] = R->RV64_PC + Inst.instSize;  // PC following return
           R->RV64_PC = (int64_t)(R->RV64_PC) + tmp;
           R->RV64[0] = 0x00ull;  // ensure that x0 = 0
+          TRC64WR(rd);
           TRC64PC();
         }
         return true;

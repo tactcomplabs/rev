@@ -36,8 +36,8 @@ const char *pan_splash_msg = "\
 RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false), EnableMemH(false),
-    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr),
-    Tracer(nullptr) {
+    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr)
+  {
 
   const int Verbosity = params.find<int>("verbose", 0);
   KG_GLOBAL::spinner(id);
@@ -195,7 +195,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
   EnableMemH = params.find<bool>("enable_memH", 0);
   if( !EnableMemH ){
-    Mem = new RevMem( memSize, Opts,  &output, Tracer );
+    Mem = new RevMem( memSize, Opts,  &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
   }else{
@@ -206,7 +206,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     if( !Ctrl )
       output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");
 
-    Mem = new RevMem( memSize, Opts, Ctrl, &output, Tracer );
+    Mem = new RevMem( memSize, Opts, Ctrl, &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
 
@@ -243,6 +243,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     }
     Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output, trc ) );
   }
+
 
   // setup the per-proc statistics
   TotalCycles.reserve(TotalCycles.size() + numCores);

@@ -1908,6 +1908,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
       // Tracer context for execution
       RevExt::Tracer = tracer;
+      mem->SetTracer(tracer);
 
       // execute the instruction
       if( !Ext->Execute(EToE.second, Inst, HartToExec) ){
