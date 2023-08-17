@@ -151,3 +151,19 @@ the tracer can be tested as follows:
     be advantageous to allow streaming to other files to allow
     binary or json output in addition to the text.
 
+  - If the SST machine specified does not match the elf the test behaves
+    unpredictably and the trace disassembly and effects can be very
+    confusing. For example, 
+    	       -march=rv64g  (compiler option)
+               "machine" : "[CORES:RV64G]",  (sst python option).
+
+    The disassembly will show a 'ld' but the effects are for 'lui'
+    and the test crashes.
+
+    It would be helpful to have a consistency check in the REV core
+    to ensure the machine and compiled elf match.
+
+
+
+
+    

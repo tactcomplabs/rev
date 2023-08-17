@@ -1910,6 +1910,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       RevExt::Tracer = tracer;
       mem->SetTracer(tracer);
 
+      #if 0
+      uint64_t DbgPC=0x101f0;
+      if (ExecPC==DbgPC) {
+        std::cout << "PC=0x" << std::hex << ExecPC << std::endl;
+      }
+      #endif
+
       // execute the instruction
       if( !Ext->Execute(EToE.second, Inst, HartToExec) ){
         output->fatal(CALL_INFO, -1,
@@ -1935,11 +1942,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   << " Inst: " << std::setw(23)
                   << InstTable[Inst.entry].mnemonic
                   << " r" << std::dec << (uint32_t)Inst.rd  << "= "
-                  << std::hex << RegFile(HartToExec)->RV32[Inst.rd]
+                  << std::hex << RegFile->RV32[Inst.rd]
                   << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
-                  << std::hex << RegFile(HartToExec)->RV32[Inst.rs1]
+                  << std::hex << RegFile->RV32[Inst.rs1]
                   << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
-                  << std::hex << RegFile(HartToExec)->RV32[Inst.rs2]
+                  << std::hex << RegFile->RV32[Inst.rs2]
                   << " imm = " << std::hex << Inst.imm
                   << std::endl;
 
@@ -1948,11 +1955,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   << " Inst: " << std::setw(23)
                   << InstTable[Inst.entry].mnemonic
                   << " r" << std::dec << (uint32_t)Inst.rd  << "= "
-                  << std::hex << RegFile(HartToExec)->RV64[Inst.rd]
+                  << std::hex << RegFile->RV64[Inst.rd]
                   << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
-                  << std::hex << RegFile(HartToExec)->RV64[Inst.rs1]
+                  << std::hex << RegFile->RV64[Inst.rs1]
                   << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
-                  << std::hex << RegFile(HartToExec)->RV64[Inst.rs2]
+                  << std::hex << RegFile->RV64[Inst.rs2]
                   << " imm = " << std::hex << Inst.imm
                   << std::endl;
       }

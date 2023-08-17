@@ -33,7 +33,7 @@ int main(int argc, char **argv){
   int i = 9;
   i = i + argc;
   asm volatile("xor x0,x0,x0");  // trace off 0x4033
-  for (int j=0; j<100000;j++) {
+  for (int j=0; j<1000;j++) {
     i+=j;
   }
   asm volatile("xor x0,x0,x0");  // trace on  0x4033
