@@ -301,14 +301,14 @@ namespace SST{
           R->RV32[Inst.rd] = 0x00;
           R->RV32[Inst.rd] = (Inst.imm << 12) + dt_u32(R->RV32_PC,32);
           R->RV32_PC += Inst.instSize;
-          TRC32PC();
+          TRC32WR(rd);
         }else{
           TRC64RD(rd);
           SEXT(tmp, Inst.imm << 12, 32);
           R->RV64[Inst.rd] = 0x00;
           R->RV64[Inst.rd] = tmp + dt_u64(R->RV64_PC,64);
           R->RV64_PC += Inst.instSize;
-          TRC64PC();
+          TRC64WR(rd);
         }
         return true;
       }
@@ -362,18 +362,18 @@ namespace SST{
           TRC32RD2(rs1,rs2);
           if( R->RV32[Inst.rs1] == R->RV32[Inst.rs2] ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13)); //13-bit immd, pre scaled at decode time
+            TRC32PC();
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
-          TRC32PC();
         }else{
           TRC32RD2(rs1,rs2)
           if( R->RV64[Inst.rs1] == R->RV64[Inst.rs2] ){
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13)); //13-bit immd, pre scaled at decode time
+            TRC64PC();
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
-          TRC32PC();
         }
         return true;
       }
@@ -384,19 +384,19 @@ namespace SST{
           TRC32RD2(rs1,rs2);
           if( R->RV32[Inst.rs1] != R->RV32[Inst.rs2] ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
+            TRC32PC();
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
-          TRC32PC();
         }else{
           TRC64RD2(rs1,rs2);
           if( R->RV64[Inst.rs1] != R->RV64[Inst.rs2] ){
             tmp = td_u64(Inst.imm,13);
             R->RV64_PC = R->RV64_PC + tmp;
+            TRC64PC();
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
-          TRC64PC();
         }
         return true;
       }
@@ -406,18 +406,18 @@ namespace SST{
           TRC32RD2(rs1,rs2);
           if( (int32_t)(R->RV32[Inst.rs1]) < (int32_t)(R->RV32[Inst.rs2]) ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
+            TRC32PC();
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
-          TRC32PC();
         }else{
           TRC64RD2(rs1,rs2);
           if( (int64_t)(R->RV64[Inst.rs1]) < (int64_t)(R->RV64[Inst.rs2]) ){
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
+            TRC64PC();
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
-          TRC64PC();
         }
         return true;
       }
@@ -427,18 +427,18 @@ namespace SST{
           TRC32RD2(rs1,rs2);
           if( (int32_t)(R->RV32[Inst.rs1]) >= (int32_t)(R->RV32[Inst.rs2]) ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
+            TRC32PC();
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
-          TRC32PC();
         }else{
           TRC64RD2(rs1,rs2);
           if( (int64_t)(R->RV64[Inst.rs1]) >= (int64_t)(R->RV64[Inst.rs2]) ){
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
+            TRC64PC();
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
-          TRC64PC();
         }
         return true;
       }
@@ -448,18 +448,18 @@ namespace SST{
           TRC32RD2(rs1,rs2);
           if( R->RV32[Inst.rs1] < R->RV32[Inst.rs2] ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
+            TRC32PC();
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
-          TRC32PC();
         }else{
           TRC64RD2(rs1,rs2);
           if( R->RV64[Inst.rs1] < R->RV64[Inst.rs2] ){
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
+            TRC64PC();
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
-          TRC32PC();
         }
         return true;
       }
@@ -469,18 +469,18 @@ namespace SST{
           TRC32RD2(rs1,rs2);
           if( R->RV32[Inst.rs1] >= R->RV32[Inst.rs2] ){
             R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
+            TRC32PC();
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
-          TRC32PC();
         }else{
           TRC64RD2(rs1,rs2);
           if( R->RV64[Inst.rs1] >= R->RV64[Inst.rs2] ){
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
+            TRC64PC();
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
-          TRC64PC();
         }
         return true;
       }

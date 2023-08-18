@@ -78,13 +78,15 @@ the tracer can be tested as follows:
     
 4.5 Program Counter Writes (Branches/Jumps)
 
-  |  PC   | INSN   |  Disassembl y  |             Effects            |
-   0x102a8:f35ff0ef  jal  pc - 0xcc   0x0<-ra ra<-0x102ac pc<-0x101dc 
+  |  PC   | INSN   |  Disassembly  |             Effects                      |
+  0x102a8:f35ff0ef  jal  pc - 0xcc  0x0<-ra ra<-0x102ac pc<-0x101dc <_Z5checki>
 
   Effects interpretation:
    0x0<-ra     : Destinatino register read (convenience)
    ra<-0x102ac : Destintation link register write
    pc<-0x101dc : Resolved branch target
+   <_Z5checki> : Matching ELF symbol associated with new PC
+   
 
 5. Programmer controls
 ---------------------

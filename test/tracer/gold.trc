@@ -206,14 +206,14 @@ RevCPU[cpu:ClockTick:10031000]: Core 4 ; Thread 0]; *I 0x102a0:02a00513    li   
 RevCPU[cpu:ClockTick:10031000]: Core 5 ; Thread 0]; *I 0x102a0:02a00513    li      a0, 42	 0x0<-zero 0x0<-a0 a0<-0x2a 
 RevCPU[cpu:ClockTick:10031000]: Core 6 ; Thread 0]; *I 0x102a0:02a00513    li      a0, 42	 0x0<-zero 0x0<-a0 a0<-0x2a 
 RevCPU[cpu:ClockTick:10031000]: Core 7 ; Thread 0]; *I 0x102a0:02a00513    li      a0, 42	 0x0<-zero 0x0<-a0 a0<-0x2a 
-RevCPU[cpu:ClockTick:10032000]: Core 0 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
-RevCPU[cpu:ClockTick:10032000]: Core 1 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
-RevCPU[cpu:ClockTick:10032000]: Core 2 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
-RevCPU[cpu:ClockTick:10032000]: Core 3 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
-RevCPU[cpu:ClockTick:10032000]: Core 4 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
-RevCPU[cpu:ClockTick:10032000]: Core 5 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
-RevCPU[cpu:ClockTick:10032000]: Core 6 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
-RevCPU[cpu:ClockTick:10032000]: Core 7 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc 
+RevCPU[cpu:ClockTick:10032000]: Core 0 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
+RevCPU[cpu:ClockTick:10032000]: Core 1 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
+RevCPU[cpu:ClockTick:10032000]: Core 2 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
+RevCPU[cpu:ClockTick:10032000]: Core 3 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
+RevCPU[cpu:ClockTick:10032000]: Core 4 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
+RevCPU[cpu:ClockTick:10032000]: Core 5 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
+RevCPU[cpu:ClockTick:10032000]: Core 6 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
+RevCPU[cpu:ClockTick:10032000]: Core 7 ; Thread 0]; *I 0x102a4:f39ff0ef    jal     pc - 0xc8	 0x0<-ra ra<-0x102a8 pc<-0x101dc <_Z5checki> 
 RevCPU[cpu:ClockTick:10034000]: Core 0 ; Thread 0]; *I 0x101dc:fe010113    addi    sp, sp, -32	 0x3fefff60<-sp 0x3fefff60<-sp sp<-0x3fefff40 
 RevCPU[cpu:ClockTick:10034000]: Core 1 ; Thread 0]; *I 0x101dc:fe010113    addi    sp, sp, -32	 0x3fefff60<-sp 0x3fefff60<-sp sp<-0x3fefff40 
 RevCPU[cpu:ClockTick:10034000]: Core 2 ; Thread 0]; *I 0x101dc:fe010113    addi    sp, sp, -32	 0x3fefff60<-sp 0x3fefff60<-sp sp<-0x3fefff40 
@@ -382,49 +382,49 @@ RevCPU[cpu:ClockTick:10054000]: Core 4 ; Thread 0]; *I 0x102e0:03010113    addi 
 RevCPU[cpu:ClockTick:10054000]: Core 5 ; Thread 0]; *I 0x102e0:03010113    addi    sp, sp, 48	 0x3fefff60<-sp 0x3fefff60<-sp sp<-0x3fefff90 
 RevCPU[cpu:ClockTick:10054000]: Core 6 ; Thread 0]; *I 0x102e0:03010113    addi    sp, sp, 48	 0x3fefff60<-sp 0x3fefff60<-sp sp<-0x3fefff90 
 RevCPU[cpu:ClockTick:10054000]: Core 7 ; Thread 0]; *I 0x102e0:03010113    addi    sp, sp, 48	 0x3fefff60<-sp 0x3fefff60<-sp sp<-0x3fefff90 
-RevCPU[cpu:ClockTick:10055000]: Core 0 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 0 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1024 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702
 RevCPU[cpu:ClockTick:10055000]: 	 Bytes Read: 130944 Bytes Written: 67467 Floats Read: 0 Doubles Read 0 Floats Exec: 0 TLB Hits: 48746 TLB Misses: 138 Inst Retired: 10052
 RevCPU[cpu:clockTick:10055000]: Closing Processor 0 at Cycle: 10055
-RevCPU[cpu:ClockTick:10055000]: Core 1 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 1 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1025 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702
 RevCPU[cpu:ClockTick:10055000]: 	 Bytes Read: 131008 Bytes Written: 67467 Floats Read: 0 Doubles Read 0 Floats Exec: 0 TLB Hits: 48762 TLB Misses: 138 Inst Retired: 10052
 RevCPU[cpu:clockTick:10055000]: Closing Processor 1 at Cycle: 10055
-RevCPU[cpu:ClockTick:10055000]: Core 2 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 2 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1026 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702
 RevCPU[cpu:ClockTick:10055000]: 	 Bytes Read: 131072 Bytes Written: 67467 Floats Read: 0 Doubles Read 0 Floats Exec: 0 TLB Hits: 48778 TLB Misses: 138 Inst Retired: 10052
 RevCPU[cpu:clockTick:10055000]: Closing Processor 2 at Cycle: 10055
-RevCPU[cpu:ClockTick:10055000]: Core 3 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 3 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1027 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702
 RevCPU[cpu:ClockTick:10055000]: 	 Bytes Read: 131136 Bytes Written: 67467 Floats Read: 0 Doubles Read 0 Floats Exec: 0 TLB Hits: 48794 TLB Misses: 138 Inst Retired: 10052
 RevCPU[cpu:clockTick:10055000]: Closing Processor 3 at Cycle: 10055
-RevCPU[cpu:ClockTick:10055000]: Core 4 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 4 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1028 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702
 RevCPU[cpu:ClockTick:10055000]: 	 Bytes Read: 131200 Bytes Written: 67467 Floats Read: 0 Doubles Read 0 Floats Exec: 0 TLB Hits: 48810 TLB Misses: 138 Inst Retired: 10052
 RevCPU[cpu:clockTick:10055000]: Closing Processor 4 at Cycle: 10055
-RevCPU[cpu:ClockTick:10055000]: Core 5 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 5 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1029 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702
 RevCPU[cpu:ClockTick:10055000]: 	 Bytes Read: 131264 Bytes Written: 67467 Floats Read: 0 Doubles Read 0 Floats Exec: 0 TLB Hits: 48826 TLB Misses: 138 Inst Retired: 10052
 RevCPU[cpu:clockTick:10055000]: Closing Processor 5 at Cycle: 10055
-RevCPU[cpu:ClockTick:10055000]: Core 6 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 6 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1030 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702
 RevCPU[cpu:ClockTick:10055000]: 	 Bytes Read: 131328 Bytes Written: 67467 Floats Read: 0 Doubles Read 0 Floats Exec: 0 TLB Hits: 48842 TLB Misses: 138 Inst Retired: 10052
 RevCPU[cpu:clockTick:10055000]: Closing Processor 6 at Cycle: 10055
-RevCPU[cpu:ClockTick:10055000]: Core 7 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 
+RevCPU[cpu:ClockTick:10055000]: Core 7 ; Thread 0]; *I 0x102e4:00008067    ret	 0x0<-ra 0x0<-zero zero<-0x0 pc<-0x0 <> 
 RevCPU[cpu:ClockTick:10055000]: Thread 1031 completed execution.
 RevCPU[cpu:ClockTick:10055000]: Program execution complete
 RevCPU[cpu:ClockTick:10055000]: Program Stats: Total Cycles: 10055 Busy Cycles: 10052 Idle Cycles: 3 Eff: 0.999702

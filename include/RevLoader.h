@@ -299,6 +299,9 @@ namespace SST {
       /// RevLoader: retrives the elf info structure
       ElfInfo GetInfo() { return elfinfo; }
 
+      ///< RevLoader: Provide symbol lookup table for tracer
+      std::map<uint64_t,std::string>* GetTraceSymbols();
+
     private:
       std::string exe;          ///< RevLoader: binary executable
       std::string args;         ///< RevLoader: program args
@@ -310,7 +313,8 @@ namespace SST {
 
       ElfInfo elfinfo;          ///< RevLoader: elf info from the loaded program
 
-      std::map<std::string,uint64_t> symtable;  ///< RevLoader: loaded symbol table
+      std::map<std::string,uint64_t> symtable;       ///< RevLoader: loaded symbol table
+      std::map<uint64_t,std::string> tracer_symbols; ///< RevLoader: address to symbol for tracer
 
       std::vector<std::string> argv;            ///< RevLoader: The actual argv table
 

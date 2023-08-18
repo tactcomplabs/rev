@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevLoader.h"
+#include "RevLoader.h"
 
 RevLoader::RevLoader( std::string Exe, std::string Args,
                       RevMem *Mem, SST::Output *Output )
@@ -521,6 +522,8 @@ bool RevLoader::LoadElf(){
   // print the symbol table entries
   std::map<std::string,uint64_t>::iterator it = symtable.begin();
   while( it != symtable.end() ){
+    // create another map to allow tracer to lookup symbols
+    tracer_symbols.emplace(it->second, it->first);
     output->verbose(CALL_INFO,6,0,
                     "Symbol Table Entry [%s:0x%" PRIx64 "]\n",
                     it->first.c_str(), it->second );
@@ -558,5 +561,9 @@ void RevLoader::InitStaticMem(){
   // }
 }
 
+std::map<uint64_t, std::string> *SST::RevCPU::RevLoader::GetTraceSymbols()
+{
+    return &tracer_symbols;
+}
 
 // EOF

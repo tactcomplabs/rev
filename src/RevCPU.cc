@@ -238,6 +238,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
       std::string diasmType;
       Opts->GetMachineModel(0,diasmType); 
       trc->SetDisassembler(diasmType);
+      trc->SetTraceSymbols(Loader->GetTraceSymbols());
       trc->Reset();
       trc->SetOutputEnable(true);
     }

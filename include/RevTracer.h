@@ -84,6 +84,7 @@ namespace SST{
       ~RevTracer();
 
       int SetDisassembler(std::string machine);
+      int SetTraceSymbols(std::map<uint64_t,std::string>* TraceSymbols);
       void CheckUserControls();
       void SetFetchedInsn(uint64_t _pc, uint32_t _insn);
       bool OutputEnabled();
@@ -122,6 +123,7 @@ namespace SST{
       std::vector<TraceRec_t> traceRecs;
       uint64_t pc;
       uint32_t insn;
+      std::map<uint64_t,std::string>* traceSymbols;
     
       // formatters
       void fmt_reg(uint8_t r, std::stringstream& s);

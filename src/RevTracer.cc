@@ -21,10 +21,8 @@ using namespace SST::RevCPU;
 using namespace std;
 
 RevTracer::RevTracer(unsigned Verbosity, std::string Name)
-: name(Name), outputEnabled(true), memTraceEnable(false), insn(0)
-{
-    //cout << "Creating RevTracer(" << Name << ")" << endl;
-}
+: name(Name), outputEnabled(true), memTraceEnable(false), insn(0),
+  traceSymbols(nullptr) {}
 
 SST::RevCPU::RevTracer::~RevTracer()
 {
@@ -41,6 +39,12 @@ int SST::RevCPU::RevTracer::SetDisassembler(std::string machine)
     } catch (...) {
         return 1;
     }
+    return 0;
+}
+
+int SST::RevCPU::RevTracer::SetTraceSymbols(std::map<uint64_t, std::string> *TraceSymbols)
+{
+    traceSymbols = TraceSymbols;
     return 0;
 }
 
@@ -178,10 +182,11 @@ std::string SST::RevCPU::RevTracer::RenderOneLiner()
                 break;
             case PcWrite:
                 // a:pc
-                ss_rw << "pc<-0x" << hex << r.a << " ";
-            // default:
-            //     ss_rw << "<?>";
-            //     break;
+                ss_rw << "pc<-0x" << hex << r.a;
+                if (traceSymbols and (traceSymbols->find(r.a) != traceSymbols->end()))
+                    ss_rw << " <" << traceSymbols->at(r.a) << ">";
+                ss_rw << " ";
+                break;
         }
     }
 
