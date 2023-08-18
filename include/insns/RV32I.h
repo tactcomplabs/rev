@@ -367,7 +367,7 @@ namespace SST{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
-          TRC32RD2(rs1,rs2)
+          TRC64RD2(rs1,rs2)
           if( R->RV64[Inst.rs1] == R->RV64[Inst.rs2] ){
             R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13)); //13-bit immd, pre scaled at decode time
             TRC64PC();
