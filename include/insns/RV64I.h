@@ -13,35 +13,30 @@
 
 #include "../RevInstTable.h"
 
-using namespace SST::RevCPU;
+#include <vector>
 
 namespace SST{
   namespace RevCPU{
     class RV64I : public RevExt {
 
       // Compressed instructions
-      static bool cldsp(RevFeature *F, RevRegFile *R,
-                        RevMem *M, RevInst Inst) {
+      static bool cldsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.ldsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
         //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
         Inst.imm = ((Inst.imm & 0b111111)*8);
-
         return ld(F,R,M,Inst);
       }
 
-      static bool csdsp(RevFeature *F, RevRegFile *R,
-                        RevMem *M, RevInst Inst) {
+      static bool csdsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
         //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
         Inst.imm = ((Inst.imm & 0b111111)*8);
-
         return sd(F,R,M,Inst);
       }
 
-      static bool cld(RevFeature *F, RevRegFile *R,
-                      RevMem *M, RevInst Inst) {
+      static bool cld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.ld %rd, %rs1, $imm = ld %rd, %rs1, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
@@ -50,28 +45,23 @@ namespace SST{
         return ld(F,R,M,Inst);
       }
 
-      static bool csd(RevFeature *F, RevRegFile *R,
-                      RevMem *M, RevInst Inst) {
+      static bool csd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rs2];
         Inst.rs1 = CRegMap[Inst.rs1];
         Inst.imm = (Inst.imm&0b11111111); //imm is 8-bits, zero extended, decoder pre-aligns bits, no scaling needed
-
         return sd(F,R,M,Inst);
       }
 
-      static bool caddiw(RevFeature *F, RevRegFile *R,
-                         RevMem *M, RevInst Inst) {
+      static bool caddiw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.addiw %rd, $imm = addiw %rd, %rd, $imm
         Inst.rs1 = Inst.rd;
         uint64_t tmp = Inst.imm & 0b111111;
         SEXT(Inst.imm, tmp, 6);
-
         return addiw(F,R,M,Inst);
       }
 
-      static bool caddw(RevFeature *F, RevRegFile *R,
-                       RevMem *M, RevInst Inst) {
+      static bool caddw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.addw %rd, %rs2 = addw %rd, %rd, %rs2
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = Inst.rd;
@@ -79,8 +69,7 @@ namespace SST{
         return addw(F,R,M,Inst);
       }
 
-      static bool csubw(RevFeature *F, RevRegFile *R,
-                       RevMem *M, RevInst Inst) {
+      static bool csubw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.subw %rd, %rs2 = subw %rd, %rd, %rs2
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = Inst.rd;
@@ -89,8 +78,18 @@ namespace SST{
       }
 
       // Standard instructions
-      static bool lwu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst){
-        //ZEXT(R->RV64[Inst.rd],M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
+#if 1
+      static bool lwu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+        uint32_t val;
+        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                   &val, REVMEM_FLAGS(RevCPU::RevFlag::F_ZEXT64));
+        R->SetX(F, Inst.rd, uint64_t{val});
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
+        return true;
+      }
+#else
+      static bool lwu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
         uint32_t val = 0;
         M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &val,
@@ -99,111 +98,100 @@ namespace SST{
         R->RV64[Inst.rd] |= (uint64_t)(val);
         //ZEXT64(R->RV64[Inst.rd], (uint64_t)val, 64);
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        R->RV64_PC += Inst.instSize;
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
+#endif
 
-      static bool ld(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+#if 1
+      static bool ld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        uint64_t val;
+        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                   &val, REVMEM_FLAGS(0));
+        R->SetX(F, Inst.rd, val);
+        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
+        return true;
+      }
+#else
+      static bool ld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         //R->RV64[Inst.rd] = M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
         M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    &R->RV64[Inst.rd],
-                    REVMEM_FLAGS(0x00));
+                   &R->RV64[Inst.rd],
+                   REVMEM_FLAGS(0x00));
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        R->RV64_PC += Inst.instSize;
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
+#endif
 
-      static bool sd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+#if 1
+      static bool sd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        M->WriteU64(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                    R->GetX<uint64_t>(F, Inst.rs2));
+        R->AdvancePC(F, Inst.instSize);
+        return true;
+      }
+#else
+      static bool sd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int64_t tmp = td_u64(Inst.imm,12);
         M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+tmp), (uint64_t)(R->RV64[Inst.rs2]));
         R->RV64_PC += Inst.instSize;
         return true;
       }
+#endif
 
-      static bool addiw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = dt_u32((int32_t)(td_u32(R->RV64[Inst.rs1],32)) + (int32_t)(td_u32(Inst.imm,12)),32);
-        R->RV64[Inst.rd] &= MASK32;
-        SEXTI( R->RV64[Inst.rd], 32 );
-        R->RV64_PC += Inst.instSize;
+      static bool addiw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, int64_t{R->GetX<int32_t>(F, Inst.rs1) + Inst.ImmSignExt(12)});
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool slliw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        //SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (Inst.imm&0b111111))&MASK32,64);
-        SEXT(R->RV64[Inst.rd], ((R->RV64[Inst.rs1]<< (Inst.imm & 0b0111111))&0xffffffff), 32);
-        SEXTI(R->RV64[Inst.rd],64);
-        R->RV64_PC += Inst.instSize;
+      static bool slliw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) << (Inst.imm & 0x1F));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool srliw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        // catch the special case where IMM == 0x00; RD = RS1
-        if( (Inst.imm&0b111111) == 0x00 ){
-          R->RV64[Inst.rd] = 0x00ULL;
-          R->RV64[Inst.rd] |= (R->RV64[Inst.rs1]&0xffffffff);
-          SEXTI64(R->RV64[Inst.rd],32);
-          R->RV64_PC += Inst.instSize;
-          return true;
-        }
-
-        uint32_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit unsigned value
-        uint32_t dest = (srcTrunc >> (Inst.imm&0b111111));
-        R->RV64[Inst.rd] = 0x00ULL;
-        R->RV64[Inst.rd] |= (uint64_t)(dest);
-        //ZEXT64(R->RV64[Inst.rd],(srcTrunc >> (Inst.imm&0b111111))&MASK32,64);
-        //SEXTI64(R->RV64[Inst.rd],32);
-        R->RV64_PC += Inst.instSize;
+      static bool srliw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) >> (Inst.imm & 0x1F));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool sraiw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t tmp = R->RV64[Inst.rs1] & int64_t(1<<31);  //Grab sign bit
-        int32_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit signed value
-        SEXT(R->RV64[Inst.rd],((srcTrunc >> (Inst.imm&0b1111111)))|tmp,32);
-        SEXTI(R->RV64[Inst.rd],32);
-        //replicate rs1[31] across all upper bits
-        R->RV64[Inst.rd] = (R->RV64[Inst.rs1] & 0x80000000) ? (R->RV64[Inst.rd] & MASK32) | (0xFFFFFFFF00000000) : (R->RV64[Inst.rd] & MASK32) ;
-        R->RV64_PC += Inst.instSize;
+      static bool sraiw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) >> (Inst.imm & 0x1F));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool addw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = dt_u32(td_u32(R->RV64[Inst.rs1],32) + td_u32(R->RV64[Inst.rs2],32),32); //addw operates on and produces 32-bit results even on RV64I codes 
-        SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
-        R->RV64_PC += Inst.instSize;
+      static bool addw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) + R->GetX<int32_t>(F, Inst.rs2));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool subw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = dt_u32(td_u32(R->RV64[Inst.rs1],32) - td_u32(R->RV64[Inst.rs2],32),32);
-        SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
-        R->RV64_PC += Inst.instSize;
+      static bool subw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) - R->GetX<int32_t>(F, Inst.rs2));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool sllw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        SEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] << (R->RV64[Inst.rs2]&0b11111))&MASK32,64);
-        SEXTI(R->RV64[Inst.rd], 32);    //Sign extend the result up to 64bits
-        R->RV64_PC += Inst.instSize;
+      static bool sllw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) << (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool srlw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit unsigned value, scale up to 64bit to avoid sign bit shift
-        R->RV64[Inst.rd] = (srcTrunc >> (R->RV64[Inst.rs2]&0b11111));
-        SEXTI(R->RV64[Inst.rd],32);
-        R->RV64_PC += Inst.instSize;
+      static bool srlw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool sraw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t tmp = R->RV64[Inst.rs1] & (1<<31);
-        int32_t srcTrunc = R->RV64[Inst.rs1] & MASK32;  //Force operation on 32-bit signed value
-        SEXT(R->RV64[Inst.rd],((srcTrunc >> (R->RV64[Inst.rs2]&0b111111)))|tmp,32);
-        SEXTI(R->RV64[Inst.rd],32);
-        //replicate rs1[31] across all upper bits
-        R->RV64[Inst.rd] = (R->RV64[Inst.rs1] & 0x80000000) ? (R->RV64[Inst.rd] & MASK32) | (0xFFFFFFFF00000000) : (R->RV64[Inst.rd] & MASK32) ;
-        R->RV64_PC += Inst.instSize;
+      static bool sraw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -247,12 +235,12 @@ namespace SST{
              RevMem *RevMem,
              SST::Output *Output )
         : RevExt( "RV64I", Feature, RegFile, RevMem, Output ) {
-          this->SetTable(RV64ITable);
-          this->SetCTable(RV64ICTable);
+          SetTable(RV64ITable);
+          SetCTable(RV64ICTable);
         }
 
       /// RV64I: standard destructor
-      ~RV64I() { }
+      ~RV64I() = default;
 
     }; // end class RV64I
   } // namespace RevCPU

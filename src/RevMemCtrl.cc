@@ -11,7 +11,8 @@
 #include "../include/RevMemCtrl.h"
 
 using namespace SST;
-using namespace RevCPU;
+using namespace SST::RevCPU;
+using namespace SST::Interfaces;
 
 // ---------------------------------------------------------------
 // RevMemOp
@@ -86,7 +87,7 @@ RevMemOp::~RevMemOp(){
 // ---------------------------------------------------------------
 // RevMemCtrl
 // ---------------------------------------------------------------
-RevMemCtrl::RevMemCtrl(ComponentId_t id, Params& params)
+RevMemCtrl::RevMemCtrl(ComponentId_t id, const Params& params)
   : SubComponent(id), output(nullptr) {
 
   uint32_t verbosity = params.find<uint32_t>("verbose");
@@ -101,7 +102,7 @@ RevMemCtrl::~RevMemCtrl(){
 // ---------------------------------------------------------------
 // RevBasicMemCtrl
 // ---------------------------------------------------------------
-RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, Params& params)
+RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
   : RevMemCtrl(id,params), memIface(nullptr), stdMemHandlers(nullptr),
     hasCache(false), lineSize(0),
     max_loads(64), max_stores(64), max_flush(64), max_llsc(64),
@@ -419,7 +420,7 @@ void RevBasicMemCtrl::init(unsigned int phase){
   if( phase == 1 ){
     lineSize = memIface->getLineSize();
     if( lineSize > 0 ){
-      output->verbose(CALL_INFO, 5, 0, "Detected cache layers; default line size=%d\n", lineSize);
+      output->verbose(CALL_INFO, 5, 0, "Detected cache layers; default line size=%u\n", lineSize);
       hasCache = true;
     }else{
       output->verbose(CALL_INFO, 5, 0, "No cache detected; disabling caching\n");

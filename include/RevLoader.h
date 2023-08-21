@@ -25,8 +25,7 @@
 #include <stdio.h>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
+#include "SST.h"
 
 // -- RevCPU Headers
 #include "RevMem.h"
@@ -153,8 +152,6 @@
 
 /* Section group handling.  */
 #define GRP_COMDAT	0x1		/* Mark group as COMDAT.  */
-
-using namespace SST::RevCPU;
 
 template<typename T> static inline T from_le(T n) { return n; }
 
@@ -291,7 +288,7 @@ namespace SST {
       uint64_t GetSymbolAddr(std::string Symbol);
 
       /// RevLoader: retrieves the value for 'argc'
-      unsigned GetArgc() { return argv.size(); }
+      auto GetArgc() { return argv.size(); }
 
       /// RevLoader: retrieves the target value within the argv array
       std::string GetArgv(unsigned entry);
@@ -342,7 +339,7 @@ namespace SST {
       bool LoadElf64(char *MemBuf, size_t Size);
 
       ///< Splits a string into tokens
-      void splitStr(const std::string& s,char c,std::vector<std::string>& v);
+      void splitStr(const std::string& s, char c, std::vector<std::string>& v);
 
       ///< Breaks bulk writes into cache lines
       bool WriteCacheLine(uint64_t Addr, size_t Len, void *Data);

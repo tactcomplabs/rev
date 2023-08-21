@@ -31,12 +31,6 @@ namespace SST {
         QError  = 0b0000000011111111  ///< PanStatus: error
       }PanStatus;
 
-      /// PanExec: standard constructor
-      PanExec();
-
-      /// PanExec: standard destructor
-      ~PanExec();
-
       /// PanExec: add an execution queue entry
       bool AddEntry(uint64_t Addr,unsigned *Idx);
 
@@ -51,7 +45,7 @@ namespace SST {
 
     private:
       // private data members
-      unsigned CurEntry;
+      unsigned CurEntry = 0;
       std::vector<std::tuple<unsigned,PanStatus,uint64_t>> ExecQueue;    ///< PanExec: execution queue
 
       // private functions

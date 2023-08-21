@@ -12,8 +12,7 @@
 #define _SST_REVCPU_REVEXT_H_
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
+#include "SST.h"
 
 // -- Standard Headers
 #include <string>
@@ -28,24 +27,32 @@ using namespace SST::RevCPU;
 
 namespace SST{
   namespace RevCPU{
-    class RevExt{
-    public:
+    struct RevExt{
       /// RevExt: standard constructor
       RevExt( std::string Name, RevFeature *Feature,
               RevRegFile *RegFile, RevMem *RevMem,
-              SST::Output *Output );
+              SST::Output *Output )
+        : feature(Feature), mem(RevMem), name(Name), output(Output) {
+        regFile = RegFile;
+      }
 
       /// RevExt: standard destructor
-      ~RevExt();
+      ~RevExt() = default;
 
       /// RevExt: sets the internal instruction table
-      void SetTable(std::vector<RevInstEntry> InstVect);
+      void SetTable(std::vector<RevInstEntry> InstVect){
+        table = std::move(InstVect);
+      }
 
       /// RevExt: sets the internal compressed instruction table
-      void SetCTable(std::vector<RevInstEntry> InstVect);
+      void SetCTable(std::vector<RevInstEntry> InstVect){
+        ctable = std::move(InstVect);
+      }
 
       /// RevExt: sets the optional table (used for variant-specific compressed encodings)
-      void SetOTable(std::vector<RevInstEntry> InstVect);
+      void SetOTable(std::vector<RevInstEntry> InstVect){
+        otable = std::move(InstVect);
+      }
 
       /// RevExt: retrieve the extension name
       std::string GetName() { return name; }
@@ -63,7 +70,7 @@ namespace SST{
       std::vector<RevInstEntry> GetOInstTable() { return otable; }
 
       /// RevExt: updates the RegFile pointer prior to instruction execution
-      ///         such that the currently executing RevThreadCtx is the one 
+      ///         such that the currently executing RevThreadCtx is the one
       ///         whose register file is operated on
       void SetRegFile(RevRegFile* RegFile) { regFile = RegFile; }
 

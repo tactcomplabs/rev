@@ -511,7 +511,7 @@ bool panNicEvent::buildFailed(uint32_t Token, uint8_t Tag){
 // PanNet Class
 // -----------------------------------------------------------------------------
 
-PanNet::PanNet(ComponentId_t id, Params& params)
+PanNet::PanNet(ComponentId_t id, const Params& params)
   : panNicAPI(id, params) {
   // setup the initial logging functions
   int verbosity = params.find<int>("verbose",0);

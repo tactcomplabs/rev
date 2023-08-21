@@ -150,11 +150,11 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
-  uint64_t StaticDataEnd = 0; 
-  uint64_t BSSEnd = 0; 
-  uint64_t DataEnd = 0; 
-  uint64_t TextEnd = 0; 
-  // Add memory segments for each section header 
+  uint64_t StaticDataEnd = 0;
+  uint64_t BSSEnd = 0;
+  uint64_t DataEnd = 0;
+  uint64_t TextEnd = 0;
+  // Add memory segments for each section header
   // - This should automatically handle overlap and not add segments
   //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
@@ -177,7 +177,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     // BSS Doesn't exist, but data does
     StaticDataEnd = DataEnd;
   } else if ( TextEnd > 0 ){
-    // Text is last resort 
+    // Text is last resort
     StaticDataEnd = TextEnd;
   } else {
     // Can't find any (Text, BSS, or Data) sections
@@ -296,11 +296,11 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
-  uint64_t StaticDataEnd = 0; 
-  uint64_t BSSEnd = 0; 
-  uint64_t DataEnd = 0; 
-  uint64_t TextEnd = 0; 
-  // Add memory segments for each section header 
+  uint64_t StaticDataEnd = 0;
+  uint64_t BSSEnd = 0;
+  uint64_t DataEnd = 0;
+  uint64_t TextEnd = 0;
+  // Add memory segments for each section header
   // - This should automatically handle overlap and not add segments
   //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
@@ -323,7 +323,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     // BSS Doesn't exist, but data does
     StaticDataEnd = DataEnd;
   } else if ( TextEnd > 0 ){
-    // Text is last resort 
+    // Text is last resort
     StaticDataEnd = TextEnd;
   } else {
     // Can't find any (Text, BSS, or Data) sections
@@ -445,7 +445,7 @@ bool RevLoader::LoadProgramArgs(){
   uint64_t sp = 0x00ull;
   for( unsigned i=0; i<argv.size(); i++ ){
     output->verbose(CALL_INFO,6,0,
-                    "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
+                    "Loading program argv[%u] = %s\n", i, argv[i].c_str() );
     sp = mem->GetStackTop();
     char tmpc[argv[i].size() + 1];
     argv[i].copy(tmpc,argv[i].size()+1);

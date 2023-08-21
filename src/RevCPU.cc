@@ -11,7 +11,7 @@
 #include "../include/RevCPU.h"
 #include <cmath>
 
-const char *splash_msg = "\
+const char splash_msg[] = "\
 \n\
 *******                   \n\
 /**////**                  \n\
@@ -24,7 +24,7 @@ const char *splash_msg = "\
 \n\
 ";
 
-const char *pan_splash_msg = "\
+const char pan_splash_msg[] = "\
 \n\
        __|__\n\
 --@--@--(_)--@--@--\n\
@@ -32,7 +32,7 @@ const char *pan_splash_msg = "\
     PAN PAN PAN!\n\
 ";
 
-RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
+RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false), EnableMemH(false),
     ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr) {
@@ -68,7 +68,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   numCores = params.find<unsigned>("numCores", "1");
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
-  output.verbose(CALL_INFO, 1, 0, "Building Rev with %d cores\n", numCores);
+  output.verbose(CALL_INFO, 1, 0, "Building Rev with %u cores\n", numCores);
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");
@@ -77,6 +77,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   Args = params.find<std::string>("args", "");
 
   // Create the options object
+  // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
   Opts = new RevOpts(numCores,Verbosity);
   if( !Opts )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
@@ -149,6 +150,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
     // setup the PAN target device execution context
     if( !PNic->IsHost() ){
+      // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
       PExec = new PanExec();
       if( PExec == nullptr )
       for( unsigned i=0; i<Procs.size(); i++ ){
@@ -190,9 +192,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the memory object
-  const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
+  const uint64_t memSize = params.find<unsigned long>("memSize", 1073741824);
   EnableMemH = params.find<bool>("enable_memH", 0);
   if( !EnableMemH ){
+    // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
     Mem = new RevMem( memSize, Opts,  &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
@@ -204,6 +207,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     if( !Ctrl )
       output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");
 
+    // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
     Mem = new RevMem( memSize, Opts, Ctrl, &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
@@ -213,14 +217,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Set TLB Size
-  const unsigned long tlbSize = params.find<unsigned long>("tlbSize", 512);
+  const uint64_t tlbSize = params.find<unsigned long>("tlbSize", 512);
   Mem->SetTLBSize(tlbSize);
 
   // Set max heap size
-  const unsigned long maxHeapSize = params.find<unsigned long>("maxHeapSize", std::floor((memSize/4)));
+  const uint64_t maxHeapSize = params.find<unsigned long>("maxHeapSize", std::floor((memSize/4)));
   Mem->SetMaxHeapSize(maxHeapSize);
 
   // Load the binary into memory
+  // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
   Loader = new RevLoader( Exe, Args, Mem, &output );
   if( !Loader ){
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
@@ -245,7 +250,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   TLBHitsPerCore.reserve(TLBHitsPerCore.size() + numCores);
   TLBMissesPerCore.reserve(TLBMissesPerCore.size() + numCores);
 
-  for(int s = 0; s < numCores; s++){
+  for(unsigned s = 0; s < numCores; s++){
     TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
     CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
     FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
@@ -395,7 +400,7 @@ void RevCPU::initNICMem(){
   Mem->WriteU64(0, ptr,host);
   ptr += 8;
 
-  output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+  output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
                  id, host );
 
   for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
@@ -407,7 +412,7 @@ void RevCPU::initNICMem(){
     }else{
       host = 0;
     }
-    output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+    output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
                   id, host);
     Mem->WriteU64(0, ptr,host);
     ptr += 8;
@@ -562,8 +567,7 @@ void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
 
 void RevCPU::PANHandleSuccess(panNicEvent *event){
   // search for the tag in the tag list
-  std::pair<uint8_t,int> Entry = std::make_pair(event->getTag(),
-                                                event->getSrc());
+  std::pair Entry{event->getTag(), event->getSrc()};
   auto it = std::find(TrackTags.begin(),TrackTags.end(),Entry);
   if( it == TrackTags.end() ){
     // nothing found, raise an error
@@ -575,15 +579,14 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
   }
 
   // search for the tag in the outstanding get list
-  std::vector<std::tuple<uint8_t,uint64_t,uint32_t>>::iterator GetIter;
-  for( GetIter = TrackGets.begin(); GetIter != TrackGets.end(); ++GetIter ){
-    if( std::get<0>(*GetIter) = event->getTag() ){
+  for( auto GetIter = TrackGets.begin(); GetIter != TrackGets.end(); ++GetIter ){
+    if( std::get<0>(*GetIter) == event->getTag() ){
       // found a valid entry; setup the memory write
       uint64_t *Data = new uint64_t [event->getNumBlocks(std::get<2>(*GetIter))];
       Mem->WriteMem(0,
                     std::get<1>(*GetIter),
                     std::get<2>(*GetIter),
-                    (void *)(Data));
+                    Data);
       delete[] Data;
 
       // erase the entry
@@ -1888,15 +1891,15 @@ bool RevCPU::PANProcessRDMAMailbox(){
     // Stage 2: Interrogate the payload
     if( Payload[0] == _PAN_ENTRY_VALID_ ){
       // found a valid payload, process it
-      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command; Entry=%d\n", iter);
+      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command; Entry=%u\n", iter);
 
       // Stage 2.a: Convert the buffer into an event
       panNicEvent *FEvent = new panNicEvent(getName());
 
       if( !PANConvertRDMAtoEvent(Payload[2],FEvent) )
         output.fatal(CALL_INFO, -1,
-                     "Error: could not convert RDMA command to event from address=0x%llx\n",
-                     (long long unsigned int)(Payload[1]));
+                     "Error: could not convert RDMA command to event from address=0x%" PRIx64 "\n",
+                     uint64_t(Payload[1]));
 
       // Stage 2.b: Insert the event into the send queue
       SendMB.push(std::make_pair(FEvent,(int)(Payload[1])));
@@ -2347,7 +2350,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       if( !Procs[i]->ClockTick(currentCycle) ){
          UpdateCoreStatistics(i);
         Enabled[i] = false;
-      output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
+      output.verbose(CALL_INFO, 5, 0, "Closing Processor %u at Cycle: %" PRIu64 "\n",
                      i, static_cast<uint64_t>(currentCycle));
       }
     }

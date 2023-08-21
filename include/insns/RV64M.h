@@ -14,119 +14,52 @@
 #include "../RevInstTable.h"
 #include "../RevExt.h"
 
-using namespace SST::RevCPU;
+#include <vector>
+#include <limits>
 
 namespace SST{
   namespace RevCPU{
     class RV64M : public RevExt {
 
-      static uint64_t mulhu64_impl(uint64_t A, uint64_t B){
-        uint64_t t;
-        uint32_t y1, y2, y3;
-        uint64_t a0 = (uint32_t)A, a1 = A >> 32;
-        uint64_t b0 = (uint32_t)B, b1 = B >> 32;
-
-        t = a1*b0 + ((a0+b0) >> 32);
-        y1 = t;
-        y2 = t >> 32;
-
-        t = a0+b1 + y1;
-        y1 = t;
-
-        t = a1*b1 + y2 + (t >> 32);
-        y2 = t;
-        y3 = t >> 32;
-
-        return ((uint64_t)y3 << 32) | y2;
-      }
-
-      static int64_t mulh64_impl(int64_t A, int64_t B){
-        int negate = (A < 0) != (B < 0);
-        uint64_t res = mulhu64_impl(A < 0 ? -A : A, B < 0 ? -B : B);
-        return negate ? ~res + (A * B == 0) : res;
-      }
-
-      static int64_t mulhsu64_impl(int64_t A, uint64_t B){
-        int negate = A < 0;
-        uint64_t res = mulhu64_impl(A < 0 ? -A : A, B);
-        return negate ? ~res + (A * B == 0 ) : res;
-      }
-
-      static bool mulw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],32) * td_u64(R->RV64[Inst.rs2],32),32)&MASK32;
-        SEXTI(R->RV64[Inst.rd],32);
-        R->RV64_PC += Inst.instSize;
+      static bool mulw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) * R->GetX<uint32_t>(F, Inst.rs2));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool divw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        int64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
-        int64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
-        if( rhs == 0 ){
-          // division by zero, quotient = -1
-          R->RV64[Inst.rd] = UINT64_MAX;
-          R->RV64_PC += Inst.instSize;
-          return true;
-        }else if( (lhs == INT32_MIN) &&
-                  ((int32_t)(rhs) == -1) ){
-          R->RV64[Inst.rd] = dt_u64(lhs & MASK32,32);
-          R->RV64_PC += Inst.instSize;
-          return true;
-        }
-        R->RV64[Inst.rd] = dt_u64((lhs/rhs)&MASK32,32);
-        R->RV64_PC += Inst.instSize;
+      template<typename i32_t>
+      static bool divw_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
+        i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
+        i32_t res = std::numeric_limits<i32_t>::is_signed &&
+          rs1 == std::numeric_limits<i32_t>::min() &&
+          rs2 == -i32_t{1} ? rs1 : rs2 ? rs1 / rs2 : -i32_t{1};
+        // res is cast to signed int32_t so that it will be sign-extended to 64 bits
+        // even when i32_t == uint32_t (unsigned)
+        R->SetX(F, Inst.rd, static_cast<int32_t>(res));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool divuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t lhs = R->RV64[Inst.rs1] & MASK32;
-        uint64_t rhs = R->RV64[Inst.rs2] & MASK32;
-        if( rhs == 0 ){
-          // division by zero, quotient = 2^L-1
-          R->RV64[Inst.rd] = UINT32_MAX;
-          SEXTI(R->RV64[Inst.rd], 32);
-          R->RV64_PC += Inst.instSize;
-          return true;
-        }
-        SEXT(R->RV64[Inst.rd], (lhs/rhs)&MASK32, 32);
-        R->RV64_PC += Inst.instSize;
+      static constexpr auto& divw  = divw_impl<int32_t>;
+      static constexpr auto& divuw = divw_impl<uint32_t>;
+
+      template<typename i32_t>
+      static bool remw_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
+        i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
+        i32_t res = std::numeric_limits<i32_t>::is_signed &&
+          rs1 == std::numeric_limits<i32_t>::min() &&
+          rs2 == -i32_t{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
+        // res is cast to signed int32_t so that it will be sign-extended to 64 bits
+        // even when i32_t == uint32_t (unsigned)
+        R->SetX(F, Inst.rd, static_cast<int32_t>(res));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool remw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        int64_t lhs = td_u64(R->RV64[Inst.rs1] & MASK32,32);
-        int64_t rhs = td_u64(R->RV64[Inst.rs2] & MASK32,32);
-        if( rhs == 0 ){
-          // division by zero remainder = rs1
-          R->RV64[Inst.rd] = R->RV64[Inst.rs1];
-          R->RV64_PC += Inst.instSize;
-          return true;
-        }else if( (lhs == INT32_MIN) &&
-                  ((int32_t)(rhs) == -1) ){
-          R->RV64[Inst.rd] = 0;
-          R->RV64_PC += Inst.instSize;
-          return true;
-        }
-        R->RV64[Inst.rd] = dt_u64((lhs%rhs)&MASK32,32);
-        R->RV64_PC += Inst.instSize;
-        return true;
-      }
-
-      static bool remuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t lhs = R->RV64[Inst.rs1] & MASK32;
-        uint64_t rhs = R->RV64[Inst.rs2] & MASK32;
-        uint64_t signRhs = (R->RV64[Inst.rs2] & 0x8000000000000000) >> 63;
-        if(( rhs == 0 ) || (signRhs > 0)){
-          // division by zero remainder = rs1
-          //SEXT(R->RV64[Inst.rd], R->RV64[Inst.rs1]&MASK32, 32);
-          R->RV64[Inst.rd] = R->RV64[Inst.rs1];
-          R->RV64_PC += Inst.instSize;
-          return true;
-        }
-        SEXT(R->RV64[Inst.rd], (lhs%rhs)&MASK32, 32);
-        R->RV64_PC += Inst.instSize;
-        return true;
-      }
+      static constexpr auto& remw  = remw_impl<int32_t>;
+      static constexpr auto& remuw = remw_impl<uint32_t>;
 
       // ----------------------------------------------------------------------
       //
@@ -161,7 +94,7 @@ namespace SST{
         }
 
       /// RV64M: standard destructor
-      ~RV64M() { }
+      ~RV64M() = default;
 
     }; // end class RV32I
   } // namespace RevCPU

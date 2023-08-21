@@ -24,10 +24,7 @@
 #include <tuple>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/output.h>
-#include <sst/core/subcomponent.h>
-#include <sst/core/interfaces/stdMem.h>
+#include "SST.h"
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -222,7 +219,7 @@ namespace SST {
       )
 
       /// RevMemCtrl: default constructor
-      RevMemCtrl( ComponentId_t id, Params& params);
+      RevMemCtrl( ComponentId_t id, const Params& params);
 
       /// RevMemCtrl: default destructor
       virtual ~RevMemCtrl();
@@ -438,7 +435,7 @@ namespace SST {
       }MemCtrlStats;
 
       /// RevBasicMemCtrl: constructor
-      RevBasicMemCtrl(ComponentId_t id, Params& params);
+      RevBasicMemCtrl(ComponentId_t id, const Params& params);
 
       /// RevBasicMemCtrl: destructor
       virtual ~RevBasicMemCtrl();

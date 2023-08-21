@@ -12,14 +12,14 @@
 #define _SST_REVCPU_REVOPTS_H_
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
+#include "SST.h"
 
 // -- Standard Headers
 #include <cinttypes>
 #include <map>
 #include <vector>
 #include <string>
+#include <utility>
 
 namespace SST{
   namespace RevCPU {

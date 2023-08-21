@@ -15,15 +15,12 @@
 #include <vector>
 #include <queue>
 #include <tuple>
+#include <utility>
+#include <string>
 #include <unistd.h>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
-#include <sst/core/event.h>
-#include <sst/core/link.h>
-#include <sst/core/timeConverter.h>
-#include <sst/core/interfaces/simpleNetwork.h>
+#include "SST.h"
 
 namespace SST {
   namespace RevCPU {
@@ -34,11 +31,11 @@ namespace SST {
     class nicEvent : public SST::Event {
     public:
       /// nicEvent: standard constructor
-      nicEvent(std::string name) : Event(), SrcName(name) { }
+      explicit nicEvent(std::string name) : Event(), SrcName(std::move(name)) { }
 
       /// nicEvent: extended constructor
       nicEvent(std::string name, std::vector<uint8_t> data)
-        : Event(), SrcName(name), Data(data) { }
+        : Event(), SrcName(std::move(name)), Data(std::move(data)) { }
 
       /// nicEvent: retrieve the source name
       std::string getSource() { return SrcName; }

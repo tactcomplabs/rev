@@ -14,13 +14,13 @@
 #include "../RevInstTable.h"
 #include "../RevExt.h"
 
-using namespace SST::RevCPU;
+#include <vector>
 
 namespace SST{
   namespace RevCPU{
     class RV32A : public RevExt {
 
-      static bool lrw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool lrw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
           M->LR(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                 (uint32_t *)(&R->RV32[Inst.rd]),
@@ -38,7 +38,7 @@ namespace SST{
         return true;
       }
 
-      static bool scw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool scw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
           M->SC(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
                 (uint32_t *)(&R->RV32[Inst.rs2]),
@@ -57,7 +57,7 @@ namespace SST{
         return true;
       }
 
-      static bool amoswapw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amoswapw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -93,7 +93,7 @@ namespace SST{
         return true;
       }
 
-      static bool amoaddw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amoaddw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -129,7 +129,7 @@ namespace SST{
         return true;
       }
 
-      static bool amoxorw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amoxorw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -165,7 +165,7 @@ namespace SST{
         return true;
       }
 
-      static bool amoandw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amoandw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -201,7 +201,7 @@ namespace SST{
         return true;
       }
 
-      static bool amoorw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amoorw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -237,7 +237,7 @@ namespace SST{
         return true;
       }
 
-      static bool amominw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amominw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -273,7 +273,7 @@ namespace SST{
         return true;
       }
 
-      static bool amomaxw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amomaxw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -309,7 +309,7 @@ namespace SST{
         return true;
       }
 
-      static bool amominuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amominuw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -345,7 +345,7 @@ namespace SST{
         return true;
       }
 
-      static bool amomaxuw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static bool amomaxuw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint32_t flags = 0x00ul;
 
         if( Inst.aq && Inst.rl){
@@ -415,7 +415,7 @@ namespace SST{
         }
 
       /// RV32A: standard destructor
-      ~RV32A() { }
+      ~RV32A() = default;
 
     }; // end class RV32I
   } // namespace RevCPU

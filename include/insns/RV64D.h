@@ -14,52 +14,55 @@
 #include "../RevInstTable.h"
 #include "../RevExt.h"
 
-using namespace SST::RevCPU;
+#include <vector>
+#include <cstring>
 
 namespace SST{
   namespace RevCPU{
     class RV64D : public RevExt {
 
-      static bool fcvtld(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = (int64_t)((double)(R->DPF[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      static bool fcvtld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->DPF[Inst.rs1]);
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fcvtwd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = (int64_t)((double)(R->DPF[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      static bool fcvtwd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, R->DPF[Inst.rs1]);
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-
-      static bool fcvtlud(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = (uint64_t)((double)(R->DPF[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      static bool fcvtlud(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, static_cast<uint64_t>(R->DPF[Inst.rs1]));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fcvtdl(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->DPF[Inst.rd] = (double)((int64_t)(R->RV64[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      static bool fcvtdl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->DPF[Inst.rd] = static_cast<double>(R->GetX<int64_t>(F, Inst.rs1));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fcvtdlu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->DPF[Inst.rd] = (double)((uint64_t)(R->RV64[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      static bool fcvtdlu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->DPF[Inst.rd] = static_cast<double>(R->GetX<uint64_t>(F, Inst.rs1));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fmvxd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(double));
-        R->RV64_PC += Inst.instSize;
+      static bool fmvxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        uint64_t u64;
+        std::memcpy(&u64, &R->DPF[Inst.rs1], sizeof(u64));
+        R->SetX(F, Inst.rd, u64);
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fmvdx(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(double));
-        R->RV64_PC += Inst.instSize;
+      static bool fmvdx(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        uint64_t u64 = R->GetX<uint64_t>(F, Inst.rs1);
+        std::memcpy(&R->DPF[Inst.rs1], &u64, sizeof(double));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -100,7 +103,7 @@ namespace SST{
         }
 
       /// RV364D: standard destructor
-      ~RV64D() { }
+      ~RV64D() = default;
 
     }; // end class RV32I
   } // namespace RevCPU

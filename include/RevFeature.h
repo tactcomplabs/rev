@@ -11,34 +11,37 @@
 #ifndef _SST_REVCPU_REVFEATURE_H_
 #define _SST_REVCPU_REVFEATURE_H_
 
-// -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
-
-// -- Standard Headers
-#include <cinttypes>
 #include <string>
 
-namespace SST{
-  namespace RevCPU {
-  class RevFeature;
-}}
-
-using namespace SST::RevCPU;
+// -- SST Headers
+#include "SST.h"
 
 namespace SST{
   namespace RevCPU{
 
-    typedef enum{
-      RV_UNKNOWN    = 0,        ///< RevFeatureType: unknown feature
-      RV_I          = 1,        ///< RevFeatureType: I-extension
-      RV_M          = 2,        ///< RevFeatureType: M-extension
-      RV_A          = 3,        ///< RevFeatureType: A-extension
-      RV_F          = 4,        ///< RevFeatureType: F-extension
-      RV_D          = 5,        ///< RevFeatureType: D-extension
-      RV_C          = 6,        ///< RevFeatureType: C-extension
-      RV_P          = 20        ///< RevFeatureType: PAN Extension
-    }RevFeatureType;
+    enum RevFeatureType : unsigned {
+      RV_UNKNOWN  = 0,      ///< RevFeatureType: unknown feature
+      RV_E        = 1<<0,   ///< RevFeatureType: E-extension
+      RV_I        = 1<<1,   ///< RevFeatureType: I-extension
+      RV_M        = 1<<2,   ///< RevFeatureType: M-extension
+      RV_A        = 1<<3,   ///< RevFeatureType: A-extension
+      RV_F        = 1<<4,   ///< RevFeatureType: F-extension
+      RV_D        = 1<<5,   ///< RevFeatureType: D-extension
+      RV_Q        = 1<<6,   ///< RevFeatureType: Q-extension
+      RV_L        = 1<<7,   ///< RevFeatureType: L-extension
+      RV_C        = 1<<8,   ///< RevFeatureType: C-extension
+      RV_B        = 1<<9,   ///< RevFeatureType: B-extension
+      RV_J        = 1<<10,  ///< RevFeatureType: J-extension
+      RV_T        = 1<<11,  ///< RevFeatureType: T-extension
+      RV_P        = 1<<12,  ///< RevFeatureType: P-Extension
+      RV_V        = 1<<13,  ///< RevFeatureType: V-extension
+      RV_N        = 1<<14,  ///< RevFeatureType: N-extension
+      RV_ZICSR    = 1<<15,  ///< RevFEatureType: Zicsr-extension
+      RV_ZIFENCEI = 1<<16,  ///< RevFeatureType: Zifencei-extension
+      RV_ZAM      = 1<<17,  ///< RevFeatureType: Zam-extension
+      RV_ZTSO     = 1<<18,  ///< RevFeatureType: Ztso-extension
+      RV_ZFA      = 1<<19,  ///< RevFeatureType: Zfa-extension
+    };
 
     class RevFeature{
     public:
@@ -46,53 +49,72 @@ namespace SST{
       RevFeature( std::string Machine, SST::Output *Output,
                   unsigned Min, unsigned Max, unsigned Id );
 
-      /// RevFeature: standard desctructor
-      ~RevFeature();
+      /// RevFeature: standard destructor
+      ~RevFeature() = default;
 
-      /// RevFeature: determines if the target mdoe is enabled
-      bool IsModeEnabled( RevFeatureType Type );
+      /// RevFeature: deleted copy constructor
+      RevFeature( const RevFeature& ) = delete;
 
-      /// RevFeature: retreive the feature string
-      std::string GetMachineModel() { return machine; }
+      /// RevFeature: deleted copy assignment operator
+      RevFeature& operator=( const RevFeature& ) = delete;
 
-      /// RevFeature: retrieve the feature encoding
-      uint64_t GetFeatures() { return features; }
+      /// IsModeEnabled: determines if the target mode is enabled
+      bool IsModeEnabled( RevFeatureType Type ) const {
+        return (features & Type) == Type;
+      }
 
-      /// RevFeature: retrieve the xlen
-      unsigned GetXlen() { return xlen; }
+      /// SetMachineEntry: set the machine model item
+      void SetMachineEntry( RevFeatureType Type ) {
+        features = RevFeatureType{features | Type};
+      }
 
-      /// RevFeature: get the minimum cost
-      unsigned GetMinCost() { return MinCost; }
+      /// GetMachineModel: retreive the feature string
+      auto GetMachineModel() const { return machine; }
 
-      /// RevFeature: get the maximum cost
-      unsigned GetMaxCost() { return MaxCost; }
+      /// GetFeatures: retrieve the feature encoding
+      auto GetFeatures() const { return features; }
 
-      /// RevFeature: Is the device an RV32
-      bool IsRV32() { if( xlen == 32 ){ return true; }return false; }
+      /// GetXlen: retrieve the xlen
+      auto GetXlen() const { return xlen; }
 
-      /// RevFeature: Is the device an RV64
-      bool IsRV64() { if( xlen == 64 ){ return true; }return false; }
+      /// GetMinCost: get the minimum cost
+      auto GetMinCost() const { return MinCost; }
 
-      /// RevFeature: Does the device support RV32C?
-      bool IsRV32C();
+      /// GetMaxCost: get the maximum cost
+      auto GetMaxCost() const { return MaxCost; }
 
-      /// RevFeature: Does the device support RV32F?
-      bool IsRV32F();
+      /// IsRV32: Is the device an RV32
+      bool IsRV32() const { return xlen == 32; }
 
-      /// RevFeature: Does the device support RV64F?
-      bool IsRV64F();
+      /// IsRV64: Is the device an RV64
+      bool IsRV64() const { return xlen == 64; }
 
-      /// RevFeature: Does the device support RV32D?
-      bool IsRV32D();
+      /// IsRv32C: Does the device support RV32C?
+      bool IsRV32C() const { return IsRV32() && HasCompressed(); }
 
-      /// RevFeature: Does the device support RV64D?
-      bool IsRV64D();
+      /// HasF: Does the device support F?
+      bool HasF() const { return IsModeEnabled(RV_F); }
 
-      /// RevFeature: Returns whether RV32 or RV64 "C" is enabled
-      bool HasCompressed();
+      /// IsRV32F: Does the device support RV32F?
+      bool IsRV32F() const { return IsRV32() && HasF(); }
 
-      /// RevFeature: Retrieve the hart of the target object
-      unsigned GetHart() { return Hart; }
+      /// IsRV64F: Does the device support RV64F?
+      bool IsRV64F() const { return IsRV64() && HasF(); }
+
+      /// HasD: Does the device support D?
+      bool HasD() const { return IsModeEnabled(RV_D); }
+
+      /// IsRV32D: Does the device support RV32D?
+      bool IsRV32D() const { return IsRV32() && HasD(); }
+
+      /// IsRV64D: Does the device support RV64D?
+      bool IsRV64D() const { return IsRV64() && HasD(); }
+
+      /// HasCompressed: Returns whether RV32 or RV64 "C" is enabled
+      bool HasCompressed() const { return IsModeEnabled(RV_C); }
+
+      /// GetHart: Retrieve the hart of the target object
+      auto GetHart() const { return Hart; }
 
     private:
       std::string machine;      ///< RevFeature: feature string
@@ -100,14 +122,11 @@ namespace SST{
       unsigned MinCost;         ///< RevFeature: min memory cost
       unsigned MaxCost;         ///< RevFeature: max memory cost
       unsigned Hart;            ///< RevFeature: RISC-V CPU ID, aka "hart"
-      uint64_t features;        ///< RevFeature: feature elements
+      RevFeatureType features;  ///< RevFeature: feature elements
       unsigned xlen;            ///< RevFeature: RISC-V xlen
 
-      /// RevFeature: parse the machine model string
+      /// ParseMachineModel: parse the machine model string
       bool ParseMachineModel();
-
-      /// RevFeature: set the machine model item
-      void SetMachineEntry( RevFeatureType Type );
     }; // class RevFeature
   } // namespace RevCPU
 } // namespace SST

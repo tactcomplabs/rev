@@ -13,33 +13,24 @@
 
 #include "../RevInstTable.h"
 
-using namespace SST::RevCPU;
+#include <vector>
 
 namespace SST{
   namespace RevCPU{
     class RV64P : public RevExt {
 
-      static bool future(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( M->SetFuture(( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
-          R->RV64[Inst.rd] = 0x01ll;
-        else
-          R->RV64[Inst.rd] = 0x00ll;
+      static bool future(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, !!M->SetFuture(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)));
         return true;
       }
 
-      static bool rfuture(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( M->RevokeFuture(( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
-          R->RV64[Inst.rd] = 0x01ll;
-        else
-          R->RV64[Inst.rd] = 0x00ll;
+      static bool rfuture(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, !!M->RevokeFuture(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)));
         return true;
       }
 
-      static bool sfuture(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( M->StatusFuture(( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))))) )
-          R->RV64[Inst.rd] = 0x01ll;
-        else
-          R->RV64[Inst.rd] = 0x00ll;
+      static bool sfuture(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, !!M->StatusFuture(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)));
         return true;
       }
 
@@ -75,7 +66,7 @@ namespace SST{
         }
 
       /// RV64P: standard destructor
-      ~RV64P() { }
+      ~RV64P() = default;
 
     }; // end class RV64I
   } // namespace RevCPU

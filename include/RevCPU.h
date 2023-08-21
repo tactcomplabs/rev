@@ -20,11 +20,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <random>
+#include <utility>
+#include <string>
+#include <vector>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
-#include <sst/core/interfaces/simpleNetwork.h>
+#include "SST.h"
 
 // -- Rev Headers
 #include "RevOpts.h"
@@ -47,7 +48,7 @@ namespace SST {
 
     public:
       /// RevCPU: top-level SST component constructor
-      RevCPU( SST::ComponentId_t id, SST::Params& params );
+      RevCPU( SST::ComponentId_t id, const SST::Params& params );
 
       /// RevCPU: top-level SST component destructor
       ~RevCPU();

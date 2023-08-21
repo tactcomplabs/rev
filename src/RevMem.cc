@@ -10,9 +10,11 @@
 
 #include "../include/RevMem.h"
 #include <math.h>
+#include <utility>
 #include <mutex>
+#include <random>
 
-RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
+RevMem::RevMem( uint64_t MemSize, RevOpts *Opts,
                 RevMemCtrl *Ctrl, SST::Output *Output )
   : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output),
     stacktop(0x00ull) {
@@ -34,15 +36,15 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   memStats.TLBMisses = 0;
 
   /*
-   * The first mem segment is the entirety of the memory space specified in the .py 
+   * The first mem segment is the entirety of the memory space specified in the .py
    * This is updated once RevLoader initializes and we know where the static
-   * memory ends (ie. __BSS_END__) at which point we replace this first segment with 
+   * memory ends (ie. __BSS_END__) at which point we replace this first segment with
    * a segment representing the static memory (0 -> __BSS_END__)
    */
   // AddMemSeg(0, memSize+1);
 }
 
-RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
+RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output),
     stacktop(0x00ull) {
 
@@ -56,7 +58,7 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
     output->fatal(CALL_INFO, -1, "Error: could not allocate backing memory\n");
 
   // zero the memory
-  for( unsigned long i=0; i<memSize; i++ ){
+  for( uint64_t i=0; i<memSize; i++ ){
     physMem[i] = 0;
   }
 
@@ -73,11 +75,6 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
   memStats.TLBMisses = 0;
 
   // AddMemSeg(0, memSize);
-}
-
-RevMem::~RevMem(){
-  if( physMem )
-    delete[] physMem;
 }
 
 bool RevMem::outstandingRqsts(){
@@ -104,8 +101,8 @@ void RevMem::HandleMemFault(unsigned width){
   // write the fault (read-modify-write)
   *Addr |= rval;
   output->verbose(CALL_INFO, 5, 0,
-                  "FAULT:MEM: Memory fault %d bits at address : 0x%" PRIu64 "\n",
-                 width, (uint64_t)(Addr));
+                  "FAULT:MEM: Memory fault %u bits at address : 0x%" PRIxPTR "\n",
+                  width, reinterpret_cast<uintptr_t>(Addr));
 }
 
 bool RevMem::SetFuture(uint64_t Addr){
@@ -133,6 +130,34 @@ bool RevMem::StatusFuture(uint64_t Addr){
   }
   return false;
 }
+
+#if 0
+
+bool RevMem::LR(unsigned Hart, uint64_t Addr){
+  LRSC.push_back(std::pair{Hart, Addr});
+  return true;
+}
+
+bool RevMem::SC(unsigned Hart, uint64_t Addr){
+  // search the LRSC vector for the entry pair
+  for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
+    if( (Hart == std::get<0>(*it)) &&
+        (Addr == std::get<1>(*it)) ){
+
+      // erase the entry
+      LRSC.erase(it);
+      return true;
+    }
+  }
+
+  // failed, write a nonzero value to target
+  uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
+  Tmp[0] = 0x1;
+
+  return false;
+}
+
+#else
 
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
@@ -243,6 +268,8 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
   return false;
 }
 
+#endif
+
 unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
   unsigned R = 0;
 
@@ -319,13 +346,13 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 #endif
         nextPage++;
       }else if(pageMap.count(pageNum) == 1){
-        //We've accessed this page before, just get the physical address 
+        //We've accessed this page before, just get the physical address
         physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & vAddr);
 #ifdef _REV_DEBUG_
         std::cout << "Access for page:" << pageNum << " addrShift:" << addrShift << " vAddr: 0x" << std::hex << vAddr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
 #endif
       }else{
-        output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
+        output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times\n");
       }
       AddToTLB(vAddr, physAddr);
     }
@@ -339,9 +366,8 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       }
       #endif
 
-      
-      output->fatal(CALL_INFO, 11, 
-                    "Segmentation Fault: Virtual address 0x%lx (PhysAddr = 0x%lx) was not found in any mem segments\n",
+      output->fatal(CALL_INFO, 11,
+                    "Segmentation Fault: Virtual address 0x%" PRIx64 " (PhysAddr = 0x%" PRIx64 ") was not found in any mem segments\n",
                     vAddr, physAddr);
     }
   }
@@ -353,8 +379,8 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   for(const auto& MemSeg : MemSegs ){
     if( MemSeg->contains(vAddr) ){
       /* Found the segment containing the vAddr... if it's not free then were good... if it is segfault */
-      return !(MemSeg->isFree());      
-    } 
+      return !(MemSeg->isFree());
+    }
   }
   if( vAddr >= (stacktop - _STACK_SIZE_ ) ){
     if( vAddr < memSize ){
@@ -386,12 +412,12 @@ uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize){
       }
       else {
         // TODO: Eventually add more checks once permissions are implemented
-        output->verbose(CALL_INFO, 10, 99, 
-        "Warning: Memory segment already allocated at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
-        return BaseAddr;
+        output->verbose(CALL_INFO, 10, 99,
+        "Warning: Memory segment already allocated at 0x%" PRIx64 " of size %" PRIu64 " Bytes\n", BaseAddr, SegSize);
       }
     }
-  } 
+  }
+  return BaseAddr; // TODO: Add Error-Handling
 }
 
 
@@ -414,21 +440,20 @@ uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, con
       }
       else {
         // TODO: Eventually add more checks once permissions are implemented
-        output->verbose(CALL_INFO, 10, 99, 
-        "Warning: Memory segment already allocated at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
-        return BaseAddr;
+        output->verbose(CALL_INFO, 10, 99,
+        "Warning: Memory segment already allocated at 0x%" PRIx64 " of size %" PRIu64 " Bytes\n", BaseAddr, SegSize);
       }
     }
-  } 
-
+  }
   MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedTopAddr));
-  return BaseAddr;
+
+  return BaseAddr; // TODO: Add Error-Handling
 }
 
 
 
 uint64_t RevMem::AllocMem(const uint64_t SegSize){
-  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap", SegSize);
+  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %" PRIu64 " bytes on the heap\n", SegSize);
   for( auto Seg : MemSegs ){
     // Check if we need to increase size of heap or if we can fit in existing segment
     if ((Seg->isFree()) && (Seg->getSize() >= SegSize)){
@@ -436,7 +461,7 @@ uint64_t RevMem::AllocMem(const uint64_t SegSize){
       ShrinkMemSeg(Seg, SegSize);
     }
   }
-  // If we get to this point there is nothing free so we have to try to expand heap 
+  // If we get to this point there is nothing free so we have to try to expand heap
   // TODO: Eventually this should use paging but that's not a priority at this point.
   uint64_t NewBaseAddr = heapend;
   MemSegs.emplace_back(std::make_shared<MemSegment>(NewBaseAddr, SegSize));
@@ -830,28 +855,28 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
 uint8_t RevMem::ReadU8( uint64_t Addr ){
   uint8_t Value;
   if( !ReadMem( Addr, 1, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U8)");
+    output->fatal(CALL_INFO, -1, "Error: could not read memory (U8)\n");
   return Value;
 }
 
 uint16_t RevMem::ReadU16( uint64_t Addr ){
   uint16_t Value;
   if( !ReadMem( Addr, 2, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U16)");
+    output->fatal(CALL_INFO, -1, "Error: could not read memory (U16)\n");
   return Value;
 }
 
 uint32_t RevMem::ReadU32( uint64_t Addr ){
   uint32_t Value;
   if( !ReadMem( Addr, 4, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U32)");
+    output->fatal(CALL_INFO, -1, "Error: could not read memory (U32)\n");
   return Value;
 }
 
 uint64_t RevMem::ReadU64( uint64_t Addr ){
   uint64_t Value;
   if( !ReadMem( Addr, 8, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U64)");
+    output->fatal(CALL_INFO, -1, "Error: could not read memory (U64)\n");
   return Value;
 }
 
@@ -859,7 +884,7 @@ float RevMem::ReadFloat( uint64_t Addr ){
   float Value = 0.;
   uint32_t Tmp = 0x00;
   if( !ReadMem( Addr, 4, (void *)(&Tmp) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (FLOAT)");
+    output->fatal(CALL_INFO, -1, "Error: could not read memory (FLOAT)\n");
   std::memcpy(&Value,&Tmp,sizeof(float));
   memStats.floatsRead++;
   return Value;
@@ -869,7 +894,7 @@ double RevMem::ReadDouble( uint64_t Addr ){
   double Value = 0.;
   uint64_t Tmp = 0x00;
   if( !ReadMem( Addr, 8, (void *)(&Tmp) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (DOUBLE)");
+    output->fatal(CALL_INFO, -1, "Error: could not read memory (DOUBLE)\n");
   std::memcpy(&Value,&Tmp,sizeof(double));
   memStats.doublesRead++;
   return Value;
@@ -917,9 +942,9 @@ void RevMem::WriteDouble( unsigned Hart, uint64_t Addr, double Value ){
 
 /*
 * Func: GetNewThreadPID
-* - This function is used to interact with the global 
+* - This function is used to interact with the global
 *   PID counter inside of RevMem
-* - When a new RevThreadCtx is created, it is assigned 
+* - When a new RevThreadCtx is created, it is assigned
 *   the value of PIDCount++
 * - This ensures no collisions because all RevProcs access
 *   the same RevMem instance
@@ -927,11 +952,11 @@ void RevMem::WriteDouble( unsigned Hart, uint64_t Addr, double Value ){
 uint32_t RevMem::GetNewThreadPID(){
 
   #ifdef _REV_DEBUG_
-  std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl; 
+  std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl;
   #endif
   /*
   * NOTE: A mutex is acquired solely to prevent race conditions
-  *       if multiple RevProc's create new Ctx objects at the 
+  *       if multiple RevProc's create new Ctx objects at the
   *       same time
   */
   std::unique_lock<std::mutex> lock(pid_mtx);
@@ -940,17 +965,17 @@ uint32_t RevMem::GetNewThreadPID(){
   return PIDCount;
 }
 
- 
+
 // This function is used to remove/shrink a memory segment
 // You *must* deallocate a chunk of memory that STARTS on a previously
-// allocated baseAddr 
+// allocated baseAddr
 //
 // Said in another way... you can't deallocate:
 // - Across multiple segments
-// - In the middle of segments 
+// - In the middle of segments
 //
 // When a segment is deallocated... the memory segment does not get removed
-// instead... 
+// instead...
 // - If BaseAddr + Size equals an entire segment... we simply mark it as free
 // - If it is less than a whole segment, we create a new segment at MemSegs[i+1]
 //   which encompasses the non-free space [Size+1 -> CurrSeg.TopAddr]
@@ -958,25 +983,26 @@ uint32_t RevMem::GetNewThreadPID(){
 //   which will automatically update the TopAddr
 uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
   for( unsigned i=0; i<MemSegs.size(); i++ ){
-    
-    auto CurrSeg = MemSegs[i]; 
+
+    auto CurrSeg = MemSegs[i];
     /* We don't allow memory to be unallocated if it's not on a segment boundary */
     if( CurrSeg->getBaseAddr() != BaseAddr ){
       continue;
     } else {
       /* Make sure were not trying to free beyond the segment boundaries */
       if( Size > CurrSeg->getSize() ){
-        output->fatal(CALL_INFO, 11, "Unalloc Error: Cannot free beyond the segment bounds. Attempted to"
-                                     "free from 0x%lx to 0x%lx however the highest address in the segment is 0x%lx",
-                                     BaseAddr, BaseAddr+Size, CurrSeg->getTopAddr());
+        output->fatal(CALL_INFO, 11,
+                      "Unalloc Error: Cannot free beyond the segment bounds. Attempted to "
+                      "free from 0x%" PRIx64 " to 0x%" PRIx64 " however the highest address "
+                      "in the segment is 0x%" PRIx64 "\n", BaseAddr, BaseAddr+Size, CurrSeg->getTopAddr());
         return false;
-      } 
-      
+      }
+
       /* Check if were unallocating a partial part of a segment */
       else if( Size < CurrSeg->getSize() ){
         /* Need to make a new segment that spans t */
         CurrSeg->setIsFree(true);
-        
+
         /* Create a new segment that spans from Size+1 -> TopAddr */
         /* (Default free state is false in MemSegment constructor) */
         MemSegs.emplace(MemSegs.begin()+i+1, std::make_shared<MemSegment>(CurrSeg->getBaseAddr()+Size+1, CurrSeg->getTopAddr()));
@@ -993,17 +1019,18 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
               // We need to do the following:
               // - Set the previous segments size to the combined size
               //   (setSize function automatically adjusts `TopAddr`)
-              //   also because we previously updated the size of the 
+              //   also because we previously updated the size of the
               //   CurrSeg this should encompass the updated free size
               PrevSeg->setSize(PrevSeg->getSize() + CurrSeg->getSize());
-              
+
               // - Remove CurrSeg
               MemSegs.erase(MemSegs.begin() + i);
-            } 
+            }
             // PrevSeg was not contiguous with CurrSeg... while this shouldn't happen it's not breaking
             output->verbose(CALL_INFO, 2, 2,
-                            "Previous segment (idx = %ul) has TopAddr = 0x%lx which is not contiguous with"
-                            "CurrSeg (idx = %ul) which has baseAddr = 0x%lx ", i-1, PrevSeg->getTopAddr(), i, CurrSeg->getBaseAddr());
+                            "Previous segment (idx = %u) has TopAddr = 0x%" PRIx64
+                            " which is not contiguous with CurrSeg (idx = %u) which has baseAddr = 0x%"
+                            PRIx64 " ", i-1, PrevSeg->getTopAddr(), i, CurrSeg->getBaseAddr());
           }
           // PrevSeg was not free... don't combine
         }
@@ -1023,7 +1050,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
 }
 
 
-uint64_t RevMem::ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize){
+void RevMem::ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize){
   /* Check if there will be leftover memory in the free segment */
   if( Seg->getSize() > NewSegSize ){
     /* Create new segment that encompasses the leftover space */
@@ -1042,7 +1069,7 @@ uint64_t RevMem::ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t Ne
 void RevMem::InitHeap(const uint64_t& EndOfStaticData){
   if( EndOfStaticData == 0x00ull ){
     // Program didn't contain .text, .data, or .bss sections
-    output->fatal(CALL_INFO, 7, 
+    output->fatal(CALL_INFO, 7,
                   "The loader was unable"
                   "to find a .text section in your executable. This is a bug."
                   "EndOfStaticData = 0x%lx which is less than or equal to 0",
@@ -1055,18 +1082,19 @@ void RevMem::InitHeap(const uint64_t& EndOfStaticData){
 }
 
 uint64_t RevMem::ExpandHeap(uint64_t Size){
-  /* 
-   * We don't want multiple concurrent processes changing the heapend 
+  /*
+   * We don't want multiple concurrent processes changing the heapend
    * at the same time (ie. two ThreadCtx calling brk)
    */
   std::unique_lock<std::mutex> lock(heap_mtx);
   // std::cout << "HeapEnd = 0x" << heapend << std::endl;
   uint64_t NewHeapEnd = heapend + Size;
-  
+
   /* Check if we are out of heap space (ie. heapend >= bottom of stack) */
   if( NewHeapEnd > maxHeapSize ){
-    output->fatal(CALL_INFO, 7,  "Out Of Memory --- Attempted to expand heap to 0x%lx which goes beyond the maxHeapSize = 0x%x set in the python configuration. If unset, this value will be equal to 1/4 of memSize.",
-                  NewHeapEnd, maxHeapSize);
+    output->fatal(CALL_INFO, 7,  "Out Of Memory --- Attempted to expand heap to 0x%" PRIx64
+                  " which goes beyond the maxHeapSize = 0x%" PRIx64 " set in the python configuration. "
+                  "If unset, this value will be equal to 1/4 of memSize.\n", NewHeapEnd, maxHeapSize);
   }
   heapend = NewHeapEnd;
   return heapend;

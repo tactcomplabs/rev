@@ -14,33 +14,37 @@
 #include "../RevInstTable.h"
 #include "../RevExt.h"
 
-using namespace SST::RevCPU;
+#include <vector>
 
 namespace SST{
   namespace RevCPU{
     class RV64F : public RevExt {
 
-      static bool fcvtls(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = (int64_t)((float)(R->SPF[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      // TODO: Need to implement conversion clipping
+      static bool fcvtls(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        float fp32 = R->GetFP32(F, Inst.rs1);
+        R->SetX(F, Inst.rd, static_cast<int64_t>(fp32));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fcvtlus(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->RV64[Inst.rd] = (float)(R->SPF[Inst.rs1]) > 0.0 ?  (uint64_t)((float)(R->SPF[Inst.rs1])) : 0;
-        R->RV64_PC += Inst.instSize;
+      // TODO: Need to implement conversion clipping
+      static bool fcvtlus(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        float fp32 = R->GetFP32(F, Inst.rs1);
+        R->SetX(F, Inst.rd, fp32 < 0 ? 0 : static_cast<uint64_t>(fp32));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fcvtsl(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->SPF[Inst.rd] = (float)((int64_t)(R->RV64[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      static bool fcvtsl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetFP32(F, Inst.rd, static_cast<float>(R->GetX<int64_t>(F, Inst.rs1)));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fcvtslu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        R->SPF[Inst.rd] = (float)((uint64_t)(R->RV64[Inst.rs1]));
-        R->RV64_PC += Inst.instSize;
+      static bool fcvtslu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetFP32(F, Inst.rd, static_cast<float>(R->GetX<uint64_t>(F, Inst.rs1)));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -52,8 +56,7 @@ namespace SST{
       // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
       //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
       // ----------------------------------------------------------------------
-      class Rev64FInstDefaults : public RevInstDefaults {
-        public:
+      struct Rev64FInstDefaults : RevInstDefaults {
         uint8_t opcode = 0b1010011;
         RevRegClass rdClass = RegFLOAT;
         RevRegClass rs1Class = RegFLOAT;
@@ -61,7 +64,7 @@ namespace SST{
         RevRegClass rs3Class = RegUNKNOWN;
       };
 
-      std::vector<RevInstEntry > RV64FTable = {
+      std::vector<RevInstEntry> RV64FTable = {
       {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.l.s  %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00010).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtls ).InstEntry},
       {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.lu.s %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00011).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtlus ).InstEntry},
       {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.l %rd, %rs1" ).SetFunct7( 0b1101000).SetfpcvtOp(0b00010).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtsl ).InstEntry},
@@ -76,13 +79,13 @@ namespace SST{
              RevMem *RevMem,
              SST::Output *Output )
         : RevExt( "RV64F", Feature, RegFile, RevMem, Output) {
-          this->SetTable(RV64FTable);
-        }
+        SetTable(RV64FTable);
+      }
 
       /// RV64F: standard destructor
-      ~RV64F() { }
+      ~RV64F() = default;
 
-    }; // end class RV32I
+    }; // end class RV64F
   } // namespace RevCPU
 } // namespace SST
 

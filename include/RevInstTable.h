@@ -12,10 +12,13 @@
 #define _SST_REVCPU_REVINSTTABLE_H_
 
 #include <bitset>
+#include <string>
 #include <map>
+#include <cstdint>
+#include <cstddef>
+
 #include "RevMem.h"
 #include "RevFeature.h"
-#include "RevRF.hpp"
 
 #ifndef _REV_NUM_REGS_
 #define _REV_NUM_REGS_ 32
@@ -103,127 +106,12 @@
                     (r) = (r) & (((1ULL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
-// Swizzle Macro
-#define SWIZZLE(q,in,start,dest ) q |= ((in >> start) & 1) << dest;
-
-/// td_u32: convert u32 in two's complement to decimal
-static inline uint32_t td_u32(uint32_t binary, unsigned bits){
-  uint32_t tmp = binary;
-  uint32_t i = 0;
-  if( (binary & (1UL<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<32; i++ ){
-      tmp |= (1UL<<i);
-    }
-
-    // invert all the bits
-    tmp = ~tmp;
-
-    // add 1
-    tmp += 1;
-
-    // set the sign bit
-    tmp = tmp*-1;
-  }
-  return tmp;
-}
-
-/// td_u64: convert u64 in two's complement to decimal
-static inline uint64_t td_u64(uint64_t binary, unsigned bits){
-  uint64_t tmp = binary;
-  uint64_t sext = 0x00ull;
-  uint64_t i = 0;
-
-  if( (binary & (1ULL<<(bits-1))) > 0 ){
-    // sign extend to 64 bits
-    for( i=0; i<bits; i++ ){
-      sext |= (1ULL<<i);
-    }
-    sext = ~sext;
-
-    tmp = tmp | sext;
-
-    // invert all the bits
-    tmp = ~tmp;
-
-    // add 1
-    tmp += 1;
-
-    // set the sign bit
-    tmp = tmp*-1;
-  }
-  return tmp;
-}
-
-/// dt_u32: convert u32 in decimal to two's complement
-static inline uint32_t dt_u32(int32_t binary, unsigned bits){
-  uint32_t tmp = binary;
-  uint32_t i = 0;
-  if( (binary & (1UL<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<32; i++ ){
-      tmp |= (1UL<<i);
-    }
-
-    // invert all the bits
-    tmp = ~tmp;
-
-    // add 1
-    tmp += 1;
-
-    // set the sign bit
-    tmp = tmp*-1;
-  }
-  return tmp;
-}
-
-/// td_u64: convert u64 in decimal to two's complement
-static inline uint64_t dt_u64(int64_t binary, unsigned bits){
-  uint64_t tmp = binary;
-  uint64_t i = 0;
-  if( (binary & (1ULL<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<64; i++ ){
-      tmp |= (1ULL<<i);
-    }
-
-    // invert all the bits
-    tmp = ~tmp;
-
-    // add 1
-    tmp += 1;
-
-    // set the sign bit
-    tmp = tmp*-1;
-  }
-  return tmp;
-}
 
 #if 0
-static uint32_t twos_compl(uint32_t binary, int bits){
-  uint32_t tmp = binary;
-  uint32_t i = 0;
-  //std::cout << "Binary =  " << std::bitset<32>(tmp) << std::endl;
-  if( (binary & (1<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<32; i++ ){
-      tmp |= (1<<i);
-    }
-
-    // invert all the bits
-    tmp = ~tmp;
-    //std::cout << "Flipped = " << std::bitset<32>(tmp) << std::endl;
-
-    // add 1
-    tmp += 1;
-    //std::cout << "Added =   " << std::bitset<32>(tmp) << std::endl;
-
-    // set the sign bit
-    //tmp |= (1<<31);
-    tmp = tmp*-1;
-    //std::cout << "Signed =  " << std::bitset<32>(tmp) << std::endl;
-  }
-  return tmp;
+/// convert u32/u64 in two's complement to decimal
+template<typename T>
+constexpr T td(T binary, unsigned bits){
+    return binary & T{1} << (bits-1) ? binary | ~T{0} << (bits - 1) : binary;
 }
 #endif
 
@@ -231,7 +119,7 @@ namespace SST{
   namespace RevCPU {
 
     /* Ref: RISC-V Priviledged Spec (pg. 39) */
-    enum EXCEPTION_CAUSE {
+    enum EXCEPTION_CAUSE : uint32_t {
       MISALIGNED_INST_ADDR      = 0,
       INST_ACCESS_FAULT         = 1,
       ILLEGAL_INST              = 2,
@@ -245,12 +133,21 @@ namespace SST{
       ECALL_MACHINE_MODE        = 11,
       INST_PAGE_FAULT           = 12,
       LOAD_PAGE_FAULT           = 13,
-      STORE_AMO_PAGE_FAULT      = 15
+      STORE_AMO_PAGE_FAULT      = 15,
     };
 
-    typedef struct{
-      RevRF<uint32_t, _REV_NUM_REGS_> RV32;    ///< RevRegFile: RV32I register file
-      RevRF<uint64_t, _REV_NUM_REGS_> RV64;    ///< RevRegFile: RV32I register file
+    struct RevRegFile {
+      RevRegFile(const RevRegFile&)            = default;  // Default copy constructor
+      RevRegFile& operator=(const RevRegFile&) = default;  // Default assignment
+      RevRegFile()                             = default;  // Default constructor
+      ~RevRegFile()                            = default;  // Default destructor
+
+      // This proxy class system was too complicated
+      //      RevRF<uint32_t, _REV_NUM_REGS_> RV32;    ///< RevRegFile: RV32I register file
+      //      RevRF<uint64_t, _REV_NUM_REGS_> RV64;    ///< RevRegFile: RV64I register file
+
+      uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
+      uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
       float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
       double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
 
@@ -279,46 +176,130 @@ namespace SST{
       uint32_t cost;                    ///< RevRegFile: Cost of the instruction
       bool trigger;                     ///< RevRegFile: Has the instruction been triggered?
       unsigned Entry;                   ///< RevRegFile: Instruction entry
-    }RevRegFile;                        ///< RevProc: register file construct
 
-    static std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-    static std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+      /// AdvancePC: Advance the program counter a certain number of bytes
+      template<typename T>
+      void AdvancePC(const RevFeature* F, T bytes) {
+        if ( F->IsRV32() ) {
+          RV32_PC += static_cast<int32_t>(bytes);
+        }else{
+          RV64_PC += static_cast<int64_t>(bytes);
+        }
+      }
 
-    typedef enum{
-      RVTypeUNKNOWN = 0,  ///< RevInstf: Unknown format
-      RVTypeR       = 1,  ///< RevInstF: R-Type
-      RVTypeI       = 2,  ///< RevInstF: I-Type
-      RVTypeS       = 3,  ///< RevInstF: S-Type
-      RVTypeU       = 4,  ///< RevInstF: U-Type
-      RVTypeB       = 5,  ///< RevInstF: B-Type
-      RVTypeJ       = 6,  ///< RevInstF: J-Type
-      RVTypeR4      = 7,  ///< RevInstF: R4-Type for AMOs
+      /// GetX: Get the specifed X register cast to a specific type
+      template<typename T>
+      T GetX(const RevFeature* F, size_t rs) const {
+        if( F->IsRV32() ){
+          return static_cast<T>(rs ? RV32[rs] : 0);
+        }else{
+          return static_cast<T>(rs ? RV64[rs] : 0);
+        }
+      }
+
+      /// SetX: Set the specifed X register to a specific value
+      template<typename T>
+      void SetX(const RevFeature* F, size_t rd, T val) {
+        if( rd != 0 ){
+          if( F->IsRV32() ){
+            RV32[rd] = static_cast<int32_t>(val);
+          }else{
+            RV64[rd] = static_cast<int64_t>(val);
+          }
+        }
+      }
+
+      /// GetFP32: Get the 32-bit float value of a specific FP register
+      float GetFP32(const RevFeature* F, size_t rs) const {
+        if( F->HasD() ){
+          uint64_t i64;
+          memcpy(&i64, &DPF[rs], sizeof(i64));   // The FP64 register's value
+          if (~i64 >> 32)                        // Check for boxed NaN
+            return NAN;                          // Return NaN if it's not boxed
+          auto i32 = static_cast<uint32_t>(i64); // For endian independence
+          float fp32;
+          memcpy(&fp32, &i32, sizeof(fp32));     // The bottom half of FP64
+          return fp32;                           // Reinterpreted as FP32
+        } else {
+          return SPF[rs];                        // The FP32 register's value
+        }
+      }
+
+      /// SetFP32: Set a specific FP register to a 32-bit float value
+      void SetFP32(const RevFeature* F, size_t rd, float value)
+      {
+        if( F->HasD() ){
+          uint32_t i32;
+          memcpy(&i32, &value, sizeof(i32));                 // The FP32 value
+          uint64_t i64 = uint64_t{i32} | ~uint64_t{0} << 32; // Boxed NaN value
+          memcpy(&DPF[rd], &i64, sizeof(DPF[rd]));           // Store in FP64 register
+        } else {
+          SPF[rd] = value;                                   // Store in FP32 register
+        }
+      }
+
+      /// fclass: Return FP classification like the RISC-V fclass instruction
+      // See: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
+      // Because quiet and signaling NaNs are not distinguished by the C++ standard, an
+      // additional argument has been added to disambiguate between quiet and signaling
+      // NaNs. The argument will determine whether it's a quiet or signaling NaN.
+      template<typename T>
+      unsigned fclass(T val, bool quietNaN = true) const {
+        switch(std::fpclassify(val)){
+        case FP_INFINITE:
+          return std::signbit(val) ? 1 : 1 << 7;
+        case FP_NAN:
+          return quietNaN ? 1 << 9 : 1 << 8;
+        case FP_NORMAL:
+          return std::signbit(val) ? 1 << 1 : 1 << 6;
+        case FP_SUBNORMAL:
+          return std::signbit(val) ? 1 << 2 : 1 << 5;
+        case FP_ZERO:
+          return std::signbit(val) ? 1 << 3 : 1 << 4;
+        default:
+          return 0;
+        }
+      }
+    };                        ///< RevProc: register file construct
+
+    inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+    inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+
+    enum RevInstF : int {    ///< Rev CPU Instruction Formats
+      RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format
+      RVTypeR       = 1,     ///< RevInstF: R-Type
+      RVTypeI       = 2,     ///< RevInstF: I-Type
+      RVTypeS       = 3,     ///< RevInstF: S-Type
+      RVTypeU       = 4,     ///< RevInstF: U-Type
+      RVTypeB       = 5,     ///< RevInstF: B-Type
+      RVTypeJ       = 6,     ///< RevInstF: J-Type
+      RVTypeR4      = 7,     ///< RevInstF: R4-Type for AMOs
       // -- Compressed Formats
-      RVCTypeCR     = 10, ///< RevInstF: Compressed CR-Type
-      RVCTypeCI     = 11, ///< RevInstF: Compressed CI-Type
-      RVCTypeCSS    = 12, ///< RevInstF: Compressed CSS-Type
-      RVCTypeCIW    = 13, ///< RevInstF: Compressed CIW-Type
-      RVCTypeCL     = 14, ///< RevInstF: Compressed CL-Type
-      RVCTypeCS     = 15, ///< RevInstF: Compressed CS-Type
-      RVCTypeCA     = 16, ///< RevInstF: Compressed CA-Type
-      RVCTypeCB     = 17, ///< RevInstF: Compressed CB-Type
-      RVCTypeCJ     = 18  ///< RevInstF: Compressed CJ-Type
-    }RevInstF;            ///< Rev CPU Instruction Formats
+      RVCTypeCR     = 10,    ///< RevInstF: Compressed CR-Type
+      RVCTypeCI     = 11,    ///< RevInstF: Compressed CI-Type
+      RVCTypeCSS    = 12,    ///< RevInstF: Compressed CSS-Type
+      RVCTypeCIW    = 13,    ///< RevInstF: Compressed CIW-Type
+      RVCTypeCL     = 14,    ///< RevInstF: Compressed CL-Type
+      RVCTypeCS     = 15,    ///< RevInstF: Compressed CS-Type
+      RVCTypeCA     = 16,    ///< RevInstF: Compressed CA-Type
+      RVCTypeCB     = 17,    ///< RevInstF: Compressed CB-Type
+      RVCTypeCJ     = 18     ///< RevInstF: Compressed CJ-Type
+    };
 
-    typedef enum{
-      RegUNKNOWN    = 0,  ///< RevRegClass: Unknown register file
-      RegIMM        = 1,  ///< RevRegClass: Treat the reg class like an immediate: S-Format
-      RegGPR        = 2,  ///< RevRegClass: GPR reg file
-      RegCSR        = 3,  ///< RevRegClass: CSR reg file
-      RegFLOAT      = 4   ///< RevRegClass: Float register file
-    }RevRegClass;         ///< Rev CPU Register Classes
+    enum RevRegClass : int { ///< Rev CPU Register Classes
+      RegUNKNOWN    = 0,     ///< RevRegClass: Unknown register file
+      RegIMM        = 1,     ///< RevRegClass: Treat the reg class like an immediate: S-Format
+      RegGPR        = 2,     ///< RevRegClass: GPR reg file
+      RegCSR        = 3,     ///< RevRegClass: CSR reg file
+      RegFLOAT      = 4      ///< RevRegClass: Float register file
+    };
 
-    typedef enum{
-      FUnk          = 0,  ///< RevRegClass: Imm12 is not used
-      FImm          = 1,  ///< RevRegClass: Imm12 is an immediate
-      FEnc          = 2,  ///< RevRegClass: Imm12 is an encoding value
-      FVal          = 3   ///< RevRegClass: Imm12 is an incoming register value
-    }RevImmFunc;          ///< Rev Immediate Values
+    enum RevImmFunc : int {  ///< Rev Immediate Values
+      FUnk          = 0,     ///< RevRegClass: Imm12 is not used
+      FImm          = 1,     ///< RevRegClass: Imm12 is an immediate
+      FEnc          = 2,     ///< RevRegClass: Imm12 is an encoding value
+      FVal          = 3      ///< RevRegClass: Imm12 is an incoming register value
+    };
 
     /*! \struct RevInst
      *  \brief Rev decoded instruction
@@ -327,7 +308,7 @@ namespace SST{
      * following a successful crack + decode
      *
      */
-    typedef struct{
+    struct RevInst {
       uint8_t opcode;       ///< RevInst: opcode
       uint8_t funct2;       ///< RevInst: compressed funct2 value
       uint8_t funct3;       ///< RevInst: funct3 value
@@ -349,10 +330,17 @@ namespace SST{
       bool compressed;      ///< RevInst: determines if the instruction is compressed
       uint32_t cost;        ///< RevInst: the cost to execute this instruction, in clock cycles
       unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
-    }RevInst;
+
+      ///< RevInst: Sign-extended immediate value
+      constexpr auto ImmSignExt(size_t bits) const {
+        auto tmp = imm & uint32_t{1} << (bits-1) ? imm | ~uint32_t{0} << (bits-1) : imm;
+        // This needs to be signed so that it sign-extends when mixed with uint64_t
+        return static_cast<int32_t>(tmp);
+      }
+    };
 
     /// RevInstEntry: Holds the compressed index to normal index mapping
-    static std::map<uint8_t,uint8_t> CRegMap =
+    inline std::map<uint8_t,uint8_t> CRegMap =
     {
       {0b000,8},
       {0b001,9},
@@ -364,47 +352,25 @@ namespace SST{
       {0b111,15}
     };
 
-    class RevInstDefaults {
-      public:
-      uint8_t     opcode;
-      uint32_t    cost;
-      uint8_t     funct2;     // compressed only
-      uint8_t     funct3;
-      uint8_t     funct4;     // compressed only
-      uint8_t     funct6;     // compressed only
-      uint8_t     funct7;
-      uint16_t    offset;     // compressed only
-      uint16_t    jumpTarget; // compressed only
-      RevRegClass rdClass;
-      RevRegClass rs1Class;
-      RevRegClass rs2Class;
-      RevRegClass rs3Class;
-      uint16_t    imm12;
-      RevImmFunc  imm;
-      RevInstF    format;
-      bool        compressed;
-      uint8_t     fpcvtOp;
-
-      RevInstDefaults(){
-        opcode    = 0b00000000;
-        cost      = 1;
-        funct2    = 0b000;      // compressed only
-        funct3    = 0b000;
-        funct4    = 0b000;      // compressed only
-        funct6    = 0b000;      // compressed only
-        funct7    = 0b0000000;
-        offset    = 0b0000000;  // compressed only
-        jumpTarget= 0b0000000;  // compressed only
-        rdClass   = RegGPR;
-        rs1Class  = RegGPR;
-        rs2Class  = RegGPR;
-        rs3Class  = RegUNKNOWN;
-        imm12     = 0b000000000000;
-        imm       = FUnk;
-        format    = RVTypeR;
-        compressed = false;
-        fpcvtOp  = 0b00000;    // overloaded rs2 field for R-type FP instructions
-      }
+    struct RevInstDefaults {
+      uint8_t     opcode      = 0b00000000;
+      uint32_t    cost        = 1;
+      uint8_t     funct2      = 0b000;      // compressed only
+      uint8_t     funct3      = 0b000;
+      uint8_t     funct4      = 0b000;      // compressed only
+      uint8_t     funct6      = 0b000;      // compressed only
+      uint8_t     funct7      = 0b0000000;
+      uint16_t    offset      = 0b0000000;  // compressed only
+      uint16_t    jumpTarget  = 0b0000000;  // compressed only
+      RevRegClass rdClass     = RegGPR;
+      RevRegClass rs1Class    = RegGPR;
+      RevRegClass rs2Class    = RegGPR;
+      RevRegClass rs3Class    = RegUNKNOWN;
+      uint16_t    imm12       = 0b000000000000;
+      RevImmFunc  imm         = FUnk;
+      RevInstF    format      = RVTypeR;
+      bool        compressed  = false;
+      uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
     };
 
     /*! \struct RevInstEntry

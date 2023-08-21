@@ -22,12 +22,16 @@
 #include <time.h>
 #include <random>
 #include <mutex>
+#include <cinttypes>
+#include <cstddef>
 #include <tuple>
+#include <unordered_map>
+#include <list>
+#include <memory>
+#include <utility>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
-#include <sst/core/interfaces/stdMem.h>
+#include "SST.h"
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -43,21 +47,21 @@
 
 #define _STACK_SIZE_ (1024*1024*sizeof(char))
 
-using namespace SST::RevCPU;
-
 namespace SST {
   namespace RevCPU {
 
     class RevMem {
     public:
       /// RevMem: standard constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output );
+      RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output );
 
       /// RevMem: standard memory controller constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
+      RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
 
       /// RevMem: standard destructor
-      ~RevMem();
+      ~RevMem(){
+        delete[] physMem;
+      }
 
       /* Virtual Memory Blocks  */
       class MemSegment {
@@ -71,7 +75,7 @@ namespace SST {
           uint64_t getBaseAddr() const { return BaseAddr; }
           uint64_t getSize() const { return Size; }
 
-          void setBaseAddr(uint64_t baseAddr) { 
+          void setBaseAddr(uint64_t baseAddr) {
             BaseAddr = baseAddr;
             if( Size ){
               TopAddr = Size + BaseAddr;
@@ -96,10 +100,12 @@ namespace SST {
 
       // Custom Print Function
       friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
-        std::string State = "| Free |";
+        const char* State = "| Free |";
         if( !obj.IsFree ){
-          State = "| Allocated | "; 
+          State = "| Allocated | ";
         }
+
+        // TODO: Clarify why std::cout is used for streaming instead of os
         std::cout << "---------------------------------------------------------------" << std::endl;
         return os << State << " | 0x" << std::hex << obj.getBaseAddr() << " | 0x" << std::hex << obj.getTopAddr() << " | Size = " << std::dec << obj.getSize();
       }
@@ -111,7 +117,7 @@ namespace SST {
           bool IsFree = false;
           // Potentially add a pointer to the previous segment and next segment
           // but this may not be needed if we have the vector that is allocated sequentially
-          // and when a segment is freed it's not removed, its freeness is 
+          // and when a segment is freed it's not removed, its freeness is
       };
 
       /// RevMem: determine if there are any outstanding requests
@@ -128,7 +134,7 @@ namespace SST {
 
       /// RevMem: set the stack_top address
       void SetStackTop(uint64_t Addr) { stacktop = Addr; }
- 
+
       /// RevMem: get the stack_top address
       uint64_t GetStackBottom() { return stacktop - _STACK_SIZE_; }
 
@@ -136,7 +142,7 @@ namespace SST {
       bool FenceMem(unsigned Hart);
 
       /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
-      unsigned getLineSize(){ if( ctrl ){return ctrl->getLineSize();}else{return 64;} }
+      unsigned getLineSize(){ return ctrl ? ctrl->getLineSize() : 64;}
 
       // ----------------------------------------------------
       // ---- Base Memory Interfaces
@@ -163,7 +169,7 @@ namespace SST {
       template <typename T>
       bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
                     StandardMem::Request::flags_t flags){
-        return ReadMem(Hart, Addr, sizeof(T), (void *)(Target), flags);
+        return ReadMem(Hart, Addr, sizeof(T), Target, flags);
       }
 
       ///  RevMem: template LOAD RESERVE memory interface
@@ -171,7 +177,7 @@ namespace SST {
       bool LR( unsigned Hart, uint64_t Addr, T *Target,
                uint8_t aq, uint8_t rl,
                StandardMem::Request::flags_t flags){
-        return LRBase(Hart, Addr, sizeof(T), (void *)(Target), aq, rl, flags);
+        return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, flags);
       }
 
       ///  RevMem: template STORE CONDITIONAL memory interface
@@ -179,14 +185,14 @@ namespace SST {
       bool SC( unsigned Hart, uint64_t Addr, T *Data, T *Target,
                uint8_t aq, uint8_t rl,
                StandardMem::Request::flags_t flags){
-        return SCBase(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), aq, rl, flags);
+        return SCBase(Hart, Addr, sizeof(T), Data, Target, aq, rl, flags);
       }
 
       /// RevMem: template AMO memory interface
       template <typename T>
       bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
                    StandardMem::Request::flags_t flags){
-        return AMOMem(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), flags);
+        return AMOMem(Hart, Addr, sizeof(T), Data, Target, flags);
       }
 
       /// RevMem: DEPRECATED: Read uint8 from the target memory location
@@ -274,13 +280,13 @@ namespace SST {
       void SetMaxHeapSize(const unsigned MaxHeapSize){ maxHeapSize = MaxHeapSize; }
 
       /// RevMem: Get memSize value set in .py file
-      const uint64_t GetMemSize(){ return memSize; }
-  
+      uint64_t GetMemSize() const { return memSize; }
+
       ///< RevMem: default memory size allocated to new threads (Unimplemented)
-      std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
+      std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; }
 
       /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
-      uint64_t AddMemSeg(const uint64_t SegSize);
+      // uint64_t AddMemSeg(const uint64_t SegSize); // TODO: Not implemented
 
       /// RevMem: Add new MemSegment (starting at BaseAddr)
       uint64_t AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize);
@@ -295,15 +301,15 @@ namespace SST {
       uint64_t AllocMem(uint64_t Size);
 
       /// RevMem: Shrinks segment (Only moves top addr & marks upper part as free)
-      uint64_t ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize);
-      
+      void ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize);
+
       ///< RevMem: default memory size allocated to new threads
-      uint64_t DefaultThreadMemSize = 4*1024*1024;    
+      uint64_t DefaultThreadMemSize = 4*1024*1024;
 
       void InitHeap(const uint64_t& EndOfStaticData);
       void SetHeapStart(uint64_t HeapStart){ heapstart = HeapStart; }
       void SetHeapEnd(uint64_t HeapEnd){ heapend = HeapEnd; }
-      const uint64_t GetHeapEnd(){ return heapend; }
+      uint64_t GetHeapEnd() const { return heapend; }
 
       uint64_t ExpandHeap(uint64_t Size);
 
@@ -322,15 +328,15 @@ namespace SST {
     RevMemStats memStats;
 
     protected:
-      char *physMem;                          ///< RevMem: memory container
+      char *physMem = nullptr;                 ///< RevMem: memory container
 
     private:
       std::unordered_map<uint64_t, std::pair<uint64_t, std::list<uint64_t>::iterator>> TLB;
       std::list<uint64_t> LRUQueue; ///< RevMem: List ordered by last access for implementing LRU policy when TLB fills up
       std::vector<std::shared_ptr<MemSegment>> MemSegs;
-      unsigned long memSize;        ///< RevMem: size of the target memory
-      unsigned tlbSize;             ///< RevMem: size of the target memory
-      unsigned maxHeapSize;             ///< RevMem: size of the target memory
+      uint64_t memSize;             ///< RevMem: size of the target memory
+      uint64_t tlbSize;             ///< RevMem: size of the target memory
+      uint64_t maxHeapSize;         ///< RevMem: size of the target memory
       RevOpts *opts;                ///< RevMem: options object
       RevMemCtrl *ctrl;             ///< RevMem: memory controller object
       SST::Output *output;          ///< RevMem: output handler
@@ -347,8 +353,8 @@ namespace SST {
 
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
       uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
-      uint32_t                                      addrShift; ///< RevMem: Bits to shift to caclulate page of address 
-      uint32_t                                      nextPage;  ///< RevMem: next physical page to be allocated. Will result in index 
+      uint32_t                                      addrShift; ///< RevMem: Bits to shift to caclulate page of address
+      uint32_t                                      nextPage;  ///< RevMem: next physical page to be allocated. Will result in index
                                                                     /// nextPage * pageSize into physMem
 
     uint64_t heapend;        ///< RevMem: top of the stack

@@ -14,214 +14,97 @@
 #include "../RevInstTable.h"
 #include "../RevExt.h"
 
-using namespace SST::RevCPU;
+#include <limits>
+#include <vector>
 
 namespace SST{
   namespace RevCPU{
     class RV32M : public RevExt {
-
-      static uint64_t mulhu_impl(uint64_t A, uint64_t B){
-        uint64_t t;
-        uint32_t y1, y2, y3;
-        uint64_t a0 = (uint32_t)A, a1 = A >> 32;
-        uint64_t b0 = (uint32_t)B, b1 = B >> 32;
-
-        //Compute partial products
-        __uint128_t pp1 = a0*b0;
-        __uint128_t pp2 = a1*b0;
-        __uint128_t pp3 = a0*b1;
-        __uint128_t pp4 = a1*b1;
-
-        __uint128_t sum = pp1 + (pp2 << 32) + (pp3 << 32) + (pp4 << 64);
-
-        return (uint64_t)(sum >> 64);
-      }
-
-      static int64_t mulh_impl(int64_t A, int64_t B){
-        int negate = (A < 0) != (B < 0);
-        uint64_t res = mulhu_impl(A < 0 ? -A : A, B < 0 ? -B : B);
-        return negate ? ~res + (A * B == 0) : res;
-      }
-
-      static int64_t mulhsu_impl(int64_t A, uint64_t B){
-        int negate = A < 0;
-        uint64_t res = mulhu_impl(A < 0 ? -A : A, B);
-        return negate ? ~res + (A * B == 0 ) : res;
-      }
-
-      static bool mul(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      /// Computes the LOWER half of multiplication, which not depend on signedness
+      static bool mul(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32[Inst.rd] = dt_u32(td_u32(R->RV32[Inst.rs1],32) * td_u32(R->RV32[Inst.rs2],32),32);
-          R->RV32_PC += Inst.instSize;
+          R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) * R->GetX<uint32_t>(F, Inst.rs2));
         }else{
-          R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],64) * td_u64(R->RV64[Inst.rs2],64),64);
-          R->RV64_PC += Inst.instSize;
+          R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) * R->GetX<uint64_t>(F, Inst.rs2));
         }
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool mulh(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      // Computes the UPPER half of multiplication, based on signedness
+      template<bool rs1_is_signed, bool rs2_is_signed>
+      static bool uppermul(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32[Inst.rd] = dt_u32(mulh_impl(td_u32(R->RV32[Inst.rs1],32),td_u32(R->RV32[Inst.rs2],32))>>32,32);
-          R->RV32_PC += Inst.instSize;
+          uint32_t rs1 = R->GetX<uint32_t>(F, Inst.rs1);
+          uint32_t rs2 = R->GetX<uint32_t>(F, Inst.rs2);
+          uint32_t mul = rs1 * int64_t(rs2) >> 32;
+          if (rs1_is_signed && rs1 & (uint32_t{1}<<31)) mul -= rs2;
+          if (rs2_is_signed && rs2 & (uint32_t{1}<<31)) mul -= rs1;
+          R->SetX(F, Inst.rd, mul);
         }else{
-          R->RV64[Inst.rd] = dt_u64(mulh_impl(td_u64(R->RV64[Inst.rs1],64),td_u64(R->RV64[Inst.rs2],64)),64);
-          R->RV64_PC += Inst.instSize;
+          uint64_t rs1 = R->GetX<uint64_t>(F, Inst.rs1);
+          uint64_t rs2 = R->GetX<uint64_t>(F, Inst.rs2);
+          uint64_t mul = rs1 * __int128(rs2) >> 64;
+          if (rs1_is_signed && rs1 & (uint64_t{1}<<63)) mul -= rs2;
+          if (rs2_is_signed && rs2 & (uint64_t{1}<<63)) mul -= rs1;
+          R->SetX(F, Inst.rd, mul);
         }
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool mulhsu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      // Multiplication High instructions based on signedness of arguments
+      static constexpr auto& mulh   = uppermul<true,  true>;
+      static constexpr auto& mulhu  = uppermul<false, false>;
+      static constexpr auto& mulhsu = uppermul<true,  false>;
+
+      template<typename i32_t, typename i64_t>
+      static bool div_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32[Inst.rd] = dt_u32((td_u32(R->RV32[Inst.rs1],32)*td_u32(R->RV32[Inst.rs2],32))>>32,32);
-          R->RV32_PC += Inst.instSize;
-        }else{
-          //R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),td_u64(R->RV64[Inst.rs2],32)),32);
-          R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),R->RV64[Inst.rs2]),32);
-          R->RV64_PC += Inst.instSize;
+          i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
+          i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
+          i64_t res = std::numeric_limits<i32_t>::is_signed &&
+            rs1 == std::numeric_limits<i32_t>::min() &&
+            rs2 == -i32_t{1} ? rs1 : rs2 ? rs1 / rs2 : -i32_t{1};
+          R->SetX(F, Inst.rd, res);
+        } else {
+          i64_t rs1 = R->GetX<i64_t>(F, Inst.rs1);
+          i64_t rs2 = R->GetX<i64_t>(F, Inst.rs2);
+          i64_t res =  std::numeric_limits<i64_t>::is_signed &&
+            rs1 ==  std::numeric_limits<i64_t>::min() &&
+            rs2 == -i64_t{1} ? rs1 : rs2 ? rs1 / rs2 : -i64_t{1};
+          R->SetX(F, Inst.rd, res);
         }
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool mulhu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+      static constexpr auto& div  = div_impl<int32_t,  int64_t>;
+      static constexpr auto& divu = div_impl<uint32_t, uint64_t>;
+
+      template<typename i32_t, typename i64_t>
+      static bool rem_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32[Inst.rd] = dt_u32((td_u32(R->RV32[Inst.rs1],32)*td_u32(R->RV32[Inst.rs2],32))>>32,32);
-          R->RV32_PC += Inst.instSize;
-        }else{
-          //R->RV64[Inst.rd] = dt_u64(mulhu_impl(td_u64(R->RV64[Inst.rs1],64),td_u64(R->RV64[Inst.rs2],32)),64);
-          R->RV64[Inst.rd] = dt_u64(mulhu_impl(R->RV64[Inst.rs1], R->RV64[Inst.rs2]),64);
-          R->RV64_PC += Inst.instSize;
+          i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
+          i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
+          i32_t res = std::numeric_limits<i32_t>::is_signed &&
+            rs1 == std::numeric_limits<i32_t>::min() &&
+            rs2 == -i32_t{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
+          R->SetX(F, Inst.rd, res);
+        } else {
+          i64_t rs1 = R->GetX<i64_t>(F, Inst.rs1);
+          i64_t rs2 = R->GetX<i64_t>(F, Inst.rs2);
+          i64_t res = std::numeric_limits<i64_t>::is_signed &&
+            rs1 == std::numeric_limits<i64_t>::min() &&
+            rs2 == -i64_t{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
+          R->SetX(F, Inst.rd, res);
         }
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool div(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( F->IsRV32() ){
-          int32_t lhs = td_u32(R->RV32[Inst.rs1],32);
-          int32_t rhs = td_u32(R->RV32[Inst.rs2],32);
-          if( rhs == 0 ){
-            R->RV32[Inst.rd] = UINT32_MAX;
-            R->RV32_PC += Inst.instSize;
-            return true;
-          }else if( (lhs == INT32_MIN) &&
-                    ((int32_t)(rhs) == -1) ){
-            R->RV32[Inst.rd] = dt_u32(lhs,32);
-            R->RV32_PC += Inst.instSize;
-            return true;
-          }
-          R->RV32[Inst.rd] = dt_u32(lhs/rhs,32);
-          R->RV32_PC += Inst.instSize;
-        }else{
-          int64_t lhs = td_u64(R->RV64[Inst.rs1],64);
-          int64_t rhs = td_u64(R->RV64[Inst.rs2],64);
-          if( rhs == 0 ){
-            R->RV64[Inst.rd] = UINT64_MAX;
-            R->RV64_PC += Inst.instSize;
-            return true;
-          }else if( (lhs == INT64_MIN) &&
-                    ((int64_t)(rhs) == -1) ){
-            R->RV64[Inst.rd] = dt_u64(lhs,64);
-            R->RV64_PC += Inst.instSize;
-            return true;
-          }
-          R->RV64[Inst.rd] = dt_u64(lhs/rhs,64);
-          R->RV64_PC += Inst.instSize;
-        }
-        return true;
-      }
-
-      static bool divu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( F->IsRV32() ){
-          uint32_t lhs = R->RV32[Inst.rs1];
-          uint32_t rhs = R->RV32[Inst.rs2];
-          if( rhs == 0 ){
-            R->RV32[Inst.rd] = UINT32_MAX;
-            R->RV32_PC += Inst.instSize;
-            return true;
-          }
-          SEXT(R->RV32[Inst.rd], lhs/rhs, 32);
-          R->RV32_PC += Inst.instSize;
-        }else{
-          uint64_t lhs = R->RV64[Inst.rs1];
-          uint64_t rhs = R->RV64[Inst.rs2];
-          if( rhs == 0 ){
-            R->RV64[Inst.rd] = UINT64_MAX;
-            R->RV64_PC += Inst.instSize;
-            return true;
-          }
-          SEXT(R->RV64[Inst.rd], lhs/rhs, 64);
-          R->RV64_PC += Inst.instSize;
-        }
-        return true;
-      }
-
-      static bool rem(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( F->IsRV32() ){
-          int32_t lhs = td_u32(R->RV32[Inst.rs1],32);
-          int32_t rhs = td_u32(R->RV32[Inst.rs2],32);
-          if( rhs == 0 ){
-            R->RV32[Inst.rd] = dt_u32(lhs,32);
-            R->RV32_PC += Inst.instSize;
-            return true;
-          }else if( (lhs == INT32_MIN) &&
-                    ((int32_t)(rhs) == -1) ){
-            R->RV32[Inst.rd] = 0;
-            R->RV32_PC += Inst.instSize;
-            return true;
-          }
-          R->RV32[Inst.rd] = dt_u32(lhs%rhs,32);
-          R->RV32_PC += Inst.instSize;
-        }else{
-          int64_t lhs = td_u64(R->RV64[Inst.rs1],64);
-          int64_t rhs = td_u64(R->RV64[Inst.rs2],64);
-          if( rhs == 0 ){
-            R->RV64[Inst.rd] = dt_u64(lhs,64);
-            R->RV64_PC += Inst.instSize;
-            return true;
-          }else if( (lhs == INT64_MIN) &&
-                    ((int64_t)(rhs) == -1) ){
-            R->RV64[Inst.rd] = 0;
-            R->RV64_PC += Inst.instSize;
-            return true;
-          }
-          R->RV64[Inst.rd] = dt_u64(lhs%rhs,64);
-          R->RV64_PC += Inst.instSize;
-        }
-        return true;
-      }
-
-      static bool remu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        if( F->IsRV32() ){
-          uint32_t lhs = R->RV32[Inst.rs1];
-          uint32_t rhs = R->RV32[Inst.rs2];
-          ZEXTI(lhs,32);
-          ZEXTI(rhs,32);
-          uint64_t signRhs = (R->RV64[Inst.rs2] & 0x80000000) >> 31;
-          if(( rhs == 0 ) || (signRhs > 0)){
-            //SEXT(R->RV32[Inst.rd], R->RV32[Inst.rs1], 32);
-            R->RV32[Inst.rd] = R->RV32[Inst.rs1];
-            R->RV32_PC += Inst.instSize;
-            return true;
-          }
-          SEXT(R->RV32[Inst.rd], lhs%rhs, 32);
-          R->RV32_PC += Inst.instSize;
-        }else{
-          uint64_t lhs = R->RV64[Inst.rs1];
-          uint64_t rhs = R->RV64[Inst.rs2];
-          uint64_t signRhs = (R->RV64[Inst.rs2] & 0x8000000000000000) >> 63;
-          if(( rhs == 0 ) || (signRhs > 0)){
-            //SEXT(R->RV64[Inst.rd], R->RV64[Inst.rs1], 64);
-            R->RV64[Inst.rd] = R->RV64[Inst.rs1];
-            R->RV64_PC += Inst.instSize;
-            return true;
-          }
-          uint64_t tmp = 0;
-          SEXT(tmp, lhs%rhs, 64);
-          R->RV64[Inst.rd] = tmp;
-          R->RV64_PC += Inst.instSize;
-        }
-        return true;
-      }
+      static constexpr auto& rem  = rem_impl<int32_t,  int64_t>;
+      static constexpr auto& remu = rem_impl<uint32_t, uint64_t>;
 
       // ----------------------------------------------------------------------
       //
@@ -258,7 +141,7 @@ namespace SST{
         }
 
       /// RV32M: standard destructor
-      ~RV32M() { }
+      ~RV32M() = default;
 
     }; // end class RV32I
   } // namespace RevCPU

@@ -18,12 +18,7 @@
 #include <unistd.h>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
-#include <sst/core/event.h>
-#include <sst/core/link.h>
-#include <sst/core/timeConverter.h>
-#include <sst/core/interfaces/simpleNetwork.h>
+#include "SST.h"
 
 // -- Rev Headers
 #include "RevOpts.h"
@@ -74,7 +69,7 @@ namespace SST {
       }PanOpcode;
 
       /// panNicEvent: standard constructor
-      panNicEvent(std::string name)
+      explicit panNicEvent(std::string name)
         : Event(),
         SrcName(name),
           Tag(0), Opcode(PanRsvd), VarArgs(0),
@@ -279,7 +274,7 @@ namespace SST {
       SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::panNicAPI)
 
       /// panNicAPI: default constructor
-      panNicAPI(ComponentId_t id, Params& params)
+      panNicAPI(ComponentId_t id, const Params& params)
         : SubComponent(id), isHost(false), isReserved(false), Token(0x00) { }
 
       /// panNicAPI: set whether this device is a host
@@ -385,7 +380,7 @@ namespace SST {
       )
 
       /// PanNet: default constructor
-      PanNet(ComponentId_t id, Params& params);
+      PanNet(ComponentId_t id, const Params& params);
 
       /// PanNet: default destructor
       virtual ~PanNet();

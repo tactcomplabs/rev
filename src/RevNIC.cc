@@ -23,7 +23,7 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
   registerClock(nicClock, new Clock::Handler<RevNIC>(this,&RevNIC::clockTick));
 
   // load the SimpleNetwork interfaces
-  iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1); 
+  iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1);
   if( !iFace ){
     // load the anonymous nic
     Params netparams;
