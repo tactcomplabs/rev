@@ -13,6 +13,7 @@
 
 #include "../RevInstTable.h"
 #include "../RevExt.h"
+#include <cmath>
 
 using namespace SST::RevCPU;
 
@@ -60,13 +61,13 @@ namespace SST{
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
             //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+            M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (float *)(&R->DPF[Inst.rd]),
                     REVMEM_FLAGS(0));
             R->RV32_PC += Inst.instSize;
           }else{
             //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+            M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (float *)(&R->DPF[Inst.rd]),
                     REVMEM_FLAGS(0));
             R->RV64_PC += Inst.instSize;
@@ -74,13 +75,13 @@ namespace SST{
         }else{
           if( F->IsRV32() ){
             //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+            M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->SPF[Inst.rd],
                     REVMEM_FLAGS(0));
             R->RV32_PC += Inst.instSize;
           }else{
             //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
-            M->ReadVal<float>((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+            M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->SPF[Inst.rd],
                     REVMEM_FLAGS(0));
             R->RV64_PC += Inst.instSize;
@@ -93,18 +94,18 @@ namespace SST{
       static bool fsw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            M->WriteFloat((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->DPF[Inst.rs2]));
+            M->WriteFloat(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->DPF[Inst.rs2]));
             R->RV32_PC += Inst.instSize;
           }else{
-            M->WriteFloat((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->DPF[Inst.rs2]));
+            M->WriteFloat(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->DPF[Inst.rs2]));
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            M->WriteFloat((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->SPF[Inst.rs2]));
+            M->WriteFloat(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->SPF[Inst.rs2]));
             R->RV32_PC += Inst.instSize;
           }else{
-            M->WriteFloat((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->SPF[Inst.rs2]));
+            M->WriteFloat(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (float)(R->SPF[Inst.rs2]));
             R->RV64_PC += Inst.instSize;
           }
         }
@@ -113,8 +114,8 @@ namespace SST{
 
       static bool fmadds(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R->DPF[Inst.rd] = (float)((float)(R->DPF[Inst.rs1]) *
-                                   (float)(R->DPF[Inst.rs2]) +
+          R->DPF[Inst.rd] = (float)(((float)(R->DPF[Inst.rs1]) *
+                                   (float)(R->DPF[Inst.rs2])) +
                                    (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
@@ -122,7 +123,7 @@ namespace SST{
             R->RV64_PC += Inst.instSize;
           }
         }else{
-          R->SPF[Inst.rd] = R->SPF[Inst.rs1] * R->SPF[Inst.rs2] + R->SPF[Inst.rs3];
+          R->SPF[Inst.rd] = (R->SPF[Inst.rs1] * R->SPF[Inst.rs2]) + R->SPF[Inst.rs3];
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
           }else{
@@ -155,8 +156,8 @@ namespace SST{
 
       static bool fnmsubs(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R->DPF[Inst.rd] = (float)((-(float)(R->DPF[Inst.rs1])) *
-                                    (float)(R->DPF[Inst.rs2]) -
+          R->DPF[Inst.rd] = (float)((-((float)(R->DPF[Inst.rs1])) *
+                                    (float)(R->DPF[Inst.rs2])) +
                                     (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
@@ -164,7 +165,7 @@ namespace SST{
             R->RV64_PC += Inst.instSize;
           }
         }else{
-          R->SPF[Inst.rd] = (-R->SPF[Inst.rs1]) * R->SPF[Inst.rs2] - R->SPF[Inst.rs3];
+        R->SPF[Inst.rd] = (-(R->SPF[Inst.rs1]) * R->SPF[Inst.rs2]) + R->SPF[Inst.rs3];
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
           }else{
@@ -176,8 +177,8 @@ namespace SST{
 
       static bool fnmadds(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
-          R->DPF[Inst.rd] = (float)((-(float)(R->DPF[Inst.rs1])) *
-                                    (float)(R->DPF[Inst.rs2]) +
+          R->DPF[Inst.rd] = (float)(-(((float)(R->DPF[Inst.rs1])) *
+                                    (float)(R->DPF[Inst.rs2]) ) -
                                     (float)(R->DPF[Inst.rs3]));
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
@@ -185,7 +186,7 @@ namespace SST{
             R->RV64_PC += Inst.instSize;
           }
         }else{
-          R->SPF[Inst.rd] = (-R->SPF[Inst.rs1]) * R->SPF[Inst.rs2] + R->SPF[Inst.rs3];
+          R->SPF[Inst.rd] = (-(R->SPF[Inst.rs1]) * R->SPF[Inst.rs2]) - R->SPF[Inst.rs3];
           if( F->IsRV32() ){
             R->RV32_PC += Inst.instSize;
           }else{
@@ -341,16 +342,18 @@ namespace SST{
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1 << 31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1 << 31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
@@ -359,16 +362,18 @@ namespace SST{
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1 << 31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
             tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
-            tmp2 ^= ~(1<<31);
-            tmp |= (tmp2&(1<<31));
+            tmp2 &= (1<<31);
+            tmp2 ^= (1 << 31);
+            tmp |= tmp2;
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
@@ -382,32 +387,34 @@ namespace SST{
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
+            tmp2 &= (1<<31);
+            tmp2 = (tmp & (1 << 31)) ^ tmp2;
+            tmp = (tmp & ~(1<<31)) | tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint32_t));
-            tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
+            tmp2 &= (1<<31);
+            tmp2 = (tmp & (1 << 31)) ^ tmp2;
+            tmp = (tmp & ~(1<<31)) | tmp2;
             std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
             tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&tmp,&R->SPF[Inst.rs1],sizeof(uint32_t));
-            tmp &= ~(1<<31);
             std::memcpy(&tmp2,&R->SPF[Inst.rs2],sizeof(uint32_t));
-            tmp |= ((tmp & (1<<31) )^(tmp2 & (1<<31)));
+            tmp2 &= (1<<31);
+            tmp2 = (tmp & (1 << 31)) ^ tmp2;
+            tmp = (tmp & ~(1<<31)) | tmp2;
             std::memcpy(&R->SPF[Inst.rd],&tmp,sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
@@ -505,18 +512,18 @@ namespace SST{
       static bool fcvtwus(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            R->RV32[Inst.rd] = (uint32_t)((float)(R->DPF[Inst.rs1]));
+            R->RV32[Inst.rd] = (float)(R->DPF[Inst.rs1]) > 0.0 ? (uint32_t)((float)(R->DPF[Inst.rs1])) : 0;
             R->RV32_PC += Inst.instSize;
           }else{
-            R->RV64[Inst.rd] = (uint32_t)((float)(R->DPF[Inst.rs1]));
+            R->RV64[Inst.rd] = (float)(R->DPF[Inst.rs1]) > 0.0 ? (uint32_t)((float)(R->DPF[Inst.rs1])) : 0;
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            R->RV32[Inst.rd] = (uint32_t)((float)(R->SPF[Inst.rs1]));
+            R->RV32[Inst.rd] = (float)(R->SPF[Inst.rs1]) > 0.0 ? (uint32_t)((float)(R->SPF[Inst.rs1])) : 0;
             R->RV32_PC += Inst.instSize;
           }else{
-            R->RV64[Inst.rd] = (uint32_t)((float)(R->SPF[Inst.rs1]));
+            R->RV64[Inst.rd] = (float)(R->SPF[Inst.rs1]) > 0.0 ? (uint32_t)((float)(R->SPF[Inst.rs1])) : 0;
             R->RV64_PC += Inst.instSize;
           }
         }
@@ -530,7 +537,8 @@ namespace SST{
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&R->RV64[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
-            SEXTI(R->RV64[Inst.rd],32);
+            ZEXTI64(R->RV64[Inst.rd],32);
+            SEXTI64(R->RV64[Inst.rd],32);
             R->RV64_PC += Inst.instSize;
           }
         }else{
@@ -539,7 +547,8 @@ namespace SST{
             R->RV32_PC += Inst.instSize;
           }else{
             std::memcpy(&R->RV64[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
-            SEXTI(R->RV64[Inst.rd],32);
+            ZEXTI64(R->RV64[Inst.rd],32);
+            SEXTI64(R->RV64[Inst.rd],32);
             R->RV64_PC += Inst.instSize;
           }
         }
@@ -659,16 +668,39 @@ namespace SST{
 
       static bool fclasss(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         // see: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
+        uint32_t fpclass = 0;
+        float val = R->SPF[Inst.rs1];
+        switch (std::fpclassify(val)){
+          case FP_INFINITE:
+            fpclass = std::signbit(val) ? 1 : (1 << 7);
+            break;
+          case FP_NAN:
+            fpclass = (1 << 8);  //this should distinguish between sNaN and qNaN... but doesn't. Sorry.
+            break;
+          case FP_NORMAL:
+            fpclass = std::signbit(val) ? (1 << 1) : (1 << 6);
+            break;
+          case FP_SUBNORMAL:
+            fpclass = std::signbit(val) ? (1 << 2) : (1 << 5);
+            break;
+          case FP_ZERO:
+            fpclass = std::signbit(val) ? (1 << 3) : (1 << 4);
+            break;
+        }
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
+            R->RV32[Inst.rd] = fpclass; 
             R->RV32_PC += Inst.instSize;
           }else{
+            R->RV64[Inst.rd] = (uint64_t)(fpclass); 
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
+            R->RV32[Inst.rd] = fpclass; 
             R->RV32_PC += Inst.instSize;
           }else{
+            R->RV64[Inst.rd] = (uint64_t)(fpclass); 
             R->RV64_PC += Inst.instSize;
           }
         }
@@ -720,18 +752,18 @@ namespace SST{
       static bool fmvwx(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32D() ){
           if( F->IsRV32() ){
-            std::memcpy(&R->DPF[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->DPF[Inst.rd],&R->RV32[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->DPF[Inst.rd],&R->DPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->DPF[Inst.rd],&R->RV64[Inst.rs1],sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }else{
           if( F->IsRV32() ){
-            std::memcpy(&R->SPF[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->SPF[Inst.rd],&R->RV32[Inst.rs1],sizeof(float));
             R->RV32_PC += Inst.instSize;
           }else{
-            std::memcpy(&R->SPF[Inst.rd],&R->SPF[Inst.rs1],sizeof(float));
+            std::memcpy(&R->SPF[Inst.rd],&R->RV64[Inst.rs1],sizeof(float));
             R->RV64_PC += Inst.instSize;
           }
         }
@@ -774,15 +806,15 @@ namespace SST{
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fsgnjn.s %rd, %rs1, %rs2"	    ).SetOpcode( 0b1010011).SetFunct3( 0b001	).SetFunct7(0b0010000).Setrs2Class(RegFLOAT  ).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fsgnjns ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fsgnjx.s %rd, %rs1, %rs2"	    ).SetOpcode( 0b1010011).SetFunct3( 0b010	).SetFunct7(0b0010000).Setrs2Class(RegFLOAT  ).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fsgnjxs ).InstEntry},
 
-      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.w.s %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1100000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtws ).InstEntry},
-      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.wu.s %rd, %rs1"         	).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1100000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtwus ).InstEntry},
+      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.w.s %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1100000).SetfpcvtOp(0b00000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtws ).InstEntry},
+      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.wu.s %rd, %rs1"         	).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1100000).SetfpcvtOp(0b00001).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtwus ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fmv.x.s %rd, %rs1"	            ).SetOpcode( 0b1010011).SetFunct3( 0b000	).SetFunct7(0b1110000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fmvxw ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("feq.s %rd, %rs1, %rs2"	        ).SetOpcode( 0b1010011).SetFunct3( 0b010	).SetFunct7(0b1010000).Setrs2Class(RegFLOAT  ).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&feqs ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("flt.s %rd, %rs1, %rs2"	        ).SetOpcode( 0b1010011).SetFunct3( 0b001	).SetFunct7(0b1010000).Setrs2Class(RegFLOAT  ).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&flts ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fle.s %rd, %rs1, %rs2"	        ).SetOpcode( 0b1010011).SetFunct3( 0b000	).SetFunct7(0b1010000).Setrs2Class(RegFLOAT  ).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fles ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fclass.s %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b001	).SetFunct7(0b1110000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fclasss ).InstEntry},
-      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.s.w %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1101000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtsw ).InstEntry},
-      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.s.wu %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1101000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtswu ).InstEntry},
+      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.s.w %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1101000).SetfpcvtOp(0b00000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtsw ).InstEntry},
+      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.s.wu %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1101000).SetfpcvtOp(0b00001).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtswu ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fmv.w.x %rd, %rs1"	            ).SetOpcode( 0b1010011).SetFunct3( 0b000	).SetFunct7(0b1111000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fmvwx ).InstEntry}
       };
 
