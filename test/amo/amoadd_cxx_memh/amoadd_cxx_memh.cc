@@ -3,7 +3,8 @@
 
 int main() {
         std::atomic<int> a;
-        a = 0;
-        a++;
+        a = 1;  //amoswap
         assert(a == 1);
+        a++;    //amoadd
+        assert(a == 2);
 }

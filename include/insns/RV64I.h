@@ -94,6 +94,7 @@ namespace SST{
         uint32_t val = 0;
         M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &val,
+                    Inst.hazard,
                     REVMEM_FLAGS(RevCPU::RevFlag::F_ZEXT64));
         R->RV64[Inst.rd] = 0x00ULL;
         R->RV64[Inst.rd] |= (uint64_t)(val);
@@ -107,6 +108,7 @@ namespace SST{
         //R->RV64[Inst.rd] = M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
         M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->RV64[Inst.rd],
+                    Inst.hazard,
                     REVMEM_FLAGS(0x00));
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;

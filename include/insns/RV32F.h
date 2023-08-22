@@ -63,12 +63,14 @@ namespace SST{
             //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
             M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (float *)(&R->DPF[Inst.rd]),
+                    Inst.hazard,
                     REVMEM_FLAGS(0));
             R->RV32_PC += Inst.instSize;
           }else{
             //R->DPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
             M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (float *)(&R->DPF[Inst.rd]),
+                    Inst.hazard,
                     REVMEM_FLAGS(0));
             R->RV64_PC += Inst.instSize;
           }
@@ -77,12 +79,14 @@ namespace SST{
             //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
             M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->SPF[Inst.rd],
+                    Inst.hazard,
                     REVMEM_FLAGS(0));
             R->RV32_PC += Inst.instSize;
           }else{
             //R->SPF[Inst.rd] = M->ReadFloat((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
             M->ReadVal<float>(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->SPF[Inst.rd],
+                    Inst.hazard,
                     REVMEM_FLAGS(0));
             R->RV64_PC += Inst.instSize;
           }

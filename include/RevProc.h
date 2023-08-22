@@ -26,6 +26,7 @@
 #include <random>
 #include <queue>
 #include <functional>
+#include <tuple>
 #include <inttypes.h>
 
 // -- RevCPU Headers
@@ -116,20 +117,20 @@ namespace SST{
       RevMem& GetMem(){ return *mem; }
 
       /// RevProc: Add a RevThreadCtx to the Proc's ThreadTable
-      bool AddCtx(RevThreadCtx& Ctx); 
-  
+      bool AddCtx(RevThreadCtx& Ctx);
+
       /// RevProc: Create a new RevThreadCtx w/ Parent is currently executing thread
-      uint32_t CreateChildCtx(); 
+      uint32_t CreateChildCtx();
 
       /// RevProc: Get the ThreadState of a thread (pid) from the ThreadTable (Unused)
       ThreadState GetThreadState(uint32_t pid);
-  
+
       /// RevProc: Set the ThreadState of a thread (pid) from the ThreadTable (Unused)
       bool SetState(ThreadState, uint32_t pid);
 
       /// RevProc: Used to pause RevThreadCtx w/ PID = pid (Unused)
       bool PauseThread(uint32_t pid);
-  
+
       /// RevProc: Used to ready RevThreadCtx w/ PID = pid (Unused)
       bool ReadyThread(uint32_t pid);
 
@@ -144,7 +145,7 @@ namespace SST{
 
       /// RevProc: Retires currently executing thread & then swaps to its parent. If no parent terminates program
       uint32_t RetireAndSwap(); // Returns new pid
-  
+
       /// RevProc: Used to raise an exception indicating a thread switch is coming (NewPID = PID of Ctx to switch to)
       void CtxSwitchAlert(uint32_t NewPID) { NextPID=NewPID;PendingCtxSwitch = true; }
 
@@ -153,7 +154,7 @@ namespace SST{
 
       ///< RevProc: Returns pointer to current ctx loaded into HartToExec
       std::shared_ptr<RevThreadCtx> HartToExecCtx();
-  
+
       ///< RevProc: Returns pointer to current ctx loaded into HartToDecode
       std::shared_ptr<RevThreadCtx> HartToDecodeCtx();
   
@@ -519,16 +520,16 @@ namespace SST{
 
       /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
       std::unordered_map<uint32_t, std::function<void(RevProc*)>> Ecalls;
-      
+
       /// RevProc: Initialize all of the ecalls inside the above table
       void InitEcallTable();
-      
+
       /// RevProc: Execute the Ecall based on the code loaded in RegFile->RV64_SCAUSE
       void ExecEcall();
 
       /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
       RevRegFile* GetRegFile(uint16_t HartID);
-      
+
       /// RevProc: Vector of PIDs where index of ActivePIDs is the pid of the RevThreadCtx loaded into Hart #Idx
       std::vector<uint32_t> ActivePIDs;
 
@@ -538,7 +539,10 @@ namespace SST{
 
       std::vector<RevExt *> Extensions;           ///< RevProc: vector of enabled extensions
 
-      std::queue<std::pair<uint16_t, RevInst>>   Pipeline; ///< RevProc: pipeline of instructions - bypass paths not supported
+#define PIPE_HART     0
+#define PIPE_INST     1
+#define PIPE_HAZARD   2
+      std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
 
       std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
       std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
