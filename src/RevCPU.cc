@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevCPU.h"
+#include <cmath>
 
 const char *splash_msg = "\
 \n\
@@ -67,6 +68,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   numCores = params.find<unsigned>("numCores", "1");
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
+  output.verbose(CALL_INFO, 1, 0, "Building Rev with %d cores\n", numCores);
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");
@@ -210,6 +212,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
       output.verbose(CALL_INFO, 1, 0, "Warning: memory faults cannot be enabled with memHierarchy support\n");
   }
 
+  // Set TLB Size
+  const unsigned long tlbSize = params.find<unsigned long>("tlbSize", 512);
+  Mem->SetTLBSize(tlbSize);
+
+  // Set max heap size
+  const unsigned long maxHeapSize = params.find<unsigned long>("maxHeapSize", std::floor((memSize/4)));
+  Mem->SetMaxHeapSize(maxHeapSize);
+
   // Load the binary into memory
   Loader = new RevLoader( Exe, Args, Mem, &output );
   if( !Loader ){
@@ -249,6 +259,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   BytesRead.reserve(BytesRead.size() + numCores);
   BytesWritten.reserve(BytesWritten.size() + numCores);
   FloatsExec.reserve(FloatsExec.size() + numCores);
+  TLBHitsPerCore.reserve(TLBHitsPerCore.size() + numCores);
+  TLBMissesPerCore.reserve(TLBMissesPerCore.size() + numCores);
 
   for(int s = 0; s < numCores; s++){
     TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
@@ -260,6 +272,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
     BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
     FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
+    TLBHitsPerCore.push_back( registerStatistic<uint64_t>("TLBHitsPerCore", "core_" + std::to_string(s)));
+    TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
   }
 
 
@@ -384,8 +398,8 @@ void RevCPU::initNICMem(){
   uint64_t host = 2;
   int64_t id = -1;
   for( unsigned i=0; i<_PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
-    Mem->WriteU64(ptr,(uint64_t)(id));
-    Mem->WriteU64(ptr+8,(uint64_t)(host));
+    Mem->WriteU64(0, ptr,(uint64_t)(id));
+    Mem->WriteU64(0, ptr+8,(uint64_t)(host));
     ptr += sizeof(PEMap);
   }
   ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
@@ -393,14 +407,14 @@ void RevCPU::initNICMem(){
   // the first entry in the table is our own, then its
   // all the other nodes sequentially
   id = (int64_t)(PNic->getAddress());
-  Mem->WriteU64(ptr,(uint64_t)(id));
+  Mem->WriteU64(0, ptr,(uint64_t)(id));
   ptr += 8;
   if( PNic->IsHost() ){
     host = 1;
   }else{
     host = 0;
   }
-  Mem->WriteU64(ptr,host);
+  Mem->WriteU64(0, ptr,host);
   ptr += 8;
 
   output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
@@ -408,7 +422,7 @@ void RevCPU::initNICMem(){
 
   for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
     id = PNic->getHostFromIdx(i);
-    Mem->WriteU64(ptr,(uint64_t)(id));
+    Mem->WriteU64(0, ptr,(uint64_t)(id));
     ptr += 8;
     if( PNic->IsRemoteHost((SST::Interfaces::SimpleNetwork::nid_t)(id)) ){
       host = 1;
@@ -417,7 +431,7 @@ void RevCPU::initNICMem(){
     }
     output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
                   id, host);
-    Mem->WriteU64(ptr,host);
+    Mem->WriteU64(0, ptr,host);
     ptr += 8;
   }
 }
@@ -551,7 +565,7 @@ void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
     //          "injected" state, write the value
     if( (TmpTag == tag) && (Payload[0] == _PAN_ENTRY_INJECTED_) ){
       Payload[0] = sig;
-      Mem->WriteMem(Addr,8,&Payload[0]);
+      Mem->WriteMem(0, Addr,8,&Payload[0]);
       done = true;
     }
 
@@ -588,7 +602,8 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
     if( std::get<0>(*GetIter) = event->getTag() ){
       // found a valid entry; setup the memory write
       uint64_t *Data = new uint64_t [event->getNumBlocks(std::get<2>(*GetIter))];
-      Mem->WriteMem(std::get<1>(*GetIter),
+      Mem->WriteMem(0,
+                    std::get<1>(*GetIter),
                     std::get<2>(*GetIter),
                     (void *)(Data));
       delete[] Data;
@@ -728,7 +743,7 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
       delete[] Data;
       PANBuildFailedToken(event);
     }
-  }else if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  }else if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -784,7 +799,7 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
       delete[] Data;
       PANBuildFailedToken(event);
     }
-  }else if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  }else if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -834,7 +849,7 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
   event->getData(Data);
 
   // write it to memory
-  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
     return ;
@@ -885,7 +900,7 @@ void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
   event->getData(Data);
 
   // write it to memory
-  if( !Mem->WriteMem(event->getAddr(), Size, (void *)(Data)) ){
+  if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
     delete[] Data;
     PANBuildFailedToken(event);
     return ;
@@ -1493,7 +1508,7 @@ bool RevCPU::sendPANMessage(){
     // write the completion
     uint64_t Addr = _PAN_COMPLETION_ADDR_;
     uint64_t Payload = 0x01ull;
-    Mem->WriteMem(Addr,8,&Payload);
+    Mem->WriteMem(0, Addr,8,&Payload);
 
     PNic->RevokeToken();
     ReadyForRevoke = false;
@@ -1537,8 +1552,8 @@ bool RevCPU::processPANZeroAddr(){
       TmpSize = ZeroRqst.front().first;
       TmpPtr  = ZeroRqst.front().second;
 
-      Mem->WriteU8((uint64_t)(&XferPtr[i].Valid),TmpValid);
-      Mem->WriteMem((uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, (void *)(TmpPtr));
+      Mem->WriteU8(0, (uint64_t)(&XferPtr[i].Valid),TmpValid);
+      Mem->WriteMem(0, (uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, (void *)(TmpPtr));
 
       ZeroRqst.pop();
       delete[] TmpPtr;
@@ -1782,7 +1797,7 @@ bool RevCPU::PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event){
                   "Error: could not build RDMA Revoke; Tag=%d\n",Tag);
     CmdAddr = _PAN_COMPLETION_ADDR_;
     TmpData = 0x01;
-    Mem->WriteMem(CmdAddr,8,&TmpData);
+    Mem->WriteMem(0, CmdAddr,8,&TmpData);
     break;
   case panNicEvent::Halt:
     if( !event->buildHalt(Token,Tag,(uint16_t)(Size)) )
@@ -1876,9 +1891,6 @@ bool RevCPU::PANProcessRDMAMailbox(){
   unsigned iter = 0;
   uint64_t Addr = PrevAddr;
   uint64_t Payload[3];
-  uint64_t CmdBuf;
-  uint64_t Buf = 0x00ull;
-  panNicEvent *TEvent = nullptr;
 
   while( !done ){
 
@@ -1913,7 +1925,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
 
       // Stage 2.c: mark the payload as being completed
       Payload[0] = _PAN_ENTRY_INJECTED_;
-      Mem->WriteMem(Addr,8,&Payload[0]);
+      Mem->WriteMem(0, Addr,8,&Payload[0]);
 
       // Stage 2.d: increment the message counter
       sent++;
@@ -1967,8 +1979,6 @@ void RevCPU::ExecPANTest(){
   int dest = 1;
   uint64_t BASE = 0x00000080ull;
   uint64_t Buf = 0x00ull;
-  uint64_t Addr = _PAN_COMPLETION_ADDR_;
-  uint64_t Payload = 0x01ull;
   panNicEvent *TEvent = nullptr;
 
   switch( testStage ){
@@ -2171,7 +2181,7 @@ void RevCPU::ExecPANTest(){
     SendMB.push(std::make_pair(TEvent,dest));
 
     // write the completion command to our local CPU
-    Mem->WriteU64((uint64_t)(_PAN_COMPLETION_ADDR_),0xdeadbeef);
+    Mem->WriteU64(0, (uint64_t)(_PAN_COMPLETION_ADDR_),0xdeadbeef);
     break;
   case 10:
     // revoke reservation
@@ -2344,6 +2354,8 @@ void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
   BytesRead[coreNum]->addData(stats.memStats.bytesRead);
   BytesWritten[coreNum]->addData(stats.memStats.bytesWritten);
   FloatsExec[coreNum]->addData(stats.floatsExec);
+  TLBHitsPerCore[coreNum]->addData(stats.memStats.TLBHits);
+  TLBMissesPerCore[coreNum]->addData(stats.memStats.TLBMisses);
 }
 
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){

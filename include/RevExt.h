@@ -24,10 +24,6 @@
 #include "RevMem.h"
 #include "RevFeature.h"
 
-namespace SST::RevCPU{
-  class RevExt;
-}
-
 using namespace SST::RevCPU;
 
 namespace SST{
@@ -55,7 +51,7 @@ namespace SST{
       std::string GetName() { return name; }
 
       /// RevExt: baseline execution function
-      bool Execute(unsigned Inst, RevInst Payload, uint8_t threadID);
+      bool Execute(unsigned Inst, RevInst Payload, uint16_t threadID);
 
       /// RevExt: retrieves the extension's instruction table
       std::vector<RevInstEntry> GetInstTable() { return table; }
@@ -65,6 +61,11 @@ namespace SST{
 
       /// RevExt: retrieves the extension's optional instruction table
       std::vector<RevInstEntry> GetOInstTable() { return otable; }
+
+      /// RevExt: updates the RegFile pointer prior to instruction execution
+      ///         such that the currently executing RevThreadCtx is the one 
+      ///         whose register file is operated on
+      void SetRegFile(RevRegFile* RegFile) { regFile = RegFile; }
 
     protected:
       RevFeature *feature;  ///< RevExt: feature object

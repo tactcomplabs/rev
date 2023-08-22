@@ -39,22 +39,22 @@ int main(int argc, char **argv){
  //# Test with a negative base
 
   TEST_CASE( 10, x5, 0x12345678, \
-    ASM_GEN(la  x1, tdat9); \
-    ASM_GEN(li  x2, 0x12345678); \
-    ASM_GEN(addi x4, x1, -32); \
-    ASM_GEN(sw x2, 32(x4)); \
-    ASM_GEN(lw x5, 0(x1)); \
+    ASM_GEN(la  x6, tdat9); \
+    ASM_GEN(li  x7, 0x12345678); \
+    ASM_GEN(addi x10, x6, -32); \
+    ASM_GEN(sw x7, 32(x10)); \
+    ASM_GEN(lw x5, 0(x6)); \
   )
 
   //# Test with unaligned base
 
   TEST_CASE( 11, x5, 0x58213098, \
-    ASM_GEN(la  x1, tdat9); \
-    ASM_GEN(li  x2, 0x58213098); \
-    ASM_GEN(addi x1, x1, -3); \
-    ASM_GEN(sw x2, 7(x1)); \
-    ASM_GEN(la  x4, tdat10); \
-    ASM_GEN(lw x5, 0(x4)); \
+    ASM_GEN(la  x6, tdat9); \
+    ASM_GEN(li  x7, 0x58213098); \
+    ASM_GEN(addi x6, x6, -3); \
+    ASM_GEN(sw x7, 7(x6)); \
+    ASM_GEN(la  x10, tdat10); \
+    ASM_GEN(lw x5, 0(x10)); \
   )
 
 

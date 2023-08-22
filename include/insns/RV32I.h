@@ -291,7 +291,7 @@ namespace SST{
       }
 
       static bool auipc(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        uint64_t tmp;
+        uint64_t tmp = 0x00ull;
         if( F->IsRV32() ){
           R->RV32[Inst.rd] = 0x00;
           R->RV32[Inst.rd] = (Inst.imm << 12) + dt_u32(R->RV32_PC,32);
@@ -299,7 +299,7 @@ namespace SST{
         }else{
           SEXT(tmp, Inst.imm << 12, 32);
           R->RV64[Inst.rd] = 0x00;
-          R->RV64[Inst.rd] = (Inst.imm << 12) + dt_u64(R->RV64_PC,64);
+          R->RV64[Inst.rd] = tmp + dt_u64(R->RV64_PC,64);
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -340,13 +340,13 @@ namespace SST{
       static bool beq(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] == R->RV32[Inst.rs2] ){
-            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
+            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13)); //13-bit immd, pre scaled at decode time
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
           if( R->RV64[Inst.rs1] == R->RV64[Inst.rs2] ){
-            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
+            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13)); //13-bit immd, pre scaled at decode time
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
@@ -358,13 +358,13 @@ namespace SST{
 	int64_t tmp;
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] != R->RV32[Inst.rs2] ){
-            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
+            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
           if( R->RV64[Inst.rs1] != R->RV64[Inst.rs2] ){
-            tmp = td_u64(Inst.imm,12);
+            tmp = td_u64(Inst.imm,13);
             R->RV64_PC = R->RV64_PC + tmp;
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
@@ -376,13 +376,13 @@ namespace SST{
       static bool blt(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           if( (int32_t)(R->RV32[Inst.rs1]) < (int32_t)(R->RV32[Inst.rs2]) ){
-            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
+            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
           if( (int64_t)(R->RV64[Inst.rs1]) < (int64_t)(R->RV64[Inst.rs2]) ){
-            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
+            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
@@ -392,14 +392,14 @@ namespace SST{
 
       static bool bge(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          if( (int32_t)(R->RV32[Inst.rs1]) > (int32_t)(R->RV32[Inst.rs2]) ){
-            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
+          if( (int32_t)(R->RV32[Inst.rs1]) >= (int32_t)(R->RV32[Inst.rs2]) ){
+            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
-          if( (int64_t)(R->RV64[Inst.rs1]) > (int64_t)(R->RV64[Inst.rs2]) ){
-            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
+          if( (int64_t)(R->RV64[Inst.rs1]) >= (int64_t)(R->RV64[Inst.rs2]) ){
+            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
@@ -410,13 +410,13 @@ namespace SST{
       static bool bltu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] < R->RV32[Inst.rs2] ){
-            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
+            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
           if( R->RV64[Inst.rs1] < R->RV64[Inst.rs2] ){
-            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
+            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
@@ -427,13 +427,13 @@ namespace SST{
       static bool bgeu(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           if( R->RV32[Inst.rs1] >= R->RV32[Inst.rs2] ){
-            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,12));
+            R->RV32_PC = R->RV32_PC + (int32_t)(td_u32(Inst.imm,13));
           }else{
             R->RV32_PC = R->RV32_PC + Inst.instSize;
           }
         }else{
           if( R->RV64[Inst.rs1] >= R->RV64[Inst.rs2] ){
-            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,12));
+            R->RV64_PC = R->RV64_PC + (int64_t)(td_u64(Inst.imm,13));
           }else{
             R->RV64_PC = R->RV64_PC + Inst.instSize;
           }
@@ -444,7 +444,7 @@ namespace SST{
       static bool lb(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           //SEXT(R->RV32[Inst.rd],M->ReadU8( (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),32);
-          M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
           R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFF;
@@ -452,7 +452,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],M->ReadU8( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
-          M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
           R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFF;
@@ -467,7 +467,7 @@ namespace SST{
       static bool lh(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           //SEXT(R->RV32[Inst.rd],M->ReadU16( (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),32);
-          M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint16_t *)(&R->RV32[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
           R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFFFF;
@@ -475,7 +475,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],M->ReadU16( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
-          M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint16_t *)(&R->RV64[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
           R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFF;
@@ -490,7 +490,7 @@ namespace SST{
       static bool lw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           //SEXT(R->RV32[Inst.rd],M->ReadU32( (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),32);
-          M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint32_t *)(&R->RV32[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
           R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFFFFFFFF;
@@ -498,7 +498,7 @@ namespace SST{
           R->RV32_PC += Inst.instSize;
         }else{
           //SEXT(R->RV64[Inst.rd],M->ReadU32( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
-          M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                      (uint32_t *)(&R->RV64[Inst.rd]),
                      REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
           R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFFFFFF;
@@ -514,7 +514,7 @@ namespace SST{
         if( F->IsRV32() ){
           //ZEXT(R->RV32[Inst.rd],M->ReadU8( (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),32);
           //R->RV32[Inst.rd] = M->ReadU8( (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
-          M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(0));
           R->RV32[Inst.rd] = R->RV32[Inst.rd] & 0xFF;
@@ -522,7 +522,7 @@ namespace SST{
         }else{
           //ZEXT(R->RV64[Inst.rd],M->ReadU8( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
           //R->RV64[Inst.rd] = M->ReadU8( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
-          M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint8_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(0));
           R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFF;
@@ -537,7 +537,7 @@ namespace SST{
         if( F->IsRV32() ){
           //ZEXT(R->RV32[Inst.rd],M->ReadU16( (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),32);
           //R->RV32[Inst.rd] = M->ReadU16( (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
-          M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint16_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(0));
           R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFF;
@@ -545,7 +545,7 @@ namespace SST{
         }else{
           //ZEXT(R->RV64[Inst.rd],M->ReadU16( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
           //R->RV64[Inst.rd] = M->ReadU16( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
-          M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     (uint16_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(0));
           R->RV64[Inst.rd] = R->RV64[Inst.rd] & 0xFFFF;
@@ -558,10 +558,10 @@ namespace SST{
 
       static bool sb(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU8((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint8_t)(R->RV32[Inst.rs2]));
+          M->WriteU8(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint8_t)(R->RV32[Inst.rs2]));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU8((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint8_t)(R->RV64[Inst.rs2]));
+          M->WriteU8(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint8_t)(R->RV64[Inst.rs2]));
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -571,14 +571,12 @@ namespace SST{
       static bool sh(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         int64_t tmp = 0;
         if( F->IsRV32() ){
-          tmp =  (uint32_t)(R->RV32[Inst.rs2]);
-          SEXTI(tmp, 16);
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
+          tmp =  (uint16_t)(R->RV32[Inst.rs2]);
+          M->WriteU16(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(tmp));
           R->RV32_PC += Inst.instSize;
         }else{
-          tmp =  (uint32_t)(R->RV64[Inst.rs2]);
-          SEXTI(tmp, 16);
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(tmp));
+          tmp =  (uint16_t)(R->RV64[Inst.rs2]);
+          M->WriteU16(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint16_t)(tmp));
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -586,10 +584,10 @@ namespace SST{
 
       static bool sw(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteU32((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(R->RV32[Inst.rs2]));
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(R->RV32[Inst.rs2]));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteU32((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(R->RV64[Inst.rs2]));
+          M->WriteU32(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))), (uint32_t)(R->RV64[Inst.rs2]));
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -600,9 +598,6 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((int32_t)(td_u32(R->RV32[Inst.rs1],32)) + (int32_t)(td_u32(Inst.imm,12)),32);
           R->RV32_PC += Inst.instSize;
         }else{
-          if(R->RV64_PC == 0x101b0 ){
-            int blah_junk= 0;
-          }
           R->RV64[Inst.rd] = dt_u64(td_u64(R->RV64[Inst.rs1],64) + td_u64(Inst.imm,12),64);
           R->RV64_PC += Inst.instSize;
         }
@@ -618,7 +613,7 @@ namespace SST{
           }
           R->RV32_PC += Inst.instSize;
         }else{
-          if( (int64_t)(td_u32(R->RV64[Inst.rs1],32)) < (int64_t)(td_u64(Inst.imm,12)) ){
+          if( (int64_t)(td_u64(R->RV64[Inst.rs1],64)) < (int64_t)(td_u64(Inst.imm,12)) ){
             R->RV64[Inst.rd] = 1;
           }else{
             R->RV64[Inst.rd] = 0;
@@ -824,7 +819,7 @@ namespace SST{
           SEXTI(R->RV32[Inst.rd],32);
           R->RV32_PC += Inst.instSize;
         }else{
-          ZEXT(R->RV64[Inst.rd],(R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111)),64);
+          ZEXT64(R->RV64[Inst.rd],(R->RV64[Inst.rs1] >> (R->RV64[Inst.rs2]&0b11111)),64);
           SEXTI(R->RV64[Inst.rd],64);
           R->RV64_PC += Inst.instSize;
         }
@@ -867,6 +862,7 @@ namespace SST{
       }
 
       static bool fence(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        M->FenceMem(F->GetHart());
         if( F->IsRV32() ){
           R->RV32_PC += Inst.instSize;
         }else{
@@ -876,6 +872,7 @@ namespace SST{
       }
 
       static bool fencei(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+        M->FenceMem(F->GetHart());
         if( F->IsRV32() ){
           R->RV32_PC += Inst.instSize;
         }else{
@@ -884,22 +881,33 @@ namespace SST{
         return true;  // temporarily disabled
       }
 
-      static bool ecall(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
-        // x17 (a7) is the code for ecall
+      static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+        // Save PC of Ecall to *epc register
         if( F->IsRV32() ){
-          uint32_t code = R->RV32[17];
-          switch( code ){
-          case 4: 
-            // execute the getc syscall
-            break;
-          default:
-            break;
-          }
+          R->RV32_SEPC = R->RV32_PC; // Save PC of instruction that raised exception
+          R->RV32_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV32_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
           R->RV32_PC += Inst.instSize;
-        }else{
-          uint64_t code = R->RV64[17];
-          R->RV64_PC += Inst.instSize;
         }
+        else {
+          /* 
+          * In reality this should be getting/setting a LOT of bits inside the 
+          * CSRs however because we are only concerned with ecall right now it's 
+          * not a concern.
+          * NOTE: Normally you would have to check if you are currently executing in 
+          *       Supervisor mode already and set RV64_MEPC instead but we don't need 
+          *       to worry about machine mode with the ecalls we are supporting
+          */
+          // R->RV64_PC += Inst.instSize; // TODO: Verify this needs to happen
+          R->RV64_SEPC = R->RV64_PC; // Save PC of instruction that raised exception
+          R->RV64_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0 
+          R->RV64_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0 
+          /*
+           * Trap Handler is not implemented because we only have one exception 
+           * So we don't have to worry about setting `mtvec` reg
+           */
+          R->RV64_PC += Inst.instSize;
+        } 
         return true;
       }
 

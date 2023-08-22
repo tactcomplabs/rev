@@ -24,8 +24,8 @@ namespace RevCPU {
 class RevPrefetcher{
 public:
   /// RevPrefetcher: default constructor
-  RevPrefetcher(RevMem *Mem, unsigned Depth)
-    : mem(Mem), depth(Depth){}
+  RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth)
+    : mem(Mem), feature(Feature), depth(Depth){}
 
   /// RevPrefetcher: default destructor
   ~RevPrefetcher(){
@@ -44,6 +44,7 @@ public:
 
 private:
   RevMem *mem;                                ///< RevMem object
+  RevFeature *feature;                        ///< RevFeature object
   unsigned depth;                             ///< Depth of each prefetcher stream
   std::vector<uint64_t> baseAddr;             ///< Vector of base addresses for each stream
   std::vector<uint32_t*> iStack;              ///< Vector of instruction vectors

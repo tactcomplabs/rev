@@ -59,13 +59,13 @@ namespace SST{
       static bool fld(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
           //R->DPF[Inst.rd] = M->ReadDouble((uint64_t)(R->RV32[Inst.rs1]+Inst.imm));
-          M->ReadVal((uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->DPF[Inst.rd],
                     REVMEM_FLAGS(0));
           R->RV32_PC += Inst.instSize;
         }else{
           //R->DPF[Inst.rd] = M->ReadDouble((uint64_t)(R->RV64[Inst.rs1]+Inst.imm));
-          M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+          M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->DPF[Inst.rd],
                     REVMEM_FLAGS(0));
           R->RV64_PC += Inst.instSize;
@@ -75,10 +75,10 @@ namespace SST{
 
       static bool fsd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          M->WriteDouble((uint64_t)(R->RV32[Inst.rs1]+Inst.imm), (double)(R->DPF[Inst.rs2]));
+          M->WriteDouble(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]+Inst.imm), (double)(R->DPF[Inst.rs2]));
           R->RV32_PC += Inst.instSize;
         }else{
-          M->WriteDouble((uint64_t)(R->RV64[Inst.rs1]+Inst.imm), (double)(R->DPF[Inst.rs2]));
+          M->WriteDouble(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+Inst.imm), (double)(R->DPF[Inst.rs2]));
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -191,9 +191,9 @@ namespace SST{
         uint64_t tmp2 = 0x00ull;
 
         std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint64_t));
-        tmp &= ~(1<<63);
+        tmp &= ~(1ULL<<63);
         std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint64_t));
-        tmp |= (tmp2&(1<<63));
+        tmp |= (tmp2&(1ULL<<63));
         std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(double));
 
         if( F->IsRV32() ){
@@ -209,10 +209,10 @@ namespace SST{
         uint64_t tmp2 = 0x00ull;
 
         std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint64_t));
-        tmp &= ~(1<<63);
+        tmp &= ~(1ULL<<63);
         std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint64_t));
-        tmp2 ^= ~(1<<63);
-        tmp |= (tmp2&(1<<63));
+        tmp2 ^= ~(1ULL<<63);
+        tmp |= (tmp2&(1ULL<<63));
         std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(double));
 
         if( F->IsRV32() ){
@@ -228,9 +228,9 @@ namespace SST{
         uint64_t tmp2 = 0x00ull;
 
         std::memcpy(&tmp,&R->DPF[Inst.rs1],sizeof(uint64_t));
-        tmp &= ~(1<<63);
+        tmp &= ~(1ULL<<63);
         std::memcpy(&tmp2,&R->DPF[Inst.rs2],sizeof(uint64_t));
-        tmp |= ((tmp & (1<<63) )^(tmp2 & (1<<63)));
+        tmp |= ((tmp & (1ULL<<63) )^(tmp2 & (1ULL<<63)));
         std::memcpy(&R->DPF[Inst.rd],&tmp,sizeof(double));
 
         if( F->IsRV32() ){

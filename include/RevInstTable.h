@@ -15,6 +15,7 @@
 #include <map>
 #include "RevMem.h"
 #include "RevFeature.h"
+#include "RevRF.hpp"
 
 #ifndef _REV_NUM_REGS_
 #define _REV_NUM_REGS_ 32
@@ -28,12 +29,12 @@
 #define _REV_MAX_REGCLASS_ 3
 #endif
 
-#ifndef _REV_THREAD_COUNT
-#define _REV_THREAD_COUNT_ 1
+#ifndef _REV_HART_COUNT_
+#define _REV_HART_COUNT_ 1
 #endif
 
-#ifndef _REV_INVALID_THREAD_ID_
-#define _REV_INVALID_THREAD_ID ~(uint16_t(0))
+#ifndef _REV_INVALID_HART_ID_
+#define _REV_INVALID_HART_ID_ (uint16_t)~(uint16_t(0))
 #endif
 
 // Masks
@@ -88,17 +89,31 @@
                     (r) = (r) & (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
+#define SEXT64(r,x,b) do {\
+                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register
+#define ZEXT64(r,x,b) do {\
+                    (r) = (x) & (((1ULL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register
+
+#define SEXTI64(r,b)  do {\
+                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register inline
+#define ZEXTI64(r,b)  do {\
+                    (r) = (r) & (((1ULL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register inline
+
 // Swizzle Macro
 #define SWIZZLE(q,in,start,dest ) q |= ((in >> start) & 1) << dest;
 
 /// td_u32: convert u32 in two's complement to decimal
-static uint32_t td_u32(uint32_t binary, unsigned bits){
+static inline uint32_t td_u32(uint32_t binary, unsigned bits){
   uint32_t tmp = binary;
   uint32_t i = 0;
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1UL<<(bits-1))) > 0 ){
     // sign extend to 32 bits
     for( i=bits; i<32; i++ ){
-      tmp |= (1<<i);
+      tmp |= (1UL<<i);
     }
 
     // invert all the bits
@@ -114,15 +129,15 @@ static uint32_t td_u32(uint32_t binary, unsigned bits){
 }
 
 /// td_u64: convert u64 in two's complement to decimal
-static uint64_t td_u64(uint64_t binary, unsigned bits){
+static inline uint64_t td_u64(uint64_t binary, unsigned bits){
   uint64_t tmp = binary;
   uint64_t sext = 0x00ull;
   uint64_t i = 0;
 
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1ULL<<(bits-1))) > 0 ){
     // sign extend to 64 bits
     for( i=0; i<bits; i++ ){
-      sext |= (1<<i);
+      sext |= (1ULL<<i);
     }
     sext = ~sext;
 
@@ -141,13 +156,13 @@ static uint64_t td_u64(uint64_t binary, unsigned bits){
 }
 
 /// dt_u32: convert u32 in decimal to two's complement
-static uint32_t dt_u32(int32_t binary, unsigned bits){
+static inline uint32_t dt_u32(int32_t binary, unsigned bits){
   uint32_t tmp = binary;
   uint32_t i = 0;
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1UL<<(bits-1))) > 0 ){
     // sign extend to 32 bits
     for( i=bits; i<32; i++ ){
-      tmp |= (1<<i);
+      tmp |= (1UL<<i);
     }
 
     // invert all the bits
@@ -163,13 +178,13 @@ static uint32_t dt_u32(int32_t binary, unsigned bits){
 }
 
 /// td_u64: convert u64 in decimal to two's complement
-static uint64_t dt_u64(int64_t binary, unsigned bits){
+static inline uint64_t dt_u64(int64_t binary, unsigned bits){
   uint64_t tmp = binary;
   uint64_t i = 0;
-  if( (binary & (1<<(bits-1))) > 0 ){
+  if( (binary & (1ULL<<(bits-1))) > 0 ){
     // sign extend to 32 bits
     for( i=bits; i<64; i++ ){
-      tmp |= (1<<i);
+      tmp |= (1ULL<<i);
     }
 
     // invert all the bits
@@ -184,6 +199,7 @@ static uint64_t dt_u64(int64_t binary, unsigned bits){
   return tmp;
 }
 
+#if 0
 static uint32_t twos_compl(uint32_t binary, int bits){
   uint32_t tmp = binary;
   uint32_t i = 0;
@@ -209,15 +225,47 @@ static uint32_t twos_compl(uint32_t binary, int bits){
   }
   return tmp;
 }
+#endif
 
 namespace SST{
   namespace RevCPU {
 
+    /* Ref: RISC-V Priviledged Spec (pg. 39) */
+    enum EXCEPTION_CAUSE {
+      MISALIGNED_INST_ADDR      = 0,
+      INST_ACCESS_FAULT         = 1,
+      ILLEGAL_INST              = 2,
+      BREAKPOINT                = 3,
+      LOAD_ADDR_MISALIGNED      = 4,
+      LOAD_ACCESS_FAULT         = 5,
+      STORE_AMO_ADDR_MISALIGNED = 6,
+      STORE_AMO_ACCESS_FAULT    = 7,
+      ECALL_USER_MODE           = 8,
+      ECALL_SUPERVISOR_MODE     = 9,
+      ECALL_MACHINE_MODE        = 11,
+      INST_PAGE_FAULT           = 12,
+      LOAD_PAGE_FAULT           = 13,
+      STORE_AMO_PAGE_FAULT      = 15
+    };
+
     typedef struct{
-      uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
-      uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
+      RevRF<uint32_t, _REV_NUM_REGS_> RV32;    ///< RevRegFile: RV32I register file
+      RevRF<uint64_t, _REV_NUM_REGS_> RV64;    ///< RevRegFile: RV32I register file
       float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
       double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
+
+      /* Supervisor Mode CSRs */
+      uint64_t RV64_SSTATUS; // During ecall, previous priviledge mode is saved in this register (Incomplete)
+      uint64_t RV64_SEPC;    // Holds address of instruction that caused the exception (ie. ECALL)
+      uint64_t RV64_SCAUSE;  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
+      uint64_t RV64_STVAL;   // Used to store additional info about exception (ECALL does not use this and sets value to 0)
+      uint64_t RV64_STVEC;   // Holds the base address of the exception handling routine (trap handler) that the processor jumps to when and exception occurs
+
+      uint32_t RV32_SSTATUS;
+      uint32_t RV32_SEPC;
+      uint32_t RV32_SCAUSE;
+      uint32_t RV32_STVAL;
+      uint32_t RV32_STVEC;
 
       bool RV32_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
       bool RV64_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
@@ -233,8 +281,8 @@ namespace SST{
       unsigned Entry;                   ///< RevRegFile: Instruction entry
     }RevRegFile;                        ///< RevProc: register file construct
 
-    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-    static std::bitset<_REV_THREAD_COUNT_>  THREAD_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+    static std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+    static std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
     typedef enum{
       RVTypeUNKNOWN = 0,  ///< RevInstf: Unknown format
@@ -335,6 +383,7 @@ namespace SST{
       RevImmFunc  imm;
       RevInstF    format;
       bool        compressed;
+      uint8_t     fpcvtOp;
 
       RevInstDefaults(){
         opcode    = 0b00000000;
@@ -354,6 +403,7 @@ namespace SST{
         imm       = FUnk;
         format    = RVTypeR;
         compressed = false;
+        fpcvtOp  = 0b00000;    // overloaded rs2 field for R-type FP instructions
       }
     };
 
@@ -396,6 +446,8 @@ namespace SST{
         bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst);
 
         bool compressed;      ///< RevInstEntry: compressed instruction
+
+        uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
       } RevInstEntry;
 
 
@@ -426,6 +478,7 @@ namespace SST{
         InstEntry.imm       = RevInstDefaultsPolicy::imm;
         InstEntry.format    = RevInstDefaultsPolicy::format;
         InstEntry.compressed= false;
+        InstEntry.fpcvtOp  = RevInstDefaultsPolicy::fpcvtOp;
       }
 
       // Begin Set() functions to allow call chaining - all Set() must return *this
@@ -446,7 +499,8 @@ namespace SST{
       RevInstEntryBuilder& Setimm12(uint16_t imm12)     {InstEntry.imm12 = imm12;   return *this;};
       RevInstEntryBuilder& Setimm(RevImmFunc imm)       {InstEntry.imm = imm;       return *this;};
       RevInstEntryBuilder& SetFormat(RevInstF format)   {InstEntry.format = format; return *this;};
-      RevInstEntryBuilder& SetCompressed(bool c)        {InstEntry.compressed = c; return *this;};
+      RevInstEntryBuilder& SetCompressed(bool c)        {InstEntry.compressed = c;  return *this;};
+      RevInstEntryBuilder& SetfpcvtOp(uint8_t op)       {InstEntry.fpcvtOp = op;    return *this;};
 
       RevInstEntryBuilder& SetImplFunc(bool (*func)(RevFeature *,
                                                     RevRegFile *,
@@ -454,7 +508,7 @@ namespace SST{
                                                     RevInst)){
         InstEntry.func = func; return *this;};
 
-    };// class RevInstEntryBuilder;
+    }; // class RevInstEntryBuilder;
 
   } // namespace RevCPU
 } // namespace SST

@@ -75,6 +75,25 @@ bool RevOpts::InitPrefetchDepth( std::vector<std::string> Depths ){
 
 bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
   std::vector<std::string> vstr;
+
+  // check to see if we expand into multiple cores
+  if( StartAddrs.size() == 1 ){
+    std::string s = StartAddrs[0];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    if( vstr[0] == "CORES" ){
+      // set all cores to the target machine model
+      std::string::size_type sz = 0;
+      uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
+      for( unsigned i=0; i<numCores; i++ ){
+        startAddr.find(i)->second = Addr;
+      }
+      return true;
+    }
+  }
+
   for(unsigned i=0; i<StartAddrs.size(); i++ ){
     std::string s = StartAddrs[i];
     splitStr(s,':',vstr);
@@ -114,6 +133,24 @@ bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
 
 bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
   std::vector<std::string> vstr;
+
+  // check to see if we expand into multiple cores
+  if( Machines.size() == 1 ){
+    std::string s = Machines[0];
+    splitStr(s,':',vstr);
+    if( vstr.size() != 2 )
+      return false;
+
+    if( vstr[0] == "CORES" ){
+      // set all cores to the target machine model
+      for( unsigned i=0; i<numCores; i++ ){
+        machine.at(i) = vstr[1];
+      }
+      return true;
+    }
+  }
+
+  // parse individual core configs
   for( unsigned i=0; i<Machines.size(); i++ ){
     std::string s = Machines[i];
     splitStr(s,':',vstr);
@@ -223,7 +260,6 @@ bool RevOpts::GetInstTable( unsigned Core, std::string &Table ){
 }
 
 bool RevOpts::GetMemCost( unsigned Core, unsigned &Min, unsigned &Max ){
-  std::pair<unsigned,unsigned> Tmp;
   if( Core > numCores )
     return false;
 
