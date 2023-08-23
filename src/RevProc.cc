@@ -2858,11 +2858,10 @@ void RevProc::ECALL_mmap(){
     // Currently there is no handling of getting it 'close' to the 
     // suggested address... instead if it can't allocate a new segment 
     // there it fails.
-    if( !mem->AddMemSeg(Addr, Size) ){
+    if( !mem->AllocMemAt(Addr, Size) ){
       output->fatal(CALL_INFO, 11, "Failed to add mem segment\n");
     }
   }
-  // std::cout << "MMAP Returning Addr = 0x" << Addr << std::endl; 
   RegFile->RV64[10] = Addr;
   return;
 }
