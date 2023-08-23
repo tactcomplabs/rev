@@ -481,6 +481,8 @@ uint64_t RevMem::AllocMem(const uint64_t& SegSize){
     else {
       continue;
     }
+
+
   }
   
   // If we still haven't allocated, expand the heap
@@ -543,27 +545,24 @@ uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
         // - Before: |-------- FreeSeg -------|
         // - After:  |------ AllocedSeg ------|
         FreeMemSegs.erase(FreeMemSegs.begin()+i);
+        MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
       }
       // Segment was allocated so return the BaseAddr
       ret = BaseAddr;
-      break;
     }
   }
-
-  if (ret) { // Found a place
-    // Check if any addresses in the segment are already
-    for( auto Seg : MemSegs ){
-      // Check if either the baseAddr or topAddr of the potential new segment exists inside of an already allocated segment
-      if( Seg->contains(BaseAddr) || Seg->contains(BaseAddr + SegSize) ){
-        output->fatal(CALL_INFO, 11,
-                      "Error: Attempting to allocate memory at address 0x%lx of size 0x%lx which contains memory that is"
-                      "already allocated in the segment with BaseAddr = 0x%lx and Size 0x%lx\n",
-                      BaseAddr, SegSize, Seg->getBaseAddr(), Seg->getSize());
-      } else {
-        continue;
-      }
+ 
+  // Check if any addresses in the segment are already
+  for( auto Seg : MemSegs ){
+    // Check if either the baseAddr or topAddr of the potential new segment exists inside of an already allocated segment
+    if( Seg->contains(BaseAddr) || Seg->contains(BaseAddr + SegSize) ){
+      output->fatal(CALL_INFO, 11, 
+                    "Error: Attempting to allocate memory at address 0x%lx of size 0x%lx which contains memory that is"
+                    "already allocated in the segment with BaseAddr = 0x%lx and Size 0x%lx\n",
+                    BaseAddr, SegSize, Seg->getBaseAddr(), Seg->getSize());
+    } else {
+      continue;
     }
-    MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
   }
 
   return ret;
