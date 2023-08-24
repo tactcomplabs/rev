@@ -67,30 +67,26 @@ namespace SST{
       }
 
       static bool fmadds(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float res = std::fmaf(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), R->GetFP32(F, Inst.rs3));
-        R->SetFP32(F, Inst.rd, res);
+        R->SetFP32(F, Inst.rd, std::fmaf(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), R->GetFP32(F, Inst.rs3)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fmsubs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float res = std::fmaf(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), -R->GetFP32(F, Inst.rs3));
-        R->SetFP32(F, Inst.rd, res);
+        R->SetFP32(F, Inst.rd, std::fmaf(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), -R->GetFP32(F, Inst.rs3)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fnmsubs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)
       {
-        float res = -std::fmaf(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), R->GetFP32(F, Inst.rs3));
-        R->SetFP32(F, Inst.rd, res);
+        R->SetFP32(F, Inst.rd, std::fmaf(-R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), R->GetFP32(F, Inst.rs3)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fnmadds(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float res = std::fmaf(-R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), R->GetFP32(F, Inst.rs3));
-        R->SetFP32(F, Inst.rd, res);
+        R->SetFP32(F, Inst.rd, -std::fmaf(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2), R->GetFP32(F, Inst.rs3)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
@@ -145,25 +141,33 @@ namespace SST{
       }
 
       static bool fmins(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetFP32(F, Inst.rd, std::min(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
+        R->SetFP32(F, Inst.rd, std::fmin(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fmaxs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetFP32(F, Inst.rd, std::max(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
+        R->SetFP32(F, Inst.rd, std::fmax(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fcvtws(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, static_cast<int32_t>(R->GetFP32(F, Inst.rs1)));
+        float fp32 = R->GetFP32(F, Inst.rs1);
+        int32_t res = std::isnan(fp32) ? std::numeric_limits<int32_t>::max() :
+          fp32 > float(std::numeric_limits<int32_t>::max()) ? std::numeric_limits<int32_t>::max() :
+          fp32 < float(std::numeric_limits<int32_t>::min()) ? std::numeric_limits<int32_t>::min() :
+          static_cast<int32_t>(fp32);
+        R->SetX(F, Inst.rd, res);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fcvtwus(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, static_cast<uint32_t>(R->GetFP32(F, Inst.rs1)));
+        float fp32 = R->GetFP32(F, Inst.rs1);
+        uint32_t res = std::isnan(fp32) || fp32 > float(std::numeric_limits<uint32_t>::max()) ?
+          std::numeric_limits<uint32_t>::max() : fp32 < 0 ? 0 : static_cast<uint32_t>(fp32);
+        R->SetX(F, Inst.rd, res);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
@@ -186,23 +190,16 @@ namespace SST{
         return true;
       }
 
-      static bool feqs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetFP32(F, Inst.rs1) == R->GetFP32(F, Inst.rs2));
+      template<template<class> class OP>
+      static bool fcmps(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, OP()(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool flts(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetFP32(F, Inst.rs1) < R->GetFP32(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fles(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetFP32(F, Inst.rs1) <= R->GetFP32(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& feqs = fcmps<std::equal_to>;
+      static constexpr auto& flts = fcmps<std::less>;
+      static constexpr auto& fles = fcmps<std::less_equal>;
 
       static bool fclasss(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         float fp32 = R->GetFP32(F, Inst.rs1);

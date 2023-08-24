@@ -332,7 +332,7 @@ namespace SST{
       unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
 
       ///< RevInst: Sign-extended immediate value
-      constexpr auto ImmSignExt(size_t bits) const {
+      constexpr int32_t ImmSignExt(size_t bits) const {
         auto tmp = imm & uint32_t{1} << (bits-1) ? imm | ~uint32_t{0} << (bits-1) : imm;
         // This needs to be signed so that it sign-extends when mixed with uint64_t
         return static_cast<int32_t>(tmp);

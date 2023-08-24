@@ -162,9 +162,7 @@ bool RevMem::SC(unsigned Hart, uint64_t Addr){
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
                     StandardMem::Request::flags_t flags){
-  std::vector<std::tuple<unsigned,uint64_t,unsigned,uint64_t*>>::iterator it;
-
-  for( it = LRSC.begin(); it != LRSC.end(); ++it ){
+  for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
     if( (Hart == std::get<LRSC_HART>(*it)) &&
         (Addr == std::get<LRSC_ADDR>(*it)) ){
       // existing reservation; return w/ error

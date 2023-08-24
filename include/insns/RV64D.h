@@ -20,21 +20,22 @@
 namespace SST{
   namespace RevCPU{
     class RV64D : public RevExt {
-
       static bool fcvtld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->DPF[Inst.rs1]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fcvtwd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->DPF[Inst.rs1]);
+        double fp64 = R->DPF[Inst.rs1];
+        int64_t res = std::isnan(fp64) ? std::numeric_limits<int64_t>::max() :
+          fp64 > double(std::numeric_limits<int64_t>::max()) ? std::numeric_limits<int64_t>::max() :
+          fp64 < double(std::numeric_limits<int64_t>::min()) ? std::numeric_limits<int64_t>::min() :
+          static_cast<int64_t>(fp64);
+        R->SetX(F, Inst.rd, res);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fcvtlud(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, static_cast<uint64_t>(R->DPF[Inst.rs1]));
+        double fp64 = R->DPF[Inst.rs1];
+        uint64_t res = std::isnan(fp64) || fp64 > double(std::numeric_limits<uint64_t>::max()) ?
+          std::numeric_limits<uint64_t>::max() : fp64 < 0 ? 0 : static_cast<uint64_t>(fp64);
+        R->SetX(F, Inst.rd, res);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
@@ -88,7 +89,6 @@ namespace SST{
       {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.d.lu %rd, %rs1" ).SetFunct7(0b1101001).SetImplFunc( &fcvtdlu ).InstEntry},
       {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fmv.x.d %rd, %rs1"   ).SetFunct7(0b1110001).SetImplFunc( &fmvxd ).InstEntry},
       {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fmv.d.x %rd, %rs1"   ).SetFunct7(0b1111001).SetImplFunc( &fmvdx ).InstEntry},
-      {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.w.d %rd, %rs1" ).SetFunct7(0b1100001).SetImplFunc( &fcvtwd ).InstEntry}
       };
 
 

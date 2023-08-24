@@ -141,13 +141,13 @@ namespace SST{
       }
 
       static bool fmind(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = std::min(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
+        R->DPF[Inst.rd] = std::fmin(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fmaxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = std::max(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
+        R->DPF[Inst.rd] = std::fmax(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
@@ -164,23 +164,16 @@ namespace SST{
         return true;
       }
 
-      static bool feqd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->DPF[Inst.rs1] == R->DPF[Inst.rs2]);
+      template<template<class> class OP>
+      static bool fcmpd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetX(F, Inst.rd, OP()(R->DPF[Inst.rs1], R->DPF[ Inst.rs2]));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fltd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->DPF[Inst.rs1] < R->DPF[Inst.rs2]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fled(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->DPF[Inst.rs1] <= R->DPF[Inst.rs2]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& feqd = fcmpd<std::equal_to>;
+      static constexpr auto& fltd = fcmpd<std::less>;
+      static constexpr auto& fled = fcmpd<std::less_equal>;
 
       static bool fclassd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         double fp64 = R->DPF[Inst.rs1];
@@ -192,13 +185,21 @@ namespace SST{
       }
 
       static bool fcvtwd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, static_cast<int32_t>(R->DPF[Inst.rs1]));
+        double fp64 = R->DPF[Inst.rs1];
+        int32_t res = std::isnan(fp64) ? std::numeric_limits<int32_t>::max() :
+          fp64 > double(std::numeric_limits<int32_t>::max()) ? std::numeric_limits<int32_t>::max() :
+          fp64 < double(std::numeric_limits<int32_t>::min()) ? std::numeric_limits<int32_t>::min() :
+          static_cast<int32_t>(fp64);
+        R->SetX(F, Inst.rd, res);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool fcvtwud(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, static_cast<uint32_t>(R->DPF[Inst.rs1]));
+        double fp64 = R->DPF[Inst.rs1];
+        uint32_t res = std::isnan(fp64) || fp64 > double(std::numeric_limits<uint32_t>::max()) ?
+          std::numeric_limits<uint32_t>::max() : fp64 < 0 ? 0 : static_cast<uint32_t>(fp64);
+        R->SetX(F, Inst.rd, static_cast<int32_t>(res));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }

@@ -154,7 +154,7 @@ namespace SST{
       }
 
       static bool srliw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) >> (Inst.imm & 0x1F));
+        R->SetX(F, Inst.rd, static_cast<int32_t>(R->GetX<uint32_t>(F, Inst.rs1) >> (Inst.imm & 0x1F)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
@@ -178,13 +178,13 @@ namespace SST{
       }
 
       static bool sllw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) << (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
+        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) << (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool srlw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
+        R->SetX(F, Inst.rd, static_cast<int32_t>(R->GetX<uint32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
