@@ -185,8 +185,8 @@ namespace SST{
         return true;
       }
 
-      static constexpr auto& fcvtwd  = cvt_fp_to_int<double,  int32_t>;
-      static constexpr auto& fcvtwud = cvt_fp_to_int<double, uint32_t>;
+      static constexpr auto& fcvtwd  = CvtFpToInt<double,  int32_t>;
+      static constexpr auto& fcvtwud = CvtFpToInt<double, uint32_t>;
 
       static bool fcvtdw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = static_cast<double>(R->GetX<int32_t>(F, Inst.rs1));

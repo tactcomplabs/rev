@@ -20,8 +20,8 @@
 namespace SST{
   namespace RevCPU{
     class RV64D : public RevExt {
-      static constexpr auto& fcvtld  = cvt_fp_to_int<double,  int64_t>;
-      static constexpr auto& fcvtlud = cvt_fp_to_int<double, uint64_t>;
+      static constexpr auto& fcvtld  = CvtFpToInt<double,  int64_t>;
+      static constexpr auto& fcvtlud = CvtFpToInt<double, uint64_t>;
 
       static bool fcvtdl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = static_cast<double>(R->GetX<int64_t>(F, Inst.rs1));

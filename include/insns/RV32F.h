@@ -152,8 +152,8 @@ namespace SST{
         return true;
       }
 
-      static constexpr auto& fcvtws  = cvt_fp_to_int<float,  int32_t>;
-      static constexpr auto& fcvtwus = cvt_fp_to_int<float, uint32_t>;
+      static constexpr auto& fcvtws  = CvtFpToInt<float,  int32_t>;
+      static constexpr auto& fcvtwus = CvtFpToInt<float, uint32_t>;
 
       static bool fmvxw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int32_t i32;

@@ -449,7 +449,7 @@ namespace SST{
     /// FP values outside the range of the target integer type are clipped
     /// at the integer type's numerical limits, whether signed or unsigned.
     template<typename FP, typename INT>
-    static bool cvt_fp_to_int(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    static bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       FP fp;
       if constexpr(std::is_same_v<FP, double>){
         fp = R->DPF[Inst.rs1];         // Read the double FP register directly
