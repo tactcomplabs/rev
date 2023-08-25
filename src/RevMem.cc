@@ -1160,8 +1160,8 @@ void RevMem::InitHeap(const uint64_t& EndOfStaticData){
     // Mark heap as free
     FreeMemSegs.emplace_back(std::make_shared<MemSegment>(EndOfStaticData+1, maxHeapSize));
 
-    heapend = EndOfStaticData;
-    heapstart = EndOfStaticData;
+    heapend = EndOfStaticData + 1;
+    heapstart = EndOfStaticData + 1;
   }
   return;
 }

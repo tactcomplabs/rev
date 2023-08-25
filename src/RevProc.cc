@@ -2874,12 +2874,15 @@ void RevProc::ECALL_munmap(){
   uint64_t Addr = RegFile->RV64[10];
   uint64_t Size = RegFile->RV64[11];
 
-  if( mem->DeallocMem(Addr, Size) == -1 ){
+  int rc =  mem->DeallocMem(Addr, Size) == -1;
+  if(rc == -1){
     output->fatal(CALL_INFO, 11, 
                   "Failed to perform munmap(Addr = 0x%lx, Size = 0x%lx)"
                   "likely because the memory was not allocated to begin with" , 
                   Addr, Size);
   }
+
+  RegFile->RV64[10] = rc;
   return;
 }
 
