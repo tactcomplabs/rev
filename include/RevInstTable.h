@@ -16,6 +16,8 @@
 #include <map>
 #include <cstdint>
 #include <cstddef>
+#include <limits>
+#include <type_traits>
 
 #include "RevMem.h"
 #include "RevFeature.h"
@@ -238,29 +240,8 @@ namespace SST{
         }
       }
 
-      /// fclass: Return FP classification like the RISC-V fclass instruction
-      // See: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
-      // Because quiet and signaling NaNs are not distinguished by the C++ standard, an
-      // additional argument has been added to disambiguate between quiet and signaling
-      // NaNs. The argument will determine whether it's a quiet or signaling NaN.
-      template<typename T>
-      unsigned fclass(T val, bool quietNaN = true) const {
-        switch(std::fpclassify(val)){
-        case FP_INFINITE:
-          return std::signbit(val) ? 1 : 1 << 7;
-        case FP_NAN:
-          return quietNaN ? 1 << 9 : 1 << 8;
-        case FP_NORMAL:
-          return std::signbit(val) ? 1 << 1 : 1 << 6;
-        case FP_SUBNORMAL:
-          return std::signbit(val) ? 1 << 2 : 1 << 5;
-        case FP_ZERO:
-          return std::signbit(val) ? 1 << 3 : 1 << 4;
-        default:
-          return 0;
-        }
-      }
     };                        ///< RevProc: register file construct
+
 
     inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
     inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
@@ -476,6 +457,50 @@ namespace SST{
 
     }; // class RevInstEntryBuilder;
 
+    /// General template for converting between Floating Point and Integer.
+    /// FP values outside the range of the target integer type are clipped
+    /// at the integer type's numerical limits, whether signed or unsigned.
+    template<typename FP, typename INT>
+    static bool cvt_fp_to_int(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      FP fp;
+      if constexpr(std::is_same_v<FP, double>){
+        fp = R->DPF[Inst.rs1];         // Read the double FP register directly
+      }else{
+        fp = R->GetFP32(F, Inst.rs1);  // Read the F or D register, unboxing if D
+      }
+      constexpr INT max = std::numeric_limits<INT>::max();
+      constexpr INT min = std::numeric_limits<INT>::min();
+      INT res = std::isnan(fp) || fp > FP(max) ? max : fp < FP(min) ? min : static_cast<INT>(fp);
+
+      // Make final result signed so sign extension occurs when sizeof(INT) < XLEN
+      R->SetX(F, Inst.rd, static_cast<std::make_signed_t<INT>>(res));
+
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+    /// fclass: Return FP classification like the RISC-V fclass instruction
+    // See: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
+    // Because quiet and signaling NaNs are not distinguished by the C++ standard, an
+    // additional argument has been added to disambiguate between quiet and signaling
+    // NaNs. The argument will determine whether it's a quiet or signaling NaN.
+    template<typename T>
+    unsigned fclass(T val, bool quietNaN = true) {
+      switch(std::fpclassify(val)){
+      case FP_INFINITE:
+        return std::signbit(val) ? 1 : 1 << 7;
+      case FP_NAN:
+        return quietNaN ? 1 << 9 : 1 << 8;
+      case FP_NORMAL:
+        return std::signbit(val) ? 1 << 1 : 1 << 6;
+      case FP_SUBNORMAL:
+        return std::signbit(val) ? 1 << 2 : 1 << 5;
+      case FP_ZERO:
+        return std::signbit(val) ? 1 << 3 : 1 << 4;
+      default:
+        return 0;
+      }
+    }
   } // namespace RevCPU
 } // namespace SST
 

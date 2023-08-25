@@ -179,30 +179,14 @@ namespace SST{
         double fp64 = R->DPF[Inst.rs1];
         uint64_t i64;
         memcpy(&i64, &fp64, sizeof(i64));
-        R->SetX(F, Inst.rd, R->fclass(fp64, i64 & uint64_t{1}<<51));
+        bool quietNaN = (i64 & uint64_t{1}<<51) != 0;
+        R->SetX(F, Inst.rd, fclass(fp64, quietNaN));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fcvtwd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        double fp64 = R->DPF[Inst.rs1];
-        int32_t res = std::isnan(fp64) ? std::numeric_limits<int32_t>::max() :
-          fp64 > double(std::numeric_limits<int32_t>::max()) ? std::numeric_limits<int32_t>::max() :
-          fp64 < double(std::numeric_limits<int32_t>::min()) ? std::numeric_limits<int32_t>::min() :
-          static_cast<int32_t>(fp64);
-        R->SetX(F, Inst.rd, res);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fcvtwud(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        double fp64 = R->DPF[Inst.rs1];
-        uint32_t res = std::isnan(fp64) || fp64 > double(std::numeric_limits<uint32_t>::max()) ?
-          std::numeric_limits<uint32_t>::max() : fp64 < 0 ? 0 : static_cast<uint32_t>(fp64);
-        R->SetX(F, Inst.rd, static_cast<int32_t>(res));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& fcvtwd  = cvt_fp_to_int<double,  int32_t>;
+      static constexpr auto& fcvtwud = cvt_fp_to_int<double, uint32_t>;
 
       static bool fcvtdw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = static_cast<double>(R->GetX<int32_t>(F, Inst.rs1));

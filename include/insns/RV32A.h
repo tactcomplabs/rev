@@ -26,15 +26,14 @@ namespace SST{
                 (uint32_t *)(&R->RV32[Inst.rd]),
                 Inst.aq, Inst.rl,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
-          R->RV32_PC += Inst.instSize;
         }else{
           M->LR(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                 (uint32_t *)(&R->RV64[Inst.rd]),
                 Inst.aq, Inst.rl,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-          R->RV64_PC += Inst.instSize;
         }
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -45,15 +44,14 @@ namespace SST{
                 (uint32_t *)(&R->RV32[Inst.rd]),
                 Inst.aq, Inst.rl,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
-          R->RV32_PC += Inst.instSize;
         }else{
           M->SC(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
                 (uint32_t *)(&R->RV64[Inst.rs2]),
                 (uint32_t *)(&R->RV64[Inst.rd]),
                 Inst.aq, Inst.rl,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-          R->RV64_PC += Inst.instSize;
         }
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -78,7 +76,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -86,10 +83,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -114,7 +111,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -122,10 +118,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -150,7 +146,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -158,10 +153,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -186,7 +181,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -194,10 +188,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -222,7 +216,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -230,10 +223,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->RV32_PC += Inst.instSize;
         return true;
       }
 
@@ -258,7 +251,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -266,10 +258,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->RV32_PC += Inst.instSize;
         return true;
       }
 
@@ -294,7 +286,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -302,10 +293,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->RV32_PC += Inst.instSize;
         return true;
       }
 
@@ -330,7 +321,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -338,10 +328,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -366,7 +356,6 @@ namespace SST{
                     (int32_t *)(&R->RV32[Inst.rs2]),
                     (int32_t *)(&R->RV32[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV32_PC += Inst.instSize;
         }else{
           flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
@@ -374,10 +363,10 @@ namespace SST{
                     (int32_t *)(&R->RV64[Inst.rs2]),
                     (int32_t *)(&R->RV64[Inst.rd]),
                     REVMEM_FLAGS(flags));
-          R->RV64_PC += Inst.instSize;
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 

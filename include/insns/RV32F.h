@@ -152,25 +152,8 @@ namespace SST{
         return true;
       }
 
-      static bool fcvtws(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float fp32 = R->GetFP32(F, Inst.rs1);
-        int32_t res = std::isnan(fp32) ? std::numeric_limits<int32_t>::max() :
-          fp32 > float(std::numeric_limits<int32_t>::max()) ? std::numeric_limits<int32_t>::max() :
-          fp32 < float(std::numeric_limits<int32_t>::min()) ? std::numeric_limits<int32_t>::min() :
-          static_cast<int32_t>(fp32);
-        R->SetX(F, Inst.rd, res);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fcvtwus(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float fp32 = R->GetFP32(F, Inst.rs1);
-        uint32_t res = std::isnan(fp32) || fp32 > float(std::numeric_limits<uint32_t>::max()) ?
-          std::numeric_limits<uint32_t>::max() : fp32 < 0 ? 0 : static_cast<uint32_t>(fp32);
-        R->SetX(F, Inst.rd, res);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& fcvtws  = cvt_fp_to_int<float,  int32_t>;
+      static constexpr auto& fcvtwus = cvt_fp_to_int<float, uint32_t>;
 
       static bool fmvxw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int32_t i32;
@@ -205,7 +188,8 @@ namespace SST{
         float fp32 = R->GetFP32(F, Inst.rs1);
         uint32_t i32;
         memcpy(&i32, &fp32, sizeof(i32));
-        R->SetX(F, Inst.rd, R->fclass(fp32, i32 & uint32_t{1}<<22));
+        bool quietNaN = (i32 & uint32_t{1}<<22) != 0;
+        R->SetX(F, Inst.rd, fclass(fp32, quietNaN));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }

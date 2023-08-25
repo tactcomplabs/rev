@@ -20,26 +20,8 @@
 namespace SST{
   namespace RevCPU{
     class RV64F : public RevExt {
-
-      static bool fcvtls(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float fp32 = R->GetFP32(F, Inst.rs1);
-        int64_t res = std::isnan(fp32) ? std::numeric_limits<int64_t>::max() :
-          fp32 > float(std::numeric_limits<int64_t>::max()) ? std::numeric_limits<int64_t>::max() :
-          fp32 < float(std::numeric_limits<int64_t>::min()) ? std::numeric_limits<int64_t>::min() :
-          static_cast<int64_t>(fp32);
-        R->SetX(F, Inst.rd, res);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fcvtlus(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float fp32 = R->GetFP32(F, Inst.rs1);
-        uint64_t res = std::isnan(fp32) || fp32 > float(std::numeric_limits<uint64_t>::max()) ?
-          std::numeric_limits<uint64_t>::max() : fp32 < 0 ? 0 : static_cast<uint64_t>(fp32);
-        R->SetX(F, Inst.rd, res);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& fcvtls  = cvt_fp_to_int<float,  int64_t>;
+      static constexpr auto& fcvtlus = cvt_fp_to_int<float, uint64_t>;
 
       static bool fcvtsl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->SetFP32(F, Inst.rd, static_cast<float>(R->GetX<int64_t>(F, Inst.rs1)));

@@ -15,13 +15,13 @@ else()
 endif()
 
 # Check for RISCV Compiler
-set(ENV{RVCC} "${RVCC}")
-set(RVCC "${RVCC}")
-
+if(NOT RVCC)
+  set(RVCC "$ENV{RVCC}")
+endif()  
 if(RVCC)
   message(STATUS "RVCC set to ${RVCC}")
 else()
-#  message(FATAL_ERROR "No RVCC compiler found: use -DRVCC=/path/to/compiler (gcc,clang)")
+  message(FATAL_ERROR "RVCC environment varible is not set.")
 endif()
 
 # find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
