@@ -26,7 +26,7 @@ namespace SST {
 
       /// Constructor
       explicit RevCPUPyModule(std::string library) :
-        SSTElementPythonModule(library) {
+        SSTElementPythonModule(std::move(library)) {
         auto primary_module = createPrimaryModule(pyrevcpu,
                                                   "pyrevcpu.py");
       }
