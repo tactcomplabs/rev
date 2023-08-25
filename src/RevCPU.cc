@@ -221,7 +221,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   Mem->SetTLBSize(tlbSize);
 
   // Set max heap size
-  const uint64_t maxHeapSize = params.find<unsigned long>("maxHeapSize", std::floor((memSize/4)));
+  const uint64_t maxHeapSize = params.find<unsigned long>("maxHeapSize", memSize/4);
   Mem->SetMaxHeapSize(maxHeapSize);
 
   // Load the binary into memory
@@ -2298,7 +2298,7 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
                  "Error: no faults enabled; add a fault vector in the 'faults' param\n" );
   }
 
-  srand(time(NULL));
+  srand(unsigned(time(NULL)));
 
   unsigned selector = 0;
   if( myfaults.size() == 1 ){
@@ -2306,7 +2306,7 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
   }else{
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(0, myfaults.size()-1); // define the range
+    std::uniform_int_distribution<> distr(0, int(myfaults.size())-1); // define the range
     selector = distr(gen);
   }
 

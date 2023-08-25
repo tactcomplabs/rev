@@ -80,9 +80,9 @@ namespace SST{
       static bool cj(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.j $imm = jal x0, $imm
         Inst.rd = 0; // x0
-        //Inst.imm = Inst.jumpTarget;
-        SEXT(Inst.imm, Inst.jumpTarget&0b111111111111, 12);
 
+        Inst.imm = Inst.jumpTarget;
+        Inst.imm = Inst.ImmSignExt(12);
         return jal(F, R, M, Inst);
       }
 
@@ -138,9 +138,10 @@ namespace SST{
         // c.beqz %rs1, $imm = beq %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
-        //Inst.imm = Inst.offset;
+        Inst.imm = Inst.offset;
+        Inst.imm = Inst.ImmSignExt(6);
         //Inst.imm = Inst.offset & 0b111111;
-        SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
+        //SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
         //SEXT(Inst.imm, Inst.offset, 6);
 
         return beq(F, R, M, Inst);
@@ -150,10 +151,11 @@ namespace SST{
         // c.bnez %rs1, $imm = bne %rs1, x0, $imm
         Inst.rs2 = 0;
         Inst.rs1 = CRegMap[Inst.rs1];
-        //Inst.imm = Inst.offset;
+        Inst.imm = Inst.offset;
+        Inst.imm = Inst.ImmSignExt(9);  //Immd is signed 9-bit, scaled in decode
         //Inst.imm = Inst.offset & 0b111111;
         //SEXT(Inst.imm, Inst.offset, 6);
-        SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
+        //SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
 
         return bne(F, R, M, Inst);
       }
@@ -161,32 +163,30 @@ namespace SST{
       static bool cli(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.li %rd, $imm = addi %rd, x0, $imm
         Inst.rs1 = 0;
-        SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
+        // SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
+        Inst.imm = Inst.ImmSignExt(6);
         return addi(F, R, M, Inst);
       }
 
       static bool CIFUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( Inst.rd == 2 ){
           // c.addi16sp
-           //SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
-           //SEXT(Inst.imm, (Inst.imm & 0b111111)*16, 6);
-#if 0
-          SEXT(Inst.imm, (Inst.imm & 0b1111111111), 10); // Immd is 10 bits, sign extended and scaled in decode
-#else
+          //SEXT(Inst.imm, (Inst.imm & 0b011111111)*16, 32);
+          //SEXT(Inst.imm, (Inst.imm & 0b111111)*16, 6);
+          // SEXT(Inst.imm, (Inst.imm & 0b1111111111), 10); // Immd is 10 bits, sign extended and scaled in decode
           Inst.imm = Inst.ImmSignExt(10);
-#endif
           return addi(F, R, M, Inst);
         }else{
           // c.lui %rd, $imm = addi %rd, x0, $imm
-          SEXT(Inst.imm, (Inst.imm & 0b111111), 6);
+          Inst.imm = Inst.ImmSignExt(6);
           return lui(F, R, M, Inst);
         }
       }
 
       static bool caddi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.addi %rd, $imm = addi %rd, %rd, $imm
-        uint32_t tmp = Inst.imm & 0b111111;
-        SEXT(Inst.imm, tmp, 6);
+        // uint32_t tmp = Inst.imm & 0b111111;
+        Inst.imm = Inst.ImmSignExt(6);
         Inst.rs1 = Inst.rd;
         return addi(F, R, M, Inst);
       }
@@ -215,7 +215,7 @@ namespace SST{
         // c.andi %rd, $imm = sandi %rd, %rd, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = Inst.rd;
-        SEXT(Inst.imm, (Inst.imm & 0b0111111), 6);  //immd is 6 bits, sign extended no scaling needed
+        Inst.imm = Inst.ImmSignExt(6);  //immd is 6 bits, sign extended no scaling needed
         return andi(F, R, M, Inst);
       }
 

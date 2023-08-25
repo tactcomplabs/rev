@@ -56,8 +56,9 @@ namespace SST{
       static bool caddiw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.addiw %rd, $imm = addiw %rd, %rd, $imm
         Inst.rs1 = Inst.rd;
-        uint64_t tmp = Inst.imm & 0b111111;
-        SEXT(Inst.imm, tmp, 6);
+        // uint64_t tmp = Inst.imm & 0b111111;
+        // SEXT(Inst.imm, tmp, 6);
+        Inst.imm = Inst.ImmSignExt(6);
         return addiw(F,R,M,Inst);
       }
 
@@ -78,7 +79,6 @@ namespace SST{
       }
 
       // Standard instructions
-#if 1
       static bool lwu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
         uint32_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
@@ -88,22 +88,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
-#else
-      static bool lwu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
-        uint32_t val = 0;
-        M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                    &val,
-                    REVMEM_FLAGS(RevCPU::RevFlag::F_ZEXT64));
-        R->RV64[Inst.rd] = 0x00ULL;
-        R->RV64[Inst.rd] |= (uint64_t)(val);
-        //ZEXT64(R->RV64[Inst.rd], (uint64_t)val, 64);
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-#endif
 
-#if 1
       static bool ld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint64_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
@@ -113,33 +98,13 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
-#else
-      static bool ld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        //R->RV64[Inst.rd] = M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
-        M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
-                   &R->RV64[Inst.rd],
-                   REVMEM_FLAGS(0x00));
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-#endif
 
-#if 1
       static bool sd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         M->WriteU64(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                     R->GetX<uint64_t>(F, Inst.rs2));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
-#else
-      static bool sd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        int64_t tmp = td_u64(Inst.imm,12);
-        M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+tmp), (uint64_t)(R->RV64[Inst.rs2]));
-        R->RV64_PC += Inst.instSize;
-        return true;
-      }
-#endif
 
       static bool addiw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->SetX(F, Inst.rd, int64_t{R->GetX<int32_t>(F, Inst.rs1) + Inst.ImmSignExt(12)});

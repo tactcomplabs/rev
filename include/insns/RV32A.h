@@ -226,7 +226,7 @@ namespace SST{
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        R->RV32_PC += Inst.instSize;
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -261,7 +261,7 @@ namespace SST{
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        R->RV32_PC += Inst.instSize;
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
@@ -296,7 +296,7 @@ namespace SST{
         }
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        R->RV32_PC += Inst.instSize;
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 

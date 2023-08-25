@@ -210,7 +210,8 @@ namespace SST {
       bool *Enabled;                      ///< RevCPU: Completion structure
 
       uint8_t PrivTag;                    ///< RevCPU: private tag locator
-      uint64_t LToken;                    ///< RevCPU: token identifier for PAN Test
+      // TODO: LToken is used everywhere as uint32_t but was declared as uint64_t
+      uint32_t LToken;                    ///< RevCPU: token identifier for PAN Test
 
       int address;                        ///< RevCPU: local network address
 

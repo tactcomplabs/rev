@@ -79,7 +79,8 @@
 #define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
 
 // RV{32,64} Register Operation Macros
-                    //(r) = ((r) & (~r));
+// TODO: These should be replaced with simpler inline functions or casts
+
 #define SEXT(r,x,b) do {\
                     (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register

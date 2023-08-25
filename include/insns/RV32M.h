@@ -37,14 +37,14 @@ namespace SST{
         if( F->IsRV32() ){
           uint32_t rs1 = R->GetX<uint32_t>(F, Inst.rs1);
           uint32_t rs2 = R->GetX<uint32_t>(F, Inst.rs2);
-          uint32_t mul = rs1 * int64_t(rs2) >> 32;
+          uint32_t mul = static_cast<uint32_t>(rs1 * int64_t(rs2) >> 32);
           if (rs1_is_signed && rs1 & (uint32_t{1}<<31)) mul -= rs2;
           if (rs2_is_signed && rs2 & (uint32_t{1}<<31)) mul -= rs1;
           R->SetX(F, Inst.rd, mul);
         }else{
           uint64_t rs1 = R->GetX<uint64_t>(F, Inst.rs1);
           uint64_t rs2 = R->GetX<uint64_t>(F, Inst.rs2);
-          uint64_t mul = rs1 * __int128(rs2) >> 64;
+          uint64_t mul = static_cast<uint64_t>(rs1 * __int128(rs2) >> 64);
           if (rs1_is_signed && rs1 & (uint64_t{1}<<63)) mul -= rs2;
           if (rs2_is_signed && rs2 & (uint64_t{1}<<63)) mul -= rs1;
           R->SetX(F, Inst.rd, mul);
