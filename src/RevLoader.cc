@@ -288,6 +288,15 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
+    // Check if the program header is PT_TLS
+    // - If so, save the addr & size of the TLS segment
+    if( ph[i].p_type == PT_TLS ){
+      std::cout << "TLS Segment: " << std::endl;
+      std::cout << "  Addr: 0x" << std::hex << ph[i].p_paddr << std::endl;
+      std::cout << "  Size: 0x" << std::hex << ph[i].p_memsz << std::endl;
+      mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
+    }
+    
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
       mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
@@ -313,6 +322,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
       DataEnd = sh[i].sh_addr + sh[i].sh_size;
     }
   }
+
   // If BSS exists, static data ends after it
   if( BSSEnd > 0 ){
     StaticDataEnd = BSSEnd;

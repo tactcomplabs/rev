@@ -306,6 +306,12 @@ namespace SST {
 
       uint64_t ExpandHeap(uint64_t Size);
 
+      void SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size);
+
+      // RevMem: Used to get the TLS BaseAddr & Size
+      const uint64_t& GetTLSBaseAddr(){ return TLSBaseAddr; }
+      const uint64_t& GetTLSSize(){ return TLSSize; }
+
     class RevMemStats {
     public:
       uint64_t TLBHits;
@@ -328,6 +334,11 @@ namespace SST {
       std::list<uint64_t> LRUQueue; ///< RevMem: List ordered by last access for implementing LRU policy when TLB fills up
       std::vector<std::shared_ptr<MemSegment>> MemSegs;     // Currently Allocated MemSegs
       std::vector<std::shared_ptr<MemSegment>> FreeMemSegs; // MemSegs that have been unallocated
+  
+      uint64_t TLSBaseAddr = 0x0;
+      uint64_t TLSSize = 0x0;
+      
+
       unsigned long memSize;        ///< RevMem: size of the target memory
       unsigned tlbSize;             ///< RevMem: size of the target memory
       unsigned maxHeapSize;             ///< RevMem: size of the target memory
