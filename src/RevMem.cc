@@ -461,9 +461,9 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
                     bool *Hazard,
                     StandardMem::Request::flags_t flags){
-//#ifdef _REV_DEBUG_
+#ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
-//#endif
+#endif
 
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
@@ -479,7 +479,6 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
 
   if( ctrl ){
     // sending to the RevMemCtrl
-    std::cout << "AMOMem flags = 0x" << std::hex << (uint32_t)(flags) << std::dec << std::endl;
     ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem),
                               Len, reinterpret_cast<char *>(Data),
                               Target, Hazard, flags);
@@ -577,10 +576,6 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
     }
     // clear the hazard
     *Hazard = false;
-  }
-
-  if( *Hazard ){
-    std::cout << "HAZARD IS SET" << std::endl;
   }
 
   return true;

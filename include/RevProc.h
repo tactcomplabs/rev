@@ -27,6 +27,7 @@
 #include <queue>
 #include <functional>
 #include <tuple>
+#include <list>
 #include <inttypes.h>
 
 // -- RevCPU Headers
@@ -157,12 +158,12 @@ namespace SST{
 
       ///< RevProc: Returns pointer to current ctx loaded into HartToDecode
       std::shared_ptr<RevThreadCtx> HartToDecodeCtx();
-  
+
       ///< RevProc: Change HartToExec active pid
-      bool ChangeActivePID(uint32_t PID); 
-  
+      bool ChangeActivePID(uint32_t PID);
+
       ///< RevProc: Change HartID active pid
-      bool ChangeActivePID(uint32_t PID, uint16_t HartID); 
+      bool ChangeActivePID(uint32_t PID, uint16_t HartID);
 
       bool UpdateRegFile();
       // bool UpdateRegFile(uint16_t HartID);
@@ -184,7 +185,7 @@ namespace SST{
       uint64_t Retired;         ///< RevProc: number of retired instructions
       bool PendingCtxSwitch = false; ///< RevProc: determines if the core is halted
       bool SwapToParent = false; ///< RevProc: determines if the core is halted
-      uint32_t NextPID = 0; 
+      uint32_t NextPID = 0;
 
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
@@ -542,7 +543,9 @@ namespace SST{
 #define PIPE_HART     0
 #define PIPE_INST     1
 #define PIPE_HAZARD   2
-      std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
+      //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
+      std::vector<std::pair<uint16_t,RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
+      std::list<bool *> LoadHazards;                      ///< RevProc: list of allocated load hazards
 
       std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
       std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
@@ -551,6 +554,12 @@ namespace SST{
       std::map<unsigned,std::pair<unsigned,unsigned>> EntryToExt;     ///< RevProc: instruction entry to extension object mapping
                                                                       ///           first = Master table entry number
                                                                       ///           second = pair<Extension Index, Extension Entry>
+
+      /// RevProc: creates a new pipeline load hazard and returns a pointer to it
+      bool *createLoadHazard();
+
+      /// RevProc: destroys the target load hazard object and removes it from the list
+      void destroyLoadHazard(bool *hazard);
 
       /// RevProc: splits a string into tokens
       void splitStr(const std::string& s, char c, std::vector<std::string>& v);

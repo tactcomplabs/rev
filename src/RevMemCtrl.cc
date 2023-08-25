@@ -258,7 +258,6 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
                                      bool *Hazard,
                                      StandardMem::Request::flags_t flags){
 
-  std::cout << "sendAMORequest" << std::endl;
   if( Size == 0 )
     return true;
 
@@ -267,7 +266,6 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
   // AMO enums
   if( ((uint32_t)(flags) & (uint32_t)(0x3FE00000)) == 0){
     // not an atomic request
-    std::cout << "FUCK THIS : 0x" << std::hex << (uint32_t)(flags) << std::hex << std::endl;
     return true;
   }
 
@@ -278,9 +276,6 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
                               RevMemOp::MemOp::MemOpREAD, flags);
   Op->setHazard(Hazard);
   *Hazard = true;
-
-  std::cout << "MY AMO HAZARD ADDRESS IS : 0x" << std::hex
-             << Op->getHazard() << std::dec << std::endl;
 
   // Store the first operation in the AMOTable.  When the read
   // response comes back, we will catch the response, perform
@@ -1263,6 +1258,8 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     }
     std::cout << "hazard ptr = 0x" << std::hex << op->getHazard() << std::dec << std::endl;
     std::cout << "hazard value before processing = " << *op->getHazard() << std::endl;
+    std::cout << "Address of the target register = 0x" << std::hex
+              << (uint64_t *)(op->getTarget()) << std::dec << std::endl;
 #endif
 
     auto range = AMOTable.equal_range(op->getAddr());
@@ -1316,7 +1313,9 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
       handleAMO(op);
     }
     bool *Hazard = op->getHazard();
-    *Hazard = false;
+    if( Hazard != nullptr ){
+      *Hazard = false;
+    }
     delete op;
     outstanding.erase(ev->getID());
     delete ev;
@@ -1339,9 +1338,6 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,char *,void *,
   StandardMem::Request::flags_t flags = Tmp->getFlags();
   std::vector<uint8_t> buffer = Tmp->getBuf();
 
-  std::cout << "buffer size = " << buffer.size() << std::endl;
-  std::cout << "tmp size = " << Tmp->getSize() << std::endl;
-
   if( Tmp->getSize() == 4 ){
     int32_t TmpBuf = 0x00ul;
     int32_t *TmpTarget = reinterpret_cast<int32_t *>(Target);
@@ -1353,12 +1349,7 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,char *,void *,
 
     // 32-bit (W) AMOs
     if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
-      std::cout << "handling AMOAdd command" << std::endl;
-      std::cout << "TmpTarget = 0x" << std::hex << *TmpTarget << std::dec << std::endl;
-      std::cout << "TmpBuf = 0x" << std::hex << TmpBuf << std::dec << std::endl;
       *TmpTarget += TmpBuf;
-      SEXTI(*TmpTarget,32);
-      std::cout << "Result TmpTarget = 0x" << std::hex << *TmpTarget << std::dec << std::endl;
     }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
       *TmpTarget ^= TmpBuf;
     }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
