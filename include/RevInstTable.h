@@ -108,15 +108,6 @@
                     (r) = (r) & (((1ULL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
-
-#if 0
-/// convert u32/u64 in two's complement to decimal
-template<typename T>
-constexpr T td(T binary, unsigned bits){
-    return binary & T{1} << (bits-1) ? binary | ~T{0} << (bits - 1) : binary;
-}
-#endif
-
 namespace SST{
   namespace RevCPU {
 
@@ -143,10 +134,6 @@ namespace SST{
       RevRegFile& operator=(const RevRegFile&) = default;  // Default assignment
       RevRegFile()                             = default;  // Default constructor
       ~RevRegFile()                            = default;  // Default destructor
-
-      // This proxy class system was too complicated
-      //      RevRF<uint32_t, _REV_NUM_REGS_> RV32;    ///< RevRegFile: RV32I register file
-      //      RevRF<uint64_t, _REV_NUM_REGS_> RV64;    ///< RevRegFile: RV64I register file
 
       uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
       uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
