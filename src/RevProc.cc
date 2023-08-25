@@ -434,10 +434,12 @@ bool RevProc::Reset(){
 
     regFile->cost = 0;
 
+#if 0
     while(!Pipeline.empty()){
       Pipeline.pop();
     }
-
+#endif
+    Pipeline.clear();
   }
   // set the pc
   uint64_t StartAddr = 0x00ull;
@@ -1603,6 +1605,7 @@ void RevProc::ResetInst(RevInst *I){
   I->jumpTarget = 0;
   I->instSize   = 0;
   I->compressed = false;
+  I->hazard     = nullptr;
 }
 
 void RevProc::HandleRegFault(unsigned width){
@@ -1689,34 +1692,41 @@ void RevProc::HandleALUFault(unsigned width){
 
 bool RevProc::DependencyCheck(uint16_t HartID, RevInst* I){
 
-      bool depFound = false;
-      bool isFloat = IsFloat(I->entry);
+  bool depFound = false;
+  bool isFloat = IsFloat(I->entry);
 
-      RevRegFile* regFile = GetRegFile(HartID);
+  RevRegFile* regFile = GetRegFile(HartID);
 
+  // check the load hazard bit
+  if( I->hazard != nullptr ){
+    bool *Hazard = I->hazard;
+    if( *Hazard ){
+      return true;
+    }
+  }
 
-      if(feature->IsRV32()){
-        if(isFloat){
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs3] || depFound : depFound;
-        }else{
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs3] || depFound : depFound;
-        }
-      }else {
-        if(isFloat){
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs3] || depFound : depFound;
-        }else{
-          depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs1] || depFound : depFound;
-          depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs2] || depFound : depFound;
-          depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs3] || depFound : depFound;
-        }
-      }
-    return depFound;
+  if(feature->IsRV32()){
+    if(isFloat){
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs3] || depFound : depFound;
+    }else{
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs3] || depFound : depFound;
+    }
+  }else {
+    if(isFloat){
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs3] || depFound : depFound;
+    }else{
+      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs1] || depFound : depFound;
+      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs2] || depFound : depFound;
+      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs3] || depFound : depFound;
+    }
+  }
+  return depFound;
 }
 
 void RevProc::DependencySet(uint16_t HartID, RevInst* Inst){
@@ -1780,6 +1790,19 @@ uint16_t RevProc::GetHartID(){
   return nextID;
 }
 
+bool *RevProc::createLoadHazard(){
+  bool *LH = new bool;
+  *LH = false;
+  LoadHazards.push_back(LH);
+  return LH;
+}
+
+void RevProc::destroyLoadHazard(bool *LH){
+  if( LH != nullptr ){
+    LoadHazards.remove(LH);
+  }
+}
+
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
@@ -1823,7 +1846,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     HART_CTS[tID] = (GetRegFile(tID)->cost == 0);
   }
 
-  if( HART_CTS.any() && (!Halted)) { // && (RegFile(HartID)->cost == 0)){
+  if( HART_CTS.any() && (!Halted)) {
     // fetch the next instruction
     ResetInst(&Inst);
 
@@ -1845,17 +1868,19 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Inst.entry = RegFile->Entry;
     }
 
-    //Now that we have decoded the instruction, check for pipeline hazards
+    Inst.hazard = nullptr;
+
+    // Now that we have decoded the instruction, check for pipeline hazards
     if(Stalled || DependencyCheck(HartToDecode, &Inst)) {
       RegFile->cost = 0; // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
       HartToExec = _REV_INVALID_HART_ID_;
-    }else {                 
+    }else {
       Stats.cyclesBusy++;
       HART_CTE[HartToDecode] = true;
       HartToExec = HartToDecode;
-    };
+    }
     Inst.cost = RegFile->cost;
     Inst.entry = RegFile->Entry;
     rtn = true;
@@ -1866,7 +1891,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // trigger the next instruction
     // HartToExec = HartToDecode;
     RegFile->trigger = true;
-    
 
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
@@ -1893,24 +1917,42 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // Update RegFile (in case of prior context switch)
       Ext->SetRegFile(RegFile);
 
+      // -- BEGIN new pipelining implementation
+      if( !PendingCtxSwitch ){
+        bool *LH = createLoadHazard();
+        Pipeline.push_back(std::make_pair(HartToExec,Inst));
+        Pipeline.back().second.hazard = LH;
+      }
+
+      if( (Ext->GetName() == "RV32F") ||
+          (Ext->GetName() == "RV32D") ||
+          (Ext->GetName() == "RV64F") ||
+          (Ext->GetName() == "RV64D") ){
+        Stats.floatsExec++;
+      }
+
+      // set the hazarding
+      DependencySet(HartToExec, &(Pipeline.back().second));
+      // -- END new pipelining implementation
 
       // execute the instruction
-      if( !Ext->Execute(EToE.second, Inst, HartToExec) ){
+      if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec) ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
-      //#define __REV_DEEP_TRACE__
+
+//      #define __REV_DEEP_TRACE__
       #ifdef __REV_DEEP_TRACE__
       if(feature->IsRV32()){
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC
                   << " Inst: " << std::setw(23)
                   << InstTable[Inst.entry].mnemonic
                   << " r" << std::dec << (uint32_t)Inst.rd  << "= "
-                  << std::hex << RegFile(HartToExec)->RV32[Inst.rd]
+                  << std::hex << RegFile->RV32[Inst.rd]
                   << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
-                  << std::hex << RegFile(HartToExec)->RV32[Inst.rs1]
+                  << std::hex << RegFile->RV32[Inst.rs1]
                   << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
-                  << std::hex << RegFile(HartToExec)->RV32[Inst.rs2]
+                  << std::hex << RegFile->RV32[Inst.rs2]
                   << " imm = " << std::hex << Inst.imm
                   << std::endl;
 
@@ -1919,13 +1961,16 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   << " Inst: " << std::setw(23)
                   << InstTable[Inst.entry].mnemonic
                   << " r" << std::dec << (uint32_t)Inst.rd  << "= "
-                  << std::hex << RegFile(HartToExec)->RV64[Inst.rd]
+                  << std::hex << RegFile->RV64[Inst.rd]
                   << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
-                  << std::hex << RegFile(HartToExec)->RV64[Inst.rs1]
+                  << std::hex << RegFile->RV64[Inst.rs1]
                   << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
-                  << std::hex << RegFile(HartToExec)->RV64[Inst.rs2]
+                  << std::hex << RegFile->RV64[Inst.rs2]
                   << " imm = " << std::hex << Inst.imm
                   << std::endl;
+        std::cout << "RDT: Address of RD = 0x" << std::hex
+                  << (uint64_t *)(&RegFile->RV64[Inst.rd])
+                  << std::dec << std::endl;
       }
       #endif
 
@@ -1969,21 +2014,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         #endif
         // }
       }
-
-      if( !PendingCtxSwitch ){
-        Pipeline.push(std::make_pair(HartToExec, Inst));
-      }
-      bool isFloat = false;
-      if( (Ext->GetName() == "RV32F") ||
-          (Ext->GetName() == "RV32D") ||
-          (Ext->GetName() == "RV64F") ||
-          (Ext->GetName() == "RV64D") ){
-        Stats.floatsExec++;
-        isFloat = true;
-      }
-
-      DependencySet(HartToExec, &Inst);
-
 
       // inject the ALU fault
       if( ALUFault ){
@@ -2039,34 +2069,34 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
 
-  if(!Pipeline.empty() && Pipeline.front().second.cost > 0){
-      Pipeline.front().second.cost--;
-      if(Pipeline.front().second.cost == 0){
-        uint16_t tID = Pipeline.front().first;
-        output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
-                      id, tID, ExecPC);
-        Retired++;
-        RevInst retiredInst = Pipeline.front().second;
-        DependencyClear(tID, &retiredInst);
-        Pipeline.pop();
-        GetRegFile(tID)->cost = 0;
-      }
+  // walk the pipeline hazards.  if a load hazard is set, increase the cost to > 0
+  for( auto i : Pipeline ){
+    if( *(i.second.hazard) ){
+      i.second.cost++;
+    }
   }
-  /*for(int tID = 0; tID < _REV_HART_COUNT_; tID ++){
-    //A thread that has successfully decoded an instruction AND has no dependencies will have
-      // a cost > 0 as set by the decode stage
-      if(RegFile(tID)->cost > 0){   
-        RegFile(tID)->cost = RegFile(tID)->cost - 1;
-        if( RegFile(tID)->cost == 0 ){
-            output->verbose(CALL_INFO, 6, 0,
+
+  // Check for pipeline hazards
+  if(!Pipeline.empty() &&
+     (Pipeline.front().second.cost > 0)){
+    Pipeline.front().second.cost--;
+    if((Pipeline.front().second.cost == 0) &&
+       (!*(Pipeline.front().second.hazard))){
+      // Ready to retire this instruction
+      uint16_t tID = Pipeline.front().first;
+      output->verbose(CALL_INFO, 6, 0,
                       "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
                       id, tID, ExecPC);
-            Retired++;
-            RegFile(tID)->trigger = false;
-        }
-      }
-  }*/
+      Retired++;
+      DependencyClear(tID, &(Pipeline.front().second));
+      destroyLoadHazard(Pipeline.front().second.hazard);
+      Pipeline.erase(Pipeline.begin());
+      GetRegFile(tID)->cost = 0;
+    }else{
+      // could not retire the instruction, bump the cost
+      Pipeline.front().second.cost++;
+    }
+  }
 
   // Check for completion states and new tasks
   if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
@@ -2369,23 +2399,23 @@ uint32_t RevProc::CreateChildCtx() {
 /* ========================================= */
 void RevProc::InitEcallTable(){
   Ecalls = {
-    {5,   &RevProc::ECALL_setxattr},        
+    {5,   &RevProc::ECALL_setxattr},
     {17,  &RevProc::ECALL_getcwd},          // Not implemented
     {23,  &RevProc::ECALL_dup},             // Not implemented
     {24,  &RevProc::ECALL_dup3},            // Not implemented
-    {34,  &RevProc::ECALL_mkdirat},         
-    {49,  &RevProc::ECALL_chdir},          
+    {34,  &RevProc::ECALL_mkdirat},
+    {49,  &RevProc::ECALL_chdir},
     {54,  &RevProc::ECALL_fchownat},        // Not implemented
     {55,  &RevProc::ECALL_fchown},          // Not implemented
-    {56,  &RevProc::ECALL_openat},          
+    {56,  &RevProc::ECALL_openat},
     {57,  &RevProc::ECALL_close},           // Not implemented
     {63,  &RevProc::ECALL_read},            // Not implemented
-    {64,  &RevProc::ECALL_write},          
+    {64,  &RevProc::ECALL_write},
     {77,  &RevProc::ECALL_tee},             // Not implemented
     {81,  &RevProc::ECALL_sync},            // Not implemented
     {82,  &RevProc::ECALL_fsync},           // Not implemented
     {83,  &RevProc::ECALL_fdatasync},       // Not implemented
-    {93,  &RevProc::ECALL_exit},           
+    {93,  &RevProc::ECALL_exit},
     {94,  &RevProc::ECALL_exit_group},      // Not implemented
     {95,  &RevProc::ECALL_waitid},          // Not implemented
     {99,  &RevProc::ECALL_set_robust_list}, // Not implemented
@@ -2396,13 +2426,13 @@ void RevProc::InitEcallTable(){
     {135, &RevProc::ECALL_rt_sigprocmask},  // Not implemented
     {169, &RevProc::ECALL_gettimeofday},    // Not implemented
     {170, &RevProc::ECALL_settimeofday},    // Not implemented
-    {172, &RevProc::ECALL_getpid},         
-    {173, &RevProc::ECALL_getppid},        
-    {178, &RevProc::ECALL_gettid},          
+    {172, &RevProc::ECALL_getpid},
+    {173, &RevProc::ECALL_getppid},
+    {178, &RevProc::ECALL_gettid},
     {214, &RevProc::ECALL_brk},             // Not implemented
-    {215, &RevProc::ECALL_munmap},          
+    {215, &RevProc::ECALL_munmap},
     {220, &RevProc::ECALL_clone},           // Fork functionality works but not clone3
-    {222, &RevProc::ECALL_mmap},            // 
+    {222, &RevProc::ECALL_mmap},            //
     {403, &RevProc::ECALL_clock_gettime},   // Not implemented
     {404, &RevProc::ECALL_clock_settime},   // Not implemented
     {408, &RevProc::ECALL_timer_gettime},   // Not implemented
@@ -2438,9 +2468,10 @@ void RevProc::ECALL_brk(){
   const uint64_t heapend = mem->GetHeapEnd();
   if( Addr > 0 && Addr > heapend ){
     uint64_t Size = Addr - heapend;
-    mem->ExpandHeap(Size); 
+    mem->ExpandHeap(Size);
   } else {
-    output->fatal(CALL_INFO, 11, "Out of memory / Unable to expand system break (brk) to Addr = 0x%lx", Addr);
+    output->fatal(CALL_INFO, 11,
+                  "Out of memory / Unable to expand system break (brk) to Addr = 0x%lx", Addr);
   }
   return;
 }
@@ -2457,7 +2488,7 @@ void RevProc::ECALL_clone(){
   mem->ReadMem(CloneArgsAddr, sizeof(uint64_t), &args);
 
   /*
-   * Parse clone flags 
+   * Parse clone flags
    * NOTE: if no flags are set, we get fork() like behavior
    */
   for( uint64_t bit=1; bit != 0; bit <<= 1 ){

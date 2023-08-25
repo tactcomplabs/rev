@@ -45,7 +45,6 @@ comp_lsq.addParams({
       "max_readlock"    : 16,
       "max_writeunlock" : 16,
       "max_custom"      : 16,
-      "max_amo"         : 16,
       "ops_per_cycle"   : 16
 })
 comp_lsq.enableAllStatistics({"type":"sst.AccumulatorStatistic"})

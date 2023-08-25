@@ -145,6 +145,20 @@ namespace SST {
       /// RevMemOp destructor
       ~RevMemOp();
 
+      /// RevMemOp: determine if the request is an AMO
+      bool isAMOOp(uint32_t flags){
+        uint32_t t_flags =  (uint32_t)(RevCPU::RevFlag::F_AMOADD) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOXOR) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOAND) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOOR) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOMIN) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOMAX) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOMINU) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) |
+                            (uint32_t)(RevCPU::RevFlag::F_AMOSWAP);
+        return ((flags & t_flags) > 0);
+      }
+
       /// RevMemOp: retrieve the memory operation type
       MemOp getOp() { return Op; }
 
@@ -181,6 +195,9 @@ namespace SST {
       /// RevMemOp: set the hart
       void setHart(unsigned H){Hart = H;}
 
+      /// RevMemOp: set the hazard pointer
+      void setHazard(bool *H){ hazard = H;}
+
       /// RevMemOp: retrieve the invalidate flag
       bool getInv() { return Inv; }
 
@@ -192,6 +209,9 @@ namespace SST {
 
       /// RevMemOp: retrieve the hart
       unsigned getHart() { return Hart; }
+
+      /// RevMemOp: retrieve the hazard pointer
+      bool *getHazard() { return hazard; }
 
       // RevMemOp: determine if the request is cache-able
       bool isCacheable() { if( (flags & 0b10) > 0 ){ return false; } return true; }
@@ -208,6 +228,7 @@ namespace SST {
       std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
       StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
       void *target;                         ///< RevMemOp: target register pointer
+      bool *hazard;                         ///< RevMemOp: load hazard
     };
 
     // ----------------------------------------
@@ -246,7 +267,7 @@ namespace SST {
 
       /// RevMemCtrl: send a read request
       virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                   uint32_t Size, void *target,
+                                   uint32_t Size, void *target, bool *Hazard,
                                    StandardMem::Request::flags_t flags) = 0;
 
       /// RevMemCtrl: send a write request
@@ -257,11 +278,12 @@ namespace SST {
       /// RevMemCtrl: send an AMO request
       virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                   uint32_t Size, char *buffer, void *target,
+                                  bool *Hazard,
                                   StandardMem::Request::flags_t flags) = 0;
 
       /// RevMemCtrl: send a readlock request
       virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                       uint32_t Size, void *target,
+                                       uint32_t Size, void *target, bool *Hazard,
                                        StandardMem::Request::flags_t flags) = 0;
 
       /// RevMemCtrl: send a writelock request
@@ -343,7 +365,6 @@ namespace SST {
                               { "max_readlock",   "Sets the maxmium number of outstanding readlock events",   "64"},
                               { "max_writeunlock","Sets the maximum number of outstanding writeunlock events","64"},
                               { "max_custom",     "Sets the maximum number of outstanding custom events",     "64"},
-                              { "max_amo",        "Sets the maximum number of outstanding AMO events",        "64"},
                               { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" }
       )
 
@@ -471,7 +492,7 @@ namespace SST {
 
       /// RevBasicMemCtrl: send a read request
       virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                   uint32_t Size, void *target,
+                                   uint32_t Size, void *target, bool *Hazard,
                                    StandardMem::Request::flags_t flags) override;
 
       /// RevBasicMemCtrl: send a write request
@@ -482,11 +503,12 @@ namespace SST {
       /// RevBasicMemCtrl: send an AMO request
       virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                   uint32_t Size, char *buffer, void *target,
+                                  bool *Hazard,
                                   StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a readlock request
       virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                       uint32_t Size, void *target,
+                                       uint32_t Size, void *target, bool *Hazard,
                                        StandardMem::Request::flags_t flags) override;
 
       // RevBasicMemCtrl: send a writelock request
@@ -579,14 +601,13 @@ namespace SST {
       bool processNextRqst(unsigned &t_max_loads, unsigned &t_max_stores,
                            unsigned &t_max_flush, unsigned &t_max_llsc,
                            unsigned &t_max_readlock, unsigned &t_max_writeunlock,
-                           unsigned &t_max_custom, unsigned &t_max_amo,
-                           unsigned &t_max_ops);
+                           unsigned &t_max_custom, unsigned &t_max_ops);
 
       /// RevBasicMemCtrl: determine if we can instantiate the target memory operation
       bool isMemOpAvail(RevMemOp *Op, unsigned &t_max_loads, unsigned &t_max_stores,
                         unsigned &t_max_flush, unsigned &t_max_llsc,
                         unsigned &t_max_readlock, unsigned &t_max_writeunlock,
-                        unsigned &t_max_custom, unsigned &t_max_amo);
+                        unsigned &t_max_custom);
 
       /// RevBasicMemCtrl: build a standard memory request
       bool buildStandardMemRqst(RevMemOp *op, bool &Success);
@@ -641,7 +662,6 @@ namespace SST {
       unsigned max_readlock;                  ///< maximum number of oustanding readlock events
       unsigned max_writeunlock;               ///< maximum number of oustanding writelock events
       unsigned max_custom;                    ///< maximum number of oustanding custom events
-      unsigned max_amo;                       ///< maximum number of outstanding AMO events
       unsigned max_ops;                       ///< maximum number of ops to issue per cycle
 
       uint64_t num_read;                      ///< number of outstanding read requests
@@ -652,7 +672,6 @@ namespace SST {
       uint64_t num_writeunlock;               ///< number of oustanding writelock requests
       uint64_t num_custom;                    ///< number of outstanding custom requests
       uint64_t num_fence;                     ///< number of oustanding fence requests
-      uint64_t num_amo;                       ///< number of outstanding AMO request
 
       std::vector<StandardMem::Request::id_t> requests;               ///< outstanding StandardMem requests
       std::vector<RevMemOp *> rqstQ;                                  ///< queued memory requests

@@ -48,6 +48,7 @@ private:
   unsigned depth;                             ///< Depth of each prefetcher stream
   std::vector<uint64_t> baseAddr;             ///< Vector of base addresses for each stream
   std::vector<uint32_t*> iStack;              ///< Vector of instruction vectors
+  std::vector<bool*> iHazard;                 ///< Vector of instruction cost vectors
 
   /// fills a missed stream cache instruction
   void Fill(uint64_t Addr);
