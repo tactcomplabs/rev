@@ -304,10 +304,12 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
     { RevCPU::RevFlag::F_AMOSWAP, RevBasicMemCtrl::MemCtrlStats::AMOSwapPending },
   };
 
-  for(auto& entry : table)
-    if(flags & uint32_t(entry.first))
+  for(auto& entry : table){
+    if(flags & uint32_t(entry.first)){
       recordStat(entry.second, 1);
-
+      break;
+    }
+  }
   return true;
 }
 
