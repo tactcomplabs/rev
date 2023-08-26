@@ -394,61 +394,45 @@ namespace SST{
         return true;
       }
 
-      static bool addi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      template<template<class> class OP>
+      static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) + Inst.ImmSignExt(12));
+          R->SetX(F, Inst.rd, OP()(R->GetX<int32_t>(F, Inst.rs1), R->GetX<int32_t>(F, Inst.rs2)));
         }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) + Inst.ImmSignExt(12));
+          R->SetX(F, Inst.rd, OP()(R->GetX<int64_t>(F, Inst.rs1), R->GetX<int64_t>(F, Inst.rs2)));
         }
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool slti(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      static constexpr auto& add   = oper<std::plus>;
+      static constexpr auto& sub   = oper<std::minus>;
+      static constexpr auto& f_xor = oper<std::bit_xor>;
+      static constexpr auto& f_or  = oper<std::bit_or>;
+      static constexpr auto& f_and = oper<std::bit_and>;
+
+      template<template<class> class OP>
+      static bool operi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) < Inst.ImmSignExt(12));
+          R->SetX(F, Inst.rd, OP()(R->GetX<int32_t>(F, Inst.rs1), Inst.ImmSignExt(12)));
         }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) < Inst.ImmSignExt(12));
+          R->SetX(F, Inst.rd, OP()(R->GetX<int64_t>(F, Inst.rs1), Inst.ImmSignExt(12)));
         }
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
+
+      static constexpr auto& addi  = operi<std::plus>;
+      static constexpr auto& slti  = operi<std::less>;
+      static constexpr auto& xori  = operi<std::bit_xor>;
+      static constexpr auto& ori   = operi<std::bit_or>;
+      static constexpr auto& andi  = operi<std::bit_and>;
 
       static bool sltiu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
           R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) < static_cast<uint32_t>(Inst.ImmSignExt(12)));
         }else{
           R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) < static_cast<uint64_t>(Inst.ImmSignExt(12)));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool xori(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) ^ Inst.ImmSignExt(12));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) ^ Inst.ImmSignExt(12));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool ori(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) | Inst.ImmSignExt(12));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) | Inst.ImmSignExt(12));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool andi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) & Inst.ImmSignExt(12));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) & Inst.ImmSignExt(12));
         }
         R->AdvancePC(F, Inst.instSize);
         return true;
@@ -464,121 +448,53 @@ namespace SST{
         return true;
       }
 
-      static bool srli(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      template<template<class> class SIGN>
+      static bool shift_righti(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) >> (Inst.imm & 0x1f));
+          R->SetX(F, Inst.rd, R->GetX<SIGN<uint32_t>>(F, Inst.rs1) >> (Inst.imm & 0x1f));
         }else{
-          R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) >> (Inst.imm & 0x3f));
+          R->SetX(F, Inst.rd, R->GetX<SIGN<uint64_t>>(F, Inst.rs1) >> (Inst.imm & 0x3f));
         }
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool srai(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      static constexpr auto& srli = shift_righti<std::make_unsigned_t>;
+      static constexpr auto& srai = shift_righti<std::make_signed_t>;
+
+      template<template<class> class SIGN>
+      static bool set_lt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) >> (Inst.imm & 0x1f));
+          R->SetX(F, Inst.rd, R->GetX<SIGN<uint32_t>>(F, Inst.rs1) < R->GetX<SIGN<uint32_t>>(F, Inst.rs2));
         }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) >> (Inst.imm & 0x3f));
+          R->SetX(F, Inst.rd, R->GetX<SIGN<uint64_t>>(F, Inst.rs1) < R->GetX<SIGN<uint64_t>>(F, Inst.rs2));
         }
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool add(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      static constexpr auto& slt  = set_lt<std::make_signed_t>;
+      static constexpr auto& sltu = set_lt<std::make_unsigned_t>;
+
+      template<template<class> class SIGN>
+      static bool shift_right(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) + R->GetX<int32_t>(F, Inst.rs2));
+          R->SetX(F, Inst.rd, R->GetX<SIGN<int32_t> >(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x1f));
         }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) + R->GetX<int64_t>(F, Inst.rs2));
+          R->SetX(F, Inst.rd, R->GetX<SIGN<int64_t> >(F, Inst.rs1) >> (R->GetX<uint64_t>(F, Inst.rs2) & 0x3f));
         }
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool sub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) - R->GetX<int32_t>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) - R->GetX<int64_t>(F, Inst.rs2));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& srl = shift_right<std::make_unsigned_t>;
+      static constexpr auto& sra = shift_right<std::make_signed_t>;
 
       static bool sll(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
           R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) << (R->GetX<uint32_t>(F, Inst.rs2) & 0x1f));
         }else{
           R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) << (R->GetX<uint64_t>(F, Inst.rs2) & 0x3f));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool slt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) < R->GetX<int32_t>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) < R->GetX<int64_t>(F, Inst.rs2));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool sltu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) < R->GetX<uint32_t>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) < R->GetX<uint64_t>(F, Inst.rs2));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool f_xor(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) ^ R->GetX<int32_t>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) ^ R->GetX<int64_t>(F, Inst.rs2));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool srl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x1f));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) >> (R->GetX<uint64_t>(F, Inst.rs2) & 0x3f));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool sra(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x1f));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) >> (R->GetX<uint64_t>(F, Inst.rs2) & 0x3f));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool f_or(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) | R->GetX<int32_t>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) | R->GetX<int64_t>(F, Inst.rs2));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool f_and(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) & R->GetX<int32_t>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<int64_t>(F, Inst.rs1) & R->GetX<int64_t>(F, Inst.rs2));
         }
         R->AdvancePC(F, Inst.instSize);
         return true;

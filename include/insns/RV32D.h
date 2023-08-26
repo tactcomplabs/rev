@@ -80,40 +80,28 @@ namespace SST{
       }
 
       static bool fnmsubd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = -std::fma(R->DPF[Inst.rs1], R->DPF[Inst.rs2], R->DPF[Inst.rs3]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fnmaddd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = std::fma(-R->DPF[Inst.rs1], R->DPF[Inst.rs2], R->DPF[Inst.rs3]);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool faddd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = R->DPF[Inst.rs1] + R->DPF[Inst.rs2];
+      static bool fnmaddd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->DPF[Inst.rd] = -std::fma(R->DPF[Inst.rs1], R->DPF[Inst.rs2], R->DPF[Inst.rs3]);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fsubd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = R->DPF[Inst.rs1] - R->DPF[Inst.rs2];
+      template<template<class> class OP>
+      static bool fopd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->DPF[Inst.rd] = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fmuld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = R->DPF[Inst.rs1] * R->DPF[Inst.rs2];
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fdivd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = R->DPF[Inst.rs1] / R->DPF[Inst.rs2];
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& faddd = fopd<std::plus>;
+      static constexpr auto& fsubd = fopd<std::minus>;
+      static constexpr auto& fmuld = fopd<std::multiplies>;
+      static constexpr auto& fdivd = fopd<std::divides>;
 
       static bool fsqrtd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = std::sqrt(R->DPF[Inst.rs1]);
@@ -166,7 +154,7 @@ namespace SST{
 
       template<template<class> class OP>
       static bool fcmpd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, OP()(R->DPF[Inst.rs1], R->DPF[ Inst.rs2]));
+        R->SetX(F, Inst.rd, OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }

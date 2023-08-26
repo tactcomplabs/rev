@@ -91,29 +91,17 @@ namespace SST{
         return true;
       }
 
-      static bool fadds(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetFP32(F, Inst.rd, R->GetFP32(F, Inst.rs1) + R->GetFP32(F, Inst.rs2));
+      template<template<class> class OP>
+      static bool fops(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        R->SetFP32(F, Inst.rd, OP()(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool fsubs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetFP32(F, Inst.rd, R->GetFP32(F, Inst.rs1) - R->GetFP32(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fmuls(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetFP32(F, Inst.rd, R->GetFP32(F, Inst.rs1) * R->GetFP32(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fdivs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetFP32(F, Inst.rd, R->GetFP32(F, Inst.rs1) / R->GetFP32(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& fadds = fops<std::plus>;
+      static constexpr auto& fsubs = fops<std::minus>;
+      static constexpr auto& fmuls = fops<std::multiplies>;
+      static constexpr auto& fdivs = fops<std::divides>;
 
       static bool fsqrts(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->SetFP32(F, Inst.rd, sqrtf( R->GetFP32(F, Inst.rs1) ));
