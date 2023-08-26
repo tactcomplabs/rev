@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Build the test
-clean && make
+make clean && make
 
 # Check that the exec was built...
 if [ -f amoadd_cxx.exe ]; then

@@ -299,6 +299,7 @@ namespace SST{
       bool compressed;      ///< RevInst: determines if the instruction is compressed
       uint32_t cost;        ///< RevInst: the cost to execute this instruction, in clock cycles
       unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
+      bool *hazard;         ///< RevInst: signals a load hazard
 
       ///< RevInst: Sign-extended immediate value
       constexpr int32_t ImmSignExt(size_t bits) const {

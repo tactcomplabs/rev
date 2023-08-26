@@ -55,7 +55,7 @@ namespace SST{
       // Standard instructions
       static bool fld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-                   &R->DPF[Inst.rd], REVMEM_FLAGS(0));
+                   &R->DPF[Inst.rd], Inst.hazard, REVMEM_FLAGS(0));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }

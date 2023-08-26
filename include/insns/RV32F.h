@@ -52,7 +52,7 @@ namespace SST{
       static bool flw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         float fp32;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &fp32,
-                   REVMEM_FLAGS(0));
+                   Inst.hazard, REVMEM_FLAGS(0));
         R->SetFP32(F, Inst.rd, fp32);
         R->AdvancePC(F, Inst.instSize);
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());

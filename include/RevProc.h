@@ -24,6 +24,7 @@
 #include <random>
 #include <queue>
 #include <functional>
+
 #include <cinttypes>
 #include <memory>
 #include <unordered_map>
@@ -31,6 +32,8 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <tuple>
+#include <list>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -540,7 +543,12 @@ namespace SST{
 
       std::vector<RevExt *> Extensions;           ///< RevProc: vector of enabled extensions
 
-      std::queue<std::pair<uint16_t, RevInst>>   Pipeline; ///< RevProc: pipeline of instructions - bypass paths not supported
+#define PIPE_HART     0
+#define PIPE_INST     1
+#define PIPE_HAZARD   2
+      //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
+      std::vector<std::pair<uint16_t,RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
+      std::list<bool *> LoadHazards;                      ///< RevProc: list of allocated load hazards
 
       std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
       std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
@@ -549,6 +557,12 @@ namespace SST{
       std::map<unsigned,std::pair<unsigned,unsigned>> EntryToExt;     ///< RevProc: instruction entry to extension object mapping
                                                                       ///           first = Master table entry number
                                                                       ///           second = pair<Extension Index, Extension Entry>
+
+      /// RevProc: creates a new pipeline load hazard and returns a pointer to it
+      bool *createLoadHazard();
+
+      /// RevProc: destroys the target load hazard object and removes it from the list
+      void destroyLoadHazard(bool *hazard);
 
       /// RevProc: splits a string into tokens
       void splitStr(const std::string& s, char c, std::vector<std::string>& v);

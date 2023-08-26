@@ -316,9 +316,11 @@ namespace SST{
       static bool lb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int8_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
+                   Inst.hazard,
                    REVMEM_FLAGS(F->IsRV32() ? RevCPU::RevFlag::F_SEXT32 : RevCPU::RevFlag::F_SEXT64));
         R->SetX(F, Inst.rd, int32_t{val});
         R->AdvancePC(F, Inst.instSize);
+
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
@@ -327,9 +329,11 @@ namespace SST{
       static bool lh(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int16_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
+                   Inst.hazard,
                    REVMEM_FLAGS(F->IsRV32() ? RevCPU::RevFlag::F_SEXT32 : RevCPU::RevFlag::F_SEXT64));
         R->SetX(F, Inst.rd, int32_t{val});
         R->AdvancePC(F, Inst.instSize);
+
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
@@ -338,9 +342,11 @@ namespace SST{
       static bool lw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int32_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
+                   Inst.hazard,
                    REVMEM_FLAGS(F->IsRV32() ? RevCPU::RevFlag::F_SEXT32 : RevCPU::RevFlag::F_SEXT64));
         R->SetX(F, Inst.rd, val);
         R->AdvancePC(F, Inst.instSize);
+
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
@@ -348,9 +354,11 @@ namespace SST{
 
       static bool lbu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint8_t val;
-        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val, REVMEM_FLAGS(0));
+        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
+                   Inst.hazard, REVMEM_FLAGS(0));
         R->SetX(F, Inst.rd, val);
         R->AdvancePC(F, Inst.instSize);
+
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
@@ -358,9 +366,11 @@ namespace SST{
 
       static bool lhu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint16_t val;
-        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val, REVMEM_FLAGS(0));
+        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
+                   Inst.hazard, REVMEM_FLAGS(0));
         R->SetX(F, Inst.rd, val);
         R->AdvancePC(F, Inst.instSize);
+
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
