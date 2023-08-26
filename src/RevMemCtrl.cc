@@ -41,7 +41,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
     Inv(false), Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(nullptr), hazard(nullptr){
   for(uint32_t i = 0; i < Size; i++){
-    membuf.push_back((uint8_t)(buffer[i]));
+    membuf.push_back(buffer[i]);
   }
 }
 
@@ -52,7 +52,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
     Inv(false), Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(target), hazard(nullptr){
   for(uint32_t i = 0; i < Size; i++){
-    membuf.push_back((uint8_t)(buffer[i]));
+    membuf.push_back(buffer[i]);
   }
 }
 

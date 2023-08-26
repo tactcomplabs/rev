@@ -19,8 +19,7 @@ using namespace RevCPU;
 // -----------------------------------------------------------------------------
 
 panNicEvent::PanPacket panNicEvent::getType(){
-  uint8_t Type = Opcode & 0b11;
-  return (panNicEvent::PanPacket)(Type);
+  return panNicEvent::PanPacket(Opcode & 0b11);
 }
 
 std::string panNicEvent::getOpcodeStr(){
@@ -344,7 +343,7 @@ bool panNicEvent::buildStatus(uint32_t Token, uint8_t Tag, uint16_t Entry){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize((uint32_t)(Entry)) )
+  if( !setSize(Entry) )
     return false;
   return true;
 }
@@ -355,7 +354,7 @@ bool panNicEvent::buildCancel(uint32_t Token, uint8_t Tag, uint16_t Entry){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize((uint32_t)(Entry)) )
+  if( !setSize(Entry) )
     return false;
   return true;
 }
@@ -384,7 +383,7 @@ bool panNicEvent::buildHalt(uint32_t Token, uint8_t Tag, uint16_t Hart){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize((uint32_t)(Hart)) )
+  if( !setSize(Hart) )
     return false;
   return true;
 }
@@ -404,7 +403,7 @@ bool panNicEvent::buildReadReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint6
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize((uint32_t)(Hart)) )
+  if( !setSize(Hart) )
     return false;
   if( !setAddr(Reg) )
     return false;
@@ -419,7 +418,7 @@ bool panNicEvent::buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize((uint32_t)(Hart)) )
+  if( !setSize(Hart) )
     return false;
   if( !setAddr(Reg) )
     return false;
@@ -434,7 +433,7 @@ bool panNicEvent::buildSingleStep(uint32_t Token, uint8_t Tag, uint16_t Hart){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize((uint32_t)(Hart)) )
+  if( !setSize(Hart) )
     return false;
   return true;
 }
@@ -480,7 +479,7 @@ bool panNicEvent::buildBOTW(uint32_t Token, uint8_t Tag, uint8_t VarArgs, uint64
     return false;
   if( !setOffset(Offset) )
     return false;
-  if( !setData(Args,(uint32_t)(VarArgs)) )
+  if( !setData(Args, VarArgs) )
     return false;
   return true;
 }
@@ -564,7 +563,7 @@ void PanNet::init(unsigned int phase){
     if( !initBroadcastSent) {
       initBroadcastSent = true;
       panNicEvent *ev = new panNicEvent(getName());
-      ev->setTag((uint8_t)(this->IsHost()));    // send a boolean on whether we are a host device
+      ev->setTag(IsHost());    // send a boolean on whether we are a host device
 
       SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
@@ -582,7 +581,7 @@ void PanNet::init(unsigned int phase){
     output->verbose(CALL_INFO, 1, 0,
                     "%s received PAN init message from %s\n",
                     getName().c_str(), ev->getSource().c_str());
-    if( (bool)(ev->getTag()) ){
+    if( ev->getTag() ){
       output->verbose(CALL_INFO, 1, 0,
                       "%s identified %s as a HOST device\n",
                       getName().c_str(), ev->getSource().c_str());

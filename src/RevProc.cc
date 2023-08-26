@@ -2452,9 +2452,9 @@ void RevProc::InitEcallTable(){
 /*              const void *value, size_t size, int flags) */
 /*======================================================== */
 void RevProc::ECALL_setxattr(){
-  const char *path = (char*)RegFile->RV64[10];
-  const char *name = (char*)RegFile->RV64[11];
-  const void *value = (void*)RegFile->RV64[12];
+  const char *path = reinterpret_cast<char*>(RegFile->RV64[10]);
+  const char *name = reinterpret_cast<char*>(RegFile->RV64[11]);
+  const void *value = reinterpret_cast<void*>(RegFile->RV64[12]);
   size_t size = RegFile->RV64[13];
   uint64_t flags = RegFile->RV64[14];
 
@@ -3161,7 +3161,7 @@ void RevProc::ExecEcall(){
   // a7 register = ecall code
   uint64_t EcallCode;
   if( feature->IsRV32() )
-    EcallCode = (uint64_t)RegFile->RV32[17];
+    EcallCode = RegFile->RV32[17];
   else if( feature->IsRV64() )
     EcallCode = RegFile->RV64[17];
   else {

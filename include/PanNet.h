@@ -416,7 +416,7 @@ namespace SST {
       virtual bool IsRemoteHost(SST::Interfaces::SimpleNetwork::nid_t NID){ return hostMap[NID]; }
 
       /// PanNet: retrieve the number of hosts
-      virtual unsigned getNumPEs() { return (unsigned)(hostMap.size()); }
+      virtual unsigned getNumPEs() { return hostMap.size(); }
 
       /// PanNet: retrieve the endpoint ID of the target map index
       virtual int64_t getHostFromIdx(unsigned Idx);

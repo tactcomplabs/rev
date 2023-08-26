@@ -60,12 +60,12 @@ bool RevOpts::InitPrefetchDepth( std::vector<std::string> Depths ){
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    unsigned Core = std::stoul(vstr[0],nullptr,0);
     if( Core > numCores )
       return false;
 
     std::string::size_type sz = 0;
-    unsigned Depth = (unsigned)(std::stoul(vstr[1],&sz,0));
+    unsigned Depth = std::stoul(vstr[1],&sz,0);
 
     prefetchDepth.find(Core)->second = Depth;
     vstr.clear();

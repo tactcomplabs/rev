@@ -28,7 +28,7 @@ namespace SST{
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
         }else{
           M->LR(F->GetHart(), R->RV64[Inst.rs1],
-                (uint32_t *)&R->RV64[Inst.rd],
+                reinterpret_cast<uint32_t*>(&R->RV64[Inst.rd]),
                 Inst.aq, Inst.rl, Inst.hazard,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
         }
@@ -39,15 +39,15 @@ namespace SST{
 
       static bool scw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          M->SC(F->GetHart(), (uint64_t)(R->RV32[Inst.rs1]),
+          M->SC(F->GetHart(), R->RV32[Inst.rs1],
                 &R->RV32[Inst.rs2],
                 &R->RV32[Inst.rd],
                 Inst.aq, Inst.rl,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
         }else{
           M->SC(F->GetHart(), R->RV64[Inst.rs1],
-                (uint32_t *)&R->RV64[Inst.rs2],
-                (uint32_t *)&R->RV64[Inst.rd],
+                reinterpret_cast<uint32_t*>(&R->RV64[Inst.rs2]),
+                reinterpret_cast<uint32_t*>(&R->RV64[Inst.rd]),
                 Inst.aq, Inst.rl,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
         }
@@ -60,12 +60,11 @@ namespace SST{
         uint32_t flags = static_cast<uint32_t>(F_AMO);
 
         if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
+          flags |= uint32_t(RevCPU::RevFlag::F_AQ) | uint32_t(RevCPU::RevFlag::F_RL);
         }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
+          flags |= uint32_t(RevCPU::RevFlag::F_AQ);
         }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
+          flags |= uint32_t(RevCPU::RevFlag::F_RL);
         }
 
         if( F->IsRV32() ){
@@ -76,11 +75,11 @@ namespace SST{
                     Inst.hazard,
                     flags);
         }else{
-          flags |= (uint32_t)(RevCPU::RevFlag::F_SEXT64);
+          flags |= uint32_t(RevCPU::RevFlag::F_SEXT64);
           M->AMOVal(F->GetHart(),
                     R->RV64[Inst.rs1],
-                    (int32_t *)&R->RV64[Inst.rs2],
-                    (int32_t *)&R->RV64[Inst.rd],
+                    reinterpret_cast<int32_t*>(&R->RV64[Inst.rs2]),
+                    reinterpret_cast<int32_t*>(&R->RV64[Inst.rd]),
                     Inst.hazard,
                     flags);
         }
