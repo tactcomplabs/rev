@@ -1990,23 +1990,23 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   "Core %u; HartID %d; PID %" PRIu32 " - Exception Raised: ECALL with code = %lu\n",
                   id, HartToExec, GetActivePID(), RegFile->RV64[17]);
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-                  << code << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+        //                  << cRegFile->RV64[17] << std::endl;
         #endif
 
         /* Execute system call on this RevProc */
         ExecEcall();
 
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-                  << rc << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+        //        << rc << std::endl;
         #endif
 
         // } else {
         //   ExecEcall();
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-                  << code << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+        //                  << code << std::endl;
         #endif
 
         /* exception handled... zero the cause registers */
@@ -2014,8 +2014,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         RegFile->RV32_SCAUSE = 0;
 
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-                  << rc << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+        //                  << rc << std::endl;
         #endif
         // }
       }

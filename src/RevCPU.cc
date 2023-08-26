@@ -2409,7 +2409,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         output.verbose(CALL_INFO,5,0,"ZeroRqst not empty\n");
       }
       if( !TrackTags.empty() ){
-        output.verbose(CALL_INFO,5,0,"TrackTags not empty: %d\n", TrackTags.size());
+        output.verbose(CALL_INFO,5,0,"TrackTags not empty: %zu\n", TrackTags.size());
       }
     }
 #endif

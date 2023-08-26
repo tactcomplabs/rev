@@ -180,10 +180,12 @@ namespace SST{
       /// GetX: Get the specifed X register cast to a specific type
       template<typename T>
       T GetX(const RevFeature* F, size_t rs) const {
-        if( F->IsRV32() ){
-          return static_cast<T>(rs ? RV32[rs] : 0);
+        if( rs == 0 ){
+          return 0;
+        }else if( F->IsRV32() ){
+          return static_cast<T>(RV32[rs]);
         }else{
-          return static_cast<T>(rs ? RV64[rs] : 0);
+          return static_cast<T>(RV64[rs]);
         }
       }
 
