@@ -335,10 +335,10 @@ namespace SST {
       void initNICMem();
 
       /// RevCPU: decode the fault codes
-      void DecodeFaultCodes(std::vector<std::string> faults);
+      void DecodeFaultCodes(const std::vector<std::string>& faults);
 
       /// RevCPU:: decode the fault width
-      void DecodeFaultWidth(std::string width);
+      void DecodeFaultWidth(const std::string& width);
 
       /// RevCPU: executes the PAN test harness
       void ExecPANTest();

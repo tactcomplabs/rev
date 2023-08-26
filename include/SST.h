@@ -16,6 +16,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wuseless-cast"
 
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>

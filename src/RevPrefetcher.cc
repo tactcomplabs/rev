@@ -183,9 +183,10 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // now fill it
   for( unsigned y=0; y<depth; y++ ){
-    mem->ReadVal( feature->GetHart(), Addr+(y*4),
-                  (uint32_t *)(&iStack[x][y]),
-                  &(iHazard[x][y]),
+    mem->ReadVal( feature->GetHart(),
+                  Addr+(y*4),
+                  &iStack[x][y],
+                  &iHazard[x][y],
                   REVMEM_FLAGS(0x00) );
 
   }
@@ -193,7 +194,7 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
 void RevPrefetcher::DeleteStream(unsigned i){
   // delete the target stream as we no longer need it
-  if( i > (baseAddr.size()-1) ){
+  if( i >= baseAddr.size() ){
     return ;
   }
 

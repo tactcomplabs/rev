@@ -76,11 +76,11 @@ namespace SST {
     public:
       SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::nicAPI)
 
-      /// nicEvent: default constructor
+      /// nicEvent: constructor
       nicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
 
       /// nicEvent: default destructor
-      virtual ~nicAPI() { }
+      virtual ~nicAPI() = default;
 
       /// nicEvent: registers the event handler with the core
       virtual void setMsgHandler(Event::HandlerBase* handler) = 0;
@@ -134,10 +134,10 @@ namespace SST {
         {"iface", "SimpleNetwork interface to a network", "SST::Interfaces::SimpleNetwork"}
       )
 
-      /// RevNIC: default constructor
+      /// RevNIC: constructor
       RevNIC(ComponentId_t id, Params& params);
 
-      /// RevNIC: default destructor
+      /// RevNIC: destructor
       virtual ~RevNIC();
 
       /// RevNIC: Callback to parent on received messages

@@ -59,32 +59,30 @@
                     (r) = (r) & (((1ULL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
-using namespace SST::RevCPU;
-using namespace SST::Interfaces;
-
 namespace SST {
   namespace RevCPU {
+    using namespace SST::Interfaces;
 
     // ----------------------------------------
     // Extended StandardMem::Request::Flag enums
     // ----------------------------------------
-    enum class RevFlag {
-      F_NONCACHEABLE = 1 << 1,/// non cacheable
-      F_SEXT32 = 1 << 17,     /// sign extend the 32bit result
-      F_SEXT64 = 1 << 18,     /// sign extend the 64bit result
-      F_ZEXT32 = 1 << 19,     /// zero extend the 32bit result
-      F_ZEXT64 = 1 << 20,     /// zero extend the 64bit result
-      F_AMOADD = 1 << 21,     /// AMO Add
-      F_AMOXOR = 1 << 22,     /// AMO Xor
-      F_AMOAND = 1 << 23,     /// AMO And
-      F_AMOOR  = 1 << 24,     /// AMO Or
-      F_AMOMIN = 1 << 25,     /// AMO Min
-      F_AMOMAX = 1 << 26,     /// AMO Max
-      F_AMOMINU= 1 << 27,     /// AMO Minu
-      F_AMOMAXU= 1 << 28,     /// AMO Maxu
-      F_AMOSWAP= 1 << 29,     /// AMO Swap
-      F_AQ     = 1 << 30,     /// AMO AQ Flag
-      F_RL     = 1 << 31      /// AMO RL Flag
+    enum class RevFlag : uint32_t {
+      F_NONCACHEABLE = 1u<<1, /// non cacheable
+      F_SEXT32 = 1u << 17,    /// sign extend the 32bit result
+      F_SEXT64 = 1u << 18,    /// sign extend the 64bit result
+      F_ZEXT32 = 1u << 19,    /// zero extend the 32bit result
+      F_ZEXT64 = 1u << 20,    /// zero extend the 64bit result
+      F_AMOADD = 1u << 21,    /// AMO Add
+      F_AMOXOR = 1u << 22,    /// AMO Xor
+      F_AMOAND = 1u << 23,    /// AMO And
+      F_AMOOR  = 1u << 24,    /// AMO Or
+      F_AMOMIN = 1u << 25,    /// AMO Min
+      F_AMOMAX = 1u << 26,    /// AMO Max
+      F_AMOMINU= 1u << 27,    /// AMO Minu
+      F_AMOMAXU= 1u << 28,    /// AMO Maxu
+      F_AMOSWAP= 1u << 29,    /// AMO Swap
+      F_AQ     = 1u << 30,    /// AMO AQ Flag
+      F_RL     = 1u << 31,    /// AMO RL Flag
     };
 
     // ----------------------------------------
@@ -92,7 +90,7 @@ namespace SST {
     // ----------------------------------------
     class RevMemOp {
     public:
-      typedef enum{
+      enum MemOp {
         MemOpREAD           = 0,
         MemOpWRITE          = 1,
         MemOpFLUSH          = 2,
@@ -102,116 +100,117 @@ namespace SST {
         MemOpSTORECOND      = 6,
         MemOpCUSTOM         = 7,
         MemOpFENCE          = 8,
-        MemOpAMO            = 9
-      }MemOp;
+        MemOpAMO            = 9,
+      };
 
       /// RevMemOp constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
-                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
+                MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
-                void *target, RevMemOp::MemOp Op,
+                void *target, MemOp Op,
                 StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
-                char *buffer, RevMemOp::MemOp Op,
+                char *buffer, MemOp Op,
                 StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                 char *buffer, void *target,
-                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
+                MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                 std::vector<uint8_t> buffer,
-                RevMemOp::MemOp Op, StandardMem::Request::flags_t flags );
+                MemOp Op, StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
-                void *target, unsigned CustomOpc, RevMemOp::MemOp Op,
+                void *target, unsigned CustomOpc, MemOp Op,
                 StandardMem::Request::flags_t flags );
 
       /// RevMemOp overloaded constructor
       RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
-                char *buffer, unsigned CustomOpc, RevMemOp::MemOp Op,
+                char *buffer, unsigned CustomOpc, MemOp Op,
                 StandardMem::Request::flags_t flags );
 
-      /// RevMemOp destructor
-      ~RevMemOp();
+      /// RevMemOp default destructor
+      ~RevMemOp() = default;
 
       /// RevMemOp: determine if the request is an AMO
-      bool isAMOOp(uint32_t flags){
-        uint32_t t_flags =  (uint32_t)(RevCPU::RevFlag::F_AMOADD) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOXOR) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOAND) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOOR) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOMIN) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOMAX) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOMINU) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) |
-                            (uint32_t)(RevCPU::RevFlag::F_AMOSWAP);
-        return ((flags & t_flags) > 0);
+      static constexpr bool isAMOOp(uint32_t flags){
+        constexpr uint32_t t_flags =
+          uint32_t(RevCPU::RevFlag::F_AMOADD)  |
+          uint32_t(RevCPU::RevFlag::F_AMOXOR)  |
+          uint32_t(RevCPU::RevFlag::F_AMOAND)  |
+          uint32_t(RevCPU::RevFlag::F_AMOOR)   |
+          uint32_t(RevCPU::RevFlag::F_AMOMIN)  |
+          uint32_t(RevCPU::RevFlag::F_AMOMAX)  |
+          uint32_t(RevCPU::RevFlag::F_AMOMINU) |
+          uint32_t(RevCPU::RevFlag::F_AMOMAXU) |
+          uint32_t(RevCPU::RevFlag::F_AMOSWAP);
+        return (flags & t_flags) != 0;
       }
 
       /// RevMemOp: retrieve the memory operation type
-      MemOp getOp() { return Op; }
+      MemOp getOp() const { return Op; }
 
       /// RevMemOp: retrieve the custom opcode
-      unsigned getCustomOpc() { return CustomOpc; }
+      unsigned getCustomOpc() const { return CustomOpc; }
 
       /// RevMemOp: retrieve the target address
-      uint64_t getAddr() { return Addr; }
+      uint64_t getAddr() const { return Addr; }
 
       /// RevMemOp: retrieve the target physical address
-      uint64_t getPhysAddr() { return PAddr; }
+      uint64_t getPhysAddr() const { return PAddr; }
 
       /// RevMemOp: retrieve the size of the request
-      uint32_t getSize() { return Size; }
+      uint32_t getSize() const { return Size; }
 
       /// RevMemOp: retrieve the memory buffer
-      std::vector<uint8_t> getBuf() { return membuf; }
+      std::vector<uint8_t> getBuf() const { return membuf; }
 
       /// RevMemOp: retrieve the memory operation flags
-      StandardMem::Request::flags_t getFlags() { return flags; }
+      StandardMem::Request::flags_t getFlags() const { return flags; }
 
       /// RevMemOp: retrieve the standard set of memory flags for MemEventBase
-      StandardMem::Request::flags_t getStdFlags() { return ((uint32_t)(flags) & 0b1111111111111111); }
+      StandardMem::Request::flags_t getStdFlags() const { return flags & 0xFFFF; }
 
       /// RevMemOp: retrieve the flags for MemEventBase without caching enable
-      StandardMem::Request::flags_t getNonCacheFlags() { return ((uint32_t)(flags) & 0b1111111111111101); }
+      StandardMem::Request::flags_t getNonCacheFlags() const { return flags & 0xFFFD; }
 
       /// RevMemOp: sets the number of split cache line requests
-      void setSplitRqst(unsigned S){ SplitRqst = S; }
+      void setSplitRqst(unsigned S) { SplitRqst = S; }
 
       /// RevMemOp: set the invalidate flag
-      void setInv(bool I){ Inv = I; }
+      void setInv(bool I) { Inv = I; }
 
       /// RevMemOp: set the hart
-      void setHart(unsigned H){Hart = H;}
+      void setHart(unsigned H) { Hart = H ;}
 
       /// RevMemOp: set the hazard pointer
-      void setHazard(bool *H){ hazard = H;}
+      void setHazard(bool *H) { hazard = H;}
 
       /// RevMemOp: retrieve the invalidate flag
-      bool getInv() { return Inv; }
+      bool getInv() const { return Inv; }
 
       /// RevMemOp: retrieve the number of split cache line requests
-      unsigned getSplitRqst() { return SplitRqst; }
+      unsigned getSplitRqst() const { return SplitRqst; }
 
       /// RevMemOp: retrieve the target address
-      void *getTarget() { return target; }
+      void *getTarget() const { return target; }
 
       /// RevMemOp: retrieve the hart
-      unsigned getHart() { return Hart; }
+      unsigned getHart() const { return Hart; }
 
       /// RevMemOp: retrieve the hazard pointer
-      bool *getHazard() { return hazard; }
+      bool *getHazard() const { return hazard; }
 
       // RevMemOp: determine if the request is cache-able
-      bool isCacheable() { if( (flags & 0b10) > 0 ){ return false; } return true; }
+      bool isCacheable() { return !(flags & 0b10 ); }
 
     private:
       unsigned Hart;      ///< RevMemOp: RISC-V Hart
@@ -239,10 +238,10 @@ namespace SST {
       SST_ELI_DOCUMENT_PARAMS({ "verbose", "Set the verbosity of output for the memory controller", "0" }
       )
 
-      /// RevMemCtrl: default constructor
+      /// RevMemCtrl: constructor
       RevMemCtrl( ComponentId_t id, const Params& params);
 
-      /// RevMemCtrl: default destructor
+      /// RevMemCtrl: destructor
       virtual ~RevMemCtrl();
 
       /// RevMemCtrl: initialization function

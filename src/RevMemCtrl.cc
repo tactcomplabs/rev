@@ -14,6 +14,8 @@ using namespace SST;
 using namespace SST::RevCPU;
 using namespace SST::Interfaces;
 
+#define IS_ATOMIC 0x3FE00000
+
 // ---------------------------------------------------------------
 // RevMemOp
 // ---------------------------------------------------------------
@@ -38,7 +40,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size),
     Inv(false), Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(nullptr), hazard(nullptr){
-  for(unsigned i=0; i<(unsigned)(Size); i++ ){
+  for(uint32_t i = 0; i < Size; i++){
     membuf.push_back((uint8_t)(buffer[i]));
   }
 }
@@ -49,7 +51,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size),
     Inv(false), Op(Op), CustomOpc(0),
     SplitRqst(1), flags(flags), target(target), hazard(nullptr){
-  for(unsigned i=0; i<(unsigned)(Size); i++ ){
+  for(uint32_t i = 0; i < Size; i++){
     membuf.push_back((uint8_t)(buffer[i]));
   }
 }
@@ -76,12 +78,9 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                    StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
     CustomOpc(CustomOpc), SplitRqst(1), flags(flags), target(nullptr), hazard(nullptr){
-  for(unsigned i=0; i<(unsigned)(Size); i++ ){
+  for(uint32_t i = 0; i< Size; i++){
     membuf.push_back((uint8_t)(buffer[i]));
   }
-}
-
-RevMemOp::~RevMemOp(){
 }
 
 // ---------------------------------------------------------------
@@ -150,46 +149,49 @@ RevBasicMemCtrl::~RevBasicMemCtrl(){
 }
 
 void RevBasicMemCtrl::registerStats(){
-  stats.push_back(registerStatistic<uint64_t>("ReadInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("ReadPending"));
-  stats.push_back(registerStatistic<uint64_t>("ReadBytes"));
-  stats.push_back(registerStatistic<uint64_t>("WriteInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("WritePending"));
-  stats.push_back(registerStatistic<uint64_t>("WriteBytes"));
-  stats.push_back(registerStatistic<uint64_t>("FlushInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("FlushPending"));
-  stats.push_back(registerStatistic<uint64_t>("ReadLockInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("ReadLockPending"));
-  stats.push_back(registerStatistic<uint64_t>("ReadLockBytes"));
-  stats.push_back(registerStatistic<uint64_t>("WriteUnlockInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("WriteUnlockPending"));
-  stats.push_back(registerStatistic<uint64_t>("WriteUnlockBytes"));
-  stats.push_back(registerStatistic<uint64_t>("LoadLinkInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("LoadLinkPending"));
-  stats.push_back(registerStatistic<uint64_t>("StoreCondInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("StoreCondPending"));
-  stats.push_back(registerStatistic<uint64_t>("CustomInFlight"));
-  stats.push_back(registerStatistic<uint64_t>("CustomPending"));
-  stats.push_back(registerStatistic<uint64_t>("CustomBytes"));
-  stats.push_back(registerStatistic<uint64_t>("FencePending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOAddBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOAddPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOXorBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOXorPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOAndBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOAndPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOOrBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOOrPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMinBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMinPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMaxBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMaxPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMinuBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMinuPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMaxuBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOMaxuPending"));
-  stats.push_back(registerStatistic<uint64_t>("AMOSwapBytes"));
-  stats.push_back(registerStatistic<uint64_t>("AMOSwapPending"));
+  for(auto* stat : {
+      "ReadInFlight",
+      "ReadPending",
+      "ReadBytes",
+      "WriteInFlight",
+      "WritePending",
+      "WriteBytes",
+      "FlushInFlight",
+      "FlushPending",
+      "ReadLockInFlight",
+      "ReadLockPending",
+      "ReadLockBytes",
+      "WriteUnlockInFlight",
+      "WriteUnlockPending",
+      "WriteUnlockBytes",
+      "LoadLinkInFlight",
+      "LoadLinkPending",
+      "StoreCondInFlight",
+      "StoreCondPending",
+      "CustomInFlight",
+      "CustomPending",
+      "CustomBytes",
+      "FencePending",
+      "AMOAddBytes",
+      "AMOAddPending",
+      "AMOXorBytes",
+      "AMOXorPending",
+      "AMOAndBytes",
+      "AMOAndPending",
+      "AMOOrBytes",
+      "AMOOrPending",
+      "AMOMinBytes",
+      "AMOMinPending",
+      "AMOMaxBytes",
+      "AMOMaxPending",
+      "AMOMinuBytes",
+      "AMOMinuPending",
+      "AMOMaxuBytes",
+      "AMOMaxuPending",
+      "AMOSwapBytes",
+      "AMOSwapPending",
+    })
+    stats.push_back(registerStatistic<uint64_t>(stat));
 }
 
 void RevBasicMemCtrl::recordStat(RevBasicMemCtrl::MemCtrlStats Stat,
@@ -265,7 +267,7 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
   // Check to see if our flags contain an atomic request
   // The flag hex value is a bitwise OR of all the RevFlag
   // AMO enums
-  if( ((uint32_t)(flags) & (uint32_t)(0x3FE00000)) == 0){
+  if( (flags & IS_ATOMIC) == 0 ){
     // not an atomic request
     return true;
   }
@@ -282,7 +284,7 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
   // response comes back, we will catch the response, perform
   // the MODIFY (using the operation in flags), then dispatch
   // a WRITE operation.
-  auto tmp = std::make_tuple(Hart,buffer,target,flags,Op,false);
+  auto tmp = std::make_tuple(Hart, buffer, target, flags, Op, false);
   AMOTable.insert({Addr,tmp});
 
   // We have the request created and recorded in the AMOTable
@@ -290,25 +292,21 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
   rqstQ.push_back(Op);
 
   // now we record the stat for the particular AMO
-  if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOAddPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOXorPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOAndPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOOrPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOMinPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOMaxPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOMinuPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOMaxuPending,1);
-  }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP)) > 0 ){
-    recordStat(RevBasicMemCtrl::MemCtrlStats::AMOSwapPending,1);
-  }
+  static constexpr std::pair<RevCPU::RevFlag, RevBasicMemCtrl::MemCtrlStats> table[] = {
+    { RevCPU::RevFlag::F_AMOADD,  RevBasicMemCtrl::MemCtrlStats::AMOAddPending  },
+    { RevCPU::RevFlag::F_AMOXOR,  RevBasicMemCtrl::MemCtrlStats::AMOXorPending  },
+    { RevCPU::RevFlag::F_AMOAND,  RevBasicMemCtrl::MemCtrlStats::AMOAndPending  },
+    { RevCPU::RevFlag::F_AMOOR,   RevBasicMemCtrl::MemCtrlStats::AMOOrPending   },
+    { RevCPU::RevFlag::F_AMOMIN,  RevBasicMemCtrl::MemCtrlStats::AMOMinPending  },
+    { RevCPU::RevFlag::F_AMOMAX,  RevBasicMemCtrl::MemCtrlStats::AMOMaxPending  },
+    { RevCPU::RevFlag::F_AMOMIN,  RevBasicMemCtrl::MemCtrlStats::AMOMinuPending },
+    { RevCPU::RevFlag::F_AMOMAXU, RevBasicMemCtrl::MemCtrlStats::AMOMaxuPending },
+    { RevCPU::RevFlag::F_AMOSWAP, RevBasicMemCtrl::MemCtrlStats::AMOSwapPending },
+  };
+
+  for(auto& entry : table)
+    if(flags & uint32_t(entry.first))
+      recordStat(entry.second, 1);
 
   return true;
 }
@@ -1080,16 +1078,12 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op,
 bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
   if( AMOTable.size() == 0 ){
     return false;
-  }else if( Slot == 0 ){
-    return false;
   }
 
   // search all preceding slots for an AMO from the same Hart
-  for( unsigned i=0; i<Slot; i++ ){
-    if( (((uint32_t)(rqstQ[i]->getFlags()) & (uint32_t)(0x3FE00000)) > 0) &&
-        (rqstQ[i]->getHart() == rqstQ[Slot]->getHart()) ){
-      if( ((uint32_t)(rqstQ[i]->getFlags()) &
-           (uint32_t)(RevCPU::RevFlag::F_AQ)) > 0 ){
+  for( unsigned i = 0; i < Slot; i++ ){
+    if( rqstQ[i]->getFlags() & IS_ATOMIC && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
+      if( rqstQ[i]->getFlags() & uint32_t(RevCPU::RevFlag::F_AQ) ){
         // this implies that we found a preceding request in the request queue
         // that was 1) an AMO and 2) came from the same HART as 'slot'
         // and 3) had the AQ flag set;
@@ -1105,15 +1099,13 @@ bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
 bool RevBasicMemCtrl::isRL(unsigned Slot, unsigned Hart){
   if( AMOTable.size() == 0 ){
     return false;
-  }else if( Slot == 0 ){
-    return false;
   }
 
-  if( (((uint32_t)(rqstQ[Slot]->getFlags()) & (uint32_t)(0x3FE00000)) > 0) &&
-      (((uint32_t)(rqstQ[Slot]->getFlags()) & (uint32_t)(RevCPU::RevFlag::F_RL))>0) ){
+  if( rqstQ[Slot]->getFlags() & IS_ATOMIC &&
+      rqstQ[Slot]->getFlags() & uint32_t(RevCPU::RevFlag::F_RL) ){
     // this is an AMO, check to see if there are other ops from the same
     // HART in flight
-    for( unsigned i=0; i<Slot; i++ ){
+    for( unsigned i = 0; i < Slot; i++ ){
       if( rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
         // this implies that the same Hart has preceding memory ops
         // in which case, we can't dispatch this AMO until they clear
@@ -1220,18 +1212,18 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
 void RevBasicMemCtrl::handleFlagResp(RevMemOp *op){
    StandardMem::Request::flags_t flags = op->getFlags();
 
-   if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_SEXT32)) ){
+   if( flags & uint32_t(RevCPU::RevFlag::F_SEXT32) ){
      uint32_t *target = (uint32_t *)(op->getTarget());
-     SEXTI(*target,32);
-   }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_SEXT64)) ){
+     SEXTI(*target, 32);
+   }else if( flags & uint32_t(RevCPU::RevFlag::F_SEXT64) ){
      uint64_t *target = (uint64_t *)(op->getTarget());
-     SEXTI(*target,64);
-   }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_ZEXT32)) ){
+     SEXTI(*target, 64);
+   }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT32) ){
      uint32_t *target = (uint32_t *)(op->getTarget());
-     ZEXTI(*target,32);
-   }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_ZEXT64)) ){
+     ZEXTI(*target, 32);
+   }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT64) ){
      uint64_t *target = (uint64_t *)(op->getTarget());
-     ZEXTI64(*target,63);
+     ZEXTI64(*target, 63);
    }
 }
 
@@ -1279,8 +1271,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
       // split request exists, determine how to handle it
 
       uint8_t *target = (uint8_t *)(op->getTarget());
-      unsigned startByte = (unsigned)( (uint64_t)(ev->pAddr) - op->getAddr() );
-      target += (uint8_t)(startByte);
+      target += ev->pAddr - op->getAddr();
       for( unsigned i=0; i<(unsigned)(ev->size); i++ ){
         *target = ev->data[i];
         target++;
@@ -1304,7 +1295,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
 
     // no split request exists; handle as normal
     uint8_t *target = (uint8_t *)(op->getTarget());
-    for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
+    for( unsigned i = 0; i < op->getSize(); i++ ){
       *target = ev->data[i];
       target++;
     }
@@ -1326,10 +1317,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
   num_read--;
 }
 
-void RevBasicMemCtrl::performAMO(std::tuple<unsigned,char *,void *,
-                                            StandardMem::Request::flags_t,
-                                            RevMemOp *,
-                                            bool> Entry){
+void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMem::Request::flags_t, RevMemOp *, bool> Entry){
   RevMemOp *Tmp = std::get<AMOTABLE_MEMOP>(Entry);
   if( Tmp == nullptr ){
     output->fatal(CALL_INFO, -1, "Error : AMOTable entry is null\n" );
@@ -1339,70 +1327,47 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,char *,void *,
   StandardMem::Request::flags_t flags = Tmp->getFlags();
   std::vector<uint8_t> buffer = Tmp->getBuf();
 
+  auto findFlag = [&](auto* TmpTarget, auto* TmpTargetU, auto TmpBuf, auto TmpBufU){
+    static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
+      { RevCPU::RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
+      { RevCPU::RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
+      { RevCPU::RevFlag::F_AMOAND,  [&]{ *TmpTarget &= TmpBuf; } },
+      { RevCPU::RevFlag::F_AMOOR,   [&]{ *TmpTarget |= TmpBuf; } },
+      { RevCPU::RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = TmpBuf; } },
+      { RevCPU::RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  TmpBuf);  } },
+      { RevCPU::RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  TmpBuf);  } },
+      { RevCPU::RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
+      { RevCPU::RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
+    };
+    for(auto& flag : table)
+      if( flags & uint32_t(flag.first) )
+        flag.second();
+  };
+
   if( Tmp->getSize() == 4 ){
     int32_t TmpBuf = 0x00ul;
-    int32_t *TmpTarget = reinterpret_cast<int32_t *>(Target);
-    uint32_t *TmpTargetU = reinterpret_cast<uint32_t *>(Target);
+    int32_t *TmpTarget = static_cast<int32_t *>(Target);
+    uint32_t *TmpTargetU = static_cast<uint32_t *>(Target);
     for( unsigned i=0; i<buffer.size(); i++ ){
-      TmpBuf |= ((buffer[i]) << (i*8));
+      TmpBuf |= buffer[i] << i*8;
     }
     uint32_t TmpBufU = reinterpret_cast<uint32_t&>(TmpBuf);
-
-    // 32-bit (W) AMOs
-    if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
-      *TmpTarget += TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
-      *TmpTarget ^= TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
-      *TmpTarget &= TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
-      *TmpTarget |= TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
-      *TmpTarget = std::min(*TmpTarget,TmpBuf);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
-      *TmpTarget = std::max(*TmpTarget,TmpBuf);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
-      *TmpTargetU = std::min(*TmpTargetU,TmpBufU);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
-      *TmpTargetU = std::max(*TmpTargetU,TmpBufU);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
-      *TmpTarget = TmpBuf;
-    }
+    findFlag(TmpTarget, TmpTargetU, TmpBuf,  TmpBufU);
   }else{
     int64_t TmpBuf = 0x00ul;
-    int64_t *TmpTarget = reinterpret_cast<int64_t *>(Target);
-    uint64_t *TmpTargetU = reinterpret_cast<uint64_t *>(Target);
+    int64_t *TmpTarget = static_cast<int64_t *>(Target);
+    uint64_t *TmpTargetU = static_cast<uint64_t *>(Target);
     for( unsigned i=0; i<buffer.size(); i++ ){
-      TmpBuf |= ((buffer[i]) << (i*8));
+      TmpBuf |= buffer[i] << i*8;
     }
     uint64_t TmpBufU = reinterpret_cast<uint64_t&>(TmpBuf);
-
-    // 64-bit (W) AMOs
-    if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
-      *TmpTarget += TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
-      *TmpTarget ^= TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
-      *TmpTarget &= TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
-      *TmpTarget |= TmpBuf;
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
-      *TmpTarget = std::min(*TmpTarget,TmpBuf);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
-      *TmpTarget = std::max(*TmpTarget,TmpBuf);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
-      *TmpTargetU = std::min(*TmpTargetU,TmpBufU);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
-      *TmpTargetU = std::max(*TmpTargetU,TmpBufU);
-    }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
-      *TmpTarget = TmpBuf;
-    }
+    findFlag(TmpTarget, TmpTargetU, TmpBuf,  TmpBufU);
   }
 
   // copy the target data over to the buffer and build the memory request
   buffer.clear();
-  uint8_t *TmpBuf8 = reinterpret_cast<uint8_t *>(Target);
-  for(unsigned i=0; i<(unsigned)(Tmp->getSize()); i++ ){
+  uint8_t *TmpBuf8 = static_cast<uint8_t *>(Target);
+  for(unsigned i = 0; i < Tmp->getSize(); i++ ){
     buffer.push_back(TmpBuf8[i]);
   }
 

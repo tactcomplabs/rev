@@ -273,7 +273,7 @@ namespace SST {
     public:
       SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::panNicAPI)
 
-      /// panNicAPI: default constructor
+      /// panNicAPI: constructor
       panNicAPI(ComponentId_t id, const Params& params)
         : SubComponent(id), isHost(false), isReserved(false), Token(0x00) { }
 
@@ -316,7 +316,7 @@ namespace SST {
       }
 
       /// panNicAPI: default destructor
-      virtual ~panNicAPI() { }
+      virtual ~panNicAPI() = default;
 
       /// panNicAPI: registers the event handler with the core
       virtual void setMsgHandler(Event::HandlerBase* handler) = 0;
@@ -379,10 +379,10 @@ namespace SST {
         {"iface", "SimpleNetwork interface to a network", "SST::Interfaces::SimpleNetwork"}
       )
 
-      /// PanNet: default constructor
+      /// PanNet: constructor
       PanNet(ComponentId_t id, const Params& params);
 
-      /// PanNet: default destructor
+      /// PanNet: destructor
       virtual ~PanNet();
 
       /// PanNet: Callback to parent on received messages

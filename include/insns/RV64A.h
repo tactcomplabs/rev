@@ -21,260 +21,62 @@ namespace SST{
     class RV64A : public RevExt {
 
       static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-
-        M->LR(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
-                (uint64_t *)(&R->RV64[Inst.rd]),
-                Inst.aq, Inst.rl, Inst.hazard,
-                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-
-        R->RV64_PC += Inst.instSize;
+        M->LR(F->GetHart(),
+              R->RV64[Inst.rs1],
+              &R->RV64[Inst.rd],
+              Inst.aq, Inst.rl, Inst.hazard,
+              REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
       static bool scd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-
-        M->SC(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]),
-                (uint64_t *)(&R->RV64[Inst.rs2]),
-                (uint64_t *)(&R->RV64[Inst.rd]),
-                Inst.aq, Inst.rl,
-                REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-        R->RV64_PC += Inst.instSize;
+        M->SC(F->GetHart(),
+              R->RV64[Inst.rs1],
+              &R->RV64[Inst.rs2],
+              &R->RV64[Inst.rd],
+              Inst.aq, Inst.rl,
+              REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+        R->AdvancePC(F, Inst.instSize);
         return true;
       }
 
-      static bool amoswapd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
+      /// Atomic Memory Operations
+      template<RevCPU::RevFlag F_AMO>
+      static bool amooperd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        uint32_t flags = static_cast<uint32_t>(F_AMO);
 
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOSWAP);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
+        if( Inst.aq && Inst.rl ){
+          flags |= uint32_t(RevCPU::RevFlag::F_AQ) | uint32_t(RevCPU::RevFlag::F_RL);
         }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
+          flags |= uint32_t(RevCPU::RevFlag::F_AQ);
         }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
+          flags |= uint32_t(RevCPU::RevFlag::F_RL);
         }
 
         M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
+                  R->RV64[Inst.rs1],
+                  &R->RV64[Inst.rs2],
+                  &R->RV64[Inst.rd],
                   Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
+                  flags);
+
+        R->AdvancePC(F, Inst.instSize);
 
         // update the cost
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
 
-      static bool amoaddd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOADD);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
-
-      static bool amoxord(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOXOR);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
-
-      static bool amoandd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOAND);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
-
-      static bool amoord(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOOR);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
-
-      static bool amomind(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOMIN);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
-
-      static bool amomaxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOMAX);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
-
-      static bool amominud(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOMINU);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
-
-      static bool amomaxud(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint32_t flags = 0x00ul;
-
-        flags = (uint32_t)(RevCPU::RevFlag::F_AMOMAXU);
-        if( Inst.aq && Inst.rl){
-          flags |= ((uint32_t)(RevCPU::RevFlag::F_AQ) |
-                    (uint32_t)(RevCPU::RevFlag::F_RL));
-        }else if( Inst.aq ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_AQ);
-        }else if( Inst.rl ){
-          flags |= (uint32_t)(RevCPU::RevFlag::F_RL);
-        }
-
-        M->AMOVal(F->GetHart(),
-                  (uint64_t)(R->RV64[Inst.rs1]),
-                  (int64_t *)(&R->RV64[Inst.rs2]),
-                  (int64_t *)(&R->RV64[Inst.rd]),
-                  Inst.hazard,
-                  REVMEM_FLAGS(flags));
-         R->RV64_PC += Inst.instSize;
-
-        // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
-        return true;
-      }
+      static constexpr auto& amoaddd  = amooperd<RevCPU::RevFlag::F_AMOADD>;
+      static constexpr auto& amoswapd = amooperd<RevCPU::RevFlag::F_AMOSWAP>;
+      static constexpr auto& amoxord  = amooperd<RevCPU::RevFlag::F_AMOXOR>;
+      static constexpr auto& amoandd  = amooperd<RevCPU::RevFlag::F_AMOAND>;
+      static constexpr auto& amoord   = amooperd<RevCPU::RevFlag::F_AMOOR>;
+      static constexpr auto& amomind  = amooperd<RevCPU::RevFlag::F_AMOMIN>;
+      static constexpr auto& amomaxd  = amooperd<RevCPU::RevFlag::F_AMOMAX>;
+      static constexpr auto& amominud = amooperd<RevCPU::RevFlag::F_AMOMINU>;
+      static constexpr auto& amomaxud = amooperd<RevCPU::RevFlag::F_AMOMAXU>;
 
       // ----------------------------------------------------------------------
       //

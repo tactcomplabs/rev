@@ -327,7 +327,7 @@ RevCPU::~RevCPU(){
   delete Opts;
 }
 
-void RevCPU::DecodeFaultWidth(std::string width){
+void RevCPU::DecodeFaultWidth(const std::string& width){
   fault_width = 1;  // default to single bit failures
 
   if( width == "single" ){
@@ -343,32 +343,26 @@ void RevCPU::DecodeFaultWidth(std::string width){
   }
 }
 
-void RevCPU::DecodeFaultCodes(std::vector<std::string> faults){
-  if( faults.size() == 0 ){
+void RevCPU::DecodeFaultCodes(const std::vector<std::string>& faults){
+  if( faults.empty() ){
     output.fatal(CALL_INFO, -1, "No fault codes defined");
   }
 
-  EnableCrackFaults = false;
-  EnableMemFaults = false;
-  EnableRegFaults = false;
-  EnableALUFaults = false;
+  EnableCrackFaults = EnableMemFaults = EnableRegFaults = EnableALUFaults = false;
 
-  for( unsigned i=0; i<faults.size(); i++ ){
-    if( faults[i] == "decode"){
+  for(auto& fault : faults){
+    if( fault == "decode"){
       EnableCrackFaults = true;
-    }else if( faults[i] == "mem"){
+    }else if( fault == "mem"){
       EnableMemFaults = true;
-    }else if( faults[i] == "reg"){
+    }else if( fault == "reg"){
       EnableRegFaults = true;
-    }else if( faults[i] == "alu"){
+    }else if( fault == "alu"){
       EnableALUFaults = true;
-    }else if( faults[i] == "all" ){
-      EnableCrackFaults = true;
-      EnableMemFaults = true;
-      EnableRegFaults = true;
-      EnableALUFaults = true;
+    }else if( fault == "all" ){
+      EnableCrackFaults = EnableMemFaults =  EnableRegFaults = EnableALUFaults = true;
     }else{
-      output.fatal(CALL_INFO, -1, "Undefined fault code: %s", faults[i].c_str() );
+      output.fatal( CALL_INFO, -1, "Undefined fault code: %s", fault.c_str() );
     }
   }
 }
@@ -377,44 +371,36 @@ void RevCPU::initNICMem(){
   output.verbose(CALL_INFO,1,0,"Initializing NIC memory.\n");
 
   // init all the entries to -1
-  uint64_t ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+  uint64_t ptr = _PAN_PE_TABLE_ADDR_;
   uint64_t host = 2;
   int64_t id = -1;
-  for( unsigned i=0; i<_PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
-    Mem->WriteU64(0, ptr,(uint64_t)(id));
-    Mem->WriteU64(0, ptr+8,(uint64_t)(host));
+  for( unsigned i = 0; i < _PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
+    Mem->WriteU64(0, ptr, id);
+    Mem->WriteU64(0, ptr+8, host);
     ptr += sizeof(PEMap);
   }
-  ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+  ptr = _PAN_PE_TABLE_ADDR_;
 
   // the first entry in the table is our own, then its
   // all the other nodes sequentially
-  id = (int64_t)(PNic->getAddress());
+  id = PNic->getAddress();
   Mem->WriteU64(0, ptr,(uint64_t)(id));
   ptr += 8;
-  if( PNic->IsHost() ){
-    host = 1;
-  }else{
-    host = 0;
-  }
+  host = PNic->IsHost();
   Mem->WriteU64(0, ptr,host);
   ptr += 8;
 
   output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
                  id, host );
 
-  for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
+  for( unsigned i = 0; i < PNic->getNumPEs(); i++ ){
     id = PNic->getHostFromIdx(i);
-    Mem->WriteU64(0, ptr,(uint64_t)(id));
+    Mem->WriteU64(0, ptr, id);
     ptr += 8;
-    if( PNic->IsRemoteHost((SST::Interfaces::SimpleNetwork::nid_t)(id)) ){
-      host = 1;
-    }else{
-      host = 0;
-    }
+    host = PNic->IsRemoteHost(id);
     output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
                   id, host);
-    Mem->WriteU64(0, ptr,host);
+    Mem->WriteU64(0, ptr, host);
     ptr += 8;
   }
 }
@@ -924,7 +910,7 @@ void RevCPU::PANHandleStatus(panNicEvent *event){
     PANBuildFailedToken(event);
     return ;
   }
-  unsigned Idx = (unsigned)(event->getSize());
+  unsigned Idx = event->getSize();
   PanExec::PanStatus Status = PExec->StatusEntry(Idx);
   if( Status == PanExec::QNull ){
     PANBuildFailedToken(event);
@@ -946,7 +932,7 @@ void RevCPU::PANHandleCancel(panNicEvent *event){
     return ;
   }
 
-  unsigned Idx = (unsigned)(event->getSize());
+  unsigned Idx = event->getSize();
   if( !PExec->RemoveEntry(Idx) ){
     PANBuildFailedToken(event);
     return ;
@@ -1899,7 +1885,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
       if( !PANConvertRDMAtoEvent(Payload[2],FEvent) )
         output.fatal(CALL_INFO, -1,
                      "Error: could not convert RDMA command to event from address=0x%" PRIx64 "\n",
-                     uint64_t(Payload[1]));
+                     Payload[1]);
 
       // Stage 2.b: Insert the event into the send queue
       SendMB.push(std::make_pair(FEvent,(int)(Payload[1])));
@@ -2182,7 +2168,7 @@ void RevCPU::ExecPANTest(){
 
 bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
   bool rtn = true;
-  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", currentCycle);
 
   // run test harness
   ExecPANTest();
@@ -2224,7 +2210,7 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
 
 void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: Crack fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                 currentCycle);
 
   // select a random processor core
   unsigned Core = 0;
@@ -2240,13 +2226,13 @@ void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
 
 void RevCPU::HandleMemFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: Memory fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                 currentCycle);
   Mem->HandleMemFault(fault_width);
 }
 
 void RevCPU::HandleRegFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: Register fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                currentCycle);
 
   // select a random processor core
   unsigned Core = 0;
@@ -2262,7 +2248,7 @@ void RevCPU::HandleRegFault(SST::Cycle_t currentCycle){
 
 void RevCPU::HandleALUFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: ALU fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                 currentCycle);
 
   // select a random processor core
   unsigned Core = 0;
@@ -2342,7 +2328,7 @@ void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
-  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", currentCycle);
 
   // Execute each enabled core
   for( unsigned i=0; i<Procs.size(); i++ ){
@@ -2351,7 +2337,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
          UpdateCoreStatistics(i);
         Enabled[i] = false;
       output.verbose(CALL_INFO, 5, 0, "Closing Processor %u at Cycle: %" PRIu64 "\n",
-                     i, static_cast<uint64_t>(currentCycle));
+                     i, currentCycle);
       }
     }
   }
@@ -2418,7 +2404,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   if( rtn ){
     primaryComponentOKToEndSim();
-    output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+    output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", currentCycle);
   }
 
   return rtn;

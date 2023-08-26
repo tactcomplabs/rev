@@ -271,11 +271,11 @@ bool RevProc::SeedInstTable(){
 uint32_t RevProc::CompressCEncoding(RevInstEntry Entry){
   uint32_t Value = 0x00;
 
-  Value |= (uint32_t)(Entry.opcode);
-  Value |= (uint32_t)((uint32_t)(Entry.funct2)<<2);
-  Value |= (uint32_t)((uint32_t)(Entry.funct3)<<4);
-  Value |= (uint32_t)((uint32_t)(Entry.funct4)<<8);
-  Value |= (uint32_t)((uint32_t)(Entry.funct6)<<12);
+  Value |= Entry.opcode;
+  Value |= uint32_t(Entry.funct2) << 2;
+  Value |= uint32_t(Entry.funct3) << 4;
+  Value |= uint32_t(Entry.funct4) << 8;
+  Value |= uint32_t(Entry.funct6) << 12;
 
   return Value;
 }
@@ -283,12 +283,12 @@ uint32_t RevProc::CompressCEncoding(RevInstEntry Entry){
 uint32_t RevProc::CompressEncoding(RevInstEntry Entry){
   uint32_t Value = 0x00;
 
-  Value |= (uint32_t)(Entry.opcode);
-  Value |= (uint32_t)((uint32_t)(Entry.funct3)<<8);
-  Value |= (uint32_t)((uint32_t)(Entry.funct7)<<11);
-  Value |= (uint32_t)((uint32_t)(Entry.imm12)<<18);
-  Value |= (uint32_t)((uint32_t)(Entry.fpcvtOp)<<30);  //this is a 5 bit field, but only the lower two bits are used, so it *just* fits
-                                                          //without going to a uint64
+  Value |= Entry.opcode;
+  Value |= uint32_t(Entry.funct3)  << 8;
+  Value |= uint32_t(Entry.funct7)  << 11;
+  Value |= uint32_t(Entry.imm12)   << 18;
+  Value |= uint32_t(Entry.fpcvtOp) << 30;  //this is a 5 bit field, but only the lower two bits are used, so it *just* fits
+                                           //without going to a uint64
 
   return Value;
 }
@@ -1238,10 +1238,10 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
   }
 
   // imm
-  DInst.imm =   (uint32_t)((Inst << 4)&0b100000000000)|   // [11]
-                (uint32_t)((Inst & 0b111100000000)>>7)|   // [4:1]
-                (uint32_t)((Inst >> 20)&0b11111100000)|   // [10:5]
-                (uint32_t)((Inst >> 19)&0b1000000000000);  // [12]
+  DInst.imm = ( (Inst >> 19) & 0b1000000000000 ) | // [12]
+              ( (Inst <<  4) &  0b100000000000 ) | // [11]
+              ( (Inst >> 20) &   0b11111100000 ) | // [10:5]
+              ( (Inst >>  7) &         0b11110 ) ; // [4:1]
 
   // SP/DP Float
   DInst.fmt     = 0;
@@ -1277,11 +1277,10 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry){
   }
 
   // immA
-  DInst.imm     = 0x00;
-  DInst.imm     = ( (uint32_t)((Inst >> 20) & 0b11111111110) |            // imm[10:1]
-                    (uint32_t)(Inst & 0b11111111000000000000) |           // imm[19:12]
-                    (uint32_t)((Inst >> 9) & 0b100000000000) |            // imm[11]
-                    (uint32_t)((Inst >> 11) & 0b100000000000000000000) ); // imm[20]
+  DInst.imm     = ( (Inst >> 11) & 0b100000000000000000000 ) | // imm[20]
+                  ( (Inst)       &  0b11111111000000000000 ) | // imm[19:12]
+                  ( (Inst >> 9)  &          0b100000000000 ) | // imm[11]
+                  ( (Inst >> 20) &           0b11111111110 ) ; // imm[10:1]
 
   // SP/DP Float
   DInst.fmt     = 0;
@@ -1450,7 +1449,7 @@ RevInst RevProc::DecodeInst(){
   }
 
   // Stage 2: Retrieve the opcode
-  const uint32_t Opcode = (uint32_t)(Inst&0b1111111);
+  const uint32_t Opcode = Inst & 0b1111111;
 
   // If we find a compressed instruction, then take
   // the compressed decode path

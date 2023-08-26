@@ -83,22 +83,22 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   bool done = false;
   uint64_t BaseCacheAddr = Addr;
   while( !done ){
-    if( (BaseCacheAddr%(uint64_t)(lineSize)) == 0 ){
+    if( BaseCacheAddr % lineSize == 0 ){
       done = true;
     }else{
-      BaseCacheAddr-=1;
+      BaseCacheAddr--;
     }
   }
 
   // write the first cache line
-  size_t TmpSize = (size_t)((BaseCacheAddr+lineSize)-Addr);
-  uint64_t TmpData = (uint64_t)(Data);
+  size_t TmpSize = BaseCacheAddr + lineSize - Addr;
+  uint64_t TmpData = uint64_t(Data);
   uint64_t TmpAddr = Addr;
-  if( !mem->WriteMem(0,TmpAddr,TmpSize,(void *)(TmpData)) ){
+  if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
     output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
   }
 
-  TmpAddr += (uint64_t)(TmpSize);
+  TmpAddr += TmpSize;
   TmpData += TmpSize;
   Total += TmpSize;
 
@@ -112,12 +112,12 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
       TmpSize = (Len-Total);
     }
 
-    if( !mem->WriteMem(0, TmpAddr, TmpSize, (void *)(TmpData)) ){
+    if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
       output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
     }
 
     // incrememnt the temp counters
-    TmpAddr += (uint64_t)(TmpSize);
+    TmpAddr += TmpSize;
     TmpData += TmpSize;
     Total += TmpSize;
 
@@ -341,7 +341,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
 
   // set the first stack pointer
-  uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
+  uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
 
@@ -452,9 +452,9 @@ bool RevLoader::LoadProgramArgs(){
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
     // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
-    sp -= (uint64_t)(len);
+    sp -= len;
     // Align stack pointer on a 16-byte boundary per the RISC-V ABI
-    sp &= ~0xF;
+    sp &= ~uint64_t{0xF};
     // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
     mem->SetStackTop(sp);
     //mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));

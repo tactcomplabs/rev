@@ -19,21 +19,19 @@
 namespace SST{
 namespace RevCPU {
 
-#define REVPREF_INIT_ADDR ((uint32_t)(0xdeadbeef))
+#define REVPREF_INIT_ADDR 0xDEADBEEF
 
 class RevPrefetcher{
 public:
-  /// RevPrefetcher: default constructor
+  /// RevPrefetcher: constructor
   RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth)
     : mem(Mem), feature(Feature), depth(Depth){}
 
-  /// RevPrefetcher: default destructor
+  /// RevPrefetcher: destructor
   ~RevPrefetcher(){
     // delete all the existing streams
-    baseAddr.clear();
-    for( unsigned i=0; i<iStack.size(); i++ ){
-      delete [] iStack[i];
-    }
+    for(auto* s : iStack)
+      delete[] s;
   }
 
   /// RevPrefetcher: fetch the next instruction

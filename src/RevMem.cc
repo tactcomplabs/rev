@@ -13,6 +13,7 @@
 #include <utility>
 #include <mutex>
 #include <random>
+#include <functional>
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts,
                 RevMemCtrl *Ctrl, SST::Output *Output )
@@ -219,43 +220,38 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
         (Addr == std::get<LRSC_ADDR>(*it)) ){
       // existing reservation; test to see if the value matches
       uint64_t *TmpTarget = std::get<LRSC_VAL>(*it);
-      uint64_t *TmpData = reinterpret_cast<uint64_t *>(Data);
+      uint64_t *TmpData = static_cast<uint64_t *>(Data);
 
       if( Len == 32 ){
-        uint32_t A;
-        uint32_t B;
-        for( unsigned i=0; i<Len; i++ ){
-          A |= ((uint32_t)(TmpTarget[i]) << i);
-          B |= ((uint32_t)(TmpData[i]) << i);
+        uint32_t A = 0;
+        uint32_t B = 0;
+        for( size_t i = 0; i < Len; i++ ){
+          A |= uint32_t(TmpTarget[i]) << i;
+          B |= uint32_t(TmpData[i]) << i;
         }
         if( (A & B) == 0 ){
-          uint32_t *Tmp = (uint32_t *)(Target);
-          Tmp[0] = 0x1;
+          static_cast<uint32_t *>(Target)[0] = 1;
           return false;
         }
       }else{
-        uint64_t A;
-        uint64_t B;
-        for( unsigned i=0; i<Len; i++ ){
-          A |= ((uint64_t)(TmpTarget[i]) << i);
-          B |= ((uint64_t)(TmpData[i]) << i);
+        uint64_t A = 0;
+        uint64_t B = 0;
+        for( size_t i = 0; i < Len; i++ ){
+          A |= TmpTarget[i] << i;
+          B |= TmpData[i] << i;
         }
         if( (A & B) == 0 ){
-          uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
-          Tmp[0] = 0x1;
+          static_cast<uint64_t *>(Target)[0] = 1;
           return false;
         }
       }
 
       // everything has passed so far,
       // write the value back to memory
-      WriteMem(Hart, Addr,Len,Data,flags);
+      WriteMem(Hart, Addr, Len, Data, flags);
 
       // write zeros to target
-      for( unsigned i=0; i<Len; i++ ){
-        uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
-        Tmp[i] = 0x0;
-      }
+      memset(Target, 0, Len * sizeof(uint64_t));
 
       // erase the entry
       LRSC.erase(it);
@@ -273,13 +269,8 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
 #endif
 
 unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
-  unsigned R = 0;
-
   srand(time(NULL));
-
-  R = (unsigned)((rand() % Max) + Min);
-
-  return R;
+  return rand() % (Max-Min+1) + Min;
 }
 
 void RevMem::FlushTLB(){
@@ -491,115 +482,50 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
   //check to see if we're about to walk off the page....
-  uint32_t adjPageNum = 0;
-  uint64_t adjPhysAddr = 0;
-  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
-  char *DataMem = (char *)(Target);
 
   // set the hazard
   *Hazard = true;
 
   if( ctrl ){
     // sending to the RevMemCtrl
-    ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem),
-                              Len, reinterpret_cast<char *>(Data),
-                              Target, Hazard, flags);
+    ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem), Len,
+                         static_cast<char *>(Data), Target, Hazard, flags);
   }else{
     // process the request locally
+    auto findFlag = [&](auto* TmpTarget, auto* TmpTargetU, auto* TmpData, auto* TmpDataU){
+      static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
+        { RevCPU::RevFlag::F_AMOADD,  [&]{ *TmpTarget += *TmpData; } },
+        { RevCPU::RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= *TmpData; } },
+        { RevCPU::RevFlag::F_AMOAND,  [&]{ *TmpTarget &= *TmpData; } },
+        { RevCPU::RevFlag::F_AMOOR,   [&]{ *TmpTarget |= *TmpData; } },
+        { RevCPU::RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = *TmpData; } },
+        { RevCPU::RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  *TmpData);  } },
+        { RevCPU::RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  *TmpData);  } },
+        { RevCPU::RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, *TmpDataU); } },
+        { RevCPU::RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, *TmpDataU); } },
+      };
+      for (auto& flag : table){
+        if( flags & uint32_t(flag.first) ){
+          ReadMem(Hart, Addr, Len, Target, Hazard, flags);
+          flag.second();
+          WriteMem(Hart, Addr, Len, Target);
+          break;
+        }
+      }
+    };
+
     if( Len == 4 ){
-      // 32bit amo
-      int32_t *TmpTarget = reinterpret_cast<int32_t *>(Target);
-      uint32_t *TmpTargetU = reinterpret_cast<uint32_t *>(Target);
-      int32_t *TmpData = reinterpret_cast<int32_t *>(Data);
-      uint32_t *TmpDataU = reinterpret_cast<uint32_t *>(Data);
-
-      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget += *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget ^= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget &= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget |= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::min(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::max(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }
-
+      findFlag(static_cast<int32_t*>(Target), static_cast<uint32_t*>(Target),
+               static_cast<int32_t*>(Data),   static_cast<uint32_t*>(Data));
     }else{
-      // 64bit amo
-      int64_t *TmpTarget = reinterpret_cast<int64_t *>(Target);
-      uint64_t *TmpTargetU = reinterpret_cast<uint64_t *>(Target);
-      int64_t *TmpData = reinterpret_cast<int64_t *>(Data);
-      uint64_t *TmpDataU = reinterpret_cast<uint64_t *>(Data);
-
-      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget += *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget ^= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget &= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget |= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::min(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::max(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }
+      findFlag(static_cast<int64_t*>(Target), static_cast<uint64_t*>(Target),
+               static_cast<int64_t*>(Data),   static_cast<uint64_t*>(Data));
     }
-    // clear the hazard
-    *Hazard = false;
   }
+
+  // clear the hazard
+  *Hazard = false;
 
   return true;
 }

@@ -25,11 +25,11 @@ RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   // -- memCosts[core] = 0:10
   // -- prefetch depth = 16
   for( unsigned i=0; i<numCores; i++ ){
-    startAddr.insert( std::pair<unsigned,uint64_t>(i,(uint64_t)(0x00000000)) );
-    machine.insert( std::pair<unsigned,std::string>(i,"G") );
-    table.insert( std::pair<unsigned,std::string>(i,"_REV_INTERNAL_") );
+    startAddr.insert( std::pair<unsigned,uint64_t>(i, 0) );
+    machine.insert( std::pair<unsigned,std::string>(i, "G") );
+    table.insert( std::pair<unsigned,std::string>(i, "_REV_INTERNAL_") );
     memCosts.push_back(InitialPair);
-    prefetchDepth.insert( std::pair<unsigned,unsigned>(i,16) );
+    prefetchDepth.insert( std::pair<unsigned,unsigned>(i, 16) );
   }
 }
 
