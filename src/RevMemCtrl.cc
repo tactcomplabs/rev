@@ -1326,44 +1326,21 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
   }
   void *Target = Tmp->getTarget();
 
-  StandardMem::Request::flags_t flags = Tmp->getFlags();
-  std::vector<uint8_t> buffer = Tmp->getBuf();
-
-  auto findFlag = [&](auto* TmpTarget, auto* TmpTargetU, auto TmpBuf, auto TmpBufU){
-    static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
-      { RevCPU::RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
-      { RevCPU::RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
-      { RevCPU::RevFlag::F_AMOAND,  [&]{ *TmpTarget &= TmpBuf; } },
-      { RevCPU::RevFlag::F_AMOOR,   [&]{ *TmpTarget |= TmpBuf; } },
-      { RevCPU::RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = TmpBuf; } },
-      { RevCPU::RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  TmpBuf);  } },
-      { RevCPU::RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  TmpBuf);  } },
-      { RevCPU::RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
-      { RevCPU::RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
-    };
-    for(auto& flag : table)
-      if( flags & uint32_t(flag.first) )
-        flag.second();
-  };
+  auto flags = Tmp->getFlags();
+  auto buffer = Tmp->getBuf();
 
   if( Tmp->getSize() == 4 ){
-    int32_t TmpBuf = 0x00ul;
-    int32_t *TmpTarget = static_cast<int32_t *>(Target);
-    uint32_t *TmpTargetU = static_cast<uint32_t *>(Target);
-    for( unsigned i=0; i<buffer.size(); i++ ){
+    int32_t TmpBuf = 0;
+    for( unsigned i = 0; i < buffer.size(); i++ ){
       TmpBuf |= buffer[i] << i*8;
     }
-    uint32_t TmpBufU = reinterpret_cast<uint32_t&>(TmpBuf);
-    findFlag(TmpTarget, TmpTargetU, TmpBuf,  TmpBufU);
+    ApplyAMO(flags, Target, TmpBuf);
   }else{
-    int64_t TmpBuf = 0x00ul;
-    int64_t *TmpTarget = static_cast<int64_t *>(Target);
-    uint64_t *TmpTargetU = static_cast<uint64_t *>(Target);
-    for( unsigned i=0; i<buffer.size(); i++ ){
+    int64_t TmpBuf = 0;
+    for( unsigned i = 0; i < buffer.size(); i++ ){
       TmpBuf |= buffer[i] << i*8;
     }
-    uint64_t TmpBufU = reinterpret_cast<uint64_t&>(TmpBuf);
-    findFlag(TmpTarget, TmpTargetU, TmpBuf,  TmpBufU);
+    ApplyAMO(flags, Target, TmpBuf);
   }
 
   // copy the target data over to the buffer and build the memory request

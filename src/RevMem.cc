@@ -493,35 +493,15 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                          static_cast<char *>(Data), Target, Hazard, flags);
   }else{
     // process the request locally
-    auto findFlag = [&](auto* TmpTarget, auto* TmpTargetU, auto* TmpData, auto* TmpDataU){
-      static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
-        { RevCPU::RevFlag::F_AMOADD,  [&]{ *TmpTarget += *TmpData; } },
-        { RevCPU::RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= *TmpData; } },
-        { RevCPU::RevFlag::F_AMOAND,  [&]{ *TmpTarget &= *TmpData; } },
-        { RevCPU::RevFlag::F_AMOOR,   [&]{ *TmpTarget |= *TmpData; } },
-        { RevCPU::RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = *TmpData; } },
-        { RevCPU::RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  *TmpData);  } },
-        { RevCPU::RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  *TmpData);  } },
-        { RevCPU::RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, *TmpDataU); } },
-        { RevCPU::RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, *TmpDataU); } },
-      };
-      for (auto& flag : table){
-        if( flags & uint32_t(flag.first) ){
-          ReadMem(Hart, Addr, Len, Target, Hazard, flags);
-          flag.second();
-          WriteMem(Hart, Addr, Len, Target);
-          break;
-        }
-      }
-    };
+    ReadMem(Hart, Addr, Len, Target, Hazard, flags);
 
     if( Len == 4 ){
-      findFlag(static_cast<int32_t*>(Target), static_cast<uint32_t*>(Target),
-               static_cast<int32_t*>(Data),   static_cast<uint32_t*>(Data));
+      ApplyAMO(flags, Target, *static_cast<uint32_t*>(Data));
     }else{
-      findFlag(static_cast<int64_t*>(Target), static_cast<uint64_t*>(Target),
-               static_cast<int64_t*>(Data),   static_cast<uint64_t*>(Data));
+      ApplyAMO(flags, Target, *static_cast<uint64_t*>(Data));
     }
+
+    WriteMem(Hart, Addr, Len, Target);
   }
 
   // clear the hazard

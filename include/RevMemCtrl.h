@@ -16,12 +16,14 @@
 #include <vector>
 #include <list>
 #include <algorithm>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <random>
 #include <map>
 #include <tuple>
+#include <functional>
+#include <type_traits>
 
 // -- SST Headers
 #include "SST.h"
@@ -690,6 +692,37 @@ namespace SST {
       std::vector<Statistic<uint64_t>*> stats;  ///< statistics vector
 
     }; // RevBasicMemCtrl
+
+
+    ///< Apply Atomic Memory Operation
+    /// The operation described by "flags" is applied to memory "Target" with value "value"
+    template<typename T>
+    void ApplyAMO(uint32_t flags, void* Target, T value){
+      // Target and value cast to signed and unsigned versions
+      auto* TmpTarget  = static_cast<std::make_signed_t<T>*>(Target);
+      auto* TmpTargetU = static_cast<std::make_unsigned_t<T>*>(Target);
+      auto  TmpBuf     = static_cast<std::make_signed_t<T>>(value);
+      auto  TmpBufU    = static_cast<std::make_unsigned_t<T>>(value);
+
+      // Table mapping atomic operations to executable code
+      static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
+        { RevCPU::RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
+        { RevCPU::RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
+        { RevCPU::RevFlag::F_AMOAND,  [&]{ *TmpTarget &= TmpBuf; } },
+        { RevCPU::RevFlag::F_AMOOR,   [&]{ *TmpTarget |= TmpBuf; } },
+        { RevCPU::RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = TmpBuf; } },
+        { RevCPU::RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  TmpBuf);  } },
+        { RevCPU::RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  TmpBuf);  } },
+        { RevCPU::RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
+        { RevCPU::RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
+      };
+      for (auto& flag : table){
+        if( flags & uint32_t(flag.first) ){
+          flag.second();
+          break;
+        }
+      }
+    }
   } // namespace RevCPU
 } // namespace SST
 
