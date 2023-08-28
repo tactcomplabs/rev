@@ -199,8 +199,8 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
       uint64_t *TmpData = reinterpret_cast<uint64_t *>(Data);
 
       if( Len == 32 ){
-        uint32_t A;
-        uint32_t B;
+        uint32_t A = 0;
+        uint32_t B = 0;
         for( unsigned i=0; i<Len; i++ ){
           A |= ((uint32_t)(TmpTarget[i]) << i);
           B |= ((uint32_t)(TmpData[i]) << i);
@@ -211,8 +211,8 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
           return false;
         }
       }else{
-        uint64_t A;
-        uint64_t B;
+        uint64_t A = 0;
+        uint64_t B = 0;
         for( unsigned i=0; i<Len; i++ ){
           A |= ((uint64_t)(TmpTarget[i]) << i);
           B |= ((uint64_t)(TmpData[i]) << i);
