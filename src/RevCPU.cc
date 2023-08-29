@@ -226,10 +226,27 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
   }
 
-  // Create the processor objects
-  Procs.reserve(Procs.size() + numCores);
-  for( unsigned i=0; i<numCores; i++ ){
-    Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
+  EnableCoProc = params.find<bool>("enableCoProc", 0);
+  if(EnableCoProc){
+    // Create the co-processor objects
+    for( unsigned i=0; i<numCores; i++){
+      RevCoProc* CoProc = loadUserSubComponent<RevCoProc>("co_proc");
+        if (!CoProc) {
+          output.fatal(CALL_INFO, -1, "Error : failed to inintialize the co-processor subcomponent\n");
+        }
+        CoProcs.push_back(CoProc);
+    }
+    // Create the processor objects
+    Procs.reserve(Procs.size() + numCores);
+    for( unsigned i=0; i<numCores; i++ ){
+      Procs.push_back( new RevProc( i, Opts, Mem, Loader, CoProcs[i], &output ) );
+    }
+  }else{
+    // Create the processor objects
+    Procs.reserve(Procs.size() + numCores);
+    for( unsigned i=0; i<numCores; i++ ){
+      Procs.push_back( new RevProc( i, Opts, Mem, Loader, NULL, &output ) );
+    }
   }
 
   // setup the per-proc statistics
@@ -258,6 +275,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     TLBHitsPerCore.push_back( registerStatistic<uint64_t>("TLBHitsPerCore", "core_" + std::to_string(s)));
     TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
   }
+
 
   // setup the PAN execution contexts
   if( EnablePAN ){
@@ -302,6 +320,10 @@ RevCPU::~RevCPU(){
   // delete the processors objects
   for( unsigned i=0; i<Procs.size(); i++ ){
     delete Procs[i];
+  }
+
+  for (unsigned i=0; i<CoProcs.size(); i++){
+    delete CoProcs[i];
   }
 
   if( PExec )
@@ -2345,10 +2367,18 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   for( unsigned i=0; i<Procs.size(); i++ ){
     if( Enabled[i] ){
       if( !Procs[i]->ClockTick(currentCycle) ){
+         if(EnableCoProc && !CoProcs.empty()){
+          CoProcs[i]->Teardown();
+         }
          UpdateCoreStatistics(i);
         Enabled[i] = false;
       output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
                      i, static_cast<uint64_t>(currentCycle));
+      }
+      if(EnableCoProc && !CoProcs[i]->ClockTick(currentCycle)){
+      output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %d at Cycle: %" PRIu64 "\n",
+                     i, static_cast<uint64_t>(currentCycle));
+
       }
     }
   }

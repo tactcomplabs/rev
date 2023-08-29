@@ -39,6 +39,7 @@
 #include "RevInstTables.h"
 #include "PanExec.h"
 #include "RevPrefetcher.h"
+#include "RevCoProc.h"
 #include "RevThreadCtx.h"
 #include "../common/syscalls/SysFlags.h"
 
@@ -53,7 +54,7 @@ namespace SST{
     public:
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
-               SST::Output *Output );
+               RevCoProc* CoProc, SST::Output *Output );
 
       /// RevProc: standard desctructor
       ~RevProc();
@@ -189,6 +190,7 @@ namespace SST{
 
       RevOpts *opts;            ///< RevProc: options object
       RevMem *mem;              ///< RevProc: memory object
+      RevCoProc* coProc;        ///< RevProc: attached co-processor
       RevLoader *loader;        ///< RevProc: loader object
       SST::Output *output;      ///< RevProc: output handler
       RevFeature *feature;      ///< RevProc: feature handler

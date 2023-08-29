@@ -17,6 +17,7 @@ RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
                   RevLoader *Loader,
+                  RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
@@ -34,6 +35,12 @@ RevProc::RevProc( unsigned Id,
   unsigned MaxCost = 0;
 
   Opts->GetMemCost(Id,MinCost,MaxCost);
+
+  if(CoProc){
+    coProc = CoProc;
+  }else{
+    coProc = NULL;
+  }
 
   feature = new RevFeature(Machine,output,MinCost,MaxCost,Id);
   if( !feature )
@@ -965,12 +972,25 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   Enc |= (uint32_t)(funct4 << 8);
   Enc |= (uint32_t)(funct6 << 12);
 
+  bool isCoProcInst = false;
   std::map<uint32_t,unsigned>::iterator it = CEncToEntry.find(Enc);
   if( it == CEncToEntry.end() ){
-    output->fatal(CALL_INFO, -1,
+      if(coProc){
+        isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
+      }
+      if(isCoProcInst){ 
+        //Create NOP - ADDI x0, x0 0
+        uint8_t caddi_op= 0b01;
+        Inst = 0;
+        Enc = 0;
+        Enc |= caddi_op;
+        it = CEncToEntry.find(Enc);
+      }else{
+        output->fatal(CALL_INFO, -1,
                   "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n opc=%x; funct2=%x, funct3=%x, funct4=%x, funct6=%x\n",
                   PC,
                   Enc, opc, funct2, funct3, funct4, funct6 );
+      }
   }
 
   unsigned Entry = it->second;
@@ -1515,6 +1535,7 @@ RevInst RevProc::DecodeInst(){
   Enc |= (fcvtOp<<30);
 
   // Stage 7: Look up the value in the table
+  bool isCoProcInst = false;
   std::map<uint32_t,unsigned>::iterator it;
   it = EncToEntry.find(Enc);
    if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
@@ -1528,11 +1549,23 @@ RevInst RevProc::DecodeInst(){
     Enc |= (fcvtOp<<30);
     it = EncToEntry.find(Enc);
     if( it == EncToEntry.end() ){
-      // failed to decode the instruction
-      output->fatal(CALL_INFO, -1,
-                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
-                  PC,
-                  Enc );
+      if(coProc){
+        isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
+      }
+      if(isCoProcInst){ 
+        //Create NOP - ADDI x0, x0 0
+        uint32_t addi_op= 0b0010011;
+        Inst = 0;
+        Enc = 0;
+        Enc |= addi_op;
+        it = EncToEntry.find(Enc);
+      }else{
+        // failed to decode the instruction
+        output->fatal(CALL_INFO, -1,
+                    "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
+                    PC,
+                    Enc );
+      }
     }
 
   }
@@ -1540,16 +1573,30 @@ RevInst RevProc::DecodeInst(){
   unsigned Entry = it->second;
 
   if( Entry > (InstTable.size()-1) ){
-    output->fatal(CALL_INFO, -1,
+      if(coProc){
+        isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
+      }
+      if(isCoProcInst){ 
+        //Create NOP - ADDI x0, x0 0
+        uint32_t addi_op= 0b0010011;
+        Inst = 0;
+        Enc = 0;
+        Enc |= addi_op;
+        it = EncToEntry.find(Enc);
+        Entry = it->second;
+      } else {
+        output->fatal(CALL_INFO, -1,
                   "Error: no entry in table for instruction at PC=0x%" PRIx64 " \
                   Opcode = %x Funct3 = %x Funct7 = %x Imm12 = %x Enc = %x \n", \
                   PC, Opcode, Funct3, Funct7, Imm12, Enc );
+      }
 
   }
 
   RegFile->Entry = Entry;
 
   RegFile->trigger = false;
+
 
   // Stage 8: Do a full deocode using the target format
   switch( InstTable[Entry].format ){
