@@ -71,7 +71,7 @@ namespace SST {
     // ----------------------------------------
     class RevSimpleCoProc : public RevCoProc{
     public:
-      SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(RevSimpleCoProc, "revcpu",
+      SST_ELI_REGISTER_SUBCOMPONENT(RevSimpleCoProc, "revcpu",
                                             "RevSimpleCoProc",
                                             SST_ELI_ELEMENT_VERSION(1, 0, 0),
                                             "RISC-V Rev Simple Co-Processor",
