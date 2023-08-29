@@ -439,7 +439,6 @@ uint64_t RevMem::AllocMem(const uint64_t& SegSize){
       MemSegs.emplace_back(std::make_shared<MemSegment>(NewSegBaseAddr, SegSize));
       FreeSeg->setBaseAddr(FreeSeg->getBaseAddr() + SegSize);
       FreeSeg->setSize(oldFreeSegSize - SegSize);
-      output->verbose(CALL_INFO, 10, 99, "  => allocating start fit %lul bytes at %p\n", SegSize, NewSegBaseAddr);
       return NewSegBaseAddr;
     }
     // New data will fit exactly in the free segment
@@ -449,7 +448,6 @@ uint64_t RevMem::AllocMem(const uint64_t& SegSize){
       NewSegBaseAddr = FreeSeg->getBaseAddr();
       MemSegs.emplace_back(std::make_shared<MemSegment>(NewSegBaseAddr, SegSize));
       FreeMemSegs.erase(FreeMemSegs.begin()+i);
-      output->verbose(CALL_INFO, 10, 99, "  => allocating perfect fit %lul bytes at %p\n", SegSize, NewSegBaseAddr);
       return NewSegBaseAddr;
     }
     // FreeSeg not big enough to fit the new data
