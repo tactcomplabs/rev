@@ -108,7 +108,7 @@ namespace SST {
     public:
 
       // Register with the SST Core
-      SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+      SST_ELI_REGISTER_SUBCOMPONENT(
         RevNIC,
         "revcpu",
         "RevNIC",

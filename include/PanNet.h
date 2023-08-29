@@ -353,7 +353,7 @@ namespace SST {
     class PanNet : public panNicAPI {
     public:
       // Register with the SST Core
-      SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+      SST_ELI_REGISTER_SUBCOMPONENT(
         PanNet,
         "revcpu",
         "PanNet",
