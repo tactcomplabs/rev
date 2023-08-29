@@ -80,13 +80,14 @@ namespace SST {
           void setSize(uint64_t size) { Size = size; TopAddr = BaseAddr + size; }
 
           /// MemSegment: Check if vAddr is included in this segment
-          bool contains(const uint64_t vAddr){
-            return (vAddr >= BaseAddr && vAddr <= TopAddr);
+          bool contains(const uint64_t& vAddr){
+            return (vAddr >= BaseAddr && vAddr < TopAddr);
           };
 
           // Check if a given range is inside a segment
-          bool contains(const uint64_t vBaseAddr, const uint64_t Size){
-            uint64_t vTopAddr = vBaseAddr + Size;
+          bool contains(const uint64_t& vBaseAddr, const uint64_t& Size){
+            // exclusive top address
+            uint64_t vTopAddr = vBaseAddr + Size - 1; 
             return (this->contains(vBaseAddr) && this->contains(vTopAddr));
           };
 
@@ -292,9 +293,7 @@ namespace SST {
       /// RevMem: Attempts to allocate memory at a specific address
       uint64_t AllocMemAt(const uint64_t& BaseAddr, const uint64_t& Size);
 
-      /// RevMem: Shrinks segment (Only moves top addr & marks upper part as free)
-      uint64_t ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize);
-      
+
       /// RevMem: Sets the HeapStart & HeapEnd to EndOfStaticData
       void InitHeap(const uint64_t& EndOfStaticData);
       void SetHeapStart(const uint64_t& HeapStart){ heapstart = HeapStart; }
