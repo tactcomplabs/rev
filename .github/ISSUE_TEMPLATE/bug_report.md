@@ -8,13 +8,13 @@ assignees: ''
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+A clear and concise description of what the issue is.  Please note that issues labeled "broken" with little to no descriptive behavior will be immediately closed.  Further, issues that do not include any information to reproduce the behavior will be immediately closed.
 
 **To Reproduce**
 All issues must be accompanied by: 
-- The version of SST utilized
+- The version of SST utilized (`sst --version`; `sst-config --CXX`; `sst-config --ELEMENT_CXXFLAGS`)
 - The source code branch being used
-- The last commit from the branch
+- The last commit hash
 - The compiler utilized to build Rev
 - The compiler utilized to build the test
 - The python or JSON simulation input
