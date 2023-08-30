@@ -10,6 +10,7 @@
 
 #include "../include/RevCPU.h"
 #include <cmath>
+#include "RevMem.h"
 
 const char *splash_msg = "\
 \n\
@@ -150,11 +151,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     // setup the PAN target device execution context
     if( !PNic->IsHost() ){
       PExec = new PanExec();
-      if( PExec == nullptr )
+      if( PExec == nullptr ){
       for( unsigned i=0; i<Procs.size(); i++ ){
         Procs[i]->SetExecCtx(PExec);
       }
-      RevokeHasArrived = false;
+    }
+    RevokeHasArrived = false;
     }else{
       RevokeHasArrived = true;
     }
@@ -249,6 +251,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     for( unsigned i=0; i<numCores; i++ ){
       Procs.push_back( new RevProc( i, Opts, Mem, Loader, NULL, &output ) );
     }
+  
+  AssignedThreads.resize(numCores);
+  Procs.reserve(Procs.size() + numCores);
+
+  for( unsigned i=0; i<numCores; i++ ){
+    Procs.push_back( new RevProc( i, Opts, Mem, Loader, AssignedThreads.at(i), &output ) );
+    std::cout << "Pushing Back Proc #" << i << std::endl;
   }
 
   // setup the per-proc statistics
@@ -278,6 +287,51 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
   }
 
+  
+  // Begin ThreadManager Changes
+  // ThreadManager = new RevThreadManager(&output,                  // SST::Output
+  //                                      Procs,                    // Vector of RevProc objects
+  //                                      Mem,                      // RevMem object
+  //                                      0,                        // Number of threads to initialize (In addition to main thread)
+  //                                      Mem->GetStackTop(),       // Stack pointer for the first thread (This is modified by loader so we can't just say it's equal to MemSize)
+  //                                      Loader->GetTLSBaseAddr(), // Base address of the TLS initilization template
+  //                                      Loader->GetTLSSize(),     // Size of the TLS initialization template
+  //                                      Mem->GetMemSize() + _REVMEM_BASE_); // Base address of the first thread's memory segment
+  
+  // Create the first copy of the TLS Segment 
+  Threads.emplace(1, std::make_shared<RevThreadCtx>(
+                  1, 0,
+                  Mem->GetStackTop(),
+                  Mem->GetThreadMemSegs().front()->getTopAddr() - _STACK_SIZE_ )); 
+
+  // set the pc
+  uint64_t StartAddr = 0x00ull;
+  if( !Opts->GetStartAddr( id, StartAddr ) )
+    output.fatal(CALL_INFO, -1, "Error: failed to init the start address for the main thread\n");
+  std::string StartSymbol = "main";
+  //std::string StartSymbol = "_start";
+  if( StartAddr == 0x00ull ){
+    if( !Opts->GetStartSymbol( id, StartSymbol ) )
+      output.fatal(CALL_INFO, -1,
+                    "Error: failed to init the start symbol address for main thread=\n");
+
+    StartAddr = Loader->GetSymbolAddr(StartSymbol);
+  }
+  if( StartAddr == 0x00ull ){
+    // load "main" symbol
+    StartAddr = Loader->GetSymbolAddr("main");
+    //StartAddr = loader->GetSymbolAddr("_start");
+    if( StartAddr == 0x00ull ){
+      output.fatal(CALL_INFO, -1,
+                    "Error: failed to auto discover address for <main> for main thread\n");
+    }
+  }
+  Threads.at(1)->GetRegFile()->RV32_PC = (uint32_t)StartAddr;
+  Threads.at(1)->GetRegFile()->RV64_PC = StartAddr;
+
+  // Assign the first thread
+  // AssignedThreads.front().emplace_back(Threads[1]);
+  ThreadQueue.emplace(1);
 
   // setup the PAN execution contexts
   if( EnablePAN ){
@@ -292,8 +346,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
   // Create the completion array
   Enabled = new bool [numCores];
+  // Starting at 1 because the first Proc executes the main thread
   for( unsigned i=0; i<numCores; i++ ){
-    Enabled[i] = true;
+    // FIXME: This may break PAN
+    Enabled[i] = false;
   }
 
   {
@@ -344,6 +400,7 @@ RevCPU::~RevCPU(){
 
   // delete the options object
   delete Opts;
+
 }
 
 void RevCPU::DecodeFaultWidth(std::string width){
@@ -2360,13 +2417,22 @@ void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
   TLBMissesPerCore[coreNum]->addData(stats.memStats.TLBMisses);
 }
 
+
+/// @brief Clock tick function for the RevCPU
+/// @param currentCycle The current cycle of the simulation
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
   output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
 
+  std::cout << "Assigned Threads: " << AssignedThreads.size() << std::endl;
+  for( unsigned i=0; i<AssignedThreads.size(); i++ ){
+    std::cout << "Proc: " << i << " has " << AssignedThreads.at(i).size() << " threads assigned to it" << std::endl; 
+  }
+
   // Execute each enabled core
   for( unsigned i=0; i<Procs.size(); i++ ){
+    // If the Proc is enabled, keep executing
     if( Enabled[i] ){
       if( !Procs[i]->ClockTick(currentCycle) ){
          if(EnableCoProc && !CoProcs.empty()){
@@ -2374,13 +2440,24 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
          }
          UpdateCoreStatistics(i);
         Enabled[i] = false;
-      output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
+        output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
                      i, static_cast<uint64_t>(currentCycle));
       }
       if(EnableCoProc && !CoProcs[i]->ClockTick(currentCycle)){
       output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %d at Cycle: %" PRIu64 "\n",
                      i, static_cast<uint64_t>(currentCycle));
 
+      }
+    }
+    else {
+      // See if there is work to assign
+      if( ThreadQueue.size() ){
+        uint32_t ThreadToAssign = ThreadQueue.front();
+        ThreadQueue.pop();
+
+        AssignedThreads.at(i).emplace_back(Threads.at(ThreadToAssign));
+        // Enable Proc
+        Enabled[i] = true;
       }
     }
   }

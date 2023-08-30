@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevProc.h"
+#include "RevSysCalls.cc"
 #include <bitset>
 #include <filesystem>
 #include <sys/xattr.h>
@@ -18,12 +19,13 @@ RevProc::RevProc( unsigned Id,
                   RevMem *Mem,
                   RevLoader *Loader,
                   RevCoProc* CoProc,
+                  std::vector<std::shared_ptr<RevThreadCtx>>& AssignedThreads,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
-    opts(Opts), mem(Mem), loader(Loader), output(Output),
-    feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+    opts(Opts), mem(Mem), loader(Loader), AssignedThreads(AssignedThreads),
+    output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -57,12 +59,7 @@ RevProc::RevProc( unsigned Id,
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%d\n", id);
-
-  // Initialize ThreadTable (NOTE: Default PID = 1024 + ProcID)
-  if( !InitThreadTable() )
-    output->fatal(CALL_INFO, -1,
-                  "Error: failed to initialize the ThreadTable for core=%d\n", id );
-
+ 
   // load the instruction tables
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
@@ -390,6 +387,7 @@ bool RevProc::ReadOverrideTables(){
   // close the file
   infile.close();
 
+  // std::cout << "Done reading the override tables" << std::endl;
   return true;
 }
 
@@ -410,36 +408,42 @@ bool RevProc::LoadInstructionTable(){
 }
 
 bool RevProc::Reset(){
+  // Reset the AssignedThreads
+  for( auto& Thread : AssignedThreads ){
+    // TODO: Make sure this is the correct way to reset the thread
+    Thread.reset();
+  }
+
   // reset the register file
-  for (int t=0;  t < _REV_HART_COUNT_; t++){
-    RevRegFile* regFile = GetRegFile(t);
-    regFile->RV32_PC = 0x00l;
-    regFile->RV64_PC = 0x00ull;
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      regFile->RV32[i] = 0x00l;
-      regFile->RV64[i] = 0x00ull;
-      regFile->SPF[i]  = 0.f;
-      regFile->DPF[i]  = 0.f;
-      regFile->RV32_Scoreboard[i] = false;
-      regFile->RV64_Scoreboard[i] = false;
-      regFile->SPF_Scoreboard[i] = false;
-      regFile->DPF_Scoreboard[i] = false;
-    }
+  // for (int t=0;  t < _REV_HART_COUNT_; t++){
+  //   RevRegFile* regFile = GetRegFile(t);
+  //   regFile->RV32_PC = 0x00l;
+  //   regFile->RV64_PC = 0x00ull;
+  //   for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
+  //     regFile->RV32[i] = 0x00l;
+  //     regFile->RV64[i] = 0x00ull;
+  //     regFile->SPF[i]  = 0.f;
+  //     regFile->DPF[i]  = 0.f;
+  //     regFile->RV32_Scoreboard[i] = false;
+  //     regFile->RV64_Scoreboard[i] = false;
+  //     regFile->SPF_Scoreboard[i] = false;
+  //     regFile->DPF_Scoreboard[i] = false;
+  //   }
 
-    // initialize all the relevant program registers
-    // -- x2 : stack pointer
-    regFile->RV32[2] = (uint32_t)(mem->GetStackTop());
-    regFile->RV64[2] = mem->GetStackTop();
+  //   // initialize all the relevant program registers
+  //   // -- x2 : stack pointer
+  //   regFile->RV32[2] = (uint32_t)(mem->GetStackTop());
+  //   regFile->RV64[2] = mem->GetStackTop();
 
-    // -- x3 : global pointer
-    regFile->RV32[3] = (uint32_t)(loader->GetSymbolAddr("__global_pointer$"));
-    regFile->RV64[3] = loader->GetSymbolAddr("__global_pointer$");
+  //   // -- x3 : global pointer
+  //   regFile->RV32[3] = (uint32_t)(loader->GetSymbolAddr("__global_pointer$"));
+  //   regFile->RV64[3] = loader->GetSymbolAddr("__global_pointer$");
 
-    // -- x8 : frame pointer
-    regFile->RV32[8] = regFile->RV32[3];
-    regFile->RV64[8] = regFile->RV64[3];
+  //   // -- x8 : frame pointer
+  //   regFile->RV32[8] = regFile->RV32[3];
+  //   regFile->RV64[8] = regFile->RV64[3];
 
-    regFile->cost = 0;
+  //   regFile->cost = 0;
 
     Pipeline.clear();
   }
@@ -1845,22 +1849,22 @@ void RevProc::DependencyClear(uint16_t HartID, RevInst* Inst){
 uint16_t RevProc::GetHartID(){
   if(HART_CTS.none()) { return HartToDecode;};
 
-  uint16_t nextID = HartToDecode;
+  uint16_t NextHartID = HartToDecode;
   if(HART_CTS[HartToDecode]){
-    nextID = HartToDecode;
+    NextHartID = HartToDecode;
   }else{
-    for(int tID = 0; tID < _REV_HART_COUNT_; tID++){
-      nextID++;
-      if(nextID >= _REV_HART_COUNT_){
-        nextID = 0;
+    for(int HartID = 0; HartID < _REV_HART_COUNT_; HartID++){
+      NextHartID++;
+      if(NextHartID >= _REV_HART_COUNT_){
+        NextHartID = 0;
       }
-      if(HART_CTS[nextID]){ break; };
+      if(HART_CTS[NextHartID]){ break; };
     }
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Thread switch from %d to %d \n",
-                    id, HartToDecode, nextID);
+                    "Core %d ; Hart switch from %d to %d \n",
+                    id, HartToDecode, NextHartID);
   }
-  return nextID;
+  return NextHartID;
 }
 
 bool *RevProc::createLoadHazard(){
@@ -1880,6 +1884,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
 
+  std::cout << "Proc " << id << " has assigned threads: " << AssignedThreads.size() << std::endl;
+  for(int i = 0; i < AssignedThreads.size(); i++){
+    std::cout << "Hart " << i << " has ThreadID: " << AssignedThreads.at(i)->GetThreadID() << std::endl;
+  }
+
 #ifdef _REV_DEBUG_
   if((currentCycle % 100000000) == 0){
     std::cout << "Current Cycle: " << currentCycle <<  " PC: "
@@ -1894,38 +1903,43 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else, wait until the counter is decremented to zero to retire the instruction
   //
   //
-  if( PendingCtxSwitch ){
+  // if( PendingCtxSwitch ){
     /*
      * There was a ctx switch event triggered... Either:
      * - a call to fork/clone
      * - Child process finished executing
      * - TODO: ThreadManager decided to switch threads
      */
-    if( Pipeline.empty() ) {
-      if( !ChangeActivePID(NextPID) ){
-        output->fatal(CALL_INFO, -1,
-                      "Core %d ; Hart %u; PID %d Failed to change active PID to %u\n",
-                      id, HartToDecode, GetActivePID(), NextPID);
-      } else {
-        RegFile->trigger = 0;
-        RegFile->cost = 0;
-        ExecPC = GetPC();
-        PendingCtxSwitch = false;
-        NextPID = 0;
-      }
-    }
-  }
+    // if( Pipeline.empty() ) {
+      // if( !ChangeActiveThreadID(NextThreadID) ){
+      //   output->fatal(CALL_INFO, -1,
+      //                 "Core %d ; Hart %u; ThreadID %d Failed to change active ThreadID to %u\n",
+      //                 id, HartToDecode, GetActiveThreadID(), NextThreadID);
+      // } else {
+      //   RegFile->trigger = 0;
+      //   RegFile->cost = 0;
+      //   ExecPC = GetPC();
+      //   PendingCtxSwitch = false;
+      //   NextThreadID = 0;
+      // }
+    // }
+  // }
 
-  for (int tID = 0; tID < _REV_HART_COUNT_; tID++){
-    HART_CTS[tID] = (GetRegFile(tID)->cost == 0);
+  if( AssignedThreads.size() )
+  for (int HartID = 0; HartID < _REV_HART_COUNT_; HartID++){
+    // Only execute the hart if it is assigned a thread
+    if( AssignedThreads.size() > HartID ){
+      HART_CTS[HartID] = AssignedThreads.at(HartID)->GetRegFile()->cost == 0;
+    }
   }
 
   if( HART_CTS.any() && (!Halted)) {
     // fetch the next instruction
     ResetInst(&Inst);
 
-    //Determine the active thread
+    //Determine the active Hart
     HartToDecode = GetHartID();
+    RegFile = AssignedThreads.at(HartToDecode)->GetRegFile();
 
     if( !PrefetchInst() ){
       Stalled = true;
@@ -2056,8 +2070,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
         // Ecall found
         output->verbose(CALL_INFO, 6, 0,
-                  "Core %d; HartID %d; PID %d - Exception Raised: ECALL with code = %lu\n", 
-                  id, HartToExec, GetActivePID(), RegFile->RV64[17]);
+                  "Core %d; HartID %d; ThreadID %d - Exception Raised: ECALL with code = %lu\n", 
+                  id, HartToExec, GetActiveThreadID(), RegFile->RV64[17]);
         #ifdef _REV_DEBUG_
         std::cout << "Hart "<< HartToExec << " found ecall with code: "
                   << code << std::endl;
@@ -2217,23 +2231,24 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     if( HartToExec != _REV_INVALID_HART_ID_ ){
-      if( ActivePIDs.size() > HartToExec ) {
-        uint32_t CurrPID = ActivePIDs.at(HartToExec);
-        uint32_t ParentPID = ThreadTable.at(ActivePIDs.at(HartToExec))->GetParentPID();
-        output->verbose(CALL_INFO, 2, 0,
-                      "Thread %u completed execution.\n", CurrPID);
-        if(ParentPID != 0 ){
-          done = false;
-          output->verbose(CALL_INFO, 2, 0,
-                          "Switching from thread with PID = %u to its parent PID = %u\n",
-                          ActivePIDs.at(HartToExec), ParentPID);
-          CtxSwitchAlert(ParentPID);
-          SwapToParent = true;
-          ThreadTable.at(ActivePIDs.at(HartToExec))->SetState(ThreadState::Dead);
-        } else {
-          done = true;
-        }
-      }
+      // if( ActiveThreadIDs.size() > HartToExec ) {
+        // uint32_t CurrThreadID = ActiveThreadIDs.at(HartToExec);
+        // uint32_t ParentThreadID = ThreadTable.at(ActiveThreadIDs.at(HartToExec))->GetParentThreadID();
+        // output->verbose(CALL_INFO, 2, 0,
+        //               "Thread %u completed execution.\n", CurrThreadID);
+        // TODO: Change to ThreadManager logic
+        // if(ParentThreadID != 0 ){
+        //   done = false;
+        //   output->verbose(CALL_INFO, 2, 0,
+        //                   "Switching from thread with ThreadID = %u to its parent ThreadID = %u\n",
+        //                   ActiveThreadIDs.at(HartToExec), ParentThreadID);
+        //   CtxSwitchAlert(ParentThreadID);
+        //   SwapToParent = true;
+        //   ThreadTable.at(ActiveThreadIDs.at(HartToExec))->SetState(ThreadState::Dead);
+        // } else {
+          // done = true;
+        // }
+      // }
     }
     if( done ){
       // we are really done, return
@@ -2260,172 +2275,156 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 }
 
 
-/* System Call & Thread Stuff Below */
-uint32_t RevProc::HartToExecPID(){
-  if( ActivePIDs.size() <= HartToExec )
-    return ActivePIDs.at(HartToExec);
+uint32_t RevProc::HartToExecThreadID(){
+  if( AssignedThreads.size() <= HartToExec )
+    return AssignedThreads.at(HartToExec)->GetThreadID();
   else{
     return 0;
   }
 }
 
+// TODO: Replace with ThreadManager logic
 std::shared_ptr<RevThreadCtx> RevProc::HartToExecCtx(){
-  if( HartToExec <= ActivePIDs.size() )
-    return ThreadTable.at(ActivePIDs.at(HartToExec));
+  if( HartToExec <= AssignedThreads.size() )
+    return AssignedThreads.at(HartToExec);
   else{
     return 0;
   }
 }
 
 
-uint32_t RevProc::HartToDecodePID(){
-  if( ActivePIDs.size() <= HartToDecode )
-    return ActivePIDs.at(HartToDecode);
-  else{
-    output->fatal(CALL_INFO, -1,
-                  "Tried to get active PID for HartToDecode = %d but there is no ActivePID for that Hart\n",
-                  HartToExec);
-    return 1;
-  }
-}
-
-bool RevProc::UpdateRegFile(){
-  uint16_t HartID = GetHartID();
-  auto it = ThreadTable.find(ActivePIDs.at(HartID));
-  if( it != ThreadTable.end() ){
-    std::shared_ptr<RevThreadCtx> Ctx = it->second;
-    RegFile = Ctx->GetRegFile();
-    return true;
-  }
-  else {
-    output->fatal(CALL_INFO, -1,
-                  "Failed to find RegFile for PID = %d on Hart = %d \n", ActivePIDs.at(HartID), HartID);
-  }
-  return false;
-}
+// bool RevProc::UpdateRegFile(){
+  // uint16_t HartID = GetHartID();
+  // auto it = ThreadTable.find(ActiveThreadIDs.at(HartID));
+  // if( it != ThreadTable.end() ){
+  //   std::shared_ptr<RevThreadCtx> Ctx = it->second;
+  //   RegFile = Ctx->GetRegFile();
+  //   return true;
+  // }
+  // else {
+  //   output->fatal(CALL_INFO, -1,
+  //                 "Failed to find RegFile for ThreadID = %d on Hart = %d \n", ActiveThreadIDs.at(HartID), HartID);
+  // }
+  // return false;
+// }
 
 
 RevRegFile* RevProc::GetRegFile(uint16_t HartID){
-  auto it = ThreadTable.find(ActivePIDs.at(HartID));
-  if( it != ThreadTable.end() ){
-    std::shared_ptr<RevThreadCtx> Ctx = it->second;
-    return Ctx->GetRegFile();
+  if( AssignedThreads.size() < HartID ){
+    output->fatal(CALL_INFO, 1,
+                  "Tried to get RegFile for HartID = %d but there is no AssignedThread for that Hart\n", HartID);
   }
-  else {
-    output->fatal(CALL_INFO, -1,
-                  "Failed to find RegFile for PID = %d on Hart = %d \n", ActivePIDs.at(HartID), HartID);
-  }
-  return 0;
+  return AssignedThreads.at(HartID)->GetRegFile();
 }
-//
 
-bool RevProc::InitThreadTable(){
-  /*
-   * We need to create the first Ctx for each HART which will have the following attributes: 
-   * - PID = 1024 + However many already initialized Ctx objects there are
-   * - ParentPID = 0 : (Only the first thread on every RevProc has ParentPID = 0)
-   * - MemStartAddr : Top of stack (NOTE: No functionality yet)
-   * - MemStartSize : _DEFAULT_THREAD_MEM_SIZE_ (NOTE: No functionality yet)
-  */
+// bool RevProc::InitThreadTable(){
+//   /*
+//    * We need to create the first Ctx for each HART which will have the following attributes: 
+//    * - ThreadID = 1024 + However many already initialized Ctx objects there are
+//    * - ParentThreadID = 0 : (Only the first thread on every RevProc has ParentThreadID = 0)
+//    * - MemStartAddr : Top of stack (NOTE: No functionality yet)
+//    * - MemStartSize : _DEFAULT_THREAD_MEM_SIZE_ (NOTE: No functionality yet)
+//   */
 
-  for( unsigned HartID=0; HartID<_REV_HART_COUNT_; HartID++){
-    uint32_t ParentPID = 0;
-    uint32_t FirstActivePID = mem->GetNewThreadPID();
+//   for( unsigned HartID=0; HartID<_REV_HART_COUNT_; HartID++){
+//     uint32_t ParentThreadID = 0;
+//     uint32_t FirstActiveThreadID = mem->GetNewThreadThreadID();
 
-    std::shared_ptr<RevThreadCtx> DefaultCtx = std::make_shared<RevThreadCtx>(
-        FirstActivePID,
-        ParentPID);
+//     std::shared_ptr<RevThreadCtx> DefaultCtx = std::make_shared<RevThreadCtx>(
+//         FirstActiveThreadID,
+//         ParentThreadID);
 
-    /* Set the first RegFile as ActiveRegFile */
-    RegFile = DefaultCtx->GetRegFile();
+//     /* Set the first RegFile as ActiveRegFile */
+//     RegFile = DefaultCtx->GetRegFile();
 
-    /* Add first PID to ActivePIDs */
-    ActivePIDs.emplace_back(FirstActivePID);
+//     /* Add first ThreadID to ActiveThreadIDs */
+//     ActiveThreadIDs.emplace_back(FirstActiveThreadID);
 
-    /* Add to ThreadTable */
-    ThreadTable.emplace(FirstActivePID, DefaultCtx);
-  }
-  return true;
-}
+//     /* Add to ThreadTable */
+//     ThreadTable.emplace(FirstActiveThreadID, DefaultCtx);
+//   }
+//   return true;
+// }
 
 
 /* =====================================================
- * ChangeActivePID(NewPID)
+ * ChangeActiveThreadID(NewThreadID)
  * =====================================================
  * This function changes the active pid of HartToExec
  *
  * Returns:
  * - True if successfully changed
- * - False if not (ie. PID doesn't exist)
+ * - False if not (ie. ThreadID doesn't exist)
  *
  * NOTES:
  * - This function automatically sets the new Ctx state to Running
  * - This function automatically sets old Ctx state to Waiting
  */
-bool RevProc::ChangeActivePID(uint32_t NewPID){
-  auto it = ThreadTable.find(NewPID);
-  if( it != ThreadTable.end() ){
-    std::shared_ptr<RevThreadCtx> NewCtx = it->second;
-    /* If switching to parent, output the child is being removed from the ThreadTable */
-    if( SwapToParent ){
-      output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %d from the ThreadTable\n",
-                      ActivePIDs.at(HartToExec));
-      ThreadTable.erase(ActivePIDs.at(HartToExec));
-    }
-    ActivePIDs.at(HartToExec) = NewPID;
-    ActivePIDs.at(HartToDecode) = NewPID;
-    UpdateRegFile();
-    return true;
-  }else{
-    /* TODO: Maybe don't output fatal? */
-    output->fatal(CALL_INFO, -1,
-                  "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable\n",
-                  NewPID, HartToExec);
-    return false;
-  }
+// TODO: Add ThreadManager logic
+bool RevProc::ChangeActiveThreadID(uint32_t NewThreadID){
+  // auto it = ThreadTable.find(NewThreadID);
+  // if( it != ThreadTable.end() ){
+  //   // std::shared_ptr<RevThreadCtx> NewCtx = it->second;
+  //   /* If switching to parent, output the child is being removed from the ThreadTable */
+  //   if( SwapToParent ){
+  //     output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ ThreadID = %d from the ThreadTable\n",
+  //                     ActiveThreadIDs.at(HartToExec));
+  //     ThreadTable.erase(ActiveThreadIDs.at(HartToExec));
+  //   }
+  //   ActiveThreadIDs.at(HartToExec) = NewThreadID;
+  //   ActiveThreadIDs.at(HartToDecode) = NewThreadID;
+  //   UpdateRegFile();
+  //   return true;
+  // }else{
+  //   /* TODO: Maybe don't output fatal? */
+  //   output->fatal(CALL_INFO, -1,
+  //                 "Failed to load ctx w/ ThreadID=%d into Hart=%d because ThreadID does not exist in ThreadTable\n",
+  //                 NewThreadID, HartToExec);
+  //   return false;
+  // }
 }
 
 /* NOTE: This is currently not used but will once more complex scheduling is supported */
-/* ChangeActivePID(PID, HartID)
+/* ChangeActiveThreadID(ThreadID, HartID)
  * This function changes the active pid of HartID
  *
  * Returns:
  * - True if successfully changed
- * - False if not (ie. PID doesn't exist)
+ * - False if not (ie. ThreadID doesn't exist)
  *
  * NOTES:
  * - This function automatically sets the new Ctx state to Running
  * - This function automatically sets old Ctx state to Waiting
  */
-bool RevProc::ChangeActivePID(uint32_t PID, uint16_t HartID){
-  auto NewActiveCtx = ThreadTable.find(PID);
-  if( NewActiveCtx != ThreadTable.end() ){
-    if( ActivePIDs.size() >= HartID ){
-      ActivePIDs.at(HartToExec) = PID;
-      return true;
-    } else {
-    /* TODO: Maybe don't output fatal? */
-      output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because Hart does not exist",
-                    PID, HartToExec);
-      return false;
-    }
-  }else{
-    /* TODO: Maybe don't output fatal? */
-    output->fatal(CALL_INFO, -1,
-                  "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", 
-                  PID, HartToExec);
-    return false;
-  }
-}
+// bool RevProc::ChangeActiveThreadID(uint32_t ThreadID, uint16_t HartID){
+//   auto NewActiveCtx = ThreadTable.find(ThreadID);
+//   if( NewActiveCtx != ThreadTable.end() ){
+//     if( ActiveThreadIDs.size() >= HartID ){
+//       ActiveThreadIDs.at(HartToExec) = ThreadID;
+//       return true;
+//     } else {
+//     /* TODO: Maybe don't output fatal? */
+//       output->fatal(CALL_INFO, -1, "Failed to load ctx w/ ThreadID=%d into Hart=%d because Hart does not exist",
+//                     ThreadID, HartToExec);
+//       return false;
+//     }
+//   }else{
+//     /* TODO: Maybe don't output fatal? */
+//     output->fatal(CALL_INFO, -1,
+//                   "Failed to load ctx w/ ThreadID=%d into Hart=%d because ThreadID does not exist in ThreadTable", 
+//                   ThreadID, HartToExec);
+//     return false;
+//   }
+// }
 
-/* Returns vector of all PIDs in the ThreadTable */
-std::vector<uint32_t> RevProc::GetPIDs(){
-  std::vector<uint32_t> PIDs;
-  for( const auto& Thread : ThreadTable ){
-    PIDs.push_back(Thread.first);
-  }
-  return PIDs;
-}
+/* Returns vector of all ThreadIDs in the ThreadTable */
+// std::vector<uint32_t> RevProc::GetThreadIDs(){
+//   std::vector<uint32_t> ThreadIDs;
+//   for( const auto& Thread : ThreadTable ){
+//     ThreadIDs.push_back(Thread.first);
+//   }
+//   return ThreadIDs;
+// }
 
 /* 
  * There are a few assumptions made by this function
@@ -2434,38 +2433,38 @@ std::vector<uint32_t> RevProc::GetPIDs(){
  * - Automatically adds ChildCtx to the current Procs ThreadTable  
  * - The new Child will start with ThreadState::Ready
 */
-uint32_t RevProc::CreateChildCtx() {
-  /* We get the currently executing PID's context as this is assumed to be the parent */
-  std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
+// uint32_t RevProc::CreateChildCtx() {
+//   /* We get the currently executing ThreadID's context as this is assumed to be the parent */
+//   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
 
-  /* Get new PID from global counter in RevMem */
-  uint32_t ChildPID = mem->GetNewThreadPID();
+//   /* Get new ThreadID from global counter in RevMem */
+//   uint32_t ChildThreadID = mem->GetNewThreadThreadID();
 
-  /* Create ChildCtx as a copy of ParentCtx */
-  auto ChildCtx = std::make_shared<RevThreadCtx>(ChildPID,
-                                       ActivePIDs.at(HartToExec));
+//   /* Create ChildCtx as a copy of ParentCtx */
+//   auto ChildCtx = std::make_shared<RevThreadCtx>(ChildThreadID,
+//                                        ActiveThreadIDs.at(HartToExec));
 
-  /* Child's Regfile is the same as the parent's with the exception of return value */
-  ChildCtx->DuplicateRegFile(*RegFile);
+//   /* Child's Regfile is the same as the parent's with the exception of return value */
+//   ChildCtx->DuplicateRegFile(*RegFile);
 
-  /* Add child to Proc's ThreadTable */
-  ThreadTable.emplace(ChildPID, ChildCtx);
+//   /* Add child to Proc's ThreadTable */
+//   ThreadTable.emplace(ChildThreadID, ChildCtx);
 
-  /* Get Child's regfile so we can make the below modifications */
-  RevRegFile* ChildRegFile = ChildCtx->GetRegFile();
+//   /* Get Child's regfile so we can make the below modifications */
+//   RevRegFile* ChildRegFile = ChildCtx->GetRegFile();
 
-  /* Zero the childs cause registers as they have no exceptions raised */
-  ChildRegFile->RV64_SCAUSE = 0;
-  ChildRegFile->RV32_SCAUSE = 0;
+//   /* Zero the childs cause registers as they have no exceptions raised */
+//   ChildRegFile->RV64_SCAUSE = 0;
+//   ChildRegFile->RV32_SCAUSE = 0;
 
-  /* The child's return value from fork/clone is 0 */
-  ChildRegFile->RV64[10] = 0;
+//   /* The child's return value from fork/clone is 0 */
+//   ChildRegFile->RV64[10] = 0;
 
-  /* Add ChildPID to list of Parent's Children */
-  ParentCtx->AddChildPID(ChildPID); /* NOTE: This has no functionality at this point */
+//   /* Add ChildThreadID to list of Parent's Children */
+//   ParentCtx->AddChildThreadID(ChildThreadID); /* NOTE: This has no functionality at this point */
 
-  return ChildPID;
-}
+//   return ChildThreadID;
+// }
 
 
 /* ========================================= */
@@ -2785,18 +2784,17 @@ void RevProc::InitEcallTable(){
     { 438, &RevProc::ECALL_pidfd_getfd},            //  rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
     { 439, &RevProc::ECALL_faccessat2},             //  rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
     { 440, &RevProc::ECALL_process_madvise},        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
-
     };
 }
 
 
-/*
- * This is the function that is called when an ECALL exception is detected inside ClockTick
- * - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
- *
- * Eventually this will be integrated into a TrapHandler however since ECALLs are the only
- * supported exceptions at this point there is no need just yet.
- */
+//
+ // This is the function that is called when an ECALL exception is detected inside ClockTick
+ // - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
+ //
+ // Eventually this will be integrated into a TrapHandler however since ECALLs are the only
+ // supported exceptions at this point there is no need just yet.
+ //
 void RevProc::ExecEcall(){
   // a7 register = ecall code
   uint64_t EcallCode;
@@ -2810,14 +2808,30 @@ void RevProc::ExecEcall(){
 
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
-    /* call the function */
+    // call the function 
     (it->second)(this);
-    /* Trap handled... 0 cause registers */
+    // Trap handled... 0 cause registers 
     RegFile->RV64_SCAUSE = 0;
     RegFile->RV32_SCAUSE = 0;
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %lu not found", EcallCode);
   }
+}
+
+uint32_t RevProc::GetActiveThreadID(){
+  uint32_t ActiveThreadID = 0;
+  if( HartToDecode != _REV_INVALID_HART_ID_ ){
+    if( AssignedThreads.size() > HartToDecode ){
+      ActiveThreadID = AssignedThreads.at(HartToDecode)->GetThreadID();
+    } 
+    else {
+      output->fatal(CALL_INFO, 1, "HartToDecode = %d but there are only %zu threads assigned to this Proc. This might be a bug\n", HartToDecode, AssignedThreads.size());
+    }
+  } 
+  else {
+    output->fatal(CALL_INFO, 1, "HartToDecode = %d is invalid. This is a bug\n", HartToDecode);
+  }
+  return ActiveThreadID;
 }
 
 // EOF

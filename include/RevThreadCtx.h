@@ -22,52 +22,67 @@
 
 /// RevThreadCtx: Enum for tracking state of a software thread (Unused)
 enum class ThreadState {
-  Running,
-  Waiting,
-  Sleeping,
-  Dead,
+  Start,    // Allocate Resources 
+  Running,  // Has the CPU 
+  Blocked,  // Waiting for I/O OR synchronization with another thread (mutex, condition variable, sempahore)
+  Ready,    // On the ready list (not implemented yet) waiting for CPU availability 
+  Done,     // Deallocate resources
 };
 
 class RevThreadCtx {
 
-private:
-  uint32_t PID;                             /// Software PID of thread
-  uint32_t ParentPID;                       /// Parent Ctx's PID
-  ThreadState State = ThreadState::Waiting; /// Thread state (unused)
-  RevRegFile RegFile;                       /// Each context has its own register file
-  std::vector<uint32_t> ChildrenPIDs = {};  /// List of a thread's children (unused)
-  std::vector<int> fildes = {0, 1, 2};      /// Initial fildes are STDOUT, STDIN, and STDERR 
-
-public:
-  // Constructor that takes a RevRegFile object and a uint32_t ParentPID
-  RevThreadCtx(const uint32_t inputPID,  const uint32_t inputParentPID)
-      : PID(inputPID), ParentPID(inputParentPID)
-  { RegFile = RevRegFile(); }
+  private:
+    uint32_t ThreadID;                             /// Software ThreadID of thread
+    uint32_t ParentThreadID;                       /// Parent Ctx's ThreadID
+    uint64_t StackPtr;                             /// Starting stack pointer for this thread
+    uint64_t ThreadPtr;                            /// Thread pointer for this thread
     
-  void AddFD(int fd);                             /// RevThreadCtx: Add fd to Ctx's fildes 
-  bool RemoveFD(int fd);                          /// RevThreadCtx: Remove fd to Ctx's fildes 
-  bool FindFD(int fd);                            /// RevThreadCtx: See if Ctx has ownership of fd
-  std::vector<int> GetFildes(){ return fildes; }  /// RevThreadCtx: Get list of file descriptors owned by Ctx
+    ThreadState State = ThreadState::Start;        /// Thread state (unused)
+    RevRegFile RegFile;                            /// Each context has its own register file
+    std::vector<uint32_t> ChildrenThreadIDs = {};  /// List of a thread's children (unused)
+    std::vector<int> fildes = {0, 1, 2};           /// Initial fildes are STDOUT, STDIN, and STDERR 
 
-  bool DuplicateRegFile(RevRegFile& regToDup);    /// RevThreadCtx: Makes its own register file a copy of regToDup
-  RevRegFile* GetRegFile() { return &RegFile; }   /// RevThreadCtx: Returns pointer to its register file
-  void SetRegFile(RevRegFile r) { RegFile = r; }  /// RevThreadCtx: Sets pointer to its register file
+  public:
+    // Constructor that takes a RevRegFile object and a uint32_t ParentThreadID
+    RevThreadCtx(const uint32_t& inputThreadID, const uint32_t& inputParentThreadID,
+                 const uint64_t& inputStackPtr, const uint64_t& inputThreadPtr)
+      : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), 
+        StackPtr(inputStackPtr) , ThreadPtr(inputThreadPtr){
+      // Create the RegFile for this thread
+      RegFile = RevRegFile(); 
+      
+      // Set the stack pointer 
+      RegFile.RV32[2] = (uint32_t)StackPtr;
+      RegFile.RV64[2] = StackPtr;
 
-  uint32_t GetPID() { return PID; }               /// RevThreadCtx: Gets Ctx's PID
-  void SetPID(uint32_t NewPID) { PID = NewPID; }  /// RevThreadCtx: Sets Ctx's PID
+      // Set the thread pointer
+      RegFile.RV32[2] = (uint32_t)ThreadPtr;
+      RegFile.RV64[4] = ThreadPtr;
+    }
+      
+    void AddFD(int fd);                             /// RevThreadCtx: Add fd to Ctx's fildes 
+    bool RemoveFD(int fd);                          /// RevThreadCtx: Remove fd to Ctx's fildes 
+    bool FindFD(int fd);                            /// RevThreadCtx: See if Ctx has ownership of fd
+    std::vector<int> GetFildes(){ return fildes; }  /// RevThreadCtx: Get list of file descriptors owned by Ctx
 
-  uint32_t GetParentPID() const { return ParentPID; }                /// RevThreadCtx: Gets Ctx's Parent's PID
-  void SetParentPID(uint32_t parent_pid) { ParentPID = parent_pid; } /// RevThreadCtx: Gets Ctx's PID
+    RevRegFile* GetRegFile() { return &RegFile; }   /// RevThreadCtx: Returns pointer to its register file
+    void SetRegFile(RevRegFile r) { RegFile = r; }  /// RevThreadCtx: Sets pointer to its register file
 
-  ThreadState GetState() const { return State; }                     /// RevThreadCtx: Returns the state (ThreadState) of this Ctx
-  void SetState(ThreadState newState) { State = newState; }          /// RevThreadCtx: Used to change ThreadState of this Ctx
+    uint32_t GetThreadID() { return ThreadID; }                                  /// RevThreadCtx: Gets Ctx's ThreadID
+    void SetThreadID(uint32_t NewThreadID) { ThreadID = NewThreadID; }           /// RevThreadCtx: Sets Ctx's ThreadID
 
-  bool AddChildPID(uint32_t pid);                                    /// RevThreadCtx: Adds a child Ctx's pid to this ones children vector
-  bool RemoveChildPID(uint32_t pid);                                 /// RevThreadCtx: Removes a child Ctx's pid to this ones children vector
+    uint32_t GetParentThreadID() const { return ParentThreadID; }                /// RevThreadCtx: Gets Ctx's Parent's ThreadID
+    void SetParentThreadID(uint32_t parent_pid) { ParentThreadID = parent_pid; } /// RevThreadCtx: Gets Ctx's ThreadID
 
-  bool isRunning(){ return ( State == ThreadState::Running ); }      /// RevThreadCtx: Checks if Ctx's ThreadState is Running
-  bool isWaiting(){ return (State == ThreadState::Waiting); }        /// RevThreadCtx: Checks if Ctx's ThreadState is Running
-  bool isDead(){ return (State == ThreadState::Dead); }              /// RevThreadCtx: Checks if Ctx's ThreadState is Running
+    ThreadState GetState() const { return State; }                     /// RevThreadCtx: Returns the state (ThreadState) of this Ctx
+    void SetState(ThreadState newState) { State = newState; }          /// RevThreadCtx: Used to change ThreadState of this Ctx
+
+    bool AddChildThreadID(uint32_t pid);                               /// RevThreadCtx: Adds a child Ctx's pid to this ones children vector
+    bool RemoveChildThreadID(uint32_t pid);                            /// RevThreadCtx: Removes a child Ctx's pid to this ones children vector
+
+    bool isRunning(){ return ( State == ThreadState::Running ); }      /// RevThreadCtx: Checks if Ctx's ThreadState is Running
+    bool isBlocked(){ return (State == ThreadState::Blocked); }        /// RevThreadCtx: Checks if Ctx's ThreadState is 
+    bool isDone(){ return (State == ThreadState::Done); }              /// RevThroneCtx: Checks if Ctx's ThreadState is Done
 
 };
 

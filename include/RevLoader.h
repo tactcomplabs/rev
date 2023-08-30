@@ -302,6 +302,12 @@ namespace SST {
       /// RevLoader: retrives the elf info structure
       ElfInfo GetInfo() { return elfinfo; }
 
+      /// RevLoader: Gets TLS base address
+      uint64_t GetTLSBaseAddr() { return TLSBaseAddr; }
+  
+      /// RevLoader: Gets TLS size
+      uint64_t GetTLSSize() { return TLSSize; }
+
     private:
       std::string exe;          ///< RevLoader: binary executable
       std::string args;         ///< RevLoader: program args
@@ -310,6 +316,9 @@ namespace SST {
 
       uint32_t RV32Entry;       ///< RevLoader: RV32 entry
       uint64_t RV64Entry;       ///< RevLoader: RV64 entry
+      
+      uint64_t TLSBaseAddr = 0;
+      uint64_t TLSSize = 0;
 
       ElfInfo elfinfo;          ///< RevLoader: elf info from the loaded program
 

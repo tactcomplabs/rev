@@ -32,6 +32,7 @@
 #include "RevMemCtrl.h"
 #include "RevLoader.h"
 #include "RevProc.h"
+#include "RevThreadManager.h"
 #include "RevNIC.h"
 #include "PanNet.h"
 #include "PanExec.h"
@@ -198,7 +199,7 @@ namespace SST {
       )
 
     private:
-      unsigned numCores;                  ///< RevCPU: number of RISC-V cores
+      unsigned numCores;                  ///< RevCPU: number of RISC-V cores (# of Procs)
       unsigned msgPerCycle;               ///< RevCPU: number of messages to send per cycle
       unsigned RDMAPerCycle;              ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
       unsigned testStage;                 ///< RevCPU: controls the PAN Test harness staging
@@ -208,8 +209,20 @@ namespace SST {
       RevOpts *Opts;                      ///< RevCPU: Simulation options object
       RevMem *Mem;                        ///< RevCPU: RISC-V main memory object
       RevLoader *Loader;                  ///< RevCPU: RISC-V loader
+      
+      /// New Thread Logic 
+      // RevThreadManager *ThreadManager;    ///< RevCPU: RISC-V Thread Manager
+      std::map<uint32_t, std::shared_ptr<RevThreadCtx>> Threads;
+      
+      // Vector of vectors of threads assigned to each processor
+      std::vector<std::vector<std::shared_ptr<RevThreadCtx>>> AssignedThreads; 
+
+      std::queue<uint32_t> ThreadQueue;
+
+      // TODO: Distribute threads
+
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
-      bool *Enabled;                      ///< RevCPU: Completion structure
+      bool *Enabled;                      ///< RevCPU: Completion structure 
 
       uint8_t PrivTag;                    ///< RevCPU: private tag locator
       uint64_t LToken;                    ///< RevCPU: token identifier for PAN Test

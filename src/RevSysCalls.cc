@@ -441,8 +441,8 @@ void RevProc::ECALL_close(){
   /* Check if CurrCtx has fd in fildes vector */
   if( !CurrCtx->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
-                  "Core %d; Hart %d; PID %" PRIu32 " tried to close file descriptor %d but did not have access to it\n",
-                  id, HartToExec, HartToExecPID(), fd);
+                  "Core %d; Hart %d; ThreadID %" PRIu32 " tried to close file descriptor %d but did not have access to it\n",
+                  id, HartToExec, HartToExecThreadID(), fd);
     return;
   }
   /* Close file on host */
@@ -499,8 +499,8 @@ void RevProc::ECALL_read(){
 
   if( !CurrCtx->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
-                  "Core %d; Hart %d; PID %" PRIu32 " tried to read from file descriptor: %d but did not have access to it\n",
-                  id, HartToExec, HartToExecPID(), fd);
+                  "Core %d; Hart %d; ThreadID %" PRIu32 " tried to read from file descriptor: %d but did not have access to it\n",
+                  id, HartToExec, HartToExecThreadID(), fd);
     return;
   }
   /*
@@ -722,26 +722,27 @@ void RevProc::ECALL_personality(){
   return;
 }           
 
+// TODO: Add ThreadManager Logic
 // 93, rev_exit(int error_code) 
 void RevProc::ECALL_exit(){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit called\n");
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
   const uint64_t status = RegFile->RV64[10];
 
-  /* If the current ctx has ParentPID = 0,
+  /* If the current ctx has ParentThreadID = 0,
      it has no parent and we should terminate the sim */
-  if( CurrCtx->GetParentPID() == 0 ){
-    output->verbose(CALL_INFO, 0, 0,
-                    "Process %u exiting with status %lu\n",
-                    CurrCtx->GetPID(), status );
-    exit(status);
-  } else {
-    /* Parent exists & Child is exiting... switch back to parent */
-    CtxSwitchAlert(CurrCtx->GetParentPID());
-    output->verbose(CALL_INFO, 0, 0,
-                    "Process %u exiting with status %lu\n",
-                    CurrCtx->GetPID(), status );
-  }
+  // if( CurrCtx->GetParentThreadID() == 0 ){
+  //   output->verbose(CALL_INFO, 0, 0,
+  //                   "Process %u exiting with status %lu\n",
+  //                   CurrCtx->GetThreadID(), status );
+  //   exit(status);
+  // } else {
+  //   /* Parent exists & Child is exiting... switch back to parent */
+  //   CtxSwitchAlert(CurrCtx->GetParentThreadID());
+  //   output->verbose(CALL_INFO, 0, 0,
+  //                   "Process %u exiting with status %lu\n",
+  //                   CurrCtx->GetThreadID(), status );
+  // }
   return;
 }                  
 
@@ -1210,23 +1211,24 @@ void RevProc::ECALL_adjtimex(){
 // 172, rev_getpid(void) 
 void RevProc::ECALL_getpid(){
   output->verbose(CALL_INFO, 2, 0, "ECALL: getpid called\n");
-  /* TODO: Implement error handling */
-  output->verbose(CALL_INFO, 2, 0, "ECALL_getpid called\n");
-  uint32_t CurrentPID = ActivePIDs.at(HartToExec);
-  auto CurrentCtx = ThreadTable.at(CurrentPID);
-  RegFile->RV64[10] = ActivePIDs.at(HartToExec);
+  // There is only ever a single PID in Rev (for now)
+  // output->verbose(CALL_INFO, 2, 0, "ECALL_getpid called\n");
+  // uint32_t CurrentThreadID = ActiveThreadIDs.at(HartToExec);
+  // // auto CurrentCtx = ThreadTable.at(CurrentThreadID);
+  // RegFile->RV64[10] = ActiveThreadIDs.at(HartToExec);
   return;
 }                
 
+// TODO: Add ThreadManager Logic
 // 173, rev_getppid(void) 
 void RevProc::ECALL_getppid(){
   output->verbose(CALL_INFO, 2, 0, "ECALL: getppid called\n");
   /* TODO: Implement error handling */
   output->verbose(CALL_INFO, 2, 0, "ECALL_getppid called\n");
-  uint32_t CurrentPID = ActivePIDs.at(HartToExec);
-  auto CurrentCtx = ThreadTable.at(CurrentPID);
-  uint32_t ParentPID = CurrentCtx->GetParentPID();
-  RegFile->RV64[10] = ParentPID;
+  // uint32_t CurrentThreadID = ActiveThreadIDs.at(HartToExec);
+  // auto CurrentCtx = ThreadTable.at(CurrentThreadID);
+  // uint32_t ParentThreadID = CurrentCtx->GetParentThreadID();
+  // RegFile->RV64[10] = ParentThreadID;
   return;
 }               
 
@@ -1260,7 +1262,7 @@ void RevProc::ECALL_gettid(){
   RevRegFile* regFile = RegFile;
 
   /* rc = Currently Executing Hart */
-  regFile->RV64[10] = HartToExec;
+  regFile->RV64[10] = AssignedThreads.at(HartToExec)->GetThreadID();
   return;
 }                
 
@@ -1532,6 +1534,7 @@ void RevProc::ECALL_keyctl(){
   return;
 }                
 
+// TODO: Add ThreadManager Logic
 // TODO: Figure out the difference between this and clone3
 // 220, rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *)
 void RevProc::ECALL_clone(){
@@ -1613,7 +1616,7 @@ void RevProc::ECALL_clone(){
         // std::cout << "CLONE_NEWUSER is true" << std::endl;
         break;
       case CLONE_NEWPID: /* New pid namespace */
-        // std::cout << "CLONE_NEWPID is true" << std::endl;
+        // std::cout << "CLONE_NEWThreadID is true" << std::endl;
         break;
       case CLONE_NEWNET: /* New network namespace */
         // std::cout << "CLONE_NEWNET is true" << std::endl;
@@ -1626,12 +1629,12 @@ void RevProc::ECALL_clone(){
     }
   }
 
-  // Get the parent ctx (Current active, executing PID)
-  std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
+  // Get the parent ctx (Current active, executing ThreadID)
+  // std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
 
   // Create the child ctx 
-  uint32_t ChildPID = CreateChildCtx();
-  std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
+  // uint32_t ChildThreadID = CreateChildCtx();
+  // std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildThreadID);
 
   // TODO: Create a copy of Parents Memory Space 
   // std::pair<uint64_t, uint64_t> ParentThreadMemPtrs = ParentCtx->GetThreadMemInfo();
@@ -1690,22 +1693,22 @@ void RevProc::ECALL_clone(){
    *         In this case, the value of pid is the value thats returned to a0
    *         It follows that
    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
-   *         - The Parent's a0 register MUST have its PID in it
+   *         - The Parent's a0 register MUST have its ThreadID in it
    * ===========================================================================================
    */
 
   /*
    Alert the Proc there needs to be a Ctx switch
-   Pass the PID that will be switched to once the 
+   Pass the ThreadID that will be switched to once the 
    current pipeline is executed until completion
   */
-  CtxSwitchAlert(ChildPID);
+  // CtxSwitchAlert(ChildThreadID);
 
-  /* Parent's return value is the child's PID */
-  RegFile->RV64[10] = ChildPID;
+  /* Parent's return value is the child's ThreadID */
+  // RegFile->RV64[10] = ChildThreadID;
 
   /* Child's return value is 0 */
-  ChildCtx->GetRegFile()->RV64[10] = 0;
+  // ChildCtx->GetRegFile()->RV64[10] = 0;
 
   return;
 }                 
@@ -2324,7 +2327,7 @@ void RevProc::ECALL_clone3(){
         // std::cout << "CLONE_NEWUSER is true" << std::endl;
         break;
       case CLONE_NEWPID: /* New pid namespace */
-        // std::cout << "CLONE_NEWPID is true" << std::endl;
+        // std::cout << "CLONE_NEWThreadID is true" << std::endl;
         break;
       case CLONE_NEWNET: /* New network namespace */
         // std::cout << "CLONE_NEWNET is true" << std::endl;
@@ -2337,12 +2340,12 @@ void RevProc::ECALL_clone3(){
     }
   }
 
-  /* Get the parent ctx (Current active, executing PID) */
-  std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
+  /* Get the parent ctx (Current active, executing ThreadID) */
+  // std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
 
   /* Create the child ctx */
-  uint32_t ChildPID = CreateChildCtx();
-  std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
+  uint32_t ChildThreadID = CreateChildCtx();
+  // std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildThreadID);
 
   /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
 
@@ -2363,22 +2366,22 @@ void RevProc::ECALL_clone3(){
    *         In this case, the value of pid is the value thats returned to a0
    *         It follows that
    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
-   *         - The Parent's a0 register MUST have its PID in it
+   *         - The Parent's a0 register MUST have its ThreadID in it
    * ===========================================================================================
    */
 
   /*
    Alert the Proc there needs to be a Ctx switch
-   Pass the PID that will be switched to once the 
+   Pass the ThreadID that will be switched to once the 
    current pipeline is executed until completion
   */
-  CtxSwitchAlert(ChildPID);
+  // CtxSwitchAlert(ChildThreadID);
 
-  /* Parent's return value is the child's PID */
-  RegFile->RV64[10] = ChildPID;
+  /* Parent's return value is the child's ThreadID */
+  // RegFile->RV64[10] = ChildThreadID;
 
   /* Child's return value is 0 */
-  ChildCtx->GetRegFile()->RV64[10] = 0;
+  // ChildCtx->GetRegFile()->RV64[10] = 0;
 
   return;
 }                

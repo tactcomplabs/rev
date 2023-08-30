@@ -294,6 +294,9 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
       std::cout << "TLS Segment: " << std::endl;
       std::cout << "  Addr: 0x" << std::hex << ph[i].p_paddr << std::endl;
       std::cout << "  Size: 0x" << std::hex << ph[i].p_memsz << std::endl;
+      std::cout << "  Align: 0x" << std::hex << ph[i].p_align << std::endl;
+      TLSBaseAddr = ph[i].p_paddr;
+      TLSSize = ph[i].p_memsz;
       mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
     }
     
@@ -302,6 +305,9 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
       mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
     }
   }
+
+  // Add the first thread's memory
+  mem->AddThreadMem(_REVMEM_BASE_ + mem->GetMemSize());
 
   uint64_t StaticDataEnd = 0; 
   uint64_t BSSEnd = 0; 

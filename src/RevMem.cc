@@ -35,13 +35,6 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   memStats.TLBHits = 0;
   memStats.TLBMisses = 0;
 
-  /*
-   * The first mem segment is the entirety of the memory space specified in the .py 
-   * This is updated once RevLoader initializes and we know where the static
-   * memory ends (ie. __BSS_END__) at which point we replace this first segment with 
-   * a segment representing the static memory (0 -> __BSS_END__)
-   */
-  // AddMemSeg(0, memSize+1);
 }
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
@@ -76,7 +69,6 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
   memStats.TLBHits = 0;
   memStats.TLBMisses = 0;
 
-  stacktop = (_REVMEM_BASE_ + memSize) - _STACK_SIZE_;
 }
 
 RevMem::~RevMem(){
@@ -376,6 +368,24 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
     return true;
   }
   return false;
+}
+
+uint64_t RevMem::AddThreadMem(const uint64_t& TopAddr){
+  // Calculate the BaseAddr of the segment 
+  uint64_t BaseAddr = TopAddr - ThreadMemSize;
+  // Lock the memsegs vector
+  std::lock_guard<std::mutex> lock(threadmem_mtx);
+  ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
+  // Page boundary between 
+  NextThreadMemAddr = BaseAddr - pageSize;
+  return BaseAddr;
+}
+
+void RevMem::SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size){
+  TLSBaseAddr = BaseAddr;
+  TLSSize = Size;
+  ThreadMemSize = _STACK_SIZE_ + TLSSize;
+  return;
 }
 
 
@@ -1052,16 +1062,16 @@ void RevMem::WriteDouble( unsigned Hart, uint64_t Addr, double Value ){
     output->fatal(CALL_INFO, -1, "Error: could not write memory (DOUBLE)");
 }
 
-/*
-* Func: GetNewThreadPID
-* - This function is used to interact with the global 
-*   PID counter inside of RevMem
-* - When a new RevThreadCtx is created, it is assigned 
-*   the value of PIDCount++
-* - This ensures no collisions because all RevProcs access
-*   the same RevMem instance
-*/
-uint32_t RevMem::GetNewThreadPID(){
+// /*
+// * Func: GetNewThreadPID
+// * - This function is used to interact with the global 
+// *   PID counter inside of RevMem
+// * - When a new RevThreadCtx is created, it is assigned 
+// *   the value of PIDCount++
+// * - This ensures no collisions because all RevProcs access
+// *   the same RevMem instance
+// */
+// uint32_t RevMem::GetNewThreadPID(){
 
   #ifdef _REV_DEBUG_
   std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl; 

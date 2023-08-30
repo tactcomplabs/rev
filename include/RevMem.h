@@ -262,8 +262,6 @@ namespace SST {
       /// RevMem: Randomly assign a memory cost
       unsigned RandCost( unsigned Min, unsigned Max );
 
-      /// RevMem: Used to access & incremenet the global software PID counter
-      uint32_t GetNewThreadPID();
 
       /// RevMem: Used to set the size of the TLBSize
       void SetTLBSize(unsigned numEntries){ tlbSize = numEntries; }
@@ -274,14 +272,24 @@ namespace SST {
       /// RevMem: Get memSize value set in .py file
       const uint64_t GetMemSize(){ return memSize; }
 
+      const uint64_t GetMemSize(){ return memSize; }
+  
+      const uint64_t& GetMemSize(){ return memSize; }
+  
       ///< RevMem: Get MemSegs vector
       std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
+
+      ///< RevMem: Get ThreadMemSegs vector
+      std::vector<std::shared_ptr<MemSegment>>& GetThreadMemSegs(){ return ThreadMemSegs; } 
 
       ///< RevMem: Get FreeMemSegs vector
       std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; } 
 
       /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
       uint64_t AddMemSeg(const uint64_t& SegSize);
+
+      /// RevMem: Add new thread mem (starting at TopAddr [growing down]) --- Returns BaseAddr of segment
+      uint64_t AddThreadMem(const uint64_t& TopAddr);
 
       /// RevMem: Add new MemSegment (starting at BaseAddr)
       uint64_t AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize);
@@ -334,14 +342,15 @@ namespace SST {
       std::list<uint64_t> LRUQueue; ///< RevMem: List ordered by last access for implementing LRU policy when TLB fills up
       std::vector<std::shared_ptr<MemSegment>> MemSegs;     // Currently Allocated MemSegs
       std::vector<std::shared_ptr<MemSegment>> FreeMemSegs; // MemSegs that have been unallocated
+      std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // MemSegs that make up threads' stack & TLS
   
-      uint64_t TLSBaseAddr = 0x0;
-      uint64_t TLSSize = 0x0;
-      
-
       unsigned long memSize;        ///< RevMem: size of the target memory
       unsigned tlbSize;             ///< RevMem: size of the target memory
-      unsigned maxHeapSize;             ///< RevMem: size of the target memory
+      unsigned maxHeapSize;         ///< RevMem: size of the target memory
+      uint64_t TLSBaseAddr;         ///< RevMem: TLS Base Address
+      uint64_t TLSSize;             ///< RevMem: TLS Size
+      uint64_t ThreadMemSize;       ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
+      uint64_t NextThreadMemAddr;   ///< RevMem: Next top address for a new thread's memory 
       RevOpts *opts;                ///< RevMem: options object
       RevMemCtrl *ctrl;             ///< RevMem: memory controller object
       SST::Output *output;          ///< RevMem: output handler
