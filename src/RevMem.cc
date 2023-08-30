@@ -632,6 +632,8 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
 
+  //  fprintf(stderr,"CalcPhysAddr((pageNum, 0x103b0) = 0x%" PRIx64 "\n", CalcPhysAddr(pageNum, 0x103b0)); // HERE
+
   //check to see if we're about to walk off the page....
   uint32_t adjPageNum = 0;
   uint64_t adjPhysAddr = 0;
