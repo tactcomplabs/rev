@@ -132,34 +132,6 @@ bool RevMem::StatusFuture(uint64_t Addr){
   return false;
 }
 
-#if 0
-
-bool RevMem::LR(unsigned Hart, uint64_t Addr){
-  LRSC.push_back(std::pair{Hart, Addr});
-  return true;
-}
-
-bool RevMem::SC(unsigned Hart, uint64_t Addr){
-  // search the LRSC vector for the entry pair
-  for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
-    if( (Hart == std::get<0>(*it)) &&
-        (Addr == std::get<1>(*it)) ){
-
-      // erase the entry
-      LRSC.erase(it);
-      return true;
-    }
-  }
-
-  // failed, write a nonzero value to target
-  uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
-  Tmp[0] = 0x1;
-
-  return false;
-}
-
-#else
-
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
                     bool *Hazard,
@@ -251,7 +223,10 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
       WriteMem(Hart, Addr, Len, Data, flags);
 
       // write zeros to target
-      memset(Target, 0, Len * sizeof(uint64_t));
+      for( unsigned i=0; i<Len; i++ ){
+        uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
+        Tmp[i] = 0x0;
+      }
 
       // erase the entry
       LRSC.erase(it);
@@ -266,11 +241,16 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
   return false;
 }
 
-#endif
-
 unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
+  unsigned R = 0;
+
   srand(time(NULL));
+
+#if 0   // TODO: Correct callculation of [Min, Max] random range
   return rand() % (Max-Min+1) + Min;
+#else
+  return rand() % Max + Min;
+#endif
 }
 
 void RevMem::FlushTLB(){
