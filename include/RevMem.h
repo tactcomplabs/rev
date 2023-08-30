@@ -282,7 +282,7 @@ namespace SST {
       uint64_t AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize);
 
       /// RevMem: Add new MemSegment (starting at BaseAddr) and round it up to the nearest page
-      uint64_t AddRoundedMemSeg(const uint64_t& BaseAddr, const uint64_t& SegSize, size_t RoundUpSize);
+      uint64_t AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, size_t RoundUpSize);
 
       /// RevMem: Removes or shrinks segment
       uint64_t DeallocMem(uint64_t BaseAddr, uint64_t Size);

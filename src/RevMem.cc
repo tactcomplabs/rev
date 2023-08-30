@@ -389,31 +389,62 @@ uint64_t RevMem::AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
 // vector because there will be no FreeMemSegs that contain addresses in the static segments)
 // 
 // AllocMem is the only way that a user can allocate & deallocate memory 
-uint64_t RevMem::AddRoundedMemSeg(const uint64_t& BaseAddr, const uint64_t& SegSize, size_t RoundUpSize){
+uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, size_t RoundUpSize){
+  size_t RoundedSegSize = 0;
 
-  // Calculate the number of pages needed to fit the segment
-  uint64_t NumPages = SegSize / RoundUpSize;
-
-  if( SegSize % RoundUpSize != 0 ){
-    NumPages++;
+  // Make sure we're not dividing by zero
+  if( RoundUpSize == 0 ){
+    output->fatal(CALL_INFO, -1, "Error: RoundUpSize must be greater than 0\n");
   }
 
-  // Calculate the rounded top address of the segment
-  uint64_t RoundedTopAddr = NumPages*RoundUpSize;
+  uint64_t Remainder = SegSize % RoundUpSize;
+  // See if we need to round up at all
+  if( Remainder == 0 ){
+    RoundedSegSize = SegSize;
+  } else {
+    RoundedSegSize = SegSize + RoundUpSize - Remainder;
+  }
+
+  uint64_t NewSegTopAddr = BaseAddr + RoundedSegSize;
+  bool Added = false;
 
   // lock memsegs
   std::lock_guard<std::mutex> memseg_lock(memseg_mtx);
   
-  // Check if memory segment is already allocated (We are okay with overlap... for now per ZMAGIC but not duplicate segments)
+  // Check if memory segment is already allocated 
   for( auto Seg : MemSegs ){
-    if( Seg->contains(BaseAddr, RoundedTopAddr) ){
-      output->verbose(CALL_INFO, 10, 99, 
-      "Warning: Memory segment already allocated at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
-      return BaseAddr;
-    } 
+    // If it contains the base address
+    if( Seg->contains(BaseAddr) ){
+      // If it doesn't contain the top address, we need to expand it 
+      if( !Seg->contains(NewSegTopAddr) ){
+        size_t BytesToExpandBy = NewSegTopAddr - Seg->getTopAddr();
+        Seg->setSize(Seg->getSize() + BytesToExpandBy);
+      } else {
+        // If it contains the top address, we don't need to do anything
+        output->verbose(CALL_INFO, 10, 99, 
+        "Warning: Memory segment already allocated that contains the requested rounded allocation at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
+      }
+      // Return the containing segments Base Address
+      BaseAddr = Seg->getBaseAddr();
+      Added = true;
+      break;
+    } // --- End (if contains BaseAddr)
+    
+    else if ( !Seg->contains(BaseAddr) && Seg->contains(NewSegTopAddr) ){
+      // Existing segment only contains the top part of the new segment, expand downwards
+      Seg->setBaseAddr(BaseAddr);
+      size_t BytesToExpandBy = Seg->getBaseAddr() - BaseAddr;
+      Seg->setSize(Seg->getSize() + BytesToExpandBy);
+      Added = true;
+      break;
+    }
+
   }
-  // Add rounded segment
-  MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedTopAddr));
+  if( !Added ){
+      // BaseAddr & RoundedTopAddr not a part of a segment
+      // Add rounded segment
+      MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedSegSize));
+  }
   
   // unlock memsegs
   memseg_mtx.unlock();
