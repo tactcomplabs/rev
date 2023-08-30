@@ -54,9 +54,8 @@ namespace SST{
     public:
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
-               RevCoProc* CoProc, SST::Output *Output );
                std::vector<std::shared_ptr<RevThreadCtx>>& AssignedThreads,
-               SST::Output *Output );
+               RevCoProc* CoProc, SST::Output *Output );
 
       /// RevProc: standard desctructor
       ~RevProc();
@@ -201,8 +200,6 @@ namespace SST{
 
       std::vector<RevExt *> Extensions;           ///< RevProc: vector of enabled extensions
 
-      std::queue<std::pair<uint16_t, RevInst>>   Pipeline; ///< RevProc: pipeline of instructions - bypass paths not supported
-
       std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
       std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
       std::map<uint32_t,unsigned> CEncToEntry;    ///< RevProc: compressed instruction encoding to table entry mapping
@@ -321,6 +318,20 @@ namespace SST{
 
       /// RevProc: Clear scoreboard on instruction retirement
       void DependencyClear(uint16_t threadID, RevInst* Inst);
+
+      #define PIPE_HART     0
+      #define PIPE_INST     1
+      #define PIPE_HAZARD   2
+
+      //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
+      std::vector<std::pair<uint16_t,RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
+      std::list<bool *> LoadHazards;                      ///< RevProc: list of allocated load hazards
+
+      /// RevProc: creates a new pipeline load hazard and returns a pointer to it
+      bool *createLoadHazard();
+
+      /// RevProc: destroys the target load hazard object and removes it from the list
+      void destroyLoadHazard(bool *hazard);
 
       /*
       * ECALLs 
@@ -652,152 +663,6 @@ namespace SST{
       /// RevProc: Execute the Ecall based on the code loaded in RegFile->RV64_SCAUSE
       void ExecEcall();
 
-      /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
-      RevRegFile* GetRegFile(uint16_t HartID);
-
-      /// RevProc: Vector of PIDs where index of ActivePIDs is the pid of the RevThreadCtx loaded into Hart #Idx
-      std::vector<uint32_t> ActivePIDs;
-
-      RevInst Inst;             ///< RevProc: instruction payload
-
-      std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
-
-      std::vector<RevExt *> Extensions;           ///< RevProc: vector of enabled extensions
-
-#define PIPE_HART     0
-#define PIPE_INST     1
-#define PIPE_HAZARD   2
-      //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
-      std::vector<std::pair<uint16_t,RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
-      std::list<bool *> LoadHazards;                      ///< RevProc: list of allocated load hazards
-
-      std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
-      std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
-      std::map<uint32_t,unsigned> CEncToEntry;    ///< RevProc: compressed instruction encoding to table entry mapping
-
-      std::map<unsigned,std::pair<unsigned,unsigned>> EntryToExt;     ///< RevProc: instruction entry to extension object mapping
-                                                                      ///           first = Master table entry number
-                                                                      ///           second = pair<Extension Index, Extension Entry>
-
-      /// RevProc: creates a new pipeline load hazard and returns a pointer to it
-      bool *createLoadHazard();
-
-      /// RevProc: destroys the target load hazard object and removes it from the list
-      void destroyLoadHazard(bool *hazard);
-
-      /// RevProc: splits a string into tokens
-      void splitStr(const std::string& s, char c, std::vector<std::string>& v);
-
-      /// RevProc: parses the feature string for the target core
-      bool ParseFeatureStr(std::string Feature);
-
-      /// RevProc: loads the instruction table using the target features
-      bool LoadInstructionTable();
-
-      /// RevProc: see the instruction table the target features
-      bool SeedInstTable();
-
-      /// RevProc: enable the target extension by merging its instruction table with the master
-      bool EnableExt(RevExt *Ext, bool Opt);
-
-      /// RevProc: initializes the internal mapping tables
-      bool InitTableMapping();
-
-      /// RevProc: read in the user defined cost tables
-      bool ReadOverrideTables();
-
-      /// RevProc: compresses the encoding structure to a single value
-      uint32_t CompressEncoding(RevInstEntry Entry);
-
-      /// RevProc: compressed the compressed encoding structure to a single value
-      uint32_t CompressCEncoding(RevInstEntry Entry);
-
-      /// RevProc: extracts the instruction mnemonic from the table entry
-      std::string ExtractMnemonic(RevInstEntry Entry);
-
-      /// RevProc: reset the core and its associated features
-      bool Reset();
-
-      /// RevProc: setup the argc/argc arrays
-      void SetupArgs();
-
-      /// RevProc: set the PC
-      void SetPC(uint64_t PC);
-
-      /// RevProc: prefetch the next instruction
-      bool PrefetchInst();
-
-      /// RevProc: decode the instruction at the current PC
-      RevInst DecodeInst();
-
-      /// RevProc: decode a compressed instruction
-      RevInst DecodeCompressed(uint32_t Inst);
-
-      /// RevProc: decode an R-type instruction
-      RevInst DecodeRInst(uint32_t Inst, unsigned Entry);
-
-      /// RevProc: decode an I-type instruction
-      RevInst DecodeIInst(uint32_t Inst, unsigned Entry);
-
-      /// RevProc: decode an S-type instruction
-      RevInst DecodeSInst(uint32_t Inst, unsigned Entry);
-
-      /// RevProc: decode a U-type instruction
-      RevInst DecodeUInst(uint32_t Inst, unsigned Entry);
-
-      /// RevProc: decode a B-type instruction
-      RevInst DecodeBInst(uint32_t Inst, unsigned Entry);
-
-      /// RevProc: decode a J-type instruction
-      RevInst DecodeJInst(uint32_t Inst, unsigned Entry);
-
-      /// RevProc: decode an R4-type instruction
-      RevInst DecodeR4Inst(uint32_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CR-type isntruction
-      RevInst DecodeCRInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CI-type isntruction
-      RevInst DecodeCIInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CSS-type isntruction
-      RevInst DecodeCSSInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CIW-type isntruction
-      RevInst DecodeCIWInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CL-type isntruction
-      RevInst DecodeCLInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CS-type isntruction
-      RevInst DecodeCSInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CA-type isntruction
-      RevInst DecodeCAInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CB-type isntruction
-      RevInst DecodeCBInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: decode a compressed CJ-type isntruction
-      RevInst DecodeCJInst(uint16_t Inst, unsigned Entry);
-
-      /// RevProc: determine if the instruction is an SP/FP float
-      bool IsFloat(unsigned Entry);
-
-      /// RevProc: reset the inst structure
-      void ResetInst(RevInst *Inst);
-
-      /// RevProc: Determine next thread to execute
-      uint16_t GetHartID();
-
-      /// RevProc: Check scoreboard for pipeline hazards
-      bool DependencyCheck(uint16_t threadID, RevInst* Inst);
-
-      /// RevProc: Set scoreboard based on instruction destination
-      void DependencySet(uint16_t threadID, RevInst* Inst);
-
-      /// RevProc: Clear scoreboard on instruction retirement
-      void DependencyClear(uint16_t threadID, RevInst* Inst);
 
     }; // class RevProc
   } // namespace RevCPU

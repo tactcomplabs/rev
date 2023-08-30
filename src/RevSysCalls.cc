@@ -245,7 +245,8 @@ void RevProc::ECALL_mkdirat(){
   // at a time and search for the string terminator character '\0'
   do {
     char dirchar;
-    mem->ReadVal(RegFile->RV64[11] + sizeof(char)*i, sizeof(char), &dirchar, REVMEM_FLAGS(0));
+    // TODO: Reimpliment this with the new memory interface
+    // mem->ReadVal(HartToExec, RegFile->RV64[11] + sizeof(char)*i, &dirchar, REVMEM_FLAGS(0));
     path = path + dirchar;
     i++;
   } while( path.back() != '\0');
@@ -349,7 +350,7 @@ void RevProc::ECALL_chdir(){
   // at a time and search for the string terminator character '\0'
   do {
     char dirchar;
-    mem->ReadVal(RegFile->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar, REVMEM_FLAGS(0));
+    // mem->ReadVal(RegFile->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar, REVMEM_FLAGS(0));
     path = path + dirchar;
     i++;
   } while( path.back() != '\0');
@@ -415,7 +416,7 @@ void RevProc::ECALL_openat(){
   unsigned i = 0;
   do {
     char filenameChar;
-    mem->ReadVal(filenameAddr + sizeof(char)*i, sizeof(char), &filenameChar, REVMEM_FLAGS(0));
+    // mem->ReadVal(filenameAddr + sizeof(char)*i, sizeof(char), &filenameChar, REVMEM_FLAGS(0));
     filename = filename + filenameChar;
     i++;
   } while( filename.back() != '\0');
@@ -536,9 +537,9 @@ void RevProc::ECALL_write(){
   char buf[nbytes];
   char bufchar;
   for (unsigned i=0; i<nbytes; i++){
-    mem->ReadVal(RegFile->RV64[11] + sizeof(char)*i, sizeof(char), &bufchar, REVMEM_FLAGS(0));
+    // mem->ReadVal(RegFile->RV64[11] + sizeof(char)*i, sizeof(char), &bufchar, REVMEM_FLAGS(0));
   }
-  mem->ReadVal(RegFile->RV64[11], sizeof(buf), &buf[0], REVMEM_FLAGS(0));
+  // mem->ReadVal(RegFile->RV64[11], sizeof(buf), &buf[0], REVMEM_FLAGS(0));
 
   /* Perform the write on the host system */
   const int rc = write(fildes, buf, nbytes);
@@ -1544,7 +1545,7 @@ void RevProc::ECALL_clone(){
 
   /* Fetch the clone_args */
   struct clone_args args;
-  mem->ReadVal(CloneArgsAddr, sizeof(uint64_t), &args, REVMEM_FLAGS(0));
+  // mem->ReadVal(CloneArgsAddr, sizeof(uint64_t), &args, REVMEM_FLAGS(0));
 
   /*
    * Parse clone flags 
@@ -2255,7 +2256,7 @@ void RevProc::ECALL_clone3(){
 
   /* Fetch the clone_args */
   struct clone_args args;
-  mem->ReadVal(CloneArgsAddr, sizeof(uint64_t), &args, REVMEM_FLAGS(0));
+  // mem->ReadVal(CloneArgsAddr, sizeof(uint64_t), &args, REVMEM_FLAGS(0));
 
   /*
    * Parse clone flags 

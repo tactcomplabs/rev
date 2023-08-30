@@ -230,6 +230,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
   Opts->SetArgs(Loader->GetArgv());
 
+  AssignedThreads.resize(numCores);
   EnableCoProc = params.find<bool>("enableCoProc", 0);
   if(EnableCoProc){
     // Create the co-processor objects
@@ -243,21 +244,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     // Create the processor objects
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, Mem, Loader, CoProcs[i], &output ) );
+      Procs.push_back( new RevProc( i, Opts, Mem, Loader, AssignedThreads.at(i), CoProcs[i], &output ) );
     }
   }else{
     // Create the processor objects
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, Mem, Loader, NULL, &output ) );
+      Procs.push_back( new RevProc( i, Opts, Mem, Loader, AssignedThreads.at(i), NULL, &output ) );
     }
-  
-  AssignedThreads.resize(numCores);
-  Procs.reserve(Procs.size() + numCores);
-
-  for( unsigned i=0; i<numCores; i++ ){
-    Procs.push_back( new RevProc( i, Opts, Mem, Loader, AssignedThreads.at(i), &output ) );
-    std::cout << "Pushing Back Proc #" << i << std::endl;
   }
 
   // setup the per-proc statistics
@@ -287,16 +281,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
   }
 
-  
-  // Begin ThreadManager Changes
-  // ThreadManager = new RevThreadManager(&output,                  // SST::Output
-  //                                      Procs,                    // Vector of RevProc objects
-  //                                      Mem,                      // RevMem object
-  //                                      0,                        // Number of threads to initialize (In addition to main thread)
-  //                                      Mem->GetStackTop(),       // Stack pointer for the first thread (This is modified by loader so we can't just say it's equal to MemSize)
-  //                                      Loader->GetTLSBaseAddr(), // Base address of the TLS initilization template
-  //                                      Loader->GetTLSSize(),     // Size of the TLS initialization template
-  //                                      Mem->GetMemSize() + _REVMEM_BASE_); // Base address of the first thread's memory segment
   
   // Create the first copy of the TLS Segment 
   Threads.emplace(1, std::make_shared<RevThreadCtx>(

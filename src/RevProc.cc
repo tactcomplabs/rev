@@ -18,8 +18,8 @@ RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
                   RevLoader *Loader,
-                  RevCoProc* CoProc,
                   std::vector<std::shared_ptr<RevThreadCtx>>& AssignedThreads,
+                  RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
@@ -446,38 +446,36 @@ bool RevProc::Reset(){
   //   regFile->cost = 0;
 
     Pipeline.clear();
-  }
+  // }
 
   // set the pc
-  uint64_t StartAddr = 0x00ull;
-  if( !opts->GetStartAddr( id, StartAddr ) )
-    output->fatal(CALL_INFO, -1,
-                  "Error: failed to init the start address for core=%d\n", id);
-  std::string StartSymbol = "main";
-  if( StartAddr == 0x00ull ){
-    if( !opts->GetStartSymbol( id, StartSymbol ) )
-      output->fatal(CALL_INFO, -1,
-                    "Error: failed to init the start symbol address for core=%d\n", id);
+  // uint64_t StartAddr = 0x00ull;
+  // if( !opts->GetStartAddr( id, StartAddr ) )
+  //   output->fatal(CALL_INFO, -1,
+  //                 "Error: failed to init the start address for core=%d\n", id);
+  // std::string StartSymbol = "main";
+  // //std::string StartSymbol = "_start";
+  // if( StartAddr == 0x00ull ){
+  //   if( !opts->GetStartSymbol( id, StartSymbol ) )
+  //     output->fatal(CALL_INFO, -1,
+  //                   "Error: failed to init the start symbol address for core=%d\n", id);
 
-    StartAddr = loader->GetSymbolAddr(StartSymbol);
-  }
-
-  if( StartAddr == 0x00ull ){
-    // load "main" symbol
-    StartAddr = loader->GetSymbolAddr("main");
-    if( StartAddr == 0x00ull ){
-      output->fatal(CALL_INFO, -1,
-                    "Error: failed to auto discover address for <main> for core=%d\n", id);
-    }
-  }
-
-  SetupArgs();
-
-  for (int t=0;  t < _REV_HART_COUNT_; t++){
-    RevRegFile* regFile = GetRegFile(t);
-    regFile->RV32_PC = (uint32_t)(StartAddr);
-    regFile->RV64_PC = StartAddr;
-  }
+  //   StartAddr = loader->GetSymbolAddr(StartSymbol);
+  // }
+  // if( StartAddr == 0x00ull ){
+  //   // load "main" symbol
+  //   StartAddr = loader->GetSymbolAddr("main");
+  //   //StartAddr = loader->GetSymbolAddr("_start");
+  //   if( StartAddr == 0x00ull ){
+  //     output->fatal(CALL_INFO, -1,
+  //                   "Error: failed to auto discover address for <main> for core=%d\n", id);
+  //   }
+  // }
+  // for (int t=0;  t < _REV_HART_COUNT_; t++){
+  //   RevRegFile* regFile = GetRegFile(t);
+  //   regFile->RV32_PC = (uint32_t)(StartAddr);
+  //   regFile->RV64_PC = StartAddr;
+  // }
   HART_CTS.set();
 
   return true;
@@ -2006,11 +2004,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Ext->SetRegFile(RegFile);
 
       // -- BEGIN new pipelining implementation
-      if( !PendingCtxSwitch ){
+      // if( !PendingCtxSwitch ){
         bool *LH = createLoadHazard();
         Pipeline.push_back(std::make_pair(HartToExec,Inst));
         Pipeline.back().second.hazard = LH;
-      }
+      // }
 
       if( (Ext->GetName() == "RV32F") ||
           (Ext->GetName() == "RV32D") ||
