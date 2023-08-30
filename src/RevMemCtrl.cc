@@ -1248,7 +1248,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
 #ifdef _REV_DEBUG_
     std::cout << "handleReadResp : id=" << ev->getID() << " @Addr= 0x"
               << std::hex << op->getAddr() << std::dec << std::endl;
-    for( unsigned i=0; i<(unsigned)(op->getSize()); i++ ){
+    for( unsigned i=0; i < op->getSize(); i++ ){
       std::cout << "               : data[" << i << "] = " << (unsigned)(ev->data[i]) << std::endl;
     }
     std::cout << "hazard ptr = 0x" << std::hex << op->getHazard() << std::dec << std::endl;
