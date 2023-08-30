@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevLoader.h"
+#include "RevMem.h"
 
 RevLoader::RevLoader( std::string Exe, std::string Args,
                       RevMem *Mem, SST::Output *Output )
@@ -16,7 +17,6 @@ RevLoader::RevLoader( std::string Exe, std::string Args,
     RV32Entry(0x00l), RV64Entry(0x00ull) {
   if( !LoadElf() )
     output->fatal(CALL_INFO, -1, "Error: failed to load executable into memory\n");
-  InitStaticMem();
 }
 
 RevLoader::~RevLoader(){
@@ -147,16 +147,15 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
       output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
     }
     // Add a memory segment for the program header
-    mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
+    if( ph[i].p_memsz ){
+      mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
+    }
   }
 
   uint64_t StaticDataEnd = 0;
   uint64_t BSSEnd = 0;
   uint64_t DataEnd = 0;
   uint64_t TextEnd = 0;
-  // Add memory segments for each section header
-  // - This should automatically handle overlap and not add segments
-  //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
@@ -168,7 +167,6 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     if( strcmp(shstrtab + sh[i].sh_name, ".data") == 0 ){
       DataEnd = sh[i].sh_addr + sh[i].sh_size;
     }
-    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
   }
   // If BSS exists, static data ends after it
   if( BSSEnd > 0 ){
@@ -249,8 +247,6 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   // If the string table index and symbol table index are valid (NonZero)
   if( strtabidx && symtabidx ){
     // If there is a string table and symbol table, add them as valid memory
-    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size, true);
-    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size, true);
     // Parse the string table
     char *strtab = membuf + sh[strtabidx].sh_offset;
     Elf32_Sym* sym = (Elf32_Sym*)(membuf + sh[symtabidx].sh_offset);
@@ -293,7 +289,9 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
     // Add a memory segment for the program header
-    mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
+    if( ph[i].p_memsz ){
+      mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
+    }
   }
 
   uint64_t StaticDataEnd = 0;
@@ -314,7 +312,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     if( strcmp(shstrtab + sh[i].sh_name, ".data") == 0 ){
       DataEnd = sh[i].sh_addr + sh[i].sh_size;
     }
-    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
   }
   // If BSS exists, static data ends after it
   if( BSSEnd > 0 ){
@@ -344,7 +341,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
   WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
   mem->SetStackTop(sp);
-
 
   // iterate over the program headers
   for( unsigned i=0; i<eh->e_phnum; i++ ){
@@ -380,10 +376,10 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // Iterate over every section header
   for( unsigned i=0; i<eh->e_shnum; i++ ){
-    mem->AddMemSeg(sh[i].sh_addr, sh[i].sh_size, true);
     // If the section header is empty, skip it
-    if( sh[i].sh_type & SHT_NOBITS )
+    if( sh[i].sh_type & SHT_NOBITS ){
       continue;
+    }
     if( sz < sh[i].sh_offset + sh[i].sh_size ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
@@ -397,9 +393,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // If the string table index and symbol table index are valid (NonZero)
   if( strtabidx && symtabidx ){
-    // If there is a string table and symbol table, add them as valid memory
-    mem->AddMemSeg(sh[strtabidx].sh_addr, sh[strtabidx].sh_size, true);
-    mem->AddMemSeg(sh[symtabidx].sh_addr, sh[symtabidx].sh_size, true);
     // Parse the string table
     char *strtab = membuf + sh[strtabidx].sh_offset;
     Elf64_Sym* sym = (Elf64_Sym*)(membuf + sh[symtabidx].sh_offset);
@@ -416,7 +409,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     }
   }
 
-  // Initialize the heap after the bss section header
+  // Initialize the heap
   mem->InitHeap(StaticDataEnd);
 
   return true;
@@ -545,18 +538,5 @@ uint64_t RevLoader::GetSymbolAddr(std::string Symbol){
   }
   return tmp;
 }
-
-void RevLoader::InitStaticMem(){
-  // if( mem->GetMemSegs().size() != 1 ){
-  //   output->fatal(CALL_INFO, 99, "Loader Error: Attempting to initialize static memory however there is either more or less than 1 memory segment\n");
-  //   return;
-  // } else {
-
-  //   mem->SetHeapStart(StaticDataEnd + 1);
-  //   mem->SetHeapEnd(StaticDataEnd + 1);
-    return;
-  // }
-}
-
 
 // EOF
