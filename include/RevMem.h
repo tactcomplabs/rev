@@ -275,6 +275,9 @@ namespace SST {
       const uint64_t GetMemSize(){ return memSize; }
   
       const uint64_t& GetMemSize(){ return memSize; }
+
+      /// RevMem: Sets the next stack top address
+      void SetNextThreadMemAddr(const uint64_t& NextAddr){ NextThreadMemAddr = NextAddr; }
   
       ///< RevMem: Get MemSegs vector
       std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
@@ -288,8 +291,8 @@ namespace SST {
       /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
       uint64_t AddMemSeg(const uint64_t& SegSize);
 
-      /// RevMem: Add new thread mem (starting at TopAddr [growing down]) --- Returns BaseAddr of segment
-      uint64_t AddThreadMem(const uint64_t& TopAddr);
+      /// RevMem: Add new thread mem (starting at TopAddr [growing down]) 
+      std::shared_ptr<MemSegment> AddThreadMem();
 
       /// RevMem: Add new MemSegment (starting at BaseAddr)
       uint64_t AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize);
@@ -305,6 +308,10 @@ namespace SST {
 
       /// RevMem: Attempts to allocate memory at a specific address
       uint64_t AllocMemAt(const uint64_t& BaseAddr, const uint64_t& Size);
+
+
+      /// RevMem: Get a new ThreadID
+      uint32_t GetNewThreadID();
 
       /// RevMem: Sets the HeapStart & HeapEnd to EndOfStaticData
       void InitHeap(const uint64_t& EndOfStaticData);
@@ -342,15 +349,16 @@ namespace SST {
       std::list<uint64_t> LRUQueue; ///< RevMem: List ordered by last access for implementing LRU policy when TLB fills up
       std::vector<std::shared_ptr<MemSegment>> MemSegs;     // Currently Allocated MemSegs
       std::vector<std::shared_ptr<MemSegment>> FreeMemSegs; // MemSegs that have been unallocated
-      std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // MemSegs that make up threads' stack & TLS
+      std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // Pair of ThreadID with their ThreadMemSeg that contains TLS & Stack
   
       unsigned long memSize;        ///< RevMem: size of the target memory
       unsigned tlbSize;             ///< RevMem: size of the target memory
       unsigned maxHeapSize;         ///< RevMem: size of the target memory
       uint64_t TLSBaseAddr;         ///< RevMem: TLS Base Address
       uint64_t TLSSize;             ///< RevMem: TLS Size
-      uint64_t ThreadMemSize;       ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
-      uint64_t NextThreadMemAddr;   ///< RevMem: Next top address for a new thread's memory 
+      uint64_t ThreadIDCount = 1023;      ///< RevMem: Thread ID counter
+      uint64_t ThreadMemSize = _STACK_SIZE_;       ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
+      uint64_t NextThreadMemAddr = memSize;   ///< RevMem: Next top address for a new thread's memory 
       RevOpts *opts;                ///< RevMem: options object
       RevMemCtrl *ctrl;             ///< RevMem: memory controller object
       SST::Output *output;          ///< RevMem: output handler

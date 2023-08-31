@@ -437,7 +437,7 @@ void RevProc::ECALL_openat(){
 void RevProc::ECALL_close(){
   output->verbose(CALL_INFO, 2, 0, "ECALL: close called\n");
   int fd = RegFile->RV64[10];
-  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+  std::shared_ptr<RevThread> CurrCtx = HartToExecCtx();
 
   /* Check if CurrCtx has fd in fildes vector */
   if( !CurrCtx->FindFD(fd) ){
@@ -496,7 +496,7 @@ void RevProc::ECALL_read(){
   size_t BufSize = RegFile->RV64[12];
 
   /* Check if Current Ctx has access to the fd */
-  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+  std::shared_ptr<RevThread> CurrCtx = HartToExecCtx();
 
   if( !CurrCtx->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
@@ -727,7 +727,7 @@ void RevProc::ECALL_personality(){
 // 93, rev_exit(int error_code) 
 void RevProc::ECALL_exit(){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit called\n");
-  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+  std::shared_ptr<RevThread> CurrCtx = HartToExecCtx();
   const uint64_t status = RegFile->RV64[10];
 
   /* If the current ctx has ParentThreadID = 0,
@@ -1543,99 +1543,67 @@ void RevProc::ECALL_clone(){
   uint64_t CloneArgsAddr = RegFile->RV64[10];
   // size_t SizeOfCloneArgs = RegFile()->RV64[11];
 
-  /* Fetch the clone_args */
+  // Fetch the clone_args 
   struct clone_args args;
-  // mem->ReadVal(CloneArgsAddr, sizeof(uint64_t), &args, REVMEM_FLAGS(0));
+  bool *RequestDone;
 
-  /*
-   * Parse clone flags 
-   * NOTE: if no flags are set, we get fork() like behavior
-   */
-  for( uint64_t bit=1; bit != 0; bit <<= 1 ){
-    switch (args.flags & bit) {
-      case CLONE_VM:
-        // std::cout << "CLONE_VM is true" << std::endl;
-        break;
-      case CLONE_FS: /* Set if fs info shared between processes */
-        // std::cout << "CLONE_FS is true" << std::endl;
-        break;
-      case CLONE_FILES: /* Set if open files shared between processes */
-        // std::cout << "CLONE_FILES is true" << std::endl;
-        break;
-      case CLONE_SIGHAND: /* Set if signal handlers shared */
-        // std::cout << "CLONE_SIGHAND is true" << std::endl;
-        break;
-      case CLONE_PIDFD: /* Set if a pidfd should be placed in the parent */
-        // std::cout << "CLONE_PIDFD is true" << std::endl;
-        break;
-      case CLONE_PTRACE: /* Set if tracing continues on the child */
-        // std::cout << "CLONE_PTRACE is true" << std::endl;
-        break;
-      case CLONE_VFORK: /* Set if the parent wants the child to wake it up on mm_release */
-        // std::cout << "CLONE_VFORK is true" << std::endl;
-        break;
-      case CLONE_PARENT: /* Set if we want to have the same parent as the cloner */
-        // std::cout << "CLONE_PARENT is true" << std::endl;
-        break;
-      case CLONE_THREAD: /* Set to add to same thread group */
-        // std::cout << "CLONE_THREAD is true" << std::endl;
-        break;
-      case CLONE_NEWNS: /* Set to create new namespace */
-        // std::cout << "CLONE_NEWNS is true" << std::endl;
-        break;
-      case CLONE_SYSVSEM: /* Set to shared SVID SEM_UNDO semantics */
-        // std::cout << "CLONE_SYSVSEM is true" << std::endl;
-        break;
-      case CLONE_SETTLS: /* Set TLS info */
-        // std::cout << "CLONE_SETTLS is true" << std::endl;
-        break;
-      case CLONE_PARENT_SETTID: /* Store TID in userlevel buffer before MM copy */
-        // std::cout << "CLONE_PARENT_SETTID is true" << std::endl;
-        break;
-      case CLONE_CHILD_CLEARTID: /* Register exit futex and memory location to clear */
-        // std::cout << "CLONE_CHILD_CLEARTID is true" << std::endl;
-        break;
-      case CLONE_DETACHED: /* Create clone detached */
-        // std::cout << "CLONE_DETACHED is true" << std::endl;
-        break;
-      case CLONE_UNTRACED: /* Set if the tracing process can't force CLONE_PTRACE on this clone */
-        // std::cout << "CLONE_UNTRACED is true" << std::endl;
-        break;
-      case CLONE_CHILD_SETTID: /* New cgroup namespace */
-        // std::cout << "CLONE_CHILD_SETTID is true" << std::endl;
-        break;
-      case CLONE_NEWCGROUP: /* New cgroup namespace */
-        // std::cout << "CLONE_NEWCGROUP is true" << std::endl;
-        break;
-      case CLONE_NEWUTS: /* New utsname group */
-        // std::cout << "CLONE_NEWUTS is true" << std::endl;
-        break;
-      case CLONE_NEWIPC: /* New ipcs */
-        // std::cout << "CLONE_NEWIPC is true" << std::endl;
-        break;
-      case CLONE_NEWUSER: /* New user namespace */
-        // std::cout << "CLONE_NEWUSER is true" << std::endl;
-        break;
-      case CLONE_NEWPID: /* New pid namespace */
-        // std::cout << "CLONE_NEWThreadID is true" << std::endl;
-        break;
-      case CLONE_NEWNET: /* New network namespace */
-        // std::cout << "CLONE_NEWNET is true" << std::endl;
-        break;
-      case CLONE_IO: /* Clone I/O Context */
-        // std::cout << "CLONE_IO is true" << std::endl;
-        break;
-      default:
-        break;
-    }
-  }
+  // Parse clone flags 
+  // - Only kept around the relevant flags
+  // for( uint64_t bit=1; bit != 0; bit <<= 1 ){
+  //   switch (args.flags & bit) {
+  //     case CLONE_VM: /* For Rev this is set when you want to duplicate the parents stack */
+  //       std::cout << "CLONE_VM is true" << std::endl;
+  //       break;
+  //     case CLONE_FILES: /* Set if open files shared between processes */
+  //       std::cout << "CLONE_FILES is true" << std::endl;
+  //       break;
+  //     case CLONE_SIGHAND: /* Set if signal handlers shared */
+  //       std::cout << "CLONE_SIGHAND is true" << std::endl;
+  //       break;
+  //     case CLONE_VFORK: /* Set if the parent wants the child to wake it up on mm_release */
+  //       std::cout << "CLONE_VFORK is true" << std::endl;
+  //       break;
+  //     case CLONE_PARENT: /* Set if we want to have the same parent as the cloner */
+  //       std::cout << "CLONE_PARENT is true" << std::endl;
+  //       break;
+  //     case CLONE_THREAD: /* Set to add to same thread group */
+  //       std::cout << "CLONE_THREAD is true" << std::endl;
+  //       break;
+  //     case CLONE_NEWNS: /* Set to create new namespace */
+  //       std::cout << "CLONE_NEWNS is true" << std::endl;
+  //       break;
+  //     case CLONE_SETTLS: /* Set TLS info */
+  //       std::cout << "CLONE_SETTLS is true" << std::endl;
+  //       break;
+  //     case CLONE_PARENT_SETTID: /* Store TID in userlevel buffer before MM copy */
+  //       std::cout << "CLONE_PARENT_SETTID is true" << std::endl;
+  //       break;
+  //     case CLONE_CHILD_CLEARTID: /* Register exit futex and memory location to clear */
+  //       std::cout << "CLONE_CHILD_CLEARTID is true" << std::endl;
+  //       break;
+  //     case CLONE_DETACHED: /* Create clone detached */
+  //       std::cout << "CLONE_DETACHED is true" << std::endl;
+  //       break;
+  //     case CLONE_CHILD_SETTID: /* New cgroup namespace */
+  //       std::cout << "CLONE_CHILD_SETTID is true" << std::endl;
+  //       break;
+  //     case CLONE_NEWCGROUP: /* New cgroup namespace */
+  //       std::cout << "CLONE_NEWCGROUP is true" << std::endl;
+  //       break;
+  //     case CLONE_IO: /* Clone I/O Context */
+  //       std::cout << "CLONE_IO is true" << std::endl;
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // }
 
   // Get the parent ctx (Current active, executing ThreadID)
-  // std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
+  // std::shared_ptr<RevThread> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
 
   // Create the child ctx 
-  // uint32_t ChildThreadID = CreateChildCtx();
-  // std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildThreadID);
+  uint32_t ChildThreadID = SpawnThread();
+  // std::shared_ptr<RevThread> ChildCtx = ThreadTable.at(ChildThreadID);
 
   // TODO: Create a copy of Parents Memory Space 
   // std::pair<uint64_t, uint64_t> ParentThreadMemPtrs = ParentCtx->GetThreadMemInfo();
@@ -2342,11 +2310,7 @@ void RevProc::ECALL_clone3(){
   }
 
   /* Get the parent ctx (Current active, executing ThreadID) */
-  // std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
-
-  /* Create the child ctx */
-  uint32_t ChildThreadID = CreateChildCtx();
-  // std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildThreadID);
+  // std::shared_ptr<RevThread> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
 
   /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
 

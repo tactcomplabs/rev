@@ -307,7 +307,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   }
 
   // Add the first thread's memory
-  mem->AddThreadMem(_REVMEM_BASE_ + mem->GetMemSize());
+  mem->AddThreadMem();
 
   uint64_t StaticDataEnd = 0; 
   uint64_t BSSEnd = 0; 

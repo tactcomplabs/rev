@@ -210,15 +210,16 @@ namespace SST {
       RevLoader *Loader;                  ///< RevCPU: RISC-V loader
       
       /// New Thread Logic 
-      // RevThreadManager *ThreadManager;    ///< RevCPU: RISC-V Thread Manager
-      std::map<uint32_t, std::shared_ptr<RevThreadCtx>> Threads;
+      std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
       
       // Vector of vectors of threads assigned to each processor
-      std::vector<std::vector<std::shared_ptr<RevThreadCtx>>> AssignedThreads; 
+      std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads; 
 
+      // Create Thread 
+      void CreateThread(uint64_t pc, uint64_t stackPtr, uint64_t tlsPtr);
+
+      // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
       std::queue<uint32_t> ThreadQueue;
-
-      // TODO: Distribute threads
 
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
       bool *Enabled;                      ///< RevCPU: Completion structure 

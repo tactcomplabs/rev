@@ -1,5 +1,5 @@
 //
-// _RevThreadCtx_cc_
+// _RevThread_cc_
 //
 // Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -9,11 +9,11 @@
 //
 //
 
-#include "../include/RevThreadCtx.h"
+#include "../include/RevThread.h"
 #include <algorithm>
 #include <iostream>
 
-bool RevThreadCtx::AddChildThreadID(uint32_t tid){
+bool RevThread::AddChildThreadID(uint32_t tid){
   if( std::find(ChildrenThreadIDs.begin(), ChildrenThreadIDs.end(), tid) != ChildrenThreadIDs.end() ){
     ChildrenThreadIDs.push_back(tid);
     return true;
@@ -21,7 +21,7 @@ bool RevThreadCtx::AddChildThreadID(uint32_t tid){
   return false;
 }
 
-bool RevThreadCtx::RemoveChildThreadID(uint32_t tid){
+bool RevThread::RemoveChildThreadID(uint32_t tid){
   auto ChildToErase = std::find(ChildrenThreadIDs.begin(), ChildrenThreadIDs.end(), tid); 
   if (ChildToErase != ChildrenThreadIDs.end() ){
     ChildrenThreadIDs.erase(ChildToErase);
@@ -34,7 +34,7 @@ bool RevThreadCtx::RemoveChildThreadID(uint32_t tid){
 // Used for duplicating register files (currently only in ECALL_clone)
 // TODO: Find out if this is necessary 
 // TODO: Find a nicer way to not override the tp / sp
-// bool RevThreadCtx::DuplicateRegFile(RevRegFile& regToDup){
+// bool RevThread::DuplicateRegFile(RevRegFile& regToDup){
 //   for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
 //     // Don't override the tp / sp
 //     
@@ -74,12 +74,12 @@ bool RevThreadCtx::RemoveChildThreadID(uint32_t tid){
 // }
 
 /* Add new file descriptor */
-void RevThreadCtx::AddFD(int fd){
+void RevThread::AddFD(int fd){
   fildes.push_back(fd);
 }
 
 /* See if file descriptor exists/is owned by Ctx */
-bool RevThreadCtx::FindFD(int fd){
+bool RevThread::FindFD(int fd){
   /* Check if the fd is owned by the current ctx */
   auto it = std::find(fildes.begin(), fildes.end(), fd);
   if( it != fildes.end() ){
@@ -89,7 +89,7 @@ bool RevThreadCtx::FindFD(int fd){
 }
 
 /* Remove file descriptor from Ctx (ie. rev_close) */
-bool RevThreadCtx::RemoveFD(int fd){
+bool RevThread::RemoveFD(int fd){
   /* Check if the fd is owned by the current ctx */
   auto it = std::find(fildes.begin(), fildes.end(), fd);
 

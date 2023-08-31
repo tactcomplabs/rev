@@ -282,11 +282,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   
+  uint32_t MainThreadID = 1;
+  uint32_t MainParentThreadID = 0;
   // Create the first copy of the TLS Segment 
-  Threads.emplace(1, std::make_shared<RevThreadCtx>(
-                  1, 0,
-                  Mem->GetStackTop(),
-                  Mem->GetThreadMemSegs().front()->getTopAddr() - _STACK_SIZE_ )); 
+  Threads.emplace(1, std::make_shared<RevThread>(MainThreadID, 
+                                                 MainParentThreadID,
+                                                 Mem->GetStackTop(),
+                                                 Mem->GetThreadMemSegs().front())); 
 
   // set the pc
   uint64_t StartAddr = 0x00ull;
@@ -2412,6 +2414,8 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   std::cout << "Assigned Threads: " << AssignedThreads.size() << std::endl;
   for( unsigned i=0; i<AssignedThreads.size(); i++ ){
     std::cout << "Proc: " << i << " has " << AssignedThreads.at(i).size() << " threads assigned to it" << std::endl; 
+    // Output its utilization
+    std::cout << "Proc: " << i << " has " << Procs[i]->GetUtilization() << "% utilization" << std::endl;
   }
 
   // Execute each enabled core
@@ -2422,27 +2426,28 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
          if(EnableCoProc && !CoProcs.empty()){
           CoProcs[i]->Teardown();
          }
-         UpdateCoreStatistics(i);
+        UpdateCoreStatistics(i);
         Enabled[i] = false;
         output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
                      i, static_cast<uint64_t>(currentCycle));
       }
-      if(EnableCoProc && !CoProcs[i]->ClockTick(currentCycle)){
-      output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %d at Cycle: %" PRIu64 "\n",
-                     i, static_cast<uint64_t>(currentCycle));
-
-      }
     }
+    // Proc is not enabled, see if we can assign it work
     else {
       // See if there is work to assign
       if( ThreadQueue.size() ){
         uint32_t ThreadToAssign = ThreadQueue.front();
         ThreadQueue.pop();
-
         AssignedThreads.at(i).emplace_back(Threads.at(ThreadToAssign));
         // Enable Proc
         Enabled[i] = true;
       }
+    }
+    // Co-Processor Clock Tick
+    if(EnableCoProc && !CoProcs[i]->ClockTick(currentCycle)){
+    output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %d at Cycle: %" PRIu64 "\n",
+                   i, static_cast<uint64_t>(currentCycle));
+
     }
   }
   // Clock the PAN network transport module
@@ -2512,6 +2517,12 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   return rtn;
+}
+
+
+///==== Thread Management Functions ====///
+void RevCPU::CreateThread(uint64_t pc, uint64_t stackPtr, uint64_t tlsPtr){
+  
 }
 
 // EOF

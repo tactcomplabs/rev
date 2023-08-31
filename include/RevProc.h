@@ -40,7 +40,7 @@
 #include "PanExec.h"
 #include "RevPrefetcher.h"
 #include "RevCoProc.h"
-#include "RevThreadCtx.h"
+#include "RevThread.h"
 #include "../common/syscalls/SysFlags.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
@@ -54,7 +54,7 @@ namespace SST{
     public:
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
-               std::vector<std::shared_ptr<RevThreadCtx>>& AssignedThreads,
+               std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
                RevCoProc* CoProc, SST::Output *Output );
 
       /// RevProc: standard desctructor
@@ -119,11 +119,14 @@ namespace SST{
 
       RevMem& GetMem(){ return *mem; }
 
-      /// RevProc: Add a RevThreadCtx to the Proc's ThreadTable
-      bool AddCtx(RevThreadCtx& Ctx);
+      /// RevProc: Add a RevThread to the Proc's ThreadTable
+      bool AddCtx(RevThread& Ctx);
 
-      /// RevProc: Create a new RevThreadCtx w/ Parent is currently executing thread
+      /// RevProc: Create a new RevThread w/ Parent is currently executing thread
       uint32_t CreateChildCtx();
+ 
+      /// RevProc: SpawnThread creates a new thread and returns its ThreadID
+      uint32_t SpawnThread();
 
       /// RevProc: Returns the current HartToExec active pid 
       uint32_t GetActiveThreadID();
@@ -144,10 +147,10 @@ namespace SST{
       uint32_t HartToDecodeThreadID();
 
       ///< RevProc: Returns pointer to current ctx loaded into HartToExec
-      std::shared_ptr<RevThreadCtx> HartToExecCtx();
+      std::shared_ptr<RevThread> HartToExecCtx();
 
       ///< RevProc: Returns pointer to current ctx loaded into HartToDecode
-      std::shared_ptr<RevThreadCtx> HartToDecodeCtx();
+      std::shared_ptr<RevThread> HartToDecodeCtx();
 
       ///< RevProc: Change HartToExec active pid
       bool ChangeActiveThreadID(uint32_t ThreadID); 
@@ -156,7 +159,7 @@ namespace SST{
       bool ChangeActiveThreadID(uint32_t ThreadID, uint16_t HartID); 
 
       ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
-      unsigned GetUtilization(){ return (AssignedThreads.size() / _REV_HART_COUNT_); }
+      uint16_t GetUtilization(){ return (AssignedThreads.size() / _REV_HART_COUNT_) * 100; }
       // BEFORE MERGE
       // TODO: Implement the proc scheduling (ie. Moving N=HART threads to the end of the AssignedThreads)      
       
@@ -180,7 +183,7 @@ namespace SST{
       RevLoader *loader;        ///< RevProc: loader object
   
       /// ThreadIDs assigned to this RevProc (Index into this vector = Hart that's executing)
-      std::vector<std::shared_ptr<RevThreadCtx>>& AssignedThreads;
+      std::vector<std::shared_ptr<RevThread>>& AssignedThreads;
 
       SST::Output *output;      ///< RevProc: output handler
       RevFeature *feature;      ///< RevProc: feature handler

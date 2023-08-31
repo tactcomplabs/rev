@@ -18,7 +18,7 @@ RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
                   RevLoader *Loader,
-                  std::vector<std::shared_ptr<RevThreadCtx>>& AssignedThreads,
+                  std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
                   RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
@@ -1923,11 +1923,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // }
   // }
 
-  if( AssignedThreads.size() )
-  for (int HartID = 0; HartID < _REV_HART_COUNT_; HartID++){
-    // Only execute the hart if it is assigned a thread
-    if( AssignedThreads.size() > HartID ){
-      HART_CTS[HartID] = AssignedThreads.at(HartID)->GetRegFile()->cost == 0;
+  if( AssignedThreads.size() ){
+    for (int HartID = 0; HartID < _REV_HART_COUNT_; HartID++){
+      // Only execute the hart if it is assigned a thread
+      if( AssignedThreads.size() > HartID ){
+        HART_CTS[HartID] = AssignedThreads.at(HartID)->GetRegFile()->cost == 0;
+      }
     }
   }
 
@@ -2282,7 +2283,7 @@ uint32_t RevProc::HartToExecThreadID(){
 }
 
 // TODO: Replace with ThreadManager logic
-std::shared_ptr<RevThreadCtx> RevProc::HartToExecCtx(){
+std::shared_ptr<RevThread> RevProc::HartToExecCtx(){
   if( HartToExec <= AssignedThreads.size() )
     return AssignedThreads.at(HartToExec);
   else{
@@ -2295,7 +2296,7 @@ std::shared_ptr<RevThreadCtx> RevProc::HartToExecCtx(){
   // uint16_t HartID = GetHartID();
   // auto it = ThreadTable.find(ActiveThreadIDs.at(HartID));
   // if( it != ThreadTable.end() ){
-  //   std::shared_ptr<RevThreadCtx> Ctx = it->second;
+  //   std::shared_ptr<RevThread> Ctx = it->second;
   //   RegFile = Ctx->GetRegFile();
   //   return true;
   // }
@@ -2328,7 +2329,7 @@ RevRegFile* RevProc::GetRegFile(uint16_t HartID){
 //     uint32_t ParentThreadID = 0;
 //     uint32_t FirstActiveThreadID = mem->GetNewThreadThreadID();
 
-//     std::shared_ptr<RevThreadCtx> DefaultCtx = std::make_shared<RevThreadCtx>(
+//     std::shared_ptr<RevThread> DefaultCtx = std::make_shared<RevThread>(
 //         FirstActiveThreadID,
 //         ParentThreadID);
 
@@ -2362,7 +2363,7 @@ RevRegFile* RevProc::GetRegFile(uint16_t HartID){
 bool RevProc::ChangeActiveThreadID(uint32_t NewThreadID){
   // auto it = ThreadTable.find(NewThreadID);
   // if( it != ThreadTable.end() ){
-  //   // std::shared_ptr<RevThreadCtx> NewCtx = it->second;
+  //   // std::shared_ptr<RevThread> NewCtx = it->second;
   //   /* If switching to parent, output the child is being removed from the ThreadTable */
   //   if( SwapToParent ){
   //     output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ ThreadID = %d from the ThreadTable\n",
@@ -2415,6 +2416,29 @@ bool RevProc::ChangeActiveThreadID(uint32_t NewThreadID){
 //   }
 // }
 
+
+// This function is only responsible for submitting the necessary memory requests
+// to duplicate the TLS Initialization Template and potentially the Parent's Stack
+//
+// Once the memory is set up properly it then signals back to RevCPU that a new 
+// RevThread object needs to be created
+uint32_t RevProc::SpawnThread(){
+  
+
+  // Need to do: 
+  // 1) Get a new ThreadID
+  // 2) Copy TLS
+  // 3a) Potentially Copy Parent's stack
+  mem->AddThreadMem();
+  // 3b) Potentially Copy Parent's RegFile
+  // 3c) Potentially Copy Parent's Parent ThreadID
+  // 3d) Potentially set a priority? 
+  // 4) Assign the correct stack ptr based on above
+  // 5) Don't think we should do (below)... In RevCPU we should check a Proc's AssignedThreads.end() to see if any have a "START" status and then pop them off the back and into Threads
+  //      Check if we have a Hart available (ie. AssignedThreads.size < _NUM_HARTS_ [prior to adding this one])
+  // 6) Return threadId to the appropriate location (probably a register file -- Probably in the syscall clone tho)
+}
+
 /* Returns vector of all ThreadIDs in the ThreadTable */
 // std::vector<uint32_t> RevProc::GetThreadIDs(){
 //   std::vector<uint32_t> ThreadIDs;
@@ -2433,13 +2457,13 @@ bool RevProc::ChangeActiveThreadID(uint32_t NewThreadID){
 */
 // uint32_t RevProc::CreateChildCtx() {
 //   /* We get the currently executing ThreadID's context as this is assumed to be the parent */
-//   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
+//   std::shared_ptr<RevThread> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
 
 //   /* Get new ThreadID from global counter in RevMem */
 //   uint32_t ChildThreadID = mem->GetNewThreadThreadID();
 
 //   /* Create ChildCtx as a copy of ParentCtx */
-//   auto ChildCtx = std::make_shared<RevThreadCtx>(ChildThreadID,
+//   auto ChildCtx = std::make_shared<RevThread>(ChildThreadID,
 //                                        ActiveThreadIDs.at(HartToExec));
 
 //   /* Child's Regfile is the same as the parent's with the exception of return value */
@@ -2786,13 +2810,11 @@ void RevProc::InitEcallTable(){
 }
 
 
-//
  // This is the function that is called when an ECALL exception is detected inside ClockTick
  // - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
  //
  // Eventually this will be integrated into a TrapHandler however since ECALLs are the only
  // supported exceptions at this point there is no need just yet.
- //
 void RevProc::ExecEcall(){
   // a7 register = ecall code
   uint64_t EcallCode;
@@ -2819,7 +2841,7 @@ void RevProc::ExecEcall(){
 uint32_t RevProc::GetActiveThreadID(){
   uint32_t ActiveThreadID = 0;
   if( HartToDecode != _REV_INVALID_HART_ID_ ){
-    if( AssignedThreads.size() > HartToDecode ){
+    if( AssignedThreads.size() >= HartToDecode ){
       ActiveThreadID = AssignedThreads.at(HartToDecode)->GetThreadID();
     } 
     else {
