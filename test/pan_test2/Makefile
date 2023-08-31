@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=pan_test
-CC=riscv64-unknown-elf-gcc
+CC=${RVCC}
 #ARCH=rv32i
 ARCH=rv64g
 
