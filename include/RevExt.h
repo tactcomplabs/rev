@@ -55,19 +55,19 @@ namespace SST{
       }
 
       /// RevExt: retrieve the extension name
-      std::string GetName() { return name; }
+      const std::string& GetName() const { return name; }
 
       /// RevExt: baseline execution function
       bool Execute(unsigned Inst, RevInst Payload, uint16_t threadID);
 
       /// RevExt: retrieves the extension's instruction table
-      std::vector<RevInstEntry> GetInstTable() { return table; }
+      const std::vector<RevInstEntry>& GetInstTable() { return table; }
 
       /// RevExt: retrieves the extension's compressed instruction table
-      std::vector<RevInstEntry> GetCInstTable() { return ctable; }
+      const std::vector<RevInstEntry>& GetCInstTable() { return ctable; }
 
       /// RevExt: retrieves the extension's optional instruction table
-      std::vector<RevInstEntry> GetOInstTable() { return otable; }
+      const std::vector<RevInstEntry>& GetOInstTable() { return otable; }
 
       /// RevExt: updates the RegFile pointer prior to instruction execution
       ///         such that the currently executing RevThreadCtx is the one
