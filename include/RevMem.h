@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <random>
-#include <mutex>
 #include <tuple>
 
 // -- SST Headers
@@ -337,9 +336,6 @@ namespace SST {
       uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
       bool isValidVirtAddr(const uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
 
-      std::mutex memseg_mtx;         ///< RevMem: Used for incrementing ThreadCtx PID counter
-      std::mutex heap_mtx;         ///< RevMem: Used for incrementing ThreadCtx PID counter
-      std::mutex pid_mtx;         ///< RevMem: Used for incrementing ThreadCtx PID counter
       uint32_t PIDCount = 1023;   ///< RevMem: Monotonically increasing PID counter for assigning new PIDs without conflicts
 
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
