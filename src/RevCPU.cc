@@ -11,6 +11,7 @@
 #include "../include/RevCPU.h"
 #include <cmath>
 #include "RevMem.h"
+#include "RevThread.h"
 
 const char *splash_msg = "\
 \n\
@@ -284,11 +285,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   
   uint32_t MainThreadID = 1;
   uint32_t MainParentThreadID = 0;
-  // Create the first copy of the TLS Segment 
-  Threads.emplace(1, std::make_shared<RevThread>(MainThreadID, 
-                                                 MainParentThreadID,
-                                                 Mem->GetStackTop(),
-                                                 Mem->GetThreadMemSegs().front())); 
 
   // set the pc
   uint64_t StartAddr = 0x00ull;
@@ -312,9 +308,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
                     "Error: failed to auto discover address for <main> for main thread\n");
     }
   }
-  Threads.at(1)->GetRegFile()->RV32_PC = (uint32_t)StartAddr;
-  Threads.at(1)->GetRegFile()->RV64_PC = StartAddr;
 
+  // Create the first copy of the TLS Segment 
+  Threads.emplace(MainThreadID, std::make_shared<RevThread>(MainThreadID, 
+                                                 MainParentThreadID,
+                                                 Mem->GetStackTop(),
+                                                 StartAddr,
+                                                 Mem->GetThreadMemSegs().front())); 
+
+  std::cout << "First Thread Info: " << std::endl;
+  std::cout << *Threads[MainThreadID] << std::endl;
+  
   // Assign the first thread
   // AssignedThreads.front().emplace_back(Threads[1]);
   ThreadQueue.emplace(1);
@@ -2432,6 +2436,18 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
                      i, static_cast<uint64_t>(currentCycle));
       }
     }
+    // Check if we need to create a new thread 
+    if( Procs[i]->GetNewThreadInfo().size() ){
+      std::cout << "Creating a new thread for Proc: " << i << std::endl;
+      // TODO: Figure out if we'll do multiple of these if present (ie. size > 1)
+      std::pair<uint32_t, std::shared_ptr<MemSegment>> NewThreadInfo = Procs[i]->GetNewThreadInfo().front();
+      CreateThread(NewThreadInfo);
+     Procs[i]->GetNewThreadInfo().pop();
+
+    // Create a new thread 
+    Procs[i]->GetNewThreadInfo().pop();
+    }
+
     // Proc is not enabled, see if we can assign it work
     else {
       // See if there is work to assign
@@ -2521,8 +2537,19 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
 
 ///==== Thread Management Functions ====///
-void RevCPU::CreateThread(uint64_t pc, uint64_t stackPtr, uint64_t tlsPtr){
-  
+void RevCPU::CreateThread(std::pair<uint32_t, std::shared_ptr<MemSegment>> NewThreadInfo){
+  uint64_t NewThreadPC = NewThreadInfo.first;
+  std::shared_ptr<MemSegment> NewThreadMem = NewThreadInfo.second;
+  uint64_t StackPtr = NewThreadMem->getBaseAddr() + _STACK_SIZE_;
+  // TODO: Change the ParentPID being passed
+  uint32_t NewThreadID = GetNewThreadID();
+  Threads.emplace(NewThreadID, std::make_shared<RevThread>(NewThreadID, 
+                                                           1, // TODO: Need to change this 
+                                                           StackPtr, 
+                                                           NewThreadPC,
+                                                           NewThreadMem));
+  ThreadQueue.emplace(NewThreadID);
+  return;
 }
 
 // EOF

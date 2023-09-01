@@ -92,19 +92,16 @@ namespace SST {
           };
 
 
-      // Override for easy std::cout << *Seg << std::endl;
-      friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
-        std::cout << "---------------------------------------------------------------" << std::endl;
-        return os << " | 0x" << std::hex << obj.getBaseAddr()
-                  << " | 0x" << std::hex << obj.getTopAddr()
-                  << " | Size = " << std::dec << obj.getSize();
-      }
+        // Override for easy std::cout << *Seg << std::endl;
+        friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
+          return os << " | BaseAddr:  0x" << std::hex << obj.getBaseAddr() << " | TopAddr: 0x" << std::hex << obj.getTopAddr() << " | Size: " << std::dec << obj.getSize() << " Bytes";
+        }
 
-      private:
-          uint64_t BaseAddr;
-          uint64_t Size;
-          uint64_t TopAddr;
-      };
+        private:
+            uint64_t BaseAddr;
+            uint64_t Size;
+            uint64_t TopAddr;
+        };
 
       /// RevMem: determine if there are any outstanding requests
       bool outstandingRqsts();
@@ -367,7 +364,7 @@ namespace SST {
       void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
       void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
       uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
-      bool isValidVirtAddr(const uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
+      bool isValidVirtAddr(const uint64_t& vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
 
       uint32_t PIDCount = 1023;   ///< RevMem: Monotonically increasing PID counter for assigning new PIDs without conflicts
 

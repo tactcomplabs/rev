@@ -15,6 +15,7 @@
 // -- Standard Headers
 #include <cstdint>
 #include <vector>
+#include <iomanip>
 
 // -- Rev Headers
 #include "../include/RevMem.h"
@@ -38,12 +39,14 @@ class RevThread {
     RevThread(const uint32_t& inputThreadID,
               const uint32_t& inputParentThreadID,
               uint64_t inputStackPtr,
-              std::shared_ptr<MemSegment> inputThreadMem)
+              uint64_t inputFirstPC,
+              std::shared_ptr<MemSegment>& inputThreadMem)
       : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), 
-       ThreadMem(inputThreadMem), StackPtr(inputStackPtr){
+       StackPtr(inputStackPtr),  FirstPC(inputFirstPC), ThreadMem(inputThreadMem) {
       // Create the RegFile for this thread
       RegFile = RevRegFile(); 
       
+      uint64_t ThreadPtr = inputThreadMem->getTopAddr();
       // Set the stack pointer 
       RegFile.RV32[2] = (uint32_t)StackPtr;
       RegFile.RV64[2] = StackPtr;
@@ -52,6 +55,10 @@ class RevThread {
       ThreadPtr = ThreadMem->getTopAddr();
       RegFile.RV32[2] = (uint32_t)ThreadPtr;
       RegFile.RV64[4] = ThreadPtr;
+
+      // Set the PC 
+      RegFile.RV32_PC = (uint32_t)FirstPC;
+      RegFile.RV64_PC = FirstPC;
     }
     
     void AddFD(int fd);                             /// RevThread: Add fd to Thread's fildes 
@@ -76,16 +83,65 @@ class RevThread {
 
     bool isRunning(){ return ( State == ThreadState::Running ); }      /// RevThread: Checks if Thread's ThreadState is Running
     bool isBlocked(){ return (State == ThreadState::Blocked); }        /// RevThread: Checks if Thread's ThreadState is 
-    bool isDone(){ return (State == ThreadState::Done);                /// RevThread: Checks if Thread's ThreadState is Done
-  }
+    bool isDone(){ return (State == ThreadState::Done); }                /// RevThread: Checks if Thread's ThreadState is Done
+
+    // Override the printing 
+    friend std::ostream& operator<<(std::ostream& os, RevThread& Thread) {
+      os << "Thread " << Thread.ThreadID << ":" << std::endl; 
+      os << "\tThreadMem = " << *Thread.ThreadMem << std::endl;
+      os << std::hex << std::internal; // set hex output & internal padding 
+      os << "\tRV64_PC = 0x" << std::setw(16) << std::setfill('0') << Thread.RegFile.RV64_PC << " | RV32_PC = 0x" << std::setw(8) << std::setfill('0') << Thread.RegFile.RV32_PC << std::endl;
+      for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
+        if( i < 10){ os << " "; } // padding for alignment
+        os << "\t";
+        os << "RV32[" << std::dec << std::setw(2) << std::setfill(' ') << i << "]: 0x" << std::setw(8) << std::setfill('0') << std::hex << Thread.RegFile.RV32[i]; 
+        os << " | "; 
+        os << "RV64[" << std::dec << std::setw(2) << std::setfill(' ') << i << "]: 0x" << std::setw(16) << std::setfill('0') << std::hex << Thread.RegFile.RV64[i]; 
+        switch (i) {
+          case 1:
+            os << " --- Return Address";
+            break;
+          case 2:
+            os << " --- Stack Pointer";
+            break;
+          case 3:
+            os << " --- Global Pointer";
+            break;
+          case 4: 
+            os << " --- Thread Pointer";
+            break;
+        default:
+          if( i >= 5 && i <= 7 ){
+            os << " --- t" << i-5 << " (Temporary Register)";
+          }
+          else if( i >= 8 && i <= 9 ){
+            os << " --- s" << i-8 << " (Callee Saved Register)";
+          }
+          else if( i >= 10 && i <= 17 ){
+           os << " --- a" << i-10 << " (Argument Register)";
+          } 
+          else if ( i >= 18 && i <= 27 ){
+            os << " --- s" << i-16 << " (Callee Saved)";
+          }
+          else if ( i >= 28 && i <= 31 ){
+            os << " --- t" << i-25 << " (Temporary Register)";
+          }
+        }
+        os << std::endl;
+      }
+      // Reset the stream to its default state (ie. Not hex)
+      os << std::dec << std::left;
+      return os;
+    }
 
   private:
     uint32_t ThreadID;                             /// Software ThreadID of thread
     uint32_t ParentThreadID;                       /// Parent Thread's ThreadID
-    std::shared_ptr<MemSegment> ThreadMem; /// Pointer to its thread memory (TLS & Stack) 
     uint64_t StackPtr;                             /// Starting stack pointer for this thread
-    uint64_t ThreadPtr;                            /// Thread pointer for this thread
+    uint64_t FirstPC;
+    std::shared_ptr<MemSegment> ThreadMem;         /// Pointer to its thread memory (TLS & Stack) 
     
+    uint64_t ThreadPtr;                            /// Thread pointer for this thread
     ThreadState State = ThreadState::Start;        /// Thread state (unused)
     RevRegFile RegFile;                            /// Each context has its own register file
     std::vector<uint32_t> ChildrenThreadIDs = {};  /// List of a thread's children (unused)

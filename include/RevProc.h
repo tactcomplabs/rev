@@ -126,10 +126,12 @@ namespace SST{
       uint32_t CreateChildCtx();
  
       /// RevProc: SpawnThread creates a new thread and returns its ThreadID
-      uint32_t SpawnThread();
+      uint32_t SpawnThread(uint64_t fn);
 
       /// RevProc: Returns the current HartToExec active pid 
       uint32_t GetActiveThreadID();
+
+      std::queue<std::pair<uint64_t, std::shared_ptr<MemSegment>>>& GetNewThreadInfo() { return NewThreadInfo; }
 
       /// RevProc: Returns the active pid for HartID 
       // uint32_t GetActiveThreadID(const uint32_t HartID){ return ActiveThreadIDs.at(HartID); } 
@@ -157,6 +159,8 @@ namespace SST{
   
       ///< RevProc: Change HartID active pid
       bool ChangeActiveThreadID(uint32_t ThreadID, uint16_t HartID); 
+
+      std::queue<std::pair<uint64_t, std::shared_ptr<MemSegment>>> NewThreadInfo;
 
       ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
       uint16_t GetUtilization(){ return (AssignedThreads.size() / _REV_HART_COUNT_) * 100; }
@@ -656,6 +660,9 @@ namespace SST{
       void ECALL_pidfd_getfd();            // 438, rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
       void ECALL_faccessat2();             // 439, rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
       void ECALL_process_madvise();        // 440, rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
+
+      // =============== Begin Rev Specific Thread Functions ===============
+      void ECALL_pthread_create();         // 1000, rev_pthread_create(pthread_t  *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
 
       /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
       std::unordered_map<uint32_t, std::function<void(RevProc*)>> Ecalls;

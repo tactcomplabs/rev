@@ -305,12 +305,12 @@ void RevMem::AddToTLB(uint64_t vAddr, uint64_t physAddr){
 }
 
 uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
-  /* Check if vAddr is in the TLB */
+  // Check if vAddr is in the TLB 
   uint64_t physAddr = SearchTLB(vAddr);
 
-  /* If not in TLB, physAddr will equal _INVALID_ADDR_ */
+  // If not in TLB, physAddr will equal _INVALID_ADDR_ 
   if( physAddr == _INVALID_ADDR_ ){
-    /* Check if vAddr is a valid address before translating to physAddr */
+    // Check if vAddr is a valid address before translating to physAddr 
     if( isValidVirtAddr(vAddr) ){
       if(pageMap.count(pageNum) == 0){
         // First touch of this page, mark it as in use
@@ -321,7 +321,7 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 #endif
         nextPage++;
       }else if(pageMap.count(pageNum) == 1){
-        //We've accessed this page before, just get the physical address 
+        // We've accessed this page before, just get the physical address 
         physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & vAddr);
 #ifdef _REV_DEBUG_
         std::cout << "Access for page:" << pageNum << " addrShift:" << addrShift << " vAddr: 0x" << std::hex << vAddr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
@@ -332,7 +332,7 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       AddToTLB(vAddr, physAddr);
     }
     else {
-      /* vAddr not a valid address */
+      // vAddr not a valid address
 
 
       // #ifdef _REV_DEBUG_
@@ -356,7 +356,7 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 }
 
 // This function will change a decent amount in an upcoming PR
-bool RevMem::isValidVirtAddr(const uint64_t vAddr){
+bool RevMem::isValidVirtAddr(const uint64_t& vAddr){
   for(const auto& Seg : MemSegs ){
     if( Seg->contains(vAddr) ){
       return true;

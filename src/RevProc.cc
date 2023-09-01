@@ -2422,14 +2422,15 @@ bool RevProc::ChangeActiveThreadID(uint32_t NewThreadID){
 //
 // Once the memory is set up properly it then signals back to RevCPU that a new 
 // RevThread object needs to be created
-uint32_t RevProc::SpawnThread(){
+uint32_t RevProc::SpawnThread(uint64_t fn){
   
 
   // Need to do: 
   // 1) Get a new ThreadID
   // 2) Copy TLS
   // 3a) Potentially Copy Parent's stack
-  mem->AddThreadMem();
+  
+  NewThreadInfo.emplace(fn, mem->AddThreadMem());
   // 3b) Potentially Copy Parent's RegFile
   // 3c) Potentially Copy Parent's Parent ThreadID
   // 3d) Potentially set a priority? 
