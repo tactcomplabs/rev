@@ -65,7 +65,7 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   }
 
   //stacktop = _REVMEM_BASE_ + memSize;
-  stacktop = (_REVMEM_BASE_ + memSize);
+  stacktop = (_REVMEM_BASE_ + memSize) - _STACK_SIZE_;
 
   memStats.bytesRead = 0;
   memStats.bytesWritten = 0;
@@ -75,8 +75,6 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   memStats.floatsWritten = 0;
   memStats.TLBHits = 0;
   memStats.TLBMisses = 0;
-
-  stacktop = (_REVMEM_BASE_ + memSize) - _STACK_SIZE_;
 }
 
 bool RevMem::outstandingRqsts(){
@@ -604,10 +602,10 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
     }
 
     WriteMem(Hart, Addr, Len, Target);
-  }
 
-  // clear the hazard
-  *Hazard = false;
+    // clear the hazard
+    *Hazard = false;
+  }
 
   return true;
 }

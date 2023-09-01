@@ -1080,6 +1080,8 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op,
 bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
   if( AMOTable.size() == 0 ){
     return false;
+  }else if( Slot == 0 ){
+    return false;
   }
 
   // search all preceding slots for an AMO from the same Hart
@@ -1100,6 +1102,8 @@ bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
 
 bool RevBasicMemCtrl::isRL(unsigned Slot, unsigned Hart){
   if( AMOTable.size() == 0 ){
+    return false;
+  }else if( Slot == 0 ){
     return false;
   }
 
@@ -1273,7 +1277,9 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
       // split request exists, determine how to handle it
 
       uint8_t *target = (uint8_t *)(op->getTarget());
-      target += ev->pAddr - op->getAddr();
+      uint8_t startByte = static_cast<uint8_t>(ev->pAddr - op->getAddr());
+      target += startByte;
+
       for( unsigned i=0; i<(unsigned)(ev->size); i++ ){
         *target = ev->data[i];
         target++;
