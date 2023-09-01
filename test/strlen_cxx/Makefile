@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=strlen_cxx
-CC=riscv64-unknown-elf-g++
+CC="${RVCC}"
 #ARCH=rv64g
 ARCH=rv64imafd
 
