@@ -373,8 +373,6 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
 
 uint64_t RevMem::AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
   // TODO: Check to make sure there's no overlap
-  // Lock the memsegs vector
-  std::lock_guard<std::mutex> lock(memseg_mtx);
   MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
   return BaseAddr;
 }
@@ -402,9 +400,6 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
 
   uint64_t NewSegTopAddr = BaseAddr + RoundedSegSize;
   bool Added = false;
-
-  // lock memsegs
-  std::lock_guard<std::mutex> memseg_lock(memseg_mtx);
 
   // Check if memory segment is already allocated
   for( auto Seg : MemSegs ){
@@ -441,8 +436,6 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
       MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedSegSize));
   }
 
-  // unlock memsegs
-  memseg_mtx.unlock();
   return BaseAddr;
 }
 
@@ -992,9 +985,7 @@ uint32_t RevMem::GetNewThreadPID(){
   *       if multiple RevProc's create new Ctx objects at the
   *       same time
   */
-  std::unique_lock<std::mutex> lock(pid_mtx);
   PIDCount++;
-  lock.unlock();
   return PIDCount;
 }
 
@@ -1128,8 +1119,6 @@ void RevMem::InitHeap(const uint64_t& EndOfStaticData){
 uint64_t RevMem::ExpandHeap(uint64_t Size){
    // We don't want multiple concurrent processes changing the heapend
    // at the same time (ie. two ThreadCtx calling brk)
-  std::unique_lock<std::mutex> lock(heap_mtx);
-
   uint64_t NewHeapEnd = heapend + Size;
 
   // Check if we are out of heap space (ie. heapend >= bottom of stack)
@@ -1140,8 +1129,6 @@ uint64_t RevMem::ExpandHeap(uint64_t Size){
   }
   // update the heapend
   heapend = NewHeapEnd;
-
-  heap_mtx.unlock();
 
   return heapend;
 }
