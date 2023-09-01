@@ -12,6 +12,7 @@
 #define _SST_REVCPU_REVFEATURE_H_
 
 #include <string>
+#include <cstdint>
 
 // -- SST Headers
 #include "SST.h"
@@ -19,7 +20,7 @@
 namespace SST{
   namespace RevCPU{
 
-    enum RevFeatureType : unsigned {
+    enum RevFeatureType : uint32_t {
       RV_UNKNOWN  = 0,      ///< RevFeatureType: unknown feature
       RV_E        = 1<<0,   ///< RevFeatureType: E-extension
       RV_I        = 1<<1,   ///< RevFeatureType: I-extension
@@ -123,7 +124,7 @@ namespace SST{
       unsigned MaxCost;         ///< RevFeature: max memory cost
       unsigned Hart;            ///< RevFeature: RISC-V CPU ID, aka "hart"
       RevFeatureType features;  ///< RevFeature: feature elements
-      unsigned xlen;            ///< RevFeature: RISC-V xlen
+      unsigned xlen;            ///< RevFeature: RISC-V Xlen
 
       /// ParseMachineModel: parse the machine model string
       bool ParseMachineModel();

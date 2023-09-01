@@ -9,7 +9,6 @@
 //
 
 #include "../include/RevFeature.h"
-#include <array>
 #include <utility>
 #include <cstring>
 #include <string_view>
@@ -21,14 +20,15 @@ RevFeature::RevFeature( std::string Machine,
                         unsigned Min,
                         unsigned Max,
                         unsigned Id )
-  : machine(Machine), output(Output), MinCost(Min), MaxCost(Max), Hart(Id), features(RV_UNKNOWN), xlen(0) {
+  : machine(std::move(Machine)), output(Output), MinCost(Min), MaxCost(Max),
+    Hart(Id), features(RV_UNKNOWN), xlen(0) {
   output->verbose(CALL_INFO, 6, 0,
                   "Core %u ; Initializing feature set from machine string=%s\n",
                   Hart,
                   machine.c_str());
   if( !ParseMachineModel() )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to parse the machine model: %s\n", Machine.c_str());
+                  "Error: failed to parse the machine model: %s\n", machine.c_str());
 }
 
 bool RevFeature::ParseMachineModel(){
@@ -47,29 +47,28 @@ bool RevFeature::ParseMachineModel(){
   output->verbose(CALL_INFO, 6, 0, "Core %u ; Setting XLEN to %u\n", Hart, xlen);
   output->verbose(CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", Hart, mac);
 
-  using Entry = std::pair<std::string_view, unsigned>;
-  static constexpr std::array table = {
-    Entry { "E",          RV_E                                                      },
-    Entry { "I",          RV_I                                                      },
-    Entry { "M",          RV_M                                                      },
-    Entry { "A",          RV_A                                                      },
-    Entry { "F",          RV_F | RV_ZICSR                                           },
-    Entry { "D",          RV_D | RV_F | RV_ZICSR                                    },
-    Entry { "G",          RV_I | RV_M | RV_A | RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI },
-    Entry { "Q",          RV_Q | RV_D | RV_F | RV_ZICSR                             },
-    Entry { "L",          RV_L                                                      },
-    Entry { "C",          RV_C                                                      },
-    Entry { "B",          RV_B                                                      },
-    Entry { "J",          RV_J                                                      },
-    Entry { "T",          RV_T                                                      },
-    Entry { "P",          RV_P                                                      },
-    Entry { "V",          RV_V | RV_D | RV_F | RV_ZICSR                             },
-    Entry { "N",          RV_N                                                      },
-    Entry { "Zicsr",      RV_ZICSR                                                  },
-    Entry { "Zifencei",   RV_ZIFENCEI                                               },
-    Entry { "Zam",        RV_ZAM | RV_A                                             },
-    Entry { "Ztso",       RV_ZTSO                                                   },
-    Entry { "Zfa",        RV_ZFA | RV_F | RV_ZICSR                                  },
+  static constexpr std::pair<std::string_view, uint32_t> table[] = {
+    { "E",          RV_E                                                      },
+    { "I",          RV_I                                                      },
+    { "M",          RV_M                                                      },
+    { "A",          RV_A                                                      },
+    { "F",          RV_F | RV_ZICSR                                           },
+    { "D",          RV_D | RV_F | RV_ZICSR                                    },
+    { "G",          RV_I | RV_M | RV_A | RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI },
+    { "Q",          RV_Q | RV_D | RV_F | RV_ZICSR                             },
+    { "L",          RV_L                                                      },
+    { "C",          RV_C                                                      },
+    { "B",          RV_B                                                      },
+    { "J",          RV_J                                                      },
+    { "T",          RV_T                                                      },
+    { "P",          RV_P                                                      },
+    { "V",          RV_V | RV_D | RV_F | RV_ZICSR                             },
+    { "N",          RV_N                                                      },
+    { "Zicsr",      RV_ZICSR                                                  },
+    { "Zifencei",   RV_ZIFENCEI                                               },
+    { "Zam",        RV_ZAM | RV_A                                             },
+    { "Ztso",       RV_ZTSO                                                   },
+    { "Zfa",        RV_ZFA | RV_F | RV_ZICSR                                  },
   };
 
   // -- step 2: parse all the features
