@@ -22,11 +22,16 @@ int main(int argc, char **argv){
     void* ret1 = 0, *retaddr1 = 0;
 
     // Different input and output registers for JALR
-    asm volatile(
-        " lla %1, retaddr1\n"
-        " jalr %0, 0(%2)\n"
-        "retaddr1:\n"
-        : "=r&"(ret1), "=&r"(retaddr1) : "r"(&&target1));
+    asm goto(
+        " lla %1, l1\n"
+        " lla t0, %l2\n"
+        " jalr %0, 0(t0)\n"
+        "l1:\n"
+        " nop\n"
+        " nop\n"
+        " nop\n"
+        " nop\n"
+        : "=&r"(ret1), "=&r"(retaddr1) : : "t0" : target1);
     FAIL;
  target1:
     if (ret1 != retaddr1)
@@ -34,11 +39,16 @@ int main(int argc, char **argv){
 
     // Same input and output registers for JALR
     void* ret2 = 0, *retaddr2 = 0;
-    asm volatile(
-        " lla %1, retaddr2\n"
+    asm goto(
+        " lla %1, l2\n"
+        " lla %0, %l2\n"
         " jalr %0, 0(%0)\n"
-        "retaddr2:\n"
-        : "=r"(ret2), "=&r"(retaddr2) : "0"(&&target2));
+        "l2:\n"
+        " nop\n"
+        " nop\n"
+        " nop\n"
+        " nop\n"
+        : "=r"(ret2), "=&r"(retaddr2) : : : target2);
     FAIL;
  target2:
     if (ret2 != retaddr2)
