@@ -180,24 +180,20 @@ namespace SST{
       /// GetX: Get the specifed X register cast to a specific type
       template<typename T>
       T GetX(const RevFeature* F, size_t rs) const {
-        if( rs == 0 ){
-          return 0;
-        }else if( F->IsRV32() ){
-          return static_cast<T>(RV32[rs]);
+        if( F->IsRV32() ){
+          return static_cast<T>(rs ? RV32[rs] : 0);
         }else{
-          return static_cast<T>(RV64[rs]);
+          return static_cast<T>(rs ? RV64[rs] : 0);
         }
       }
 
       /// SetX: Set the specifed X register to a specific value
       template<typename T>
       void SetX(const RevFeature* F, size_t rd, T val) {
-        if( rd != 0 ){
-          if( F->IsRV32() ){
-            RV32[rd] = static_cast<int32_t>(val);
-          }else{
-            RV64[rd] = static_cast<int64_t>(val);
-          }
+        if( F->IsRV32() ){
+          RV32[rd] = rd ? static_cast<int32_t>(val) : 0;
+        }else{
+          RV64[rd] = rd ? static_cast<int64_t>(val) : 0;
         }
       }
 
@@ -310,6 +306,9 @@ namespace SST{
         return static_cast<int32_t>(tmp);
       }
     };
+
+    static_assert(std::is_aggregate_v<RevInst>,
+                  "RevInst must be an aggregate type (https://en.cppreference.com/w/cpp/language/aggregate_initialization)");
 
     /// RevInstEntry: Holds the compressed index to normal index mapping
     inline std::map<uint8_t,uint8_t> CRegMap =
