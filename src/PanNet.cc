@@ -22,7 +22,7 @@ panNicEvent::PanPacket panNicEvent::getType(){
   return panNicEvent::PanPacket(Opcode & 0b11);
 }
 
-std::string panNicEvent::getOpcodeStr(){
+const char* panNicEvent::getOpcodeStr(){
   switch(Opcode){
   case panNicEvent::Success:
     return "Success";
