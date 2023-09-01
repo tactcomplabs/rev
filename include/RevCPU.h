@@ -112,7 +112,7 @@ namespace SST {
         {"msgPerCycle",     "Number of messages per cycle to inject",       "1"},
         {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject",  "1"},
         {"testIters",       "Number of PAN test messages to send",          "255"},
-        {"splash",          "Display the splash logo",                      "0"}
+        {"splash",          "Display the splash logo",                      "0"},
       )
 
       // -------------------------------------------------------
@@ -128,7 +128,7 @@ namespace SST {
         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
         {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
         {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
-        {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"}
+        {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"},
       )
 
       // -------------------------------------------------------

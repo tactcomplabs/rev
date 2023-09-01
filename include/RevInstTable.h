@@ -321,7 +321,7 @@ namespace SST{
       {0b100,12},
       {0b101,13},
       {0b110,14},
-      {0b111,15}
+      {0b111,15},
     };
 
     struct RevInstDefaults {

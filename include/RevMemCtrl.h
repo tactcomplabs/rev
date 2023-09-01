@@ -363,7 +363,7 @@ namespace SST {
                               { "max_readlock",   "Sets the maxmium number of outstanding readlock events",   "64"},
                               { "max_writeunlock","Sets the maximum number of outstanding writeunlock events","64"},
                               { "max_custom",     "Sets the maximum number of outstanding custom events",     "64"},
-                              { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" }
+                              { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" },
       )
 
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({ "memIface", "Set the interface to memory", "SST::Interfaces::StandardMem" })
@@ -410,7 +410,7 @@ namespace SST {
         {"AMOMaxuBytes",        "Counts the number of bytes in AMOMaxu transactions","bytes", 1},
         {"AMOMaxuPending",      "Counts the number of AMOMaxu operations pending",   "count", 1},
         {"AMOSwapBytes",        "Counts the number of bytes in AMOSwap transactions","bytes", 1},
-        {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1}
+        {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1},
       )
 
       typedef enum{

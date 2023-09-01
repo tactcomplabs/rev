@@ -79,7 +79,7 @@ namespace SST{
       {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("divw %rd, %rs1, %rs2" ).SetFunct3(0b100).SetImplFunc(&divw ).InstEntry},
       {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("divuw %rd, %rs1, %rs2").SetFunct3(0b101).SetImplFunc(&divuw ).InstEntry},
       {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("remw %rd, %rs1, %rs2" ).SetFunct3(0b110).SetImplFunc(&remw ).InstEntry},
-      {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("remuw %rd, %rs1, %rs2").SetFunct3(0b111).SetImplFunc(&remuw ).InstEntry}
+      {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("remuw %rd, %rs1, %rs2").SetFunct3(0b111).SetImplFunc(&remuw ).InstEntry},
       };
 
 

@@ -39,7 +39,7 @@ namespace SST {
         PanBase     = 0b00,               ///< PanPacket: base packet type
         PanStream   = 0b01,               ///< PanPacket: streaming packet type
         PanRsvd     = 0b10,               ///< PanPacket: reserved for future expansion
-        PanBOTW     = 0b11                ///< PanPacket: bump on the wire packet
+        PanBOTW     = 0b11,               ///< PanPacket: bump on the wire packet
       }PanPacket;
 
       typedef enum{
@@ -66,7 +66,7 @@ namespace SST {
         StatusFuture    = 0b11010000,     ///< PanOpcode: Status future
         Success         = 0b11100000,     ///< PanOpcode: Command success
         Failed          = 0b11110000,     ///< PanOpcode: Failed success
-        BOTW            = 0b11            ///< PanOpcode: Bump on the wire
+        BOTW            = 0b11,           ///< PanOpcode: Bump on the wire
       }PanOpcode;
 
       /// panNicEvent: standard constructor

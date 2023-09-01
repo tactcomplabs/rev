@@ -232,14 +232,14 @@ namespace SST{
       {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.w.d %rd, %rs1"            ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct7(0b1100001	).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtwd ).InstEntry},
       {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.wu.d %rd, %rs1"           ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct7(0b1100001	).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtwud ).InstEntry},
       {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.d.w %rd, %rs1"            ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct7(0b1101001	).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtdw ).InstEntry},
-      {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.d.wu %rd, %rs1"           ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct7(0b1101001	).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtdwu ).InstEntry}
+      {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.d.wu %rd, %rs1"           ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct7(0b1101001	).SetrdClass(RegFLOAT	).Setrs1Class(RegFLOAT).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtdwu ).InstEntry},
       };
 
     std::vector<RevInstEntry> RV32DCTable = {
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fldsp %rd, $imm").SetCost(1).SetOpcode(0b10).SetFunct3(0b001).SetrdClass(RegFLOAT).Setrs1Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCI).SetImplFunc(&cfldsp).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fsdsp %rs1, $imm").SetCost(1).SetOpcode(0b10).SetFunct3(0b101).Setrs2Class(RegFLOAT).Setrs1Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCSS).SetImplFunc(&cfsdsp).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fld %rd, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b001).Setrs1Class(RegGPR).SetrdClass(RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCL).SetImplFunc(&cfld).SetCompressed(true).InstEntry},
-        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fsd %rs2, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b101).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCS).SetImplFunc(&cfsd).SetCompressed(true).InstEntry}
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fsd %rs2, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b101).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCS).SetImplFunc(&cfsd).SetCompressed(true).InstEntry},
       };
 
     public:

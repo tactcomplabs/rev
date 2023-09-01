@@ -121,7 +121,7 @@ namespace SST {
       SST_ELI_DOCUMENT_PARAMS(
         {"clock", "Clock frequency of the NIC", "1Ghz"},
         {"port", "Port to use, if loaded as an anonymous subcomponent", "network"},
-        {"verbose", "Verbosity for output (0 = nothing)", "0"}
+        {"verbose", "Verbosity for output (0 = nothing)", "0"},
       )
 
       // Register the ports
