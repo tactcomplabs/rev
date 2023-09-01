@@ -281,11 +281,13 @@ namespace SST{
 
       static bool jalr(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
-          R->RV32_PC = (R->GetX<uint32_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & ~(1<<0);
-          R->SetX(F, Inst.rd, R->RV32_PC + Inst.instSize);
+          auto ret = R->RV32_PC + Inst.instSize;
+          R->RV32_PC = (R->GetX<uint32_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & ~uint32_t{1};
+          R->SetX(F, Inst.rd, ret);
         }else{
-          R->RV64_PC = (R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & ~(1<<0);
-          R->SetX(F, Inst.rd, R->RV64_PC + Inst.instSize);
+          auto ret = R->RV64_PC + Inst.instSize;
+          R->RV64_PC = (R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & ~uint64_t{1};
+          R->SetX(F, Inst.rd, ret);
         }
         return true;
       }
