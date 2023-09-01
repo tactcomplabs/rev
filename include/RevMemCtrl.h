@@ -699,10 +699,10 @@ namespace SST {
     template<typename T>
     void ApplyAMO(uint32_t flags, void* Target, T value){
       // Target and value cast to signed and unsigned versions
-      auto* TmpTarget  = static_cast<std::make_signed_t<T>*>(Target);
-      auto* TmpTargetU = static_cast<std::make_unsigned_t<T>*>(Target);
-      auto  TmpBuf     = static_cast<std::make_signed_t<T>>(value);
-      auto  TmpBufU    = static_cast<std::make_unsigned_t<T>>(value);
+      auto* TmpTarget  = static_cast<std::make_signed_t   <T>*>(Target);
+      auto* TmpTargetU = static_cast<std::make_unsigned_t <T>*>(Target);
+      auto  TmpBuf     = static_cast<std::make_signed_t   <T> >(value);
+      auto  TmpBufU    = static_cast<std::make_unsigned_t <T> >(value);
 
       // Table mapping atomic operations to executable code
       static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
@@ -716,6 +716,7 @@ namespace SST {
         { RevCPU::RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
         { RevCPU::RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
       };
+
       for (auto& flag : table){
         if( flags & uint32_t(flag.first) ){
           flag.second();
