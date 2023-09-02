@@ -74,6 +74,10 @@ RevProc::RevProc( unsigned Id,
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the Ecall Table for core=%d\n", id );
 
+  ECALL_buf = new char[64];
+  ECALL_buf[0] = '\0';
+  ECALL_string = "";
+
   // reset the core
   if( !Reset() )
     output->fatal(CALL_INFO, -1,
@@ -94,6 +98,7 @@ RevProc::~RevProc(){
     delete Extensions[i];
   delete sfetch;
   delete feature;
+  delete[] ECALL_buf;
 }
 
 RevProc::RevProcStats RevProc::GetStats(){
@@ -2037,7 +2042,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         #endif
 
         /* Execute system call on this RevProc */
-        ExecEcall();
+        ExecEcall(Pipeline.back().second); //ExecEcall will also set the exception cause registers
 
         #ifdef _REV_DEBUG_
         std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
@@ -2050,10 +2055,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         std::cout << "Hart "<< HartToExec << " found ecall with code: "
                   << code << std::endl;
         #endif
-
-        /* exception handled... zero the cause registers */
-        RegFile->RV64_SCAUSE = 0;
-        RegFile->RV32_SCAUSE = 0;
 
         #ifdef _REV_DEBUG_
         std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
@@ -2491,7 +2492,7 @@ void RevProc::InitEcallTable(){
 /* rev_setxattr(const char *path, const char *name,        */
 /*              const void *value, size_t size, int flags) */
 /*======================================================== */
-void RevProc::ECALL_setxattr(){
+RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
   const char *path = (char*)RegFile->RV64[10];
   const char *name = (char*)RegFile->RV64[11];
   const void *value = (void*)RegFile->RV64[12];
@@ -2505,11 +2506,11 @@ void RevProc::ECALL_setxattr(){
   uint64_t rc = setxattr(path, name, value, size, flags);
 #endif
   RegFile->RV64[10] = rc;
-  return;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* Increments program break by n bytes  */
-void RevProc::ECALL_brk(){
+RevProc::ECALL_status_t RevProc::ECALL_brk(RevInst& inst){
   uint64_t Addr = RegFile->RV64[10];
 
   const uint64_t heapend = mem->GetHeapEnd();
@@ -2520,13 +2521,13 @@ void RevProc::ECALL_brk(){
     output->fatal(CALL_INFO, 11,
                   "Out of memory / Unable to expand system break (brk) to Addr = 0x%lx", Addr);
   }
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ======================================================= */
 /* rev_clone3(struct clone_args*, size_t args_size)        */
 /* ======================================================= */
-void RevProc::ECALL_clone(){
+RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
   uint64_t CloneArgsAddr = RegFile->RV64[10];
   // size_t SizeOfCloneArgs = RegFile()->RV64[11];
 
@@ -2615,6 +2616,7 @@ void RevProc::ECALL_clone(){
       default:
         break;
     }
+    return RevProc::ECALL_status_t::SUCCESS;
   }
 
   /* Get the parent ctx (Current active, executing PID) */
@@ -2660,35 +2662,48 @@ void RevProc::ECALL_clone(){
   /* Child's return value is 0 */
   ChildCtx->GetRegFile()->RV64[10] = 0;
 
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
 /* =============================== */
 /* rev_chdir(const char *filename) */
 /* =============================== */
-void RevProc::ECALL_chdir(){
+RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL_chdir called\n");
-  std::string path = "";
-  unsigned i=0;
+  RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
 
   // we don't know how long the path string is so read a byte (char)
   // at a time and search for the string terminator character '\0'
-  do {
-    char dirchar;
-    mem->ReadMem(RegFile->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
-    path = path + dirchar;
-    i++;
-  } while( path.back() != '\0');
+  if('\0' != ECALL_buf[0]){
+    //We are in the middle of the string
+    std::cout << "Middle of the string, read: " << ECALL_buf[0] << std::endl;
+    ECALL_string = ECALL_string + ECALL_buf[0];
+    mem->ReadVal<char>(HartToExec, RegFile->RV64[10] + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+  }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
+    //found the null terminator - we're done
+    ECALL_string = ECALL_string + ECALL_buf[0];
+    std::cout << "Found null terminator, full string: " << ECALL_string << std::endl;
+    const int rc = chdir(ECALL_string.data());
+    RegFile->RV64[10] = rc;
+    ECALL_string.clear();   //reset the ECALL buffers
+    ECALL_buf[0] = '\0';
+    rtval = RevProc::ECALL_status_t::SUCCESS;
+  }else{
+    //first time through the ECALL
+    std::cout << "First Mem read for ECALL" << std::endl;
+    mem->ReadVal<char>(HartToExec, RegFile->RV64[10], &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+  }
 
-  const int rc = chdir(path.data());
-  RegFile->RV64[10] = rc;
+  return rtval;
 }
 
 /* ============================================================ */
 /* rev_mkdirat(int dfd, const char * path, unsigned short mode) */
 /* ============================================================ */
-// void RevProc::ECALL_mkdir(){
+// RevProc::ECALL_status_t RevProc::ECALL_mkdir(){
 //   output->verbose(CALL_INFO, 2, 0, "ECALL_mkdir called\n");
 //   std::string path = "";
 //   unsigned i=0;
@@ -2711,7 +2726,7 @@ void RevProc::ECALL_chdir(){
 /* ======================== */
 /* rev_exit(int error_code) */
 /* ======================== */
-void RevProc::ECALL_exit(){
+RevProc::ECALL_status_t RevProc::ECALL_exit(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL_exit called\n");
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
   const uint64_t status = RegFile->RV64[10];
@@ -2729,15 +2744,15 @@ void RevProc::ECALL_exit(){
     output->verbose(CALL_INFO, 0, 0,
                     "Process %u exiting with status %lu\n",
                     CurrCtx->GetPID(), status );
-    return;
+    return RevProc::ECALL_status_t::SUCCESS;
   }
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ========================================= */
 /* rev_getcwd(char *buf, unsigned long size) */
 /* ========================================= */
-void RevProc::ECALL_getcwd(){
+RevProc::ECALL_status_t RevProc::ECALL_getcwd(RevInst& inst){
   uint64_t BufAddr = RegFile->RV64[10];
   uint64_t size = RegFile->RV64[11];
   std::string CWD = std::filesystem::current_path().c_str();
@@ -2746,38 +2761,38 @@ void RevProc::ECALL_getcwd(){
   /* Returns null-terminated string in buf */
   RegFile->RV64[10] = BufAddr;
 
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ================ */
 /* rev_getpid(void) */
 /* ================ */
-void RevProc::ECALL_getpid(){
+RevProc::ECALL_status_t RevProc::ECALL_getpid(RevInst& inst){
   /* TODO: Implement error handling */
   output->verbose(CALL_INFO, 2, 0, "ECALL_getpid called\n");
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
   RegFile->RV64[10] = ActivePIDs.at(HartToExec);
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ================= */
 /* rev_getppid(void) */
 /* ================= */
-void RevProc::ECALL_getppid(){
+RevProc::ECALL_status_t RevProc::ECALL_getppid(RevInst& inst){
 /* TODO: Implement error handling */
   output->verbose(CALL_INFO, 2, 0, "ECALL_getppid called\n");
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
   uint32_t ParentPID = CurrentCtx->GetParentPID();
   RegFile->RV64[10] = ParentPID;
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================== */
 /* rev_write(unsigned int fd, const char *buf, size_t nbytes) */
 /* ========================================================== */
-void RevProc::ECALL_write(){
+RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL_write called\n");
   int fildes = RegFile->RV64[10];
   std::size_t nbytes = RegFile->RV64[12];
@@ -2794,6 +2809,7 @@ void RevProc::ECALL_write(){
 
   /* write returns the number of bytes written */
   RegFile->RV64[10] = rc;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
@@ -2802,35 +2818,35 @@ void RevProc::ECALL_write(){
 /*   const struct __kernel_itimerspec  *new_setting, */
 /*   struct __kernel_itimerspec  *old_setting) */
 /* ========================================================================== */
-void RevProc::ECALL_timer_settime(){
+RevProc::ECALL_status_t RevProc::ECALL_timer_settime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_settime called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
 /* ======================================================================== */
 /* rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec *setting) */
 /* ======================================================================== */
-void RevProc::ECALL_timer_gettime(){
+RevProc::ECALL_status_t RevProc::ECALL_timer_gettime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_gettime called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================================== */
 /* rev_clock_settime(clockid_t which_clock, */
 /* const struct __kernel_timespec *tp) */
 /* ========================================================================== */
-void RevProc::ECALL_clock_settime(){
+RevProc::ECALL_status_t RevProc::ECALL_clock_settime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clock_settime called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ============================================================ */
 /* rev_clock_gettime(clockid_t which_clock, struct timeval *tp) */
 /* ============================================================ */
-void RevProc::ECALL_clock_gettime(){
+RevProc::ECALL_status_t RevProc::ECALL_clock_gettime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clock_gettime called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
@@ -2839,7 +2855,7 @@ void RevProc::ECALL_clock_gettime(){
 /* ====================================== */
 // void *mmap(void *addr, size_t length, int prot, int flags,
 //          int fd, off_t offset);
-void RevProc::ECALL_mmap(){
+RevProc::ECALL_status_t RevProc::ECALL_mmap(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n"); 
 
   uint64_t Addr = RegFile->RV64[10];
@@ -2864,13 +2880,13 @@ void RevProc::ECALL_mmap(){
   }
   // std::cout << "MMAP Returning Addr = 0x" << Addr << std::endl; 
   RegFile->RV64[10] = Addr;
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ================================== */
 /* munmap(void *addr, size_t length); */
 /* ================================== */
-void RevProc::ECALL_munmap(){
+RevProc::ECALL_status_t RevProc::ECALL_munmap(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n"); 
   uint64_t Addr = RegFile->RV64[10];
   uint64_t Size = RegFile->RV64[11];
@@ -2880,36 +2896,36 @@ void RevProc::ECALL_munmap(){
                   "Failed to perform munmap(Addr = 0x%lx, Size = 0x%lx)", 
                   Addr, Size);
   }
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
 /* ================ */
 /* rev_gettid(void) */
 /* ================ */
-void RevProc::ECALL_gettid(){
+RevProc::ECALL_status_t RevProc::ECALL_gettid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: gettid called\n");
   RevRegFile* regFile = RegFile;
 
   /* rc = Currently Executing Hart */
   regFile->RV64[10] = HartToExec;
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================= */
 /* rev_settimeofday(struct timeval *tv, struct timezone *tz) */
 /* ========================================================= */
-void RevProc::ECALL_settimeofday(){
+RevProc::ECALL_status_t RevProc::ECALL_settimeofday(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: settimeofday called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ============================================================= */
 /* int rev_gettimeofday(struct timeval *tv, struct timezone *tz) */
 /* ============================================================= */
-void RevProc::ECALL_gettimeofday(){
+RevProc::ECALL_status_t RevProc::ECALL_gettimeofday(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: gettimeofday called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
@@ -2917,26 +2933,26 @@ void RevProc::ECALL_gettimeofday(){
 /* rev_rt_sigprocmask(int how, sigset_t *set, sigset_t *oset, */
 /* size_t sigsetsize) */
 /* ========================================================================== */
-void RevProc::ECALL_rt_sigprocmask(){
+RevProc::ECALL_status_t RevProc::ECALL_rt_sigprocmask(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: rt_sigprocmask called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ================================== */
 /* rev_timer_delete(timer_t timer_id) */
 /* ================================== */
-void RevProc::ECALL_timer_delete(){
+RevProc::ECALL_status_t RevProc::ECALL_timer_delete(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_delete called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ===========================================================================*/
 /* rev_timer_create(clockid_t which_clock, struct sigevent *timer_event_spec, */
 /*   timer_t *created_timer_id) */
 /* ===========================================================================*/
-void RevProc::ECALL_timer_create(){
+RevProc::ECALL_status_t RevProc::ECALL_timer_create(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_create called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
@@ -2944,73 +2960,73 @@ void RevProc::ECALL_timer_create(){
 /* rev_nanosleep(struct __kernel_timespec *rqtp, */
 /* struct __kernel_timespec *rmtp) */
 /* ========================================================================== */
-void RevProc::ECALL_nanosleep(){
+RevProc::ECALL_status_t RevProc::ECALL_nanosleep(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: nanosleep called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================================== */
 /* rev_get_robust_list(int pid, struct robust_list_head *head_ptr, */
 /*   size_t *len_ptr) */
 /* ========================================================================== */
-void RevProc::ECALL_get_robust_list(){
+RevProc::ECALL_status_t RevProc::ECALL_get_robust_list(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: get_robust_list called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ============================================================== */
 /* rev_set_robust_list(struct robust_list_head *head, size_t len) */
 /* ============================================================== */
-void RevProc::ECALL_set_robust_list(){
+RevProc::ECALL_status_t RevProc::ECALL_set_robust_list(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: set_robust_list called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================================== */
 /* rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, */
 /*   struct rusage  *ru) */
 /* ==========================================================================*/
-void RevProc::ECALL_waitid(){
+RevProc::ECALL_status_t RevProc::ECALL_waitid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: waitid called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ============================== */
 /* rev_exit_group(int error_code) */
 /* ============================== */
-void RevProc::ECALL_exit_group(){
+RevProc::ECALL_status_t RevProc::ECALL_exit_group(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit_group called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ============================== */
 /* rev_fdatasync(unsigned int fd) */
 /* ============================== */
-void RevProc::ECALL_fdatasync(){
+RevProc::ECALL_status_t RevProc::ECALL_fdatasync(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: fdatasync called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ========================== */
 /* rev_fsync(unsigned int fd) */
 /* ========================== */
-void RevProc::ECALL_fsync(){
+RevProc::ECALL_status_t RevProc::ECALL_fsync(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: fsync called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ============== */
 /* rev_sync(void) */
 /* ============== */
-void RevProc::ECALL_sync(){
+RevProc::ECALL_status_t RevProc::ECALL_sync(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: sync called\n");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* =================================================================== */
 /*  ssize_t tee(int fd_in, int fd_out, size_t len, unsigned int flags) */
 /* =================================================================== */
-void RevProc::ECALL_tee(){
+RevProc::ECALL_status_t RevProc::ECALL_tee(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: tee called\n");
 #if 0
   // commented out to remove warnings
@@ -3019,13 +3035,13 @@ void RevProc::ECALL_tee(){
   size_t len     = RegFile->RV64[12];
   uint64_t flags = RegFile->RV64[13];
 #endif
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* =================================================================== */
 /* int openat(int dirfd, const char *pathname, int flags, mode_t mode) */
 /* =================================================================== */
-void RevProc::ECALL_openat(){
+RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
   int dfd = RegFile->RV64[10];
   int filenameAddr = RegFile->RV64[11];
   int flags = RegFile->RV64[12]; /* NOTE: Unused for now */
@@ -3057,13 +3073,13 @@ void RevProc::ECALL_openat(){
 
   /* openat returns the file descriptor of the opened file */
   RegFile->RV64[10] = fd;
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* =================================================== */
 /* rev_read(unsigned int fd, char *buf, size_t nbytes) */
 /* =================================================== */
-void RevProc::ECALL_read(){
+RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
   int fd = RegFile->RV64[10];
   uint64_t BufAddr = RegFile->RV64[11];
   size_t BufSize = RegFile->RV64[12];
@@ -3075,7 +3091,7 @@ void RevProc::ECALL_read(){
     output->fatal(CALL_INFO, -1,
                   "Core %d; Hart %d; PID %" PRIu32 " tried to read from file descriptor: %" PRIu64 " but did not have access to it\n",
                   id, HartToExec, HartToExecPID(), fd);
-    return;
+    return RevProc::ECALL_status_t::SUCCESS;
   }
   /*
    * This buffer is an intermediate buffer for storing the data read from host 
@@ -3098,14 +3114,14 @@ void RevProc::ECALL_read(){
   mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf);
 
   RegFile->RV64[10] = rc;
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
 /* ========================== */
 /* rev_close(unsigned int fd) */
 /* ========================== */
-void RevProc::ECALL_close(){
+RevProc::ECALL_status_t RevProc::ECALL_close(RevInst& inst){
   int fd = RegFile->RV64[10];
   std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
 
@@ -3114,7 +3130,7 @@ void RevProc::ECALL_close(){
     output->fatal(CALL_INFO, -1,
                   "Core %d; Hart %d; PID %" PRIu32 " tried to close file descriptor %d but did not have access to it\n",
                   id, HartToExec, HartToExecPID(), fd);
-    return;
+    return RevProc::ECALL_status_t::SUCCESS;
   }
   /* Close file on host */
   uint64_t rc = close(fd);
@@ -3125,29 +3141,29 @@ void RevProc::ECALL_close(){
   /* rc is propogated to rev from host */
   RegFile->RV64[10] = rc;
 
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ====================================================================== */
 /* rev_fchown(unsigned int fd, unsigned short user, unsigned short group) */         
 /* ====================================================================== */
-void RevProc::ECALL_fchown(){
+RevProc::ECALL_status_t RevProc::ECALL_fchown(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: fchown called"); 
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ==================================================================================== */
 /* rev_fchownat(int dfd, const char *filename, unsigned user, unsigned group, int flag) */
 /* ==================================================================================== */
-void RevProc::ECALL_fchownat(){
+RevProc::ECALL_status_t RevProc::ECALL_fchownat(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: fchownat called"); 
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* ======================================================================*/
 /* rev_mkdirat(int dfd, const char * path, unsigned short mode)          */
 /* ======================================================================*/
-void RevProc::ECALL_mkdirat(){
+RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
 
   output->verbose(CALL_INFO, 2, 0, "ECALL_mkdirat called"); 
 
@@ -3168,24 +3184,24 @@ void RevProc::ECALL_mkdirat(){
 
   const int rc = mkdirat(fd, path.data(), Mode);
   RegFile->RV64[10] = rc;
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 /* =========================================================== */
 /* rev_dup3(unsigned int oldfd, unsigned int newfd, int flags) */
 /* =========================================================== */
-void RevProc::ECALL_dup3(){
+RevProc::ECALL_status_t RevProc::ECALL_dup3(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: dup3 called"); 
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
 /* =========================================================== */
 /* rev_dup(unsigned int fildes)                                */
 /* =========================================================== */
-void RevProc::ECALL_dup(){
+RevProc::ECALL_status_t RevProc::ECALL_dup(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: dup called");
-  return;
+  return RevProc::ECALL_status_t::SUCCESS;
 }
 
 
@@ -3196,7 +3212,7 @@ void RevProc::ECALL_dup(){
  * Eventually this will be integrated into a TrapHandler however since ECALLs are the only
  * supported exceptions at this point there is no need just yet.
  */
-void RevProc::ExecEcall(){
+void RevProc::ExecEcall(RevInst& inst){
   // a7 register = ecall code
   uint64_t EcallCode;
   if( feature->IsRV32() )
@@ -3210,10 +3226,10 @@ void RevProc::ExecEcall(){
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
     /* call the function */
-    (it->second)(this);
+    ECALL_status_t status = (it->second)(this, inst);
     /* Trap handled... 0 cause registers */
-    RegFile->RV64_SCAUSE = 0;
-    RegFile->RV32_SCAUSE = 0;
+    RegFile->RV64_SCAUSE = status;
+    RegFile->RV32_SCAUSE = status;
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %lu not found", EcallCode);
   }
