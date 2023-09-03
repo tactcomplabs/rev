@@ -10,9 +10,18 @@ int main() {
     rev_exit(1);
   }
   const char msg2[67] = "Greetings Dave Greetings Dave Greetings Dave 123456789012345678901\n";
-  ssize_t bytes_writteni2 = rev_write(STDOUT_FILENO, msg2, sizeof(msg2));
+  ssize_t bytes_written2 = rev_write(STDOUT_FILENO, msg2, sizeof(msg2));
 
-  /*const char msg2[98] = "Greetings - this is a much longer message and some nice text, in fact, it is bigger than 64 bytes\n"; 
-  ssize_t bytes_writteni2 = rev_write(STDOUT_FILENO, msg2, sizeof(char)*98);*/
+  if( bytes_written2 < 0 ){
+    rev_exit(1);
+  }
+
+    //The test below fails - we are reaching into invalid address space, this appears unrealted to most recent changes
+/*  const char msg3[98] = "Greetings - this is a much longer message and some nice text, in fact, it is bigger than 64 bytes\n"; 
+  ssize_t bytes_written3 = rev_write(STDOUT_FILENO, msg3, sizeof(msg3));
+
+  if( bytes_written3 < 0 ){
+    rev_exit(1);
+  }*/
   return 0;
 }
