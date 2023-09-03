@@ -16,7 +16,7 @@ int main() {
 
     // Open the file "test.txt" under the current directory
     rev_write(STDOUT_FILENO, &OpenMsg[0], sizeof(OpenMsg));
-    int fd = rev_openat(AT_FDCWD, "test.txt", O_RDONLY);
+    int fd = rev_openat(AT_FDCWD, "test.txt", 0, O_RDONLY);
     if (fd == -1) {
         // handle error
     }

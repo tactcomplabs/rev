@@ -484,6 +484,10 @@ bool RevProc::Reset(){
   }
   HART_CTS.set();
 
+  ECALL_buf[0] = '\0';
+  ECALL_bytesRead = 0;
+  ECALL_string.clear();
+
   return true;
 }
 
@@ -1802,6 +1806,25 @@ void RevProc::DependencySet(uint16_t HartID, RevInst* Inst){
     }
 }
 
+void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat){
+      RevRegFile* regFile = GetRegFile(HartID);
+      if(RegNum != 0 && RegNum < _REV_NUM_REGS_){
+        if(feature->IsRV32()){
+          if(isFloat){
+            regFile->SPF_Scoreboard[RegNum] = true;
+          }else{
+            regFile->RV32_Scoreboard[RegNum] = true;
+          }
+      }else{
+          if(isFloat){
+            regFile->DPF_Scoreboard[RegNum] = true;
+          }else{
+            regFile->RV64_Scoreboard[RegNum] = true;
+          }
+      }
+    }
+}
+
 void RevProc::DependencyClear(uint16_t HartID, RevInst* Inst){
     RevRegFile* regFile = GetRegFile(HartID);
     if(Inst->rd < _REV_NUM_REGS_){
@@ -1817,6 +1840,25 @@ void RevProc::DependencyClear(uint16_t HartID, RevInst* Inst){
             regFile->DPF_Scoreboard[Inst->rd] = false;
           }else{
             regFile->RV64_Scoreboard[Inst->rd] = false;
+          }
+      }
+    }
+}
+
+void RevProc::DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
+      RevRegFile* regFile = GetRegFile(HartID);
+      if(RegNum != 0 && RegNum < _REV_NUM_REGS_){
+        if(feature->IsRV32()){
+          if(isFloat){
+            regFile->SPF_Scoreboard[RegNum] = false;
+          }else{
+            regFile->RV32_Scoreboard[RegNum] = false;
+          }
+      }else{
+          if(isFloat){
+            regFile->DPF_Scoreboard[RegNum] = false;
+          }else{
+            regFile->RV64_Scoreboard[RegNum] = false;
           }
       }
     }
@@ -2799,7 +2841,6 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
 
   if(ECALL_bytesRead == nbytes){
     //Read is complete - send to host
-    rtv = RevProc::ECALL_status_t::SUCCESS;
     ECALL_string = ECALL_string.append(ECALL_buf);
     /* Perform the write on the host system */
     const int rc = write(fildes, ECALL_string.data(), nbytes);
@@ -2811,6 +2852,8 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     ECALL_bytesRead = 0;
     ECALL_buf[0] = '\0';
     ECALL_string.clear();
+    rtv = RevProc::ECALL_status_t::SUCCESS;
+
   }else {
     if(ECALL_bytesRead > 0){
       //Not our first time through... so capture previous read data
@@ -3076,6 +3119,7 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
   int flags = RegFile->RV64[12]; /* NOTE: Unused for now */
   uint64_t mode = RegFile->RV64[13];
 
+  RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
   /*
    * NOTE: this is currently only opening files in the current directory
    *       because of some oddities in parsing the arguments & flags
@@ -3084,25 +3128,48 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
 
 
   /* Read the filename from memory one character at a time until we find '\0' */
-  std::string filename = "";
+
+  if('\0' != ECALL_buf[0]){
+    //We are in the middle of the string
+    ECALL_string = ECALL_string + ECALL_buf[0];
+    mem->ReadVal<char>(HartToExec, filenameAddr + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+    DependencySet(HartToExec, 10, false);
+  }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
+    //found the null terminator - we're done
+    ECALL_string = ECALL_string + ECALL_buf[0];
+
+    /* Do the openat on the host */
+    dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
+    int fd = openat(dfd, ECALL_string.c_str(), O_RDWR);
+
+    HartToExecCtx()->AddFD(fd);
+
+    /* openat returns the file descriptor of the opened file */
+    RegFile->RV64[10] = fd;
+
+    ECALL_string.clear();   //reset the ECALL buffers
+    ECALL_buf[0] = '\0';
+    rtval = RevProc::ECALL_status_t::SUCCESS;
+    DependencyClear(HartToExec, 10, false);
+  }else{
+    //first time through the ECALL
+    mem->ReadVal<char>(HartToExec, filenameAddr, &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    DependencySet(HartToExec, 10, false);
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+  }
+
+/*  std::string filename = "";
   unsigned i = 0;
   do {
     char filenameChar;
     mem->ReadMem(filenameAddr + sizeof(char)*i, sizeof(char), &filenameChar);
     filename = filename + filenameChar;
     i++;
-  } while( filename.back() != '\0');
+  } while( filename.back() != '\0');*/
 
-  dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
 
-  /* Do the openat on the host */
-  int fd = openat(dfd, filename.c_str(), O_RDWR);
-
-  HartToExecCtx()->AddFD(fd);
-
-  /* openat returns the file descriptor of the opened file */
-  RegFile->RV64[10] = fd;
-  return RevProc::ECALL_status_t::SUCCESS;
+  return rtval;
 }
 
 /* =================================================== */
@@ -3259,6 +3326,16 @@ void RevProc::ExecEcall(RevInst& inst){
     /* Trap handled... 0 cause registers */
     RegFile->RV64_SCAUSE = status;
     RegFile->RV32_SCAUSE = status;
+    //For now, rewind the PC and keep executing the ECALL until we
+    // have completed 
+    if(RevProc::ECALL_status_t::SUCCESS != status){
+      if( feature->IsRV32() ){
+        RegFile->RV32_PC -= inst.instSize;
+      }else{
+        RegFile->RV64_PC -= inst.instSize;
+      }
+
+    }
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %lu not found", EcallCode);
   }

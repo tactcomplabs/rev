@@ -686,6 +686,12 @@ namespace SST{
       /// RevProc: Clear scoreboard on instruction retirement
       void DependencyClear(uint16_t threadID, RevInst* Inst);
 
+      /// RevProc: Set scoreboard based on register number and floating point. 64 vs. 32 bit inferred from RevFeature
+      void DependencySet(uint16_t threadID, uint16_t RegNum, bool isFloat);
+
+      /// RevProc: Clear scoreboard on instruction retirement
+      void DependencyClear(uint16_t threadID, uint16_t RegNum, bool isFloat);
+
     }; // class RevProc
   } // namespace RevCPU
 } // namespace SST
