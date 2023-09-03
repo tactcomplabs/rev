@@ -3159,16 +3159,6 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
     rtval = RevProc::ECALL_status_t::CONTINUE;
   }
 
-/*  std::string filename = "";
-  unsigned i = 0;
-  do {
-    char filenameChar;
-    mem->ReadMem(filenameAddr + sizeof(char)*i, sizeof(char), &filenameChar);
-    filename = filename + filenameChar;
-    i++;
-  } while( filename.back() != '\0');*/
-
-
   return rtval;
 }
 
@@ -3265,7 +3255,33 @@ RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
 
   unsigned fd = RegFile->RV64[10];
   unsigned Mode = RegFile->RV64[12];
+  RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
 
+  if('\0' != ECALL_buf[0]){
+    //We are in the middle of the string
+    ECALL_string = ECALL_string + ECALL_buf[0];
+    mem->ReadVal<char>(HartToExec, RegFile->RV64[11] + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+    DependencySet(HartToExec, 10, false);
+  }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
+    //found the null terminator - we're done
+    ECALL_string = ECALL_string + ECALL_buf[0];
+
+    /* Do the mkdirat on the host */
+    const int rc = mkdirat(fd, ECALL_string.data(), Mode);
+    RegFile->RV64[10] = rc;
+
+    ECALL_string.clear();   //reset the ECALL buffers
+    ECALL_buf[0] = '\0';
+    rtval = RevProc::ECALL_status_t::SUCCESS;
+    DependencyClear(HartToExec, 10, false);
+  }else{
+    //first time through the ECALL
+    mem->ReadVal<char>(HartToExec, RegFile->RV64[11], &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    DependencySet(HartToExec, 10, false);
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+  }
+/*
   std::string path = "";
   unsigned i=0;
   
@@ -3279,8 +3295,10 @@ RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
   } while( path.back() != '\0');
 
   const int rc = mkdirat(fd, path.data(), Mode);
-  RegFile->RV64[10] = rc;
-  return RevProc::ECALL_status_t::SUCCESS;
+  RegFile->RV64[10] = rc;*/
+
+
+  return rtval;
 }
 
 /* =========================================================== */
