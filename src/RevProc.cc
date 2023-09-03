@@ -77,6 +77,7 @@ RevProc::RevProc( unsigned Id,
   ECALL_buf = new char[64];
   ECALL_buf[0] = '\0';
   ECALL_string = "";
+  ECALL_bytesRead = 0;
 
   // reset the core
   if( !Reset() )
@@ -2677,14 +2678,12 @@ RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
   // at a time and search for the string terminator character '\0'
   if('\0' != ECALL_buf[0]){
     //We are in the middle of the string
-    std::cout << "Middle of the string, read: " << ECALL_buf[0] << std::endl;
     ECALL_string = ECALL_string + ECALL_buf[0];
     mem->ReadVal<char>(HartToExec, RegFile->RV64[10] + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
     rtval = RevProc::ECALL_status_t::CONTINUE;
   }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
     //found the null terminator - we're done
     ECALL_string = ECALL_string + ECALL_buf[0];
-    std::cout << "Found null terminator, full string: " << ECALL_string << std::endl;
     const int rc = chdir(ECALL_string.data());
     RegFile->RV64[10] = rc;
     ECALL_string.clear();   //reset the ECALL buffers
@@ -2692,7 +2691,6 @@ RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
     rtval = RevProc::ECALL_status_t::SUCCESS;
   }else{
     //first time through the ECALL
-    std::cout << "First Mem read for ECALL" << std::endl;
     mem->ReadVal<char>(HartToExec, RegFile->RV64[10], &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
     rtval = RevProc::ECALL_status_t::CONTINUE;
   }
@@ -2797,19 +2795,50 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
   int fildes = RegFile->RV64[10];
   std::size_t nbytes = RegFile->RV64[12];
 
-  char buf[nbytes];
-  char bufchar;
-  for (unsigned i=0; i<nbytes; i++){
-    mem->ReadMem(RegFile->RV64[11] + sizeof(char)*i, sizeof(char), &bufchar);
+  RevProc::ECALL_status_t rtv = RevProc::ECALL_status_t::SUCCESS;
+
+  if(ECALL_bytesRead == nbytes){
+    //Read is complete - send to host
+    rtv = RevProc::ECALL_status_t::SUCCESS;
+    ECALL_string = ECALL_string.append(ECALL_buf);
+    /* Perform the write on the host system */
+    const int rc = write(fildes, ECALL_string.data(), nbytes);
+
+    /* write returns the number of bytes written */
+    RegFile->RV64[10] = rc;
+
+    /*Reset our tracking state*/
+    ECALL_bytesRead = 0;
+    ECALL_buf[0] = '\0';
+    ECALL_string.clear();
+  }else {
+    if(ECALL_bytesRead > 0){
+      //Not our first time through... so capture previous read data
+      ECALL_string = ECALL_string.append(ECALL_buf);
+    }
+    if(1 == (nbytes - ECALL_bytesRead)){
+      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(char), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      ECALL_buf[1] = '\0';  //Pre-null terminate to allow for succesful string cat later
+      ECALL_bytesRead += 1;
+    }
+    else if(3 >= (nbytes - ECALL_bytesRead )){
+      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(uint16_t), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      ECALL_buf[2] = '\0'; //Pre-null terminate to allow for succesful string cat later
+      ECALL_bytesRead += 2;
+    }
+    else if(7 >= (nbytes - ECALL_bytesRead )){
+      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(uint32_t), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      ECALL_buf[4] = '\0'; //Pre-null terminate to allow for succesful string cat later
+      ECALL_bytesRead += 4;
+    }
+    else {
+      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(uint64_t), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      ECALL_buf[8] = '\0'; //Pre-null terminate to allow for succesful string cat later
+     ECALL_bytesRead += 8;
+    }
+    rtv = RevProc::ECALL_status_t::CONTINUE;
   }
-  mem->ReadMem(RegFile->RV64[11], sizeof(buf), &buf);
-
-  /* Perform the write on the host system */
-  const int rc = write(fildes, buf, nbytes);
-
-  /* write returns the number of bytes written */
-  RegFile->RV64[10] = rc;
-  return RevProc::ECALL_status_t::SUCCESS;
+  return rtv;
 }
 
 

@@ -216,6 +216,7 @@ namespace SST{
 
      char* ECALL_buf;
      std::string ECALL_string;
+     uint32_t ECALL_bytesRead;
 
       ECALL_status_t ECALL_io_setup(RevInst& inst);               // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
       ECALL_status_t ECALL_io_destroy(RevInst& inst);             // 1, rev_io_destroy(aio_context_t ctx)
