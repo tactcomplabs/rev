@@ -220,7 +220,7 @@ bool panNicEvent::buildSyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint3
   if( !setAddr(Addr) ){
     return false;
   }
-  if( !setData(Data,Size) ){
+  if( !setData(Data, Size) ){
     return false;
   }
 
@@ -253,7 +253,7 @@ bool panNicEvent::buildAsyncPut(uint32_t Token, uint8_t Tag, uint64_t Addr, uint
     return false;
   if( !setAddr(Addr) )
     return false;
-  if( !setData(Data,Size) )
+  if( !setData(Data, Size) )
     return false;
 
   return true;
@@ -285,7 +285,7 @@ bool panNicEvent::buildSyncStreamPut(uint32_t Token, uint8_t Tag, uint64_t Addr,
     return false;
   if( !setAddr(Addr) )
     return false;
-  if( !setData(Data,Size) )
+  if( !setData(Data, Size) )
     return false;
 
   return true;
@@ -317,7 +317,7 @@ bool panNicEvent::buildAsyncStreamPut(uint32_t Token, uint8_t Tag, uint64_t Addr
     return false;
   if( !setAddr(Addr) )
     return false;
-  if( !setData(Data,Size) )
+  if( !setData(Data, Size) )
     return false;
 
   return true;
@@ -422,7 +422,7 @@ bool panNicEvent::buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint
     return false;
   if( !setAddr(Reg) )
     return false;
-  if( !setData(Data,8) )      /// right now we only write 8 bytes
+  if( !setData(Data, 8) )      /// right now we only write 8 bytes
     return false;
   return true;
 }
@@ -513,10 +513,10 @@ bool panNicEvent::buildFailed(uint32_t Token, uint8_t Tag){
 PanNet::PanNet(ComponentId_t id, const Params& params)
   : panNicAPI(id, params) {
   // setup the initial logging functions
-  int verbosity = params.find<int>("verbose",0);
+  int verbosity = params.find<int>("verbose", 0);
   output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
 
-  registerClock("1Ghz", new Clock::Handler<PanNet>(this,&PanNet::clockTick));
+  registerClock("1Ghz", new Clock::Handler<PanNet>(this, &PanNet::clockTick));
 
   // load the SimpleNetwork interfaces
   iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1);
@@ -536,7 +536,7 @@ PanNet::PanNet(ComponentId_t id, const Params& params)
   }
 
   // determine if this is a host device
-  isHost = params.find<bool>("host_device",0);
+  isHost = params.find<bool>("host_device", 0);
   this->SetHost(isHost);
 
   iFace->setNotifyOnReceive(new SST::Interfaces::SimpleNetwork::Handler<PanNet>(this, &PanNet::msgNotify));
@@ -644,7 +644,7 @@ int64_t PanNet::getHostFromIdx(unsigned Idx){
   }
 
   unsigned i = 0;
-  for( std::map<SST::Interfaces::SimpleNetwork::nid_t,bool>::iterator it = hostMap.begin();
+  for( std::map<SST::Interfaces::SimpleNetwork::nid_t, bool>::iterator it = hostMap.begin();
        it != hostMap.end();
        ++it ){
     if( i == Idx ){
@@ -658,7 +658,7 @@ int64_t PanNet::getHostFromIdx(unsigned Idx){
 
 bool PanNet::clockTick(Cycle_t cycle){
   while( !sendQ.empty() ){
-    if( iFace->spaceToSend(0,512) && iFace->send(sendQ.front(),0)) {
+    if( iFace->spaceToSend(0, 512) && iFace->send(sendQ.front(), 0)) {
       sendQ.pop();
     }else{
       break;

@@ -324,7 +324,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
 
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         return true;
       }
 
@@ -337,7 +337,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
 
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         return true;
       }
 
@@ -350,7 +350,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
 
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         return true;
       }
 
@@ -362,7 +362,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
 
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         return true;
       }
 
@@ -374,7 +374,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
 
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         return true;
       }
 
@@ -664,10 +664,10 @@ namespace SST{
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.srli %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b100).SetFunct2(0b00).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCB).SetImplFunc(&csrli).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.srai %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b100).SetFunct2(0b01).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCB).SetImplFunc(&csrai).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.andi %rd, $imm").SetCost(1).SetOpcode(0b01).SetFunct3(0b100).SetFunct2(0b10).SetrdClass(RegGPR).Setimm(FVal).SetFormat(RVCTypeCB).SetImplFunc(&candi).SetCompressed(true).InstEntry},
-        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.and %rd,%rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b11).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&cand).SetCompressed(true).InstEntry},
-        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.or %rd,%rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b10).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&cor).SetCompressed(true).InstEntry},
-        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.xor %rd,%rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b01).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&cxor).SetCompressed(true).InstEntry},
-        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.sub %rd,%rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b00).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&csub).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.and %rd, %rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b11).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&cand).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.or %rd, %rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b10).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&cor).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.xor %rd, %rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b01).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&cxor).SetCompressed(true).InstEntry},
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.sub %rd, %rs1").SetCost(1).SetOpcode(0b01).SetFunct6(0b100011).SetFunct2(0b00).SetrdClass(RegGPR).Setrs2Class(RegGPR).SetFormat(RVCTypeCA).SetImplFunc(&csub).SetCompressed(true).InstEntry},
       };
 
       // RV32C-Only table

@@ -363,8 +363,8 @@ namespace SST {
       #define LRSC_ADDR 1
       #define LRSC_AQRL 2
       #define LRSC_VAL  3
-      std::vector<std::tuple<unsigned,uint64_t,
-                             unsigned,uint64_t*>> LRSC;   ///< RevMem: load reserve/store conditional vector
+      std::vector<std::tuple<unsigned, uint64_t,
+                             unsigned, uint64_t*>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
     }; // class RevMem
   } // namespace RevCPU

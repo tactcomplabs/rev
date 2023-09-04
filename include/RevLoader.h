@@ -307,7 +307,7 @@ namespace SST {
 
       ElfInfo elfinfo;          ///< RevLoader: elf info from the loaded program
 
-      std::map<std::string,uint64_t> symtable;  ///< RevLoader: loaded symbol table
+      std::map<std::string, uint64_t> symtable;  ///< RevLoader: loaded symbol table
 
       std::vector<std::string> argv;            ///< RevLoader: The actual argv table
 

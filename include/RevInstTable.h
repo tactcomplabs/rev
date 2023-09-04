@@ -64,7 +64,7 @@
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
 
-// RV{32,64}{F,D} macros
+// RV{32, 64}{F, D} macros
 #define FCSR_NX(x)  ((x)&(0b1))             // FCSR: NX field
 #define FCSR_UF(x)  (((x)&(0b10))>>1)       // FCSR: UF field
 #define FCSR_OF(x)  (((x)&(0b100))>>2)      // FCSR: OF field
@@ -78,34 +78,34 @@
 #define FRM_RUP   0b011                     // Rounding mode: Round Up (towards +INF)
 #define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
 
-// RV{32,64} Register Operation Macros
+// RV{32, 64} Register Operation Macros
 // TODO: These should be replaced with simpler inline functions or casts
 
-#define SEXT(r,x,b) do {\
+#define SEXT(r, x, b) do {\
                     (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register
-#define ZEXT(r,x,b) do {\
+#define ZEXT(r, x, b) do {\
                     (r) = (x) & (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register
 
-#define SEXTI(r,b)  do {\
+#define SEXTI(r, b)  do {\
                     (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register inline
-#define ZEXTI(r,b)  do {\
+#define ZEXTI(r, b)  do {\
                     (r) = (r) & (((1UL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
-#define SEXT64(r,x,b) do {\
+#define SEXT64(r, x, b) do {\
                     (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register
-#define ZEXT64(r,x,b) do {\
+#define ZEXT64(r, x, b) do {\
                     (r) = (x) & (((1ULL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register
 
-#define SEXTI64(r,b)  do {\
+#define SEXTI64(r, b)  do {\
                     (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
                     }while(0)                // Sign extend the target register inline
-#define ZEXTI64(r,b)  do {\
+#define ZEXTI64(r, b)  do {\
                     (r) = (r) & (((1ULL) << (b)) - 1);\
                     }while(0)                // Zero extend the target register inline
 
@@ -311,16 +311,16 @@ namespace SST{
                   "RevInst must be an aggregate type (https://en.cppreference.com/w/cpp/language/aggregate_initialization)");
 
     /// RevInstEntry: Holds the compressed index to normal index mapping
-    inline std::map<uint8_t,uint8_t> CRegMap =
+    inline std::map<uint8_t, uint8_t> CRegMap =
     {
-      {0b000,8},
-      {0b001,9},
-      {0b010,10},
-      {0b011,11},
-      {0b100,12},
-      {0b101,13},
-      {0b110,14},
-      {0b111,15},
+      {0b000, 8},
+      {0b001, 9},
+      {0b010, 10},
+      {0b011, 11},
+      {0b100, 12},
+      {0b101, 13},
+      {0b110, 14},
+      {0b111, 15},
     };
 
     struct RevInstDefaults {

@@ -32,7 +32,7 @@ namespace SST{
                 Inst.aq, Inst.rl, Inst.hazard,
                 REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
         }
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
@@ -84,7 +84,7 @@ namespace SST{
                     flags);
         }
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         R->AdvancePC(F, Inst.instSize);
         return true;
       }

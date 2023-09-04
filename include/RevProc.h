@@ -90,7 +90,7 @@ namespace SST{
       void SetExecCtx(PanExec *P) { PExec = P; }
 
       /// RevProc: Retrieve a random memory cost value
-      unsigned RandCost() { return mem->RandCost(feature->GetMinCost(),feature->GetMaxCost()); }
+      unsigned RandCost() { return mem->RandCost(feature->GetMinCost(), feature->GetMaxCost()); }
 
       /// RevProc: Handle register faults
       void HandleRegFault(unsigned width);
@@ -549,14 +549,14 @@ namespace SST{
 #define PIPE_INST     1
 #define PIPE_HAZARD   2
       //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
-      std::vector<std::pair<uint16_t,RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
+      std::vector<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
       std::list<bool *> LoadHazards;                      ///< RevProc: list of allocated load hazards
 
-      std::map<std::string,unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
-      std::map<uint32_t,unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
-      std::map<uint32_t,unsigned> CEncToEntry;    ///< RevProc: compressed instruction encoding to table entry mapping
+      std::map<std::string, unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
+      std::map<uint32_t, unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
+      std::map<uint32_t, unsigned> CEncToEntry;    ///< RevProc: compressed instruction encoding to table entry mapping
 
-      std::map<unsigned,std::pair<unsigned,unsigned>> EntryToExt;     ///< RevProc: instruction entry to extension object mapping
+      std::map<unsigned, std::pair<unsigned, unsigned>> EntryToExt;     ///< RevProc: instruction entry to extension object mapping
                                                                       ///           first = Master table entry number
                                                                       ///           second = pair<Extension Index, Extension Entry>
 

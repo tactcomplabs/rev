@@ -64,7 +64,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
 
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         return true;
       }
 
