@@ -194,7 +194,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
 
   // set the first stack pointer
   uint32_t sp = mem->GetStackTop() - (uint32_t)(elfinfo.phdr_size);
-  WriteCacheLine(sp, elfinfo.phdr_size, (void *)(ph));
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -339,7 +339,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // set the first stack pointer
   uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
-  WriteCacheLine(sp, elfinfo.phdr_size, (void *)(ph));
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -450,8 +450,8 @@ bool RevLoader::LoadProgramArgs(){
     sp &= ~uint64_t{0xF};
     // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
     mem->SetStackTop(sp);
-    //mem->WriteMem(mem->GetStackTop(), len, (void *)(&tmpc));
-    WriteCacheLine(mem->GetStackTop(), len, (void *)(&tmpc));
+    //mem->WriteMem(mem->GetStackTop(), len, &tmpc);
+    WriteCacheLine(mem->GetStackTop(), len, &tmpc);
   }
 
   return true;

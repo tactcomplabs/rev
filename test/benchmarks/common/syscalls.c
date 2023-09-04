@@ -153,8 +153,9 @@ void printhex(uint64_t x)
   printstr(str);
 }
 
-static inline void printnum(void (*putch)(int, void**), void **putdat,
-                    unsigned long long num, unsigned base, int width, int padc)
+static inline void printnum(void putch(int, void**), void **putdat,
+                            unsigned long long num, unsigned base,
+                            int width, int padc)
 {
   unsigned digs[sizeof(num)*CHAR_BIT];
   int pos = 0;
@@ -194,7 +195,8 @@ static long long getint(va_list *ap, int lflag)
     return va_arg(*ap, int);
 }
 
-static void vprintfmt(void (*putch)(int, void**), void **putdat, const char *fmt, va_list ap)
+static void vprintfmt(void putch(int, void**), void **putdat,
+                      const char *fmt, va_list ap)
 {
   register const char* p;
   const char* last_fmt;
@@ -226,7 +228,7 @@ static void vprintfmt(void (*putch)(int, void**), void **putdat, const char *fmt
     case '-':
       padc = '-';
       goto reswitch;
-      
+
     // flag to pad with 0's instead of spaces
     case '0':
       padc = '0';
@@ -316,7 +318,7 @@ static void vprintfmt(void (*putch)(int, void**), void **putdat, const char *fmt
 
     // pointer
     case 'p':
-      static_assert(sizeof(long) == sizeof(void*));
+      static_assert(sizeof(long) == sizeof(intptr_t));
       lflag = 1;
       putch('0', putdat);
       putch('x', putdat);
@@ -335,7 +337,7 @@ static void vprintfmt(void (*putch)(int, void**), void **putdat, const char *fmt
     case '%':
       putch(ch, putdat);
       break;
-      
+
     // unrecognized escape sequence - just print it literally
     default:
       putch('%', putdat);
@@ -350,7 +352,7 @@ int printf(const char* fmt, ...)
   va_list ap;
   va_start(ap, fmt);
 
-  vprintfmt((void*)putchar, 0, fmt, ap);
+  vprintfmt(putchar, 0, fmt, ap);
 
   va_end(ap);
   return 0; // incorrect return value, but who cares, anyway?

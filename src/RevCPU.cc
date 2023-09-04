@@ -728,11 +728,11 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
   // check for zero address
   if( event->getAddr() == 0x00ull ){
     // handle the special zero put messages
-    if( !PANHandleZeroAddrPut(Size, (void *)(Data)) ){
+    if( !PANHandleZeroAddrPut(Size, Data) ){
       delete[] Data;
       PANBuildFailedToken(event);
     }
-  }else if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  }else if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -784,11 +784,11 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
   // check for zero address
   if( event->getAddr() == 0x00ull ){
     // handle the special zero put messages
-    if( !PANHandleZeroAddrPut(Size, (void *)(Data)) ){
+    if( !PANHandleZeroAddrPut(Size, Data) ){
       delete[] Data;
       PANBuildFailedToken(event);
     }
-  }else if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  }else if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -838,7 +838,7 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
   event->getData(Data);
 
   // write it to memory
-  if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
     return ;
@@ -889,7 +889,7 @@ void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
   event->getData(Data);
 
   // write it to memory
-  if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
     return ;
@@ -1529,7 +1529,7 @@ bool RevCPU::processPANZeroAddr(){
 
     if( !Mem->ReadMem((uint64_t)(&XferPtr[i].Valid),
                       8,
-                      (void *)(&TmpValid)) ){
+                      &TmpValid) ){
       output.fatal(CALL_INFO, -1,
                    "Error: Could not read valid bit for zero address data insertion; Addr=0x%" PRIx64 "\n",
                    (uint64_t)(&XferPtr[i].Valid));
@@ -1542,7 +1542,7 @@ bool RevCPU::processPANZeroAddr(){
       TmpPtr  = ZeroRqst.front().second;
 
       Mem->WriteU8(0, (uint64_t)(&XferPtr[i].Valid), TmpValid);
-      Mem->WriteMem(0, (uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, (void *)(TmpPtr));
+      Mem->WriteMem(0, (uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, TmpPtr);
 
       ZeroRqst.pop();
       delete[] TmpPtr;
@@ -1579,7 +1579,7 @@ bool RevCPU::processPANMemRead(){
       uint64_t *Data = new uint64_t [SCmd->getNumBlocks(tmp_size)];
       if( !Mem->ReadMem( tmp_addr,
                          (size_t)(tmp_size),
-                         (void *)(Data))){
+                         Data)){
         // build a failed response
         SCmd->buildFailed(PNic->GetToken(), tmp_tag);
         SCmd->setSrc(address);
