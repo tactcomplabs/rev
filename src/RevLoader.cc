@@ -150,11 +150,11 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     mem->AddMemSeg(ph[i].p_paddr, ph[i].p_filesz, true);
   }
 
-  uint64_t StaticDataEnd = 0; 
-  uint64_t BSSEnd = 0; 
-  uint64_t DataEnd = 0; 
-  uint64_t TextEnd = 0; 
-  // Add memory segments for each section header 
+  uint64_t StaticDataEnd = 0;
+  uint64_t BSSEnd = 0;
+  uint64_t DataEnd = 0;
+  uint64_t TextEnd = 0;
+  // Add memory segments for each section header
   // - This should automatically handle overlap and not add segments
   //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
@@ -430,6 +430,50 @@ std::string RevLoader::GetArgv(unsigned entry){
 }
 
 bool RevLoader::LoadProgramArgs(){
+  // -------------- BEGIN MEMORY LAYOUT NOTES
+  // At this point in the code, the loader has initialized .text, .bss, .sbss, etc
+  // We seek to utilize the argument array information that is passed in
+  // from the user (see parameter="args") in order to initialize the arguments to 'main'
+  // For example, people often implement:
+  //        int main( int argc, char **argv)
+  //
+  // This function builds the necessary information for the input arguments
+  // and writes this information to memory
+  //
+  // There are two things we know:
+  // 1) StackTop is the current top of the stack initialized by the loader (not RevMem)
+  // 2) MemTop is the theoretical "top" of memory (eg, the highest possible virtual address) set by RevMem
+  //
+  // These data elements are written to the highest 1024 bytes of memory, or:
+  // [MemTop] --> [Memtop-1024]
+  //
+  // This is addressable memory, but exists BEYOND the top of the standard stack
+  // The data is written in two parts.  First, we write the ARGV strings (null terminated) 
+  // in reverse order into the most significant addresses as follows:
+  //
+  // [MemTop]
+  //    ARGV[ARGC-1]
+  //    ARGV[ARGC-2]
+  //    ....
+  //    ARGV[0] (also known as the executable name)
+  //
+  // Note that the addresses are written contiguously
+  //
+  // Next, we setup the prologue header just above the base stack pointer
+  // that contains the layout of this array.  This includes our ARGC value
+  // We start this block of memory at SP+48 bytes as follows:
+  //
+  // [SP+48] : ARGC
+  // [SP+52] : POINTER TO A MEMORY LOCATION THAT CONTAINS THE BASE ADDRESS OF *ARGV[0]
+  // [SP+60] : POINTER TO ARGV[0]
+  // [SP+68] : POINTER TO ARGV[1]
+  // [SP+72] : ...
+  //
+  // Finally, when the processor comes out of Reset() (see RevProc.cc), we initialize
+  // the x10 register to the value of ARGC and the x11 register to the base pointer to ARGV
+  // -------------- END MEMORY LAYOUT NOTES
+
+
   // argv[0] = program name
   argv.push_back(exe);
 
@@ -441,24 +485,42 @@ bool RevLoader::LoadProgramArgs(){
     return false;
   }
 
-  // load the program args into memory
-  uint64_t sp = 0x00ull;
-  for( unsigned i=0; i<argv.size(); i++ ){
-    output->verbose(CALL_INFO,6,0,
+  uint64_t OldStackTop = mem->GetMemTop();
+  uint64_t ArgArray = mem->GetStackTop()+48;
+
+  // setup the argc argument values
+  uint32_t Argc = (uint32_t)(argv.size());
+  WriteCacheLine(ArgArray, 4, (void *)(&Argc));
+  ArgArray += 4;
+
+  // write the argument values
+  for( int i=(argv.size()-1); i >= 0; i-- ){
+    output->verbose(CALL_INFO, 6, 0,
                     "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
-    sp = mem->GetStackTop();
+
+    // retrieve the current stack pointer
     char tmpc[argv[i].size() + 1];
     argv[i].copy(tmpc,argv[i].size()+1);
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
-    // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
-    sp -= (uint64_t)(len);
-    // Align stack pointer on a 16-byte boundary per the RISC-V ABI
-    sp &= ~0xF;
-    // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
-    mem->SetStackTop(sp);
-    //mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));
-    WriteCacheLine(mem->GetStackTop(),len,(void *)(&tmpc));
+
+    OldStackTop -= len;
+
+    WriteCacheLine(OldStackTop, len,(void *)(&tmpc));
+  }
+
+  // now reverse engineer the address alignments
+  // -- this is the address of the argv pointers (address + 8) in the stack
+  // -- Note: this is NOT the actual addresses of the argv[n]'s
+  uint64_t ArgBase = ArgArray+8;
+  WriteCacheLine(ArgArray, 8, (void *)(&ArgBase));
+  ArgArray += 8;
+
+  // -- these are the addresses of each argv entry
+  for( unsigned i=0; i<argv.size(); i++ ){
+    WriteCacheLine(ArgArray, 8, (void *)(&OldStackTop));
+    OldStackTop += (argv[i].size()+1);
+    ArgArray += 8;
   }
 
   return true;

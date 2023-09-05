@@ -71,12 +71,13 @@ namespace SST {
           uint64_t getBaseAddr() const { return BaseAddr; }
           uint64_t getSize() const { return Size; }
 
-          void setBaseAddr(uint64_t baseAddr) { 
+          void setBaseAddr(uint64_t baseAddr) {
             BaseAddr = baseAddr;
             if( Size ){
               TopAddr = Size + BaseAddr;
             }
           }
+
           void setSize(uint64_t size) { Size = size; TopAddr = BaseAddr + size; }
 
           /// MemSegment: Check if vAddr is included in this segment
@@ -98,10 +99,12 @@ namespace SST {
       friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
         std::string State = "| Free |";
         if( !obj.IsFree ){
-          State = "| Allocated | "; 
+          State = "| Allocated | ";
         }
         std::cout << "---------------------------------------------------------------" << std::endl;
-        return os << State << " | 0x" << std::hex << obj.getBaseAddr() << " | 0x" << std::hex << obj.getTopAddr() << " | Size = " << std::dec << obj.getSize();
+        return os << State << " | 0x" << std::hex << obj.getBaseAddr()
+                  << " | 0x" << std::hex << obj.getTopAddr()
+                  << " | Size = " << std::dec << obj.getSize();
       }
 
       private:
@@ -111,7 +114,7 @@ namespace SST {
           bool IsFree = false;
           // Potentially add a pointer to the previous segment and next segment
           // but this may not be needed if we have the vector that is allocated sequentially
-          // and when a segment is freed it's not removed, its freeness is 
+          // and when a segment is freed it's not removed, its freeness is
       };
 
       /// RevMem: determine if there are any outstanding requests
@@ -128,7 +131,10 @@ namespace SST {
 
       /// RevMem: set the stack_top address
       void SetStackTop(uint64_t Addr) { stacktop = Addr; }
- 
+
+      /// RevMem: retrieve the address of the top of memory (not stack)
+      uint64_t GetMemTop() { return (_REVMEM_BASE_ + memSize); }
+
       /// RevMem: get the stack_top address
       uint64_t GetStackBottom() { return stacktop - _STACK_SIZE_; }
 
@@ -278,9 +284,9 @@ namespace SST {
 
       /// RevMem: Get memSize value set in .py file
       const uint64_t GetMemSize(){ return memSize; }
-  
+
       ///< RevMem: default memory size allocated to new threads (Unimplemented)
-      std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
+      std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; }
 
       /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
       uint64_t AddMemSeg(const uint64_t SegSize);
@@ -299,9 +305,9 @@ namespace SST {
 
       /// RevMem: Shrinks segment (Only moves top addr & marks upper part as free)
       uint64_t ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize);
-      
+
       ///< RevMem: default memory size allocated to new threads
-      uint64_t DefaultThreadMemSize = 4*1024*1024;    
+      uint64_t DefaultThreadMemSize = 4*1024*1024;
 
       void InitHeap(const uint64_t& EndOfStaticData);
       void SetHeapStart(uint64_t HeapStart){ heapstart = HeapStart; }
