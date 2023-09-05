@@ -9,12 +9,44 @@
 //
 
 #include "../include/RevMemCtrl.h"
+#include "../include/RevInstTable.h"
 
 using namespace SST;
 using namespace SST::RevCPU;
 using namespace SST::Interfaces;
 
 #define IS_ATOMIC 0x3FE00000
+
+// RV{32,64} Register Operation Macros
+                    //(r) = ((r) & (~r));
+#define SEXT(r,x,b) do {\
+                    (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register
+#define ZEXT(r,x,b) do {\
+                    (r) = (x) & (((1UL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register
+
+#define SEXTI(r,b)  do {\
+                    (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register inline
+#define ZEXTI(r,b)  do {\
+                    (r) = (r) & (((1UL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register inline
+
+#define SEXT64(r,x,b) do {\
+                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register
+#define ZEXT64(r,x,b) do {\
+                    (r) = (x) & (((1ULL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register
+
+#define SEXTI64(r,b)  do {\
+                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
+                    }while(0)                // Sign extend the target register inline
+#define ZEXTI64(r,b)  do {\
+                    (r) = (r) & (((1ULL) << (b)) - 1);\
+                    }while(0)                // Zero extend the target register inline
+
 
 // ---------------------------------------------------------------
 // RevMemOp
@@ -141,7 +173,7 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
 }
 
 RevBasicMemCtrl::~RevBasicMemCtrl(){
-  for( unsigned i=0; i<rqstQ.size(); i++ ){
+  for( size_t i=0; i<rqstQ.size(); i++ ){
     delete rqstQ[i];
   }
   rqstQ.clear();
@@ -1219,17 +1251,20 @@ void RevBasicMemCtrl::handleFlagResp(RevMemOp *op){
    StandardMem::Request::flags_t flags = op->getFlags();
 
    if( flags & uint32_t(RevCPU::RevFlag::F_SEXT32) ){
-     uint32_t *target = (uint32_t *)(op->getTarget());
-     SEXTI(*target, 32);
+     uint32_t *target = static_cast<uint32_t*>(op->getTarget());
+     SEXTI(*target,32);
    }else if( flags & uint32_t(RevCPU::RevFlag::F_SEXT64) ){
-     uint64_t *target = (uint64_t *)(op->getTarget());
-     SEXTI(*target, 64);
+     uint64_t *target = static_cast<uint64_t*>(op->getTarget());
+     SEXTI(*target,64);
    }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT32) ){
-     uint32_t *target = (uint32_t *)(op->getTarget());
-     ZEXTI(*target, 32);
+     uint32_t *target = static_cast<uint32_t*>(op->getTarget());
+     ZEXTI(*target,32);
    }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT64) ){
-     uint64_t *target = (uint64_t *)(op->getTarget());
-     ZEXTI64(*target, 63);
+     uint64_t *target = static_cast<uint64_t*>(op->getTarget());
+     ZEXTI64(*target,63);
+   }else if( flags & uint32_t(RevCPU::RevFlag::F_BOXNAN) ){
+     double *target = static_cast<double*>(op->getTarget());
+     BoxNaN(target, target);
    }
 }
 

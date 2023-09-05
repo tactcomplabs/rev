@@ -43,7 +43,7 @@
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
-#define REVMEM_FLAGS(x) (StandardMem::Request::flags_t(x))
+#define REVMEM_FLAGS(x) (static_cast<StandardMem::Request::flags_t>(x))
 
 #define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
 

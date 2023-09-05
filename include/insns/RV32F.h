@@ -49,15 +49,7 @@ namespace SST{
       }
 
       // Standard instructions
-      static bool flw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        float fp32;
-        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &fp32,
-                   Inst.hazard, REVMEM_FLAGS(0));
-        R->SetFP32(F, Inst.rd, fp32);
-        R->AdvancePC(F, Inst.instSize);
-        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-        return true;
-      }
+      static constexpr auto& flw = fload<float>;
 
       static bool fsw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         M->WriteFloat(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),

@@ -80,15 +80,23 @@
 
 //< Zero-extend value of bits size
 template<typename T>
-constexpr std::make_unsigned_t<T> ZeroExt(T val, size_t bits){
-  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << (bits-1));
+constexpr auto ZeroExt(T val, size_t bits){
+  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << bits);
 }
 
 //< Sign-extend value of bits size
 template<typename T>
-constexpr std::make_signed_t<T> SignExt(T val, size_t bits){
+constexpr auto SignExt(T val, size_t bits){
   auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
   return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
+}
+
+/// BoxNaN: Store a boxed float inside a double
+inline void BoxNaN(double* dest, void* value){
+  uint32_t i32;
+  memcpy(&i32, value, sizeof(float));       // The FP32 value
+  uint64_t i64 = uint64_t{i32} | ~uint64_t{0} << 32; // Boxed NaN value
+  memcpy(dest, &i64, sizeof(double));       // Store in FP64 register
 }
 
 namespace SST{
@@ -199,15 +207,11 @@ namespace SST{
       void SetFP32(const RevFeature* F, size_t rd, float value)
       {
         if( F->HasD() ){
-          uint32_t i32;
-          memcpy(&i32, &value, sizeof(i32));                 // The FP32 value
-          uint64_t i64 = uint64_t{i32} | ~uint64_t{0} << 32; // Boxed NaN value
-          memcpy(&DPF[rd], &i64, sizeof(DPF[rd]));           // Store in FP64 register
+          BoxNaN(&DPF[rd], &value);  // Store NaN-boxed in FP64 register
         } else {
-          SPF[rd] = value;                                   // Store in FP32 register
+          SPF[rd] = value;           // Store in FP32 register
         }
       }
-
     };                        ///< RevProc: register file construct
 
 
@@ -470,6 +474,80 @@ namespace SST{
       default:
         return 0;
       }
+    }
+
+    /// Templated load instruction.
+    template<typename T>
+    static bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      if( sizeof(T) < sizeof(uint64_t) && F->IsRV32() ){
+        static constexpr auto flags = sizeof(T) < sizeof(uint32_t) ?
+          REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
+                       RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
+
+        M->ReadVal(F->GetHart(),
+                   R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                   reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
+                   Inst.hazard,
+                   flags);
+
+        if(Inst.rd){
+          if constexpr(std::is_signed_v<T>){
+            R->RV32[Inst.rd] = SignExt(R->RV32[Inst.rd], sizeof(T) * 8);
+          }else{
+            R->RV32[Inst.rd] = ZeroExt(R->RV32[Inst.rd], sizeof(T) * 8);
+          }
+        }
+      }else{
+        static constexpr auto flags = sizeof(T) < sizeof(uint64_t) ?
+          REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
+                       RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
+
+        M->ReadVal(F->GetHart(),
+                   R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                   reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
+                   Inst.hazard,
+                   flags);
+
+        if(Inst.rd){
+          if constexpr(std::is_signed_v<T>){
+            R->RV64[Inst.rd] = SignExt(R->RV64[Inst.rd], sizeof(T) * 8);
+          }else{
+            R->RV64[Inst.rd] = ZeroExt(R->RV64[Inst.rd], sizeof(T) * 8);
+          }
+        }
+      }
+      R->AdvancePC(F, Inst.instSize);
+      // update the cost
+      R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
+      return true;
+    }
+
+    /// Templated floating-point load instruction.
+    template<typename T>
+    static bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      if(std::is_same_v<T, double> || F->HasD()){
+        static constexpr auto flags = sizeof(T) < sizeof(double) ?
+          REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
+
+        M->ReadVal(F->GetHart(),
+                   R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                   reinterpret_cast<T*>(&R->DPF[Inst.rd]),
+                   Inst.hazard,
+                   flags);
+
+        if constexpr(sizeof(T) < sizeof(double)){
+          BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
+        }
+      }else{
+        M->ReadVal(F->GetHart(),
+                   R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                   &R->SPF[Inst.rd],
+                   Inst.hazard,
+                   REVMEM_FLAGS(0));
+      }
+      R->AdvancePC(F, Inst.instSize);
+      R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
+      return true;
     }
   } // namespace RevCPU
 } // namespace SST

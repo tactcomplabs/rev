@@ -79,27 +79,8 @@ namespace SST{
       }
 
       // Standard instructions
-      static bool lwu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
-        uint32_t val;
-        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-                   &val, Inst.hazard, REVMEM_FLAGS(RevCPU::RevFlag::F_ZEXT64));
-        R->SetX(F, Inst.rd, uint64_t{val});
-
-        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool ld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        uint64_t val;
-        M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-                   &val, Inst.hazard, REVMEM_FLAGS(0));
-        R->SetX(F, Inst.rd, val);
-
-        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& lwu = load<uint32_t>;
+      static constexpr auto& ld  = load<int64_t>;
 
       static bool sd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         M->WriteU64(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),

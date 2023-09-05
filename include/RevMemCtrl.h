@@ -31,36 +31,6 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 
-// RV{32, 64} Register Operation Macros
-                    //(r) = ((r) & (~r));
-#define SEXT(r, x, b) do {\
-                    (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT(r, x, b) do {\
-                    (r) = (x) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
-
-#define SEXTI(r, b)  do {\
-                    (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI(r, b)  do {\
-                    (r) = (r) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
-
-#define SEXT64(r, x, b) do {\
-                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT64(r, x, b) do {\
-                    (r) = (x) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
-
-#define SEXTI64(r, b)  do {\
-                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI64(r, b)  do {\
-                    (r) = (r) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
-
 namespace SST {
   namespace RevCPU {
     using namespace SST::Interfaces;
@@ -70,6 +40,7 @@ namespace SST {
     // ----------------------------------------
     enum class RevFlag : uint32_t {
       F_NONCACHEABLE = 1u<<1, /// non cacheable
+      F_BOXNAN = 1u << 16,    /// NaN-box the 32-bit float
       F_SEXT32 = 1u << 17,    /// sign extend the 32bit result
       F_SEXT64 = 1u << 18,    /// sign extend the 64bit result
       F_ZEXT32 = 1u << 19,    /// zero extend the 32bit result
