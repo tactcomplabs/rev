@@ -214,6 +214,7 @@ namespace SST{
         ERROR = 255
      }ECALL_status_t;
 
+     // TODO: We may need one of these per HART
      char* ECALL_buf;
      std::string ECALL_string;
      uint32_t ECALL_bytesRead;

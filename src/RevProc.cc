@@ -2572,140 +2572,153 @@ RevProc::ECALL_status_t RevProc::ECALL_brk(RevInst& inst){
 /* ======================================================= */
 RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
   uint64_t CloneArgsAddr = RegFile->RV64[10];
+  RevProc::ECALL_status_t rtval = RevProc::ECALL_status_t::SUCCESS;
   // size_t SizeOfCloneArgs = RegFile()->RV64[11];
 
-  /* Fetch the clone_args */
-  struct clone_args args;
-  mem->ReadMem(CloneArgsAddr, sizeof(uint64_t), &args);
+ if(0 == ECALL_bytesRead){
+    // First time through the function... 
+    /* Fetch the clone_args */
+    // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
+                                // using the 1st uint64, so that's all we're going to fetch
+    uint64_t* args = reinterpret_cast<uint64_t*>(ECALL_buf);
+    mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
+    ECALL_bytesRead = 8;
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+ }else{
+    /*
+    * Parse clone flags
+    * NOTE: if no flags are set, we get fork() like behavior
+    */
+   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL_buf);
+    for( uint64_t bit=1; bit != 0; bit <<= 1 ){
+      switch (*args & bit) {
+        case CLONE_VM:
+          // std::cout << "CLONE_VM is true" << std::endl;
+          break;
+        case CLONE_FS: /* Set if fs info shared between processes */
+          // std::cout << "CLONE_FS is true" << std::endl;
+          break;
+        case CLONE_FILES: /* Set if open files shared between processes */
+          // std::cout << "CLONE_FILES is true" << std::endl;
+          break;
+        case CLONE_SIGHAND: /* Set if signal handlers shared */
+          // std::cout << "CLONE_SIGHAND is true" << std::endl;
+          break;
+        case CLONE_PIDFD: /* Set if a pidfd should be placed in the parent */
+          // std::cout << "CLONE_PIDFD is true" << std::endl;
+          break;
+        case CLONE_PTRACE: /* Set if tracing continues on the child */
+          // std::cout << "CLONE_PTRACE is true" << std::endl;
+          break;
+        case CLONE_VFORK: /* Set if the parent wants the child to wake it up on mm_release */
+          // std::cout << "CLONE_VFORK is true" << std::endl;
+          break;
+        case CLONE_PARENT: /* Set if we want to have the same parent as the cloner */
+          // std::cout << "CLONE_PARENT is true" << std::endl;
+          break;
+        case CLONE_THREAD: /* Set to add to same thread group */
+          // std::cout << "CLONE_THREAD is true" << std::endl;
+          break;
+        case CLONE_NEWNS: /* Set to create new namespace */
+          // std::cout << "CLONE_NEWNS is true" << std::endl;
+          break;
+        case CLONE_SYSVSEM: /* Set to shared SVID SEM_UNDO semantics */
+          // std::cout << "CLONE_SYSVSEM is true" << std::endl;
+          break;
+        case CLONE_SETTLS: /* Set TLS info */
+          // std::cout << "CLONE_SETTLS is true" << std::endl;
+          break;
+        case CLONE_PARENT_SETTID: /* Store TID in userlevel buffer before MM copy */
+          // std::cout << "CLONE_PARENT_SETTID is true" << std::endl;
+          break;
+        case CLONE_CHILD_CLEARTID: /* Register exit futex and memory location to clear */
+          // std::cout << "CLONE_CHILD_CLEARTID is true" << std::endl;
+          break;
+        case CLONE_DETACHED: /* Create clone detached */
+          // std::cout << "CLONE_DETACHED is true" << std::endl;
+          break;
+        case CLONE_UNTRACED: /* Set if the tracing process can't force CLONE_PTRACE on this clone */
+          // std::cout << "CLONE_UNTRACED is true" << std::endl;
+          break;
+        case CLONE_CHILD_SETTID: /* New cgroup namespace */
+          // std::cout << "CLONE_CHILD_SETTID is true" << std::endl;
+          break;
+        case CLONE_NEWCGROUP: /* New cgroup namespace */
+          // std::cout << "CLONE_NEWCGROUP is true" << std::endl;
+          break;
+        case CLONE_NEWUTS: /* New utsname group */
+          // std::cout << "CLONE_NEWUTS is true" << std::endl;
+          break;
+        case CLONE_NEWIPC: /* New ipcs */
+          // std::cout << "CLONE_NEWIPC is true" << std::endl;
+          break;
+        case CLONE_NEWUSER: /* New user namespace */
+          // std::cout << "CLONE_NEWUSER is true" << std::endl;
+          break;
+        case CLONE_NEWPID: /* New pid namespace */
+          // std::cout << "CLONE_NEWPID is true" << std::endl;
+          break;
+        case CLONE_NEWNET: /* New network namespace */
+          // std::cout << "CLONE_NEWNET is true" << std::endl;
+          break;
+        case CLONE_IO: /* Clone I/O Context */
+          // std::cout << "CLONE_IO is true" << std::endl;
+          break;
+        default:
+          break;
+      } // switch
+    } // for
 
-  /*
-   * Parse clone flags
-   * NOTE: if no flags are set, we get fork() like behavior
-   */
-  for( uint64_t bit=1; bit != 0; bit <<= 1 ){
-    switch (args.flags & bit) {
-      case CLONE_VM:
-        // std::cout << "CLONE_VM is true" << std::endl;
-        break;
-      case CLONE_FS: /* Set if fs info shared between processes */
-        // std::cout << "CLONE_FS is true" << std::endl;
-        break;
-      case CLONE_FILES: /* Set if open files shared between processes */
-        // std::cout << "CLONE_FILES is true" << std::endl;
-        break;
-      case CLONE_SIGHAND: /* Set if signal handlers shared */
-        // std::cout << "CLONE_SIGHAND is true" << std::endl;
-        break;
-      case CLONE_PIDFD: /* Set if a pidfd should be placed in the parent */
-        // std::cout << "CLONE_PIDFD is true" << std::endl;
-        break;
-      case CLONE_PTRACE: /* Set if tracing continues on the child */
-        // std::cout << "CLONE_PTRACE is true" << std::endl;
-        break;
-      case CLONE_VFORK: /* Set if the parent wants the child to wake it up on mm_release */
-        // std::cout << "CLONE_VFORK is true" << std::endl;
-        break;
-      case CLONE_PARENT: /* Set if we want to have the same parent as the cloner */
-        // std::cout << "CLONE_PARENT is true" << std::endl;
-        break;
-      case CLONE_THREAD: /* Set to add to same thread group */
-        // std::cout << "CLONE_THREAD is true" << std::endl;
-        break;
-      case CLONE_NEWNS: /* Set to create new namespace */
-        // std::cout << "CLONE_NEWNS is true" << std::endl;
-        break;
-      case CLONE_SYSVSEM: /* Set to shared SVID SEM_UNDO semantics */
-        // std::cout << "CLONE_SYSVSEM is true" << std::endl;
-        break;
-      case CLONE_SETTLS: /* Set TLS info */
-        // std::cout << "CLONE_SETTLS is true" << std::endl;
-        break;
-      case CLONE_PARENT_SETTID: /* Store TID in userlevel buffer before MM copy */
-        // std::cout << "CLONE_PARENT_SETTID is true" << std::endl;
-        break;
-      case CLONE_CHILD_CLEARTID: /* Register exit futex and memory location to clear */
-        // std::cout << "CLONE_CHILD_CLEARTID is true" << std::endl;
-        break;
-      case CLONE_DETACHED: /* Create clone detached */
-        // std::cout << "CLONE_DETACHED is true" << std::endl;
-        break;
-      case CLONE_UNTRACED: /* Set if the tracing process can't force CLONE_PTRACE on this clone */
-        // std::cout << "CLONE_UNTRACED is true" << std::endl;
-        break;
-      case CLONE_CHILD_SETTID: /* New cgroup namespace */
-        // std::cout << "CLONE_CHILD_SETTID is true" << std::endl;
-        break;
-      case CLONE_NEWCGROUP: /* New cgroup namespace */
-        // std::cout << "CLONE_NEWCGROUP is true" << std::endl;
-        break;
-      case CLONE_NEWUTS: /* New utsname group */
-        // std::cout << "CLONE_NEWUTS is true" << std::endl;
-        break;
-      case CLONE_NEWIPC: /* New ipcs */
-        // std::cout << "CLONE_NEWIPC is true" << std::endl;
-        break;
-      case CLONE_NEWUSER: /* New user namespace */
-        // std::cout << "CLONE_NEWUSER is true" << std::endl;
-        break;
-      case CLONE_NEWPID: /* New pid namespace */
-        // std::cout << "CLONE_NEWPID is true" << std::endl;
-        break;
-      case CLONE_NEWNET: /* New network namespace */
-        // std::cout << "CLONE_NEWNET is true" << std::endl;
-        break;
-      case CLONE_IO: /* Clone I/O Context */
-        // std::cout << "CLONE_IO is true" << std::endl;
-        break;
-      default:
-        break;
-    }
-    return RevProc::ECALL_status_t::SUCCESS;
-  }
+    /* Get the parent ctx (Current active, executing PID) */
+    std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
 
-  /* Get the parent ctx (Current active, executing PID) */
-  std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
+    /* Create the child ctx */
+    uint32_t ChildPID = CreateChildCtx();
+    std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
 
-  /* Create the child ctx */
-  uint32_t ChildPID = CreateChildCtx();
-  std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
+    /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
 
-  /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
+    /*
+    * ===========================================================================================
+    * Register File
+    * ===========================================================================================
+    * We need to duplicate the parent's RegFile to to the Childs
+    * - NOTE: when we return from this function, the return value will
+    *         be automatically stored in the Proc.RegFile[HartToExec]'s a0
+    *         register. In a traditional fork code this looks like:
+    *
+    *         pid_t pid = fork()
+    *         if pid < 0: // Error
+    *         else if pid = 0: // New Child Process
+    *         else: // Parent Process
+    *
+    *         In this case, the value of pid is the value thats returned to a0
+    *         It follows that
+    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
+    *         - The Parent's a0 register MUST have its PID in it
+    * ===========================================================================================
+    */
 
-  /*
-   * ===========================================================================================
-   * Register File
-   * ===========================================================================================
-   * We need to duplicate the parent's RegFile to to the Childs
-   * - NOTE: when we return from this function, the return value will
-   *         be automatically stored in the Proc.RegFile[HartToExec]'s a0
-   *         register. In a traditional fork code this looks like:
-   *
-   *         pid_t pid = fork()
-   *         if pid < 0: // Error
-   *         else if pid = 0: // New Child Process
-   *         else: // Parent Process
-   *
-   *         In this case, the value of pid is the value thats returned to a0
-   *         It follows that
-   *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
-   *         - The Parent's a0 register MUST have its PID in it
-   * ===========================================================================================
-   */
+    /*
+    Alert the Proc there needs to be a Ctx switch
+    Pass the PID that will be switched to once the 
+    current pipeline is executed until completion
+    */
+    CtxSwitchAlert(ChildPID);
 
-  /*
-   Alert the Proc there needs to be a Ctx switch
-   Pass the PID that will be switched to once the 
-   current pipeline is executed until completion
-  */
-  CtxSwitchAlert(ChildPID);
+    /* Parent's return value is the child's PID */
+    RegFile->RV64[10] = ChildPID;
 
-  /* Parent's return value is the child's PID */
-  RegFile->RV64[10] = ChildPID;
+    /* Child's return value is 0 */
+    ChildCtx->GetRegFile()->RV64[10] = 0;
 
-  /* Child's return value is 0 */
-  ChildCtx->GetRegFile()->RV64[10] = 0;
+    /*clean up ecall state*/
+    rtval = RevProc::ECALL_status_t::SUCCESS;
+    ECALL_bytesRead = 0;
+    ECALL_buf[0] = '\0';
 
-  return RevProc::ECALL_status_t::SUCCESS;
+  } //else
+  return rtval;
 }
 
 
