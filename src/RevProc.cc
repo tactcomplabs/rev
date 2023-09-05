@@ -2743,11 +2743,13 @@ RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
     RegFile->RV64[10] = rc;
     ECALL_string.clear();   //reset the ECALL buffers
     ECALL_buf[0] = '\0';
+    DependencyClear(HartToExec, 10, false);
     rtval = RevProc::ECALL_status_t::SUCCESS;
   }else{
     //first time through the ECALL
     mem->ReadVal<char>(HartToExec, RegFile->RV64[10], &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
     rtval = RevProc::ECALL_status_t::CONTINUE;
+    DependencySet(HartToExec, 10, false);
   }
 
   return rtval;
@@ -2866,6 +2868,7 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     ECALL_buf[0] = '\0';
     ECALL_string.clear();
     rtv = RevProc::ECALL_status_t::SUCCESS;
+    DependencyClear(HartToExec, 10, false);
 
   }else {
     if(ECALL_bytesRead > 0){
@@ -2893,6 +2896,7 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
      ECALL_bytesRead += 8;
     }
     rtv = RevProc::ECALL_status_t::CONTINUE;
+    DependencySet(HartToExec, 10, false);
   }
   return rtv;
 }
