@@ -78,36 +78,18 @@
 #define FRM_RUP   0b011                     // Rounding mode: Round Up (towards +INF)
 #define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
 
-// RV{32, 64} Register Operation Macros
-// TODO: These should be replaced with simpler inline functions or casts
+//< Zero-extend value of bits size
+template<typename T>
+constexpr std::make_unsigned_t<T> ZeroExt(T val, size_t bits){
+  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << (bits-1));
+}
 
-#define SEXT(r, x, b) do {\
-                    (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT(r, x, b) do {\
-                    (r) = (x) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
-
-#define SEXTI(r, b)  do {\
-                    (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI(r, b)  do {\
-                    (r) = (r) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
-
-#define SEXT64(r, x, b) do {\
-                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT64(r, x, b) do {\
-                    (r) = (x) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
-
-#define SEXTI64(r, b)  do {\
-                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI64(r, b)  do {\
-                    (r) = (r) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
+//< Sign-extend value of bits size
+template<typename T>
+constexpr std::make_signed_t<T> SignExt(T val, size_t bits){
+  auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
+  return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
+}
 
 namespace SST{
   namespace RevCPU {
@@ -301,9 +283,7 @@ namespace SST{
 
       ///< RevInst: Sign-extended immediate value
       constexpr int32_t ImmSignExt(size_t bits) const {
-        auto tmp = imm & uint32_t{1} << (bits-1) ? imm | ~uint32_t{0} << (bits-1) : imm;
-        // This needs to be signed so that it sign-extends when mixed with uint64_t
-        return static_cast<int32_t>(tmp);
+        return SignExt(imm, bits);
       }
     };
 
