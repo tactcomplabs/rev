@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=amoadd_cxx_memh
-CC=riscv64-unknown-elf-g++
+CC=${RVCC}
 #ARCH=rv64g
 ARCH=rv64imafd
 
