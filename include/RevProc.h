@@ -52,7 +52,7 @@ namespace SST{
     public:
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
-               SST::Output *Output, RevTracer *Tracer );
+               SST::Output *Output );
 
       /// RevProc: standard desctructor
       ~RevProc();
@@ -83,6 +83,9 @@ namespace SST{
 
       /// RevProc: Set the PAN execution context
       void SetExecCtx(PanExec *P) { PExec = P; }
+
+      /// RevProc: Set an optional tracer
+      void SetTracer(RevTracer *T) { tracer = T; }
 
       /// RevProc: Retrieve a random memory cost value
       unsigned RandCost() { return mem->RandCost(feature->GetMinCost(),feature->GetMaxCost()); }

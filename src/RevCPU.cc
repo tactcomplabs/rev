@@ -231,20 +231,23 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   // Create the processor objects
   Procs.reserve(Procs.size() + numCores);
   for( unsigned i=0; i<numCores; i++ ){
-    // Each core gets its very own tracer
-    RevTracer* trc = nullptr;
-    if (output.getVerboseLevel()>=5) { 
-      trc = new RevTracer(output.getVerboseLevel(), getName());
+    Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output ) );
+  }
+
+  // Assign tracer to each core
+  if (output.getVerboseLevel()>=5) {
+    for( unsigned i=0; i<numCores; i++ ){
+      // Each core gets its very own tracer
+      RevTracer* trc = new RevTracer(output.getVerboseLevel(), getName());
       std::string diasmType;
       Opts->GetMachineModel(0,diasmType); 
       trc->SetDisassembler(diasmType);
       trc->SetTraceSymbols(Loader->GetTraceSymbols());
       trc->Reset();
       trc->SetOutputEnable(true);
+      Procs[i]->SetTracer(trc);
     }
-    Procs.push_back( new RevProc( i, Opts, Mem, Loader, &output, trc ) );
   }
-
 
   // setup the per-proc statistics
   TotalCycles.reserve(TotalCycles.size() + numCores);

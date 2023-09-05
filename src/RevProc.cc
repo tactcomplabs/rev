@@ -17,13 +17,12 @@ RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
                   RevLoader *Loader,
-                  SST::Output *Output,
-                  RevTracer *Tracer )
+                  SST::Output *Output)
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
     opts(Opts), mem(Mem), loader(Loader), output(Output),
-    tracer(Tracer), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+    tracer(nullptr), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
