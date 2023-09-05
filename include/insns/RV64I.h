@@ -93,8 +93,9 @@ namespace SST{
         TRC64RD4MEM2(rs1,rd);
         //ZEXT(R->RV64[Inst.rd],M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12)))),64);
         uint32_t val = 0;
-        M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+        M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &val,
+                    Inst.hazard,
                     REVMEM_FLAGS(RevCPU::RevFlag::F_ZEXT64));
         R->RV64[Inst.rd] = 0x00ULL;
         R->RV64[Inst.rd] |= (uint64_t)(val);
@@ -108,8 +109,9 @@ namespace SST{
       static bool ld(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         TRC64RD4MEM2(rs1,rd);
         //R->RV64[Inst.rd] = M->ReadU64( (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))));
-        M->ReadVal((uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
+        M->ReadVal(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+(int32_t)(td_u32(Inst.imm,12))),
                     &R->RV64[Inst.rd],
+                    Inst.hazard,
                     REVMEM_FLAGS(0x00));
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         R->RV64_PC += Inst.instSize;
@@ -120,7 +122,7 @@ namespace SST{
       static bool sd(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         TRC64RD4MEM2(rs1,rs2);
         int64_t tmp = td_u64(Inst.imm,12);
-        M->WriteU64((uint64_t)(R->RV64[Inst.rs1]+tmp), (uint64_t)(R->RV64[Inst.rs2]));
+        M->WriteU64(F->GetHart(), (uint64_t)(R->RV64[Inst.rs1]+tmp), (uint64_t)(R->RV64[Inst.rs2]));
         R->RV64_PC += Inst.instSize;
         return true;
       }

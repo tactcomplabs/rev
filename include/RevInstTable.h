@@ -200,34 +200,6 @@ static inline uint64_t dt_u64(int64_t binary, unsigned bits){
   return tmp;
 }
 
-#if 0
-static uint32_t twos_compl(uint32_t binary, int bits){
-  uint32_t tmp = binary;
-  uint32_t i = 0;
-  //std::cout << "Binary =  " << std::bitset<32>(tmp) << std::endl;
-  if( (binary & (1<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<32; i++ ){
-      tmp |= (1<<i);
-    }
-
-    // invert all the bits
-    tmp = ~tmp;
-    //std::cout << "Flipped = " << std::bitset<32>(tmp) << std::endl;
-
-    // add 1
-    tmp += 1;
-    //std::cout << "Added =   " << std::bitset<32>(tmp) << std::endl;
-
-    // set the sign bit
-    //tmp |= (1<<31);
-    tmp = tmp*-1;
-    //std::cout << "Signed =  " << std::bitset<32>(tmp) << std::endl;
-  }
-  return tmp;
-}
-#endif
-
 namespace SST{
   namespace RevCPU {
 
@@ -350,6 +322,7 @@ namespace SST{
       bool compressed;      ///< RevInst: determines if the instruction is compressed
       uint32_t cost;        ///< RevInst: the cost to execute this instruction, in clock cycles
       unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
+      bool *hazard;         ///< RevInst: signals a load hazard
     }RevInst;
 
     /// RevInstEntry: Holds the compressed index to normal index mapping

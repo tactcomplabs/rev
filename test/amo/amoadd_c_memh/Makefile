@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: large_bss
+# makefile: amoadd_c
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,14 +12,14 @@
 
 .PHONY: src
 
-EXAMPLE=cache_test1
+EXAMPLE=amoadd_c_memh
 CC=${RVCC}
-ARCH=rv32i
-ABI=ilp32
+#ARCH=rv64g
+ARCH=rv64imafd
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

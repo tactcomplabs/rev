@@ -25,6 +25,7 @@ set(RevCPUSrcs
   diasm.cc
   isa_parser.cc
   regnames.cc
+  RevCoProc.cc
   )
 
 add_library(revcpu SHARED ${RevCPUSrcs})

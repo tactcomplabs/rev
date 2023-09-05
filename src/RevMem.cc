@@ -134,23 +134,115 @@ bool RevMem::StatusFuture(uint64_t Addr){
   return false;
 }
 
-bool RevMem::LR(unsigned Hart, uint64_t Addr){
-  std::pair<unsigned,uint64_t> Entry = std::make_pair(Hart,Addr);
-  LRSC.push_back(Entry);
+bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
+                    void *Target, uint8_t aq, uint8_t rl,
+                    bool *Hazard,
+                    StandardMem::Request::flags_t flags){
+  std::vector<std::tuple<unsigned,uint64_t,unsigned,uint64_t*>>::iterator it;
+
+  for( it = LRSC.begin(); it != LRSC.end(); ++it ){
+    if( (Hart == std::get<LRSC_HART>(*it)) &&
+        (Addr == std::get<LRSC_ADDR>(*it)) ){
+      // existing reservation; return w/ error
+      uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
+      Tmp[0] = 0x01ul;
+      return false;
+    }else if( (Hart != std::get<LRSC_HART>(*it)) &&
+              (Addr == std::get<LRSC_ADDR>(*it)) ){
+      // existing reservation; return w/ error
+      uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
+      Tmp[0] = 0x01ul;
+      return false;
+    }
+  }
+
+  // didn't find a colliding object; add it
+  LRSC.push_back(std::tuple<unsigned,uint64_t,
+                 unsigned,uint64_t*>(Hart,Addr,(unsigned)(aq|(rl<<1)),
+                                     reinterpret_cast<uint64_t *>(Target)));
+
+  // now handle the memory operation
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Target);
+
+  if( ctrl ){
+    *Hazard = true;
+    ctrl->sendREADLOCKRequest(Hart, Addr, (uint64_t)(BaseMem),
+                              Len, Target, Hazard, flags);
+  }else{
+    for( unsigned i=0; i<Len; i++ ){
+      DataMem[i] = BaseMem[i];
+    }
+    // clear the hazard
+    *Hazard = false;
+  }
+
   return true;
 }
 
-bool RevMem::SC(unsigned Hart, uint64_t Addr){
-  // search the LRSC vector for the entry pair
-  std::vector<std::pair<unsigned,uint64_t>>::iterator it;
+bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
+                    void *Data, void *Target, uint8_t aq, uint8_t rl,
+                    StandardMem::Request::flags_t flags){
+  std::vector<std::tuple<unsigned,uint64_t,unsigned,uint64_t*>>::iterator it;
 
   for( it = LRSC.begin(); it != LRSC.end(); ++it ){
-    if( (Hart == std::get<0>(*it)) &&
-        (Addr == std::get<1>(*it)) ){
+    if( (Hart == std::get<LRSC_HART>(*it)) &&
+        (Addr == std::get<LRSC_ADDR>(*it)) ){
+      // existing reservation; test to see if the value matches
+      uint64_t *TmpTarget = std::get<LRSC_VAL>(*it);
+      uint64_t *TmpData = reinterpret_cast<uint64_t *>(Data);
+
+      if( Len == 32 ){
+        uint32_t A = 0;
+        uint32_t B = 0;
+        for( unsigned i=0; i<Len; i++ ){
+          A |= ((uint32_t)(TmpTarget[i]) << i);
+          B |= ((uint32_t)(TmpData[i]) << i);
+        }
+        if( (A & B) == 0 ){
+          uint32_t *Tmp = (uint32_t *)(Target);
+          Tmp[0] = 0x1;
+          return false;
+        }
+      }else{
+        uint64_t A = 0;
+        uint64_t B = 0;
+        for( unsigned i=0; i<Len; i++ ){
+          A |= ((uint64_t)(TmpTarget[i]) << i);
+          B |= ((uint64_t)(TmpData[i]) << i);
+        }
+        if( (A & B) == 0 ){
+          uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
+          Tmp[0] = 0x1;
+          return false;
+        }
+      }
+
+      // everything has passed so far,
+      // write the value back to memory
+      WriteMem(Hart, Addr,Len,Data,flags);
+
+      // write zeros to target
+      for( unsigned i=0; i<Len; i++ ){
+        uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
+        Tmp[i] = 0x0;
+      }
+
+      // erase the entry
       LRSC.erase(it);
       return true;
     }
   }
+
+  // failed, write a nonzero value to target
+  uint32_t *Tmp = reinterpret_cast<uint32_t *>(Target);
+  Tmp[0] = 0x1;
 
   return false;
 }
@@ -260,7 +352,6 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   return physAddr;
 }
 
-
 bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   // std::cout << "Checking validity of vAddr = 0x" << std::hex << vAddr << std::endl;
   for(const auto& MemSeg : MemSegs ){
@@ -359,14 +450,138 @@ uint64_t RevMem::AllocMem(const uint64_t SegSize){
 }
 
 
-bool RevMem::FenceMem(){
+bool RevMem::FenceMem(unsigned Hart){
   if( ctrl ){
-    return ctrl->sendFENCE();
+    return ctrl->sendFENCE(Hart);
   }
   return true;  // base RevMem support does nothing here
 }
 
-bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data,
+bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
+                    void *Data, void *Target,
+                    bool *Hazard,
+                    StandardMem::Request::flags_t flags){
+#ifdef _REV_DEBUG_
+  std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
+#endif
+
+  uint64_t pageNum = Addr >> addrShift;
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  //check to see if we're about to walk off the page....
+  uint32_t adjPageNum = 0;
+  uint64_t adjPhysAddr = 0;
+  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  char *BaseMem = &physMem[physAddr];
+  char *DataMem = (char *)(Target);
+
+  // set the hazard
+  *Hazard = true;
+
+  if( ctrl ){
+    // sending to the RevMemCtrl
+    ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem),
+                              Len, reinterpret_cast<char *>(Data),
+                              Target, Hazard, flags);
+  }else{
+    // process the request locally
+    if( Len == 4 ){
+      // 32bit amo
+      int32_t *TmpTarget = reinterpret_cast<int32_t *>(Target);
+      uint32_t *TmpTargetU = reinterpret_cast<uint32_t *>(Target);
+      int32_t *TmpData = reinterpret_cast<int32_t *>(Data);
+      uint32_t *TmpDataU = reinterpret_cast<uint32_t *>(Data);
+
+      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget += *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget ^= *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget &= *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget |= *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget = std::min(*TmpTarget,*TmpData);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget = std::max(*TmpTarget,*TmpData);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
+        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
+        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget = *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }
+
+    }else{
+      // 64bit amo
+      int64_t *TmpTarget = reinterpret_cast<int64_t *>(Target);
+      uint64_t *TmpTargetU = reinterpret_cast<uint64_t *>(Target);
+      int64_t *TmpData = reinterpret_cast<int64_t *>(Data);
+      uint64_t *TmpDataU = reinterpret_cast<uint64_t *>(Data);
+
+      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget += *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget ^= *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget &= *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget |= *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget = std::min(*TmpTarget,*TmpData);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget = std::max(*TmpTarget,*TmpData);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
+        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
+        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
+        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
+      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
+        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
+        *TmpTarget = *TmpData;
+        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
+      }
+    }
+    // clear the hazard
+    *Hazard = false;
+  }
+
+  return true;
+}
+
+bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
                        StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -393,7 +608,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data,
     std::cout << "Warning: Writing off end of page... " << std::endl;
 #endif
     if( ctrl ){
-      ctrl->sendWRITERequest(Addr,
+      ctrl->sendWRITERequest(Hart, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -407,7 +622,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data,
     if( ctrl ){
       // write the memory using RevMemCtrl
       unsigned Cur = (Len-span);
-      ctrl->sendWRITERequest(Addr,
+      ctrl->sendWRITERequest(Hart, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              &(DataMem[Cur]),
@@ -423,7 +638,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data,
   }else{
     if( ctrl ){
       // write the memory using RevMemCtrl
-      ctrl->sendWRITERequest(Addr,
+      ctrl->sendWRITERequest(Hart, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -440,7 +655,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data,
 }
 
 
-bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
+bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -482,7 +697,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
     std::cout << "Warning: Writing off end of page... " << std::endl;
 #endif
     if( ctrl ){
-      ctrl->sendWRITERequest(Addr,
+      ctrl->sendWRITERequest(Hart, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -496,7 +711,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
     if( ctrl ){
       // write the memory using RevMemCtrl
       unsigned Cur = (Len-span);
-      ctrl->sendWRITERequest(Addr,
+      ctrl->sendWRITERequest(Hart, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              &(DataMem[Cur]),
@@ -518,7 +733,7 @@ bool RevMem::WriteMem( uint64_t Addr, size_t Len, void *Data ){
   }else{
     if( ctrl ){
       // write the memory using RevMemCtrl
-      ctrl->sendWRITERequest(Addr,
+      ctrl->sendWRITERequest(Hart, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -572,8 +787,8 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
   return true;
 }
 
-bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
-                     StandardMem::Request::flags_t flags){
+bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
+                     bool *Hazard, StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -586,12 +801,16 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
   char *DataMem = (char *)(Target);
+
+  // set the hazard
+  *Hazard = true;
+
   if((physAddr + Len) > endOfPage){
     uint32_t span = (physAddr + Len) - endOfPage;
     adjPageNum = ((Addr+Len)-span) >> addrShift;
     adjPhysAddr = CalcPhysAddr(adjPageNum, ((Addr+Len)-span));
     if( ctrl ){
-      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, Target, flags);
+      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, Hazard, flags);
     }else{
       for( unsigned i=0; i< (Len-span); i++ ){
         DataMem[i] = BaseMem[i];
@@ -600,25 +819,30 @@ bool RevMem::ReadMem(uint64_t Addr, size_t Len, void *Target,
     BaseMem = &physMem[adjPhysAddr];
     if( ctrl ){
       unsigned Cur = (Len-span);
-      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, flags);
+      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, Hazard, flags);
     }else{
       unsigned Cur = (Len-span);
       for( unsigned i=0; i< span; i++ ){
         DataMem[Cur] = BaseMem[i];
         Cur++;
       }
+      // clear the hazard
+      *Hazard = false;
     }
 #ifdef _REV_DEBUG_
     std::cout << "Warning: Reading off end of page... " << std::endl;
 #endif
   }else{
     if( ctrl ){
-      ctrl->sendREADRequest(Addr, (uint64_t)(BaseMem), Len, Target, flags);
+      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, Hazard, flags);
     }else{
       for( unsigned i=0; i<Len; i++ ){
         DataMem[i] = BaseMem[i];
       }
-      if (Tracer) Tracer->memRead(Addr,Len,(void*) DataMem);
+      // clear the hazard
+      *Hazard = false;
+      // trace the read
+      if (Tracer) Tracer->memRead(Addr,Len,(void*) DataMem);      
     }
   }
 
@@ -674,43 +898,43 @@ double RevMem::ReadDouble( uint64_t Addr ){
   return Value;
 }
 
-void RevMem::WriteU8( uint64_t Addr, uint8_t Value ){
+void RevMem::WriteU8( unsigned Hart, uint64_t Addr, uint8_t Value ){
   uint8_t Tmp = Value;
-  if( !WriteMem(Addr,1,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr,1,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U8)");
 }
 
-void RevMem::WriteU16( uint64_t Addr, uint16_t Value ){
+void RevMem::WriteU16( unsigned Hart, uint64_t Addr, uint16_t Value ){
   uint16_t Tmp = Value;
-  if( !WriteMem(Addr,2,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr,2,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U16)");
 }
 
-void RevMem::WriteU32( uint64_t Addr, uint32_t Value ){
+void RevMem::WriteU32( unsigned Hart, uint64_t Addr, uint32_t Value ){
   uint32_t Tmp = Value;
-  if( !WriteMem(Addr,4,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr,4,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U32)");
 }
 
-void RevMem::WriteU64( uint64_t Addr, uint64_t Value ){
+void RevMem::WriteU64( unsigned Hart, uint64_t Addr, uint64_t Value ){
   uint64_t Tmp = Value;
-  if( !WriteMem(Addr,8,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr,8,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U64)");
 }
 
-void RevMem::WriteFloat( uint64_t Addr, float Value ){
+void RevMem::WriteFloat( unsigned Hart, uint64_t Addr, float Value ){
   uint32_t Tmp = 0x00;
   std::memcpy(&Tmp,&Value,sizeof(float));
   memStats.floatsWritten++;
-  if( !WriteMem(Addr,4,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr,4,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (FLOAT)");
 }
 
-void RevMem::WriteDouble( uint64_t Addr, double Value ){
+void RevMem::WriteDouble( unsigned Hart, uint64_t Addr, double Value ){
   uint64_t Tmp = 0x00;
   std::memcpy(&Tmp,&Value,sizeof(double));
   memStats.doublesWritten++;
-  if( !WriteMem(Addr,8,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr,8,(void *)(&Tmp)) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (DOUBLE)");
 }
 

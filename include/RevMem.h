@@ -22,6 +22,7 @@
 #include <time.h>
 #include <random>
 #include <mutex>
+#include <tuple>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -133,7 +134,7 @@ namespace SST {
       uint64_t GetStackBottom() { return stacktop - _STACK_SIZE_; }
 
       /// RevMem: initiate a memory fence
-      bool FenceMem();
+      bool FenceMem(unsigned Hart);
 
       /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
       unsigned getLineSize(){ if( ctrl ){return ctrl->getLineSize();}else{return 64;} }
@@ -145,14 +146,15 @@ namespace SST {
       // ---- Base Memory Interfaces
       // ----------------------------------------------------
       /// RevMem: write to the target memory location
-      bool WriteMem( uint64_t Addr, size_t Len, void *Data );
+      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data );
 
       /// RevMem: write to the target memory location with the target flags
-      bool WriteMem( uint64_t Addr, size_t Len, void *Data,
+      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
                      StandardMem::Request::flags_t flags );
 
       /// RevMem: read data from the target memory location
-      bool ReadMem( uint64_t Addr, size_t Len, void *Target,
+      bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
+                    bool *Hazard,
                     StandardMem::Request::flags_t flags);
 
       /// RevMem: DEPRECATED: read data from the target memory location
@@ -164,9 +166,34 @@ namespace SST {
       // ----------------------------------------------------
       /// RevMem: template read memory interface
       template <typename T>
-      bool ReadVal( uint64_t Addr, T *Target,
+      bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
+                    bool *Hazard,
                     StandardMem::Request::flags_t flags){
-        return ReadMem(Addr, sizeof(T), (void *)(Target), flags);
+        return ReadMem(Hart, Addr, sizeof(T), (void *)(Target), Hazard, flags);
+      }
+
+      ///  RevMem: template LOAD RESERVE memory interface
+      template <typename T>
+      bool LR( unsigned Hart, uint64_t Addr, T *Target,
+               uint8_t aq, uint8_t rl, bool *Hazard,
+               StandardMem::Request::flags_t flags){
+        return LRBase(Hart, Addr, sizeof(T), (void *)(Target), aq, rl, Hazard, flags);
+      }
+
+      ///  RevMem: template STORE CONDITIONAL memory interface
+      template <typename T>
+      bool SC( unsigned Hart, uint64_t Addr, T *Data, T *Target,
+               uint8_t aq, uint8_t rl,
+               StandardMem::Request::flags_t flags){
+        return SCBase(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), aq, rl, flags);
+      }
+
+      /// RevMem: template AMO memory interface
+      template <typename T>
+      bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
+                   bool *Hazard,
+                   StandardMem::Request::flags_t flags){
+        return AMOMem(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), Hazard, flags);
       }
 
       /// RevMem: DEPRECATED: Read uint8 from the target memory location
@@ -197,31 +224,40 @@ namespace SST {
       // ---- Write Memory Interfaces
       // ----------------------------------------------------
       /// RevMem: Write a uint8 to the target memory location
-      void WriteU8( uint64_t Addr, uint8_t Value );
+      void WriteU8( unsigned Hart, uint64_t Addr, uint8_t Value );
 
       /// RevMem: Write a uint16 to the target memory location
-      void WriteU16( uint64_t Addr, uint16_t Value );
+      void WriteU16( unsigned Hart, uint64_t Addr, uint16_t Value );
 
       /// RevMem: Write a uint32 to the target memory location
-      void WriteU32( uint64_t Addr, uint32_t Value );
+      void WriteU32( unsigned Hart, uint64_t Addr, uint32_t Value );
 
       /// RevMem: Write a uint64 to the target memory location
-      void WriteU64( uint64_t Addr, uint64_t Value );
+      void WriteU64( unsigned Hart, uint64_t Addr, uint64_t Value );
 
       /// RevMem: Write a float to the target memory location
-      void WriteFloat( uint64_t Addr, float Value );
+      void WriteFloat( unsigned Hart, uint64_t Addr, float Value );
 
       /// RevMem: Write a double to the target memory location
-      void WriteDouble( uint64_t Addr, double Value );
+      void WriteDouble( unsigned Hart, uint64_t Addr, double Value );
 
       // ----------------------------------------------------
       // ---- Atomic/Future/LRSC Interfaces
       // ----------------------------------------------------
       /// RevMem: Add a memory reservation for the target address
-      bool LR(unsigned Hart, uint64_t Addr);
+      bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
+                  void *Data, uint8_t aq, uint8_t rl, bool *Hazard,
+                  StandardMem::Request::flags_t flags);
 
       /// RevMem: Clear a memory reservation for the target address
-      bool SC(unsigned Hart, uint64_t Addr);
+      bool SCBase(unsigned Hart, uint64_t Addr, size_t Len,
+                  void *Data, void *Target, uint8_t aq, uint8_t rl,
+                  StandardMem::Request::flags_t flags);
+
+      /// RevMem: Initiated an AMO request
+      bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
+                  void *Data, void *Target, bool *Hazard,
+                  StandardMem::Request::flags_t flags);
 
       /// RevMem: Initiates a future operation [RV64P only]
       bool SetFuture( uint64_t Addr );
@@ -328,7 +364,13 @@ namespace SST {
 
       std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 
-      std::vector<std::pair<unsigned,uint64_t>> LRSC;   ///< RevMem: load reserve/store conditional vector
+      // these are LRSC tuple index macros
+      #define LRSC_HART 0
+      #define LRSC_ADDR 1
+      #define LRSC_AQRL 2
+      #define LRSC_VAL  3
+      std::vector<std::tuple<unsigned,uint64_t,
+                             unsigned,uint64_t*>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
       RevTracer* Tracer; //kg prototype convenience
 
