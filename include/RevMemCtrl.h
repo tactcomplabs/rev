@@ -70,6 +70,7 @@ namespace SST {
     // ----------------------------------------
     enum class RevFlag : uint32_t {
       F_NONCACHEABLE = 1u<<1, /// non cacheable
+      F_BOXNAN = 1u << 16,    /// NaN-box the 32-bit float
       F_SEXT32 = 1u << 17,    /// sign extend the 32bit result
       F_SEXT64 = 1u << 18,    /// sign extend the 64bit result
       F_ZEXT32 = 1u << 19,    /// zero extend the 32bit result
