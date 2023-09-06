@@ -479,8 +479,8 @@ namespace SST{
     /// Templated load instruction.
     template<typename T>
     bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-      if( sizeof(T) < sizeof(uint64_t) && F->IsRV32() ){
-        static constexpr auto flags = sizeof(T) < sizeof(uint32_t) ?
+      if( sizeof(T) < sizeof(int64_t) && F->IsRV32() ){
+        static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
           REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
                        RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
 
@@ -498,7 +498,7 @@ namespace SST{
           }
         }
       }else{
-        static constexpr auto flags = sizeof(T) < sizeof(uint64_t) ?
+        static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
           REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                        RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
 
