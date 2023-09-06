@@ -2876,24 +2876,24 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
       ECALL_string = ECALL_string.append(ECALL_buf);
     }
     if(1 == (nbytes - ECALL_bytesRead)){
-      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(char), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      mem->ReadVal<char>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, ECALL_buf, inst.hazard, REVMEM_FLAGS(0x0));
       ECALL_buf[1] = '\0';  //Pre-null terminate to allow for succesful string cat later
-      ECALL_bytesRead += 1;
+      ECALL_bytesRead += sizeof(char);
     }
     else if(3 >= (nbytes - ECALL_bytesRead )){
-      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(uint16_t), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      mem->ReadVal<int16_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int16_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
       ECALL_buf[2] = '\0'; //Pre-null terminate to allow for succesful string cat later
-      ECALL_bytesRead += 2;
+      ECALL_bytesRead += sizeof(int16_t);
     }
     else if(7 >= (nbytes - ECALL_bytesRead )){
-      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(uint32_t), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      mem->ReadVal<int32_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int32_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
       ECALL_buf[4] = '\0'; //Pre-null terminate to allow for succesful string cat later
-      ECALL_bytesRead += 4;
+      ECALL_bytesRead += sizeof(int32_t);
     }
     else {
-      mem->ReadMem(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, sizeof(uint64_t), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x0));
+      mem->ReadVal<int64_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int64_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
       ECALL_buf[8] = '\0'; //Pre-null terminate to allow for succesful string cat later
-     ECALL_bytesRead += 8;
+     ECALL_bytesRead += sizeof(int64_t);
     }
     rtv = RevProc::ECALL_status_t::CONTINUE;
     DependencySet(HartToExec, 10, false);
