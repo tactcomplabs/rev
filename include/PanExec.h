@@ -24,12 +24,12 @@ namespace SST {
 
     class PanExec{
     public:
-      typedef enum{
+      enum PanStatus : uint8_t {
         QExec   = 0,                  ///< PanStatus: entry is executing
         QValid  = 1,                  ///< PanStatus: valid entry, ready to execute
         QNull   = 13,                 ///< PanStatus: null entry
-        QError  = 0b0000000011111111  ///< PanStatus: error
-      }PanStatus;
+        QError  = 0xFF,               ///< PanStatus: error
+      };
 
       /// PanExec: add an execution queue entry
       bool AddEntry(uint64_t Addr, unsigned *Idx);

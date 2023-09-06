@@ -35,14 +35,14 @@ namespace SST {
     class panNicEvent : public SST::Event {
     public:
 
-      typedef enum{
+      enum PanPacket : uint8_t {
         PanBase     = 0b00,               ///< PanPacket: base packet type
         PanStream   = 0b01,               ///< PanPacket: streaming packet type
         PanRsvd     = 0b10,               ///< PanPacket: reserved for future expansion
         PanBOTW     = 0b11,               ///< PanPacket: bump on the wire packet
-      }PanPacket;
+      };
 
-      typedef enum{
+      enum PanOpcode : uint8_t {
         SyncGet         = 0b00000000,     ///< PanOpcode: Synchronous get
         SyncPut         = 0b00000100,     ///< PanOpcode: Synchronous put
         AsyncGet        = 0b00001000,     ///< PanOpcode: Asynchronous get
@@ -67,7 +67,7 @@ namespace SST {
         Success         = 0b11100000,     ///< PanOpcode: Command success
         Failed          = 0b11110000,     ///< PanOpcode: Failed success
         BOTW            = 0b11,           ///< PanOpcode: Bump on the wire
-      }PanOpcode;
+      };
 
       /// panNicEvent: standard constructor
       explicit panNicEvent(std::string name)
