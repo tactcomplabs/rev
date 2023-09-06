@@ -1602,7 +1602,7 @@ void RevProc::ECALL_clone(){
   // std::shared_ptr<RevThread> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
 
   // Create the child ctx 
-  uint32_t ChildThreadID = SpawnThread();
+  // uint32_t ChildThreadID = SpawnThread();
   // std::shared_ptr<RevThread> ChildCtx = ThreadTable.at(ChildThreadID);
 
   // TODO: Create a copy of Parents Memory Space 

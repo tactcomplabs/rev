@@ -269,10 +269,6 @@ namespace SST {
       /// RevMem: Get memSize value set in .py file
       const uint64_t GetMemSize(){ return memSize; }
 
-      const uint64_t GetMemSize(){ return memSize; }
-  
-      const uint64_t& GetMemSize(){ return memSize; }
-
       /// RevMem: Sets the next stack top address
       void SetNextThreadMemAddr(const uint64_t& NextAddr){ NextThreadMemAddr = NextAddr; }
   
