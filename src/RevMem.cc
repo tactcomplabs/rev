@@ -51,17 +51,14 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output),
     stacktop(0x00ull) {
 
-  // allocate the backing memory
-  physMem = new char [memSize];
+  // allocate the backing memory, zeroing it
+  physMem = new char [memSize]{};
   pageSize = 262144; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
   nextPage = 0;
 
   if( !physMem )
     output->fatal(CALL_INFO, -1, "Error: could not allocate backing memory\n");
-
-  // zero the memory
-  memset(physMem, 0, memSize);
 
   //stacktop = _REVMEM_BASE_ + memSize;
   stacktop = (_REVMEM_BASE_ + memSize) - _STACK_SIZE_;
