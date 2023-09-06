@@ -1252,17 +1252,20 @@ void RevBasicMemCtrl::handleFlagResp(RevMemOp *op){
    StandardMem::Request::flags_t flags = op->getFlags();
 
    if( flags & uint32_t(RevCPU::RevFlag::F_SEXT32) ){
-     uint32_t *target = (uint32_t *)(op->getTarget());
-     SEXTI(*target, 32);
+     uint32_t *target = static_cast<uint32_t*>(op->getTarget());
+     SEXTI(*target,32);
    }else if( flags & uint32_t(RevCPU::RevFlag::F_SEXT64) ){
-     uint64_t *target = (uint64_t *)(op->getTarget());
-     SEXTI(*target, 64);
+     uint64_t *target = static_cast<uint64_t*>(op->getTarget());
+     SEXTI(*target,64);
    }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT32) ){
-     uint32_t *target = (uint32_t *)(op->getTarget());
-     ZEXTI(*target, 32);
+     uint32_t *target = static_cast<uint32_t*>(op->getTarget());
+     ZEXTI(*target,32);
    }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT64) ){
-     uint64_t *target = (uint64_t *)(op->getTarget());
-     ZEXTI64(*target, 63);
+     uint64_t *target = static_cast<uint64_t*>(op->getTarget());
+     ZEXTI64(*target,63);
+   }else if( flags & uint32_t(RevCPU::RevFlag::F_BOXNAN) ){
+     double *target = static_cast<double*>(op->getTarget());
+     BoxNaN(target, target);
    }
 }
 
@@ -1310,7 +1313,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
       // split request exists, determine how to handle it
 
       uint8_t *target = static_cast<uint8_t *>(op->getTarget());
-      unsigned startByte = (unsigned)( (uint64_t)(ev->pAddr) - op->getAddr() );
+      unsigned startByte = (unsigned)(ev->pAddr - op->getAddr());
       target += uint8_t(startByte);
       for( unsigned i=0; i<(unsigned)(ev->size); i++ ){
         *target = ev->data[i];
@@ -1364,19 +1367,21 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
   }
   void *Target = Tmp->getTarget();
 
-  auto flags = Tmp->getFlags();
-  auto buffer = Tmp->getBuf();
+  StandardMem::Request::flags_t flags = Tmp->getFlags();
+  std::vector<uint8_t> buffer = Tmp->getBuf();
 
   if( Tmp->getSize() == 4 ){
-    int32_t TmpBuf = 0;
-    for( unsigned i = 0; i < buffer.size(); i++ ){
-      TmpBuf |= buffer[i] << i*8;
+    // 32-bit (W) AMOs
+    uint32_t TmpBuf = 0;
+    for( size_t i = 0; i < buffer.size(); i++ ){
+      TmpBuf |= uint32_t{buffer[i]} << i*8;
     }
     ApplyAMO(flags, Target, TmpBuf);
   }else{
-    int64_t TmpBuf = 0;
-    for( unsigned i = 0; i < buffer.size(); i++ ){
-      TmpBuf |= buffer[i] << i*8;
+    // 64-bit (D) AMOs
+    uint64_t TmpBuf = 0;
+    for( size_t i = 0; i < buffer.size(); i++ ){
+      TmpBuf |= uint64_t{buffer[i]} << i*8;
     }
     ApplyAMO(flags, Target, TmpBuf);
   }
