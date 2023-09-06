@@ -478,7 +478,7 @@ namespace SST{
 
     /// Templated load instruction.
     template<typename T>
-    static bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( sizeof(T) < sizeof(uint64_t) && F->IsRV32() ){
         static constexpr auto flags = sizeof(T) < sizeof(uint32_t) ?
           REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
@@ -524,7 +524,7 @@ namespace SST{
 
     /// Templated floating-point load instruction.
     template<typename T>
-    static bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if(std::is_same_v<T, double> || F->HasD()){
         static constexpr auto flags = sizeof(T) < sizeof(double) ?
           REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
@@ -535,7 +535,7 @@ namespace SST{
                    Inst.hazard,
                    flags);
 
-        if constexpr(sizeof(T) < sizeof(double)){
+        if constexpr(std::is_same_v<T, float>){
           BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
         }
       }else{
