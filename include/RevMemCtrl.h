@@ -31,36 +31,6 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 
-// RV{32,64} Register Operation Macros
-                    //(r) = ((r) & (~r));
-#define SEXT(r,x,b) do {\
-                    (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT(r,x,b) do {\
-                    (r) = (x) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
-
-#define SEXTI(r,b)  do {\
-                    (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI(r,b)  do {\
-                    (r) = (r) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
-
-#define SEXT64(r,x,b) do {\
-                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT64(r,x,b) do {\
-                    (r) = (x) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
-
-#define SEXTI64(r,b)  do {\
-                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI64(r,b)  do {\
-                    (r) = (r) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
-
 namespace SST {
   namespace RevCPU {
     using namespace SST::Interfaces;
