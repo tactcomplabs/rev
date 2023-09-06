@@ -213,7 +213,7 @@ namespace SST {
       bool *getHazard() const { return hazard; }
 
       // RevMemOp: determine if the request is cache-able
-      bool isCacheable() { return !(flags & 0b10 ); }
+      bool isCacheable() const { return (flags & 0b10) == 0; }
 
     private:
       unsigned Hart;      ///< RevMemOp: RISC-V Hart
@@ -362,9 +362,9 @@ namespace SST {
                               { "max_flush",      "Sets the maxmium number of oustanding flush events",       "64"},
                               { "max_llsc",       "Sets the maximum number of outstanding LL/SC events",      "64"},
                               { "max_readlock",   "Sets the maxmium number of outstanding readlock events",   "64"},
-                              { "max_writeunlock","Sets the maximum number of outstanding writeunlock events","64"},
+                              { "max_writeunlock", "Sets the maximum number of outstanding writeunlock events", "64"},
                               { "max_custom",     "Sets the maximum number of outstanding custom events",     "64"},
-                              { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" }
+                              { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" },
       )
 
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({ "memIface", "Set the interface to memory", "SST::Interfaces::StandardMem" })
@@ -392,29 +392,29 @@ namespace SST {
         {"StoreCondPending",    "Counts the number of storeconds pending",          "count", 1},
         {"CustomInFlight",      "Counts the number of custom commands in flight",   "count", 1},
         {"CustomPending",       "Counts the number of custom commands pending",     "count", 1},
-        {"CustomBytes",         "Counts the number of bytes in custom transactions","bytes", 1},
+        {"CustomBytes",         "Counts the number of bytes in custom transactions", "bytes", 1},
         {"FencePending",        "Counts the number of fence operations pending",    "count", 1},
-        {"AMOAddBytes",         "Counts the number of bytes in AMOAdd transactions","bytes", 1},
+        {"AMOAddBytes",         "Counts the number of bytes in AMOAdd transactions", "bytes", 1},
         {"AMOAddPending",       "Counts the number of AMOAdd operations pending",   "count", 1},
-        {"AMOXorBytes",         "Counts the number of bytes in AMOXor transactions","bytes", 1},
+        {"AMOXorBytes",         "Counts the number of bytes in AMOXor transactions", "bytes", 1},
         {"AMOXorPending",       "Counts the number of AMOXor operations pending",   "count", 1},
-        {"AMOAndBytes",         "Counts the number of bytes in AMOAnd transactions","bytes", 1},
+        {"AMOAndBytes",         "Counts the number of bytes in AMOAnd transactions", "bytes", 1},
         {"AMOAndPending",       "Counts the number of AMOAnd operations pending",   "count", 1},
         {"AMOOrBytes",          "Counts the number of bytes in AMOOr transactions", "bytes", 1},
         {"AMOOrPending",        "Counts the number of AMOOr operations pending",    "count", 1},
-        {"AMOMinBytes",         "Counts the number of bytes in AMOMin transactions","bytes", 1},
+        {"AMOMinBytes",         "Counts the number of bytes in AMOMin transactions", "bytes", 1},
         {"AMOMinPending",       "Counts the number of AMOMin operations pending",   "count", 1},
-        {"AMOMaxBytes",         "Counts the number of bytes in AMOMax transactions","bytes", 1},
+        {"AMOMaxBytes",         "Counts the number of bytes in AMOMax transactions", "bytes", 1},
         {"AMOMaxPending",       "Counts the number of AMOMax operations pending",   "count", 1},
-        {"AMOMinuBytes",        "Counts the number of bytes in AMOMinu transactions","bytes", 1},
+        {"AMOMinuBytes",        "Counts the number of bytes in AMOMinu transactions", "bytes", 1},
         {"AMOMinuPending",      "Counts the number of AMOMinu operations pending",   "count", 1},
-        {"AMOMaxuBytes",        "Counts the number of bytes in AMOMaxu transactions","bytes", 1},
+        {"AMOMaxuBytes",        "Counts the number of bytes in AMOMaxu transactions", "bytes", 1},
         {"AMOMaxuPending",      "Counts the number of AMOMaxu operations pending",   "count", 1},
-        {"AMOSwapBytes",        "Counts the number of bytes in AMOSwap transactions","bytes", 1},
-        {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1}
+        {"AMOSwapBytes",        "Counts the number of bytes in AMOSwap transactions", "bytes", 1},
+        {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1},
       )
 
-      typedef enum{
+      enum MemCtrlStats : uint32_t {
         ReadInFlight        = 0,
         ReadPending         = 1,
         ReadBytes           = 2,
@@ -454,8 +454,8 @@ namespace SST {
         AMOMaxuBytes        = 36,
         AMOMaxuPending      = 37,
         AMOSwapBytes        = 38,
-        AMOSwapPending      = 39
-      }MemCtrlStats;
+        AMOSwapPending      = 39,
+      };
 
       /// RevBasicMemCtrl: constructor
       RevBasicMemCtrl(ComponentId_t id, const Params& params);
@@ -645,9 +645,9 @@ namespace SST {
       unsigned getNumSplitRqsts(RevMemOp *op);
 
       /// RevBasicMemCtrl: perform the MODIFY portion of the AMO (READ+MODIFY+WRITE)
-      void performAMO(std::tuple<unsigned,char *,void *,
+      void performAMO(std::tuple<unsigned, char *, void *,
                                  StandardMem::Request::flags_t,
-                                 RevMemOp *,bool> Entry);
+                                 RevMemOp *, bool> Entry);
 
       // -- private data members
       StandardMem* memIface;                  ///< StandardMem memory interface
@@ -674,7 +674,7 @@ namespace SST {
 
       std::vector<StandardMem::Request::id_t> requests;               ///< outstanding StandardMem requests
       std::vector<RevMemOp *> rqstQ;                                  ///< queued memory requests
-      std::map<StandardMem::Request::id_t,RevMemOp *> outstanding;    ///< map of outstanding requests
+      std::map<StandardMem::Request::id_t, RevMemOp *> outstanding;    ///< map of outstanding requests
 
 #define AMOTABLE_HART   0
 #define AMOTABLE_BUFFER 1
