@@ -536,16 +536,19 @@ void RevProc::ECALL_write(){
 
   char buf[nbytes];
   char bufchar;
-  for (unsigned i=0; i<nbytes; i++){
+  // for (unsigned i=0; i<nbytes; i++){
     // mem->ReadVal(RegFile->RV64[11] + sizeof(char)*i, sizeof(char), &bufchar, REVMEM_FLAGS(0));
-  }
+  // }
   // mem->ReadVal(RegFile->RV64[11], sizeof(buf), &buf[0], REVMEM_FLAGS(0));
 
   /* Perform the write on the host system */
-  const int rc = write(fildes, buf, nbytes);
+  // Print the active thread id to the file
+  std::cout << "Writing to file: " << fildes << " from thread: " << GetActiveThreadID() << std::endl;
+
+  // const int rc = write(fildes, GetActiveThreadID(), sizeof(uint32_t));
 
   /* write returns the number of bytes written */
-  RegFile->RV64[10] = rc;
+  // RegFile->RV64[10] = rc;
   return;
 }                 
 
@@ -1636,11 +1639,11 @@ void RevProc::ECALL_clone(){
   // mem->ReadMem(HartToDecode, ParentThreadMemPtrs.first - _STACK_SIZE_, _STACK_SIZE_ - 1, &StackData, REVMEM_FLAGS(0));
   
 
-  std::cout << "MADE IT" << std::endl;
+  // std::cout << "MADE IT" << std::endl;
 
   // mem->WriteMem(HartToDecode, ChildThreadMemPtrs.first - _STACK_SIZE_, _STACK_SIZE_ - 1, &StackData);
     
-  std::cout << "WROTE IT" << std::endl;
+  // std::cout << "WROTE IT" << std::endl;
 
   // mem->WriteMem(HartToExec, ChildThreadMemPtrs.first - _STACK_SIZE_, _STACK_SIZE_, StackData);
 
@@ -2384,7 +2387,13 @@ void RevProc::ECALL_process_madvise(){
 }       
 
 
-
+// 1000
+void RevProc::ECALL_pthread_create(){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_create called\n");
+  uint64_t NewThreadPC = RegFile->RV64[10];
+  SpawnThread(NewThreadPC);
+  return;
+}
 
 
 

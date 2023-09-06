@@ -3736,3 +3736,31 @@ int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int be
     );
   return rc;
 }
+
+
+// ==================== REV PTHREADS
+void* rev_pthread_create( void* fn ){
+  int rc;
+  asm volatile (
+    "li a7, 1000 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  // return rc;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

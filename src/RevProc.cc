@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevProc.h"
+#include "RevInstTable.h"
 #include "RevSysCalls.cc"
 #include <bitset>
 #include <filesystem>
@@ -1882,10 +1883,18 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   bool rtn = false;
   Stats.totalCycles++;
 
-  std::cout << "Proc " << id << " has assigned threads: " << AssignedThreads.size() << std::endl;
-  for(int i = 0; i < AssignedThreads.size(); i++){
-    std::cout << "Hart " << i << " has ThreadID: " << AssignedThreads.at(i)->GetThreadID() << std::endl;
+  if( AssignedThreads.size() > _REV_HART_COUNT_ ){
+    output->fatal(CALL_INFO, 99, "Proc has become oversubscribed\n");
+  } else if( AssignedThreads.size() ){
+    std::cout << "Proc " << id << " has " << std::dec << AssignedThreads.size() << " assigned threads" << std::endl;
+    for(int i = 0; i < _REV_HART_COUNT_; i++){
+        std::cout << "Hart " << i << " has ThreadID: " << AssignedThreads.at(i)->GetThreadID() << std::endl;
+      }
   }
+  else {
+    return false;
+  }
+
 
 #ifdef _REV_DEBUG_
   if((currentCycle % 100000000) == 0){
@@ -1930,6 +1939,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         HART_CTS[HartID] = AssignedThreads.at(HartID)->GetRegFile()->cost == 0;
       }
     }
+    // std::cout << *AssignedThreads.front() << std::endl;
+  } else {
+    
   }
 
   if( HART_CTS.any() && (!Halted)) {
@@ -2229,7 +2241,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       done = false;
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ ){
+    // if( HartToExec != _REV_INVALID_HART_ID_ ){
+    //   AssignedThreads.at(HartToExec)->SetState(ThreadState::Done);
       // if( ActiveThreadIDs.size() > HartToExec ) {
         // uint32_t CurrThreadID = ActiveThreadIDs.at(HartToExec);
         // uint32_t ParentThreadID = ThreadTable.at(ActiveThreadIDs.at(HartToExec))->GetParentThreadID();
@@ -2248,8 +2261,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           // done = true;
         // }
       // }
+    // }
+    if( done && AssignedThreads.size() ){
+      AssignedThreads.at(HartToDecode)->SetState(ThreadState::Done);
     }
-    if( done ){
+    else if( done && !AssignedThreads.size() ){
+
+
       // we are really done, return
       output->verbose(CALL_INFO,2,0,"Program execution complete\n");
       Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
@@ -2268,6 +2286,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                                       Retired);
       return false;
     }
+  }
+  if( AssignedThreads.size() == 0 ){
+    return false;
   }
 
   return rtn;
@@ -2423,6 +2444,8 @@ bool RevProc::ChangeActiveThreadID(uint32_t NewThreadID){
 // Once the memory is set up properly it then signals back to RevCPU that a new 
 // RevThread object needs to be created
 uint32_t RevProc::SpawnThread(uint64_t fn){
+  std::cout << "========> Inside of SpawnThread <========" << std::endl;
+  std::cout << "FUNCTION POINTER: 0x" << std::hex << fn << std::endl;
   
 
   // Need to do: 
@@ -2438,6 +2461,7 @@ uint32_t RevProc::SpawnThread(uint64_t fn){
   // 5) Don't think we should do (below)... In RevCPU we should check a Proc's AssignedThreads.end() to see if any have a "START" status and then pop them off the back and into Threads
   //      Check if we have a Hart available (ie. AssignedThreads.size < _NUM_HARTS_ [prior to adding this one])
   // 6) Return threadId to the appropriate location (probably a register file -- Probably in the syscall clone tho)
+
 }
 
 /* Returns vector of all ThreadIDs in the ThreadTable */
@@ -2807,6 +2831,7 @@ void RevProc::InitEcallTable(){
     { 438, &RevProc::ECALL_pidfd_getfd},            //  rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
     { 439, &RevProc::ECALL_faccessat2},             //  rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
     { 440, &RevProc::ECALL_process_madvise},        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
+    { 1000, &RevProc::ECALL_pthread_create},        //  
     };
 }
 

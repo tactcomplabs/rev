@@ -532,6 +532,10 @@ bool RevLoader::LoadProgramArgs(){
     ArgArray += 8;
   }
 
+  // FIXME: Absolutely temporary 
+  sp -= 1024;
+  mem->SetStackTop(sp);
+  mem->SetNextThreadMemAddr(sp - _STACK_SIZE_ - mem->GetTLSSize() - __PAGE_SIZE__);
   return true;
 }
 

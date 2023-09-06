@@ -319,6 +319,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   std::cout << "First Thread Info: " << std::endl;
   std::cout << *Threads[MainThreadID] << std::endl;
   
+  Threads.at(MainThreadID)->GetRegFile()->RV32[3] = (uint32_t)(Loader->GetSymbolAddr("__global_pointer$"));
+  Threads.at(MainThreadID)->GetRegFile()->RV64[3] = Loader->GetSymbolAddr("__global_pointer$");
+
+  Threads.at(MainThreadID)->GetRegFile()->RV32[8] = Threads.at(MainThreadID)->GetRegFile()->RV32[3];
+  Threads.at(MainThreadID)->GetRegFile()->RV64[8] = Threads.at(MainThreadID)->GetRegFile()->RV64[3];
+
+  Threads.at(MainThreadID)->GetRegFile()->cost = 0;
+
   // Assign the first thread
   // AssignedThreads.front().emplace_back(Threads[1]);
   ThreadQueue.emplace(1);
@@ -2419,7 +2427,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   for( unsigned i=0; i<AssignedThreads.size(); i++ ){
     std::cout << "Proc: " << i << " has " << AssignedThreads.at(i).size() << " threads assigned to it" << std::endl; 
     // Output its utilization
-    std::cout << "Proc: " << i << " has " << Procs[i]->GetUtilization() << "% utilization" << std::endl;
+    std::cout << "Proc: " << i << " has " << std::dec << Procs[i]->GetUtilization() << "% utilization" << std::endl;
   }
 
   // Execute each enabled core
@@ -2435,23 +2443,40 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
                      i, static_cast<uint64_t>(currentCycle));
       }
-    }
+      // FIXME: Do this a different way... but check if any of the AssignedThreads have done state
+      for( unsigned j=0; j<AssignedThreads.at(i).size(); j++ ){
+        if( AssignedThreads.at(i).at(j)->GetState() == ThreadState::Done ){
+          std::cout << "===========> Found a thread that's DONE" << std::endl;
+          // Remove the thread from the Proc
+          // TODO: Save this object to an archive of some sort 
+          AssignedThreads.at(i).erase(AssignedThreads.at(i).begin()+j);
+          // Remove the thread from the AssignedThreads
+          // Decrement j so we don't skip over the next thread
+          j--;
+        }
+      }
+      
+      if( Procs[i]->GetUtilization() < 100 && ThreadQueue.size() ){
+        AssignedThreads.at(i).emplace_back(Threads.at(ThreadQueue.front()));
+        ThreadQueue.pop();
+      }
     // Check if we need to create a new thread 
     if( Procs[i]->GetNewThreadInfo().size() ){
       std::cout << "Creating a new thread for Proc: " << i << std::endl;
       // TODO: Figure out if we'll do multiple of these if present (ie. size > 1)
       std::pair<uint32_t, std::shared_ptr<MemSegment>> NewThreadInfo = Procs[i]->GetNewThreadInfo().front();
       CreateThread(NewThreadInfo);
-     Procs[i]->GetNewThreadInfo().pop();
 
-    // Create a new thread 
-    Procs[i]->GetNewThreadInfo().pop();
+      // Remove from the queue
+      Procs[i]->GetNewThreadInfo().pop();
+    }
     }
 
-    // Proc is not enabled, see if we can assign it work
+    // Proc is disabled, see if we can assign it work
     else {
+      std::cout << "PROC IS DISABLED SO I AM ASSIGNING WORK" << std::endl;
       // See if there is work to assign
-      if( ThreadQueue.size() ){
+      if( Procs[i]->GetUtilization() < 100 && ThreadQueue.size() ){
         uint32_t ThreadToAssign = ThreadQueue.front();
         ThreadQueue.pop();
         AssignedThreads.at(i).emplace_back(Threads.at(ThreadToAssign));

@@ -6,7 +6,8 @@
 int main() {
   int pid;
 
-  pid = rev_fork();
+  pid = rev_fork(); // Parent's stack pointer 
+  //Copy from ThreadMemTopAddr downto ParentRegfile[x2]
 
   if (pid < 0) {
     rev_exit(pid);

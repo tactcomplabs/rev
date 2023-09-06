@@ -348,7 +348,7 @@ namespace SST {
       unsigned tlbSize;             ///< RevMem: size of the target memory
       unsigned maxHeapSize;         ///< RevMem: size of the target memory
       uint64_t TLSBaseAddr;         ///< RevMem: TLS Base Address
-      uint64_t TLSSize;             ///< RevMem: TLS Size
+      uint64_t TLSSize = 0;             ///< RevMem: TLS Size
       uint64_t ThreadIDCount = 1023;      ///< RevMem: Thread ID counter
       uint64_t ThreadMemSize = _STACK_SIZE_;       ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
       uint64_t NextThreadMemAddr = memSize;   ///< RevMem: Next top address for a new thread's memory 

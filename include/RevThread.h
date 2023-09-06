@@ -48,8 +48,8 @@ class RevThread {
       
       uint64_t ThreadPtr = inputThreadMem->getTopAddr();
       // Set the stack pointer 
-      RegFile.RV32[2] = (uint32_t)StackPtr;
-      RegFile.RV64[2] = StackPtr;
+      RegFile.RV32[2] = (uint32_t)StackPtr - 1024;
+      RegFile.RV64[2] = StackPtr - 1024;
 
       // Set the thread pointer
       ThreadPtr = ThreadMem->getTopAddr();
@@ -92,7 +92,7 @@ class RevThread {
       os << std::hex << std::internal; // set hex output & internal padding 
       os << "\tRV64_PC = 0x" << std::setw(16) << std::setfill('0') << Thread.RegFile.RV64_PC << " | RV32_PC = 0x" << std::setw(8) << std::setfill('0') << Thread.RegFile.RV32_PC << std::endl;
       for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-        if( i < 10){ os << " "; } // padding for alignment
+        if( i < 10){ os << " "; } 
         os << "\t";
         os << "RV32[" << std::dec << std::setw(2) << std::setfill(' ') << i << "]: 0x" << std::setw(8) << std::setfill('0') << std::hex << Thread.RegFile.RV32[i]; 
         os << " | "; 
@@ -112,19 +112,19 @@ class RevThread {
             break;
         default:
           if( i >= 5 && i <= 7 ){
-            os << " --- t" << i-5 << " (Temporary Register)";
+            os << " --- t" << std::dec << i-5 << " (Temporary Register)";
           }
           else if( i >= 8 && i <= 9 ){
-            os << " --- s" << i-8 << " (Callee Saved Register)";
+            os << " --- s" << std::dec << i-8 << " (Callee Saved Register)";
           }
           else if( i >= 10 && i <= 17 ){
-           os << " --- a" << i-10 << " (Argument Register)";
+           os << " --- a" << std::dec <<  i-10 << " (Argument Register)";
           } 
           else if ( i >= 18 && i <= 27 ){
-            os << " --- s" << i-16 << " (Callee Saved)";
+            os << " --- s" << std::dec << i-16 << " (Callee Saved)";
           }
           else if ( i >= 28 && i <= 31 ){
-            os << " --- t" << i-25 << " (Temporary Register)";
+            os << " --- t" << std::dec << i-25 << " (Temporary Register)";
           }
         }
         os << std::endl;

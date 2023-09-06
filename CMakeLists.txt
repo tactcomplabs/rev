@@ -145,12 +145,6 @@ if(NOT INSTRUCTIONS_PATH)
   message(STATUS "INSTRUCTIONS_PATH set to ${INSTRUCTIONS_PATH}")
 endif()
 
-# RevCPU syscalls path
-if(NOT SYSCALLS_PATH)
-  set(SYSCALLS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include/syscalls")
-  message(STATUS "SYSCALLS_PATH set to ${SYSCALLS_PATH}")
-endif()
-
 #------------------------------------------------------------------------
 #-- TESTING
 #------------------------------------------------------------------------
