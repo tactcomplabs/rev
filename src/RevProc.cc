@@ -1888,8 +1888,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   } else if( AssignedThreads.size() ){
     std::cout << "Proc " << id << " has " << std::dec << AssignedThreads.size() << " assigned threads" << std::endl;
     for(int i = 0; i < _REV_HART_COUNT_; i++){
+      if( AssignedThreads.size() > i ){
         std::cout << "Hart " << i << " has ThreadID: " << AssignedThreads.at(i)->GetThreadID() << std::endl;
       }
+    }
   }
   else {
     return false;

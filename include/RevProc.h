@@ -163,7 +163,8 @@ namespace SST{
       std::queue<std::pair<uint64_t, std::shared_ptr<MemSegment>>> NewThreadInfo;
 
       ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
-      uint16_t GetUtilization(){ return (AssignedThreads.size() / _REV_HART_COUNT_) * 100; }
+      float GetUtilization(){ return ((float)AssignedThreads.size() / _REV_HART_COUNT_) * 100; }
+ 
       // BEFORE MERGE
       // TODO: Implement the proc scheduling (ie. Moving N=HART threads to the end of the AssignedThreads)      
       
@@ -196,7 +197,6 @@ namespace SST{
       RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
       RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
-      // uint32_t NextThreadID = 0;     ///< RevProc: ThreadID of next thread to load into HartToExec
 
       /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
       RevRegFile* GetRegFile(uint16_t HartID);

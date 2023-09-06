@@ -27,6 +27,9 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
+  
+  // Add the 1024 bytes for the program header information
+  AddMemSegAt(stacktop+1, 1024);
 
   memStats.bytesRead = 0;
   memStats.bytesWritten = 0;
@@ -61,6 +64,9 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
+
+  // Add the 1024 bytes for the program header information
+  AddMemSegAt(stacktop+1, 1024);
 
   memStats.bytesRead = 0;
   memStats.bytesWritten = 0;

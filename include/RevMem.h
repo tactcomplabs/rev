@@ -259,7 +259,6 @@ namespace SST {
       /// RevMem: Randomly assign a memory cost
       unsigned RandCost( unsigned Min, unsigned Max );
 
-
       /// RevMem: Used to set the size of the TLBSize
       void SetTLBSize(unsigned numEntries){ tlbSize = numEntries; }
 
@@ -301,7 +300,6 @@ namespace SST {
 
       /// RevMem: Attempts to allocate memory at a specific address
       uint64_t AllocMemAt(const uint64_t& BaseAddr, const uint64_t& Size);
-
 
       /// RevMem: Get a new ThreadID
       uint32_t GetNewThreadID();
@@ -349,9 +347,9 @@ namespace SST {
       unsigned maxHeapSize;         ///< RevMem: size of the target memory
       uint64_t TLSBaseAddr;         ///< RevMem: TLS Base Address
       uint64_t TLSSize = 0;             ///< RevMem: TLS Size
-      uint64_t ThreadIDCount = 1023;      ///< RevMem: Thread ID counter
+      uint64_t ThreadIDCount = 1024;      ///< RevMem: Thread ID counter
       uint64_t ThreadMemSize = _STACK_SIZE_;       ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
-      uint64_t NextThreadMemAddr = memSize;   ///< RevMem: Next top address for a new thread's memory 
+      uint64_t NextThreadMemAddr = memSize - 1024;   ///< RevMem: Next top address for a new thread's memory 
       RevOpts *opts;                ///< RevMem: options object
       RevMemCtrl *ctrl;             ///< RevMem: memory controller object
       SST::Output *output;          ///< RevMem: output handler
@@ -361,8 +359,6 @@ namespace SST {
       void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
       uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
       bool isValidVirtAddr(const uint64_t& vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
-
-      uint32_t PIDCount = 1023;   ///< RevMem: Monotonically increasing PID counter for assigning new PIDs without conflicts
 
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
       uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
