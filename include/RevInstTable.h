@@ -64,7 +64,7 @@
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
 
-// RV{32, 64}{F, D} macros
+// RV{32,64}{F,D} macros
 #define FCSR_NX(x)  ((x)&(0b1))             // FCSR: NX field
 #define FCSR_UF(x)  (((x)&(0b10))>>1)       // FCSR: UF field
 #define FCSR_OF(x)  (((x)&(0b100))>>2)      // FCSR: OF field

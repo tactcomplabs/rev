@@ -183,7 +183,7 @@ namespace SST {
       bool *getHazard() const { return hazard; }
 
       // RevMemOp: determine if the request is cache-able
-      bool isCacheable() { return !(flags & 0b10 ); }
+      bool isCacheable() const { return (flags & 0b10) == 0; }
 
     private:
       unsigned Hart;      ///< RevMemOp: RISC-V Hart
@@ -384,7 +384,7 @@ namespace SST {
         {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1},
       )
 
-      typedef enum{
+      enum MemCtrlStats : uint32_t {
         ReadInFlight        = 0,
         ReadPending         = 1,
         ReadBytes           = 2,
@@ -424,8 +424,8 @@ namespace SST {
         AMOMaxuBytes        = 36,
         AMOMaxuPending      = 37,
         AMOSwapBytes        = 38,
-        AMOSwapPending      = 39
-      }MemCtrlStats;
+        AMOSwapPending      = 39,
+      };
 
       /// RevBasicMemCtrl: constructor
       RevBasicMemCtrl(ComponentId_t id, const Params& params);

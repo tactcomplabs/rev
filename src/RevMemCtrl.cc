@@ -173,15 +173,14 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
 }
 
 RevBasicMemCtrl::~RevBasicMemCtrl(){
-  for( size_t i=0; i<rqstQ.size(); i++ ){
-    delete rqstQ[i];
-  }
+  for( auto* p : rqstQ )
+    delete p;
   rqstQ.clear();
   delete stdMemHandlers;
 }
 
 void RevBasicMemCtrl::registerStats(){
-  for(auto* stat : {
+  for( auto* stat : {
       "ReadInFlight",
       "ReadPending",
       "ReadBytes",
@@ -222,15 +221,16 @@ void RevBasicMemCtrl::registerStats(){
       "AMOMaxuPending",
       "AMOSwapBytes",
       "AMOSwapPending",
-    })
+    }){
     stats.push_back(registerStatistic<uint64_t>(stat));
+  }
 }
 
 void RevBasicMemCtrl::recordStat(RevBasicMemCtrl::MemCtrlStats Stat,
                                  uint64_t Data){
   if( Stat > RevBasicMemCtrl::MemCtrlStats::AMOSwapPending){
     // do nothing
-    return ;
+    return;
   }
   stats[Stat]->addData(Data);
 }
@@ -1118,8 +1118,9 @@ bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
 
   // search all preceding slots for an AMO from the same Hart
   for( unsigned i = 0; i < Slot; i++ ){
-    if( rqstQ[i]->getFlags() & IS_ATOMIC && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
-      if( rqstQ[i]->getFlags() & uint32_t(RevCPU::RevFlag::F_AQ) ){
+    if( (rqstQ[i]->getFlags() & IS_ATOMIC) != 0 &&
+        rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
+      if( (rqstQ[i]->getFlags() & uint32_t(RevCPU::RevFlag::F_AQ)) != 0 ){
         // this implies that we found a preceding request in the request queue
         // that was 1) an AMO and 2) came from the same HART as 'slot'
         // and 3) had the AQ flag set;
@@ -1139,8 +1140,8 @@ bool RevBasicMemCtrl::isRL(unsigned Slot, unsigned Hart){
     return false;
   }
 
-  if( rqstQ[Slot]->getFlags() & IS_ATOMIC &&
-      rqstQ[Slot]->getFlags() & uint32_t(RevCPU::RevFlag::F_RL) ){
+  if( (rqstQ[Slot]->getFlags() & IS_ATOMIC) != 0 &&
+      (rqstQ[Slot]->getFlags() & uint32_t(RevCPU::RevFlag::F_RL)) != 0 ){
     // this is an AMO, check to see if there are other ops from the same
     // HART in flight
     for( unsigned i = 0; i < Slot; i++ ){
@@ -1367,19 +1368,21 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
   }
   void *Target = Tmp->getTarget();
 
-  auto flags = Tmp->getFlags();
-  auto buffer = Tmp->getBuf();
+  StandardMem::Request::flags_t flags = Tmp->getFlags();
+  std::vector<uint8_t> buffer = Tmp->getBuf();
 
   if( Tmp->getSize() == 4 ){
-    int32_t TmpBuf = 0;
-    for( unsigned i = 0; i < buffer.size(); i++ ){
-      TmpBuf |= buffer[i] << i*8;
+    // 32-bit (W) AMOs
+    uint32_t TmpBuf = 0;
+    for( size_t i = 0; i < buffer.size(); i++ ){
+      TmpBuf |= uint32_t{buffer[i]} << i*8;
     }
     ApplyAMO(flags, Target, TmpBuf);
   }else{
-    int64_t TmpBuf = 0;
-    for( unsigned i = 0; i < buffer.size(); i++ ){
-      TmpBuf |= buffer[i] << i*8;
+    // 64-bit (D) AMOs
+    uint64_t TmpBuf = 0;
+    for( size_t i = 0; i < buffer.size(); i++ ){
+      TmpBuf |= uint64_t{buffer[i]} << i*8;
     }
     ApplyAMO(flags, Target, TmpBuf);
   }
@@ -1387,7 +1390,7 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
   // copy the target data over to the buffer and build the memory request
   buffer.clear();
   uint8_t *TmpBuf8 = static_cast<uint8_t *>(Target);
-  for(unsigned i = 0; i < Tmp->getSize(); i++ ){
+  for( size_t i = 0; i < Tmp->getSize(); i++ ){
     buffer.push_back(TmpBuf8[i]);
   }
 
@@ -1406,7 +1409,8 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
                                   nullptr, // this can be null here since we don't need to modify the response
                                   Op->getTarget(),
                                   Op->getFlags(),
-                                  Op, true);
+                                  Op,
+                                  true);
   AMOTable.insert({Op->getAddr(), NewEntry});
   rqstQ.push_back(Op);
 }
