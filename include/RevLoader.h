@@ -296,6 +296,9 @@ namespace SST {
       /// RevLoader: retrieves the target value within the argv array
       std::string GetArgv(unsigned entry);
 
+      /// RevLoader: retrieve the entire argv vector
+      std::vector<std::string> GetArgv() { return argv; }
+
       /// RevLoader: retrives the elf info structure
       ElfInfo GetInfo() { return elfinfo; }
 

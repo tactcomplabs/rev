@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: strlen_c
+# makefile: ex2
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,14 +12,14 @@
 
 .PHONY: src
 
-EXAMPLE=amoadd_cxx_memh
+EXAMPLE=argc
 CC=${RVCC}
 #ARCH=rv64g
 ARCH=rv64imafd
 
 all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+$(EXAMPLE).exe: $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

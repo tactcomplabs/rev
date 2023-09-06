@@ -21,8 +21,10 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   addrShift = int(log(pageSize) / log(2.0));
   nextPage = 0;
 
-  //stacktop = _REVMEM_BASE_ + memSize;
-  stacktop = (_REVMEM_BASE_ + memSize) - _STACK_SIZE_;
+  // We initialize StackTop to the size of memory minus 1024 bytes
+  // This allocates 1024 bytes for program header information to contain
+  // the ARGC and ARGV information
+  stacktop = (_REVMEM_BASE_ + memSize) - 1024;
 
   memStats.bytesRead = 0;
   memStats.bytesWritten = 0;
@@ -60,8 +62,10 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
     physMem[i] = 0;
   }
 
-  //stacktop = _REVMEM_BASE_ + memSize;
-  stacktop = (_REVMEM_BASE_ + memSize);
+  // We initialize StackTop to the size of memory minus 1024 bytes
+  // This allocates 1024 bytes for program header information to contain
+  // the ARGC and ARGV information
+  stacktop = (_REVMEM_BASE_ + memSize) - 1024;
 
   memStats.bytesRead = 0;
   memStats.bytesWritten = 0;

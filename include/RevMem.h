@@ -70,12 +70,13 @@ namespace SST {
           uint64_t getBaseAddr() const { return BaseAddr; }
           uint64_t getSize() const { return Size; }
 
-          void setBaseAddr(uint64_t baseAddr) { 
+          void setBaseAddr(uint64_t baseAddr) {
             BaseAddr = baseAddr;
             if( Size ){
               TopAddr = Size + BaseAddr;
             }
           }
+
           void setSize(uint64_t size) { Size = size; TopAddr = BaseAddr + size; }
 
           /// MemSegment: Check if vAddr is included in this segment
@@ -94,7 +95,9 @@ namespace SST {
       // Override for easy std::cout << *Seg << std::endl;
       friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
         std::cout << "---------------------------------------------------------------" << std::endl;
-        return os << " | BaseAddr:  0x" << std::hex << obj.getBaseAddr() << " | TopAddr: 0x" << std::hex << obj.getTopAddr() << " | Size: " << std::dec << obj.getSize() << " Bytes";
+        return os << State << " | 0x" << std::hex << obj.getBaseAddr()
+                  << " | 0x" << std::hex << obj.getTopAddr()
+                  << " | Size = " << std::dec << obj.getSize();
       }
 
       private:
@@ -117,7 +120,10 @@ namespace SST {
 
       /// RevMem: set the stack_top address
       void SetStackTop(uint64_t Addr) { stacktop = Addr; }
- 
+
+      /// RevMem: retrieve the address of the top of memory (not stack)
+      uint64_t GetMemTop() { return (_REVMEM_BASE_ + memSize); }
+
       /// RevMem: get the stack_top address
       uint64_t GetStackBottom() { return stacktop - _STACK_SIZE_; }
 
@@ -267,7 +273,7 @@ namespace SST {
 
       /// RevMem: Get memSize value set in .py file
       const uint64_t GetMemSize(){ return memSize; }
-  
+
       ///< RevMem: Get MemSegs vector
       std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
 
@@ -291,7 +297,6 @@ namespace SST {
 
       /// RevMem: Attempts to allocate memory at a specific address
       uint64_t AllocMemAt(const uint64_t& BaseAddr, const uint64_t& Size);
-
 
       /// RevMem: Sets the HeapStart & HeapEnd to EndOfStaticData
       void InitHeap(const uint64_t& EndOfStaticData);
