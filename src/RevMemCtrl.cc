@@ -1309,8 +1309,9 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     if( op->getSplitRqst() > 1 ){
       // split request exists, determine how to handle it
 
-      uint8_t *target = (uint8_t *)(op->getTarget());
-      target += ev->pAddr - op->getAddr();
+      uint8_t *target = static_cast<uint8_t *>(op->getTarget());
+      unsigned startByte = (unsigned)( (uint64_t)(ev->pAddr) - op->getAddr() );
+      target += uint8_t(startByte);
       for( unsigned i=0; i<(unsigned)(ev->size); i++ ){
         *target = ev->data[i];
         target++;
