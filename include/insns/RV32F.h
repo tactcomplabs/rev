@@ -25,27 +25,27 @@ namespace SST{
       static bool cflwsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.flwsp rd, $imm = lw rd, x2, $imm
         Inst.rs1  = 2;
-        return flw(F,R,M,Inst);
+        return flw(F, R, M, Inst);
       }
 
       static bool cfswsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.swsp rs2, $imm = sw rs2, x2, $imm
         Inst.rs1  = 2;
-        return fsw(F,R,M,Inst);
+        return fsw(F, R, M, Inst);
       }
 
       static bool cflw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.flw %rd, %rs1, $imm = flw %rd, %rs1, $imm
         Inst.rd  = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        return flw(F,R,M,Inst);
+        return flw(F, R, M, Inst);
       }
 
       static bool cfsw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         // c.fsw rs2, rs1, $imm = fsw rs2, $imm(rs1)
         Inst.rs2 = CRegMap[Inst.rd];
         Inst.rs1 = CRegMap[Inst.rs1];
-        return fsw(F,R,M,Inst);
+        return fsw(F, R, M, Inst);
       }
 
       // Standard instructions
@@ -239,14 +239,14 @@ namespace SST{
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fclass.s %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b001	).SetFunct7(0b1110000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fclasss ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.s.w %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1101000).SetfpcvtOp(0b00000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtsw ).InstEntry},
       {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fcvt.s.wu %rd, %rs1"	          ).SetOpcode( 0b1010011).SetFunct3( 0b0	  ).SetFunct7(0b1101000).SetfpcvtOp(0b00001).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fcvtswu ).InstEntry},
-      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fmv.w.x %rd, %rs1"	            ).SetOpcode( 0b1010011).SetFunct3( 0b000	).SetFunct7(0b1111000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fmvwx ).InstEntry}
+      {RevInstEntryBuilder<Rev32FInstDefaults>().SetMnemonic("fmv.w.x %rd, %rs1"	            ).SetOpcode( 0b1010011).SetFunct3( 0b000	).SetFunct7(0b1111000).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fmvwx ).InstEntry},
       };
 
     std::vector<RevInstEntry> RV32FCOTable = {
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.flwsp %rd, $imm").SetCost(1).SetOpcode(0b10).SetFunct3(0b011).SetrdClass(RegFLOAT).Setrs1Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCI).SetImplFunc(&cflwsp).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fswsp %rs2, $imm").SetCost(1).SetOpcode(0b10).SetFunct3(0b111).Setrs2Class(RegFLOAT).Setrs1Class(RegGPR).Setimm(FVal).SetFormat(RVCTypeCSS).SetImplFunc(&cfswsp).SetCompressed(true).InstEntry},
         {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.flw %rd, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b011).Setrs1Class(RegGPR).SetrdClass(RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCL).SetImplFunc(&cflw).SetCompressed(true).InstEntry},
-        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b111).Setrs1Class(RegGPR).Setrs2Class(RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS).SetImplFunc(&cfsw).SetCompressed(true).InstEntry}
+        {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b111).Setrs1Class(RegGPR).Setrs2Class(RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS).SetImplFunc(&cfsw).SetCompressed(true).InstEntry},
       };
 
     public:
