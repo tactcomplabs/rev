@@ -5,3 +5,5 @@ src/librevcpu.so
 .vscode
 .#*
 *~
+*.out
+*.asm
