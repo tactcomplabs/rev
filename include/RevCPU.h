@@ -101,7 +101,7 @@ namespace SST {
         {"enable_nic",      "Enable the internal RevNIC",                   "0"},
         {"enable_pan",      "Enable PAN network endpoint",                  "0"},
         {"enable_test",     "Enable PAN network endpoint test",             "0"},
-        {"enable_pan_stats","Enable PAN network statistics",                "1"},
+        {"enable_pan_stats", "Enable PAN network statistics",               "1"},
         {"enable_memH",     "Enable memHierarchy",                          "0"},
         {"enableRDMAMbox",  "Enable the RDMA mailbox",                      "1"},
         {"enableCoProc",    "Enable an attached coProcessor for all cores", "0"},
@@ -112,7 +112,7 @@ namespace SST {
         {"msgPerCycle",     "Number of messages per cycle to inject",       "1"},
         {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject",  "1"},
         {"testIters",       "Number of PAN test messages to send",          "255"},
-        {"splash",          "Display the splash logo",                      "0"}
+        {"splash",          "Display the splash logo",                      "0"},
       )
 
       // -------------------------------------------------------
@@ -128,7 +128,7 @@ namespace SST {
         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
         {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
         {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
-        {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"}
+        {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"},
       )
 
       // -------------------------------------------------------
@@ -253,12 +253,12 @@ namespace SST {
       std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
 
 
-      std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
-      std::queue<std::pair<uint32_t,char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size,Data>
-      std::list<std::pair<uint8_t,int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag,Dest>
+      std::queue<std::pair<panNicEvent *, int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd, Dest>
+      std::queue<std::pair<uint32_t, char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
+      std::list<std::pair<uint8_t, int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>
       std::vector<std::tuple<uint8_t,
                              uint64_t,
-                             uint32_t>> TrackGets;      ///< RevCPU: tracks the outstanding get messages; tuple<Tag,Addr,Sz>
+                             uint32_t>> TrackGets;      ///< RevCPU: tracks the outstanding get messages; tuple<Tag, Addr, Sz>
       std::vector<std::tuple<uint8_t,
                              uint32_t,
                              unsigned,

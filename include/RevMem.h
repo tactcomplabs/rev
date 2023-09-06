@@ -43,7 +43,7 @@
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
-#define REVMEM_FLAGS(x) (StandardMem::Request::flags_t(x))
+#define REVMEM_FLAGS(x) (static_cast<StandardMem::Request::flags_t>(x))
 
 #define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
 
@@ -363,8 +363,8 @@ namespace SST {
       #define LRSC_ADDR 1
       #define LRSC_AQRL 2
       #define LRSC_VAL  3
-      std::vector<std::tuple<unsigned,uint64_t,
-                             unsigned,uint64_t*>> LRSC;   ///< RevMem: load reserve/store conditional vector
+      std::vector<std::tuple<unsigned, uint64_t,
+                             unsigned, uint64_t*>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
     }; // class RevMem
   } // namespace RevCPU

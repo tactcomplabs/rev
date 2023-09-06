@@ -13,7 +13,7 @@
 RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   : numCores(NumCores), verbosity(Verbosity) {
 
-  std::pair<unsigned,unsigned> InitialPair;
+  std::pair<unsigned, unsigned> InitialPair;
   InitialPair.first = 0;
   InitialPair.second = 10;
 
@@ -25,11 +25,11 @@ RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   // -- memCosts[core] = 0:10
   // -- prefetch depth = 16
   for( unsigned i=0; i<numCores; i++ ){
-    startAddr.insert( std::pair<unsigned,uint64_t>(i, 0) );
-    machine.insert( std::pair<unsigned,std::string>(i, "G") );
-    table.insert( std::pair<unsigned,std::string>(i, "_REV_INTERNAL_") );
+    startAddr.insert( std::pair<unsigned, uint64_t>(i, 0) );
+    machine.insert( std::pair<unsigned, std::string>(i, "G") );
+    table.insert( std::pair<unsigned, std::string>(i, "_REV_INTERNAL_") );
     memCosts.push_back(InitialPair);
-    prefetchDepth.insert( std::pair<unsigned,unsigned>(i, 16) );
+    prefetchDepth.insert( std::pair<unsigned, unsigned>(i, 16) );
   }
 }
 
@@ -56,16 +56,16 @@ bool RevOpts::InitPrefetchDepth( std::vector<std::string> Depths ){
   std::vector<std::string> vstr;
   for(unsigned i=0; i<Depths.size(); i++ ){
     std::string s = Depths[i];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = std::stoul(vstr[0],nullptr,0);
+    unsigned Core = std::stoul(vstr[0], nullptr, 0);
     if( Core > numCores )
       return false;
 
     std::string::size_type sz = 0;
-    unsigned Depth = std::stoul(vstr[1],&sz,0);
+    unsigned Depth = std::stoul(vstr[1], &sz, 0);
 
     prefetchDepth.find(Core)->second = Depth;
     vstr.clear();
@@ -79,14 +79,14 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
   // check to see if we expand into multiple cores
   if( StartAddrs.size() == 1 ){
     std::string s = StartAddrs[0];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 2 )
       return false;
 
     if( vstr[0] == "CORES" ){
       // set all cores to the target machine model
       std::string::size_type sz = 0;
-      uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
+      uint64_t Addr = (uint64_t)(std::stoull(vstr[1], &sz, 0));
       for( unsigned i=0; i<numCores; i++ ){
         startAddr.find(i)->second = Addr;
       }
@@ -96,16 +96,16 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
 
   for(unsigned i=0; i<StartAddrs.size(); i++ ){
     std::string s = StartAddrs[i];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
     if( Core > numCores )
       return false;
 
     std::string::size_type sz = 0;
-    uint64_t Addr = (uint64_t)(std::stoull(vstr[1],&sz,0));
+    uint64_t Addr = (uint64_t)(std::stoull(vstr[1], &sz, 0));
 
     startAddr.find(Core)->second = Addr;
     vstr.clear();
@@ -117,15 +117,15 @@ bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
   std::vector<std::string> vstr;
   for(unsigned i=0; i<StartSymbols.size(); i++ ){
     std::string s = StartSymbols[i];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
     if( Core > numCores )
       return false;
 
-    startSym.insert(std::pair<unsigned,std::string>(Core,vstr[1]));
+    startSym.insert(std::pair<unsigned, std::string>(Core, vstr[1]));
     vstr.clear();
   }
   return true;
@@ -137,7 +137,7 @@ bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
   // check to see if we expand into multiple cores
   if( Machines.size() == 1 ){
     std::string s = Machines[0];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 2 )
       return false;
 
@@ -153,11 +153,11 @@ bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
   // parse individual core configs
   for( unsigned i=0; i<Machines.size(); i++ ){
     std::string s = Machines[i];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
     if( Core > numCores )
       return false;
 
@@ -171,11 +171,11 @@ bool RevOpts::InitInstTables( std::vector<std::string> InstTables ){
   std::vector<std::string> vstr;
   for( unsigned i=0; i<InstTables.size(); i++ ){
     std::string s = InstTables[i];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
+    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
     if( Core > numCores )
       return false;
 
@@ -190,13 +190,13 @@ bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
 
   for( unsigned i=0; i<MemCosts.size(); i++ ){
     std::string s = MemCosts[i];
-    splitStr(s,':',vstr);
+    splitStr(s, ':', vstr);
     if( vstr.size() != 3 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0],nullptr,0));
-    unsigned Min  = (unsigned)(std::stoi(vstr[1],nullptr,0));
-    unsigned Max  = (unsigned)(std::stoi(vstr[2],nullptr,0));
+    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
+    unsigned Min  = (unsigned)(std::stoi(vstr[1], nullptr, 0));
+    unsigned Max  = (unsigned)(std::stoi(vstr[2], nullptr, 0));
     memCosts[Core].first  = Min;
     memCosts[Core].second = Max;
     if( (Min==0) || (Max==0) ){

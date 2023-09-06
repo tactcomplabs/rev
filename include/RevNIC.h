@@ -112,7 +112,7 @@ namespace SST {
         RevNIC,
         "revcpu",
         "RevNIC",
-        SST_ELI_ELEMENT_VERSION(1,0,0),
+        SST_ELI_ELEMENT_VERSION(1, 0, 0),
         "RISC-V SST NIC",
         SST::RevCPU::nicAPI
       )
@@ -121,7 +121,7 @@ namespace SST {
       SST_ELI_DOCUMENT_PARAMS(
         {"clock", "Clock frequency of the NIC", "1Ghz"},
         {"port", "Port to use, if loaded as an anonymous subcomponent", "network"},
-        {"verbose", "Verbosity for output (0 = nothing)", "0"}
+        {"verbose", "Verbosity for output (0 = nothing)", "0"},
       )
 
       // Register the ports

@@ -35,7 +35,7 @@ namespace SST {
       SST_ELI_REGISTER_PYTHON_MODULE(
         SST::RevCPU::RevCPUPyModule,      // python class
         "revcpu",                         // component library
-        SST_ELI_ELEMENT_VERSION(1,0,0)
+        SST_ELI_ELEMENT_VERSION(1, 0, 0)
       )
 
       // Export the library via ELI

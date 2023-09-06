@@ -32,14 +32,14 @@ RevProc::RevProc( unsigned Id,
 
   // initialize the machine model for the target core
   std::string Machine;
-  if( !Opts->GetMachineModel(id,Machine) )
+  if( !Opts->GetMachineModel(id, Machine) )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to retrieve the machine model for core=%u\n", id);
 
   unsigned MinCost = 0;
   unsigned MaxCost = 0;
 
-  Opts->GetMemCost(Id,MinCost,MaxCost);
+  Opts->GetMemCost(Id, MinCost, MaxCost);
 
   if(CoProc){
     coProc = CoProc;
@@ -47,7 +47,7 @@ RevProc::RevProc( unsigned Id,
     coProc = NULL;
   }
 
-  feature = new RevFeature(Machine,output,MinCost,MaxCost,Id);
+  feature = new RevFeature(Machine, output, MinCost, MaxCost, Id);
   if( !feature )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevFeature object for core=%u\n", id);
@@ -58,7 +58,7 @@ RevProc::RevProc( unsigned Id,
     Depth = 16;
   }
 
-  sfetch = new RevPrefetcher(Mem,feature,Depth);
+  sfetch = new RevPrefetcher(Mem, feature, Depth);
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%u\n", id);
@@ -162,11 +162,11 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
 
   for( unsigned i=0; i<IT.size(); i++ ){
     InstTable.push_back(IT[i]);
-    std::pair<unsigned,unsigned> ExtObj =
-      std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+    std::pair<unsigned, unsigned> ExtObj =
+      std::pair<unsigned, unsigned>(Extensions.size()-1, i);
     EntryToExt.insert(
       std::pair<unsigned,
-        std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+        std::pair<unsigned, unsigned>>(InstTable.size()-1, ExtObj));
   }
 
   // load the compressed instructions
@@ -180,11 +180,11 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
 
     for( unsigned i=0; i<CT.size(); i++ ){
       InstTable.push_back(CT[i]);
-      std::pair<unsigned,unsigned> ExtObj =
-        std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+      std::pair<unsigned, unsigned> ExtObj =
+        std::pair<unsigned, unsigned>(Extensions.size()-1, i);
       EntryToExt.insert(
         std::pair<unsigned,
-          std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+          std::pair<unsigned, unsigned>>(InstTable.size()-1, ExtObj));
     }
     // load the optional compressed instructions
     if( Opt ){
@@ -197,11 +197,11 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
 
       for( unsigned i=0; i<CT.size(); i++ ){
         InstTable.push_back(CT[i]);
-        std::pair<unsigned,unsigned> ExtObj =
-          std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+        std::pair<unsigned, unsigned> ExtObj =
+          std::pair<unsigned, unsigned>(Extensions.size()-1, i);
         EntryToExt.insert(
           std::pair<unsigned,
-            std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+            std::pair<unsigned, unsigned>>(InstTable.size()-1, ExtObj));
       }
     }
   }
@@ -219,57 +219,57 @@ bool RevProc::SeedInstTable(){
   if( feature->IsModeEnabled(RV_I) ){
     if( feature->GetXlen() == 64 ){
       // load RV32I & RV64; no optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),false);
-      EnableExt(static_cast<RevExt *>(new RV64I(feature,RegFile,mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV32I(feature, RegFile, mem, output)), false);
+      EnableExt(static_cast<RevExt *>(new RV64I(feature, RegFile, mem, output)), false);
     }else{
       // load RV32I w/ optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),true);
+      EnableExt(static_cast<RevExt *>(new RV32I(feature, RegFile, mem, output)), true);
     }
   }
 
   // M-Extension
   if( feature->IsModeEnabled(RV_M) ){
-    EnableExt(static_cast<RevExt *>(new RV32M(feature,RegFile,mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV32M(feature, RegFile, mem, output)), false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64M(feature,RegFile,mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64M(feature, RegFile, mem, output)), false);
     }
   }
 
   // A-Extension
   if( feature->IsModeEnabled(RV_A) ){
-    EnableExt(static_cast<RevExt *>(new RV32A(feature,RegFile,mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV32A(feature, RegFile, mem, output)), false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64A(feature,RegFile,mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64A(feature, RegFile, mem, output)), false);
     }
   }
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
     if( (!feature->IsModeEnabled(RV_D)) && (feature->GetXlen() == 32) ){
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),true);
+      EnableExt(static_cast<RevExt *>(new RV32F(feature, RegFile, mem, output)), true);
     }else{
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),false);
-      EnableExt(static_cast<RevExt *>(new RV64F(feature,RegFile,mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV32F(feature, RegFile, mem, output)), false);
+      EnableExt(static_cast<RevExt *>(new RV64F(feature, RegFile, mem, output)), false);
 
     }
 #if 0
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64D(feature, RegFile, mem, output)));
     }
 #endif
   }
 
   // D-Extension
   if( feature->IsModeEnabled(RV_D) ){
-    EnableExt(static_cast<RevExt *>(new RV32D(feature,RegFile,mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV32D(feature, RegFile, mem, output)), false);
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)),false);
+      EnableExt(static_cast<RevExt *>(new RV64D(feature, RegFile, mem, output)), false);
     }
   }
 
   // PAN Extension
   if( feature->IsModeEnabled(RV_P) ){
-    EnableExt(static_cast<RevExt *>(new RV64P(feature,RegFile,mem,output)),false);
+    EnableExt(static_cast<RevExt *>(new RV64P(feature, RegFile, mem, output)), false);
   }
 
   return true;
@@ -324,7 +324,7 @@ void RevProc::splitStr(const std::string& s,
 std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
   std::string Tmp = Entry.mnemonic;
   std::vector<std::string> vstr;
-  splitStr(Tmp,' ',vstr);
+  splitStr(Tmp, ' ', vstr);
 
   return vstr[0];
 }
@@ -336,11 +336,11 @@ bool RevProc::InitTableMapping(){
 
   for( unsigned i=0; i<InstTable.size(); i++ ){
     NameToEntry.insert(
-      std::pair<std::string,unsigned>(ExtractMnemonic(InstTable[i]),i) );
+      std::pair<std::string, unsigned>(ExtractMnemonic(InstTable[i]), i) );
     if( !InstTable[i].compressed ){
       // map normal instruction
       EncToEntry.insert(
-        std::pair<uint32_t,unsigned>(CompressEncoding(InstTable[i]),i) );
+        std::pair<uint32_t, unsigned>(CompressEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
                       "Core %u ; Table Entry %u = %s\n",
                       id,
@@ -349,7 +349,7 @@ bool RevProc::InitTableMapping(){
     }else{
       // map compressed instruction
       CEncToEntry.insert(
-        std::pair<uint32_t,unsigned>(CompressCEncoding(InstTable[i]),i) );
+        std::pair<uint32_t, unsigned>(CompressCEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
                       "Core %u ; Compressed Table Entry %u = %s\n",
                       id,
@@ -382,14 +382,14 @@ bool RevProc::ReadOverrideTables(){
   std::string Inst;
   std::string Cost;
   unsigned Entry;
-  std::map<std::string,unsigned>::iterator it;
+  std::map<std::string, unsigned>::iterator it;
   while( infile >> Inst >> Cost ){
     it = NameToEntry.find(Inst);
     if( it == NameToEntry.end() )
       output->fatal(CALL_INFO, -1, "Error: could not find instruction in table for map value=%s\n", Inst.c_str() );
 
     Entry = it->second;
-    InstTable[Entry].cost = (unsigned)(std::stoi(Cost,nullptr,0));
+    InstTable[Entry].cost = (unsigned)(std::stoi(Cost, nullptr, 0));
   }
 
   // close the file
@@ -978,7 +978,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   Enc |= (uint32_t)(funct6 << 12);
 
   bool isCoProcInst = false;
-  std::map<uint32_t,unsigned>::iterator it = CEncToEntry.find(Enc);
+  std::map<uint32_t, unsigned>::iterator it = CEncToEntry.find(Enc);
   if( it == CEncToEntry.end() ){
       if(coProc){
         isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
@@ -1013,31 +1013,31 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
 
   switch( InstTable[Entry].format ){
   case RVCTypeCR:
-    return DecodeCRInst(TmpInst,Entry);
+    return DecodeCRInst(TmpInst, Entry);
     break;
   case RVCTypeCI:
-    return DecodeCIInst(TmpInst,Entry);
+    return DecodeCIInst(TmpInst, Entry);
     break;
   case RVCTypeCSS:
-    return DecodeCSSInst(TmpInst,Entry);
+    return DecodeCSSInst(TmpInst, Entry);
     break;
   case RVCTypeCIW:
-    return DecodeCIWInst(TmpInst,Entry);
+    return DecodeCIWInst(TmpInst, Entry);
     break;
   case RVCTypeCL:
-    return DecodeCLInst(TmpInst,Entry);
+    return DecodeCLInst(TmpInst, Entry);
     break;
   case RVCTypeCS:
-    return DecodeCSInst(TmpInst,Entry);
+    return DecodeCSInst(TmpInst, Entry);
     break;
   case RVCTypeCA:
-    return DecodeCAInst(TmpInst,Entry);
+    return DecodeCAInst(TmpInst, Entry);
     break;
   case RVCTypeCB:
-    return DecodeCBInst(TmpInst,Entry);
+    return DecodeCBInst(TmpInst, Entry);
     break;
   case RVCTypeCJ:
-    return DecodeCJInst(TmpInst,Entry);
+    return DecodeCJInst(TmpInst, Entry);
     break;
   default:
     output->fatal(CALL_INFO, -1,
@@ -1540,7 +1540,7 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 7: Look up the value in the table
   bool isCoProcInst = false;
-  std::map<uint32_t,unsigned>::iterator it;
+  std::map<uint32_t, unsigned>::iterator it;
   it = EncToEntry.find(Enc);
    if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
     //This is kind of a hack, but we may not have found the instruction becasue
@@ -1605,25 +1605,25 @@ RevInst RevProc::DecodeInst(){
   // Stage 8: Do a full deocode using the target format
   switch( InstTable[Entry].format ){
   case RVTypeR:
-    return DecodeRInst(Inst,Entry);
+    return DecodeRInst(Inst, Entry);
     break;
   case RVTypeI:
-    return DecodeIInst(Inst,Entry);
+    return DecodeIInst(Inst, Entry);
     break;
   case RVTypeS:
-    return DecodeSInst(Inst,Entry);
+    return DecodeSInst(Inst, Entry);
     break;
   case RVTypeU:
-    return DecodeUInst(Inst,Entry);
+    return DecodeUInst(Inst, Entry);
     break;
   case RVTypeB:
-    return DecodeBInst(Inst,Entry);
+    return DecodeBInst(Inst, Entry);
     break;
   case RVTypeJ:
-    return DecodeJInst(Inst,Entry);
+    return DecodeJInst(Inst, Entry);
     break;
   case RVTypeR4:
-    return DecodeR4Inst(Inst,Entry);
+    return DecodeR4Inst(Inst, Entry);
     break;
   default:
     output->fatal(CALL_INFO, -1,
@@ -1662,7 +1662,7 @@ void RevProc::ResetInst(RevInst *I){
 void RevProc::HandleRegFault(unsigned width){
   // build the permissible set of registers available to fault
   unsigned LWidth = 0;
-  std::vector<std::pair<std::string,void*>> RRegs;
+  std::vector<std::pair<std::string, void*>> RRegs;
 
   RevRegFile* regFile = GetRegFile(HartToExec);
 
@@ -1676,7 +1676,7 @@ void RevProc::HandleRegFault(unsigned width){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "x" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->RV32[i])));
+                                      &regFile->RV32[i]));
     }
   }else{
     // rv64
@@ -1685,7 +1685,7 @@ void RevProc::HandleRegFault(unsigned width){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "x" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->RV64[i])));
+                                      &regFile->RV64[i]));
     }
   }
 
@@ -1693,13 +1693,13 @@ void RevProc::HandleRegFault(unsigned width){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "f" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->SPF[i])));
+                                      &regFile->SPF[i]));
     }
   }else if( feature->IsModeEnabled(RV_D) ){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
       std::string Name = "f" + std::to_string(i);
       RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->DPF[i])));
+                                      &regFile->DPF[i]));
     }
   }
 
@@ -1724,7 +1724,7 @@ void RevProc::HandleRegFault(unsigned width){
 
   output->verbose(CALL_INFO, 5, 0,
                   "FAULT:REG: Register fault of %u bits into register %s\n",
-                  LWidth,RegName.c_str());
+                  LWidth, RegName.c_str());
 }
 
 void RevProc::HandleCrackFault(unsigned width){
@@ -1953,7 +1953,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( ExecPC != _PAN_FWARE_JUMP_ ){
 
       // Find the instruction extension
-      std::map<unsigned,std::pair<unsigned,unsigned>>::iterator it;
+      std::map<unsigned, std::pair<unsigned, unsigned>>::iterator it;
       it = EntryToExt.find(RegFile->Entry);
       if( it == EntryToExt.end() ){
         // failed to find the extension
@@ -1962,7 +1962,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
 
       // found the instruction extension
-      std::pair<unsigned,unsigned> EToE = it->second;
+      std::pair<unsigned, unsigned> EToE = it->second;
       RevExt *Ext = Extensions[EToE.first];
 
       // Update RegFile (in case of prior context switch)
@@ -1971,7 +1971,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // -- BEGIN new pipelining implementation
       if( !PendingCtxSwitch ){
         bool *LH = createLoadHazard();
-        Pipeline.push_back(std::make_pair(HartToExec,Inst));
+        Pipeline.push_back(std::make_pair(HartToExec, Inst));
         Pipeline.back().second.hazard = LH;
       }
 
@@ -2159,7 +2159,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if( PExec != nullptr){
         uint64_t Addr = 0x00ull;
         unsigned Idx = 0;
-        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
+        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr, &Idx);
         switch( Status ){
         case PanExec::QExec:
           output->verbose(CALL_INFO, 5, 0,
@@ -2214,14 +2214,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
     if( done ){
       // we are really done, return
-      output->verbose(CALL_INFO,2,0,"Program execution complete\n");
+      output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
       Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
-      output->verbose(CALL_INFO,2,0,
+      output->verbose(CALL_INFO, 2, 0,
                       "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
                       " Idle Cycles: %" PRIu64 " Eff: %f\n",
                       Stats.totalCycles, Stats.cyclesBusy,
                       Stats.cyclesIdle_Total, static_cast<double>(Stats.percentEff));
-      output->verbose(CALL_INFO,3,0,"\t Bytes Read: %" PRIu32 " Bytes Written: %" PRIu32
+      output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu32 " Bytes Written: %" PRIu32
                       " Floats Read: %" PRIu32 " Doubles Read %" PRIu32 " Floats Exec: %" PRIu64
                       " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
                       mem->memStats.bytesRead,

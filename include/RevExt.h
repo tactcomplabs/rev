@@ -17,6 +17,8 @@
 // -- Standard Headers
 #include <string>
 #include <cmath>
+#include <utility>
+#include <vector>
 
 // -- RevCPU Headers
 #include "RevInstTable.h"

@@ -93,9 +93,9 @@ namespace SST {
       )
 
       // Enum for referencing statistics
-      typedef enum{
-        InstRetired = 0
-      }CoProcStats;
+      enum CoProcStats : uint32_t {
+        InstRetired = 0,
+      };
 
       /// RevSimpleCoProc: constructor
       RevSimpleCoProc(ComponentId_t id, Params& params);

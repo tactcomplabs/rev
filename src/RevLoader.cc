@@ -75,7 +75,7 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   // block the writes as cache lines
   if( Len < lineSize ){
     // one cache line to write, dispatch it
-    return mem->WriteMem(0,Addr,Len,Data);
+    return mem->WriteMem(0, Addr, Len, Data);
   }
 
   // calculate the base address of the first cache line
@@ -194,7 +194,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
 
   // set the first stack pointer
   uint32_t sp = mem->GetStackTop() - (uint32_t)(elfinfo.phdr_size);
-  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -339,7 +339,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // set the first stack pointer
   uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
-  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -427,7 +427,7 @@ bool RevLoader::LoadProgramArgs(){
   argv.push_back(exe);
 
   // split the rest of the arguments into tokens
-  splitStr(args,' ',argv);
+  splitStr(args, ' ', argv);
 
   if( argv.size() == 0 ){
     output->fatal(CALL_INFO, -1, "Error: failed to initialize the program arguments\n");
@@ -437,11 +437,11 @@ bool RevLoader::LoadProgramArgs(){
   // load the program args into memory
   uint64_t sp = 0x00ull;
   for( unsigned i=0; i<argv.size(); i++ ){
-    output->verbose(CALL_INFO,6,0,
+    output->verbose(CALL_INFO, 6, 0,
                     "Loading program argv[%u] = %s\n", i, argv[i].c_str() );
     sp = mem->GetStackTop();
     char tmpc[argv[i].size() + 1];
-    argv[i].copy(tmpc,argv[i].size()+1);
+    argv[i].copy(tmpc, argv[i].size()+1);
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
     // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
@@ -450,8 +450,8 @@ bool RevLoader::LoadProgramArgs(){
     sp &= ~uint64_t{0xF};
     // std::cout << "Setting sp: 0x" << std::hex << sp << std::endl;
     mem->SetStackTop(sp);
-    //mem->WriteMem(mem->GetStackTop(),len,(void *)(&tmpc));
-    WriteCacheLine(mem->GetStackTop(),len,(void *)(&tmpc));
+    //mem->WriteMem(mem->GetStackTop(), len, &tmpc);
+    WriteCacheLine(mem->GetStackTop(), len, &tmpc);
   }
 
   return true;
@@ -476,13 +476,13 @@ bool RevLoader::LoadElf(){
   // open the target file
   int fd = open(exe.c_str(), O_RDONLY);
   struct stat FileStats;
-  if( fstat(fd,&FileStats) < 0 )
+  if( fstat(fd, &FileStats) < 0 )
     output->fatal(CALL_INFO, -1, "Error: failed to stat executable file: %s\n", exe.c_str() );
 
   size_t FileSize = FileStats.st_size;
 
   // map the executable into memory
-  char *membuf = (char *)(mmap(NULL,FileSize, PROT_READ, MAP_PRIVATE, fd, 0));
+  char *membuf = (char *)(mmap(NULL, FileSize, PROT_READ, MAP_PRIVATE, fd, 0));
   if( membuf == MAP_FAILED )
     output->fatal(CALL_INFO, -1, "Error: failed to map executable file: %s\n", exe.c_str() );
 
@@ -501,10 +501,10 @@ bool RevLoader::LoadElf(){
     output->fatal(CALL_INFO, -1, "Error: Not in little endian format\n" );
 
   if( IsRVElf32(*eh64) ){
-    if( !LoadElf32(membuf,FileSize) )
+    if( !LoadElf32(membuf, FileSize) )
       output->fatal(CALL_INFO, -1, "Error: could not load Elf32 binary\n" );
   }else{
-    if( !LoadElf64(membuf,FileSize) )
+    if( !LoadElf64(membuf, FileSize) )
       output->fatal(CALL_INFO, -1, "Error: could not load Elf64 binary\n" );
   }
 
@@ -512,9 +512,9 @@ bool RevLoader::LoadElf(){
   munmap( membuf, FileSize );
 
   // print the symbol table entries
-  std::map<std::string,uint64_t>::iterator it = symtable.begin();
+  std::map<std::string, uint64_t>::iterator it = symtable.begin();
   while( it != symtable.end() ){
-    output->verbose(CALL_INFO,6,0,
+    output->verbose(CALL_INFO, 6, 0,
                     "Symbol Table Entry [%s:0x%" PRIx64 "]\n",
                     it->first.c_str(), it->second );
     it++;

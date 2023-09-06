@@ -32,7 +32,7 @@ namespace SST {
       }PanStatus;
 
       /// PanExec: add an execution queue entry
-      bool AddEntry(uint64_t Addr,unsigned *Idx);
+      bool AddEntry(uint64_t Addr, unsigned *Idx);
 
       /// PanExec: remove an execution queue entry
       bool RemoveEntry(unsigned Idx);
@@ -46,7 +46,7 @@ namespace SST {
     private:
       // private data members
       unsigned CurEntry = 0;
-      std::vector<std::tuple<unsigned,PanStatus,uint64_t>> ExecQueue;    ///< PanExec: execution queue
+      std::vector<std::tuple<unsigned, PanStatus, uint64_t>> ExecQueue;    ///< PanExec: execution queue
 
       // private functions
       unsigned GetNewEntry();
