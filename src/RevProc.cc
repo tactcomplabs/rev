@@ -447,20 +447,15 @@ bool RevProc::Reset(){
 
     regFile->cost = 0;
 
-#if 0
-    while(!Pipeline.empty()){
-      Pipeline.pop();
-    }
-#endif
     Pipeline.clear();
   }
+
   // set the pc
   uint64_t StartAddr = 0x00ull;
   if( !opts->GetStartAddr( id, StartAddr ) )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to init the start address for core=%d\n", id);
   std::string StartSymbol = "main";
-  //std::string StartSymbol = "_start";
   if( StartAddr == 0x00ull ){
     if( !opts->GetStartSymbol( id, StartSymbol ) )
       output->fatal(CALL_INFO, -1,
@@ -468,15 +463,18 @@ bool RevProc::Reset(){
 
     StartAddr = loader->GetSymbolAddr(StartSymbol);
   }
+
   if( StartAddr == 0x00ull ){
     // load "main" symbol
     StartAddr = loader->GetSymbolAddr("main");
-    //StartAddr = loader->GetSymbolAddr("_start");
     if( StartAddr == 0x00ull ){
       output->fatal(CALL_INFO, -1,
                     "Error: failed to auto discover address for <main> for core=%d\n", id);
     }
   }
+
+  SetupArgs();
+
   for (int t=0;  t < _REV_HART_COUNT_; t++){
     RevRegFile* regFile = GetRegFile(t);
     regFile->RV32_PC = (uint32_t)(StartAddr);
@@ -489,6 +487,34 @@ bool RevProc::Reset(){
   ECALL_string.clear();
 
   return true;
+}
+
+void RevProc::SetupArgs(){
+  auto Argv = opts->GetArgv();
+
+  // ----------------------------------
+  // We need to initialize the x10 register to include the value of ARGC
+  // This is >= 1 (the executable name is always included)
+  // We also need to initialize the ARGV pointer to the value
+  // of the ARGV base pointer in memory which is currently set to the
+  // program header region.  When we come out of reset, this is StackTop+60 bytes
+  // ----------------------------------
+
+  // calculate the total size of the argv's
+  uint64_t TotalSize = 0x00ull;
+  for( unsigned i=0; i<Argv.size(); i++ ){
+    TotalSize += (Argv[i].size()+1);
+  }
+
+  for( int r=0; r < _REV_HART_COUNT_; r++ ){
+    // setup argc
+    RevRegFile* regFile = GetRegFile(r);
+    regFile->RV32[10] = Argv.size();
+    regFile->RV64[10] = Argv.size();
+
+    regFile->RV32[11] = (uint32_t)(mem->GetStackTop()+60);
+    regFile->RV64[11] = mem->GetStackTop()+60;
+  }
 }
 
 bool RevProc::IsFloat(unsigned Entry){
@@ -2963,11 +2989,10 @@ RevProc::ECALL_status_t RevProc::ECALL_mmap(RevInst& inst){
     // Currently there is no handling of getting it 'close' to the 
     // suggested address... instead if it can't allocate a new segment 
     // there it fails.
-    if( !mem->AddMemSeg(Addr, Size) ){
+    if( !mem->AllocMemAt(Addr, Size) ){
       output->fatal(CALL_INFO, 11, "Failed to add mem segment\n");
     }
   }
-  // std::cout << "MMAP Returning Addr = 0x" << Addr << std::endl; 
   RegFile->RV64[10] = Addr;
   return RevProc::ECALL_status_t::SUCCESS;
 }
@@ -2980,11 +3005,15 @@ RevProc::ECALL_status_t RevProc::ECALL_munmap(RevInst& inst){
   uint64_t Addr = RegFile->RV64[10];
   uint64_t Size = RegFile->RV64[11];
 
-  if( !mem->DeallocMem(Addr, Size) ){
+  int rc =  mem->DeallocMem(Addr, Size) == -1;
+  if(rc == -1){
     output->fatal(CALL_INFO, 11, 
-                  "Failed to perform munmap(Addr = 0x%lx, Size = 0x%lx)", 
+                  "Failed to perform munmap(Addr = 0x%lx, Size = 0x%lx)"
+                  "likely because the memory was not allocated to begin with" , 
                   Addr, Size);
   }
+
+  RegFile->RV64[10] = rc;
   return RevProc::ECALL_status_t::SUCCESS;
 }
 

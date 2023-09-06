@@ -33,7 +33,7 @@ namespace SST {
     class RevOpts{
     public:
       /// RevOpts: options constructor
-      RevOpts( unsigned NumCores, const int Verbosity );
+      RevOpts( unsigned NumCores, const int Verbosity);
 
       /// RevOpts: options destructor
       ~RevOpts();
@@ -80,6 +80,12 @@ namespace SST {
       /// RevOpts: retrieve the prefetch depth for the target core
       bool GetPrefetchDepth( unsigned Core, unsigned &Depth );
 
+      /// RevOpts: set the argv arrary
+      void SetArgs(std::vector<std::string> A){ Argv = A; }
+
+      /// RevOpts: retrieve the argv array
+      std::vector<std::string> GetArgv() { return Argv; }
+
     private:
       unsigned numCores;                            ///< RevOpts: number of initialized cores
       int verbosity;                                ///< RevOpts: verbosity level
@@ -91,6 +97,8 @@ namespace SST {
       std::map<unsigned,unsigned> prefetchDepth;    ///< RevOpts: map of core id to prefretch depth
 
       std::vector<std::pair<unsigned,unsigned>> memCosts; ///< RevOpts: vector of memory cost ranges
+
+      std::vector<std::string> Argv;                ///< RevOpts: vector of function arguments
 
       /// RevOpts: splits a string into tokens
       void splitStr(const std::string& s,char c,std::vector<std::string>& v);
