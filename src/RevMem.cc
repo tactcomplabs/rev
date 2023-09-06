@@ -154,8 +154,8 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
   }
 
   // didn't find a colliding object; add it
-  LRSC.push_back(std::tuple<unsigned,uint64_t,
-                 unsigned,uint64_t*>(Hart,Addr,(unsigned)(aq|(rl<<1)),
+  LRSC.push_back(std::tuple<unsigned, uint64_t,
+                 unsigned, uint64_t*>(Hart, Addr, (unsigned)(aq|(rl<<1)),
                                      reinterpret_cast<uint64_t *>(Target)));
 
   // now handle the memory operation
@@ -186,7 +186,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
 bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target, uint8_t aq, uint8_t rl,
                     StandardMem::Request::flags_t flags){
-  std::vector<std::tuple<unsigned,uint64_t,unsigned,uint64_t*>>::iterator it;
+  std::vector<std::tuple<unsigned, uint64_t, unsigned, uint64_t*>>::iterator it;
 
   for( it = LRSC.begin(); it != LRSC.end(); ++it ){
     if( (Hart == std::get<LRSC_HART>(*it)) &&
@@ -830,7 +830,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
-  char *DataMem = (char *)(Target);
+  char *DataMem = static_cast<char *>(Target);
 
   // set the hazard
   *Hazard = true;
@@ -880,28 +880,28 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
 
 uint8_t RevMem::ReadU8( uint64_t Addr ){
   uint8_t Value;
-  if( !ReadMem( Addr, 1, (void *)(&Value) ) )
+  if( !ReadMem( Addr, 1, &Value ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (U8)\n");
   return Value;
 }
 
 uint16_t RevMem::ReadU16( uint64_t Addr ){
   uint16_t Value;
-  if( !ReadMem( Addr, 2, (void *)(&Value) ) )
+  if( !ReadMem( Addr, 2, &Value ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (U16)\n");
   return Value;
 }
 
 uint32_t RevMem::ReadU32( uint64_t Addr ){
   uint32_t Value;
-  if( !ReadMem( Addr, 4, (void *)(&Value) ) )
+  if( !ReadMem( Addr, 4, &Value ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (U32)\n");
   return Value;
 }
 
 uint64_t RevMem::ReadU64( uint64_t Addr ){
   uint64_t Value;
-  if( !ReadMem( Addr, 8, (void *)(&Value) ) )
+  if( !ReadMem( Addr, 8, &Value ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (U64)\n");
   return Value;
 }
@@ -909,9 +909,9 @@ uint64_t RevMem::ReadU64( uint64_t Addr ){
 float RevMem::ReadFloat( uint64_t Addr ){
   float Value = 0.;
   uint32_t Tmp = 0x00;
-  if( !ReadMem( Addr, 4, (void *)(&Tmp) ) )
+  if( !ReadMem( Addr, 4, &Tmp ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (FLOAT)\n");
-  std::memcpy(&Value,&Tmp,sizeof(float));
+  std::memcpy(&Value, &Tmp, sizeof(float));
   memStats.floatsRead++;
   return Value;
 }
@@ -919,50 +919,50 @@ float RevMem::ReadFloat( uint64_t Addr ){
 double RevMem::ReadDouble( uint64_t Addr ){
   double Value = 0.;
   uint64_t Tmp = 0x00;
-  if( !ReadMem( Addr, 8, (void *)(&Tmp) ) )
+  if( !ReadMem( Addr, 8, &Tmp ) )
     output->fatal(CALL_INFO, -1, "Error: could not read memory (DOUBLE)\n");
-  std::memcpy(&Value,&Tmp,sizeof(double));
+  std::memcpy(&Value, &Tmp, sizeof(double));
   memStats.doublesRead++;
   return Value;
 }
 
 void RevMem::WriteU8( unsigned Hart, uint64_t Addr, uint8_t Value ){
   uint8_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,1,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr, 1, &Tmp) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U8)");
 }
 
 void RevMem::WriteU16( unsigned Hart, uint64_t Addr, uint16_t Value ){
   uint16_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,2,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr, 2, &Tmp) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U16)");
 }
 
 void RevMem::WriteU32( unsigned Hart, uint64_t Addr, uint32_t Value ){
   uint32_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,4,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr, 4, &Tmp) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U32)");
 }
 
 void RevMem::WriteU64( unsigned Hart, uint64_t Addr, uint64_t Value ){
   uint64_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,8,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr, 8, &Tmp) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (U64)");
 }
 
 void RevMem::WriteFloat( unsigned Hart, uint64_t Addr, float Value ){
   uint32_t Tmp = 0x00;
-  std::memcpy(&Tmp,&Value,sizeof(float));
+  std::memcpy(&Tmp, &Value, sizeof(float));
   memStats.floatsWritten++;
-  if( !WriteMem(Hart, Addr,4,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr, 4, &Tmp) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (FLOAT)");
 }
 
 void RevMem::WriteDouble( unsigned Hart, uint64_t Addr, double Value ){
   uint64_t Tmp = 0x00;
-  std::memcpy(&Tmp,&Value,sizeof(double));
+  std::memcpy(&Tmp, &Value, sizeof(double));
   memStats.doublesWritten++;
-  if( !WriteMem(Hart, Addr,8,(void *)(&Tmp)) )
+  if( !WriteMem(Hart, Addr, 8, &Tmp) )
     output->fatal(CALL_INFO, -1, "Error: could not write memory (DOUBLE)");
 }
 
