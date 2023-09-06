@@ -10,7 +10,7 @@
 
 #include "../include/RevMem.h"
 #include <math.h>
-#include <mutex>
+#include <memory>
 
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
                 RevMemCtrl *Ctrl, SST::Output *Output )
@@ -76,7 +76,7 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
   memStats.TLBHits = 0;
   memStats.TLBMisses = 0;
 
-  // AddMemSeg(0, memSize);
+  stacktop = (_REVMEM_BASE_ + memSize) - _STACK_SIZE_;
 }
 
 RevMem::~RevMem(){
@@ -169,9 +169,9 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
   //check to see if we're about to walk off the page....
-  uint32_t adjPageNum = 0;
-  uint64_t adjPhysAddr = 0;
-  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  // uint32_t adjPageNum = 0;
+  // uint64_t adjPhysAddr = 0;
+  // uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
   char *DataMem = (char *)(Target);
 
@@ -341,11 +341,11 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       /* vAddr not a valid address */
 
 
-      #ifdef _REV_DEBUG_
+      // #ifdef _REV_DEBUG_
       for( auto Seg : MemSegs ){
         std::cout << *Seg << std::endl;
       }
-      #endif
+      // #endif
 
       
       output->fatal(CALL_INFO, 11, 
@@ -356,12 +356,11 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   return physAddr;
 }
 
+// This function will change a decent amount in an upcoming PR
 bool RevMem::isValidVirtAddr(const uint64_t vAddr){
-  // std::cout << "Checking validity of vAddr = 0x" << std::hex << vAddr << std::endl;
   for(const auto& MemSeg : MemSegs ){
     if( MemSeg->contains(vAddr) ){
-      /* Found the segment containing the vAddr... if it's not free then were good... if it is segfault */
-      return !(MemSeg->isFree());      
+      return true;
     } 
   }
   if( vAddr >= (stacktop - _STACK_SIZE_ ) ){
@@ -369,7 +368,6 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
       return true;
     }
     else {
-      // PrintMemBounds();
       return false;
     }
   }
@@ -381,76 +379,194 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
 }
 
 
-uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize){
+uint64_t RevMem::AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
   // TODO: Check to make sure there's no overlap
-  uint64_t TopAddr = BaseAddr + SegSize;
-
-  // Check if memory segment is already allocated (We are okay with overlap... for now per ZMAGIC but not duplicate segments)
-  for( auto Seg : MemSegs ){
-    if( Seg->contains(BaseAddr, SegSize) ){
-      if( Seg->isFree() ){
-        // If the segment is free, we can shrink it to fit the new segment
-        ShrinkMemSeg(Seg, SegSize);
-      }
-      else {
-        // TODO: Eventually add more checks once permissions are implemented
-        output->verbose(CALL_INFO, 10, 99, 
-        "Warning: Memory segment already allocated at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
-        return BaseAddr;
-      }
-    }
-  } 
-}
-
-
-uint64_t RevMem::AddMemSeg(const uint64_t& BaseAddr, const uint64_t SegSize, const bool roundUpToPage){
-  // Calculate the number of pages needed to fit the segment
-  uint64_t NumPages = SegSize / __PAGE_SIZE__;
-  // std::cout << "Adding Memory Segment of size " << SegSize << " Bytes" << std::endl;
-  if( SegSize % __PAGE_SIZE__ != 0 ){
-    NumPages++;
-  }
-
-  uint64_t RoundedTopAddr = NumPages*__PAGE_SIZE__;
-
-  // Check if memory segment is already allocated (We are okay with overlap... for now per ZMAGIC but not duplicate segments)
-  for( auto Seg : MemSegs ){
-    if( Seg->contains(BaseAddr, RoundedTopAddr) ){
-      if( Seg->isFree() ){
-        // If the segment is free, we can shrink it to fit the new segment
-        ShrinkMemSeg(Seg, RoundedTopAddr);
-      }
-      else {
-        // TODO: Eventually add more checks once permissions are implemented
-        output->verbose(CALL_INFO, 10, 99, 
-        "Warning: Memory segment already allocated at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
-        return BaseAddr;
-      }
-    }
-  } 
-
-  MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedTopAddr));
+  MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
   return BaseAddr;
 }
 
+// Check if memory segment is already allocated (We are okay with overlap... for now per ZMAGIC but not duplicate segments)
+// Currently only the loader calls this (Static Mem allocation does not have to worry about checking the FreeMemSegs
+// vector because there will be no FreeMemSegs that contain addresses in the static segments)
+// 
+// AllocMem is the only way that a user can allocate & deallocate memory 
+uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, size_t RoundUpSize){
+  size_t RoundedSegSize = 0;
 
+  // Make sure we're not dividing by zero
+  if( RoundUpSize == 0 ){
+    output->fatal(CALL_INFO, -1, "Error: RoundUpSize must be greater than 0\n");
+  }
 
-uint64_t RevMem::AllocMem(const uint64_t SegSize){
-  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap", SegSize);
+  uint64_t Remainder = SegSize % RoundUpSize;
+  // See if we need to round up at all
+  if( Remainder == 0 ){
+    RoundedSegSize = SegSize;
+  } else {
+    RoundedSegSize = SegSize + RoundUpSize - Remainder;
+  }
+
+  uint64_t NewSegTopAddr = BaseAddr + RoundedSegSize;
+  bool Added = false;
+
+  // Check if memory segment is already allocated 
   for( auto Seg : MemSegs ){
-    // Check if we need to increase size of heap or if we can fit in existing segment
-    if ((Seg->isFree()) && (Seg->getSize() >= SegSize)){
-      // TODO: Eventually check write permissions based on current thread
-      ShrinkMemSeg(Seg, SegSize);
+    // If it contains the base address
+    if( Seg->contains(BaseAddr) ){
+      // If it doesn't contain the top address, we need to expand it 
+      if( !Seg->contains(NewSegTopAddr) ){
+        size_t BytesToExpandBy = NewSegTopAddr - Seg->getTopAddr();
+        Seg->setSize(Seg->getSize() + BytesToExpandBy);
+      } else {
+        // If it contains the top address, we don't need to do anything
+        output->verbose(CALL_INFO, 10, 99, 
+        "Warning: Memory segment already allocated that contains the requested rounded allocation at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
+      }
+      // Return the containing segments Base Address
+      BaseAddr = Seg->getBaseAddr();
+      Added = true;
+      break;
+    } // --- End (if contains BaseAddr)
+    
+    else if ( !Seg->contains(BaseAddr) && Seg->contains(NewSegTopAddr) ){
+      // Existing segment only contains the top part of the new segment, expand downwards
+      Seg->setBaseAddr(BaseAddr);
+      size_t BytesToExpandBy = Seg->getBaseAddr() - BaseAddr;
+      Seg->setSize(Seg->getSize() + BytesToExpandBy);
+      Added = true;
+      break;
+    }
+
+  }
+  if( !Added ){
+      // BaseAddr & RoundedTopAddr not a part of a segment
+      // Add rounded segment
+      MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedSegSize));
+  }
+  
+  return BaseAddr;
+}
+
+// AllocMem differs from AddMemSeg because it first searches the FreeMemSegs
+// vector to see if there is a free segment that will fit the new data
+// If there is not a free segment, it will allocate a new segment at the end of the heap
+uint64_t RevMem::AllocMem(const uint64_t& SegSize){
+  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap\n", SegSize);
+
+  uint64_t NewSegBaseAddr = 0;
+  // Check if there is a free segment that can fit the new data
+  for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
+    auto FreeSeg = FreeMemSegs[i];
+    // if the FreeSeg is bigger than the new data, we can shrink it so it starts 
+    // after the new segment (SegSize)
+    uint64_t oldFreeSegSize = FreeSeg->getSize();
+    if( oldFreeSegSize > SegSize ){
+      // New data will start where the free segment started
+      NewSegBaseAddr = FreeSeg->getBaseAddr();
+      MemSegs.emplace_back(std::make_shared<MemSegment>(NewSegBaseAddr, SegSize));
+      FreeSeg->setBaseAddr(FreeSeg->getBaseAddr() + SegSize);
+      FreeSeg->setSize(oldFreeSegSize - SegSize);
+      return NewSegBaseAddr;
+    }
+    // New data will fit exactly in the free segment
+    // ie. remove from FreeMemSegs & add to MemSegs
+    else if (oldFreeSegSize == SegSize ){
+      // New data will start where the free segment started
+      NewSegBaseAddr = FreeSeg->getBaseAddr();
+      MemSegs.emplace_back(std::make_shared<MemSegment>(NewSegBaseAddr, SegSize));
+      FreeMemSegs.erase(FreeMemSegs.begin()+i);
+      return NewSegBaseAddr;
+    }
+    // FreeSeg not big enough to fit the new data
+    else {
+      continue;
     }
   }
-  // If we get to this point there is nothing free so we have to try to expand heap 
-  // TODO: Eventually this should use paging but that's not a priority at this point.
-  uint64_t NewBaseAddr = heapend;
-  MemSegs.emplace_back(std::make_shared<MemSegment>(NewBaseAddr, SegSize));
+  
+  // If we still haven't allocated, expand the heap
+  if( !NewSegBaseAddr ){
+    NewSegBaseAddr = heapend;
+  }
+  MemSegs.emplace_back(std::make_shared<MemSegment>(NewSegBaseAddr, SegSize));
 
   ExpandHeap(SegSize);
-  return NewBaseAddr;
+
+  return NewSegBaseAddr;
+}
+
+// AllocMemAt differs from AddMemSegAt because it first searches the FreeMemSegs
+// vector to see if there is a free segment that will fit the new data
+// If its unable to allocate at the location requested it will error. This may change in the future.
+uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
+  int ret = 0;
+  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap", SegSize);
+
+  // Check if this range exists in the FreeMemSegs vector
+  for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
+    auto FreeSeg = FreeMemSegs[i];
+    if( FreeSeg->contains(BaseAddr, SegSize) ){
+      // Check if were allocating on a boundary of FreeSeg
+      // if not, were allocating in the middle
+      if( FreeSeg->getBaseAddr() != BaseAddr && FreeSeg->getTopAddr() != (BaseAddr + SegSize) ){
+        // Before: |-------------------- FreeSeg --------------------|
+        // After:  |--- FreeSeg ---|- AllocedSeg -|--- NewFreeSeg ---|
+
+        size_t OldFreeSegTop = FreeSeg->getTopAddr();
+
+        // Shrink FreeSeg so it's size goes up to the new AllocedSeg's BaseAddr
+        FreeSeg->setSize(BaseAddr - FreeSeg->getBaseAddr());
+
+        // Create New AllocedSeg; this is done later on before returning
+
+        // Create New FreeSeg that fills the upper part of the old FreeSeg
+        uint64_t NewFreeSegBaseAddr = BaseAddr + SegSize;
+        size_t NewFreeSegSize = OldFreeSegTop - NewFreeSegBaseAddr;
+        FreeMemSegs.emplace_back(std::make_shared<MemSegment>(NewFreeSegBaseAddr, NewFreeSegSize));
+      }
+
+      // If were allocating at the beginning of a FreeSeg (That doesn't take up the whole segment)
+      else if( FreeSeg->getBaseAddr() == BaseAddr && FreeSeg->getTopAddr() != (BaseAddr + SegSize) ){
+        // - Before: |--------------- FreeSeg --------------| 
+        // - After:  |---- AllocedSeg ----|---- FreeSeg ----|
+        FreeSeg->setBaseAddr(BaseAddr + SegSize);
+      }  
+
+      // If were allocating at the end of a FreeSeg (ie. TopAddr is last allocated address)
+      else if( FreeSeg->getBaseAddr() != BaseAddr && FreeSeg->getTopAddr() == (BaseAddr + SegSize) ) {
+        // - Before: |--------------- FreeSeg --------------| 
+        // - After:  |---- FreeSeg ----|---- AllocedSeg ----|
+        FreeSeg->setSize(FreeSeg->getSize() - SegSize);
+      }
+
+      // Entire segment is being occupied
+      else {
+        // - Before: |-------- FreeSeg -------|
+        // - After:  |------ AllocedSeg ------|
+        FreeMemSegs.erase(FreeMemSegs.begin()+i);
+      }
+      // Segment was allocated so return the BaseAddr
+      ret = BaseAddr;
+      break;
+    }
+  }
+
+  if (ret) { // Found a place
+    // Check if any addresses in the segment are already
+    for( auto Seg : MemSegs ){
+      // Check if either the baseAddr or topAddr of the potential new segment exists inside of an already allocated segment
+      if( Seg->contains(BaseAddr) || Seg->contains(BaseAddr + SegSize) ){
+        output->fatal(CALL_INFO, 11,
+                      "Error: Attempting to allocate memory at address 0x%lx of size 0x%lx which contains memory that is"
+                      "already allocated in the segment with BaseAddr = 0x%lx and Size 0x%lx\n",
+                      BaseAddr, SegSize, Seg->getBaseAddr(), Seg->getSize());
+      } else {
+        continue;
+      }
+    }
+    MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
+  }
+
+  return ret;
 }
 
 
@@ -472,11 +588,11 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
   //check to see if we're about to walk off the page....
-  uint32_t adjPageNum = 0;
-  uint64_t adjPhysAddr = 0;
-  uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
+  // uint32_t adjPageNum = 0;
+  // uint64_t adjPhysAddr = 0;
+  // uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
-  char *DataMem = (char *)(Target);
+  // char *DataMem = (char *)(Target);
 
   // set the hazard
   *Hazard = true;
@@ -956,9 +1072,7 @@ uint32_t RevMem::GetNewThreadPID(){
   *       if multiple RevProc's create new Ctx objects at the 
   *       same time
   */
-  std::unique_lock<std::mutex> lock(pid_mtx);
   PIDCount++;
-  lock.unlock();
   return PIDCount;
 }
 
@@ -971,93 +1085,103 @@ uint32_t RevMem::GetNewThreadPID(){
 // - Across multiple segments
 // - In the middle of segments 
 //
-// When a segment is deallocated... the memory segment does not get removed
-// instead... 
-// - If BaseAddr + Size equals an entire segment... we simply mark it as free
-// - If it is less than a whole segment, we create a new segment at MemSegs[i+1]
-//   which encompasses the non-free space [Size+1 -> CurrSeg.TopAddr]
-//   and then we mark the CurrSeg as free and shrink it's Size to Size
-//   which will automatically update the TopAddr
+// Three possible scenarios:
+    // 1. Deallocating the entire segment
+    // - |---------- AllocedSeg -----------| 
+    // - |----------- FreeSeg -------------| 
+    //
+    // 2. Deallocating a partial part of a segment
+    // - |------------- AllocedSeg --------------|
+    // - |---- NewFreeSeg ----|--- AllocedSeg ---|
+    // If this is the situation, we also need to check if the segment 
+    // before (ie. baseAddr - 1) is also free and if so, find that 
+    // segment and merge it with the new free segment
+    // - |--- FreeSeg ---|------------- AllocedSeg --------------|
+    // - |--- FreeSeg ---|---- NewFreeSeg ----|--- AllocedSeg ---|
+    // - |--- FreeSeg ------------------------|--- AllocedSeg ---|
+    //
+    // 3. Deallocating memory that hasn't been allocated 
+    // - |---- FreeSeg ----| ==> SegFault :/ 
 uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
+  output->verbose(CALL_INFO, 10, 99, 
+                  "Attempting to deallocate %lul bytes starting at BaseAddr = 0x%lx\n",
+                  Size, BaseAddr);
+
+  int ret = -1;
+  // Search through allocated segments for the segment that begins on the baseAddr
   for( unsigned i=0; i<MemSegs.size(); i++ ){
-    
-    auto CurrSeg = MemSegs[i]; 
-    /* We don't allow memory to be unallocated if it's not on a segment boundary */
-    if( CurrSeg->getBaseAddr() != BaseAddr ){
+    auto AllocedSeg = MemSegs[i]; 
+    // We don't allow memory to be deallocated if it's not on a segment boundary 
+    if( AllocedSeg->getBaseAddr() != BaseAddr ){
       continue;
     } else {
-      /* Make sure were not trying to free beyond the segment boundaries */
-      if( Size > CurrSeg->getSize() ){
-        output->fatal(CALL_INFO, 11, "Unalloc Error: Cannot free beyond the segment bounds. Attempted to"
+      // Found the segment we're deallocating...
+
+      // Make sure we're not trying to free beyond the segment boundaries
+      if( Size > AllocedSeg->getSize() ){
+        output->fatal(CALL_INFO, 11, "Dealloc Error: Cannot free beyond the segment bounds. Attempted to"
                                      "free from 0x%lx to 0x%lx however the highest address in the segment is 0x%lx",
-                                     BaseAddr, BaseAddr+Size, CurrSeg->getTopAddr());
-        return false;
+                                     BaseAddr, BaseAddr+Size, AllocedSeg->getTopAddr());
       } 
-      
-      /* Check if were unallocating a partial part of a segment */
-      else if( Size < CurrSeg->getSize() ){
-        /* Need to make a new segment that spans t */
-        CurrSeg->setIsFree(true);
-        
-        /* Create a new segment that spans from Size+1 -> TopAddr */
-        /* (Default free state is false in MemSegment constructor) */
-        MemSegs.emplace(MemSegs.begin()+i+1, std::make_shared<MemSegment>(CurrSeg->getBaseAddr()+Size+1, CurrSeg->getTopAddr()));
-
-        /* Shrink to size of free segment */
-        CurrSeg->setSize(Size);
-
-        /* Check if previous segment is free and combine */
-        if( i > 1 ){
-          auto PrevSeg = MemSegs.at(i-1);
-          if( PrevSeg->isFree() ){
-            if( PrevSeg->getTopAddr() == (CurrSeg->getBaseAddr() - 1) ){
-              // std::cout << "Combining Memory Segments" << std::endl;
-              // We need to do the following:
-              // - Set the previous segments size to the combined size
-              //   (setSize function automatically adjusts `TopAddr`)
-              //   also because we previously updated the size of the 
-              //   CurrSeg this should encompass the updated free size
-              PrevSeg->setSize(PrevSeg->getSize() + CurrSeg->getSize());
-              
-              // - Remove CurrSeg
-              MemSegs.erase(MemSegs.begin() + i);
-            } 
-            // PrevSeg was not contiguous with CurrSeg... while this shouldn't happen it's not breaking
-            output->verbose(CALL_INFO, 2, 2,
-                            "Previous segment (idx = %ul) has TopAddr = 0x%lx which is not contiguous with"
-                            "CurrSeg (idx = %ul) which has baseAddr = 0x%lx ", i-1, PrevSeg->getTopAddr(), i, CurrSeg->getBaseAddr());
-          }
-          // PrevSeg was not free... don't combine
-        }
-        // There is either only 1 segment or we are inside the static memory section (segment 1)
-        // so we don't need to worry about combining anything
-      }
-
+      // (2.) Check if we're only deallocating a part of a segment
+      else if( Size < AllocedSeg->getSize() ){
+        output->verbose(CALL_INFO, 10, 99, "  => partial deallocation detected\n");
+        uint64_t oldAllocedSize = AllocedSeg->getSize();
+        // Free data starts where alloced data used to
+        // Before: |------------------- AllocedSeg ------------------------|
+        // After:  |--- FreeSeg ---|------------- AllocedSeg --------------|
+        // Alloced data now starts after the dealloced data
+        AllocedSeg->setBaseAddr(BaseAddr + Size);
+        AllocedSeg->setSize(oldAllocedSize - Size);
+        ret = 0;
+        break;
+      } // --- End Partial Deallocation 
+      // We are deallocating the entire segment (1.)
       else {
-        // std::cout << "Unallocating entire segment" << std::endl;
-        // std::cout << *CurrSeg << std::endl;
-        CurrSeg->setIsFree(true);
-        // std::cout << *CurrSeg << std::endl;
+        output->verbose(CALL_INFO, 10, 99, "  => entire deallocation\n");
+        // Delete it from MemSegs
+        MemSegs.erase(MemSegs.begin() + i);
+        ret = 0;
+        break;
       }
     }
   }
-  return true;
-}
 
-
-uint64_t RevMem::ShrinkMemSeg(std::shared_ptr<MemSegment> Seg, const uint64_t NewSegSize){
-  /* Check if there will be leftover memory in the free segment */
-  if( Seg->getSize() > NewSegSize ){
-    /* Create new segment that encompasses the leftover space */
-    AddMemSeg(NewSegSize+1, Seg->getTopAddr()-NewSegSize);
-    /* Create the new segment that won't be free */
-    MemSegs.emplace_back(std::make_shared<MemSegment>(Seg->getBaseAddr(), NewSegSize));
-  } else {
-    /* New segment same size as free block so all we have to do is set it to not free */
-    // TODO: We will have to eventually update permissions based on thread ctx
-    Seg->setIsFree(false);
+  // We found a matching segment to deallocate
+  if (ret == 0) {
+    // Check if the address before the baseAddr is also free
+    // If so, we can merge the two segments
+    // - Before: |--- FreeSeg ---|---- NewFreeSeg ----|--- AllocedSeg ---|
+    // - After:  |--- FreeSeg ------------------------|--- AllocedSeg ---|
+    bool hasMerged = false;
+    for( auto FreeSeg : FreeMemSegs ){
+      // Check if the address that precedes the baseAddr is free
+      if( FreeSeg->contains(BaseAddr-1) ){
+        // We can merge the two segments
+        // by setting the Size of the FreeSeg to be the sum of the two
+        // and NOT creating a new FreeMemSeg
+        output->verbose(CALL_INFO, 10, 99, "  => merging with previous free segment\n");
+        FreeSeg->setSize(FreeSeg->getSize() + Size);
+        // Dealloc success, return 0
+        hasMerged = true;
+        break;
+      }
+    }
+    if (!hasMerged) {
+      output->verbose(CALL_INFO, 10, 99, "  => allocating new free segment\n");
+      // If we get here, the address that precedes the newly freed data is not free
+      // We need to create a new FreeMemSeg that starts at the baseAddr of the previously
+      // allocated data and is `Size` bytes long
+      // - Before: |--------------------|--- AllocedSeg ---|
+      // - After:  |---- NewFreeSeg ----|--- AllocedSeg ---|
+      FreeMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, Size));
+    }
   }
+
+  // here were not able to find the memory to deallocate
+  return ret;
 }
+
 
 /// @brief This function is called from the loader to initialize the heap
 /// @param EndOfStaticData: The address of the end of the static data section (ie. end of .bss section)
@@ -1070,27 +1194,28 @@ void RevMem::InitHeap(const uint64_t& EndOfStaticData){
                   "EndOfStaticData = 0x%lx which is less than or equal to 0",
                   EndOfStaticData);
   } else {
-    heapend = EndOfStaticData;
-    heapstart = EndOfStaticData;
+    // Mark heap as free
+    FreeMemSegs.emplace_back(std::make_shared<MemSegment>(EndOfStaticData+1, maxHeapSize));
+
+    heapend = EndOfStaticData + 1;
+    heapstart = EndOfStaticData + 1;
   }
   return;
 }
 
 uint64_t RevMem::ExpandHeap(uint64_t Size){
-  /* 
-   * We don't want multiple concurrent processes changing the heapend 
-   * at the same time (ie. two ThreadCtx calling brk)
-   */
-  std::unique_lock<std::mutex> lock(heap_mtx);
-  // std::cout << "HeapEnd = 0x" << heapend << std::endl;
+   // We don't want multiple concurrent processes changing the heapend 
+   // at the same time (ie. two ThreadCtx calling brk)
   uint64_t NewHeapEnd = heapend + Size;
   
-  /* Check if we are out of heap space (ie. heapend >= bottom of stack) */
+  // Check if we are out of heap space (ie. heapend >= bottom of stack)
   if( NewHeapEnd > maxHeapSize ){
     output->fatal(CALL_INFO, 7,  "Out Of Memory --- Attempted to expand heap to 0x%lx which goes beyond the maxHeapSize = 0x%x set in the python configuration. If unset, this value will be equal to 1/4 of memSize.",
                   NewHeapEnd, maxHeapSize);
   }
+  // update the heapend
   heapend = NewHeapEnd;
+
   return heapend;
 }
 
