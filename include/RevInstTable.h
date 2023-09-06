@@ -78,36 +78,26 @@
 #define FRM_RUP   0b011                     // Rounding mode: Round Up (towards +INF)
 #define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
 
-// RV{32,64} Register Operation Macros
-// TODO: These should be replaced with simpler inline functions or casts
+//< Zero-extend value of bits size
+template<typename T>
+constexpr auto ZeroExt(T val, size_t bits){
+  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << bits);
+}
 
-#define SEXT(r,x,b) do {\
-                    (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT(r,x,b) do {\
-                    (r) = (x) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
+//< Sign-extend value of bits size
+template<typename T>
+constexpr auto SignExt(T val, size_t bits){
+  auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
+  return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
+}
 
-#define SEXTI(r,b)  do {\
-                    (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI(r,b)  do {\
-                    (r) = (r) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
-
-#define SEXT64(r,x,b) do {\
-                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT64(r,x,b) do {\
-                    (r) = (x) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
-
-#define SEXTI64(r,b)  do {\
-                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI64(r,b)  do {\
-                    (r) = (r) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
+/// BoxNaN: Store a boxed float inside a double
+inline void BoxNaN(double* dest, void* value){
+  uint32_t i32;
+  memcpy(&i32, value, sizeof(float));       // The FP32 value
+  uint64_t i64 = uint64_t{i32} | ~uint64_t{0} << 32; // Boxed NaN value
+  memcpy(dest, &i64, sizeof(double));       // Store in FP64 register
+}
 
 namespace SST{
   namespace RevCPU {
@@ -180,24 +170,20 @@ namespace SST{
       /// GetX: Get the specifed X register cast to a specific type
       template<typename T>
       T GetX(const RevFeature* F, size_t rs) const {
-        if( rs == 0 ){
-          return 0;
-        }else if( F->IsRV32() ){
-          return static_cast<T>(RV32[rs]);
+        if( F->IsRV32() ){
+          return static_cast<T>(rs ? RV32[rs] : 0);
         }else{
-          return static_cast<T>(RV64[rs]);
+          return static_cast<T>(rs ? RV64[rs] : 0);
         }
       }
 
       /// SetX: Set the specifed X register to a specific value
       template<typename T>
       void SetX(const RevFeature* F, size_t rd, T val) {
-        if( rd != 0 ){
-          if( F->IsRV32() ){
-            RV32[rd] = static_cast<int32_t>(val);
-          }else{
-            RV64[rd] = static_cast<int64_t>(val);
-          }
+        if( F->IsRV32() ){
+          RV32[rd] = rd ? static_cast<int32_t>(val) : 0;
+        }else{
+          RV64[rd] = rd ? static_cast<int64_t>(val) : 0;
         }
       }
 
@@ -311,17 +297,20 @@ namespace SST{
       }
     };
 
+    static_assert(std::is_aggregate_v<RevInst>,
+                  "RevInst must be an aggregate type (https://en.cppreference.com/w/cpp/language/aggregate_initialization)");
+
     /// RevInstEntry: Holds the compressed index to normal index mapping
-    inline std::map<uint8_t,uint8_t> CRegMap =
+    inline std::map<uint8_t, uint8_t> CRegMap =
     {
-      {0b000,8},
-      {0b001,9},
-      {0b010,10},
-      {0b011,11},
-      {0b100,12},
-      {0b101,13},
-      {0b110,14},
-      {0b111,15}
+      {0b000, 8},
+      {0b001, 9},
+      {0b010, 10},
+      {0b011, 11},
+      {0b100, 12},
+      {0b101, 13},
+      {0b110, 14},
+      {0b111, 15},
     };
 
     struct RevInstDefaults {
