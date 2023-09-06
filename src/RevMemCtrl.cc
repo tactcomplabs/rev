@@ -173,15 +173,14 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
 }
 
 RevBasicMemCtrl::~RevBasicMemCtrl(){
-  for( unsigned i=0; i<rqstQ.size(); i++ ){
-    delete rqstQ[i];
-  }
+  for( auto* p : rqstQ )
+    delete p;
   rqstQ.clear();
   delete stdMemHandlers;
 }
 
 void RevBasicMemCtrl::registerStats(){
-  for(auto* stat : {
+  for( auto* stat : {
       "ReadInFlight",
       "ReadPending",
       "ReadBytes",
@@ -1113,12 +1112,15 @@ bool RevBasicMemCtrl::buildStandardMemRqst(RevMemOp *op,
 bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
   if( AMOTable.size() == 0 ){
     return false;
+  }else if( Slot == 0 ){
+    return false;
   }
 
   // search all preceding slots for an AMO from the same Hart
   for( unsigned i = 0; i < Slot; i++ ){
-    if( rqstQ[i]->getFlags() & IS_ATOMIC && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
-      if( rqstQ[i]->getFlags() & uint32_t(RevCPU::RevFlag::F_AQ) ){
+    if( (rqstQ[i]->getFlags() & IS_ATOMIC) != 0 &&
+        rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
+      if( (rqstQ[i]->getFlags() & uint32_t(RevCPU::RevFlag::F_AQ)) != 0 ){
         // this implies that we found a preceding request in the request queue
         // that was 1) an AMO and 2) came from the same HART as 'slot'
         // and 3) had the AQ flag set;
@@ -1134,10 +1136,12 @@ bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart){
 bool RevBasicMemCtrl::isRL(unsigned Slot, unsigned Hart){
   if( AMOTable.size() == 0 ){
     return false;
+  }else if( Slot == 0 ){
+    return false;
   }
 
-  if( rqstQ[Slot]->getFlags() & IS_ATOMIC &&
-      rqstQ[Slot]->getFlags() & uint32_t(RevCPU::RevFlag::F_RL) ){
+  if( (rqstQ[Slot]->getFlags() & IS_ATOMIC) != 0 &&
+      (rqstQ[Slot]->getFlags() & uint32_t(RevCPU::RevFlag::F_RL)) != 0 ){
     // this is an AMO, check to see if there are other ops from the same
     // HART in flight
     for( unsigned i = 0; i < Slot; i++ ){
@@ -1273,8 +1277,8 @@ unsigned RevBasicMemCtrl::getNumSplitRqsts(RevMemOp *op){
 }
 
 void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
-  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
-    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+  if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
     if( !op )
       output->fatal(CALL_INFO, -1, "RevMemOp is null in handleReadResp\n" );
@@ -1379,7 +1383,7 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
   // copy the target data over to the buffer and build the memory request
   buffer.clear();
   uint8_t *TmpBuf8 = static_cast<uint8_t *>(Target);
-  for(unsigned i = 0; i < Tmp->getSize(); i++ ){
+  for( size_t i = 0; i < Tmp->getSize(); i++ ){
     buffer.push_back(TmpBuf8[i]);
   }
 
@@ -1418,8 +1422,8 @@ void RevBasicMemCtrl::handleAMO(RevMemOp *op){
 }
 
 void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
-  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
-    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+  if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
     if( !op )
       output->fatal(CALL_INFO, -1, "RevMemOp is null in handleWriteResp\n" );
@@ -1474,8 +1478,8 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
 }
 
 void RevBasicMemCtrl::handleFlushResp(StandardMem::FlushResp* ev){
-  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
-    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+  if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
     if( !op )
       output->fatal(CALL_INFO, -1, "RevMemOp is null in handleFlushResp\n" );
@@ -1504,8 +1508,8 @@ void RevBasicMemCtrl::handleFlushResp(StandardMem::FlushResp* ev){
 }
 
 void RevBasicMemCtrl::handleCustomResp(StandardMem::CustomResp* ev){
-  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
-    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+  if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
     if( !op )
       output->fatal(CALL_INFO, -1, "RevMemOp is null in handleCustomResp\n" );
@@ -1534,8 +1538,8 @@ void RevBasicMemCtrl::handleCustomResp(StandardMem::CustomResp* ev){
 }
 
 void RevBasicMemCtrl::handleInvResp(StandardMem::InvNotify* ev){
-  if( std::find(requests.begin(),requests.end(),ev->getID()) != requests.end() ){
-    requests.erase(std::find(requests.begin(),requests.end(),ev->getID()));
+  if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
+    requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
     if( !op )
       output->fatal(CALL_INFO, -1, "RevMemOp is null in handleInvResp\n" );
