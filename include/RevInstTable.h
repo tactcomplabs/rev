@@ -81,14 +81,12 @@
 //< Zero-extend value of bits size
 template<typename T>
 constexpr auto ZeroExt(T val, size_t bits){
-  static_assert( bits < sizeof(T), "Useless call to ZeroExt() which does not change value" );
   return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << bits);
 }
 
 //< Sign-extend value of bits size
 template<typename T>
 constexpr auto SignExt(T val, size_t bits){
-  static_assert( bits < sizeof(T), "Useless call to SignExt() which does not change value" );
   auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
   return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
 }
