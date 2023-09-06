@@ -52,7 +52,7 @@ namespace SST{
       std::vector<RevInstEntry> RV64PTable = {
       {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("future %rd, $imm(%rs1)" ).SetFunct3(0b111).SetImplFunc(&future).InstEntry},
       {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("rfuture %rd, $imm(%rs1)").SetFunct3(0b101).SetImplFunc(&rfuture).InstEntry},
-      {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("sfuture %rd, $imm(%rs1)").SetFunct3(0b100).SetImplFunc(&sfuture).InstEntry}
+      {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("sfuture %rd, $imm(%rs1)").SetFunct3(0b100).SetImplFunc(&sfuture).InstEntry},
       };
 
     public:

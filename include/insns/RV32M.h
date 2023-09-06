@@ -127,7 +127,7 @@ namespace SST{
       {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("div %rd, %rs1, %rs2"   ).SetFunct3(0b100).SetImplFunc( &div ).InstEntry},
       {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("divu %rd, %rs1, %rs2"  ).SetFunct3(0b101).SetImplFunc( &divu ).InstEntry},
       {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("rem %rd, %rs1, %rs2"   ).SetFunct3(0b110).SetImplFunc( &rem ).InstEntry},
-      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("remu %rd, %rs1, %rs20" ).SetFunct3(0b111).SetImplFunc( &remu ).InstEntry}
+      {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("remu %rd, %rs1, %rs20" ).SetFunct3(0b111).SetImplFunc( &remu ).InstEntry},
       };
 
     public:

@@ -55,7 +55,7 @@ namespace SST{
       {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.l.s  %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00010).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtls ).InstEntry},
       {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.lu.s %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00011).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtlus ).InstEntry},
       {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.l %rd, %rs1" ).SetFunct7( 0b1101000).SetfpcvtOp(0b00010).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtsl ).InstEntry},
-      {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct7( 0b1101000).SetfpcvtOp(0b00011).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtslu ) .InstEntry}
+      {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct7( 0b1101000).SetfpcvtOp(0b00011).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtslu ) .InstEntry},
       };
 
 

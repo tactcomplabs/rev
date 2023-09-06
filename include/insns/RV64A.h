@@ -64,7 +64,7 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
 
         // update the cost
-        R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+        R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
         return true;
       }
 
@@ -103,7 +103,7 @@ namespace SST{
       {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomin.d %rd, %rs1, %rs2"  ).SetFunct7(0b10000												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amomind ).InstEntry},
       {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomax.d %rd, %rs1, %rs2"  ).SetFunct7(0b10100												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amomaxd ).InstEntry},
       {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amominu.d %rd, %rs1, %rs2" ).SetFunct7(0b11000												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amominud ).InstEntry},
-      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomaxu.d %rd, %rs1, %rs2" ).SetFunct7(0b11100												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amomaxud ).InstEntry}
+      {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomaxu.d %rd, %rs1, %rs2" ).SetFunct7(0b11100												 ).Setrs2Class(RegUNKNOWN).SetImplFunc(&amomaxud ).InstEntry},
       };
 
 
