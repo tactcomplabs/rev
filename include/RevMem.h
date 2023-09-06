@@ -87,7 +87,7 @@ namespace SST {
           // Check if a given range is inside a segment
           bool contains(const uint64_t& vBaseAddr, const uint64_t& Size){
             // exclusive top address
-            uint64_t vTopAddr = vBaseAddr + Size - 1; 
+            uint64_t vTopAddr = vBaseAddr + Size - 1;
             return (this->contains(vBaseAddr) && this->contains(vTopAddr));
           };
 
@@ -95,7 +95,7 @@ namespace SST {
       // Override for easy std::cout << *Seg << std::endl;
       friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
         std::cout << "---------------------------------------------------------------" << std::endl;
-        return os << State << " | 0x" << std::hex << obj.getBaseAddr()
+        return os << " | 0x" << std::hex << obj.getBaseAddr()
                   << " | 0x" << std::hex << obj.getTopAddr()
                   << " | Size = " << std::dec << obj.getSize();
       }
