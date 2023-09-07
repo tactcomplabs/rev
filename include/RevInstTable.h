@@ -437,7 +437,7 @@ namespace SST{
     template<typename FP, typename INT>
     static bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       FP fp;
-      if constexpr(std::is_same_v<FP, double>){
+      if(std::is_same_v<FP, double>){
         fp = R->DPF[Inst.rs1];         // Read the double FP register directly
       }else{
         fp = R->GetFP32(F, Inst.rs1);  // Read the F or D register, unboxing if D
@@ -480,10 +480,9 @@ namespace SST{
     template<typename T>
     bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( sizeof(T) < sizeof(int64_t) && F->IsRV32() ){
-        static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
+        constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
           REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
                        RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
-
         M->ReadVal(F->GetHart(),
                    R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                    reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
@@ -491,7 +490,7 @@ namespace SST{
                    flags);
         R->SetX(F, Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
       }else{
-        static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
+        constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
           REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                        RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
 
@@ -521,7 +520,8 @@ namespace SST{
                    Inst.hazard,
                    flags);
 
-        if constexpr(std::is_same_v<T, float>){
+        // Box float value into 64-bit FP register
+        if(std::is_same_v<T, float>){
           BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
         }
       }else{
