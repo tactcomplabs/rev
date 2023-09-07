@@ -549,37 +549,67 @@ namespace SST{
       return true;
     }
 
-    /// Arithmetic register - register operator template
-    // The second template parameter is the type of operands; if omitted, defaults to XLEN
-    template<template<class> class OP, typename T = void>
+    /// Operand Kind (immediate or register)
+    enum class OpKind { Imm, Reg };
+
+    /// Arithmetic operator template
+    // The First parameter is the operator functor (such as std::plus)
+    // The second parameter is the operand kind (OpKind::Imm or OpKind::Reg)
+    // The second template parameter is the type of operands (defaults to XLEN bits)
+    template<template<class> class OP, OpKind KIND, typename T = void>
     static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( F->IsRV32() ){
         using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), R->GetX<TT>(F, Inst.rs2)));
+        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1),
+                                 KIND == OpKind::Imm ?
+                                 Inst.ImmSignExt(12) :
+                                 R->GetX<TT>(F, Inst.rs2)));
       }else{
         using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), R->GetX<TT>(F, Inst.rs2)));
+        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1),
+                                 KIND == OpKind::Imm ?
+                                 Inst.ImmSignExt(12) :
+                                 R->GetX<TT>(F, Inst.rs2)));
       }
       R->AdvancePC(F, Inst.instSize);
       return true;
     }
 
-    /// Arithmetic register - immediate operator template
-    // The second template parameter is the type of operands; if omitted, defaults to XLEN
-    template<template<class> class OP, typename T = void>
-    static bool operi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    /// Left shift functor
+    struct ShiftLeft{
+      template<typename T>
+      constexpr T operator()(T val, int shift) const { return val << shift; }
+    };
+
+    /// Right shift functor
+    struct ShiftRight{
+      template<typename T>
+      constexpr T operator()(T val, int shift) const { return val >> shift; }
+    };
+
+    /// Shift template
+    // The first parameter is either ShiftLeft or ShiftRight
+    // The second parameter is the operand kind (OpKind::Imm or OpKind::Reg)
+    // The third parameter is std::make_signed_t or std::make_unsigned_t
+    // The fourth parameter is the type of operand (defaults to XLEN bits)
+    template<typename OP, OpKind KIND, template<class> class SIGN, typename T = void>
+    static bool shift(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( F->IsRV32() ){
         using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), Inst.ImmSignExt(12)));
+        R->SetX(F, Inst.rd, TT(OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
+                                    KIND == OpKind::Imm ?
+                                    Inst.imm & 0x1f :
+                                    R->GetX<uint32_t>(F, Inst.rs2) & 0x1f)));
       }else{
         using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), Inst.ImmSignExt(12)));
+        R->SetX(F, Inst.rd, TT(OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
+                                    KIND == OpKind::Imm ?
+                                    Inst.imm & 0x3f :
+                                    R->GetX<uint64_t>(F, Inst.rs2) & 0x3f)));
       }
       R->AdvancePC(F, Inst.instSize);
       return true;
     }
-
-
   } // namespace RevCPU
 } // namespace SST
 

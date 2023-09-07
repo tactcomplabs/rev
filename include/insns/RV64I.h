@@ -82,61 +82,19 @@ namespace SST{
       static constexpr auto& ld    = load<int64_t>;
       static constexpr auto& lwu   = load<uint32_t>;
       static constexpr auto& sd    = store<uint64_t>;
-      static constexpr auto& addw  = oper<std::plus,  int32_t>;
-      static constexpr auto& subw  = oper<std::minus, int32_t>;
-      static constexpr auto& addiw = operi<std::plus, int32_t>;
 
-#if 0
-      template<typename T>
-      struct left_shift  { constexpr T operator()(T val, int shift) const { return val << shift; } };
+      // 32-bit arithmetic operators
+      static constexpr auto& addw  = oper<std::plus,  OpKind::Reg, int32_t>;
+      static constexpr auto& subw  = oper<std::minus, OpKind::Reg, int32_t>;
+      static constexpr auto& addiw = oper<std::plus,  OpKind::Imm, int32_t>;
 
-      template<typename T>
-      struct right_shift { constexpr T operator()(T val, int shift) const { return val >> shift; } };
-
-
-      static constexpr auto& slliw
-
-      template<template<class> class OP, typename T = void>
-      static bool shifti(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32())
-
-#endif
-
-      static bool slliw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) << (Inst.imm & 0x1F));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool srliw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, static_cast<int32_t>(R->GetX<uint32_t>(F, Inst.rs1) >> (Inst.imm & 0x1F)));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool sraiw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) >> (Inst.imm & 0x1F));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool sllw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) << (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool srlw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, static_cast<int32_t>(R->GetX<uint32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f)));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool sraw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<int32_t>(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x3f));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      // Shift operators
+      static constexpr auto& slliw = shift<ShiftLeft,  OpKind::Imm, std::make_unsigned_t, int32_t>;
+      static constexpr auto& srliw = shift<ShiftRight, OpKind::Imm, std::make_unsigned_t, int32_t>;
+      static constexpr auto& sraiw = shift<ShiftRight, OpKind::Imm, std::make_signed_t,   int32_t>;
+      static constexpr auto& sllw  = shift<ShiftLeft,  OpKind::Reg, std::make_unsigned_t, int32_t>;
+      static constexpr auto& srlw  = shift<ShiftRight, OpKind::Reg, std::make_unsigned_t, int32_t>;
+      static constexpr auto& sraw  = shift<ShiftRight, OpKind::Reg, std::make_signed_t,   int32_t>;
 
       // ----------------------------------------------------------------------
       //

@@ -328,19 +328,17 @@ namespace SST{
       static constexpr auto& sh  = store<uint16_t>;
       static constexpr auto& sw  = store<uint32_t>;
 
-      // Arithmetic register - register operators
-      static constexpr auto& add   = oper<std::plus>;
-      static constexpr auto& sub   = oper<std::minus>;
-      static constexpr auto& f_xor = oper<std::bit_xor>;
-      static constexpr auto& f_or  = oper<std::bit_or>;
-      static constexpr auto& f_and = oper<std::bit_and>;
+      // Arithmetic operators
+      static constexpr auto& add   = oper<std::plus,    OpKind::Reg>;
+      static constexpr auto& addi  = oper<std::plus,    OpKind::Imm>;
+      static constexpr auto& sub   = oper<std::minus,   OpKind::Reg>;
+      static constexpr auto& f_xor = oper<std::bit_xor, OpKind::Reg>;
+      static constexpr auto& xori  = oper<std::bit_xor, OpKind::Imm>;
+      static constexpr auto& f_or  = oper<std::bit_or,  OpKind::Reg>;
+      static constexpr auto& ori   = oper<std::bit_or,  OpKind::Imm>;
+      static constexpr auto& f_and = oper<std::bit_and, OpKind::Reg>;
+      static constexpr auto& andi  = oper<std::bit_and, OpKind::Imm>;
 
-      // Arithmetic register - immediate operators
-      static constexpr auto& addi  = operi<std::plus>;
-      static constexpr auto& slti  = operi<std::less>;
-      static constexpr auto& xori  = operi<std::bit_xor>;
-      static constexpr auto& ori   = operi<std::bit_or>;
-      static constexpr auto& andi  = operi<std::bit_and>;
 
       static bool sltiu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
@@ -365,54 +363,15 @@ namespace SST{
 
       static constexpr auto& slt  = set_lt<std::make_signed_t>;
       static constexpr auto& sltu = set_lt<std::make_unsigned_t>;
+      static constexpr auto& slti  = oper<std::less,    OpKind::Imm>;
 
-      static bool slli(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) << (Inst.imm & 0x1f));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) << (Inst.imm & 0x3f));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      template<template<class> class SIGN>
-      static bool shift_righti(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<SIGN<uint32_t>>(F, Inst.rs1) >> (Inst.imm & 0x1f));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<SIGN<uint64_t>>(F, Inst.rs1) >> (Inst.imm & 0x3f));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static constexpr auto& srli = shift_righti<std::make_unsigned_t>;
-      static constexpr auto& srai = shift_righti<std::make_signed_t>;
-
-      template<template<class> class SIGN>
-      static bool shift_right(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<SIGN<int32_t> >(F, Inst.rs1) >> (R->GetX<uint32_t>(F, Inst.rs2) & 0x1f));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<SIGN<int64_t> >(F, Inst.rs1) >> (R->GetX<uint64_t>(F, Inst.rs2) & 0x3f));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static constexpr auto& srl = shift_right<std::make_unsigned_t>;
-      static constexpr auto& sra = shift_right<std::make_signed_t>;
-
-      static bool sll(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) << (R->GetX<uint32_t>(F, Inst.rs2) & 0x1f));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) << (R->GetX<uint64_t>(F, Inst.rs2) & 0x3f));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      // Shift operators
+      static constexpr auto& slli = shift<ShiftLeft,  OpKind::Imm, std::make_unsigned_t>;
+      static constexpr auto& srli = shift<ShiftRight, OpKind::Imm, std::make_unsigned_t>;
+      static constexpr auto& srai = shift<ShiftRight, OpKind::Imm, std::make_signed_t>;
+      static constexpr auto& sll  = shift<ShiftLeft,  OpKind::Reg, std::make_unsigned_t>;
+      static constexpr auto& srl  = shift<ShiftRight, OpKind::Reg, std::make_unsigned_t>;
+      static constexpr auto& sra  = shift<ShiftRight, OpKind::Reg, std::make_signed_t>;
 
       static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         M->FenceMem(F->GetHart());

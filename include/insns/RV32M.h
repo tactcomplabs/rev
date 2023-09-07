@@ -14,6 +14,7 @@
 #include "../RevInstTable.h"
 #include "../RevExt.h"
 
+#include <cstdint>
 #include <limits>
 #include <vector>
 #include <functional>
@@ -22,7 +23,7 @@ namespace SST{
   namespace RevCPU{
     class RV32M : public RevExt {
       /// Computes the LOWER half of multiplication, which not depend on signedness
-      static constexpr auto& mul = oper<std::multiplies>;
+      static constexpr auto& mul = oper<std::multiplies, OpKind::Reg>;
 
       // Computes the UPPER half of multiplication, based on signedness
       template<bool rs1_is_signed, bool rs2_is_signed>
