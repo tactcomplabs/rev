@@ -507,13 +507,7 @@ namespace SST{
                    reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
                    Inst.hazard,
                    flags);
-
-        if(Inst.rd){
-          if constexpr(std::is_signed_v<T>){
-            R->RV64[Inst.rd] = SignExt(R->RV64[Inst.rd], sizeof(T) * 8);
-          }else{
-            R->RV64[Inst.rd] = ZeroExt(R->RV64[Inst.rd], sizeof(T) * 8);
-          }
+        R->SetX(F, Inst.rd, R->RV64[Inst.rd]);
         }
       }
       R->AdvancePC(F, Inst.instSize);

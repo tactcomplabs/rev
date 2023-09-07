@@ -79,7 +79,7 @@ namespace SST{
       }
 
       // Standard instructions
-#if 1
+#if 0
       static bool ld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint64_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
