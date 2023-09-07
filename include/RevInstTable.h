@@ -489,7 +489,7 @@ namespace SST{
                    reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
                    Inst.hazard,
                    flags);
-        R->SetX(F, Inst.rd, R->RV32[Inst.rd]);
+        R->SetX(F, Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
       }else{
         static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
           REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
@@ -500,7 +500,7 @@ namespace SST{
                    reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
                    Inst.hazard,
                    flags);
-        R->SetX(F, Inst.rd, R->RV64[Inst.rd]);
+        R->SetX(F, Inst.rd, static_cast<T>(R->RV64[Inst.rd]));
       }
       R->AdvancePC(F, Inst.instSize);
       // update the cost
