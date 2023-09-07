@@ -315,7 +315,7 @@ namespace SST{
       static constexpr auto& bge  = bcond<std::greater_equal, std::make_signed_t>;
       static constexpr auto& bgeu = bcond<std::greater_equal, std::make_unsigned_t>;
 
-#if 0
+#if 1
       static constexpr auto& lb  = load<int8_t>;
 #else
       static bool lb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
@@ -332,7 +332,7 @@ namespace SST{
       }
 #endif
 
-#if 0
+#if 1
       static constexpr auto& lh  = load<int16_t>;
 #else
       static bool lh(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
@@ -366,7 +366,7 @@ namespace SST{
       }
 #endif
 
-#if 0
+#if 1
       static constexpr auto& lbu = load<uint8_t>;
 #else
       static bool lbu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
@@ -382,7 +382,7 @@ namespace SST{
       }
 #endif
 
-#if 0
+#if 1
       static constexpr auto& lhu = load<uint16_t>;
 #else
       static bool lhu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
