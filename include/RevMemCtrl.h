@@ -115,7 +115,7 @@ namespace SST {
 
       /// RevMemOp: determine if the request is an AMO
       static constexpr bool isAMOOp(uint32_t flags){
-        static constexpr uint32_t t_flags =
+        constexpr uint32_t t_flags =
           uint32_t(RevCPU::RevFlag::F_AMOADD)  |
           uint32_t(RevCPU::RevFlag::F_AMOXOR)  |
           uint32_t(RevCPU::RevFlag::F_AMOAND)  |
