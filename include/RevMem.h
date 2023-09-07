@@ -153,7 +153,7 @@ namespace SST {
       [[deprecated("Simple RevMem interfaces have been deprecated")]]
       bool ReadMem( uint64_t Addr, size_t Len, void *Data );
 
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
+      [[deprecated("ReadU* interfaces have been deprecated")]]
       uint64_t ReadU64( uint64_t Addr ){
         uint64_t Value;
         if( !ReadMem( Addr, sizeof(Value), &Value ) )
