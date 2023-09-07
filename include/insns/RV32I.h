@@ -315,6 +315,9 @@ namespace SST{
       static constexpr auto& bge  = bcond<std::greater_equal, std::make_signed_t>;
       static constexpr auto& bgeu = bcond<std::greater_equal, std::make_unsigned_t>;
 
+#if 0
+      static constexpr auto& lb  = load<int8_t>;
+#else
       static bool lb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int8_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
@@ -327,7 +330,11 @@ namespace SST{
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
+#endif
 
+#if 0
+      static constexpr auto& lh  = load<int16_t>;
+#else
       static bool lh(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int16_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
@@ -340,7 +347,11 @@ namespace SST{
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
+#endif
 
+#if 1
+      static constexpr auto& lw  = load<int32_t>;
+#else
       static bool lw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         int32_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
@@ -353,7 +364,11 @@ namespace SST{
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
+#endif
 
+#if 0
+      static constexpr auto& lbu = load<uint8_t>;
+#else
       static bool lbu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint8_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
@@ -365,7 +380,11 @@ namespace SST{
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
+#endif
 
+#if 0
+      static constexpr auto& lhu = load<uint16_t>;
+#else
       static bool lhu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint16_t val;
         M->ReadVal(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), &val,
@@ -377,6 +396,7 @@ namespace SST{
         R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
         return true;
       }
+#endif
 
       static bool sb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         M->WriteU8(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), R->GetX<uint8_t>(F, Inst.rs2));
