@@ -292,10 +292,9 @@ namespace SST{
         return true;
       }
 
-      // Conditional branch. The first template parameter is the comparison operator.
+      // Conditional branch template
+      // The first template parameter is the comparison functor
       // The second template parameter is std::make_signed_t or std::make_unsigned_t
-      // and makes the comparison signed or unsigned. For == and != signedness does
-      // not matter, so the second parameter has a default of std:make_unsigned_t.
       template<template<class> class OP, template<class> class SIGN = std::make_unsigned_t>
       static bool bcond(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         bool cond;
@@ -361,9 +360,9 @@ namespace SST{
         return true;
       }
 
-      static constexpr auto& slt  = set_lt<std::make_signed_t>;
       static constexpr auto& sltu = set_lt<std::make_unsigned_t>;
-      static constexpr auto& slti  = oper<std::less,    OpKind::Imm>;
+      static constexpr auto& slt  = oper<std::less, OpKind::Reg>;
+      static constexpr auto& slti = oper<std::less, OpKind::Imm>;
 
       // Shift operators
       static constexpr auto& slli = shift<ShiftLeft,  OpKind::Imm, std::make_unsigned_t>;

@@ -84,9 +84,9 @@ namespace SST{
       static constexpr auto& sd    = store<uint64_t>;
 
       // 32-bit arithmetic operators
-      static constexpr auto& addw  = oper<std::plus,  OpKind::Reg, int32_t>;
-      static constexpr auto& subw  = oper<std::minus, OpKind::Reg, int32_t>;
-      static constexpr auto& addiw = oper<std::plus,  OpKind::Imm, int32_t>;
+      static constexpr auto& addw  = oper<std::plus,   OpKind::Reg, std::make_signed_t,   int32_t>;
+      static constexpr auto& subw  = oper<std::minus,  OpKind::Reg, std::make_signed_t,   int32_t>;
+      static constexpr auto& addiw = oper<std::plus,   OpKind::Imm, std::make_signed_t,   int32_t>;
 
       // Shift operators
       static constexpr auto& slliw = shift<ShiftLeft,  OpKind::Imm, std::make_unsigned_t, int32_t>;

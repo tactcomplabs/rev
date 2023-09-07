@@ -555,21 +555,23 @@ namespace SST{
     /// Arithmetic operator template
     // The First parameter is the operator functor (such as std::plus)
     // The second parameter is the operand kind (OpKind::Imm or OpKind::Reg)
-    // The second template parameter is the type of operands (defaults to XLEN bits)
-    template<template<class> class OP, OpKind KIND, typename T = void>
+    // The third parameter is std::make_unsigned_t or std::make_signed_t (default)
+    // The fourth parameter is the type of operands (defaults to XLEN bits)
+    template<template<class> class OP, OpKind KIND,
+             template<class> class SIGN = std::make_signed_t, typename T = void>
     static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( F->IsRV32() ){
         using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1),
+        R->SetX(F, Inst.rd, OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
                                  KIND == OpKind::Imm ?
                                  Inst.ImmSignExt(12) :
-                                 R->GetX<TT>(F, Inst.rs2)));
+                                 R->GetX<SIGN<TT>>(F, Inst.rs2)));
       }else{
         using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1),
+        R->SetX(F, Inst.rd, OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
                                  KIND == OpKind::Imm ?
                                  Inst.ImmSignExt(12) :
-                                 R->GetX<TT>(F, Inst.rs2)));
+                                 R->GetX<SIGN<TT>>(F, Inst.rs2)));
       }
       R->AdvancePC(F, Inst.instSize);
       return true;
