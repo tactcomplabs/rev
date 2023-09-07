@@ -22,9 +22,6 @@
 namespace SST{
   namespace RevCPU{
     class RV32M : public RevExt {
-      /// Computes the LOWER half of multiplication, which not depend on signedness
-      static constexpr auto& mul = oper<std::multiplies, OpKind::Reg>;
-
       // Computes the UPPER half of multiplication, based on signedness
       template<bool rs1_is_signed, bool rs2_is_signed>
       static bool uppermul(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
@@ -51,6 +48,9 @@ namespace SST{
       static constexpr auto& mulh   = uppermul<true,  true>;
       static constexpr auto& mulhu  = uppermul<false, false>;
       static constexpr auto& mulhsu = uppermul<true,  false>;
+
+      /// Computes the LOWER half of multiplication, which does not depend on signedness
+      static constexpr auto& mul = oper<std::multiplies, OpKind::Reg>;
 
       // Division template
       template<typename i32_t, typename i64_t>

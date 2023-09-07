@@ -37,7 +37,7 @@ namespace SST{
 
       static bool fmvxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint64_t u64;
-        std::memcpy(&u64, &R->DPF[Inst.rs1], sizeof(u64));
+        memcpy(&u64, &R->DPF[Inst.rs1], sizeof(u64));
         R->SetX(F, Inst.rd, u64);
         R->AdvancePC(F, Inst.instSize);
         return true;
@@ -45,7 +45,7 @@ namespace SST{
 
       static bool fmvdx(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         uint64_t u64 = R->GetX<uint64_t>(F, Inst.rs1);
-        std::memcpy(&R->DPF[Inst.rs1], &u64, sizeof(double));
+        memcpy(&R->DPF[Inst.rs1], &u64, sizeof(double));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }

@@ -54,13 +54,7 @@ namespace SST{
 
       // Standard instructions
       static constexpr auto& fld = fload<double>;
-
-      static bool fsd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        M->Write(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-                 R->DPF[Inst.rs2]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& fsd = fstore<double>;
 
       static bool fmaddd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = std::fma(R->DPF[Inst.rs1], R->DPF[Inst.rs2], R->DPF[Inst.rs3]);
@@ -86,17 +80,19 @@ namespace SST{
         return true;
       }
 
-      template<template<class> class OP>
-      static bool fopd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& faddd = foper<double, std::plus>;
+      static constexpr auto& fsubd = foper<double, std::minus>;
+      static constexpr auto& fmuld = foper<double, std::multiplies>;
+      static constexpr auto& fdivd = foper<double, std::divides>;
+      static constexpr auto& fmind = foper<double, FMin>;
+      static constexpr auto& fmaxd = foper<double, FMax>;
 
-      static constexpr auto& faddd = fopd<std::plus>;
-      static constexpr auto& fsubd = fopd<std::minus>;
-      static constexpr auto& fmuld = fopd<std::multiplies>;
-      static constexpr auto& fdivd = fopd<std::divides>;
+      static constexpr auto& feqd = fcondop<double, std::equal_to>;
+      static constexpr auto& fltd = fcondop<double, std::less>;
+      static constexpr auto& fled = fcondop<double, std::less_equal>;
+
+      static constexpr auto& fcvtwd  = CvtFpToInt<double,  int32_t>;
+      static constexpr auto& fcvtwud = CvtFpToInt<double, uint32_t>;
 
       static bool fsqrtd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = std::sqrt(R->DPF[Inst.rs1]);
@@ -123,18 +119,6 @@ namespace SST{
         return true;
       }
 
-      static bool fmind(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = std::fmin(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool fmaxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->DPF[Inst.rd] = std::fmax(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
       static bool fcvtsd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = double{R->GetFP32(F, Inst.rs1)};
         R->AdvancePC(F, Inst.instSize);
@@ -147,17 +131,6 @@ namespace SST{
         return true;
       }
 
-      template<template<class> class OP>
-      static bool fcmpd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static constexpr auto& feqd = fcmpd<std::equal_to>;
-      static constexpr auto& fltd = fcmpd<std::less>;
-      static constexpr auto& fled = fcmpd<std::less_equal>;
-
       static bool fclassd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         double fp64 = R->DPF[Inst.rs1];
         uint64_t i64;
@@ -167,9 +140,6 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
-
-      static constexpr auto& fcvtwd  = CvtFpToInt<double,  int32_t>;
-      static constexpr auto& fcvtwud = CvtFpToInt<double, uint32_t>;
 
       static bool fcvtdw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         R->DPF[Inst.rd] = static_cast<double>(R->GetX<int32_t>(F, Inst.rs1));

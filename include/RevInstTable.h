@@ -549,6 +549,60 @@ namespace SST{
       return true;
     }
 
+    /// Floating-point store template
+    template<typename T>
+    static bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      T val;
+      if constexpr(std::is_same_v<T, double>){
+        val = R->DPF[Inst.rs2];
+      }else{
+        val = R->GetFP32(F, Inst.rs2);
+      }
+      M->Write(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), val);
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+    /// Floating-point operation template
+    template<typename T, template<class> class OP>
+    static bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      if constexpr(std::is_same_v<T, double>){
+        R->DPF[Inst.rd] = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
+      }else{
+        R->SetFP32(F, Inst.rd, OP()(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
+      }
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+    /// Floating-point conditional operation template
+    template<typename T, template<class> class OP>
+    static bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      uint32_t res;
+      if constexpr(std::is_same_v<T, double>){
+        res = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
+      }else{
+        res = OP()(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2));
+      }
+      R->SetX(F, Inst.rd, res);
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+    /// Floating-point minimum functor
+    template<typename = void>
+    struct FMin{
+      template<typename T>
+      auto operator()(T x, T y) { return std::fmin(x, y); }
+    };
+
+    /// Floating-point maximum functor
+    template<typename = void>
+    struct FMax{
+      template<typename T>
+      auto operator()(T x, T y) { return std::fmax(x, y); }
+    };
+
     /// Operand Kind (immediate or register)
     enum class OpKind { Imm, Reg };
 
@@ -564,13 +618,13 @@ namespace SST{
         using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
         R->SetX(F, Inst.rd, OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
                                  KIND == OpKind::Imm ?
-                                 Inst.ImmSignExt(12) :
+                                 SIGN<TT>(Inst.ImmSignExt(12)) :
                                  R->GetX<SIGN<TT>>(F, Inst.rs2)));
       }else{
         using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
         R->SetX(F, Inst.rd, OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
                                  KIND == OpKind::Imm ?
-                                 Inst.ImmSignExt(12) :
+                                 SIGN<TT>(Inst.ImmSignExt(12)) :
                                  R->GetX<SIGN<TT>>(F, Inst.rs2)));
       }
       R->AdvancePC(F, Inst.instSize);
@@ -592,9 +646,10 @@ namespace SST{
     /// Shift template
     // The first parameter is either ShiftLeft or ShiftRight
     // The second parameter is the operand kind (OpKind::Imm or OpKind::Reg)
-    // The third parameter is std::make_signed_t or std::make_unsigned_t
+    // The third parameter is std::make_signed_t or std::make_unsigned_t (default)
     // The fourth parameter is the type of operand (defaults to XLEN bits)
-    template<typename OP, OpKind KIND, template<class> class SIGN, typename T = void>
+    template<typename OP, OpKind KIND,
+             template<class> class SIGN = std::make_unsigned_t, typename T = void>
     static bool shift(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( F->IsRV32() ){
         using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
