@@ -75,8 +75,6 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
   memStats.floatsWritten = 0;
   memStats.TLBHits = 0;
   memStats.TLBMisses = 0;
-
-  stacktop = (_REVMEM_BASE_ + memSize) - _STACK_SIZE_;
 }
 
 RevMem::~RevMem(){
