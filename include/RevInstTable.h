@@ -508,7 +508,6 @@ namespace SST{
                    Inst.hazard,
                    flags);
         R->SetX(F, Inst.rd, R->RV64[Inst.rd]);
-        }
       }
       R->AdvancePC(F, Inst.instSize);
       // update the cost
