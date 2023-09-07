@@ -578,7 +578,7 @@ namespace SST{
     /// Floating-point conditional operation template
     template<typename T, template<class> class OP>
     static bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-      uint32_t res;
+      bool res;
       if constexpr(std::is_same_v<T, double>){
         res = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
       }else{
@@ -614,7 +614,8 @@ namespace SST{
     template<template<class> class OP, OpKind KIND,
              template<class> class SIGN = std::make_signed_t, typename T = void>
     static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-      if( F->IsRV32() ){
+      // Optimization: When T != void, we assume that XLEN == 64
+      if( std::is_void_v<T> && F->IsRV32() ){
         using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
         R->SetX(F, Inst.rd, OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
                                  KIND == OpKind::Imm ?
@@ -651,7 +652,8 @@ namespace SST{
     template<typename OP, OpKind KIND,
              template<class> class SIGN = std::make_unsigned_t, typename T = void>
     static bool shift(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-      if( F->IsRV32() ){
+      // Optimization: When T != void, we assume that XLEN == 64
+      if( std::is_void_v<T> && F->IsRV32() ){
         using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
         R->SetX(F, Inst.rd, TT(OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
                                     KIND == OpKind::Imm ?
