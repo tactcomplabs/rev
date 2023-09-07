@@ -26,8 +26,8 @@ comp_cpu.addParams({
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV64IMAFDC]",                      # Core:Config; RV64I for core 0
-#        "startAddr" : "[0:0x00000000]",               # Starting address for core 0
-        "startSymbol" : "[0:_start]",
+        "startAddr" : "[0:0x00000000]",               # Starting address for core 0
+#        "startSymbol" : "[0:_start]",
         "memCost" : "[0:1:1]",                        # Memory loads required 1-10 cycles
         "program" : "strlen_cxx.exe",                   # Target executable
         "splash" : 1                                  # Display the splash message
