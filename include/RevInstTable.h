@@ -476,7 +476,7 @@ namespace SST{
       }
     }
 
-    /// Templated load instruction.
+    /// Templated load instruction
     template<typename T>
     bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( sizeof(T) < sizeof(int64_t) && F->IsRV32() ){
@@ -489,14 +489,7 @@ namespace SST{
                    reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
                    Inst.hazard,
                    flags);
-
-        if(Inst.rd){
-          if constexpr(std::is_signed_v<T>){
-            R->RV32[Inst.rd] = SignExt(R->RV32[Inst.rd], sizeof(T) * 8);
-          }else{
-            R->RV32[Inst.rd] = ZeroExt(R->RV32[Inst.rd], sizeof(T) * 8);
-          }
-        }
+        R->SetX(F, Inst.rd, R->RV32[Inst.rd]);
       }else{
         static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
           REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
@@ -515,7 +508,7 @@ namespace SST{
       return true;
     }
 
-    /// Templated floating-point load instruction.
+    /// Templated floating-point load instruction
     template<typename T>
     bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if(std::is_same_v<T, double> || F->HasD()){
