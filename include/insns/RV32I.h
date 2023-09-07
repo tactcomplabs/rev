@@ -308,6 +308,7 @@ namespace SST{
         return true;
       }
 
+      // Conditional branches
       static constexpr auto& beq  = bcond<std::equal_to>;
       static constexpr auto& bne  = bcond<std::not_equal_to>;
       static constexpr auto& blt  = bcond<std::less,          std::make_signed_t>;
@@ -315,58 +316,26 @@ namespace SST{
       static constexpr auto& bge  = bcond<std::greater_equal, std::make_signed_t>;
       static constexpr auto& bgeu = bcond<std::greater_equal, std::make_unsigned_t>;
 
+      // Loads
       static constexpr auto& lb  = load<int8_t>;
       static constexpr auto& lh  = load<int16_t>;
       static constexpr auto& lw  = load<int32_t>;
       static constexpr auto& lbu = load<uint8_t>;
       static constexpr auto& lhu = load<uint16_t>;
 
-      static bool sb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        M->WriteU8(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), R->GetX<uint8_t>(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      // Stores
+      static constexpr auto& sb  = store<uint8_t>;
+      static constexpr auto& sh  = store<uint16_t>;
+      static constexpr auto& sw  = store<uint32_t>;
 
-      static bool sh(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        M->WriteU16(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), R->GetX<uint16_t>(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static bool sw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        M->WriteU32(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), R->GetX<uint32_t>(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      template<template<class> class OP>
-      static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, OP()(R->GetX<int32_t>(F, Inst.rs1), R->GetX<int32_t>(F, Inst.rs2)));
-        }else{
-          R->SetX(F, Inst.rd, OP()(R->GetX<int64_t>(F, Inst.rs1), R->GetX<int64_t>(F, Inst.rs2)));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
+      // Arithmetic register - register operators
       static constexpr auto& add   = oper<std::plus>;
       static constexpr auto& sub   = oper<std::minus>;
       static constexpr auto& f_xor = oper<std::bit_xor>;
       static constexpr auto& f_or  = oper<std::bit_or>;
       static constexpr auto& f_and = oper<std::bit_and>;
 
-      template<template<class> class OP>
-      static bool operi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, OP()(R->GetX<int32_t>(F, Inst.rs1), Inst.ImmSignExt(12)));
-        }else{
-          R->SetX(F, Inst.rd, OP()(R->GetX<int64_t>(F, Inst.rs1), Inst.ImmSignExt(12)));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
+      // Arithmetic register - immediate operators
       static constexpr auto& addi  = operi<std::plus>;
       static constexpr auto& slti  = operi<std::less>;
       static constexpr auto& xori  = operi<std::bit_xor>;
@@ -382,6 +351,20 @@ namespace SST{
         R->AdvancePC(F, Inst.instSize);
         return true;
       }
+
+      template<template<class> class SIGN>
+      static bool set_lt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+        if( F->IsRV32() ){
+          R->SetX(F, Inst.rd, R->GetX<SIGN<uint32_t>>(F, Inst.rs1) < R->GetX<SIGN<uint32_t>>(F, Inst.rs2));
+        }else{
+          R->SetX(F, Inst.rd, R->GetX<SIGN<uint64_t>>(F, Inst.rs1) < R->GetX<SIGN<uint64_t>>(F, Inst.rs2));
+        }
+        R->AdvancePC(F, Inst.instSize);
+        return true;
+      }
+
+      static constexpr auto& slt  = set_lt<std::make_signed_t>;
+      static constexpr auto& sltu = set_lt<std::make_unsigned_t>;
 
       static bool slli(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
@@ -406,20 +389,6 @@ namespace SST{
 
       static constexpr auto& srli = shift_righti<std::make_unsigned_t>;
       static constexpr auto& srai = shift_righti<std::make_signed_t>;
-
-      template<template<class> class SIGN>
-      static bool set_lt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<SIGN<uint32_t>>(F, Inst.rs1) < R->GetX<SIGN<uint32_t>>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<SIGN<uint64_t>>(F, Inst.rs1) < R->GetX<SIGN<uint64_t>>(F, Inst.rs2));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static constexpr auto& slt  = set_lt<std::make_signed_t>;
-      static constexpr auto& sltu = set_lt<std::make_unsigned_t>;
 
       template<template<class> class SIGN>
       static bool shift_right(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {

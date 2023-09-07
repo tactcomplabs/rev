@@ -52,8 +52,8 @@ namespace SST{
       static constexpr auto& flw = fload<float>;
 
       static bool fsw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        M->WriteFloat(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-                      R->GetFP32(F, Inst.rs2));
+        M->Write(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+                 R->GetFP32(F, Inst.rs2));
         R->AdvancePC(F, Inst.instSize);
         return true;
       }

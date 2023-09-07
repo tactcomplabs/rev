@@ -476,7 +476,7 @@ namespace SST{
       }
     }
 
-    /// Templated load instruction
+    /// Load template
     template<typename T>
     bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( sizeof(T) < sizeof(int64_t) && F->IsRV32() ){
@@ -501,13 +501,24 @@ namespace SST{
                    flags);
         R->SetX(F, Inst.rd, static_cast<T>(R->RV64[Inst.rd]));
       }
-      R->AdvancePC(F, Inst.instSize);
       // update the cost
       R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
+
+      R->AdvancePC(F, Inst.instSize);
       return true;
     }
 
-    /// Templated floating-point load instruction
+    /// Store template
+    template<typename T>
+    static bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      M->Write(F->GetHart(),
+               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+               R->GetX<T>(F, Inst.rs2));
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+    /// Floating-point load template
     template<typename T>
     bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if(std::is_same_v<T, double> || F->HasD()){
@@ -531,10 +542,44 @@ namespace SST{
                    Inst.hazard,
                    REVMEM_FLAGS(0));
       }
-      R->AdvancePC(F, Inst.instSize);
+      // update the cost
       R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
+
+      R->AdvancePC(F, Inst.instSize);
       return true;
     }
+
+    /// Arithmetic register - register operator template
+    // The second template parameter is the type of operands; if omitted, defaults to XLEN
+    template<template<class> class OP, typename T = void>
+    static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      if( F->IsRV32() ){
+        using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
+        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), R->GetX<TT>(F, Inst.rs2)));
+      }else{
+        using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
+        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), R->GetX<TT>(F, Inst.rs2)));
+      }
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+    /// Arithmetic register - immediate operator template
+    // The second template parameter is the type of operands; if omitted, defaults to XLEN
+    template<template<class> class OP, typename T = void>
+    static bool operi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      if( F->IsRV32() ){
+        using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
+        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), Inst.ImmSignExt(12)));
+      }else{
+        using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
+        R->SetX(F, Inst.rd, OP()(R->GetX<TT>(F, Inst.rs1), Inst.ImmSignExt(12)));
+      }
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+
   } // namespace RevCPU
 } // namespace SST
 

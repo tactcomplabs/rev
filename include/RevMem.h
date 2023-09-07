@@ -153,6 +153,14 @@ namespace SST {
       [[deprecated("Simple RevMem interfaces have been deprecated")]]
       bool ReadMem( uint64_t Addr, size_t Len, void *Data );
 
+      [[deprecated("Simple RevMem interfaces have been deprecated")]]
+      uint64_t ReadU64( uint64_t Addr ){
+        uint64_t Value;
+        if( !ReadMem( Addr, sizeof(Value), &Value ) )
+          output->fatal(CALL_INFO, -1, "Error: could not read memory (U64)\n");
+        return Value;
+      }
+
       // ----------------------------------------------------
       // ---- Read Memory Interfaces
       // ----------------------------------------------------
@@ -188,50 +196,25 @@ namespace SST {
         return AMOMem(Hart, Addr, sizeof(T), Data, Target, Hazard, flags);
       }
 
-      /// RevMem: DEPRECATED: Read uint8 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint8_t ReadU8( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read uint16 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint16_t ReadU16( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read uint32 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint32_t ReadU32( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read uint64 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint64_t ReadU64( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read float from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      float ReadFloat( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read double from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      double ReadDouble( uint64_t Addr );
-
       // ----------------------------------------------------
       // ---- Write Memory Interfaces
       // ----------------------------------------------------
-      /// RevMem: Write a uint8 to the target memory location
-      void WriteU8( unsigned Hart, uint64_t Addr, uint8_t Value );
 
-      /// RevMem: Write a uint16 to the target memory location
-      void WriteU16( unsigned Hart, uint64_t Addr, uint16_t Value );
+      template<typename T>
+      void Write( unsigned Hart, uint64_t Addr, T Value ){
+        if( std::is_same_v<T, float>){
+          memStats.floatsWritten++;
+        }else if(std::is_same_v<T, double>){
+          memStats.doublesWritten++;
+        }
 
-      /// RevMem: Write a uint32 to the target memory location
-      void WriteU32( unsigned Hart, uint64_t Addr, uint32_t Value );
-
-      /// RevMem: Write a uint64 to the target memory location
-      void WriteU64( unsigned Hart, uint64_t Addr, uint64_t Value );
-
-      /// RevMem: Write a float to the target memory location
-      void WriteFloat( unsigned Hart, uint64_t Addr, float Value );
-
-      /// RevMem: Write a double to the target memory location
-      void WriteDouble( unsigned Hart, uint64_t Addr, double Value );
+        if( !WriteMem(Hart, Addr, sizeof(T), &Value) ){
+          output->fatal(CALL_INFO, -1, std::is_floating_point_v<T> ?
+                        "Error: could not write memory (FP%zu)\n" :
+                        "Error: could not write memory (U%zu)\n",
+                        sizeof(T) * 8);
+        }
+      }
 
       // ----------------------------------------------------
       // ---- Atomic/Future/LRSC Interfaces

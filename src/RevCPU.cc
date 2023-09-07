@@ -397,8 +397,8 @@ void RevCPU::initNICMem(){
   uint64_t host = 2;
   int64_t id = -1;
   for( unsigned i = 0; i < _PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
-    Mem->WriteU64(0, ptr, id);
-    Mem->WriteU64(0, ptr+8, host);
+    Mem->Write(0, ptr, id);
+    Mem->Write(0, ptr+8, host);
     ptr += sizeof(PEMap);
   }
   ptr = _PAN_PE_TABLE_ADDR_;
@@ -406,10 +406,10 @@ void RevCPU::initNICMem(){
   // the first entry in the table is our own, then its
   // all the other nodes sequentially
   id = PNic->getAddress();
-  Mem->WriteU64(0, ptr, (uint64_t)(id));
+  Mem->Write(0, ptr, id);
   ptr += 8;
   host = PNic->IsHost();
-  Mem->WriteU64(0, ptr, host);
+  Mem->Write(0, ptr, host);
   ptr += 8;
 
   output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
@@ -417,12 +417,12 @@ void RevCPU::initNICMem(){
 
   for( unsigned i = 0; i < PNic->getNumPEs(); i++ ){
     id = PNic->getHostFromIdx(i);
-    Mem->WriteU64(0, ptr, id);
+    Mem->Write(0, ptr, id);
     ptr += 8;
     host = PNic->IsRemoteHost(id);
     output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
                   id, host);
-    Mem->WriteU64(0, ptr, host);
+    Mem->Write(0, ptr, host);
     ptr += 8;
   }
 }
@@ -1541,7 +1541,7 @@ bool RevCPU::processPANZeroAddr(){
       TmpSize = ZeroRqst.front().first;
       TmpPtr  = ZeroRqst.front().second;
 
-      Mem->WriteU8(0, (uint64_t)(&XferPtr[i].Valid), TmpValid);
+      Mem->Write(0, (uint64_t)(&XferPtr[i].Valid), TmpValid);
       Mem->WriteMem(0, (uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, TmpPtr);
 
       ZeroRqst.pop();
@@ -2170,7 +2170,7 @@ void RevCPU::ExecPANTest(){
     SendMB.push(std::make_pair(TEvent, dest));
 
     // write the completion command to our local CPU
-    Mem->WriteU64(0, (uint64_t)(_PAN_COMPLETION_ADDR_), 0xdeadbeef);
+    Mem->Write(0, (uint64_t)(_PAN_COMPLETION_ADDR_), uint64_t{0xdeadbeef});
     break;
   case 10:
     // revoke reservation

@@ -16,20 +16,13 @@
 
 #include <limits>
 #include <vector>
+#include <functional>
 
 namespace SST{
   namespace RevCPU{
     class RV32M : public RevExt {
       /// Computes the LOWER half of multiplication, which not depend on signedness
-      static bool mul(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) * R->GetX<uint32_t>(F, Inst.rs2));
-        }else{
-          R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) * R->GetX<uint64_t>(F, Inst.rs2));
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
+      static constexpr auto& mul = oper<std::multiplies>;
 
       // Computes the UPPER half of multiplication, based on signedness
       template<bool rs1_is_signed, bool rs2_is_signed>
@@ -58,6 +51,7 @@ namespace SST{
       static constexpr auto& mulhu  = uppermul<false, false>;
       static constexpr auto& mulhsu = uppermul<true,  false>;
 
+      // Division template
       template<typename i32_t, typename i64_t>
       static bool div_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
@@ -82,6 +76,7 @@ namespace SST{
       static constexpr auto& div  = div_impl<int32_t,  int64_t>;
       static constexpr auto& divu = div_impl<uint32_t, uint64_t>;
 
+      // Remainder template
       template<typename i32_t, typename i64_t>
       static bool rem_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         if( F->IsRV32() ){
