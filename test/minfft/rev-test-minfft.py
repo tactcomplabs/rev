@@ -19,10 +19,6 @@ sst.setStatisticLoadLevel(4)
 
 max_addr_gb = 1
 
-        #"machine" : "[0:RV64IMAF]",                      # Core:Config; RV32I for core 0
-        #"machine" : "[0:RV32I]",                      # Core:Config; RV32I for core 0
-        #"program" : os.getenv("REV_EXE", "fir_hilbert_int.exe"),  # Target executable
-#        "program" : os.getenv("REV_EXE", "ex1_int.exe"),  # Target executable
 # Define the simulation components
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({

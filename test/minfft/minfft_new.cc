@@ -76,7 +76,7 @@ void FFT(complex<double>* f, int N, double d)
 
 int main()
 {
-  int n = 1024;
+  int n = MAX;
   double d = 10.;
   complex<double> vec[MAX];
   for(int i = 0; i < n; i++) {
