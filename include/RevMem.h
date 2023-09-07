@@ -309,7 +309,7 @@ namespace SST {
       uint32_t bytesWritten;
     };
 
-    RevMemStats memStats;
+      RevMemStats memStats = {};
 
     protected:
       char *physMem = nullptr;                 ///< RevMem: memory container
@@ -342,8 +342,8 @@ namespace SST {
                                                                     /// nextPage * pageSize into physMem
 
       uint64_t heapend;        ///< RevMem: top of the stack
-      uint64_t heapstart;        ///< RevMem: top of the stack
-      uint64_t stacktop;        ///< RevMem: top of the stack
+      uint64_t heapstart;      ///< RevMem: top of the stack
+      uint64_t stacktop = 0;   ///< RevMem: top of the stack
 
       std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 

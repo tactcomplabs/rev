@@ -17,10 +17,8 @@
 #include <random>
 #include <functional>
 
-RevMem::RevMem( uint64_t MemSize, RevOpts *Opts,
-                RevMemCtrl *Ctrl, SST::Output *Output )
-  : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output),
-    stacktop(0x00ull) {
+RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
+  : memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output) {
   // Note: this constructor assumes the use of the memHierarchy backend
   pageSize = 262144; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
@@ -30,15 +28,6 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts,
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
-
-  memStats.bytesRead = 0;
-  memStats.bytesWritten = 0;
-  memStats.doublesRead = 0;
-  memStats.doublesWritten = 0;
-  memStats.floatsRead = 0;
-  memStats.floatsWritten = 0;
-  memStats.TLBHits = 0;
-  memStats.TLBMisses = 0;
 
   /*
    * The first mem segment is the entirety of the memory space specified in the .py
@@ -50,8 +39,7 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts,
 }
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
-  : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output),
-    stacktop(0x00ull) {
+  : memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output) {
 
   // allocate the backing memory, zeroing it
   physMem = new char [memSize]{};
@@ -66,15 +54,6 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
-
-  memStats.bytesRead = 0;
-  memStats.bytesWritten = 0;
-  memStats.doublesRead = 0;
-  memStats.doublesWritten = 0;
-  memStats.floatsRead = 0;
-  memStats.floatsWritten = 0;
-  memStats.TLBHits = 0;
-  memStats.TLBMisses = 0;
 }
 
 bool RevMem::outstandingRqsts(){
