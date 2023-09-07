@@ -446,20 +446,15 @@ bool RevProc::Reset(){
 
     regFile->cost = 0;
 
-#if 0
-    while(!Pipeline.empty()){
-      Pipeline.pop();
-    }
-#endif
     Pipeline.clear();
   }
+
   // set the pc
   uint64_t StartAddr = 0x00ull;
   if( !opts->GetStartAddr( id, StartAddr ) )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to init the start address for core=%u\n", id);
   std::string StartSymbol = "main";
-  //std::string StartSymbol = "_start";
   if( StartAddr == 0x00ull ){
     if( !opts->GetStartSymbol( id, StartSymbol ) )
       output->fatal(CALL_INFO, -1,
@@ -467,15 +462,18 @@ bool RevProc::Reset(){
 
     StartAddr = loader->GetSymbolAddr(StartSymbol);
   }
+
   if( StartAddr == 0x00ull ){
     // load "main" symbol
     StartAddr = loader->GetSymbolAddr("main");
-    //StartAddr = loader->GetSymbolAddr("_start");
     if( StartAddr == 0x00ull ){
       output->fatal(CALL_INFO, -1,
                     "Error: failed to auto discover address for <main> for core=%u\n", id);
     }
   }
+
+  SetupArgs();
+
   for (int t=0;  t < _REV_HART_COUNT_; t++){
     RevRegFile* regFile = GetRegFile(t);
     regFile->RV32_PC = (uint32_t)(StartAddr);
@@ -484,6 +482,34 @@ bool RevProc::Reset(){
   HART_CTS.set();
 
   return true;
+}
+
+void RevProc::SetupArgs(){
+  auto Argv = opts->GetArgv();
+
+  // ----------------------------------
+  // We need to initialize the x10 register to include the value of ARGC
+  // This is >= 1 (the executable name is always included)
+  // We also need to initialize the ARGV pointer to the value
+  // of the ARGV base pointer in memory which is currently set to the
+  // program header region.  When we come out of reset, this is StackTop+60 bytes
+  // ----------------------------------
+
+  // calculate the total size of the argv's
+  uint64_t TotalSize = 0x00ull;
+  for( unsigned i=0; i<Argv.size(); i++ ){
+    TotalSize += (Argv[i].size()+1);
+  }
+
+  for( int r=0; r < _REV_HART_COUNT_; r++ ){
+    // setup argc
+    RevRegFile* regFile = GetRegFile(r);
+    regFile->RV32[10] = Argv.size();
+    regFile->RV64[10] = Argv.size();
+
+    regFile->RV32[11] = (uint32_t)(mem->GetStackTop()+60);
+    regFile->RV64[11] = mem->GetStackTop()+60;
+  }
 }
 
 bool RevProc::IsFloat(unsigned Entry){

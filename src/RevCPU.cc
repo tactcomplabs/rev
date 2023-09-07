@@ -231,6 +231,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
   }
 
+  Opts->SetArgs(Loader->GetArgv());
+
   EnableCoProc = params.find<bool>("enableCoProc", 0);
   if(EnableCoProc){
     // Create the co-processor objects
