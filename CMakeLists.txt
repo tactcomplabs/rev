@@ -85,7 +85,7 @@ message (LDFLAGS="${LDFLAGS}")
 #------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
-set(CMAKE_CXX_FLAGS "-O2 -Wall -Wextra -Werror -Wuninitialized -Wmaybe-uninitialized -Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2 -Wuseless-cast -Wdouble-promotion -Wno-error=double-promotion -Wno-variadic-macros -Wno-error=variadic-macros -Wno-deprecated-declarations -Wvolatile -Wno-unused-variable -Wno-unused-parameter -Wno-shift-count-overflow ${CMAKE_CXX_FLAGS} -std=c++17 -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+set(CMAKE_CXX_FLAGS "-std=c++17 -O2 -Wall -Wextra -Werror -Wvla -Wuninitialized -Wfloat-conversion -Wdouble-promotion -Wnon-virtual-dtor -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
 

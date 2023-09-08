@@ -3168,9 +3168,9 @@ RevProc::ECALL_status_t RevProc::ECALL_tee(RevInst& inst){
 /* =================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
   int dfd = RegFile->RV64[10];
-  int filenameAddr = RegFile->RV64[11];
-  int flags = RegFile->RV64[12]; /* NOTE: Unused for now */
-  uint64_t mode = RegFile->RV64[13];
+  int filenameAddr = static_cast<int>(RegFile->RV64[11]);
+  [[maybe_unused]] auto flags = RegFile->RV64[12];
+  [[maybe_unused]] auto mode = RegFile->RV64[13];
 
   RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
   /*
@@ -3237,7 +3237,7 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
    * This buffer is an intermediate buffer for storing the data read from host
    * for later use in writing to RevMem
   */
-  char TmpBuf[BufSize];
+  std::vector<char> TmpBuf(BufSize);
 
   /*
    * Read nbytes of fd from host
@@ -3248,10 +3248,10 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
    */
 
   /* Do the read on the host */
-  uint64_t rc = read(fd, &TmpBuf, BufSize);
+  uint64_t rc = read(fd, &TmpBuf[0], BufSize);
 
   /* Write that data to the buffer inside of Rev */
-  mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf);
+  mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf[0]);
 
   RegFile->RV64[10] = rc;
   return RevProc::ECALL_status_t::SUCCESS;

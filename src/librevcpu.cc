@@ -8,11 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include <sst/core/sst_config.h>
+#include "SST.h"
 #include "../include/RevCPU.h"
-
-// Install the python library
-#include <sst/core/model/element_python.h>
 
 namespace SST {
   namespace RevCPU {
@@ -27,8 +24,7 @@ namespace SST {
       /// Constructor
       explicit RevCPUPyModule(std::string library) :
         SSTElementPythonModule(std::move(library)) {
-        auto primary_module = createPrimaryModule(pyrevcpu,
-                                                  "pyrevcpu.py");
+        createPrimaryModule(pyrevcpu, "pyrevcpu.py");
       }
 
       // Register the library with ELI

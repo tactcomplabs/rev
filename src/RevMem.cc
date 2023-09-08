@@ -220,8 +220,6 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
 }
 
 unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
-  unsigned R = 0;
-
   srand(time(NULL));
 
 #if 0   // TODO: Correct callculation of [Min, Max] random range

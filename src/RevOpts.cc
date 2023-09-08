@@ -86,7 +86,7 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
     if( vstr[0] == "CORES" ){
       // set all cores to the target machine model
       std::string::size_type sz = 0;
-      uint64_t Addr = (uint64_t)(std::stoull(vstr[1], &sz, 0));
+      uint64_t Addr = std::stoull(vstr[1], &sz, 0);
       for( unsigned i=0; i<numCores; i++ ){
         startAddr.find(i)->second = Addr;
       }
@@ -100,12 +100,12 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
+    unsigned Core = std::stoi(vstr[0], nullptr, 0);
     if( Core > numCores )
       return false;
 
     std::string::size_type sz = 0;
-    uint64_t Addr = (uint64_t)(std::stoull(vstr[1], &sz, 0));
+    uint64_t Addr = std::stoull(vstr[1], &sz, 0);
 
     startAddr.find(Core)->second = Addr;
     vstr.clear();
@@ -121,7 +121,7 @@ bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
+    unsigned Core = std::stoi(vstr[0], nullptr, 0);
     if( Core > numCores )
       return false;
 
@@ -157,7 +157,7 @@ bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
+    unsigned Core = std::stoi(vstr[0], nullptr, 0);
     if( Core > numCores )
       return false;
 
@@ -175,7 +175,7 @@ bool RevOpts::InitInstTables( std::vector<std::string> InstTables ){
     if( vstr.size() != 2 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
+    unsigned Core = std::stoi(vstr[0], nullptr, 0);
     if( Core > numCores )
       return false;
 
@@ -194,9 +194,9 @@ bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
     if( vstr.size() != 3 )
       return false;
 
-    unsigned Core = (unsigned)(std::stoi(vstr[0], nullptr, 0));
-    unsigned Min  = (unsigned)(std::stoi(vstr[1], nullptr, 0));
-    unsigned Max  = (unsigned)(std::stoi(vstr[2], nullptr, 0));
+    unsigned Core = std::stoi(vstr[0], nullptr, 0);
+    unsigned Min  = std::stoi(vstr[1], nullptr, 0);
+    unsigned Max  = std::stoi(vstr[2], nullptr, 0);
     memCosts[Core].first  = Min;
     memCosts[Core].second = Max;
     if( (Min==0) || (Max==0) ){

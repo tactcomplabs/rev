@@ -15,8 +15,8 @@
 #define _SST_H_
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
@@ -28,6 +28,7 @@
 #include <sst/core/statapi/stataccumulator.h>
 #include <sst/core/subcomponent.h>
 #include <sst/core/timeConverter.h>
+#include <sst/core/model/element_python.h>
 
 #pragma GCC diagnostic pop
 

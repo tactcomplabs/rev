@@ -19,12 +19,7 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         return false;
@@ -66,12 +61,7 @@ bool RevPrefetcher::FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst){
   for( unsigned i=0; i<baseAddr.size(); i++ ){
     lastAddr = baseAddr[i] + (depth*4);
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         Fetched = false;
@@ -107,12 +97,7 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         Fetched = false;

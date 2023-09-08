@@ -1189,7 +1189,7 @@ void RevCPU::PANHandleBOTW(panNicEvent *event){
     return ;
   }
 
-  uint8_t VarArgs = event->getVarArgs();
+  [[maybe_unused]] uint8_t VarArgs = event->getVarArgs();
   uint64_t Entry  = (uint64_t)(event->getOffset()) + Loader->GetSymbolAddr("_start");
   unsigned Idx    = 0;
 
@@ -1517,8 +1517,7 @@ bool RevCPU::processPANZeroAddr(){
 
   output.verbose(CALL_INFO, 5, 0, "Processing Zero Address Put Commands\n");
 
-  bool done = false;
-  size_t XferSize = sizeof(PRTIME_XFER);
+  [[maybe_unused]] size_t XferSize = sizeof(PRTIME_XFER);
   PRTIME_XFER *XferPtr = (PRTIME_XFER *)(_PAN_XFER_BUF_ADDR_);
   uint8_t TmpValid = _PAN_ENTRY_INVALID_;
   char *TmpPtr = nullptr;

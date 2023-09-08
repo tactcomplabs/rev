@@ -492,14 +492,14 @@ bool RevLoader::LoadProgramArgs(){
                     "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
 
     // retrieve the current stack pointer
-    char tmpc[argv[i].size() + 1];
-    argv[i].copy(tmpc, argv[i].size()+1);
+    std::vector<char> tmpc(argv[i].size() + 1);
+    argv[i].copy(&tmpc[0], argv[i].size()+1);
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
 
     OldStackTop -= len;
 
-    WriteCacheLine(OldStackTop, len, &tmpc);
+    WriteCacheLine(OldStackTop, len, &tmpc[0]);
   }
 
   // now reverse engineer the address alignments
