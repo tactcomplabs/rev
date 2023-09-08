@@ -13,6 +13,12 @@
 using namespace SST;
 using namespace RevCPU;
 
+PanExec::PanExec() : CurEntry(0){
+}
+
+PanExec::~PanExec(){
+}
+
 bool PanExec::AddEntry(uint64_t Addr, unsigned *Idx){
   if( ExecQueue.size() == _PANEXEC_MAX_ENTRY_ )
     return false;

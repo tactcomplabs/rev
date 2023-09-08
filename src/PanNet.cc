@@ -19,10 +19,11 @@ using namespace RevCPU;
 // -----------------------------------------------------------------------------
 
 panNicEvent::PanPacket panNicEvent::getType(){
-  return panNicEvent::PanPacket(Opcode & 0b11);
+  uint8_t Type = Opcode & 0b11;
+  return (panNicEvent::PanPacket)(Type);
 }
 
-const char* panNicEvent::getOpcodeStr(){
+std::string panNicEvent::getOpcodeStr(){
   switch(Opcode){
   case panNicEvent::Success:
     return "Success";
@@ -343,7 +344,7 @@ bool panNicEvent::buildStatus(uint32_t Token, uint8_t Tag, uint16_t Entry){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize(Entry) )
+  if( !setSize((uint32_t)(Entry)) )
     return false;
   return true;
 }
@@ -354,7 +355,7 @@ bool panNicEvent::buildCancel(uint32_t Token, uint8_t Tag, uint16_t Entry){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize(Entry) )
+  if( !setSize((uint32_t)(Entry)) )
     return false;
   return true;
 }
@@ -383,7 +384,7 @@ bool panNicEvent::buildHalt(uint32_t Token, uint8_t Tag, uint16_t Hart){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize(Hart) )
+  if( !setSize((uint32_t)(Hart)) )
     return false;
   return true;
 }
@@ -403,7 +404,7 @@ bool panNicEvent::buildReadReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint6
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize(Hart) )
+  if( !setSize((uint32_t)(Hart)) )
     return false;
   if( !setAddr(Reg) )
     return false;
@@ -418,7 +419,7 @@ bool panNicEvent::buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize(Hart) )
+  if( !setSize((uint32_t)(Hart)) )
     return false;
   if( !setAddr(Reg) )
     return false;
@@ -433,7 +434,7 @@ bool panNicEvent::buildSingleStep(uint32_t Token, uint8_t Tag, uint16_t Hart){
     return false;
   if( !setTag(Tag) )
     return false;
-  if( !setSize(Hart) )
+  if( !setSize((uint32_t)(Hart)) )
     return false;
   return true;
 }
@@ -479,7 +480,7 @@ bool panNicEvent::buildBOTW(uint32_t Token, uint8_t Tag, uint8_t VarArgs, uint64
     return false;
   if( !setOffset(Offset) )
     return false;
-  if( !setData(Args, VarArgs) )
+  if( !setData(Args, (uint32_t)(VarArgs)) )
     return false;
   return true;
 }
@@ -510,7 +511,7 @@ bool panNicEvent::buildFailed(uint32_t Token, uint8_t Tag){
 // PanNet Class
 // -----------------------------------------------------------------------------
 
-PanNet::PanNet(ComponentId_t id, const Params& params)
+PanNet::PanNet(ComponentId_t id, Params& params)
   : panNicAPI(id, params) {
   // setup the initial logging functions
   int verbosity = params.find<int>("verbose", 0);
@@ -563,7 +564,7 @@ void PanNet::init(unsigned int phase){
     if( !initBroadcastSent) {
       initBroadcastSent = true;
       panNicEvent *ev = new panNicEvent(getName());
-      ev->setTag(IsHost());    // send a boolean on whether we are a host device
+      ev->setTag((uint8_t)(this->IsHost()));    // send a boolean on whether we are a host device
 
       SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
@@ -581,7 +582,7 @@ void PanNet::init(unsigned int phase){
     output->verbose(CALL_INFO, 1, 0,
                     "%s received PAN init message from %s\n",
                     getName().c_str(), ev->getSource().c_str());
-    if( ev->getTag() ){
+    if( (bool)(ev->getTag()) ){
       output->verbose(CALL_INFO, 1, 0,
                       "%s identified %s as a HOST device\n",
                       getName().c_str(), ev->getSource().c_str());

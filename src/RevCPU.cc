@@ -1269,7 +1269,7 @@ void RevCPU::handleHostPANMessage(panNicEvent *event){
     // host devices should never receive these commands
     output.fatal(CALL_INFO, -1,
                  "Error: host devices cannot handle %s commands; Opcode = %d; SrcID = %d\n",
-                 event->getOpcodeStr(), event->getOpcode(), event->getSrc() );
+                 event->getOpcodeStr().c_str(), event->getOpcode(), event->getSrc() );
     break;
   }
 }
@@ -1379,7 +1379,7 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
     // network devices should never receive these commands
     output.fatal(CALL_INFO, -1,
                  "Error: network devices cannot handle %s commands\n",
-                 event->getOpcodeStr());
+                 event->getOpcodeStr().c_str());
     break;
   }
 }
@@ -1475,7 +1475,7 @@ bool RevCPU::sendPANMessage(){
   output.verbose(CALL_INFO, 4, 0,
                  "Sending PAN message from %d to %d; Opc=%s; Tag=%u; Token=%" PRIu32 "; Size=%" PRIu32 "\n",
                  address, SendMB.front().second,
-                 SendMB.front().first->getOpcodeStr(),
+                 SendMB.front().first->getOpcodeStr().c_str(),
                  SendMB.front().first->getTag(),
                  SendMB.front().first->getToken(),
                  SendMB.front().first->getSize());

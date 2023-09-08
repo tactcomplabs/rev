@@ -15,11 +15,15 @@
 #include <vector>
 #include <queue>
 #include <map>
-#include <string>
 #include <unistd.h>
 
 // -- SST Headers
-#include "SST.h"
+#include <sst/core/sst_config.h>
+#include <sst/core/component.h>
+#include <sst/core/event.h>
+#include <sst/core/link.h>
+#include <sst/core/timeConverter.h>
+#include <sst/core/interfaces/simpleNetwork.h>
 
 // -- Rev Headers
 #include "RevOpts.h"
@@ -35,14 +39,14 @@ namespace SST {
     class panNicEvent : public SST::Event {
     public:
 
-      enum PanPacket : uint8_t {
+      typedef enum{
         PanBase     = 0b00,               ///< PanPacket: base packet type
         PanStream   = 0b01,               ///< PanPacket: streaming packet type
         PanRsvd     = 0b10,               ///< PanPacket: reserved for future expansion
-        PanBOTW     = 0b11,               ///< PanPacket: bump on the wire packet
-      };
+        PanBOTW     = 0b11                ///< PanPacket: bump on the wire packet
+      }PanPacket;
 
-      enum PanOpcode : uint8_t {
+      typedef enum{
         SyncGet         = 0b00000000,     ///< PanOpcode: Synchronous get
         SyncPut         = 0b00000100,     ///< PanOpcode: Synchronous put
         AsyncGet        = 0b00001000,     ///< PanOpcode: Asynchronous get
@@ -66,11 +70,11 @@ namespace SST {
         StatusFuture    = 0b11010000,     ///< PanOpcode: Status future
         Success         = 0b11100000,     ///< PanOpcode: Command success
         Failed          = 0b11110000,     ///< PanOpcode: Failed success
-        BOTW            = 0b11,           ///< PanOpcode: Bump on the wire
-      };
+        BOTW            = 0b11            ///< PanOpcode: Bump on the wire
+      }PanOpcode;
 
       /// panNicEvent: standard constructor
-      explicit panNicEvent(std::string name)
+      panNicEvent(std::string name)
         : Event(),
         SrcName(name),
           Tag(0), Opcode(PanRsvd), VarArgs(0),
@@ -78,37 +82,37 @@ namespace SST {
           Addr(0){ }
 
       /// panNicEvent: rerieve the source name
-      std::string getSource() const { return SrcName; }
+      std::string getSource() { return SrcName; }
 
       /// panNicEvent: retrieve the packet type
       panNicEvent::PanPacket getType();
 
       /// panNicEvent: retrieve the packet tag field
-      uint8_t getTag() const { return Tag; }
+      uint8_t getTag() { return Tag; }
 
       /// panNicEvent: retrieve the packet opcode
-      uint8_t getOpcode() const { return Opcode; }
+      uint8_t getOpcode() { return Opcode; }
 
       /// panNicEvent: retrieve the packet varargs
-      uint8_t getVarArgs() const { return VarArgs; }
+      uint8_t getVarArgs() { return VarArgs; }
 
       /// panNicEvent: retrieve the packet size
-      uint32_t getSize() const { return Size; }
+      uint32_t getSize() { return Size; }
 
       /// panNicEvent: retrieve the packet token
-      uint32_t getToken() const { return Token; }
+      uint32_t getToken() { return Token; }
 
       /// panNicEvent: retrieve the packet offset
-      uint32_t getOffset() const { return Offset; }
+      uint32_t getOffset() { return Offset; }
 
       /// panNicEvent: retrieve the packet address
-      uint64_t getAddr() const { return Addr; }
+      uint64_t getAddr() { return Addr; }
 
       /// panNicEvent: retrieve the packet data
       void getData(uint64_t *Out);
 
       /// panNicEvent: retrieve the source ID
-      int getSrc() const { return Src; }
+      int getSrc() { return Src; }
 
       /// panNicEvent: set the source ID
       bool setSrc(int S) { Src = S; return true; }
@@ -138,7 +142,7 @@ namespace SST {
       unsigned getNumBlocks(uint32_t Size);
 
       /// panNicEvent: return the opcode type as a string
-      const char* getOpcodeStr();
+      std::string getOpcodeStr();
 
       // ------------------------------------------------
       // Packet Building Functions
@@ -274,21 +278,21 @@ namespace SST {
     public:
       SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::panNicAPI)
 
-      /// panNicAPI: constructor
-      panNicAPI(ComponentId_t id, const Params& params)
+      /// panNicAPI: default constructor
+      panNicAPI(ComponentId_t id, Params& params)
         : SubComponent(id), isHost(false), isReserved(false), Token(0x00) { }
 
       /// panNicAPI: set whether this device is a host
       void SetHost(bool host){ isHost = host; }
 
       /// panNicAPI: determine ehther this is a host device
-      bool IsHost() const { return isHost; }
+      bool IsHost() { return isHost; }
 
       /// panNicAPI: determine if the device is reserved
-      bool IsReserved() const { return isReserved; }
+      bool IsReserved() { return isReserved; }
 
       /// panNicAPI: retrieve the host token
-      uint32_t GetToken() const { return Token; }
+      uint32_t GetToken() { return Token; }
 
       /// panNicAPI: check the target token against what is stored
       bool CheckToken(uint32_t T){
@@ -317,7 +321,7 @@ namespace SST {
       }
 
       /// panNicAPI: default destructor
-      virtual ~panNicAPI() = default;
+      virtual ~panNicAPI() { }
 
       /// panNicAPI: registers the event handler with the core
       virtual void setMsgHandler(Event::HandlerBase* handler) = 0;
@@ -341,7 +345,7 @@ namespace SST {
       virtual bool IsRemoteHost(SST::Interfaces::SimpleNetwork::nid_t NID) = 0;
 
       /// panNicAPI: retrieve the number of hosts
-      virtual unsigned getNumPEs() = 0;
+      virtual unsigned getNumPEs()  = 0;
 
       /// panNicAPI: retrieve the endpoint ID of the target map index
       virtual int64_t getHostFromIdx(unsigned Idx) = 0;
@@ -380,10 +384,10 @@ namespace SST {
         {"iface", "SimpleNetwork interface to a network", "SST::Interfaces::SimpleNetwork"}
       )
 
-      /// PanNet: constructor
-      PanNet(ComponentId_t id, const Params& params);
+      /// PanNet: default constructor
+      PanNet(ComponentId_t id, Params& params);
 
-      /// PanNet: destructor
+      /// PanNet: default destructor
       virtual ~PanNet();
 
       /// PanNet: Callback to parent on received messages
@@ -411,13 +415,13 @@ namespace SST {
       bool msgNotify(int virtualNetwork);
 
       /// PanNet: determine if I am a host connected device
-      bool IsHost() const { return isHost; }
+      bool IsHost() { return isHost; }
 
       /// PanNet: determine if the remote ID is a host
       virtual bool IsRemoteHost(SST::Interfaces::SimpleNetwork::nid_t NID){ return hostMap[NID]; }
 
       /// PanNet: retrieve the number of hosts
-      virtual unsigned getNumPEs() { return hostMap.size(); }
+      virtual unsigned getNumPEs() { return (unsigned)(hostMap.size()); }
 
       /// PanNet: retrieve the endpoint ID of the target map index
       virtual int64_t getHostFromIdx(unsigned Idx);
