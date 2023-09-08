@@ -24,12 +24,12 @@ namespace SST{
       static constexpr auto& mulw  = oper<std::multiplies, OpKind::Reg, std::make_unsigned_t, true>;
 
       // 32-bit Division
-      static constexpr auto& divw  = division <std::make_signed_t,   true>;
-      static constexpr auto& divuw = division <std::make_unsigned_t, true>;
+      static constexpr auto& divw  = divrem<DivRem::Div, std::make_signed_t,   true>;
+      static constexpr auto& divuw = divrem<DivRem::Div, std::make_unsigned_t, true>;
 
       // 32-bit Remainder
-      static constexpr auto& remw  = remainder<std::make_signed_t,   true>;
-      static constexpr auto& remuw = remainder<std::make_unsigned_t, true>;
+      static constexpr auto& remw  = divrem<DivRem::Rem, std::make_signed_t,   true>;
+      static constexpr auto& remuw = divrem<DivRem::Rem, std::make_unsigned_t, true>;
 
       // ----------------------------------------------------------------------
       //

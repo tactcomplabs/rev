@@ -345,12 +345,12 @@ namespace SST{
       static constexpr auto& sltiu = oper<std::less,    OpKind::Imm, std::make_unsigned_t>;
 
       // Shift operators
-      static constexpr auto& slli = shift<ShiftLeft,    OpKind::Imm>;
-      static constexpr auto& srli = shift<ShiftRight,   OpKind::Imm>;
-      static constexpr auto& srai = shift<ShiftRight,   OpKind::Imm, std::make_signed_t>;
-      static constexpr auto& sll  = shift<ShiftLeft,    OpKind::Reg>;
-      static constexpr auto& srl  = shift<ShiftRight,   OpKind::Reg>;
-      static constexpr auto& sra  = shift<ShiftRight,   OpKind::Reg, std::make_signed_t>;
+      static constexpr auto& slli = oper<ShiftLeft,     OpKind::Imm, std::make_unsigned_t>;
+      static constexpr auto& srli = oper<ShiftRight,    OpKind::Imm, std::make_unsigned_t>;
+      static constexpr auto& srai = oper<ShiftRight,    OpKind::Imm>;
+      static constexpr auto& sll  = oper<ShiftLeft,     OpKind::Reg, std::make_unsigned_t>;
+      static constexpr auto& srl  = oper<ShiftRight,    OpKind::Reg, std::make_unsigned_t>;
+      static constexpr auto& sra  = oper<ShiftRight,    OpKind::Reg>;
 
       static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         M->FenceMem(F->GetHart());

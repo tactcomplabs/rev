@@ -89,12 +89,12 @@ namespace SST{
       static constexpr auto& addiw = oper<std::plus,   OpKind::Imm, std::make_signed_t,   true>;
 
       // Shift operators
-      static constexpr auto& slliw = shift<ShiftLeft,  OpKind::Imm, std::make_unsigned_t, true>;
-      static constexpr auto& srliw = shift<ShiftRight, OpKind::Imm, std::make_unsigned_t, true>;
-      static constexpr auto& sraiw = shift<ShiftRight, OpKind::Imm, std::make_signed_t,   true>;
-      static constexpr auto& sllw  = shift<ShiftLeft,  OpKind::Reg, std::make_unsigned_t, true>;
-      static constexpr auto& srlw  = shift<ShiftRight, OpKind::Reg, std::make_unsigned_t, true>;
-      static constexpr auto& sraw  = shift<ShiftRight, OpKind::Reg, std::make_signed_t,   true>;
+      static constexpr auto& slliw = oper<ShiftLeft,  OpKind::Imm, std::make_unsigned_t, true>;
+      static constexpr auto& srliw = oper<ShiftRight, OpKind::Imm, std::make_unsigned_t, true>;
+      static constexpr auto& sraiw = oper<ShiftRight, OpKind::Imm, std::make_signed_t,   true>;
+      static constexpr auto& sllw  = oper<ShiftLeft,  OpKind::Reg, std::make_unsigned_t, true>;
+      static constexpr auto& srlw  = oper<ShiftRight, OpKind::Reg, std::make_unsigned_t, true>;
+      static constexpr auto& sraw  = oper<ShiftRight, OpKind::Reg, std::make_signed_t,   true>;
 
       // ----------------------------------------------------------------------
       //

@@ -53,12 +53,12 @@ namespace SST{
       static constexpr auto& mul    = oper<std::multiplies, OpKind::Reg>;
 
       // Division
-      static constexpr auto& div    = division<std::make_signed_t>;
-      static constexpr auto& divu   = division<std::make_unsigned_t>;
+      static constexpr auto& div    = divrem<DivRem::Div, std::make_signed_t>;
+      static constexpr auto& divu   = divrem<DivRem::Div, std::make_unsigned_t>;
 
       // Remainder
-      static constexpr auto& rem    = remainder<std::make_signed_t>;
-      static constexpr auto& remu   = remainder<std::make_unsigned_t>;
+      static constexpr auto& rem    = divrem<DivRem::Rem, std::make_signed_t>;
+      static constexpr auto& remu   = divrem<DivRem::Rem, std::make_unsigned_t>;
 
       // ----------------------------------------------------------------------
       //
