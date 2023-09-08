@@ -92,7 +92,7 @@ constexpr auto SignExt(T val, size_t bits){
 }
 
 /// BoxNaN: Store a boxed float inside a double
-inline void BoxNaN(double* dest, void* value){
+inline void BoxNaN(double* dest, const void* value){
   uint32_t i32;
   memcpy(&i32, value, sizeof(float));       // The FP32 value
   uint64_t i64 = uint64_t{i32} | ~uint64_t{0} << 32; // Boxed NaN value
