@@ -20,13 +20,6 @@
 namespace SST{
   namespace RevCPU{
     class RV64M : public RevExt {
-
-      static bool mulw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) * R->GetX<uint32_t>(F, Inst.rs2));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
       template<typename i32_t>
       static bool divw_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
         i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
@@ -60,6 +53,8 @@ namespace SST{
 
       static constexpr auto& remw  = remw_impl<int32_t>;
       static constexpr auto& remuw = remw_impl<uint32_t>;
+
+      static constexpr auto& mulw  = oper<std::multiplies, OpKind::Reg, std::make_unsigned_t, uint32_t>;
 
       // ----------------------------------------------------------------------
       //

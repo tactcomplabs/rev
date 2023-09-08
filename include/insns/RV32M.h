@@ -29,15 +29,15 @@ namespace SST{
           uint32_t rs1 = R->GetX<uint32_t>(F, Inst.rs1);
           uint32_t rs2 = R->GetX<uint32_t>(F, Inst.rs2);
           uint32_t mul = static_cast<uint32_t>(rs1 * int64_t(rs2) >> 32);
-          if (rs1_is_signed && rs1 & (uint32_t{1}<<31)) mul -= rs2;
-          if (rs2_is_signed && rs2 & (uint32_t{1}<<31)) mul -= rs1;
+          if (rs1_is_signed && (rs1 & (uint32_t{1}<<31)) != 0) mul -= rs2;
+          if (rs2_is_signed && (rs2 & (uint32_t{1}<<31)) != 0) mul -= rs1;
           R->SetX(F, Inst.rd, mul);
         }else{
           uint64_t rs1 = R->GetX<uint64_t>(F, Inst.rs1);
           uint64_t rs2 = R->GetX<uint64_t>(F, Inst.rs2);
           uint64_t mul = static_cast<uint64_t>(rs1 * __int128(rs2) >> 64);
-          if (rs1_is_signed && rs1 & (uint64_t{1}<<63)) mul -= rs2;
-          if (rs2_is_signed && rs2 & (uint64_t{1}<<63)) mul -= rs1;
+          if (rs1_is_signed && (rs1 & (uint64_t{1}<<63)) != 0) mul -= rs2;
+          if (rs2_is_signed && (rs2 & (uint64_t{1}<<63)) != 0) mul -= rs1;
           R->SetX(F, Inst.rd, mul);
         }
         R->AdvancePC(F, Inst.instSize);
@@ -58,14 +58,14 @@ namespace SST{
         if( F->IsRV32() ){
           i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
           i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
-          i64_t res = std::numeric_limits<i32_t>::is_signed &&
+          i32_t res = std::is_signed_v<i32_t> &&
             rs1 == std::numeric_limits<i32_t>::min() &&
             rs2 == -i32_t{1} ? rs1 : rs2 ? rs1 / rs2 : -i32_t{1};
           R->SetX(F, Inst.rd, res);
         } else {
           i64_t rs1 = R->GetX<i64_t>(F, Inst.rs1);
           i64_t rs2 = R->GetX<i64_t>(F, Inst.rs2);
-          i64_t res =  std::numeric_limits<i64_t>::is_signed &&
+          i64_t res =  std::is_signed_v<i64_t> &&
             rs1 ==  std::numeric_limits<i64_t>::min() &&
             rs2 == -i64_t{1} ? rs1 : rs2 ? rs1 / rs2 : -i64_t{1};
           R->SetX(F, Inst.rd, res);
