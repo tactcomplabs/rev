@@ -26,21 +26,21 @@
 #define _PAN_ENTRY_DONE_SUCCESS_  3
 #define _PAN_ENTRY_DONE_FAILED_   4
 
-struct MBoxEntry{
+typedef struct{
   uint64_t Valid;   ///< MBoxEntry: Valid field
   uint64_t Dest;    ///< MBoxEntry: Destination field
   uint64_t Addr;    ///< MBoxEntry: Address field
-};
+}MBoxEntry;
 
-struct PEMap{
+typedef struct{
   int64_t ID;       ///< PEMap: Endpoint ID
   uint64_t host;    ///< PEMap: 1 = host; 0 = PAN
-};
+}PEMap;
 
-struct PRTIME_XFER{
+typedef struct{
   uint8_t Valid;                      ///< PRTIME_XFER: Valid bit
   char Buffer[_PAN_XFER_BUF_];        ///< PRTIME_XFER: Bounce buffers for base packets
-};
+}PRTIME_XFER;
 
 #endif
 
