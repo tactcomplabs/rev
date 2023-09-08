@@ -335,7 +335,7 @@ namespace SST{
      * a target instruction as well as its cost function
      *
      */
-    typedef struct {
+    struct RevInstEntry{
         // disassembly
         std::string mnemonic; ///< RevInstEntry: instruction mnemonic
         uint32_t cost;        ///< RevInstEntry: instruction code in cycles
@@ -369,7 +369,7 @@ namespace SST{
         bool compressed;      ///< RevInstEntry: compressed instruction
 
         uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
-      } RevInstEntry;
+      };
 
 
     template <typename RevInstDefaultsPolicy>

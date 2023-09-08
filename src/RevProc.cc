@@ -3396,8 +3396,8 @@ void RevProc::ExecEcall(RevInst& inst){
     /* call the function */
     ECALL_status_t status = (it->second)(this, inst);
     /* Trap handled... 0 cause registers */
-    RegFile->RV64_SCAUSE = status;
-    RegFile->RV32_SCAUSE = status;
+    RegFile->RV64_SCAUSE = uint64_t(status);
+    RegFile->RV32_SCAUSE = uint32_t(status);
     //For now, rewind the PC and keep executing the ECALL until we
     // have completed
     if(RevProc::ECALL_status_t::SUCCESS != status){

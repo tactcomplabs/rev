@@ -211,11 +211,11 @@ namespace SST{
       * - Beside each function declaration is the system call code followed by its corresponding declaration
       *   that you can find in `common/syscalls.h` (the file to be included to use system calls inside of rev)
       */
-     typedef enum{
+      enum class ECALL_status_t{
         SUCCESS = 0,
         CONTINUE = EXCEPTION_CAUSE::ECALL_USER_MODE,
-        ERROR = 255
-     }ECALL_status_t;
+        ERROR = 255,
+      };
 
      // TODO: We may need one of these per HART
      char* ECALL_buf;
@@ -535,7 +535,7 @@ namespace SST{
       ECALL_status_t ECALL_faccessat2(RevInst& inst);             // 439, rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
       ECALL_status_t ECALL_process_madvise(RevInst& inst);        // 440, rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
 
-      
+
 
       /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
       std::unordered_map<uint32_t, std::function<ECALL_status_t(RevProc*, RevInst&)>> Ecalls;

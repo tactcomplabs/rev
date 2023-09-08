@@ -158,7 +158,7 @@ template<typename T> static inline T from_le(T n) { return n; }
 namespace SST {
   namespace RevCPU {
 
-    typedef struct{
+    struct Elf32_Ehdr{
       uint8_t  e_ident[16];
       uint16_t e_type;
       uint16_t e_machine;
@@ -173,9 +173,9 @@ namespace SST {
       uint16_t e_shentsize;
       uint16_t e_shnum;
       uint16_t e_shstrndx;
-    } Elf32_Ehdr;
+    };
 
-    typedef struct{
+    struct Elf32_Shdr{
       uint32_t sh_name;
       uint32_t sh_type;
       uint32_t sh_flags;
@@ -186,9 +186,9 @@ namespace SST {
       uint32_t sh_info;
       uint32_t sh_addralign;
       uint32_t sh_entsize;
-    } Elf32_Shdr;
+    };
 
-    typedef struct{
+    struct Elf32_Phdr{
       uint32_t p_type;
       uint32_t p_offset;
       uint32_t p_vaddr;
@@ -197,18 +197,18 @@ namespace SST {
       uint32_t p_memsz;
       uint32_t p_flags;
       uint32_t p_align;
-    } Elf32_Phdr;
+    };
 
-    typedef struct{
+    struct Elf32_Sym{
       uint32_t st_name;
       uint32_t st_value;
       uint32_t st_size;
       uint8_t  st_info;
       uint8_t  st_other;
       uint16_t st_shndx;
-    } Elf32_Sym;
+    };
 
-    typedef struct{
+    struct Elf64_Ehdr{
       uint8_t  e_ident[16];
       uint16_t e_type;
       uint16_t e_machine;
@@ -223,9 +223,9 @@ namespace SST {
       uint16_t e_shentsize;
       uint16_t e_shnum;
       uint16_t e_shstrndx;
-    } Elf64_Ehdr;
+    };
 
-    typedef struct{
+    struct Elf64_Shdr{
       uint32_t sh_name;
       uint32_t sh_type;
       uint64_t sh_flags;
@@ -236,9 +236,9 @@ namespace SST {
       uint32_t sh_info;
       uint64_t sh_addralign;
       uint64_t sh_entsize;
-    } Elf64_Shdr;
+    };
 
-    typedef struct{
+    struct Elf64_Phdr{
       uint32_t p_type;
       uint32_t p_flags;
       uint64_t p_offset;
@@ -247,18 +247,18 @@ namespace SST {
       uint64_t p_filesz;
       uint64_t p_memsz;
       uint64_t p_align;
-    } Elf64_Phdr;
+    };
 
-    typedef struct{
+    struct Elf64_Sym{
       uint32_t st_name;
       uint8_t  st_info;
       uint8_t  st_other;
       uint16_t st_shndx;
       uint64_t st_value;
       uint64_t st_size;
-    } Elf64_Sym;
+    };
 
-    typedef struct{
+    struct ElfInfo{
       int phent;
       int phnum;
       int is_supervisor;
@@ -274,7 +274,7 @@ namespace SST {
       uint64_t time0;
       uint64_t cycle0;
       uint64_t instret0;
-    } ElfInfo;
+    };
 
     class RevLoader {
     public:
