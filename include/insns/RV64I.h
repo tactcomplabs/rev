@@ -84,17 +84,17 @@ namespace SST{
       static constexpr auto& sd    = store<uint64_t>;
 
       // 32-bit arithmetic operators
-      static constexpr auto& addw  = oper<std::plus,   OpKind::Reg, std::make_signed_t,   int32_t>;
-      static constexpr auto& subw  = oper<std::minus,  OpKind::Reg, std::make_signed_t,   int32_t>;
-      static constexpr auto& addiw = oper<std::plus,   OpKind::Imm, std::make_signed_t,   int32_t>;
+      static constexpr auto& addw  = oper<std::plus,   OpKind::Reg, std::make_signed_t,   true>;
+      static constexpr auto& subw  = oper<std::minus,  OpKind::Reg, std::make_signed_t,   true>;
+      static constexpr auto& addiw = oper<std::plus,   OpKind::Imm, std::make_signed_t,   true>;
 
       // Shift operators
-      static constexpr auto& slliw = shift<ShiftLeft,  OpKind::Imm, std::make_unsigned_t, int32_t>;
-      static constexpr auto& srliw = shift<ShiftRight, OpKind::Imm, std::make_unsigned_t, int32_t>;
-      static constexpr auto& sraiw = shift<ShiftRight, OpKind::Imm, std::make_signed_t,   int32_t>;
-      static constexpr auto& sllw  = shift<ShiftLeft,  OpKind::Reg, std::make_unsigned_t, int32_t>;
-      static constexpr auto& srlw  = shift<ShiftRight, OpKind::Reg, std::make_unsigned_t, int32_t>;
-      static constexpr auto& sraw  = shift<ShiftRight, OpKind::Reg, std::make_signed_t,   int32_t>;
+      static constexpr auto& slliw = shift<ShiftLeft,  OpKind::Imm, std::make_unsigned_t, true>;
+      static constexpr auto& srliw = shift<ShiftRight, OpKind::Imm, std::make_unsigned_t, true>;
+      static constexpr auto& sraiw = shift<ShiftRight, OpKind::Imm, std::make_signed_t,   true>;
+      static constexpr auto& sllw  = shift<ShiftLeft,  OpKind::Reg, std::make_unsigned_t, true>;
+      static constexpr auto& srlw  = shift<ShiftRight, OpKind::Reg, std::make_unsigned_t, true>;
+      static constexpr auto& sraw  = shift<ShiftRight, OpKind::Reg, std::make_signed_t,   true>;
 
       // ----------------------------------------------------------------------
       //

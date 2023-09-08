@@ -50,36 +50,15 @@ namespace SST{
       static constexpr auto& mulhsu = uppermul<true,  false>;
 
       /// Computes the LOWER half of multiplication, which does not depend on signedness
-      static constexpr auto& mul = oper<std::multiplies, OpKind::Reg>;
+      static constexpr auto& mul    = oper<std::multiplies, OpKind::Reg>;
 
       // Division
-      static constexpr auto& div  = divide<std::make_signed_t>;
-      static constexpr auto& divu = divide<std::make_unsigned_t>;
+      static constexpr auto& div    = division<std::make_signed_t>;
+      static constexpr auto& divu   = division<std::make_unsigned_t>;
 
-      // Remainder template
-      template<typename i32_t, typename i64_t>
-      static bool rem_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
-          i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
-          i32_t res = std::numeric_limits<i32_t>::is_signed &&
-            rs1 == std::numeric_limits<i32_t>::min() &&
-            rs2 == -i32_t{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
-          R->SetX(F, Inst.rd, res);
-        } else {
-          i64_t rs1 = R->GetX<i64_t>(F, Inst.rs1);
-          i64_t rs2 = R->GetX<i64_t>(F, Inst.rs2);
-          i64_t res = std::numeric_limits<i64_t>::is_signed &&
-            rs1 == std::numeric_limits<i64_t>::min() &&
-            rs2 == -i64_t{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
-          R->SetX(F, Inst.rd, res);
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static constexpr auto& rem  = rem_impl<int32_t,  int64_t>;
-      static constexpr auto& remu = rem_impl<uint32_t, uint64_t>;
+      // Remainder
+      static constexpr auto& rem    = remainder<std::make_signed_t>;
+      static constexpr auto& remu   = remainder<std::make_unsigned_t>;
 
       // ----------------------------------------------------------------------
       //

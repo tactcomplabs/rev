@@ -20,28 +20,16 @@
 namespace SST{
   namespace RevCPU{
     class RV64M : public RevExt {
+      // 32-bit Multiplication
+      static constexpr auto& mulw  = oper<std::multiplies, OpKind::Reg, std::make_unsigned_t, true>;
+
       // 32-bit Division
-      static constexpr auto& divw  = divide<std::make_signed_t,   true>;
-      static constexpr auto& divuw = divide<std::make_unsigned_t, true>;
+      static constexpr auto& divw  = division <std::make_signed_t,   true>;
+      static constexpr auto& divuw = division <std::make_unsigned_t, true>;
 
-      template<typename i32_t>
-      static bool remw_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
-        i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
-        i32_t res = std::numeric_limits<i32_t>::is_signed &&
-          rs1 == std::numeric_limits<i32_t>::min() &&
-          rs2 == -i32_t{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
-        // res is cast to signed int32_t so that it will be sign-extended to 64 bits
-        // even when i32_t == uint32_t (unsigned)
-        R->SetX(F, Inst.rd, static_cast<int32_t>(res));
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static constexpr auto& remw  = remw_impl<int32_t>;
-      static constexpr auto& remuw = remw_impl<uint32_t>;
-
-      static constexpr auto& mulw  = oper<std::multiplies, OpKind::Reg, std::make_unsigned_t, uint32_t>;
+      // 32-bit Remainder
+      static constexpr auto& remw  = remainder<std::make_signed_t,   true>;
+      static constexpr auto& remuw = remainder<std::make_unsigned_t, true>;
 
       // ----------------------------------------------------------------------
       //

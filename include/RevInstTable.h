@@ -610,23 +610,21 @@ namespace SST{
     // The First parameter is the operator functor (such as std::plus)
     // The second parameter is the operand kind (OpKind::Imm or OpKind::Reg)
     // The third parameter is std::make_unsigned_t or std::make_signed_t (default)
-    // The fourth parameter is the type of operands (defaults to XLEN bits)
+    // The optional fourth parameter indicates W mode (32-bit on XLEN == 64)
     template<template<class> class OP, OpKind KIND,
-             template<class> class SIGN = std::make_signed_t, typename T = void>
+             template<class> class SIGN = std::make_signed_t, bool W_MODE = false>
     static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-      // Optimization: When T != void, we assume that XLEN == 64
-      if( std::is_void_v<T> && F->IsRV32() ){
-        using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
-                                 KIND == OpKind::Imm ?
-                                 SIGN<TT>(Inst.ImmSignExt(12)) :
-                                 R->GetX<SIGN<TT>>(F, Inst.rs2)));
+      if( !W_MODE && F->IsRV32() ){
+        using T = SIGN<int32_t>;
+        T res = OP()(R->GetX<T>(F, Inst.rs1), KIND == OpKind::Imm ?
+                     T(Inst.ImmSignExt(12)) : R->GetX<T>(F, Inst.rs2));
+        R->SetX(F, Inst.rd, res);
       }else{
-        using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
-        R->SetX(F, Inst.rd, OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
-                                 KIND == OpKind::Imm ?
-                                 SIGN<TT>(Inst.ImmSignExt(12)) :
-                                 R->GetX<SIGN<TT>>(F, Inst.rs2)));
+        using T = SIGN<std::conditional_t<W_MODE, int32_t, int64_t>>;
+        T res = OP()(R->GetX<T>(F, Inst.rs1), KIND == OpKind::Imm ?
+                     T(Inst.ImmSignExt(12)) : R->GetX<T>(F, Inst.rs2));
+        // In W_MODE, cast the result to int32_t so that it's sign-extended
+        R->SetX(F, Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
       }
       R->AdvancePC(F, Inst.instSize);
       return true;
@@ -648,23 +646,23 @@ namespace SST{
     // The first parameter is either ShiftLeft or ShiftRight
     // The second parameter is the operand kind (OpKind::Imm or OpKind::Reg)
     // The third parameter is std::make_signed_t or std::make_unsigned_t (default)
-    // The fourth parameter is the type of operand (defaults to XLEN bits)
+    // The optional fourth parameter indicates W mode (32-bit on XLEN == 64)
     template<typename OP, OpKind KIND,
-             template<class> class SIGN = std::make_unsigned_t, typename T = void>
+             template<class> class SIGN = std::make_unsigned_t, bool W_MODE = false>
     static bool shift(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-      // Optimization: When T != void, we assume that XLEN == 64
-      if( std::is_void_v<T> && F->IsRV32() ){
-        using TT = std::conditional_t<std::is_void_v<T>, int32_t, T>;
-        R->SetX(F, Inst.rd, TT(OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
-                                    KIND == OpKind::Imm ?
-                                    Inst.imm & 0x1f :
-                                    R->GetX<uint32_t>(F, Inst.rs2) & 0x1f)));
+      if( !W_MODE && F->IsRV32() ){
+        using T = SIGN<int32_t>;
+        T res = OP()(R->GetX<SIGN<T>>(F, Inst.rs1),
+                     0x1f & (KIND == OpKind::Imm ? Inst.imm :
+                             R->GetX<uint32_t>(F, Inst.rs2)));
+        R->SetX(F, Inst.rd, res);
       }else{
-        using TT = std::conditional_t<std::is_void_v<T>, int64_t, T>;
-        R->SetX(F, Inst.rd, TT(OP()(R->GetX<SIGN<TT>>(F, Inst.rs1),
-                                    KIND == OpKind::Imm ?
-                                    Inst.imm & 0x3f :
-                                    R->GetX<uint64_t>(F, Inst.rs2) & 0x3f)));
+        using T = SIGN<std::conditional_t<W_MODE, int32_t, int64_t>>;
+        T res = OP()(R->GetX<SIGN<T>>(F, Inst.rs1),
+                     0x3f & (KIND == OpKind::Imm ? Inst.imm :
+                             R->GetX<uint64_t>(F, Inst.rs2)));
+        // In W_MODE, cast the result to int32_t so that it's sign-extended
+        R->SetX(F, Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
       }
       R->AdvancePC(F, Inst.instSize);
       return true;
@@ -674,7 +672,7 @@ namespace SST{
     // The first parameter is std::make_signed_t or std::make_unsigned_t
     // The optional second parameter indicates W mode (32-bit on XLEN == 64)
     template<template<class> class SIGN, bool W_MODE = false>
-    static bool divide(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    static bool division(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( !W_MODE && F->IsRV32() ){
         using T = SIGN<int32_t>;
         T rs1 = R->GetX<T>(F, Inst.rs1);
@@ -683,11 +681,37 @@ namespace SST{
           rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
         R->SetX(F, Inst.rd, res);
       } else {
-        using T = SIGN<int64_t>;
+        using T = SIGN<std::conditional_t<W_MODE, int32_t, int64_t>>;
         T rs1 = R->GetX<T>(F, Inst.rs1);
         T rs2 = R->GetX<T>(F, Inst.rs2);
         T res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
           rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
+        // In W_MODE, cast the result to int32_t so that it's sign-extended
+        R->SetX(F, Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
+      }
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
+    // Remainder template
+    // The first parameter is std::make_signed_t or std::make_unsigned_t
+    // The optional second parameter indicates W mode (32-bit on XLEN == 64)
+    template<template<class> class SIGN, bool W_MODE = false>
+    static bool remainder(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      if( !W_MODE && F->IsRV32() ){
+        using T = SIGN<int32_t>;
+        T rs1 = R->GetX<T>(F, Inst.rs1);
+        T rs2 = R->GetX<T>(F, Inst.rs2);
+        T res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
+          rs2 == -T{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
+        R->SetX(F, Inst.rd, res);
+      } else {
+        using T = SIGN<std::conditional_t<W_MODE, int32_t, int64_t>>;
+        T rs1 = R->GetX<T>(F, Inst.rs1);
+        T rs2 = R->GetX<T>(F, Inst.rs2);
+        T res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
+          rs2 == -T{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
+        // In W_MODE, cast the result to int32_t so that it's sign-extended
         R->SetX(F, Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
       }
       R->AdvancePC(F, Inst.instSize);
