@@ -25,11 +25,11 @@ using MemSegment = SST::RevCPU::RevMem::MemSegment;
 
 /// RevThread: Enum for tracking state of a software thread (Unused)
 enum class ThreadState {
-  Start,    // Allocate Resources 
-  Running,  // Has the CPU 
-  Blocked,  // Waiting for I/O OR synchronization with another thread (mutex, condition variable, sempahore)
-  Ready,    // On the ready list (not implemented yet) waiting for CPU availability 
-  Done,     // Deallocate resources
+  START,    // Allocate Resources 
+  RUNNING,  // Has the CPU 
+  BLOCKED,  // Waiting for I/O OR synchronization with another thread (mutex, condition variable, sempahore)
+  READY,    // On the ready list (not implemented yet) waiting for CPU availability 
+  DONE,     // Deallocate resources
 };
 
 class RevThread {
@@ -58,7 +58,7 @@ class RevThread {
 
       // Set the PC 
       RegFile.RV32_PC = (uint32_t)FirstPC;
-      RegFile.RV64_PC = FirstPC;
+      RegFile.RV64_PC = reinterpret_cast<uint64_t>(FirstPC);
     }
     
     void AddFD(int fd);                             /// RevThread: Add fd to Thread's fildes 
@@ -81,9 +81,9 @@ class RevThread {
     bool AddChildThreadID(uint32_t pid);                               /// RevThread: Adds a child Thread's pid to this ones children vector
     bool RemoveChildThreadID(uint32_t pid);                            /// RevThread: Removes a child Thread's pid to this ones children vector
 
-    bool isRunning(){ return ( State == ThreadState::Running ); }      /// RevThread: Checks if Thread's ThreadState is Running
-    bool isBlocked(){ return (State == ThreadState::Blocked); }        /// RevThread: Checks if Thread's ThreadState is 
-    bool isDone(){ return (State == ThreadState::Done); }                /// RevThread: Checks if Thread's ThreadState is Done
+    bool isRunning(){ return ( State == ThreadState::RUNNING ); }      /// RevThread: Checks if Thread's ThreadState is Running
+    bool isBlocked(){ return (State == ThreadState::BLOCKED); }        /// RevThread: Checks if Thread's ThreadState is 
+    bool isDone(){ return (State == ThreadState::DONE); }                /// RevThread: Checks if Thread's ThreadState is Done
 
     // Override the printing 
     friend std::ostream& operator<<(std::ostream& os, RevThread& Thread) {
@@ -142,7 +142,7 @@ class RevThread {
     std::shared_ptr<MemSegment> ThreadMem;         /// Pointer to its thread memory (TLS & Stack) 
     
     uint64_t ThreadPtr;                            /// Thread pointer for this thread
-    ThreadState State = ThreadState::Start;        /// Thread state (unused)
+    ThreadState State = ThreadState::START;        /// Thread state (unused)
     RevRegFile RegFile;                            /// Each context has its own register file
     std::vector<uint32_t> ChildrenThreadIDs = {};  /// List of a thread's children (unused)
     std::vector<int> fildes = {0, 1, 2};           /// Initial fildes are STDOUT, STDIN, and STDERR 

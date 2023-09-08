@@ -63,6 +63,9 @@ namespace SST{
       /// RevProc: per-processor clock function
       bool ClockTick( SST::Cycle_t currentCycle );
 
+      /// RevProc: Called by RevCPU when there is no more work to do (ie. All RevThreads are ThreadState::DONE )
+      void EndExecution();
+
       /// RevProc: halt the CPU
       bool Halt();
 
@@ -126,7 +129,7 @@ namespace SST{
       uint32_t CreateChildCtx();
  
       /// RevProc: SpawnThread creates a new thread and returns its ThreadID
-      uint32_t SpawnThread(uint64_t fn);
+      void SpawnThread(uint64_t fn);
 
       /// RevProc: Returns the current HartToExec active pid 
       uint32_t GetActiveThreadID();
@@ -141,6 +144,8 @@ namespace SST{
 
       /// RevProc: Retires currently executing thread & then swaps to its parent. If no parent terminates program
       uint32_t RetireAndSwap(); // Returns new pid
+   
+
   
       /// RevProc: Used to raise an exception indicating a thread switch is coming (NewThreadID = ThreadID of Ctx to switch to)
       // void CtxSwitchAlert(uint32_t NewThreadID) { NextThreadID=NewThreadID;PendingCtxSwitch = true; }
@@ -678,7 +683,9 @@ namespace SST{
       
 
       // =============== Begin Rev Specific Thread Functions ===============
-      void ECALL_pthread_create();         // 1000, rev_pthread_create(pthread_t  *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
+      ECALL_status_t ECALL_pthread_create(RevInst& inst);         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
+      ECALL_status_t ECALL_pthread_join(RevInst& inst);           // 1001, rev_pthread_join(pthread_t thread, void **retval);
+      ECALL_status_t ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
 
       /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
       std::unordered_map<uint32_t, std::function<ECALL_status_t(RevProc*, RevInst&)>> Ecalls;
@@ -688,7 +695,6 @@ namespace SST{
 
       /// RevProc: Execute the Ecall based on the code loaded in RegFile->RV64_SCAUSE
       void ExecEcall(RevInst &inst);
-
 
       /// RevProc: Set scoreboard based on register number and floating point. 64 vs. 32 bit inferred from RevFeature
       void DependencySet(uint16_t threadID, uint16_t RegNum, bool isFloat);

@@ -216,12 +216,14 @@ namespace SST {
       std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads; 
 
       // Create Thread 
-      void CreateThread(std::pair<uint32_t, std::shared_ptr<MemSegment>>);
+      void CreateThread(std::pair<uint64_t, std::shared_ptr<MemSegment>>);
 
       // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
       std::queue<uint32_t> ThreadQueue;
 
-      uint32_t NextThreadID = 1023;
+      
+
+      uint32_t NextThreadID = 1024;
       uint32_t GetNewThreadID(){ return NextThreadID++; };
 
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects

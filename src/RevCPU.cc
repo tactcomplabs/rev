@@ -2425,19 +2425,29 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   std::cout << "Assigned Threads: " << AssignedThreads.size() << std::endl;
   for( unsigned i=0; i<AssignedThreads.size(); i++ ){
-    std::cout << "Proc: " << i << " has " << AssignedThreads.at(i).size() << " threads assigned to it" << std::endl; 
-    // Output its utilization
-    std::cout << "Proc: " << i << " has " << std::dec << Procs[i]->GetUtilization() << "% utilization" << std::endl;
+    std::cout << "Proc: " << i << " has " << AssignedThreads.at(i).size();
+    std::cout << " threads assigned to it (" << Procs[i]->GetUtilization() << "% utilization)" << std::endl; 
   }
 
   // Execute each enabled core
   for( unsigned i=0; i<Procs.size(); i++ ){
+    if( Procs[i]->GetUtilization() < 100 && ThreadQueue.size() ){
+      AssignedThreads.at(i).emplace_back(Threads.at(ThreadQueue.front()));
+      ThreadQueue.pop();
+      if( !Enabled[i] ){ Enabled[i] = true;}
+    }
     // If the Proc is enabled, keep executing
     if( Enabled[i] ){
+      if( !AssignedThreads.at(i).size() ){
+        // if there are no assigned threads and the Proc is enabled, disable it
+        Enabled[i] = false;
+        continue;
+      }
+      // if ClockTick returns false, shut the Proc down
       if( !Procs[i]->ClockTick(currentCycle) ){
-         if(EnableCoProc && !CoProcs.empty()){
+        if(EnableCoProc && !CoProcs.empty()){
           CoProcs[i]->Teardown();
-         }
+        }
         UpdateCoreStatistics(i);
         Enabled[i] = false;
         output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
@@ -2445,7 +2455,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       }
       // FIXME: Do this a different way... but check if any of the AssignedThreads have done state
       for( unsigned j=0; j<AssignedThreads.at(i).size(); j++ ){
-        if( AssignedThreads.at(i).at(j)->GetState() == ThreadState::Done ){
+        if( AssignedThreads.at(i).at(j)->GetState() == ThreadState::DONE ){
           std::cout << "===========> Found a thread that's DONE" << std::endl;
           // Remove the thread from the Proc
           // TODO: Save this object to an archive of some sort 
@@ -2464,7 +2474,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     if( Procs[i]->GetNewThreadInfo().size() ){
       std::cout << "Creating a new thread for Proc: " << i << std::endl;
       // TODO: Figure out if we'll do multiple of these if present (ie. size > 1)
-      std::pair<uint32_t, std::shared_ptr<MemSegment>> NewThreadInfo = Procs[i]->GetNewThreadInfo().front();
+      std::pair<uint64_t, std::shared_ptr<MemSegment>> NewThreadInfo = Procs[i]->GetNewThreadInfo().front();
       CreateThread(NewThreadInfo);
 
       // Remove from the queue
@@ -2530,8 +2540,13 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   // check to see if all the processors are completed
   for( unsigned i=0; i<Procs.size(); i++ ){
-    if( Enabled[i] )
+    if( Enabled[i] ){
       rtn = false;
+    }
+  }
+
+  if( ThreadQueue.size() ){
+    rtn = false;
   }
 
   // check to see if the network has any outstanding messages: fixme
@@ -2553,16 +2568,26 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   if( rtn ){
+    // End execution for all RevProcs 
+    for( unsigned i=0; i<numCores; i++ ){
+      Procs[i]->EndExecution();
+    }
     primaryComponentOKToEndSim();
     output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
   }
 
+  std::cout << "ThreadQueue: " << std::endl;
+  for( unsigned i=0; i<ThreadQueue.size(); i++ ){
+    std::cout << ThreadQueue.front() << std::endl;
+    ThreadQueue.push(ThreadQueue.front());
+    ThreadQueue.pop();
+  }
   return rtn;
 }
 
 
 ///==== Thread Management Functions ====///
-void RevCPU::CreateThread(std::pair<uint32_t, std::shared_ptr<MemSegment>> NewThreadInfo){
+void RevCPU::CreateThread(std::pair<uint64_t, std::shared_ptr<MemSegment>> NewThreadInfo){
   uint64_t NewThreadPC = NewThreadInfo.first;
   std::shared_ptr<MemSegment> NewThreadMem = NewThreadInfo.second;
   uint64_t StackPtr = NewThreadMem->getBaseAddr() + _STACK_SIZE_;
