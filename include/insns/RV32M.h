@@ -52,30 +52,9 @@ namespace SST{
       /// Computes the LOWER half of multiplication, which does not depend on signedness
       static constexpr auto& mul = oper<std::multiplies, OpKind::Reg>;
 
-      // Division template
-      template<typename i32_t, typename i64_t>
-      static bool div_impl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-        if( F->IsRV32() ){
-          i32_t rs1 = R->GetX<i32_t>(F, Inst.rs1);
-          i32_t rs2 = R->GetX<i32_t>(F, Inst.rs2);
-          i32_t res = std::is_signed_v<i32_t> &&
-            rs1 == std::numeric_limits<i32_t>::min() &&
-            rs2 == -i32_t{1} ? rs1 : rs2 ? rs1 / rs2 : -i32_t{1};
-          R->SetX(F, Inst.rd, res);
-        } else {
-          i64_t rs1 = R->GetX<i64_t>(F, Inst.rs1);
-          i64_t rs2 = R->GetX<i64_t>(F, Inst.rs2);
-          i64_t res =  std::is_signed_v<i64_t> &&
-            rs1 ==  std::numeric_limits<i64_t>::min() &&
-            rs2 == -i64_t{1} ? rs1 : rs2 ? rs1 / rs2 : -i64_t{1};
-          R->SetX(F, Inst.rd, res);
-        }
-        R->AdvancePC(F, Inst.instSize);
-        return true;
-      }
-
-      static constexpr auto& div  = div_impl<int32_t,  int64_t>;
-      static constexpr auto& divu = div_impl<uint32_t, uint64_t>;
+      // Division
+      static constexpr auto& div  = divide<std::make_signed_t>;
+      static constexpr auto& divu = divide<std::make_unsigned_t>;
 
       // Remainder template
       template<typename i32_t, typename i64_t>

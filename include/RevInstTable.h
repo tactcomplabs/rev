@@ -669,6 +669,31 @@ namespace SST{
       R->AdvancePC(F, Inst.instSize);
       return true;
     }
+
+    /// Division template
+    // The first parameter is std::make_signed_t or std::make_unsigned_t
+    // The optional second parameter indicates W mode (32-bit on XLEN == 64)
+    template<template<class> class SIGN, bool W_MODE = false>
+    static bool divide(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+      if( !W_MODE && F->IsRV32() ){
+        using T = SIGN<int32_t>;
+        T rs1 = R->GetX<T>(F, Inst.rs1);
+        T rs2 = R->GetX<T>(F, Inst.rs2);
+        T res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
+          rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
+        R->SetX(F, Inst.rd, res);
+      } else {
+        using T = SIGN<int64_t>;
+        T rs1 = R->GetX<T>(F, Inst.rs1);
+        T rs2 = R->GetX<T>(F, Inst.rs2);
+        T res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
+          rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
+        R->SetX(F, Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
+      }
+      R->AdvancePC(F, Inst.instSize);
+      return true;
+    }
+
   } // namespace RevCPU
 } // namespace SST
 
