@@ -435,7 +435,7 @@ namespace SST{
     /// FP values outside the range of the target integer type are clipped
     /// at the integer type's numerical limits, whether signed or unsigned.
     template<typename FP, typename INT>
-    static bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       FP fp;
       if(std::is_same_v<FP, double>){
         fp = R->DPF[Inst.rs1];         // Read the double FP register directly
@@ -551,7 +551,7 @@ namespace SST{
 
     /// Floating-point store template
     template<typename T>
-    static bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       T val;
       if constexpr(std::is_same_v<T, double>){
         val = R->DPF[Inst.rs2];
@@ -565,7 +565,7 @@ namespace SST{
 
     /// Floating-point operation template
     template<typename T, template<class> class OP>
-    static bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if constexpr(std::is_same_v<T, double>){
         R->DPF[Inst.rd] = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
       }else{
@@ -575,9 +575,23 @@ namespace SST{
       return true;
     }
 
+    /// Floating-point minimum functor
+    template<typename = void>
+    struct FMin{
+      template<typename T>
+      auto operator()(T x, T y) const { return std::fmin(x, y); }
+    };
+
+    /// Floating-point maximum functor
+    template<typename = void>
+    struct FMax{
+      template<typename T>
+      auto operator()(T x, T y) const { return std::fmax(x, y); }
+    };
+
     /// Floating-point conditional operation template
     template<typename T, template<class> class OP>
-    static bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       bool res;
       if constexpr(std::is_same_v<T, double>){
         res = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
@@ -589,20 +603,6 @@ namespace SST{
       return true;
     }
 
-    /// Floating-point minimum functor
-    template<typename = void>
-    struct FMin{
-      template<typename T>
-      auto operator()(T x, T y) { return std::fmin(x, y); }
-    };
-
-    /// Floating-point maximum functor
-    template<typename = void>
-    struct FMax{
-      template<typename T>
-      auto operator()(T x, T y) { return std::fmax(x, y); }
-    };
-
     /// Operand Kind (immediate or register)
     enum class OpKind { Imm, Reg };
 
@@ -613,7 +613,7 @@ namespace SST{
     // The optional fourth parameter indicates W mode (32-bit on XLEN == 64)
     template<template<class> class OP, OpKind KIND,
              template<class> class SIGN = std::make_signed_t, bool W_MODE = false>
-    static bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( !W_MODE && F->IsRV32() ){
         using T = SIGN<int32_t>;
         T rs1 = R->GetX<T>(F, Inst.rs1);
@@ -657,7 +657,7 @@ namespace SST{
     // The second parameter is std::make_signed_t or std::make_unsigned_t
     // The optional third parameter indicates W mode (32-bit on XLEN == 64)
     template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
-    static bool divrem(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    bool divrem(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       if( !W_MODE && F->IsRV32() ){
         using T = SIGN<int32_t>;
         T rs1 = R->GetX<T>(F, Inst.rs1);
