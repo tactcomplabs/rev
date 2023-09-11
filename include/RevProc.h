@@ -21,7 +21,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <time.h>
-#include <random>
 #include <queue>
 #include <functional>
 
@@ -47,6 +46,7 @@
 #include "RevCoProc.h"
 #include "RevThreadCtx.h"
 #include "../common/syscalls/SysFlags.h"
+#include "RevRand.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 

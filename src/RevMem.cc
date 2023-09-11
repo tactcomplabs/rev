@@ -9,12 +9,12 @@
 //
 
 #include "../include/RevMem.h"
+#include "../include/RevRand.h"
 #include <cstring>
 #include <cmath>
 #include <utility>
 #include <memory>
 #include <mutex>
-#include <random>
 #include <functional>
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
@@ -67,14 +67,10 @@ bool RevMem::outstandingRqsts(){
 
 void RevMem::HandleMemFault(unsigned width){
   // build up the fault payload
-  srand(time(NULL));
-  uint64_t rval = rand() % (2^(width));
+  uint64_t rval = RevRand(0, (uint32_t{1} << width) - 1);
 
   // find an address to fault
-  std::random_device rd; // obtain a random number from hardware
-  std::mt19937 gen(rd()); // seed the generator
-  std::uniform_int_distribution<> distr(0, memSize-8); // define the range
-  unsigned NBytes = distr(gen);
+  unsigned NBytes = RevRand(0, memSize-8);
   uint64_t *Addr = (uint64_t *)(&physMem[0] + NBytes);
 
   // write the fault (read-modify-write)
@@ -217,16 +213,6 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
   Tmp[0] = 0x1;
 
   return false;
-}
-
-unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
-  srand(time(NULL));
-
-#if 0   // TODO: Correct callculation of [Min, Max] random range
-  return rand() % (Max-Min+1) + Min;
-#else
-  return rand() % Max + Min;
-#endif
 }
 
 void RevMem::FlushTLB(){

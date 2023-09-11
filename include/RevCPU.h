@@ -37,6 +37,7 @@
 #include "PanNet.h"
 #include "PanExec.h"
 #include "RevCoProc.h"
+#include "RevRand.h"
 
 // -- PAN Common Headers
 #include "../common/include/PanAddr.h"

@@ -38,6 +38,7 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 #include "RevMemCtrl.h"
+#include "RevRand.h"
 
 #ifndef _REVMEM_BASE_
 #define _REVMEM_BASE_ 0x00000000
@@ -250,7 +251,7 @@ namespace SST {
       bool StatusFuture( uint64_t Addr );
 
       /// RevMem: Randomly assign a memory cost
-      unsigned RandCost( unsigned Min, unsigned Max );
+      unsigned RandCost( unsigned Min, unsigned Max ) { return RevRand(Min, Max); }
 
       /// RevMem: Used to access & incremenet the global software PID counter
       uint32_t GetNewThreadPID();

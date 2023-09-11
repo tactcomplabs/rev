@@ -2307,16 +2307,9 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
                  "Error: no faults enabled; add a fault vector in the 'faults' param\n" );
   }
 
-  srand(unsigned(time(NULL)));
-
   unsigned selector = 0;
-  if( myfaults.size() == 1 ){
-    selector = 0;
-  }else{
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(0, int(myfaults.size())-1); // define the range
-    selector = distr(gen);
+  if( myfaults.size() != 1 ){
+    selector = RevRand(0, int(myfaults.size())-1);
   }
 
   // handle the selected fault

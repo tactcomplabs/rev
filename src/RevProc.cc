@@ -1496,8 +1496,7 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 1a: handle the crack fault injection
   if( CrackFault ){
-    srand(time(NULL));
-    uint64_t rval = rand() % (2^(fault_width));
+    uint64_t rval = RevRand(0, (uint32_t{1} << fault_width) - 1);
     Inst |= rval;
 
     // clear the fault
@@ -1740,14 +1739,10 @@ void RevProc::HandleRegFault(unsigned width){
   }
 
   // build the payload
-  srand(time(NULL));
-  uint64_t rval = rand() % (2^(LWidth));
+  uint64_t rval = RevRand(0, (uint32_t{1} << LWidth) - 1);
 
   // select a register
-  std::random_device rd; // obtain a random number from hardware
-  std::mt19937 gen(rd()); // seed the generator
-  std::uniform_int_distribution<> distr(0, RRegs.size()-1); // define the range
-  unsigned RegIdx = distr(gen);
+  unsigned RegIdx = RevRand(0, RRegs.size() - 1);
 
   std::string RegName = RRegs[RegIdx].first;
   if( feature->GetXlen() == 32 ){
@@ -2143,24 +2138,24 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         if( (Ext->GetName() == "RV32F") ||
             (Ext->GetName() == "RV32D") ){
           // write an rv32 float rd
-          uint32_t rval = rand() % (2^(fault_width));
+          uint32_t rval = RevRand(0, (uint32_t{1} << fault_width) - 1);
           uint32_t tmp = (uint32_t)(RegFile->SPF[Inst.rd]);
           tmp |= rval;
           RegFile->SPF[Inst.rd] = (float)(tmp);
         }else if( (Ext->GetName() == "RV64F") ||
                   (Ext->GetName() == "RV64D") ){
           // write an rv64 float rd
-          uint64_t rval = rand() % (2^(fault_width));
+          uint64_t rval = RevRand(0, (uint32_t{1} << fault_width) - 1);
           uint64_t tmp = (uint64_t)(RegFile->DPF[Inst.rd]);
           tmp |= rval;
           RegFile->DPF[Inst.rd] = (double)(tmp);
         }else if( feature->GetXlen() == 32 ){
           // write an rv32 gpr rd
-          uint32_t rval = rand() % (2^(fault_width));
+          uint32_t rval = RevRand(0, (uint32_t{1} << fault_width) - 1);
           RegFile->RV32[Inst.rd] |= rval;
         }else{
           // write an rv64 gpr rd
-          uint64_t rval = rand() % (2^(fault_width));
+          uint64_t rval = RevRand(0, (uint32_t{1} << fault_width) - 1);
           RegFile->RV64[Inst.rd] |= rval;
         }
 
