@@ -394,7 +394,13 @@ void RevCPU::DecodeFaultCodes(std::vector<std::string> faults){
 
 void RevCPU::initNICMem(){
   output.verbose(CALL_INFO,1,0,"Initializing NIC memory.\n");
-
+  #if 1
+  // See PanAddr.h
+  Mem->AddMemSegAt(_PAN_COMPLETION_ADDR_, sizeof(uint64_t));
+  Mem->AddMemSegAt(_PAN_COMPLETION_ADDR_, sizeof(MBoxEntry) * _PAN_RDMA_MAX_ENTRIES_);
+  Mem->AddMemSegAt(_PAN_PE_TABLE_ADDR_,   sizeof(PEMap) * _PAN_PE_TABLE_MAX_ENTRIES_);
+  Mem->AddMemSegAt(_PAN_XFER_BUF_ADDR_,   sizeof(PRTIME_XFER) * _PAN_XFER_BUF_);  
+  #endif
   // init all the entries to -1
   uint64_t ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
   uint64_t host = 2;
