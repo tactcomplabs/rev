@@ -119,7 +119,7 @@ namespace SST {
       /// RevSimpleCoProv: Called when the attached RevProc completes simulation. Could be used to 
       ///                   also signal to SST that the co-processor is done if ClockTick is registered 
       ///                   to SSTCore vs. being driven by RevCPU
-      virtual bool Teardown() { Reset(); };
+      virtual bool Teardown() { return Reset(); };
 
       private:
        

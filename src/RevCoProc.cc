@@ -52,6 +52,7 @@ RevSimpleCoProc::~RevSimpleCoProc(){
 
 bool RevSimpleCoProc::IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){
     RevCoProcInst inst = RevCoProcInst(Inst, F, R, M);
+    std::cout << "CoProc instruction issued: " << std::hex << Inst << std::dec << std::endl;
     InstQ.push(inst);
     return true;
 }
