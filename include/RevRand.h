@@ -13,12 +13,15 @@
 
 #include <cstdint>
 #include <random>
+#include <functional>
+#include <thread>
 
 namespace SST::RevCPU{
 
 /// Random Number Generator
 inline uint32_t RevRand(uint32_t low, uint32_t high){
-  static std::mt19937 r(std::random_device{}());
+  thread_local std::mt19937 r{std::random_device{}() ^
+    std::hash<std::thread::id>{}(std::this_thread::get_id())};
   return std::uniform_int_distribution<uint32_t>(low, high)(r);
 }
 
