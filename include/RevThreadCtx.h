@@ -18,8 +18,10 @@
 #include <set>
 
 // -- Rev Headers
-#include "../include/RevMem.h"
+#include "RevMem.h"
 #include "RevInstTable.h"
+
+namespace SST::RevCPU{
 
 /// RevThreadCtx: Enum for tracking state of a software thread (Unused)
 enum class ThreadState {
@@ -70,4 +72,5 @@ public:
   bool isDead(){    return State == ThreadState::Dead;    }          /// RevThreadCtx: Checks if Ctx's ThreadState is Running
 };
 
+} // namespace SST::RevCPU
 #endif

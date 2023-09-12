@@ -13,11 +13,10 @@
 
 #include <vector>
 
-#include "../include/RevMem.h"
-#include "../include/RevFeature.h"
+#include "RevMem.h"
+#include "RevFeature.h"
 
-namespace SST{
-namespace RevCPU {
+namespace SST::RevCPU{
 
 #define REVPREF_INIT_ADDR 0xDEADBEEF
 
@@ -58,7 +57,6 @@ private:
   bool FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst);
 };
 
-} // namespace RevCPU
-} // namespace SST
+} // namespace SST::RevCPU
 
 #endif // _SST_REVCPU_REVPREFETCHER_H_

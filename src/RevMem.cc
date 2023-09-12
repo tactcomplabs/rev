@@ -17,6 +17,8 @@
 #include <mutex>
 #include <functional>
 
+using namespace SST::RevCPU;
+
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
   : memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output) {
   // Note: this constructor assumes the use of the memHierarchy backend

@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevPrefetcher.h"
+using namespace SST::RevCPU;
 
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 

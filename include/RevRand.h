@@ -14,8 +14,7 @@
 #include <cstdint>
 #include <random>
 
-namespace SST{
-namespace RevCPU{
+namespace SST::RevCPU{
 
 /// Random Number Generator
 inline uint32_t RevRand(uint32_t low, uint32_t high){
@@ -23,7 +22,6 @@ inline uint32_t RevRand(uint32_t low, uint32_t high){
   return std::uniform_int_distribution<uint32_t>(low, high)(r);
 }
 
-} // namespace RevCPU
-} // namespace SST
+} // namespace SST::RevCPU
 
 #endif

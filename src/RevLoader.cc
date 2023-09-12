@@ -11,6 +11,8 @@
 #include "../include/RevLoader.h"
 #include "RevMem.h"
 
+using namespace SST::RevCPU;
+
 RevLoader::RevLoader( std::string Exe, std::string Args,
                       RevMem *Mem, SST::Output *Output )
   : exe(Exe), args(Args), mem(Mem), output(Output),

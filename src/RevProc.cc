@@ -18,6 +18,8 @@
 #include <fstream>
 #include <sys/xattr.h>
 
+using namespace SST::RevCPU;
+
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,

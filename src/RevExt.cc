@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevExt.h"
+using namespace SST::RevCPU;
 
 #define TRACE_EXECUTE 0
 

@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevOpts.h"
+using namespace SST::RevCPU;
 
 RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
   : numCores(NumCores), verbosity(Verbosity) {

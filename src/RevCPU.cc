@@ -11,6 +11,8 @@
 #include "../include/RevCPU.h"
 #include <cmath>
 
+using namespace SST::RevCPU;
+
 const char splash_msg[] = "\
 \n\
 *******                   \n\
@@ -58,7 +60,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     }
   }
 
-  // Inform SST to wait unti we authorize it to exit
+  // Inform SST to wait until we authorize it to exit
   registerAsPrimaryComponent();
   primaryComponentDoNotEndSim();
 
