@@ -15,14 +15,36 @@
 #include <random>
 #include <functional>
 #include <thread>
+#include <type_traits>
 
 namespace SST::RevCPU{
 
+// Singleton to return thread-local RNG, initializing it only on-demand
+inline auto& RevRNG(){
+  // Thread-local non-deterministic hardware random number generator
+  thread_local std::random_device RevHWRNG;
+
+  // Thread-local deterministic pseudo random number generator
+  // Two hardware random numbers and a thread id hash are combined into a seed
+  // See https://www.youtube.com/watch?v=LDPMpc-ENqY
+  thread_local std::mt19937_64 RevRNG{
+    (uint64_t{RevHWRNG()} << 32 | RevHWRNG()) ^
+    std::hash<std::thread::id>{}(std::this_thread::get_id())
+  };
+
+  return RevRNG;
+}
+
 /// Random Number Generator
-inline uint32_t RevRand(uint32_t low, uint32_t high){
-  thread_local std::mt19937 r{std::random_device{}() ^
-    std::hash<std::thread::id>{}(std::this_thread::get_id())};
-  return std::uniform_int_distribution<uint32_t>(low, high)(r);
+// Returns a value in [min, max] (integer) or [min, max) (floating-point)
+template<typename T, typename U>
+inline auto RevRand(T min, U max){
+  using TU = std::common_type_t<T, U>;
+  if constexpr(std::is_floating_point_v<TU>){
+    return std::uniform_real_distribution<TU>(min, max)(RevRNG());
+  }else{
+    return std::uniform_int_distribution<TU>(min, max)(RevRNG());
+  }
 }
 
 } // namespace SST::RevCPU
