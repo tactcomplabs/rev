@@ -123,18 +123,22 @@ namespace SST{
       RevMem& GetMem(){ return *mem; }
 
       /// RevProc: Add a RevThread to the Proc's ThreadTable
-      bool AddCtx(RevThread& Ctx);
+      // bool AddCtx(RevThread& Ctx);
 
       /// RevProc: Create a new RevThread w/ Parent is currently executing thread
-      uint32_t CreateChildCtx();
+      // uint32_t CreateChildCtx();
  
+      // /// RevProc: SpawnThread creates a new thread and returns its ThreadID
+      // void SpawnThread(uint64_t fn);
+
       /// RevProc: SpawnThread creates a new thread and returns its ThreadID
-      void SpawnThread(uint64_t fn);
+      void CreateThread(uint64_t fn);
 
       /// RevProc: Returns the current HartToExec active pid 
       uint32_t GetActiveThreadID();
 
-      std::queue<std::pair<uint64_t, std::shared_ptr<MemSegment>>>& GetNewThreadInfo() { return NewThreadInfo; }
+      /// RevProc: Queue of threads to be spawned
+      std::queue<std::shared_ptr<RevThread>>& GetNewThreadInfo() { return NewThreadInfo; }
 
       /// RevProc: Returns the active pid for HartID 
       // uint32_t GetActiveThreadID(const uint32_t HartID){ return ActiveThreadIDs.at(HartID); } 
@@ -165,7 +169,11 @@ namespace SST{
       ///< RevProc: Change HartID active pid
       bool ChangeActiveThreadID(uint32_t ThreadID, uint16_t HartID); 
 
-      std::queue<std::pair<uint64_t, std::shared_ptr<MemSegment>>> NewThreadInfo;
+      ///< RevProc: Holds the info for all new threads to be spawned
+      ///           Right now this is through the following ECALLS:
+      ///           - rev_clone
+      ///           - rev_pthread_create
+      std::queue<std::shared_ptr<RevThread>> NewThreadInfo;
 
       ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
       float GetUtilization(){ return ((float)AssignedThreads.size() / _REV_HART_COUNT_) * 100; }
@@ -680,9 +688,11 @@ namespace SST{
       ECALL_status_t ECALL_faccessat2(RevInst& inst);             // 439, rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
       ECALL_status_t ECALL_process_madvise(RevInst& inst);        // 440, rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
 
+      // =============== Begin Rev Niceties (non-syscalls utilities) 
+      ECALL_status_t ECALL_printf(RevInst& inst);
       
 
-      // =============== Begin Rev Specific Thread Functions ===============
+      // =============== Begin Rev Specific Thread Functions
       ECALL_status_t ECALL_pthread_create(RevInst& inst);         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
       ECALL_status_t ECALL_pthread_join(RevInst& inst);           // 1001, rev_pthread_join(pthread_t thread, void **retval);
       ECALL_status_t ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);

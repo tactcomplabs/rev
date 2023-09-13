@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <limits.h>
+#include <stdarg.h>
 
 /* Clone Flags */
 #define CSIGNAL              0x000000ff /* Signal mask to be sent at exit */
@@ -3749,18 +3751,29 @@ void* rev_pthread_create( void* fn ){
   // return rc;
 }
 
+int rev_pthread_join( int tid, int retval ){
+  int rc;
+  asm volatile (
+    "li a7, 1001 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
+// ===================== Non-Syscall Useful Things
+// - TODO: SNPRINTF
+// - TODO: PRINTF
+int rev_snprintf( char * s, size_t n, const char * format, ... ){
+  int rc;
+  asm volatile (
+    "li a7, 999 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+  );
+  return rc;
+}
 
 

@@ -1483,8 +1483,8 @@ RevInst RevProc::DecodeInst(){
 
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
-                    id, HartToDecode, PC, Inst);
+                    "Core %d ; Hart %d ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
+                    id, HartToDecode, GetActiveThreadID(), PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
                   "Error: Core %d failed to decode instruction at PC=0x%" PRIx64 "; Inst=%d\n",
@@ -1936,10 +1936,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     output->fatal(CALL_INFO, 99, "Proc has become oversubscribed\n");
   }
   else if( AssignedThreads.size() ){
-    std::cout << "Proc " << id << " has " << std::dec << AssignedThreads.size() << " assigned threads" << std::endl;
+    // std::cout << "Proc " << id << " has " << std::dec << AssignedThreads.size() << " assigned threads" << std::endl;
     for(int i = 0; i < _REV_HART_COUNT_; i++){
       if( AssignedThreads.size() > i ){
-        std::cout << "Hart " << i << " has ThreadID: " << AssignedThreads.at(i)->GetThreadID() << std::endl;
+        // std::cout <<  "\t==> Hart " << i << " | ThreadID: " << std::setfill(' ') << std::setw(4) << std::dec << AssignedThreads.at(i)->GetThreadID() << " |" << std::endl;
       }
     }
   }
@@ -2203,8 +2203,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // Ready to retire this instruction
       uint16_t HartID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
-                      id, HartID, ExecPC);
+                      "Core %d ; HartID %d; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
+                      id, HartID, GetActiveThreadID(), ExecPC);
       Retired++;
       DependencyClear(HartID, &(Pipeline.front().second));
       destroyLoadHazard(Pipeline.front().second.hazard);
@@ -2251,9 +2251,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         }
       }
     }else if( GetPC() == 0x00ull ) {
-      std::cout << "PC IS ZERO" << std::endl;
+      // std::cout << "PC IS ZERO" << std::endl;
       // AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
       // PAN execution contexts not enabled, this is our last PC
+      // AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
       done = true;
     }
 
@@ -2310,13 +2311,13 @@ uint32_t RevProc::HartToExecThreadID(){
 }
 
 // TODO: Replace with ThreadManager logic
-std::shared_ptr<RevThread> RevProc::HartToExecCtx(){
-  if( HartToExec <= AssignedThreads.size() )
-    return AssignedThreads.at(HartToExec);
-  else{
-    return 0;
-  }
-}
+// std::shared_ptr<RevThread> RevProc::HartToExecCtx(){
+//   if( HartToExec <= AssignedThreads.size() )
+//     return AssignedThreads.at(HartToExec);
+//   else{
+//     return 0;
+//   }
+// }
 
 
 // bool RevProc::UpdateRegFile(){
@@ -2343,31 +2344,56 @@ RevRegFile* RevProc::GetRegFile(uint16_t HartID){
   return AssignedThreads.at(HartID)->GetRegFile();
 }
 
+void RevProc::CreateThread(uint64_t firstPC){
+  // tidAddr is the address we have to write the new thread's id to
+  output->verbose(CALL_INFO, 2, 0,
+                  "Creating new thread with PC = 0x%lx\n", firstPC);
+  uint64_t ParentPID = GetActiveThreadID();
+  
+  // Create the new thread's memory
+  std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
+
+  // TODO: Copy TLS into new memory
+  // TODO: Potentially copy Parent's Stack to child's
+  
+  // Create a new RevThread Object
+  std::shared_ptr<RevThread> NewThread =
+            std::make_shared<RevThread>(ParentPID, 
+                                        NewThreadMem->getBaseAddr()+_STACK_SIZE_,
+                                        firstPC, NewThreadMem);
+  // Save the address that will hold the new ThreadID
+  NewThread->SetTIDAddr(NewThreadMem->getTopAddr() - sizeof(uint32_t));
+  NewThreadInfo.emplace(NewThread);
+
+  return;
+}
+
 // This function is only responsible for submitting the necessary memory requests
 // to duplicate the TLS Initialization Template and potentially the Parent's Stack
 //
 // Once the memory is set up properly it then signals back to RevCPU that a new 
 // RevThread object needs to be created
-void RevProc::SpawnThread(uint64_t fn){
-  std::cout << "========> Inside of SpawnThread <========" << std::endl;
-  std::cout << "FUNCTION POINTER: 0x" << std::hex << fn << std::endl;
-  
-  // Need to do: 
-  // 1) Get a new ThreadID
-  // 2) Copy TLS
-  // 3a) Potentially Copy Parent's stack
-  
-  NewThreadInfo.emplace(fn, mem->AddThreadMem());
-  // 3b) Potentially Copy Parent's RegFile
-  // 3c) Potentially Copy Parent's Parent ThreadID
-  // 3d) Potentially set a priority? 
-  // 4) Assign the correct stack ptr based on above
-  // 5) Don't think we should do (below)... In RevCPU we should check a Proc's AssignedThreads.end() to see if any have a "START" status and then pop them off the back and into Threads
-  //      Check if we have a Hart available (ie. AssignedThreads.size < _NUM_HARTS_ [prior to adding this one])
-  // 6) Return threadId to the appropriate location (probably a register file -- Probably in the syscall clone tho)
+// void RevProc::SpawnThread(uint64_t fn){
+//   std::cout << "========> Inside of SpawnThread <========" << std::endl;
+//   std::cout << "FUNCTION POINTER: 0x" << std::hex << fn << std::endl;
+//   
+//   // Need to do: 
+//   // 1) Get a new ThreadID
+//   // 2) Copy TLS
+//   // 3a) Potentially Copy Parent's stack
+//   
+//   
+//   NewThreadInfo.emplace(fn, mem->AddThreadMem());
+//   // 3b) Potentially Copy Parent's RegFile
+//   // 3c) Potentially Copy Parent's Parent ThreadID
+//   // 3d) Potentially set a priority? 
+//   // 4) Assign the correct stack ptr based on above
+//   // 5) Don't think we should do (below)... In RevCPU we should check a Proc's AssignedThreads.end() to see if any have a "START" status and then pop them off the back and into Threads
+//   //      Check if we have a Hart available (ie. AssignedThreads.size < _NUM_HARTS_ [prior to adding this one])
+//   // 6) Return threadId to the appropriate location (probably a register file -- Probably in the syscall clone tho)
 
 
-}
+// }
 
 /* Returns vector of all ThreadIDs in the ThreadTable */
 // std::vector<uint32_t> RevProc::GetThreadIDs(){
@@ -2424,16 +2450,16 @@ void RevProc::SpawnThread(uint64_t fn){
 /* ========================================= */
 void RevProc::InitEcallTable(){
   Ecalls = {
-    { 0,   &RevProc::ECALL_io_setup},               //  rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
-    { 1,   &RevProc::ECALL_io_destroy},             //  rev_io_destroy(aio_context_t ctx)
-    { 2,   &RevProc::ECALL_io_submit},              //  rev_io_submit(aio_context_t, long, struct iocb  *  *)
-    { 3,   &RevProc::ECALL_io_cancel},              //  rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result)
-    { 4,   &RevProc::ECALL_io_getevents},           //  rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout)
-    { 5,   &RevProc::ECALL_setxattr},               //  rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
-    { 6,   &RevProc::ECALL_lsetxattr},              //  rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
-    { 7,   &RevProc::ECALL_fsetxattr},              //  rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags)
-    { 8,   &RevProc::ECALL_getxattr},               //  rev_getxattr(const char  *path, const char  *name, void  *value, size_t size)
-    { 9,   &RevProc::ECALL_lgetxattr},              //  rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size)
+     { 0,   &RevProc::ECALL_io_setup},               //  rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
+     { 1,   &RevProc::ECALL_io_destroy},             //  rev_io_destroy(aio_context_t ctx)
+     { 2,   &RevProc::ECALL_io_submit},              //  rev_io_submit(aio_context_t, long, struct iocb  *  *)
+     { 3,   &RevProc::ECALL_io_cancel},              //  rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result)
+     { 4,   &RevProc::ECALL_io_getevents},           //  rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout)
+     { 5,   &RevProc::ECALL_setxattr},               //  rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
+     { 6,   &RevProc::ECALL_lsetxattr},              //  rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
+     { 7,   &RevProc::ECALL_fsetxattr},              //  rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags)
+     { 8,   &RevProc::ECALL_getxattr},               //  rev_getxattr(const char  *path, const char  *name, void  *value, size_t size)
+     { 9,   &RevProc::ECALL_lgetxattr},              //  rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size)
     { 10,  &RevProc::ECALL_fgetxattr},              //  rev_fgetxattr(int fd, const char  *name, void  *value, size_t size)
     { 11,  &RevProc::ECALL_listxattr},              //  rev_listxattr(const char  *path, char  *list, size_t size)
     { 12,  &RevProc::ECALL_llistxattr},             //  rev_llistxattr(const char  *path, char  *list, size_t size)
@@ -2736,164 +2762,12 @@ void RevProc::InitEcallTable(){
     { 438, &RevProc::ECALL_pidfd_getfd},            //  rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
     { 439, &RevProc::ECALL_faccessat2},             //  rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
     { 440, &RevProc::ECALL_process_madvise},        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
+    { 999, &RevProc::ECALL_printf},        //  
     { 1000, &RevProc::ECALL_pthread_create},        //  
+    { 1001, &RevProc::ECALL_pthread_join},        //  
     };
 }
 
-
-// /* ======================================================= */
-// /* rev_clone3(struct clone_args*, size_t args_size)        */
-// /* ======================================================= */
-// RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
-//   uint64_t CloneArgsAddr = RegFile->RV64[10];
-//   RevProc::ECALL_status_t rtval = RevProc::ECALL_status_t::SUCCESS;
-//   // size_t SizeOfCloneArgs = RegFile()->RV64[11];
-
-//  if(0 == ECALL_bytesRead){
-//     // First time through the function... 
-//     /* Fetch the clone_args */
-//     // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
-//                                 // using the 1st uint64, so that's all we're going to fetch
-//     uint64_t* args = reinterpret_cast<uint64_t*>(ECALL_buf);
-//     mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
-//     ECALL_bytesRead = 8;
-//     rtval = RevProc::ECALL_status_t::CONTINUE;
-//  }else{
-//     /*
-//     * Parse clone flags
-//     * NOTE: if no flags are set, we get fork() like behavior
-//     */
-//    uint64_t* args = reinterpret_cast<uint64_t*>(ECALL_buf);
-//     for( uint64_t bit=1; bit != 0; bit <<= 1 ){
-//       switch (*args & bit) {
-//         case CLONE_VM:
-//           // std::cout << "CLONE_VM is true" << std::endl;
-//           break;
-//         case CLONE_FS: /* Set if fs info shared between processes */
-//           // std::cout << "CLONE_FS is true" << std::endl;
-//           break;
-//         case CLONE_FILES: /* Set if open files shared between processes */
-//           // std::cout << "CLONE_FILES is true" << std::endl;
-//           break;
-//         case CLONE_SIGHAND: /* Set if signal handlers shared */
-//           // std::cout << "CLONE_SIGHAND is true" << std::endl;
-//           break;
-//         case CLONE_PIDFD: /* Set if a pidfd should be placed in the parent */
-//           // std::cout << "CLONE_PIDFD is true" << std::endl;
-//           break;
-//         case CLONE_PTRACE: /* Set if tracing continues on the child */
-//           // std::cout << "CLONE_PTRACE is true" << std::endl;
-//           break;
-//         case CLONE_VFORK: /* Set if the parent wants the child to wake it up on mm_release */
-//           // std::cout << "CLONE_VFORK is true" << std::endl;
-//           break;
-//         case CLONE_PARENT: /* Set if we want to have the same parent as the cloner */
-//           // std::cout << "CLONE_PARENT is true" << std::endl;
-//           break;
-//         case CLONE_THREAD: /* Set to add to same thread group */
-//           // std::cout << "CLONE_THREAD is true" << std::endl;
-//           break;
-//         case CLONE_NEWNS: /* Set to create new namespace */
-//           // std::cout << "CLONE_NEWNS is true" << std::endl;
-//           break;
-//         case CLONE_SYSVSEM: /* Set to shared SVID SEM_UNDO semantics */
-//           // std::cout << "CLONE_SYSVSEM is true" << std::endl;
-//           break;
-//         case CLONE_SETTLS: /* Set TLS info */
-//           // std::cout << "CLONE_SETTLS is true" << std::endl;
-//           break;
-//         case CLONE_PARENT_SETTID: /* Store TID in userlevel buffer before MM copy */
-//           // std::cout << "CLONE_PARENT_SETTID is true" << std::endl;
-//           break;
-//         case CLONE_CHILD_CLEARTID: /* Register exit futex and memory location to clear */
-//           // std::cout << "CLONE_CHILD_CLEARTID is true" << std::endl;
-//           break;
-//         case CLONE_DETACHED: /* Create clone detached */
-//           // std::cout << "CLONE_DETACHED is true" << std::endl;
-//           break;
-//         case CLONE_UNTRACED: /* Set if the tracing process can't force CLONE_PTRACE on this clone */
-//           // std::cout << "CLONE_UNTRACED is true" << std::endl;
-//           break;
-//         case CLONE_CHILD_SETTID: /* New cgroup namespace */
-//           // std::cout << "CLONE_CHILD_SETTID is true" << std::endl;
-//           break;
-//         case CLONE_NEWCGROUP: /* New cgroup namespace */
-//           // std::cout << "CLONE_NEWCGROUP is true" << std::endl;
-//           break;
-//         case CLONE_NEWUTS: /* New utsname group */
-//           // std::cout << "CLONE_NEWUTS is true" << std::endl;
-//           break;
-//         case CLONE_NEWIPC: /* New ipcs */
-//           // std::cout << "CLONE_NEWIPC is true" << std::endl;
-//           break;
-//         case CLONE_NEWUSER: /* New user namespace */
-//           // std::cout << "CLONE_NEWUSER is true" << std::endl;
-//           break;
-//         case CLONE_NEWPID: /* New pid namespace */
-//           // std::cout << "CLONE_NEWPID is true" << std::endl;
-//           break;
-//         case CLONE_NEWNET: /* New network namespace */
-//           // std::cout << "CLONE_NEWNET is true" << std::endl;
-//           break;
-//         case CLONE_IO: /* Clone I/O Context */
-//           // std::cout << "CLONE_IO is true" << std::endl;
-//           break;
-//         default:
-//           break;
-//       } // switch
-//     } // for
-
-//     /* Get the parent ctx (Current active, executing PID) */
-//     std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
-
-//     /* Create the child ctx */
-//     uint32_t ChildPID = CreateChildCtx();
-//     std::shared_ptr<RevThreadCtx> ChildCtx = ThreadTable.at(ChildPID);
-
-//     /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
-
-//     /*
-//     * ===========================================================================================
-//     * Register File
-//     * ===========================================================================================
-//     * We need to duplicate the parent's RegFile to to the Childs
-//     * - NOTE: when we return from this function, the return value will
-//     *         be automatically stored in the Proc.RegFile[HartToExec]'s a0
-//     *         register. In a traditional fork code this looks like:
-//     *
-//     *         pid_t pid = fork()
-//     *         if pid < 0: // Error
-//     *         else if pid = 0: // New Child Process
-//     *         else: // Parent Process
-//     *
-//     *         In this case, the value of pid is the value thats returned to a0
-//     *         It follows that
-//     *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
-//     *         - The Parent's a0 register MUST have its PID in it
-//     * ===========================================================================================
-//     */
-
-//     /*
-//     Alert the Proc there needs to be a Ctx switch
-//     Pass the PID that will be switched to once the 
-//     current pipeline is executed until completion
-//     */
-//     CtxSwitchAlert(ChildPID);
-
-//     /* Parent's return value is the child's PID */
-//     RegFile->RV64[10] = ChildPID;
-
-//     /* Child's return value is 0 */
-//     ChildCtx->GetRegFile()->RV64[10] = 0;
-
-//     /*clean up ecall state*/
-//     rtval = RevProc::ECALL_status_t::SUCCESS;
-//     ECALL_bytesRead = 0;
-//     ECALL_buf[0] = '\0';
-
-//   } //else
-//   return rtval;
-// }
 
 /*
  * This is the function that is called when an ECALL exception is detected inside ClockTick
@@ -2931,7 +2805,7 @@ void RevProc::ExecEcall(RevInst& inst){
 
     }
   } else {
-    output->fatal(CALL_INFO, -1, "Ecall Code = %lu not found", EcallCode);
+    output->fatal(CALL_INFO, -1, "Ecall Code = %llu not found", EcallCode);
   }
 }
 
@@ -2951,5 +2825,4 @@ uint32_t RevProc::GetActiveThreadID(){
   return ActiveThreadID;
 }
 
-// EOF
 // EOF

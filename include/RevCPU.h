@@ -215,13 +215,19 @@ namespace SST {
       // Vector of vectors of threads assigned to each processor
       std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads; 
 
-      // Create Thread 
+      // Init Thread 
       void CreateThread(std::pair<uint64_t, std::shared_ptr<MemSegment>>);
 
-      // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
-      std::queue<uint32_t> ThreadQueue;
+      void InitThread(std::shared_ptr<RevThread> ThreadToInit);
 
-      
+      // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
+      std::vector<uint32_t> ThreadQueue = {};
+
+      // Used for tracking which threads are waiting for pthread_join
+      std::vector<uint32_t> WaitingThreads = {};
+
+      // Used for tracking threads that are complete
+      std::set<uint32_t> CompletedThreads = {};
 
       uint32_t NextThreadID = 1024;
       uint32_t GetNewThreadID(){ return NextThreadID++; };

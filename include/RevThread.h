@@ -9,8 +9,10 @@
 //
 //
 
-#ifndef _SST_REVCPU_REVTHREADCTX_H_
-#define _SST_REVCPU_REVTHREADCTX_H_
+#ifndef _SST_REVCPU_REVTHREAD_H_
+#define _SST_REVCPU_REVTHREAD_H_
+
+#define __INVALID_TID__ 0xFFFFFFFF
 
 // -- Standard Headers
 #include <cstdint>
@@ -36,31 +38,13 @@ class RevThread {
 
   public:
     // Constructor that takes a RevRegFile object and a uint32_t ParentThreadID
-    RevThread(const uint32_t& inputThreadID,
-              const uint32_t& inputParentThreadID,
-              uint64_t inputStackPtr,
-              uint64_t inputFirstPC,
-              std::shared_ptr<MemSegment>& inputThreadMem)
-      : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), 
-       StackPtr(inputStackPtr),  FirstPC(inputFirstPC), ThreadMem(inputThreadMem) {
-      // Create the RegFile for this thread
-      RegFile = RevRegFile(); 
-      
-      uint64_t ThreadPtr = inputThreadMem->getTopAddr();
-      // Set the stack pointer 
-      RegFile.RV32[2] = (uint32_t)StackPtr - 1024;
-      RegFile.RV64[2] = StackPtr - 1024;
+    RevThread( uint32_t ParentThreadID,
+               uint64_t inputStackPtr,
+               uint64_t inputFirstPC,
+               std::shared_ptr<MemSegment>& inputThreadMem);
 
-      // Set the thread pointer
-      ThreadPtr = ThreadMem->getTopAddr();
-      RegFile.RV32[2] = (uint32_t)ThreadPtr;
-      RegFile.RV64[4] = ThreadPtr;
-
-      // Set the PC 
-      RegFile.RV32_PC = (uint32_t)FirstPC;
-      RegFile.RV64_PC = reinterpret_cast<uint64_t>(FirstPC);
-    }
-    
+    void SetTIDAddr(uint64_t tidAddr){ ThreadIDAddr = tidAddr; } /// RevThread: Sets the address of the ThreadID
+    uint64_t GetTIDAddr(){ return ThreadIDAddr; }   /// RevThread: Gets the address of the ThreadID
     void AddFD(int fd);                             /// RevThread: Add fd to Thread's fildes 
     bool RemoveFD(int fd);                          /// RevThread: Remove fd to Thread's fildes 
     bool FindFD(int fd);                            /// RevThread: See if Thread has ownership of fd
@@ -84,6 +68,9 @@ class RevThread {
     bool isRunning(){ return ( State == ThreadState::RUNNING ); }      /// RevThread: Checks if Thread's ThreadState is Running
     bool isBlocked(){ return (State == ThreadState::BLOCKED); }        /// RevThread: Checks if Thread's ThreadState is 
     bool isDone(){ return (State == ThreadState::DONE); }                /// RevThread: Checks if Thread's ThreadState is Done
+
+    uint32_t GetWaitingToJoinTID(){ return WaitingToJoinTID; }
+    void SetWaitingToJoinTID(uint32_t ThreadToWaitOn){ WaitingToJoinTID = ThreadToWaitOn; }
 
     // Override the printing 
     friend std::ostream& operator<<(std::ostream& os, RevThread& Thread) {
@@ -135,19 +122,20 @@ class RevThread {
     }
 
   private:
-    uint32_t ThreadID;                             /// Software ThreadID of thread
-    uint32_t ParentThreadID;                       /// Parent Thread's ThreadID
+    uint32_t ParentThreadID;
     uint64_t StackPtr;                             /// Starting stack pointer for this thread
     uint64_t FirstPC;
     std::shared_ptr<MemSegment> ThreadMem;         /// Pointer to its thread memory (TLS & Stack) 
     
+    uint32_t ThreadID;
     uint64_t ThreadPtr;                            /// Thread pointer for this thread
     ThreadState State = ThreadState::START;        /// Thread state (unused)
     RevRegFile RegFile;                            /// Each context has its own register file
+    uint64_t ThreadIDAddr = _INVALID_ADDR_;                         /// Used to store the ThreadID
     std::vector<uint32_t> ChildrenThreadIDs = {};  /// List of a thread's children (unused)
     std::vector<int> fildes = {0, 1, 2};           /// Initial fildes are STDOUT, STDIN, and STDERR 
 
-
+    uint32_t WaitingToJoinTID = __INVALID_TID__;
 };
 
 

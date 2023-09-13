@@ -5,8 +5,7 @@
 #include <sys/xattr.h>
 
 // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx) 
-RevProc::ECALL_status_t RevProc::ECALL_io_setup(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: io_setup called by thread %i\n", GetActiveThreadID());
+RevProc::ECALL_status_t RevProc::ECALL_io_setup(RevInst& inst){ output->verbose(CALL_INFO, 2, 0, "ECALL: io_setup called by thread %i\n", GetActiveThreadID());
   return RevProc::ECALL_status_t::SUCCESS;
 }
 
@@ -592,6 +591,7 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     ECALL_string = ECALL_string.append(ECALL_buf);
     // Perform the write on the host system 
     const int rc = write(fildes, ECALL_string.data(), nbytes);
+
 
     // write returns the number of bytes written
     RegFile->RV64[10] = rc;
@@ -1346,10 +1346,9 @@ RevProc::ECALL_status_t RevProc::ECALL_getegid(RevInst& inst){
 // 178, rev_gettid(void) 
 RevProc::ECALL_status_t RevProc::ECALL_gettid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: gettid called by thread %i\n", GetActiveThreadID());
-  RevRegFile* regFile = RegFile;
 
   /* rc = Currently Executing Hart */
-  regFile->RV64[10] = AssignedThreads.at(HartToExec)->GetThreadID();
+  RegFile->RV64[10] = AssignedThreads.at(HartToExec)->GetThreadID();
   return RevProc::ECALL_status_t::SUCCESS;
 }                
 
@@ -2468,7 +2467,56 @@ RevProc::ECALL_status_t RevProc::ECALL_faccessat2(RevInst& inst){
 RevProc::ECALL_status_t RevProc::ECALL_process_madvise(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: process_madvise called by thread %i\n", GetActiveThreadID());
   return RevProc::ECALL_status_t::SUCCESS;
-}       
+}
+
+// 999, int rev_printf( char *format, ... )
+RevProc::ECALL_status_t RevProc::ECALL_printf(RevInst& inst) {
+  // Step 1: Read the format string from the simulated memory
+  RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
+
+  // we don't know how long the string is so read a byte (char)
+  // at a time and search for the string terminator character '\0'
+  if('\0' != ECALL_buf[0]){
+    //We are in the middle of the string
+    ECALL_string = ECALL_string + ECALL_buf[0];
+    mem->ReadVal<char>(HartToExec, RegFile->RV64[10] + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+  }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
+    //found the null terminator - we're done
+    ECALL_string = ECALL_string + ECALL_buf[0];
+    const int rc = chdir(ECALL_string.data());
+    RegFile->RV64[10] = rc;
+    ECALL_string.clear();   //reset the ECALL buffers
+    ECALL_buf[0] = '\0';
+    DependencyClear(HartToExec, 10, false);
+    rtval = RevProc::ECALL_status_t::SUCCESS;
+  }else{
+    //first time through the ECALL
+    mem->ReadVal<char>(HartToExec, RegFile->RV64[10], &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+    rtval = RevProc::ECALL_status_t::CONTINUE;
+    DependencySet(HartToExec, 10, false);
+  }
+  // Assume format_string is the read string
+
+  if( rtval == ECALL_status_t::SUCCESS){
+    // Step 2: Prepare the va_list
+    va_list args;
+    // va_start(args, ECALL_string); // Normally, you'd use the last named argument here
+    
+    // Populate the va_list from your RISC-V register file or memory
+    // This would depend on your specific simulator's architecture and calling convention
+    
+    // Step 3: Forward to host's vprintf
+    // int rc = vprintf(ECALL_string, args);
+
+    // Clean up
+    // va_end(args);
+    
+    // Set return value
+    // RegFile->RV64[10] = rc;
+  }
+  return RevProc::ECALL_status_t::SUCCESS;
+}
 
 
 // 1000, int pthread_create(pthread_t *restrict thread,
@@ -2480,21 +2528,31 @@ RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   // uint64_t ThreadID = RegFile->RV64[10]; // Used to hold the new ThreadID
   // const pthread_attr_t *restrict attr = (const pthread_attr_t *)RegFile->RV64[11];
   uint64_t NewThreadPC = RegFile->RV64[10];
-  SpawnThread(NewThreadPC);
+
+  CreateThread(NewThreadPC);
   return RevProc::ECALL_status_t::SUCCESS;
 }
 
 // 1001, int rev_pthread_join(pthread_t thread, void **retval);
 RevProc::ECALL_status_t RevProc::ECALL_pthread_join(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_join called by thread %i\n", GetActiveThreadID());
-  // int ThreadID = RegFile->RV64[10];
+  // Save the thread were waiting for 
+  int ThreadID = RegFile->RV64[10];
 
-  // if retval is not null, store the return value of the thread in retval
-  void **retval = (void **)RegFile->RV64[11];
-  if( retval != NULL ){
-    *retval = (void *)
-    AssignedThreads.at(HartToDecode)->GetRegFile()->RV64[10];
-  }
+  // Set current thread to blocked
+  AssignedThreads.at(HartToDecode)->SetState(ThreadState::BLOCKED);
+
+  // Set the TID this thread is waiting for 
+  AssignedThreads.at(HartToDecode)->SetWaitingToJoinTID(ThreadID);
+
+
+
+  // // if retval is not null, store the return value of the thread in retval
+  // void **retval = (void **)RegFile->RV64[11];
+  // if( retval != NULL ){
+  //   *retval = (void *)
+  //   AssignedThreads.at(HartToDecode)->GetRegFile()->RV64[10];
+  // }
   return RevProc::ECALL_status_t::SUCCESS;
 }
 

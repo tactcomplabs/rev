@@ -30,7 +30,7 @@
 #endif
 
 #ifndef _REV_HART_COUNT_
-#define _REV_HART_COUNT_ 1
+#define _REV_HART_COUNT_ 2
 #endif
 
 #ifndef _REV_INVALID_HART_ID_
