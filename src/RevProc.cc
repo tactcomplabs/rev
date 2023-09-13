@@ -1608,7 +1608,24 @@ RevInst RevProc::DecodeInst(){
                     Enc );
       }
     }
-
+  }else if(it == EncToEntry.end()){
+      if(coProc){
+        isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
+      }
+      if(isCoProcInst){ 
+        //Create NOP - ADDI x0, x0 0
+        uint32_t addi_op= 0b0010011;
+        Inst = 0;
+        Enc = 0;
+        Enc |= addi_op;
+        it = EncToEntry.find(Enc);
+      }else{
+        // failed to decode the instruction
+        output->fatal(CALL_INFO, -1,
+                    "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
+                    PC,
+                    Enc );
+      }
   }
 
   unsigned Entry = it->second;

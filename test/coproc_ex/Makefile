@@ -14,12 +14,12 @@
 
 EXAMPLE=ex1
 CC="${RVCC}"
-ARCH=rv32i
-ABI=ilp32
+ARCH=rv64imafd
+#ABI=lp64
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -mabi=$(ABI) -static -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH)  -static -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

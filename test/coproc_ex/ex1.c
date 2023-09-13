@@ -16,5 +16,6 @@
 int main(int argc, char **argv){
   int i = 9;
   i = i + argc;
+  asm volatile("ADDIW a0, a0, 0");
   return i;
 }
