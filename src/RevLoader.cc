@@ -525,6 +525,11 @@ void RevLoader::splitStr(const std::string& s,
   std::string::size_type i = 0;
   std::string::size_type j = s.find(c);
 
+  if( (j==std::string::npos) && (s.length() > 0) ){
+    v.push_back(s);
+    return ;
+  }
+
   while (j != std::string::npos) {
     v.push_back(s.substr(i, j-i));
     i = ++j;
@@ -532,6 +537,7 @@ void RevLoader::splitStr(const std::string& s,
     if (j == std::string::npos)
       v.push_back(s.substr(i, s.length()));
   }
+
 }
 
 bool RevLoader::LoadElf(){
