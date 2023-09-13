@@ -52,7 +52,7 @@ comp_lsq.enableAllStatistics({"type":"sst.AccumulatorStatistic"})
 
 iface = comp_lsq.setSubComponent("memIface", "memHierarchy.standardInterface")
 iface.addParams({
-      "verbose" : VERBOSE
+          "verbose" : VERBOSE
 })
 
 
@@ -66,7 +66,7 @@ iface.addParams({
 #    "cache_line_size" : "64",
 #    "debug" : DEBUG_L1,
 #    "debug_level" : DEBUG_LEVEL,
-#    "verbose" : VERBOSE,
+#        "verbose" : VERBOSE,
 #    "L1" : "1",
 #    "cache_size" : "16KiB"
 #})
@@ -75,8 +75,8 @@ memctrl = sst.Component("memory", "memHierarchy.MemController")
 memctrl.addParams({
     "debug" : DEBUG_MEM,
     "debug_level" : DEBUG_LEVEL,
-    "clock" : "2GHz",
-    "verbose" : VERBOSE,
+        "clock" : "2GHz",
+        "verbose" : VERBOSE,
     "addr_range_start" : 0,
     "addr_range_end" : MEM_SIZE,
     "backing" : "malloc"

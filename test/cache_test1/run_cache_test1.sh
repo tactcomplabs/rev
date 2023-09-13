@@ -2,11 +2,13 @@
 
 #Build the test
 make clean && make
+REV_SST_CONFIG=${REV_SST_CONFIG-./rev-test-cache1.py}
+REV_EXE=cache_test1.exe
 
 # Check that the exec was built...
-if [ -f cache_test1.exe ]; then
-  sst --add-lib-path=../../build/src/ ./rev-test-cache1.py
+if [ -f ${REV_EXE} ]; then
+  REV_EXE=${REV_EXE} sst --add-lib-path=../../build/src/ ${REV_SST_CONFIG}
 else
-  echo "Test CACHE-TEST1: cache_test1.exe not Found - likely build failed"
+  echo "Test CACHE-TEST1: ${REV_EXE} not Found - likely build failed"
   exit 1
 fi 

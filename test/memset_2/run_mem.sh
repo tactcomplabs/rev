@@ -2,11 +2,13 @@
 
 #Build the test
 make clean && make
+REV_SST_CONFIG=${REV_SST_CONFIG-./mem.py}
+REV_EXE=mem.exe
 
 # Check that the exec was built...
-if [ -f mem.exe ]; then
-  sst --add-lib-path=../../build/src/ ./mem.py
+if [ -f ${REV_EXE} ]; then
+  REV_EXE=${REV_EXE} sst --add-lib-path=../../build/src/ ${REV_SST_CONFIG}
 else
-  echo "Test MEMSET_2: mem.exe not Found - likely build failed"
+  echo "Test MEMSET_2: ${REV_EXE} not Found - likely build failed"
   exit 1
 fi

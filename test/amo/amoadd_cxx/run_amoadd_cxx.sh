@@ -2,11 +2,13 @@
 
 #Build the test
 make clean && make
+REV_SST_CONFIG=${REV_SST_CONFIG-./rev-test-amoadd_cxx.py}
+REV_EXE=amoadd_cxx.exe
 
 # Check that the exec was built...
-if [ -f amoadd_cxx.exe ]; then
-  sst --add-lib-path=../../../build/src/ ./rev-test-amoadd_cxx.py
+if [ -f ${REV_EXE} ]; then
+  REV_EXE=${REV_EXE} sst --add-lib-path=../../../build/src/ ${REV_SST_CONFIG}
 else
-  echo "Test AMOADD_CXX: amoadd_cxx.exe not Found - likely build failed"
+  echo "Test AMOADD_CXX: ${REV_EXE} not Found - likely build failed"
   exit 1
 fi 

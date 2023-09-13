@@ -14,7 +14,7 @@
 
 EXAMPLE=basic-tls
 CC=${RVCC}
-ARCH=rv64imafdc
+ARCH?=rv64imafdc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

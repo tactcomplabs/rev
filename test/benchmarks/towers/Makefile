@@ -14,7 +14,7 @@
 
 EXAMPLE=towers
 CC=${RVCC}
-ARCH=rv64imafd
+ARCH?=rv64imafd
 
 src_dir = .
 COMMON_RISCV_OPTS ?= -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -ffast-math -fno-common -fno-builtin-printf -march=$(ARCH) -mabi=lp64d

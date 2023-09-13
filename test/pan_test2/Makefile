@@ -14,8 +14,8 @@
 
 EXAMPLE=pan_test
 CC=${RVCC}
-#ARCH=rv32i
-ARCH=rv64g
+#ARCH?=rv32i
+ARCH?=rv64g
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

@@ -14,9 +14,9 @@
 
 EXAMPLE=minfft
 CC=${RVCC}
-ARCH=rv64imfd
-#ARCH=rv32i
-#ABI=ilp32
+ARCH?=rv64imfd
+#ARCH?=rv32i
+#ABI?=ilp32
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

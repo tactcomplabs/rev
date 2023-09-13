@@ -14,8 +14,8 @@
 
 EXAMPLE=ex4
 CC=${RVCC}
-ARCH=rv32ic
-ABI=ilp32
+ARCH?=rv32ic
+ABI?=ilp32
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
