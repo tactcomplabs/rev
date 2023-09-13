@@ -12,14 +12,14 @@
 
 .PHONY: src
 
-EXAMPLE=ex1
+EXAMPLE=coproc_ex
 CC="${RVCC}"
-ARCH=rv64imafd
-#ABI=lp64
+ARCH?=rv64imafd
+ABI?=lp64d
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH)  -static -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -mabi=$(ABI) -static -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

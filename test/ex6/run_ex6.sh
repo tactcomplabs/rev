@@ -2,11 +2,13 @@
 
 #Build the test
 make clean && make
+REV_SST_CONFIG=${REV_SST_CONFIG-./rev-test-ex6.py}
+REV_EXE=ex6.exe
 
 # Check that the exec was built...
-if [ -f ex6.exe ]; then
-  sst --add-lib-path=../../build/src/ ./rev-test-ex6.py
+if [ -f ${REV_EXE} ]; then
+  REV_EXE=${REV_EXE} sst --add-lib-path=../../build/src/ ${REV_SST_CONFIG}
 else
-  echo "Test EX6: ex6.exe not Found - likely build failed"
+  echo "Test EX6: ${REV_EXE} not Found - likely build failed"
   exit 1
 fi 

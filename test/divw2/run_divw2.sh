@@ -1,12 +1,14 @@
 #!/bin/bash
 
 #Build the test
-make
+make clean && make
+REV_SST_CONFIG=${REV_SST_CONFIG-./rev-divw2.py}
+REV_EXE=divw2.exe
 
 # Check that the exec was built...
-if [ -f divw2.exe ]; then
-  sst --add-lib-path=../../build/src/ ./rev-divw2.py
+if [ -f ${REV_EXE} ]; then
+  REV_EXE=${REV_EXE} sst --add-lib-path=../../build/src/ ${REV_SST_CONFIG}
 else
-  echo "Test DIVW: dviw2.exe not Found - likely build failed"
+  echo "Test DIVW2: ${REV_EXE} not Found - likely build failed"
   exit 1
 fi

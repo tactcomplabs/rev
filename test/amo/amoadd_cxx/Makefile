@@ -14,8 +14,8 @@
 
 EXAMPLE=amoadd_cxx
 CC=${RVCC}
-#ARCH=rv64g
-ARCH=rv64imafd
+#ARCH?=rv64g
+ARCH?=rv64imafd
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc

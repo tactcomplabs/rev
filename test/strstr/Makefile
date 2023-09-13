@@ -14,8 +14,8 @@
 
 EXAMPLE=strstr
 CC=${RVCC}
-#ARCH=rv64g
-ARCH=rv64imafdc
+#ARCH?=rv64g
+ARCH?=rv64imafdc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

@@ -36,9 +36,9 @@ max_addr_gb = 1
 #-- HOST CPU
 host_cpu0 = sst.Component("cpu0", "revcpu.RevCPU")
 host_cpu0.addParams({
-	"verbose" : 5,                                # Verbosity
+        "verbose" : 5,                                # Verbosity
         "numCores" : 1,                               # Number of cores
-	"clock" : "1.0GHz",                           # Clock
+        "clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV64G]",                      # Core:Config; RV64G for core 0
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
@@ -56,9 +56,9 @@ host_cpu0.addParams({
 #-- PAN CPU
 pan_cpu1 = sst.Component("cpu1", "revcpu.RevCPU")
 pan_cpu1.addParams({
-	"verbose" : 5,                                # Verbosity
+        "verbose" : 5,                                # Verbosity
         "numCores" : 1,                               # Number of cores
-	"clock" : "1.0GHz",                           # Clock
+        "clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV64GP]",                     # Core:Config; RV64GP for core 0
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0

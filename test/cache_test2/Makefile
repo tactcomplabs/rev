@@ -14,8 +14,8 @@
 
 EXAMPLE=cache_test2
 CC=${RVCC}
-#ARCH=rv64g
-ARCH=rv64imafd
+#ARCH?=rv64g
+ARCH?=rv64imafd
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

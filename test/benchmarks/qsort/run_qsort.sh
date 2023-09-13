@@ -2,11 +2,13 @@
 
 #Build the test
 make clean && make
+REV_SST_CONFIG=${REV_SST_CONFIG-./qsort.py}
+REV_EXE=qsort.exe
 
 # Check that the exec was built...
-if [ -f qsort.exe ]; then
-  sst --add-lib-path=../../../build/src/ ./qsort.py
+if [ -f ${REV_EXE} ]; then
+  REV_EXE=${REV_EXE} sst --add-lib-path=../../../build/src/ ${REV_SST_CONFIG}
 else
-  echo "Test QSORT: qsort.exe not Found - likely build failed"
+  echo "Test QSORT: ${REV_EXE} not Found - likely build failed"
   exit 1
 fi 

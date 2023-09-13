@@ -14,7 +14,7 @@
 
 EXAMPLE=fault1
 CC=${RVCC}
-ARCH=rv64g
+ARCH?=rv64g
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

@@ -15,7 +15,7 @@
 EXAMPLE=pan_test
 SPIN=pan_spin
 CC=${RVCC}
-ARCH=rv64g
+ARCH?=rv64g
 
 all: $(EXAMPLE).exe $(SPIN).exe
 $(SPIN).exe: $(SPIN).c
