@@ -426,33 +426,21 @@ bool RevProc::Reset(){
   // reset the register file
   for (int t=0;  t < _REV_HART_COUNT_; t++){
     RevRegFile* regFile = GetRegFile(t);
-    regFile->RV32_PC = 0x00l;
-    regFile->RV64_PC = 0x00ull;
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      regFile->RV32[i] = 0x00l;
-      regFile->RV64[i] = 0x00ull;
-      regFile->SPF[i]  = 0.f;
-      regFile->DPF[i]  = 0.f;
-      regFile->RV32_Scoreboard[i] = false;
-      regFile->RV64_Scoreboard[i] = false;
-      regFile->SPF_Scoreboard[i] = false;
-      regFile->DPF_Scoreboard[i] = false;
-    }
+
+    // Zero all register data
+    memset(regFile, 0, sizeof(*regFile));
 
     // initialize all the relevant program registers
+
     // -- x2 : stack pointer
-    regFile->RV32[2] = (uint32_t)(mem->GetStackTop());
-    regFile->RV64[2] = mem->GetStackTop();
+    regFile->SetX(feature, 2, mem->GetStackTop());
 
     // -- x3 : global pointer
-    regFile->RV32[3] = (uint32_t)(loader->GetSymbolAddr("__global_pointer$"));
-    regFile->RV64[3] = loader->GetSymbolAddr("__global_pointer$");
+    auto gp = loader->GetSymbolAddr("__global_pointer$");
+    regFile->SetX(feature, 3, gp);
 
     // -- x8 : frame pointer
-    regFile->RV32[8] = regFile->RV32[3];
-    regFile->RV64[8] = regFile->RV64[3];
-
-    regFile->cost = 0;
+    regFile->SetX(feature, 8, gp);
 
     Pipeline.clear();
   }
@@ -1612,7 +1600,7 @@ RevInst RevProc::DecodeInst(){
       if(coProc){
         isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
       }
-      if(isCoProcInst){ 
+      if(isCoProcInst){
         //Create NOP - ADDI x0, x0 0
         uint32_t addi_op= 0b0010011;
         Inst = 0;

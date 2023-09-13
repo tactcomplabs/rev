@@ -104,20 +104,20 @@ namespace SST::RevCPU{
 /* Ref: RISC-V Priviledged Spec (pg. 39) */
 enum EXCEPTION_CAUSE : uint32_t {
   MISALIGNED_INST_ADDR      = 0,
-    INST_ACCESS_FAULT         = 1,
-    ILLEGAL_INST              = 2,
-    BREAKPOINT                = 3,
-    LOAD_ADDR_MISALIGNED      = 4,
-    LOAD_ACCESS_FAULT         = 5,
-    STORE_AMO_ADDR_MISALIGNED = 6,
-    STORE_AMO_ACCESS_FAULT    = 7,
-    ECALL_USER_MODE           = 8,
-    ECALL_SUPERVISOR_MODE     = 9,
-    ECALL_MACHINE_MODE        = 11,
-    INST_PAGE_FAULT           = 12,
-    LOAD_PAGE_FAULT           = 13,
-    STORE_AMO_PAGE_FAULT      = 15,
-    };
+  INST_ACCESS_FAULT         = 1,
+  ILLEGAL_INST              = 2,
+  BREAKPOINT                = 3,
+  LOAD_ADDR_MISALIGNED      = 4,
+  LOAD_ACCESS_FAULT         = 5,
+  STORE_AMO_ADDR_MISALIGNED = 6,
+  STORE_AMO_ACCESS_FAULT    = 7,
+  ECALL_USER_MODE           = 8,
+  ECALL_SUPERVISOR_MODE     = 9,
+  ECALL_MACHINE_MODE        = 11,
+  INST_PAGE_FAULT           = 12,
+  LOAD_PAGE_FAULT           = 13,
+  STORE_AMO_PAGE_FAULT      = 15,
+};
 
 struct RevRegFile {
   RevRegFile(const RevRegFile&)            = default;  // Default copy constructor
@@ -158,7 +158,7 @@ struct RevRegFile {
 
   /// AdvancePC: Advance the program counter a certain number of bytes
   template<typename T>
-  void AdvancePC(const RevFeature* F, T bytes) {
+  inline void AdvancePC(const RevFeature* F, T bytes) {
     if ( F->IsRV32() ) {
       RV32_PC += static_cast<int32_t>(bytes);
     }else{
@@ -168,7 +168,7 @@ struct RevRegFile {
 
   /// GetX: Get the specifed X register cast to a specific type
   template<typename T>
-  T GetX(const RevFeature* F, size_t rs) const {
+  inline T GetX(const RevFeature* F, size_t rs) const {
     if( F->IsRV32() ){
       return static_cast<T>(rs ? RV32[rs] : 0);
     }else{
@@ -178,16 +178,16 @@ struct RevRegFile {
 
   /// SetX: Set the specifed X register to a specific value
   template<typename T>
-  void SetX(const RevFeature* F, size_t rd, T val) {
+  inline void SetX(const RevFeature* F, size_t rd, T val) {
     if( F->IsRV32() ){
-      RV32[rd] = rd ? static_cast<int32_t>(val) : 0;
+      RV32[rd] = rd ? static_cast<uint32_t>(val) : 0;
     }else{
-      RV64[rd] = rd ? static_cast<int64_t>(val) : 0;
+      RV64[rd] = rd ? static_cast<uint64_t>(val) : 0;
     }
   }
 
   /// GetFP32: Get the 32-bit float value of a specific FP register
-  float GetFP32(const RevFeature* F, size_t rs) const {
+  inline float GetFP32(const RevFeature* F, size_t rs) const {
     if( F->HasD() ){
       uint64_t i64;
       memcpy(&i64, &DPF[rs], sizeof(i64));   // The FP64 register's value
@@ -203,7 +203,7 @@ struct RevRegFile {
   }
 
   /// SetFP32: Set a specific FP register to a 32-bit float value
-  void SetFP32(const RevFeature* F, size_t rd, float value)
+  inline void SetFP32(const RevFeature* F, size_t rd, float value)
   {
     if( F->HasD() ){
       BoxNaN(&DPF[rd], &value);  // Store NaN-boxed in FP64 register
@@ -213,6 +213,8 @@ struct RevRegFile {
   }
 };                        ///< RevProc: register file construct
 
+static_assert(std::is_trivially_copyable_v<RevRegFile> && std::is_standard_layout_v<RevRegFile>,
+              "RevRegFile must not have any virtual bases or members, and no user-provided constructors");
 
 inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
 inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
@@ -235,7 +237,7 @@ enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVCTypeCS     = 15,    ///< RevInstF: Compressed CS-Type
   RVCTypeCA     = 16,    ///< RevInstF: Compressed CA-Type
   RVCTypeCB     = 17,    ///< RevInstF: Compressed CB-Type
-  RVCTypeCJ     = 18     ///< RevInstF: Compressed CJ-Type
+  RVCTypeCJ     = 18,    ///< RevInstF: Compressed CJ-Type
 };
 
 enum RevRegClass : int { ///< Rev CPU Register Classes
@@ -243,14 +245,14 @@ enum RevRegClass : int { ///< Rev CPU Register Classes
   RegIMM        = 1,     ///< RevRegClass: Treat the reg class like an immediate: S-Format
   RegGPR        = 2,     ///< RevRegClass: GPR reg file
   RegCSR        = 3,     ///< RevRegClass: CSR reg file
-  RegFLOAT      = 4      ///< RevRegClass: Float register file
+  RegFLOAT      = 4,     ///< RevRegClass: Float register file
 };
 
 enum RevImmFunc : int {  ///< Rev Immediate Values
   FUnk          = 0,     ///< RevRegClass: Imm12 is not used
   FImm          = 1,     ///< RevRegClass: Imm12 is an immediate
   FEnc          = 2,     ///< RevRegClass: Imm12 is an encoding value
-  FVal          = 3      ///< RevRegClass: Imm12 is an incoming register value
+  FVal          = 3,     ///< RevRegClass: Imm12 is an incoming register value
 };
 
 /*! \struct RevInst
@@ -290,8 +292,8 @@ struct RevInst {
   }
 };
 
-static_assert(std::is_aggregate_v<RevInst>,
-              "RevInst must be an aggregate type (https://en.cppreference.com/w/cpp/language/aggregate_initialization)");
+static_assert(std::is_trivially_copyable_v<RevInst> && std::is_standard_layout_v<RevInst>,
+              "RevInst must not have any virtual bases or members, and no user-provided constructors");
 
 /// RevInstEntry: Holds the compressed index to normal index mapping
 inline std::map<uint8_t, uint8_t> CRegMap =
@@ -326,6 +328,9 @@ struct RevInstDefaults {
   bool        compressed  = false;
   uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
 };
+
+static_assert(std::is_trivially_copyable_v<RevInst> && std::is_standard_layout_v<RevInst>,
+              "RevInst must not have any virtual bases or members, and no user-provided constructors");
 
 /*! \struct RevInstEntry
  *  \brief Rev instruction entry
@@ -370,11 +375,8 @@ struct RevInstEntry{
   uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
 };
 
-
 template <typename RevInstDefaultsPolicy>
-class RevInstEntryBuilder : public RevInstDefaultsPolicy{
-public:
-
+struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   RevInstEntry InstEntry;
 
   RevInstEntryBuilder() : RevInstDefaultsPolicy() {
@@ -422,11 +424,13 @@ public:
   RevInstEntryBuilder& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;};
   RevInstEntryBuilder& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;};
 
-  RevInstEntryBuilder& SetImplFunc(bool (*func)(RevFeature *,
-                                                RevRegFile *,
-                                                RevMem *,
-                                                RevInst)){
-    InstEntry.func = func; return *this;};
+  RevInstEntryBuilder& SetImplFunc(bool func(RevFeature *,
+                                             RevRegFile *,
+                                             RevMem *,
+                                             RevInst)){
+    InstEntry.func = func;
+    return *this;
+  };
 
 }; // class RevInstEntryBuilder;
 
@@ -436,7 +440,7 @@ public:
 template<typename FP, typename INT>
 bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   FP fp;
-  if(std::is_same_v<FP, double>){
+  if constexpr(std::is_same_v<FP, double>){
     fp = R->DPF[Inst.rs1];         // Read the double FP register directly
   }else{
     fp = R->GetFP32(F, Inst.rs1);  // Read the F or D register, unboxing if D
@@ -492,7 +496,6 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                    RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
-
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
