@@ -19,18 +19,18 @@
 
 namespace SST::RevCPU{
 
-// Singleton to return thread-local RNG, initializing it only on-demand
+/// Singleton to return thread-local RNG, initializing it only on-demand
 inline auto& RevRNG(){
-  // Thread-local non-deterministic hardware random number generator
-  thread_local std::random_device RevHWRNG;
+  // Non-deterministic hardware random number generator
+  static std::random_device RevHWRNG;
+
+  // All threads share the same hardware seed which changes from run to run
+  static uint64_t HWSeed = uint64_t{RevHWRNG()} << 32 | RevHWRNG();
 
   // Thread-local deterministic pseudo random number generator
-  // Two hardware random numbers and a thread id hash are combined into a seed
+  // The hardware random seed and a thread id hash are combined into a seed
   // See https://www.youtube.com/watch?v=LDPMpc-ENqY
-  thread_local std::mt19937_64 RevRNG{
-    (uint64_t{RevHWRNG()} << 32 | RevHWRNG()) ^
-    std::hash<std::thread::id>{}(std::this_thread::get_id())
-  };
+  thread_local std::mt19937_64 RevRNG{HWSeed ^ std::hash<std::thread::id>{}(std::this_thread::get_id())};
 
   return RevRNG;
 }
