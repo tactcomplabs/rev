@@ -120,10 +120,7 @@ enum EXCEPTION_CAUSE : uint32_t {
 };
 
 struct RevRegFile {
-  RevRegFile(const RevRegFile&)            = default;  // Default copy constructor
-  RevRegFile& operator=(const RevRegFile&) = default;  // Default assignment
-  RevRegFile()                             = default;  // Default constructor
-  ~RevRegFile()                            = default;  // Default destructor
+  explicit RevRegFile() = default;  // prevent aggregate initialization but allow value-initialization
 
   uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
   uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file

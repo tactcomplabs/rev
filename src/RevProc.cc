@@ -1897,18 +1897,11 @@ void RevProc::DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
 }
 
 uint16_t RevProc::GetHartID(){
-  if(HART_CTS.none()) { return HartToDecode;};
-
   uint16_t nextID = HartToDecode;
-  if(HART_CTS[HartToDecode]){
-    nextID = HartToDecode;
-  }else{
-    for(int tID = 0; tID < _REV_HART_COUNT_; tID++){
-      nextID++;
-      if(nextID >= _REV_HART_COUNT_){
+  if(HART_CTS.any()){
+    while(!HART_CTS[nextID]){
+      if(++nextID >= _REV_HART_COUNT_)
         nextID = 0;
-      }
-      if(HART_CTS[nextID]){ break; };
     }
     output->verbose(CALL_INFO, 6, 0,
                     "Core %u ; Thread switch from %d to %d \n",

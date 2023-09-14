@@ -32,31 +32,30 @@ enum class ThreadState {
 };
 
 class RevThreadCtx {
-  uint32_t PID;                             /// Software PID of thread
-  uint32_t ParentPID;                       /// Parent Ctx's PID
-  ThreadState State = ThreadState::Waiting; /// Thread state (unused)
-  RevRegFile RegFile;                       /// Each context has its own register file
-  std::set<uint32_t> ChildrenPIDs;          /// List of a thread's children (unused)
-  std::set<int> fildes = {0, 1, 2};         /// Initial fildes are STDOUT, STDIN, and STDERR
+  uint32_t PID;                                               /// Software PID of thread
+  uint32_t ParentPID;                                         /// Parent Ctx's PID
+  [[maybe_unused]] ThreadState State = ThreadState::Waiting;  /// Thread state
+  RevRegFile RegFile{};                                       /// Each context has its own register file
+  [[maybe_unused]] std::set<uint32_t> ChildrenPIDs;           /// List of a thread's children
+  std::set<int> fildes = {0, 1, 2};                           /// Initial fildes are STDOUT, STDIN, and STDERR
 
 public:
   // Constructor that takes a RevRegFile object and a uint32_t ParentPID
   RevThreadCtx(const uint32_t inputPID,  const uint32_t inputParentPID)
       : PID(inputPID), ParentPID(inputParentPID) {
-    RegFile = RevRegFile();
   }
 
-  void AddFD(int fd) { fildes.insert(fd); }           /// RevThreadCtx: Add fd to Ctx's fildes
-  bool RemoveFD(int fd) { return fildes.erase(fd); }  /// RevThreadCtx: Remove fd to Ctx's fildes
-  bool FindFD(int fd) { return fildes.count(fd); }    /// RevThreadCtx: See if Ctx has ownership of fd
-  auto GetFildes(){ return fildes; }                  /// RevThreadCtx: Get list of file descriptors owned by Ctx
+  void AddFD(int fd) { fildes.insert(fd); }                   /// RevThreadCtx: Add fd to Ctx's fildes
+  bool RemoveFD(int fd) { return fildes.erase(fd); }          /// RevThreadCtx: Remove fd to Ctx's fildes
+  bool FindFD(int fd) { return fildes.count(fd); }            /// RevThreadCtx: See if Ctx has ownership of fd
+  auto GetFildes(){ return fildes; }                          /// RevThreadCtx: Get list of file descriptors owned by Ctx
 
-  bool DuplicateRegFile(const RevRegFile& regToDup);  /// RevThreadCtx: Makes its own register file a copy of regToDup
-  RevRegFile* GetRegFile() { return &RegFile; }       /// RevThreadCtx: Returns pointer to its register file
-  void SetRegFile(RevRegFile r) { RegFile = r; }      /// RevThreadCtx: Sets pointer to its register file
+  bool DuplicateRegFile(const RevRegFile& regToDup);          /// RevThreadCtx: Makes its own register file a copy of regToDup
+  RevRegFile* GetRegFile() { return &RegFile; }               /// RevThreadCtx: Returns pointer to its register file
+  void SetRegFile(RevRegFile r) { RegFile = r; }              /// RevThreadCtx: Sets pointer to its register file
 
-  auto GetPID() { return PID; }                       /// RevThreadCtx: Gets Ctx's PID
-  void SetPID(uint32_t NewPID) { PID = NewPID; }      /// RevThreadCtx: Sets Ctx's PID
+  auto GetPID() { return PID; }                               /// RevThreadCtx: Gets Ctx's PID
+  void SetPID(uint32_t NewPID) { PID = NewPID; }              /// RevThreadCtx: Sets Ctx's PID
 
   auto GetParentPID() const { return ParentPID; }                    /// RevThreadCtx: Gets Ctx's Parent's PID
   void SetParentPID(uint32_t parent_pid) { ParentPID = parent_pid; } /// RevThreadCtx: Sets Ctx's Parent's PID
