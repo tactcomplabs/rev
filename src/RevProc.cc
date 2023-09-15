@@ -198,59 +198,59 @@ bool RevProc::SeedInstTable(){
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // load RV32I & RV64; no optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature, RegFile, mem, output)), false);
-      EnableExt(static_cast<RevExt *>(new RV64I(feature, RegFile, mem, output)), false);
+      EnableExt(new RV32I(feature, RegFile, mem, output), false);
+      EnableExt(new RV64I(feature, RegFile, mem, output), false);
     }else{
       // load RV32I w/ optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature, RegFile, mem, output)), true);
+      EnableExt(new RV32I(feature, RegFile, mem, output), true);
     }
   }
 
   // M-Extension
   if( feature->IsModeEnabled(RV_M) ){
-    EnableExt(static_cast<RevExt *>(new RV32M(feature, RegFile, mem, output)), false);
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64M(feature, RegFile, mem, output)), false);
+    EnableExt(new RV32M(feature, RegFile, mem, output), false);
+    if( feature->IsRV64() ){
+      EnableExt(new RV64M(feature, RegFile, mem, output), false);
     }
   }
 
   // A-Extension
   if( feature->IsModeEnabled(RV_A) ){
-    EnableExt(static_cast<RevExt *>(new RV32A(feature, RegFile, mem, output)), false);
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64A(feature, RegFile, mem, output)), false);
+    EnableExt(new RV32A(feature, RegFile, mem, output), false);
+    if( feature->IsRV64() ){
+      EnableExt(new RV64A(feature, RegFile, mem, output), false);
     }
   }
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
-    if( (!feature->IsModeEnabled(RV_D)) && (feature->GetXlen() == 32) ){
-      EnableExt(static_cast<RevExt *>(new RV32F(feature, RegFile, mem, output)), true);
+    if( !feature->IsModeEnabled(RV_D) && feature->IsRV32() ){
+      EnableExt(new RV32F(feature, RegFile, mem, output), true);
     }else{
-      EnableExt(static_cast<RevExt *>(new RV32F(feature, RegFile, mem, output)), false);
-      EnableExt(static_cast<RevExt *>(new RV64F(feature, RegFile, mem, output)), false);
+      EnableExt(new RV32F(feature, RegFile, mem, output), false);
+      EnableExt(new RV64F(feature, RegFile, mem, output), false);
 
     }
 #if 0
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature, RegFile, mem, output)));
+    if( feature->IsRV64() ){
+      EnableExt(new RV64D(feature, RegFile, mem, output));
     }
 #endif
   }
 
   // D-Extension
   if( feature->IsModeEnabled(RV_D) ){
-    EnableExt(static_cast<RevExt *>(new RV32D(feature, RegFile, mem, output)), false);
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature, RegFile, mem, output)), false);
+    EnableExt(new RV32D(feature, RegFile, mem, output), false);
+    if( feature->IsRV64() ){
+      EnableExt(new RV64D(feature, RegFile, mem, output), false);
     }
   }
 
   // PAN Extension
   if( feature->IsModeEnabled(RV_P) ){
-    EnableExt(static_cast<RevExt *>(new RV64P(feature, RegFile, mem, output)), false);
+    EnableExt(new RV64P(feature, RegFile, mem, output), false);
   }
 
   return true;
@@ -534,7 +534,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
   }else if( (CompInst.opcode == 0b10) &&
             (CompInst.funct3 == 0b011) ){
     CompInst.imm = 0;
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.ldsp
       CompInst.imm =  ((Inst & 0b1100000) >> 2);        // [4:3]
       CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
@@ -620,7 +620,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm |= ((Inst & 0b110000000) >> 1);        // [7:6]
   }else if( CompInst.funct3 == 0b111 ){
     CompInst.imm = 0;
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.sdsp
       CompInst.imm =  ((Inst & 0b1110000000000) >> 7);    // [5:3]
       CompInst.imm |= ((Inst & 0b1110000000) >> 1);       // [8:6]
@@ -695,7 +695,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm |= ((Inst & 0b1000000) >> 4);        // [2]
     CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
   }else if( CompInst.funct3 == 0b011 ){
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.ld
       CompInst.imm =  ((Inst & 0b1100000) << 1);        // [7:6]
       CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
@@ -715,7 +715,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm |= ((Inst & 0b1000000) >> 4);        // [2]
     CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
   }else if( CompInst.funct3 == 0b111 ){
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.sd
       CompInst.imm =  ((Inst & 0b1100000) << 1);        // [7:6]
       CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
@@ -755,7 +755,7 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm    |= ((Inst & 0b01110000000000) >> 6);   //offset[5:3]
     CompInst.imm    |= ((Inst & 0b01000000) >> 4);          //offset[2]
   }else{
-    if(feature->GetXlen() == 32){
+    if( feature->IsRV32() ){
       //c.fsw
       CompInst.imm     = ((Inst & 0b00100000) << 1);         //imm[6]
       CompInst.imm     = ((Inst & 0b01000000) << 4);         //imm[2]

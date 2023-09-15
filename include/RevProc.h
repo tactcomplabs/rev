@@ -183,11 +183,11 @@ private:
   unsigned fault_width;     ///< RevProc: the width of the target fault
   unsigned id;              ///< RevProc: processor id
   uint64_t ExecPC;          ///< RevProc: executing PC
-  uint16_t HartToDecode;   ///< RevProc: Current executing ThreadID
-  uint16_t HartToExec;     ///< RevProc: Thread to dispatch instruction
+  uint16_t HartToDecode;    ///< RevProc: Current executing ThreadID
+  uint16_t HartToExec;      ///< RevProc: Thread to dispatch instruction
   uint64_t Retired;         ///< RevProc: number of retired instructions
   bool PendingCtxSwitch = false; ///< RevProc: determines if the core is halted
-  bool SwapToParent = false; ///< RevProc: determines if the core is halted
+  bool SwapToParent = false;///< RevProc: determines if the core is halted
   uint32_t NextPID = 0;
 
   RevOpts *opts;            ///< RevProc: options object
@@ -575,9 +575,6 @@ private:
 
   std::vector<RevExt *> Extensions;           ///< RevProc: vector of enabled extensions
 
-#define PIPE_HART     0
-#define PIPE_INST     1
-#define PIPE_HAZARD   2
   //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
   std::vector<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
   std::list<bool *> LoadHazards;                      ///< RevProc: list of allocated load hazards

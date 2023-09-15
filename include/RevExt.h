@@ -36,8 +36,8 @@ struct RevExt{
         regFile = RegFile;
       }
 
-  /// RevExt: standard destructor
-  ~RevExt() = default;
+  /// RevExt: standard destructor. virtual so that Extensions[i] can be deleted
+  virtual ~RevExt() = default;
 
   /// RevExt: sets the internal instruction table
   void SetTable(std::vector<RevInstEntry> InstVect){
