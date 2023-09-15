@@ -55,6 +55,7 @@ namespace SST{
       /// RevProc: standard constructor
       RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
                std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
+               std::function<uint32_t()> GetNewThreadID,
                RevCoProc* CoProc, SST::Output *Output );
 
       /// RevProc: standard desctructor
@@ -131,8 +132,10 @@ namespace SST{
       // /// RevProc: SpawnThread creates a new thread and returns its ThreadID
       // void SpawnThread(uint64_t fn);
 
+      std::bitset<_REV_HART_COUNT_> GetThreadStateChanges(){ return ThreadStateChanges; }
+
       /// RevProc: SpawnThread creates a new thread and returns its ThreadID
-      void CreateThread(uint64_t fn);
+      void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
 
       /// RevProc: Returns the current HartToExec active pid 
       uint32_t GetActiveThreadID();
@@ -202,6 +205,7 @@ namespace SST{
   
       /// ThreadIDs assigned to this RevProc (Index into this vector = Hart that's executing)
       std::vector<std::shared_ptr<RevThread>>& AssignedThreads;
+      std::function<uint32_t()> GetNewThreadID;
 
       SST::Output *output;      ///< RevProc: output handler
       RevFeature *feature;      ///< RevProc: feature handler
@@ -213,6 +217,8 @@ namespace SST{
 
       /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
       RevRegFile* GetRegFile(uint16_t HartID);
+
+      std::bitset<_REV_HART_COUNT_> ThreadStateChanges; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
       
       RevInst Inst;             ///< RevProc: instruction payload
 

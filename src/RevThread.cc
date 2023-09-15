@@ -21,7 +21,7 @@ RevThread::RevThread( uint32_t inputParentThreadID,
   // Create the RegFile for this thread
   RegFile = RevRegFile(); 
   
-  ThreadPtr = inputThreadMem->getBaseAddr() + _STACK_SIZE_ + 1;
+  ThreadPtr = inputThreadMem->getTopAddr() - 1;
   // Set the stack pointer 
   RegFile.RV32[2] = (uint32_t)StackPtr - 1024;
   RegFile.RV64[2] = StackPtr - 1024;

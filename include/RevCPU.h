@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <random>
+#include <functional>
 
 // -- SST Headers
 #include <sst/core/sst_config.h>
@@ -196,6 +197,14 @@ namespace SST {
         {"TLBHitsPerCore",      "TLB hits per core",                                    "count",  1},
         {"TLBMissesPerCore",    "TLB misses per core",                                  "count",  1},
       )
+      
+
+      // Passed as a function pointer to each RevProc for when they encounter a function that 
+      // results in a new RevThread being spawned 
+      std::function<uint32_t()> GetNewTID() {
+          return std::function<uint32_t()>([this]() { return GetNewThreadID(); });
+      }
+
 
     private:
       unsigned numCores;                  ///< RevCPU: number of RISC-V cores (# of Procs)
@@ -220,17 +229,24 @@ namespace SST {
 
       void InitThread(std::shared_ptr<RevThread> ThreadToInit);
 
-      // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
-      std::vector<uint32_t> ThreadQueue = {};
+      void CheckBlockedThreads();
+      
+      // Used to check if a thread that is waiting to join can proceed
+      bool ThreadCanProceed(uint32_t TID);
 
+      // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
+      // Create a priority_queue for the RevThreads based on the value of Threads.at(ThreadID)->GetPriority()
+      std::vector<uint32_t> ThreadQueue = {};
+      
       // Used for tracking which threads are waiting for pthread_join
-      std::vector<uint32_t> WaitingThreads = {};
+      std::set<uint32_t> BlockedThreads = {};
 
       // Used for tracking threads that are complete
       std::set<uint32_t> CompletedThreads = {};
 
       uint32_t NextThreadID = 1024;
-      uint32_t GetNewThreadID(){ return NextThreadID++; };
+
+      uint32_t GetNewThreadID(){ return NextThreadID++; }
 
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
       bool *Enabled;                      ///< RevCPU: Completion structure 

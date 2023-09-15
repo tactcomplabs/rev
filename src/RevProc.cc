@@ -20,13 +20,14 @@ RevProc::RevProc( unsigned Id,
                   RevMem *Mem,
                   RevLoader *Loader,
                   std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
+                  std::function<uint32_t()> GetNewTID,
                   RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
     opts(Opts), mem(Mem), loader(Loader), AssignedThreads(AssignedThreads),
-    output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+    GetNewThreadID(GetNewTID), output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -2104,7 +2105,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
         // Ecall found
         output->verbose(CALL_INFO, 6, 0,
-                  "Core %d; HartID %d; ThreadID %d - Exception Raised: ECALL with code = %lu\n", 
+                  "Core %d; HartID %d; ThreadID %d - Exception Raised: ECALL with code = %llu\n", 
                   id, HartToExec, GetActiveThreadID(), RegFile->RV64[17]);
         #ifdef _REV_DEBUG_
         std::cout << "Hart "<< HartToExec << " found ecall with code: "
@@ -2252,7 +2253,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }else if( GetPC() == 0x00ull ) {
       // std::cout << "PC IS ZERO" << std::endl;
-      // AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
+      AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
+      ThreadStateChanges.set(HartToExec);
       // PAN execution contexts not enabled, this is our last PC
       // AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
       done = true;
@@ -2267,6 +2269,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       output->verbose(CALL_INFO, 2, 0,
                       "Thread %d is done\n", AssignedThreads.at(HartToExec)->GetThreadID());
       AssignedThreads.at(HartToExec)->SetState(ThreadState::DONE);
+      ThreadStateChanges.set(HartToExec);
       // done = true;
     }
 
@@ -2344,11 +2347,12 @@ RevRegFile* RevProc::GetRegFile(uint16_t HartID){
   return AssignedThreads.at(HartID)->GetRegFile();
 }
 
-void RevProc::CreateThread(uint64_t firstPC){
+void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // tidAddr is the address we have to write the new thread's id to
   output->verbose(CALL_INFO, 2, 0,
-                  "Creating new thread with PC = 0x%lx\n", firstPC);
+                  "Creating new thread with PC = 0x%llx\n", firstPC);
   uint64_t ParentPID = GetActiveThreadID();
+
   
   // Create the new thread's memory
   std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
@@ -2361,8 +2365,8 @@ void RevProc::CreateThread(uint64_t firstPC){
             std::make_shared<RevThread>(ParentPID, 
                                         NewThreadMem->getBaseAddr()+_STACK_SIZE_,
                                         firstPC, NewThreadMem);
+  NewThread->SetThreadID(NewTID);
   // Save the address that will hold the new ThreadID
-  NewThread->SetTIDAddr(NewThreadMem->getTopAddr() - sizeof(uint32_t));
   NewThreadInfo.emplace(NewThread);
 
   return;

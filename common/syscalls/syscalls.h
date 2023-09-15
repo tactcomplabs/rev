@@ -153,8 +153,6 @@
 #define STDOUT_FILENO   1       /* standard output file descriptor */
 #define STDERR_FILENO   2       /* standard error file descriptor */
 
-
-
 struct __aio_sigset;
 struct epoll_event;
 struct iattr;
@@ -3740,18 +3738,22 @@ int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int be
 }
 
 
+// pthread_t *restrict thread
+// const pthread_attr_t *restrict attr - NOT USED RIGHT NOW
+// void *(*start_routine)(void *)
+// void *restrict arg); - NOT USED RIGHT NOW
 // ==================== REV PTHREADS
-void* rev_pthread_create( void* fn ){
+void* rev_pthread_create( uint32_t* thread, void* fn, void* arg ){
   int rc;
   asm volatile (
     "li a7, 1000 \n\t"
     "ecall \n\t"
     "mv %0, a0" : "=r" (rc)
     );
-  // return rc;
+  return rc;
 }
 
-int rev_pthread_join( int tid, int retval ){
+void* rev_pthread_join( uint32_t thread, void** retval ){
   int rc;
   asm volatile (
     "li a7, 1001 \n\t"
@@ -3763,7 +3765,7 @@ int rev_pthread_join( int tid, int retval ){
 
 
 
-// ===================== Non-Syscall Useful Things
+// ===================== Non-Syscall Useful Things (Not working)
 // - TODO: SNPRINTF
 // - TODO: PRINTF
 int rev_snprintf( char * s, size_t n, const char * format, ... ){

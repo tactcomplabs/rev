@@ -2500,7 +2500,7 @@ RevProc::ECALL_status_t RevProc::ECALL_printf(RevInst& inst) {
 
   if( rtval == ECALL_status_t::SUCCESS){
     // Step 2: Prepare the va_list
-    va_list args;
+    // va_list args;
     // va_start(args, ECALL_string); // Normally, you'd use the last named argument here
     
     // Populate the va_list from your RISC-V register file or memory
@@ -2525,25 +2525,45 @@ RevProc::ECALL_status_t RevProc::ECALL_printf(RevInst& inst) {
 //                          void *restrict arg);
 RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_create called by thread %i\n", GetActiveThreadID());
-  // uint64_t ThreadID = RegFile->RV64[10]; // Used to hold the new ThreadID
+  uint64_t tidAddr = RegFile->RV64[10]; // Used to hold the new ThreadID
   // const pthread_attr_t *restrict attr = (const pthread_attr_t *)RegFile->RV64[11];
-  uint64_t NewThreadPC = RegFile->RV64[10];
+  uint64_t NewThreadPC = RegFile->RV64[11];
+  uint64_t ArgPtr = RegFile->RV64[12];
+  uint32_t NewTID = GetNewThreadID();
+  std::cout << "New TID = " << NewTID << std::endl;
+  CreateThread(NewTID, NewThreadPC, (void*)ArgPtr);
 
-  CreateThread(NewThreadPC);
+  mem->WriteMem(feature->GetHart(), tidAddr, sizeof(uint64_t), &NewTID);
   return RevProc::ECALL_status_t::SUCCESS;
 }
 
 // 1001, int rev_pthread_join(pthread_t thread, void **retval);
 RevProc::ECALL_status_t RevProc::ECALL_pthread_join(RevInst& inst){
+  RevProc::ECALL_status_t rtval = RevProc::ECALL_status_t::CONTINUE;
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_join called by thread %i\n", GetActiveThreadID());
   // Save the thread were waiting for 
-  int ThreadID = RegFile->RV64[10];
+  // uint64_t* ThreadIDAddr = (uint64_t*)RegFile->RV64[10];
 
-  // Set current thread to blocked
-  AssignedThreads.at(HartToDecode)->SetState(ThreadState::BLOCKED);
+  if( ECALL_bytesRead == 0 ){
+    mem->ReadVal<uint64_t>(HartToExec, RegFile->RV64[10],
+                       reinterpret_cast<uint64_t*>(ECALL_buf), // + ECALL_bytesRead, 
+                       inst.hazard, REVMEM_FLAGS(0x0));
+    ECALL_bytesRead += 8;
+  } else {
+    if( ECALL_bytesRead == 8 ){
+      rtval = RevProc::ECALL_status_t::SUCCESS;
 
-  // Set the TID this thread is waiting for 
-  AssignedThreads.at(HartToDecode)->SetWaitingToJoinTID(ThreadID);
+      // Set current thread to blocked
+      AssignedThreads.at(HartToDecode)->SetState(ThreadState::BLOCKED);
+
+      // Signal to RevCPU this thread is has changed state
+      ThreadStateChanges.set(HartToDecode);
+
+      // Set the TID this thread is waiting for 
+      AssignedThreads.at(HartToDecode)->SetWaitingToJoinTID(reinterpret_cast<uint64_t>(ECALL_buf));
+    } 
+  }
+  
 
 
 
@@ -2553,7 +2573,8 @@ RevProc::ECALL_status_t RevProc::ECALL_pthread_join(RevInst& inst){
   //   *retval = (void *)
   //   AssignedThreads.at(HartToDecode)->GetRegFile()->RV64[10];
   // }
-  return RevProc::ECALL_status_t::SUCCESS;
+  //
+  return rtval;
 }
 
 
