@@ -428,25 +428,25 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   }
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
-  RevInstEntryBuilder& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;};
-  RevInstEntryBuilder& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;};
-  RevInstEntryBuilder& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;};
-  RevInstEntryBuilder& SetFunct2(uint8_t f2)        { InstEntry.funct2 = f2;    return *this;};
-  RevInstEntryBuilder& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;};
-  RevInstEntryBuilder& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;};
-  RevInstEntryBuilder& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;};
-  RevInstEntryBuilder& SetFunct7(uint8_t f7)        { InstEntry.funct7 = f7;    return *this;};
-  RevInstEntryBuilder& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;};
-  RevInstEntryBuilder& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;};
-  RevInstEntryBuilder& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;};
-  RevInstEntryBuilder& Setrs1Class(RevRegClass rs1) { InstEntry.rs1Class = rs1; return *this;};
-  RevInstEntryBuilder& Setrs2Class(RevRegClass rs2) { InstEntry.rs2Class = rs2; return *this;};
-  RevInstEntryBuilder& Setrs3Class(RevRegClass rs3) { InstEntry.rs3Class = rs3; return *this;};
-  RevInstEntryBuilder& Setimm12(uint16_t imm12)     { InstEntry.imm12 = imm12;  return *this;};
-  RevInstEntryBuilder& Setimm(RevImmFunc imm)       { InstEntry.imm = imm;      return *this;};
-  RevInstEntryBuilder& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;};
-  RevInstEntryBuilder& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;};
-  RevInstEntryBuilder& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;};
+  RevInstEntryBuilder& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;}
+  RevInstEntryBuilder& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;}
+  RevInstEntryBuilder& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;}
+  RevInstEntryBuilder& SetFunct2(uint8_t f2)        { InstEntry.funct2 = f2;    return *this;}
+  RevInstEntryBuilder& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;}
+  RevInstEntryBuilder& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;}
+  RevInstEntryBuilder& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;}
+  RevInstEntryBuilder& SetFunct7(uint8_t f7)        { InstEntry.funct7 = f7;    return *this;}
+  RevInstEntryBuilder& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;}
+  RevInstEntryBuilder& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;}
+  RevInstEntryBuilder& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;}
+  RevInstEntryBuilder& Setrs1Class(RevRegClass rs1) { InstEntry.rs1Class = rs1; return *this;}
+  RevInstEntryBuilder& Setrs2Class(RevRegClass rs2) { InstEntry.rs2Class = rs2; return *this;}
+  RevInstEntryBuilder& Setrs3Class(RevRegClass rs3) { InstEntry.rs3Class = rs3; return *this;}
+  RevInstEntryBuilder& Setimm12(uint16_t imm12)     { InstEntry.imm12 = imm12;  return *this;}
+  RevInstEntryBuilder& Setimm(RevImmFunc imm)       { InstEntry.imm = imm;      return *this;}
+  RevInstEntryBuilder& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
+  RevInstEntryBuilder& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
+  RevInstEntryBuilder& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
 
   RevInstEntryBuilder& SetImplFunc(bool func(RevFeature *,
                                              RevRegFile *,
@@ -454,7 +454,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
                                              RevInst)){
     InstEntry.func = func;
     return *this;
-  };
+  }
 
 }; // class RevInstEntryBuilder;
 
