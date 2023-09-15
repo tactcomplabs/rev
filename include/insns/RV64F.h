@@ -44,11 +44,11 @@ class RV64F : public RevExt {
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64FInstDefaults : RevInstDefaults {
-    uint8_t opcode = 0b1010011;
-    RevRegClass rdClass = RegFLOAT;
-    RevRegClass rs1Class = RegFLOAT;
-    RevRegClass rs2Class = RegUNKNOWN;
-    RevRegClass rs3Class = RegUNKNOWN;
+    static constexpr uint8_t     opcode   = 0b1010011;
+    static constexpr RevRegClass rdClass  = RegFLOAT;
+    static constexpr RevRegClass rs1Class = RegFLOAT;
+    static constexpr RevRegClass rs2Class = RegUNKNOWN;
+    static constexpr RevRegClass rs3Class = RegUNKNOWN;
   };
 
   std::vector<RevInstEntry> RV64FTable = {

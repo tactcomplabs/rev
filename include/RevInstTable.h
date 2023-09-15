@@ -120,8 +120,6 @@ enum EXCEPTION_CAUSE : uint32_t {
 };
 
 struct RevRegFile {
-  explicit RevRegFile() = default;  // prevent aggregate initialization but allow value-initialization
-
   uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
   uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
   float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
@@ -152,6 +150,8 @@ struct RevRegFile {
   uint32_t cost;                    ///< RevRegFile: Cost of the instruction
   bool trigger;                     ///< RevRegFile: Has the instruction been triggered?
   unsigned Entry;                   ///< RevRegFile: Instruction entry
+
+  explicit RevRegFile() = default;  // prevent aggregate initialization
 
   /// GetX: Get the specifed X register cast to a specific integral type
   template<typename T>
@@ -229,10 +229,8 @@ struct RevRegFile {
   }
 }; // RevRegFile
 
-static_assert(std::is_trivially_copyable_v<RevRegFile> &&
-              std::is_standard_layout_v<RevRegFile>,
-              "RevRegFile must not have any virtual bases or members, "
-              "and no user-provided constructors");
+static_assert(std::is_trivially_copyable_v<RevRegFile>,
+              "RevRegFile must be trivially copyable to be able to use memcpy() and memset()");
 
 inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
 inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
@@ -281,30 +279,30 @@ enum RevImmFunc : int {  ///< Rev Immediate Values
  *
  */
 struct RevInst {
-  explicit RevInst() = default;  // prevent aggregate initialization but allow value-initialization
+  uint8_t opcode      = 0; ///< RevInst: opcode
+  uint8_t funct2      = 0; ///< RevInst: compressed funct2 value
+  uint8_t funct3      = 0; ///< RevInst: funct3 value
+  uint8_t funct4      = 0; ///< RevInst: compressed funct4 value
+  uint8_t funct6      = 0; ///< RevInst: compressed funct6 value
+  uint8_t funct7      = 0; ///< RevInst: funct7 value
+  uint64_t rd         =~0; ///< RevInst: rd value
+  uint64_t rs1        =~0; ///< RevInst: rs1 value
+  uint64_t rs2        =~0; ///< RevInst: rs2 value
+  uint64_t rs3        =~0; ///< RevInst: rs3 value
+  uint64_t imm        = 0; ///< RevInst: immediate value
+  uint8_t fmt         = 0; ///< RevInst: floating point format
+  uint8_t rm          = 0; ///< RevInst: floating point rounding mode
+  uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
+  uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
+  uint16_t offset     = 0; ///< RevInst: compressed offset
+  uint16_t jumpTarget = 0; ///< RevInst: compressed jumpTarget
+  uint8_t instSize    = 0; ///< RevInst: size of the instruction in bytes
+  bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
+  uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
+  unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
+  bool *hazard        = 0; ///< RevInst: signals a load hazard
 
-  uint8_t opcode;       ///< RevInst: opcode
-  uint8_t funct2;       ///< RevInst: compressed funct2 value
-  uint8_t funct3;       ///< RevInst: funct3 value
-  uint8_t funct4;       ///< RevInst: compressed funct4 value
-  uint8_t funct6;       ///< RevInst: compressed funct6 value
-  uint8_t funct7;       ///< RevInst: funct7 value
-  uint8_t rd;           ///< RevInst: rd value
-  uint8_t rs1;          ///< RevInst: rs1 value
-  uint8_t rs2;          ///< RevInst: rs2 value
-  uint8_t rs3;          ///< RevInst: rs3 value
-  uint32_t imm;         ///< RevInst: immediate value
-  uint8_t fmt;          ///< RevInst: floating point format
-  uint8_t rm;           ///< RevInst: floating point rounding mode
-  uint8_t aq;           ///< RevInst: aq field for atomic instructions
-  uint8_t rl;           ///< RevInst: rl field for atomic instructions
-  uint16_t offset;      ///< RevInst: compressed offset
-  uint16_t jumpTarget;  ///< RevInst: compressed jumpTarget
-  uint8_t instSize;     ///< RevInst: size of the instruction in bytes
-  bool compressed;      ///< RevInst: determines if the instruction is compressed
-  uint32_t cost;        ///< RevInst: the cost to execute this instruction, in clock cycles
-  unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
-  bool *hazard;         ///< RevInst: signals a load hazard
+  explicit RevInst() = default; // prevent aggregate initialization
 
   ///< RevInst: Sign-extended immediate value
   constexpr int32_t ImmSignExt(size_t bits) const {
@@ -312,14 +310,13 @@ struct RevInst {
   }
 }; // RevInst
 
-static_assert(std::is_trivially_copyable_v<RevInst> &&
-              std::is_standard_layout_v<RevInst>,
-              "RevInst must not have any virtual bases or members, "
-              "and no user-provided constructors");
+static_assert(std::is_trivially_copyable_v<RevInst>,
+              "RevInst must be trivially copyable to be able to use memcpy() and memset()");
 
 #if 0
 
 /// CRegMap: Holds the compressed index to normal index mapping
+// TODO: Replace with macro below if mappings are trivial
 inline const std::map<uint8_t, uint8_t> CRegMap =
 {
   {0b000,  8},
@@ -343,30 +340,25 @@ inline const std::map<uint8_t, uint8_t> CRegMap =
 #endif
 
 struct RevInstDefaults {
-  uint8_t     opcode      = 0b00000000;
-  uint32_t    cost        = 1;
-  uint8_t     funct2      = 0b000;      // compressed only
-  uint8_t     funct3      = 0b000;
-  uint8_t     funct4      = 0b000;      // compressed only
-  uint8_t     funct6      = 0b000;      // compressed only
-  uint8_t     funct7      = 0b0000000;
-  uint16_t    offset      = 0b0000000;  // compressed only
-  uint16_t    jumpTarget  = 0b0000000;  // compressed only
-  RevRegClass rdClass     = RegGPR;
-  RevRegClass rs1Class    = RegGPR;
-  RevRegClass rs2Class    = RegGPR;
-  RevRegClass rs3Class    = RegUNKNOWN;
-  uint16_t    imm12       = 0b000000000000;
-  RevImmFunc  imm         = FUnk;
-  RevInstF    format      = RVTypeR;
-  bool        compressed  = false;
-  uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
+  static constexpr uint8_t     opcode      = 0b00000000;
+  static constexpr uint32_t    cost        = 1;
+  static constexpr uint8_t     funct2      = 0b000;      // compressed only
+  static constexpr uint8_t     funct3      = 0b000;
+  static constexpr uint8_t     funct4      = 0b000;      // compressed only
+  static constexpr uint8_t     funct6      = 0b000;      // compressed only
+  static constexpr uint8_t     funct7      = 0b0000000;
+  static constexpr uint16_t    offset      = 0b0000000;  // compressed only
+  static constexpr uint16_t    jumpTarget  = 0b0000000;  // compressed only
+  static constexpr RevRegClass rdClass     = RegGPR;
+  static constexpr RevRegClass rs1Class    = RegGPR;
+  static constexpr RevRegClass rs2Class    = RegGPR;
+  static constexpr RevRegClass rs3Class    = RegUNKNOWN;
+  static constexpr uint16_t    imm12       = 0b000000000000;
+  static constexpr RevImmFunc  imm         = FUnk;
+  static constexpr RevInstF    format      = RVTypeR;
+  static constexpr bool        compressed  = false;
+  static constexpr uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
 }; // RevInstDefaults
-
-static_assert(std::is_trivially_copyable_v<RevInstDefaults> &&
-              std::is_standard_layout_v<RevInstDefaults>,
-              "RevInstDefaults must not have any virtual bases or "
-              "members, and no user-provided constructors");
 
 /*! \struct RevInstEntry
  *  \brief Rev instruction entry

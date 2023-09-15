@@ -42,12 +42,11 @@ class RV64P : public RevExt{
   // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
-  class Rev64PInstDefaults : public RevInstDefaults {
-  public:
-    uint8_t opcode       = 0b1110111;
-    RevRegClass rs2Class = RegUNKNOWN;
-    RevImmFunc imm       = FImm;
-    RevInstF format      = RVTypeI;
+  struct Rev64PInstDefaults : RevInstDefaults {
+    static constexpr uint8_t     opcode   = 0b1110111;
+    static constexpr RevRegClass rs2Class = RegUNKNOWN;
+    static constexpr RevImmFunc  imm      = FImm;
+    static constexpr RevInstF    format   = RVTypeI;
   };
   std::vector<RevInstEntry> RV64PTable = {
     {RevInstEntryBuilder<Rev64PInstDefaults>().SetMnemonic("future %rd, $imm(%rs1)" ).SetFunct3(0b111).SetImplFunc(&future).InstEntry},

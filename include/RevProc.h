@@ -15,25 +15,26 @@
 #include "SST.h"
 
 // -- Standard Headers
-#include <iostream>
-#include <fstream>
+#include <array>
 #include <bitset>
+#include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
-#include <time.h>
-#include <queue>
+#include <filesystem>
+#include <fstream>
 #include <functional>
-
-#include <cinttypes>
-#include <memory>
-#include <unordered_map>
+#include <iostream>
+#include <list>
 #include <map>
+#include <memory>
+#include <queue>
+#include <string>
+#include <sys/xattr.h>
+#include <time.h>
+#include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <string>
-#include <tuple>
-#include <list>
-#include <array>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -569,7 +570,7 @@ private:
   /// RevProc: Vector of PIDs where index of ActivePIDs is the pid of the RevThreadCtx loaded into Hart #Idx
   std::vector<uint32_t> ActivePIDs;
 
-  RevInst Inst;             ///< RevProc: instruction payload
+  //RevInst Inst{};             ///< RevProc: instruction payload: NOTE: Moved to local variable in RevProc::ClockTick() because of local variables of same name shadowing it and of confusing uninitialized memory errors
 
   std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
 
@@ -691,19 +692,14 @@ private:
 
   /// RevProc: determine if the instruction is floating-point
   bool IsFloat(unsigned Entry) const {
+    // Note: This is crude and looks for ANY FP register operands;
+    // InstTable[...].r<reg>Class should be used when doing hazard
+    // detection on particular registers, since some instructions
+    // combine integer and FP register operands. See DependencySet().
     return( InstTable[Entry].rdClass  == RegFLOAT ||
             InstTable[Entry].rs1Class == RegFLOAT ||
             InstTable[Entry].rs2Class == RegFLOAT ||
             InstTable[Entry].rs3Class == RegFLOAT );
-  }
-
-  /// RevProc: reset the inst structure
-  static void ResetInst(RevInst *Inst){
-    memset(Inst, 0, sizeof(*Inst));
-    Inst->rd         = ~0;  // Set registers to value that is clearly invalid
-    Inst->rs1        = ~0;
-    Inst->rs2        = ~0;
-    Inst->rs3        = ~0;
   }
 
   /// RevProc: Determine next thread to execute

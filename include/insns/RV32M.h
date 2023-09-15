@@ -68,10 +68,9 @@ class RV32M : public RevExt{
   // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
-  class RevMInstDefaults : public RevInstDefaults {
-  public:
-    uint8_t funct7 = 0b0000001;
-    uint8_t opcode = 0b0110011;
+  struct RevMInstDefaults : RevInstDefaults {
+    static constexpr uint8_t funct7 = 0b0000001;
+    static constexpr uint8_t opcode = 0b0110011;
   };
   std::vector<RevInstEntry> RV32MTable = {
     {RevInstEntryBuilder<RevMInstDefaults>().SetMnemonic("mul %rd, %rs1, %rs2"   ).SetFunct3(0b000).SetImplFunc( &mul ).InstEntry},

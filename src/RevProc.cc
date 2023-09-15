@@ -9,14 +9,6 @@
 //
 
 #include "../include/RevProc.h"
-#include <bitset>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <map>
-#include <utility>
-#include <fstream>
-#include <sys/xattr.h>
 
 using namespace SST::RevCPU;
 
@@ -136,7 +128,7 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
   Extensions.push_back(Ext);
 
   // retrieve all the target instructions
-  std::vector<RevInstEntry> IT = Ext->GetInstTable();
+  const std::vector<RevInstEntry>& IT = Ext->GetInstTable();
 
   // setup the mapping of InstTable to Ext objects
   InstTable.reserve(InstTable.size() + IT.size());
@@ -901,7 +893,6 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
   uint8_t l3      = 0;
   uint32_t Enc    = 0x00ul;
   uint64_t PC     = GetPC();
-  RevInst TInst;
 
   if( !feature->HasCompressed() ){
     output->fatal(CALL_INFO, -1,
@@ -909,8 +900,6 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
                   PC);
 
   }
-
-  ResetInst(&TInst);
 
   // decode the opcode
   opc = (TmpInst & 0b11);
@@ -991,7 +980,6 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
   }
 
   RegFile->Entry = Entry;
-
   RegFile->trigger = false;
 
   switch( InstTable[Entry].format ){
@@ -1030,7 +1018,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
 
   // we should never arrive here
   // we return a null instruction in order to forego a compiler warning
-  return TInst;
+  return RevInst{};
 }
 
 RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
@@ -1381,9 +1369,6 @@ RevInst RevProc::DecodeInst(){
   uint32_t Inst = 0x00ul;
   uint64_t PC   = 0x00ull;
   bool Fetched  = false;
-  RevInst TInst;
-
-  ResetInst(&TInst);
 
   // Stage 1: Retrieve the instruction
   PC = RegFile->GetPC(feature);
@@ -1597,7 +1582,7 @@ RevInst RevProc::DecodeInst(){
 
   // we should never arrive here
   // we return a null instruction to forego a compiler warning
-  return TInst;
+  return RevInst{};
 }
 
 void RevProc::HandleRegFault(unsigned width){
@@ -1658,40 +1643,36 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
 
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
-  bool depFound = false;
 
   // Iterate through the source registers rs1, rs2, rs3 and find any dependency
   // based on the class of the source register and the associated scoreboard
-  for(const auto& [reg, regClass] : {
-      std::pair(I->rs1, E->rs1Class),
-      std::pair(I->rs2, E->rs2Class),
-      std::pair(I->rs3, E->rs3Class) }){
+  for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
+                                      std::tie(I->rs2, E->rs2Class),
+                                      std::tie(I->rs3, E->rs3Class) }){
     if(reg < _REV_NUM_REGS_){
       switch(regClass){
       case RegFLOAT:
         if(feature->HasD()){
-          depFound = regFile->DPF_Scoreboard[reg];
+          if(regFile->DPF_Scoreboard[reg]) return true;
         }else{
-          depFound = regFile->SPF_Scoreboard[reg];
+          if(regFile->SPF_Scoreboard[reg]) return true;
         }
         break;
 
       case RegGPR:
         if(feature->IsRV32()){
-          depFound = regFile->RV32_Scoreboard[reg];
+          if(regFile->RV32_Scoreboard[reg]) return true;
         }else {
-          depFound = regFile->RV64_Scoreboard[reg];
+          if(regFile->RV64_Scoreboard[reg]) return true;
         }
         break;
 
       default:
         break;
       }
-      if(depFound)
-        break;
     }
   }
-  return depFound;
+  return false;
 }
 
 /// Set or clear scoreboard based on register number and floating point
@@ -1745,10 +1726,10 @@ void RevProc::destroyLoadHazard(bool *LH){
 }
 
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
-  std::cout << currentCycle;
+  RevInst Inst;
 
   bool rtn = false;
-  std::cout << Stats.totalCycles++;
+  Stats.totalCycles++;
 
 #ifdef _REV_DEBUG_
   if((currentCycle % 100000000) == 0){
@@ -1764,10 +1745,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else, wait until the counter is decremented to zero to retire the instruction
   //
   //
-  std::cout << PendingCtxSwitch;
-  std::cout << NextPID;
-  std::cout << GetPC();
-
   if( PendingCtxSwitch ){
     /*
      * There was a ctx switch event triggered
@@ -1795,7 +1772,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   if( HART_CTS.any() && (!Halted)) {
     // fetch the next instruction
-    ResetInst(&Inst);
 
     //Determine the active thread
     HartToDecode = GetHartID();
@@ -1818,13 +1794,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     Inst.hazard = nullptr;
 
     // Now that we have decoded the instruction, check for pipeline hazards
-    bool a = Stalled;
-    std::cout << a;
-
-    bool b = a || DependencyCheck(HartToDecode, &Inst);
-    std::cout << b;
-
-    if(b){
+    if(Stalled || DependencyCheck(HartToDecode, &Inst)){
       RegFile->cost = 0; // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
@@ -2436,7 +2406,7 @@ RevProc::ECALL_status_t RevProc::ECALL_ParseString(RevInst& inst,
 /*======================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
 #if 0
-  // TODO: Nead to load the data from (value, size bytes) into
+  // TODO: Need to load the data from (value, size bytes) into
   // hostValue vector before it can be passed to setxattr() on host.
 
   auto path = RegFile->GetX<uint64_t>(feature, 10);

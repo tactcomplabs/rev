@@ -161,11 +161,10 @@ class RV32D : public RevExt{
   // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
-  class Rev32DInstDefaults : public RevInstDefaults {
-  public:
-    RevRegClass rdClass   = RegFLOAT;
-    RevRegClass rs1Class  = RegFLOAT;
-    RevRegClass rs2Class  = RegFLOAT;
+  struct Rev32DInstDefaults : RevInstDefaults {
+    static constexpr RevRegClass rdClass  = RegFLOAT;
+    static constexpr RevRegClass rs1Class = RegFLOAT;
+    static constexpr RevRegClass rs2Class = RegFLOAT;
   };
   std::vector<RevInstEntry> RV32DTable = {
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fld %rd, $imm(%rs1)"           ).SetOpcode( 0b0000111).SetFunct3(0b011 ).SetFunct7(0b0000000	).SetrdClass(RegFLOAT	).Setrs1Class(RegGPR  ).Setrs2Class(RegGPR).Setrs3Class(    RegUNKNOWN).SetFormat(RVTypeI).SetImplFunc(&fld ).InstEntry},
