@@ -42,11 +42,6 @@
 #define _REV_INVALID_HART_ID_ (uint16_t)~(uint16_t(0))
 #endif
 
-// Masks
-#define MASK8   0b11111111                          // 8bit mask
-#define MASK16  0b1111111111111111                  // 16bit mask
-#define MASK32  0b11111111111111111111111111111111  // 32bit mask
-
 // Register Decoding Macros
 #define DECODE_RD(x)    (((x)>>(7))&(0b11111))
 #define DECODE_RS1(x)   (((x)>>(15))&(0b11111))
