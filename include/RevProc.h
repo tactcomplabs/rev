@@ -715,24 +715,22 @@ private:
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;
 
-  /// RevProc: Set scoreboard based on instruction destination
-  template<bool value = true>
-  void DependencySet(uint16_t HartID, const RevInst* Inst){
-    DependencySet<value>(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RegFLOAT);
+  /// RevProc: Set or clear scoreboard based on instruction destination
+  void DependencySet(uint16_t HartID, const RevInst* Inst, bool value = true){
+    DependencySet(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RegFLOAT, value);
   }
 
   /// RevProc: Clear scoreboard on instruction retirement
   void DependencyClear(uint16_t HartID, const RevInst* Inst){
-    DependencySet<false>(HartID, Inst);
+    DependencySet(HartID, Inst, false);
   }
 
   /// RevProc: Set or clear scoreboard based on register number and floating point.
-  template<bool value = true>
-  void DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat);
+  void DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true);
 
   /// RevProc: Clear scoreboard on instruction retirement
   void DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
-    DependencySet<false>(HartID, RegNum, isFloat);
+    DependencySet(HartID, RegNum, isFloat, false);
   }
 
 }; // class RevProc

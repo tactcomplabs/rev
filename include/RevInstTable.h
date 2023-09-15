@@ -155,7 +155,7 @@ struct RevRegFile {
 
   /// GetX: Get the specifed X register cast to a specific integral type
   template<typename T>
-  inline T GetX(const RevFeature* F, size_t rs) const {
+  T GetX(const RevFeature* F, size_t rs) const {
     if( F->IsRV32() ){
       return rs ? T(RV32[rs]) : T(0);
     }else{
@@ -165,16 +165,16 @@ struct RevRegFile {
 
   /// SetX: Set the specifed X register to a specific value
   template<typename T>
-  inline void SetX(const RevFeature* F, size_t rd, T val) {
+  void SetX(const RevFeature* F, size_t rd, T val) {
     if( F->IsRV32() ){
-      RV32[rd] = rd ? uint32_t(val) : 0;
+      RV32[rd] = rd ? uint32_t(val) : uint32_t{0};
     }else{
-      RV64[rd] = rd ? uint64_t(val) : 0;
+      RV64[rd] = rd ? uint64_t(val) : uint64_t{0};
     }
   }
 
   /// GetPC: Get the Program Counter
-  inline uint64_t GetPC(const RevFeature* F) {
+  uint64_t GetPC(const RevFeature* F) const {
     if( F->IsRV32() ){
       return RV32_PC;
     }else{
@@ -184,7 +184,7 @@ struct RevRegFile {
 
   /// SetPC: Set the Program Counter to a specific value
   template<typename T>
-  inline void SetPC(const RevFeature* F, T val) {
+  void SetPC(const RevFeature* F, T val) {
     if( F->IsRV32() ){
       RV32_PC = static_cast<uint32_t>(val);
     }else{
@@ -194,7 +194,7 @@ struct RevRegFile {
 
   /// AdvancePC: Advance the program counter a certain number of bytes
   template<typename T>
-  inline void AdvancePC(const RevFeature* F, T bytes) {
+  void AdvancePC(const RevFeature* F, T bytes) {
     if ( F->IsRV32() ) {
       RV32_PC += bytes;
     }else{
@@ -203,7 +203,7 @@ struct RevRegFile {
   }
 
   /// GetFP32: Get the 32-bit float value of a specific FP register
-  inline float GetFP32(const RevFeature* F, size_t rs) const {
+  float GetFP32(const RevFeature* F, size_t rs) const {
     if( F->HasD() ){
       uint64_t i64;
       memcpy(&i64, &DPF[rs], sizeof(i64));   // The FP64 register's value
@@ -219,7 +219,7 @@ struct RevRegFile {
   }
 
   /// SetFP32: Set a specific FP register to a 32-bit float value
-  inline void SetFP32(const RevFeature* F, size_t rd, float value)
+  void SetFP32(const RevFeature* F, size_t rd, float value)
   {
     if( F->HasD() ){
       BoxNaN(&DPF[rd], &value);  // Store NaN-boxed in FP64 register
@@ -227,10 +227,12 @@ struct RevRegFile {
       SPF[rd] = value;           // Store in FP32 register
     }
   }
-};                        ///< RevProc: register file construct
+}; // RevRegFile
 
-static_assert(std::is_trivially_copyable_v<RevRegFile> && std::is_standard_layout_v<RevRegFile>,
-              "RevRegFile must not have any virtual bases or members, and no user-provided constructors");
+static_assert(std::is_trivially_copyable_v<RevRegFile> &&
+              std::is_standard_layout_v<RevRegFile>,
+              "RevRegFile must not have any virtual bases or members, "
+              "and no user-provided constructors");
 
 inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
 inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
@@ -279,6 +281,8 @@ enum RevImmFunc : int {  ///< Rev Immediate Values
  *
  */
 struct RevInst {
+  explicit RevInst() = default;  // prevent aggregate initialization but allow value-initialization
+
   uint8_t opcode;       ///< RevInst: opcode
   uint8_t funct2;       ///< RevInst: compressed funct2 value
   uint8_t funct3;       ///< RevInst: funct3 value
@@ -306,23 +310,25 @@ struct RevInst {
   constexpr int32_t ImmSignExt(size_t bits) const {
     return SignExt(imm, bits);
   }
-};
+}; // RevInst
 
-static_assert(std::is_trivially_copyable_v<RevInst> && std::is_standard_layout_v<RevInst>,
-              "RevInst must not have any virtual bases or members, and no user-provided constructors");
+static_assert(std::is_trivially_copyable_v<RevInst> &&
+              std::is_standard_layout_v<RevInst>,
+              "RevInst must not have any virtual bases or members, "
+              "and no user-provided constructors");
 
 /// RevInstEntry: Holds the compressed index to normal index mapping
-inline std::map<uint8_t, uint8_t> CRegMap =
-  {
-    {0b000, 8},
-    {0b001, 9},
-    {0b010, 10},
-    {0b011, 11},
-    {0b100, 12},
-    {0b101, 13},
-    {0b110, 14},
-    {0b111, 15},
-  };
+inline const std::map<uint8_t, uint8_t> CRegMap =
+{
+  {0b000,  8},
+  {0b001,  9},
+  {0b010, 10},
+  {0b011, 11},
+  {0b100, 12},
+  {0b101, 13},
+  {0b110, 14},
+  {0b111, 15},
+};
 
 struct RevInstDefaults {
   uint8_t     opcode      = 0b00000000;
@@ -343,10 +349,12 @@ struct RevInstDefaults {
   RevInstF    format      = RVTypeR;
   bool        compressed  = false;
   uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
-};
+}; // RevInstDefaults
 
-static_assert(std::is_trivially_copyable_v<RevInst> && std::is_standard_layout_v<RevInst>,
-              "RevInst must not have any virtual bases or members, and no user-provided constructors");
+static_assert(std::is_trivially_copyable_v<RevInstDefaults> &&
+              std::is_standard_layout_v<RevInstDefaults>,
+              "RevInstDefaults must not have any virtual bases or "
+              "members, and no user-provided constructors");
 
 /*! \struct RevInstEntry
  *  \brief Rev instruction entry
@@ -389,7 +397,7 @@ struct RevInstEntry{
   bool compressed;      ///< RevInstEntry: compressed instruction
 
   uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
-};
+}; // RevInstEntry
 
 template <typename RevInstDefaultsPolicy>
 struct RevInstEntryBuilder : RevInstDefaultsPolicy{
@@ -528,7 +536,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 
 /// Store template
 template<typename T>
-static bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   M->Write(F->GetHart(),
            R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<T>(F, Inst.rs2));

@@ -34,9 +34,9 @@ enum class ThreadState {
 class RevThreadCtx {
   uint32_t PID;                                               /// Software PID of thread
   uint32_t ParentPID;                                         /// Parent Ctx's PID
-  [[maybe_unused]] ThreadState State = ThreadState::Waiting;  /// Thread state
+  ThreadState State = ThreadState::Waiting;                   /// Thread state
   RevRegFile RegFile{};                                       /// Each context has its own register file
-  [[maybe_unused]] std::set<uint32_t> ChildrenPIDs;           /// List of a thread's children
+  std::set<uint32_t> ChildrenPIDs;                            /// List of a thread's children
   std::set<int> fildes = {0, 1, 2};                           /// Initial fildes are STDOUT, STDIN, and STDERR
 
 public:

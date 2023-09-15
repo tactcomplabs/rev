@@ -26,7 +26,7 @@ class RV32I : public RevExt {
   static bool caddi4spn(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.addi4spn rd, $imm == addi rd, x2, $imm
     Inst.rs1  = 2;
-    Inst.rd   = CRegMap[Inst.rd];
+    Inst.rd   = CRegMap.at(Inst.rd);
 
     // if Inst.imm == 0; this is a HINT instruction
     // this is effectively a NOP
@@ -59,8 +59,8 @@ class RV32I : public RevExt {
 
   static bool clw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.lw rd, rs1, $imm = lw rd, $imm(rs1)
-    Inst.rd  = CRegMap[Inst.rd];
-    Inst.rs1 = CRegMap[Inst.rs1];
+    Inst.rd  = CRegMap.at(Inst.rd);
+    Inst.rs1 = CRegMap.at(Inst.rs1);
     //Inst.imm = ((Inst.imm & 0b11111)*4);
     Inst.imm = (Inst.imm & 0b1111111); // Immd is 7 bits, zero extended, bits placed correctly in decode, no need to scale
 
@@ -69,8 +69,8 @@ class RV32I : public RevExt {
 
   static bool csw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.sw rs2, rs1, $imm = sw rs2, $imm(rs1)
-    Inst.rs2 = CRegMap[Inst.rd];
-    Inst.rs1 = CRegMap[Inst.rs1];
+    Inst.rs2 = CRegMap.at(Inst.rd);
+    Inst.rs1 = CRegMap.at(Inst.rs1);
     //Inst.imm = ((Inst.imm & 0b11111)*4);
     Inst.imm = (Inst.imm & 0b1111111); //Immd is 7-bits, zero extended, bits placed correctly in decode, no need to scale
 
@@ -137,7 +137,7 @@ class RV32I : public RevExt {
   static bool cbeqz(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.beqz %rs1, $imm = beq %rs1, x0, $imm
     Inst.rs2 = 0;
-    Inst.rs1 = CRegMap[Inst.rs1];
+    Inst.rs1 = CRegMap.at(Inst.rs1);
     Inst.imm = Inst.offset;
     Inst.imm = Inst.ImmSignExt(6);
     //Inst.imm = Inst.offset & 0b111111;
@@ -150,7 +150,7 @@ class RV32I : public RevExt {
   static bool cbnez(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.bnez %rs1, $imm = bne %rs1, x0, $imm
     Inst.rs2 = 0;
-    Inst.rs1 = CRegMap[Inst.rs1];
+    Inst.rs1 = CRegMap.at(Inst.rs1);
     Inst.imm = Inst.offset;
     Inst.imm = Inst.ImmSignExt(9);  //Immd is signed 9-bit, scaled in decode
     //Inst.imm = Inst.offset & 0b111111;
@@ -199,21 +199,21 @@ class RV32I : public RevExt {
 
   static bool csrli(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.srli %rd, $imm = srli %rd, %rd, $imm
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
     return srli(F, R, M, Inst);
   }
 
   static bool csrai(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.srai %rd, $imm = srai %rd, %rd, $imm
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
     return srai(F, R, M, Inst);
   }
 
   static bool candi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.andi %rd, $imm = sandi %rd, %rd, $imm
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
     Inst.imm = Inst.ImmSignExt(6);  //immd is 6 bits, sign extended no scaling needed
     return andi(F, R, M, Inst);
@@ -221,33 +221,33 @@ class RV32I : public RevExt {
 
   static bool cand(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.and %rd, %rs2 = and %rd, %rd, %rs2
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
-    Inst.rs2  = CRegMap[Inst.rs2];
+    Inst.rs2 = CRegMap.at(Inst.rs2);
     return f_and(F, R, M, Inst);
   }
 
   static bool cor(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.or %rd, %rs2 = or %rd, %rd, %rs2
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
-    Inst.rs2  = CRegMap[Inst.rs2];
+    Inst.rs2 = CRegMap.at(Inst.rs2);
     return f_or(F, R, M, Inst);
   }
 
   static bool cxor(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.xor %rd, %rs2 = xor %rd, %rd, %rs2
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
-    Inst.rs2  = CRegMap[Inst.rs2];
+    Inst.rs2 = CRegMap.at(Inst.rs2);
     return f_xor(F, R, M, Inst);
   }
 
   static bool csub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.sub %rd, %rs2 = sub %rd, %rd, %rs2
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
-    Inst.rs2  = CRegMap[Inst.rs2];
+    Inst.rs2  = CRegMap.at(Inst.rs2);
     return sub(F, R, M, Inst);
   }
 

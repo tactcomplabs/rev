@@ -38,8 +38,8 @@ class RV64I : public RevExt{
 
   static bool cld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.ld %rd, %rs1, $imm = ld %rd, %rs1, $imm
-    Inst.rd  = CRegMap[Inst.rd];
-    Inst.rs1 = CRegMap[Inst.rs1];
+    Inst.rd  = CRegMap.at(Inst.rd);
+    Inst.rs1 = CRegMap.at(Inst.rs1);
     //Inst.imm = ((Inst.imm&0b11111)*8);
     Inst.imm = (Inst.imm&0b11111111); //8-bit immd, zero-extended, scaled at decode
     return ld(F, R, M, Inst);
@@ -47,8 +47,8 @@ class RV64I : public RevExt{
 
   static bool csd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
-    Inst.rs2 = CRegMap[Inst.rs2];
-    Inst.rs1 = CRegMap[Inst.rs1];
+    Inst.rs2 = CRegMap.at(Inst.rs2);
+    Inst.rs1 = CRegMap.at(Inst.rs1);
     Inst.imm = (Inst.imm&0b11111111); //imm is 8-bits, zero extended, decoder pre-aligns bits, no scaling needed
     return sd(F, R, M, Inst);
   }
@@ -64,17 +64,17 @@ class RV64I : public RevExt{
 
   static bool caddw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.addw %rd, %rs2 = addw %rd, %rd, %rs2
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
-    Inst.rs2  = CRegMap[Inst.rs2];
+    Inst.rs2  = CRegMap.at(Inst.rs2);
     return addw(F, R, M, Inst);
   }
 
   static bool csubw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.subw %rd, %rs2 = subw %rd, %rd, %rs2
-    Inst.rd  = CRegMap[Inst.rd];
+    Inst.rd  = CRegMap.at(Inst.rd);
     Inst.rs1 = Inst.rd;
-    Inst.rs2  = CRegMap[Inst.rs2];
+    Inst.rs2  = CRegMap.at(Inst.rs2);
     return subw(F, R, M, Inst);
   }
 
