@@ -317,7 +317,9 @@ static_assert(std::is_trivially_copyable_v<RevInst> &&
               "RevInst must not have any virtual bases or members, "
               "and no user-provided constructors");
 
-/// RevInstEntry: Holds the compressed index to normal index mapping
+#if 0
+
+/// CRegMap: Holds the compressed index to normal index mapping
 inline const std::map<uint8_t, uint8_t> CRegMap =
 {
   {0b000,  8},
@@ -329,6 +331,16 @@ inline const std::map<uint8_t, uint8_t> CRegMap =
   {0b110, 14},
   {0b111, 15},
 };
+
+/// CRegIdx: Maps the compressed index to normal index
+#define CRegIdx(x) (CRegMap.at(x))
+
+#else
+
+/// CRegIdx: Maps the compressed index to normal index
+#define CRegIdx(x) ((x) + 8)
+
+#endif
 
 struct RevInstDefaults {
   uint8_t     opcode      = 0b00000000;

@@ -39,16 +39,16 @@ class RV32D : public RevExt{
   static bool cfld(RevFeature *F, RevRegFile *R,
                    RevMem *M, RevInst Inst) {
     // c.fld %rd, %rs1, $imm = flw %rd, %rs1, $imm
-    Inst.rd  = CRegMap.at(Inst.rd);
-    Inst.rs1 = CRegMap.at(Inst.rs1);
+    Inst.rd  = CRegIdx(Inst.rd);
+    Inst.rs1 = CRegIdx(Inst.rs1);
     return fld(F, R, M, Inst);
   }
 
   static bool cfsd(RevFeature *F, RevRegFile *R,
                    RevMem *M, RevInst Inst) {
     // c.fsd rs2, rs1, $imm = fsd rs2, $imm(rs1)
-    Inst.rs2 = CRegMap.at(Inst.rd);
-    Inst.rs1 = CRegMap.at(Inst.rs1);
+    Inst.rs2 = CRegIdx(Inst.rd);
+    Inst.rs1 = CRegIdx(Inst.rs1);
     return fsd(F, R, M, Inst);
   }
 
