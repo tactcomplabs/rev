@@ -94,9 +94,9 @@ constexpr auto SignExt(T val, size_t bits){
 /// BoxNaN: Store a boxed float inside a double
 inline void BoxNaN(double* dest, const void* value){
   uint32_t i32;
-  memcpy(&i32, value, sizeof(float));       // The FP32 value
+  memcpy(&i32, value, sizeof(float));                // The FP32 value
   uint64_t i64 = uint64_t{i32} | ~uint64_t{0} << 32; // Boxed NaN value
-  memcpy(dest, &i64, sizeof(double));       // Store in FP64 register
+  memcpy(dest, &i64, sizeof(double));                // Store in FP64 register
 }
 
 namespace SST::RevCPU{
@@ -153,23 +153,13 @@ struct RevRegFile {
   bool trigger;                     ///< RevRegFile: Has the instruction been triggered?
   unsigned Entry;                   ///< RevRegFile: Instruction entry
 
-  /// AdvancePC: Advance the program counter a certain number of bytes
-  template<typename T>
-  inline void AdvancePC(const RevFeature* F, T bytes) {
-    if ( F->IsRV32() ) {
-      RV32_PC += static_cast<int32_t>(bytes);
-    }else{
-      RV64_PC += static_cast<int64_t>(bytes);
-    }
-  }
-
-  /// GetX: Get the specifed X register cast to a specific type
+  /// GetX: Get the specifed X register cast to a specific integral type
   template<typename T>
   inline T GetX(const RevFeature* F, size_t rs) const {
     if( F->IsRV32() ){
-      return static_cast<T>(rs ? RV32[rs] : 0);
+      return rs ? T(RV32[rs]) : T(0);
     }else{
-      return static_cast<T>(rs ? RV64[rs] : 0);
+      return rs ? T(RV64[rs]) : T(0);
     }
   }
 
@@ -177,9 +167,38 @@ struct RevRegFile {
   template<typename T>
   inline void SetX(const RevFeature* F, size_t rd, T val) {
     if( F->IsRV32() ){
-      RV32[rd] = rd ? static_cast<uint32_t>(val) : 0;
+      RV32[rd] = rd ? uint32_t(val) : 0;
     }else{
-      RV64[rd] = rd ? static_cast<uint64_t>(val) : 0;
+      RV64[rd] = rd ? uint64_t(val) : 0;
+    }
+  }
+
+  /// GetPC: Get the Program Counter
+  inline uint64_t GetPC(const RevFeature* F) {
+    if( F->IsRV32() ){
+      return RV32_PC;
+    }else{
+      return RV64_PC;
+    }
+  }
+
+  /// SetPC: Set the Program Counter to a specific value
+  template<typename T>
+  inline void SetPC(const RevFeature* F, T val) {
+    if( F->IsRV32() ){
+      RV32_PC = static_cast<uint32_t>(val);
+    }else{
+      RV64_PC = static_cast<uint64_t>(val);
+    }
+  }
+
+  /// AdvancePC: Advance the program counter a certain number of bytes
+  template<typename T>
+  inline void AdvancePC(const RevFeature* F, T bytes) {
+    if ( F->IsRV32() ) {
+      RV32_PC += bytes;
+    }else{
+      RV64_PC += bytes;
     }
   }
 
@@ -277,7 +296,7 @@ struct RevInst {
   uint8_t rl;           ///< RevInst: rl field for atomic instructions
   uint16_t offset;      ///< RevInst: compressed offset
   uint16_t jumpTarget;  ///< RevInst: compressed jumpTarget
-  size_t instSize;      ///< RevInst: size of the instruction in bytes
+  uint8_t instSize;     ///< RevInst: size of the instruction in bytes
   bool compressed;      ///< RevInst: determines if the instruction is compressed
   uint32_t cost;        ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
@@ -455,9 +474,9 @@ bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 
 /// fclass: Return FP classification like the RISC-V fclass instruction
 // See: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
-// Because quiet and signaling NaNs are not distinguished by the C++ standard, an
-// additional argument has been added to disambiguate between quiet and signaling
-// NaNs. The argument will determine whether it's a quiet or signaling NaN.
+// Because quiet and signaling NaNs are not distinguished by the C++ standard,
+// an additional argument has been added to disambiguate between quiet and
+// signaling NaNs.
 template<typename T>
 unsigned fclass(T val, bool quietNaN = true) {
   switch(std::fpclassify(val)){

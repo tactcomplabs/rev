@@ -575,7 +575,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
   return true;
 }
 
-bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
+bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data,
                        StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -649,7 +649,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
 }
 
 
-bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data ){
+bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif

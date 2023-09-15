@@ -33,6 +33,7 @@
 #include <string>
 #include <tuple>
 #include <list>
+#include <array>
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -74,13 +75,13 @@ public:
   bool SingleStepHart();
 
   /// RevProc: retrieve the local PC for the correct feature set
-  uint64_t GetPC();
+  uint64_t GetPC() const { return RegFile->GetPC(feature); }
 
   /// RevProc: Debug mode read a register
-  bool DebugReadReg(unsigned Idx, uint64_t *Value);
+  bool DebugReadReg(unsigned Idx, uint64_t *Value) const;
 
   /// RevProc: Debug mode write a register
-  bool DebugWriteReg(unsigned Idx, uint64_t Value);
+  bool DebugWriteReg(unsigned Idx, uint64_t Value) const;
 
   /// RevProc: Is this an RV32 machine?
   bool DebugIsRV32() { return feature->IsRV32(); }
@@ -103,8 +104,7 @@ public:
   /// RevProc: Initialize ThreadTable & First Thread
   bool InitThreadTable();
 
-  class RevProcStats {
-  public:
+  struct RevProcStats {
     uint64_t totalCycles;
     uint64_t cyclesBusy;
     uint64_t cyclesIdle_Total;
@@ -116,9 +116,9 @@ public:
     uint64_t cyclesIdle_MemoryFetch;
   };
 
-  RevProcStats GetStats();
+  RevProcStats GetStats() { Stats.memStats = mem->memStats; return Stats; }
 
-  RevMem& GetMem(){ return *mem; }
+  RevMem& GetMem() const { return *mem; }
 
   /// RevProc: Add a RevThreadCtx to the Proc's ThreadTable
   bool AddCtx(RevThreadCtx& Ctx);
@@ -126,23 +126,23 @@ public:
   /// RevProc: Create a new RevThreadCtx w/ Parent is currently executing thread
   uint32_t CreateChildCtx();
 
-  /// RevProc: Get the ThreadState of a thread (pid) from the ThreadTable (Unused)
-  ThreadState GetThreadState(uint32_t pid);
+  /// RevProc: Get the ThreadState of a thread (pid) from the ThreadTable
+  // ThreadState GetThreadState(uint32_t pid) const;
 
-  /// RevProc: Set the ThreadState of a thread (pid) from the ThreadTable (Unused)
-  bool SetState(ThreadState, uint32_t pid);
+  /// RevProc: Set the ThreadState of a thread (pid) from the ThreadTable
+  // bool SetState(ThreadState, uint32_t pid);
 
-  /// RevProc: Used to pause RevThreadCtx w/ PID = pid (Unused)
-  bool PauseThread(uint32_t pid);
+  /// RevProc: Used to pause RevThreadCtx w/ PID = pid
+  // bool PauseThread(uint32_t pid);
 
-  /// RevProc: Used to ready RevThreadCtx w/ PID = pid (Unused)
-  bool ReadyThread(uint32_t pid);
+  /// RevProc: Used to ready RevThreadCtx w/ PID = pid
+  // bool ReadyThread(uint32_t pid);
 
   /// RevProc: Returns the current HartToExec active pid
-  uint32_t GetActivePID(){ return ActivePIDs.at(HartToExec); }
+  uint32_t GetActivePID() const { return GetActivePID(HartToExec); }
 
   /// RevProc: Returns the active pid for HartID
-  uint32_t GetActivePID(const uint32_t HartID){ return ActivePIDs.at(HartID); }
+  uint32_t GetActivePID(const uint32_t HartID) const { return ActivePIDs.at(HartID); }
 
   /// RevProc: Returns full list of PIDs (keys in ThreadTable)
   std::vector<uint32_t> GetPIDs();
@@ -197,7 +197,7 @@ private:
   SST::Output *output;      ///< RevProc: output handler
   RevFeature *feature;      ///< RevProc: feature handler
   PanExec *PExec;           ///< RevProc: PAN exeuction context
-  RevProcStats Stats;       ///< RevProc: collection of performance stats
+  RevProcStats Stats{};     ///< RevProc: collection of performance stats
   RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
@@ -216,10 +216,28 @@ private:
     ERROR = 255,
   };
 
+  // State information for ECALLs
+  struct ECALLState {
+    std::array<char, 64> buf;
+    std::string string;
+    std::string path_string;
+    size_t bytesRead = 0;
+
+    void clear(){
+      string.clear();
+      path_string.clear();
+      bytesRead = 0;
+      buf[0] = '\0';
+    }
+    ECALLState() {
+      buf[0] = '\0';
+    }
+  };
+
   // TODO: We may need one of these per HART
-  char* ECALL_buf;
-  std::string ECALL_string;
-  uint32_t ECALL_bytesRead;
+  ECALLState ECALL;
+
+  ECALL_status_t ECALL_ParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
 
   ECALL_status_t ECALL_io_setup(RevInst& inst);               // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
   ECALL_status_t ECALL_io_destroy(RevInst& inst);             // 1, rev_io_destroy(aio_context_t ctx)
@@ -546,7 +564,7 @@ private:
   void ExecEcall(RevInst &inst);
 
   /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
-  RevRegFile* GetRegFile(uint16_t HartID);
+  RevRegFile* GetRegFile(uint16_t HartID) const;
 
   /// RevProc: Vector of PIDs where index of ActivePIDs is the pid of the RevThreadCtx loaded into Hart #Idx
   std::vector<uint32_t> ActivePIDs;
@@ -615,7 +633,7 @@ private:
   void SetupArgs();
 
   /// RevProc: set the PC
-  void SetPC(uint64_t PC);
+  void SetPC(uint64_t PC) { RegFile->SetPC(feature, PC); }
 
   /// RevProc: prefetch the next instruction
   bool PrefetchInst();
@@ -624,79 +642,98 @@ private:
   RevInst DecodeInst();
 
   /// RevProc: decode a compressed instruction
-  RevInst DecodeCompressed(uint32_t Inst);
+  RevInst DecodeCompressed(uint32_t Inst) const;
 
   /// RevProc: decode an R-type instruction
-  RevInst DecodeRInst(uint32_t Inst, unsigned Entry);
+  RevInst DecodeRInst(uint32_t Inst, unsigned Entry) const;
 
   /// RevProc: decode an I-type instruction
-  RevInst DecodeIInst(uint32_t Inst, unsigned Entry);
+  RevInst DecodeIInst(uint32_t Inst, unsigned Entry) const;
 
   /// RevProc: decode an S-type instruction
-  RevInst DecodeSInst(uint32_t Inst, unsigned Entry);
+  RevInst DecodeSInst(uint32_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a U-type instruction
-  RevInst DecodeUInst(uint32_t Inst, unsigned Entry);
+  RevInst DecodeUInst(uint32_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a B-type instruction
-  RevInst DecodeBInst(uint32_t Inst, unsigned Entry);
+  RevInst DecodeBInst(uint32_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a J-type instruction
-  RevInst DecodeJInst(uint32_t Inst, unsigned Entry);
+  RevInst DecodeJInst(uint32_t Inst, unsigned Entry) const;
 
   /// RevProc: decode an R4-type instruction
-  RevInst DecodeR4Inst(uint32_t Inst, unsigned Entry);
+  RevInst DecodeR4Inst(uint32_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CR-type isntruction
-  RevInst DecodeCRInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCRInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CI-type isntruction
-  RevInst DecodeCIInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCIInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CSS-type isntruction
-  RevInst DecodeCSSInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCSSInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CIW-type isntruction
-  RevInst DecodeCIWInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCIWInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CL-type isntruction
-  RevInst DecodeCLInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCLInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CS-type isntruction
-  RevInst DecodeCSInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCSInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CA-type isntruction
-  RevInst DecodeCAInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCAInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CB-type isntruction
-  RevInst DecodeCBInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCBInst(uint16_t Inst, unsigned Entry) const;
 
   /// RevProc: decode a compressed CJ-type isntruction
-  RevInst DecodeCJInst(uint16_t Inst, unsigned Entry);
+  RevInst DecodeCJInst(uint16_t Inst, unsigned Entry) const;
 
-  /// RevProc: determine if the instruction is an SP/FP float
-  bool IsFloat(unsigned Entry);
+  /// RevProc: determine if the instruction is floating-point
+  bool IsFloat(unsigned Entry) const {
+    return( InstTable[Entry].rdClass  == RegFLOAT ||
+            InstTable[Entry].rs1Class == RegFLOAT ||
+            InstTable[Entry].rs2Class == RegFLOAT ||
+            InstTable[Entry].rs3Class == RegFLOAT );
+  }
 
   /// RevProc: reset the inst structure
-  void ResetInst(RevInst *Inst);
+  static void ResetInst(RevInst *Inst){
+    memset(Inst, 0, sizeof(*Inst));
+    Inst->rd         = ~0;  // Set registers to value that is clearly invalid
+    Inst->rs1        = ~0;
+    Inst->rs2        = ~0;
+    Inst->rs3        = ~0;
+  }
 
   /// RevProc: Determine next thread to execute
-  uint16_t GetHartID();
+  uint16_t GetHartID() const;
 
   /// RevProc: Check scoreboard for pipeline hazards
-  bool DependencyCheck(uint16_t threadID, RevInst* Inst);
+  bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;
 
   /// RevProc: Set scoreboard based on instruction destination
-  void DependencySet(uint16_t threadID, RevInst* Inst);
+  template<bool value = true>
+  void DependencySet(uint16_t HartID, const RevInst* Inst){
+    DependencySet<value>(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RegFLOAT);
+  }
 
   /// RevProc: Clear scoreboard on instruction retirement
-  void DependencyClear(uint16_t threadID, RevInst* Inst);
+  void DependencyClear(uint16_t HartID, const RevInst* Inst){
+    DependencySet<false>(HartID, Inst);
+  }
 
-  /// RevProc: Set scoreboard based on register number and floating point. 64 vs. 32 bit inferred from RevFeature
-  void DependencySet(uint16_t threadID, uint16_t RegNum, bool isFloat);
+  /// RevProc: Set or clear scoreboard based on register number and floating point.
+  template<bool value = true>
+  void DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat);
 
   /// RevProc: Clear scoreboard on instruction retirement
-  void DependencyClear(uint16_t threadID, uint16_t RegNum, bool isFloat);
+  void DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
+    DependencySet<false>(HartID, RegNum, isFloat);
+  }
 
 }; // class RevProc
 

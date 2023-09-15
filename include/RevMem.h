@@ -48,7 +48,7 @@
 
 #define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
 
-#define _STACK_SIZE_ (1024*1024*sizeof(char))
+#define _STACK_SIZE_ (size_t{1024*1024})
 
 namespace SST::RevCPU{
 
@@ -144,10 +144,10 @@ public:
   // ---- Base Memory Interfaces
   // ----------------------------------------------------
   /// RevMem: write to the target memory location
-  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data );
+  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data );
 
   /// RevMem: write to the target memory location with the target flags
-  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
+  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data,
                  StandardMem::Request::flags_t flags );
 
   /// RevMem: read data from the target memory location
