@@ -74,9 +74,6 @@ public:
   /// GetFeatures: retrieve the feature encoding
   auto GetFeatures() const { return features; }
 
-  /// GetXlen: retrieve the xlen
-  auto GetXlen() const { return xlen; }
-
   /// GetMinCost: get the minimum cost
   auto GetMinCost() const { return MinCost; }
 
@@ -89,26 +86,11 @@ public:
   /// IsRV64: Is the device an RV64
   bool IsRV64() const { return xlen == 64; }
 
-  /// IsRv32C: Does the device support RV32C?
-  bool IsRV32C() const { return IsRV32() && HasCompressed(); }
-
   /// HasF: Does the device support F?
   bool HasF() const { return IsModeEnabled(RV_F); }
 
-  /// IsRV32F: Does the device support RV32F?
-  bool IsRV32F() const { return IsRV32() && HasF(); }
-
-  /// IsRV64F: Does the device support RV64F?
-  bool IsRV64F() const { return IsRV64() && HasF(); }
-
   /// HasD: Does the device support D?
   bool HasD() const { return IsModeEnabled(RV_D); }
-
-  /// IsRV32D: Does the device support RV32D?
-  bool IsRV32D() const { return IsRV32() && HasD(); }
-
-  /// IsRV64D: Does the device support RV64D?
-  bool IsRV64D() const { return IsRV64() && HasD(); }
 
   /// HasCompressed: Returns whether RV32 or RV64 "C" is enabled
   bool HasCompressed() const { return IsModeEnabled(RV_C); }
