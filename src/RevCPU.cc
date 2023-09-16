@@ -37,7 +37,8 @@ const char pan_splash_msg[] = "\
 RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false), EnableMemH(false),
-    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr) {
+    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr),
+    ClockHandler(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
@@ -51,12 +52,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   {
     const std::string cpuClock = params.find<std::string>("clock", "1GHz");
     if( EnablePANTest ){
-      timeConverter  = registerClock(cpuClock,
-                                     new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTickPANTest));
+      ClockHandler = new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTickPANTest);
+      timeConverter = registerClock(cpuClock, ClockHandler);
       testIters = params.find<unsigned>("testIters", 255);
     }else{
-      timeConverter  = registerClock(cpuClock,
-                                     new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTick));
+      ClockHandler = new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTick);
+      timeConverter = registerClock(cpuClock, ClockHandler);
     }
   }
 
@@ -351,6 +352,9 @@ RevCPU::~RevCPU(){
 
   // delete the options object
   delete Opts;
+
+  // delete the clock handler object
+  delete ClockHandler;
 }
 
 void RevCPU::DecodeFaultWidth(const std::string& width){

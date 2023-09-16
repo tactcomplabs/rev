@@ -27,11 +27,7 @@ public:
     : mem(Mem), feature(Feature), depth(Depth){}
 
   /// RevPrefetcher: destructor
-  ~RevPrefetcher(){
-    // delete all the existing streams
-    for(auto* s : iStack)
-      delete[] s;
-  }
+  ~RevPrefetcher();
 
   /// RevPrefetcher: fetch the next instruction
   bool InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst);

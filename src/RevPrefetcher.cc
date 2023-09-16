@@ -11,6 +11,14 @@
 #include "../include/RevPrefetcher.h"
 using namespace SST::RevCPU;
 
+RevPrefetcher::~RevPrefetcher(){
+  // delete all the existing streams
+  for(auto* s : iStack)
+      delete[] s;
+  for(auto* h : iHazard)
+      delete[] h;
+}
+
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 
   // note: this logic now considers compressed instructions

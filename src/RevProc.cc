@@ -80,8 +80,10 @@ RevProc::RevProc( unsigned Id,
 }
 
 RevProc::~RevProc(){
-  for( unsigned i=0; i<Extensions.size(); i++ )
-    delete Extensions[i];
+  for(auto* p : Extensions)
+    delete p;
+  for(auto* p : LoadHazards)
+    delete p;
   delete sfetch;
   delete feature;
 }

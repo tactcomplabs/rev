@@ -253,6 +253,7 @@ public:
 
   std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
 
+  SST::Clock::Handler<RevCPU>* ClockHandler;  ///< RevCPU: Clock Handler
 
   std::queue<std::pair<panNicEvent *, int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd, Dest>
   std::queue<std::pair<uint32_t, char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
