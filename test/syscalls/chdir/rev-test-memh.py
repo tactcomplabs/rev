@@ -24,7 +24,7 @@ comp_cpu.addParams({
         "numCores" : 1,                               # Number of cores
 	"clock" : "2.0GHz",                           # Clock
         "memSize" : MEM_SIZE,                         # Memory size in bytes
-        "machine" : "[0:RV64ADMICF]",                      # Core:Config; RV32I for core 0
+        "machine" : "[0:RV64IMAFDC]",                      # Core:Config; RV32I for core 0
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "chdir.exe"),  # Target executable
