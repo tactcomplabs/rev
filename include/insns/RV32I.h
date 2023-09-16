@@ -139,7 +139,7 @@ class RV32I : public RevExt {
     Inst.rs2 = 0;
     Inst.rs1 = CRegIdx(Inst.rs1);
     Inst.imm = Inst.offset;
-    Inst.imm = Inst.ImmSignExt(6);
+    Inst.imm = Inst.ImmSignExt(9);
     //Inst.imm = Inst.offset & 0b111111;
     //SEXT(Inst.imm, Inst.offset&0b111111111, 9); //Immd is signed 9-bit, scaled in decode
     //SEXT(Inst.imm, Inst.offset, 6);
