@@ -423,34 +423,31 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
     InstEntry.imm       = RevInstDefaultsPolicy::imm;
     InstEntry.format    = RevInstDefaultsPolicy::format;
     InstEntry.compressed= false;
-    InstEntry.fpcvtOp  = RevInstDefaultsPolicy::fpcvtOp;
+    InstEntry.fpcvtOp   = RevInstDefaultsPolicy::fpcvtOp;
   }
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
-  RevInstEntryBuilder& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;}
-  RevInstEntryBuilder& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;}
-  RevInstEntryBuilder& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;}
-  RevInstEntryBuilder& SetFunct2(uint8_t f2)        { InstEntry.funct2 = f2;    return *this;}
-  RevInstEntryBuilder& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;}
-  RevInstEntryBuilder& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;}
-  RevInstEntryBuilder& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;}
-  RevInstEntryBuilder& SetFunct7(uint8_t f7)        { InstEntry.funct7 = f7;    return *this;}
-  RevInstEntryBuilder& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;}
-  RevInstEntryBuilder& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;}
-  RevInstEntryBuilder& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;}
-  RevInstEntryBuilder& Setrs1Class(RevRegClass rs1) { InstEntry.rs1Class = rs1; return *this;}
-  RevInstEntryBuilder& Setrs2Class(RevRegClass rs2) { InstEntry.rs2Class = rs2; return *this;}
-  RevInstEntryBuilder& Setrs3Class(RevRegClass rs3) { InstEntry.rs3Class = rs3; return *this;}
-  RevInstEntryBuilder& Setimm12(uint16_t imm12)     { InstEntry.imm12 = imm12;  return *this;}
-  RevInstEntryBuilder& Setimm(RevImmFunc imm)       { InstEntry.imm = imm;      return *this;}
-  RevInstEntryBuilder& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
-  RevInstEntryBuilder& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
-  RevInstEntryBuilder& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
+  auto& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;}
+  auto& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;}
+  auto& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;}
+  auto& SetFunct2(uint8_t f2)        { InstEntry.funct2 = f2;    return *this;}
+  auto& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;}
+  auto& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;}
+  auto& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;}
+  auto& SetFunct7(uint8_t f7)        { InstEntry.funct7 = f7;    return *this;}
+  auto& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;}
+  auto& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;}
+  auto& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;}
+  auto& Setrs1Class(RevRegClass rs1) { InstEntry.rs1Class = rs1; return *this;}
+  auto& Setrs2Class(RevRegClass rs2) { InstEntry.rs2Class = rs2; return *this;}
+  auto& Setrs3Class(RevRegClass rs3) { InstEntry.rs3Class = rs3; return *this;}
+  auto& Setimm12(uint16_t imm12)     { InstEntry.imm12 = imm12;  return *this;}
+  auto& Setimm(RevImmFunc imm)       { InstEntry.imm = imm;      return *this;}
+  auto& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
+  auto& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
+  auto& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
 
-  RevInstEntryBuilder& SetImplFunc(bool func(RevFeature *,
-                                             RevRegFile *,
-                                             RevMem *,
-                                             RevInst)){
+  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, RevInst)){
     InstEntry.func = func;
     return *this;
   }
@@ -506,7 +503,7 @@ unsigned fclass(T val, bool quietNaN = true) {
 template<typename T>
 bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( sizeof(T) < sizeof(int64_t) && F->IsRV32() ){
-    constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
+    static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
                    RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
     M->ReadVal(F->GetHart(),
@@ -516,7 +513,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
                flags);
     R->SetX(F, Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
   }else{
-    constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
+    static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                    RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
     M->ReadVal(F->GetHart(),
