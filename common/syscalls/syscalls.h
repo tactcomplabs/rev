@@ -234,7 +234,7 @@ union sigval {
 	void *sival_ptr;
 };
 
-struct siginfo_t{
+typedef struct{
 	int si_signo;
 	int si_code;
 	union sigval si_value;
@@ -244,7 +244,7 @@ struct siginfo_t{
 	void *si_addr;
 	int si_status;
 	int si_band;
-};
+}siginfo_t;
 
 typedef struct __user_cap_data_struct {
   uint32_t effective;
