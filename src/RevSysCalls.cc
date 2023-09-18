@@ -2529,11 +2529,11 @@ RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   // const pthread_attr_t *restrict attr = (const pthread_attr_t *)RegFile->RV64[11];
   uint64_t NewThreadPC = RegFile->RV64[11];
   uint64_t ArgPtr = RegFile->RV64[12];
-  uint32_t NewTID = GetNewThreadID();
+  unsigned long int NewTID = GetNewThreadID();
   std::cout << "New TID = " << NewTID << std::endl;
   CreateThread(NewTID, NewThreadPC, (void*)ArgPtr);
 
-  mem->WriteMem(feature->GetHart(), tidAddr, sizeof(uint64_t), &NewTID);
+  mem->WriteMem(feature->GetHart(), tidAddr, sizeof(unsigned long int), &NewTID, REVMEM_FLAGS(0x00));
   return RevProc::ECALL_status_t::SUCCESS;
 }
 
@@ -2541,31 +2541,19 @@ RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
 RevProc::ECALL_status_t RevProc::ECALL_pthread_join(RevInst& inst){
   RevProc::ECALL_status_t rtval = RevProc::ECALL_status_t::CONTINUE;
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_join called by thread %i\n", GetActiveThreadID());
-  // Save the thread were waiting for 
-  // uint64_t* ThreadIDAddr = (uint64_t*)RegFile->RV64[10];
-
-  if( ECALL_bytesRead == 0 ){
-    mem->ReadVal<uint64_t>(HartToExec, RegFile->RV64[10],
-                       reinterpret_cast<uint64_t*>(ECALL_buf), // + ECALL_bytesRead, 
-                       inst.hazard, REVMEM_FLAGS(0x0));
-    ECALL_bytesRead += 8;
-  } else {
-    if( ECALL_bytesRead == 8 ){
-      rtval = RevProc::ECALL_status_t::SUCCESS;
-
-      // Set current thread to blocked
-      AssignedThreads.at(HartToDecode)->SetState(ThreadState::BLOCKED);
-
-      // Signal to RevCPU this thread is has changed state
-      ThreadStateChanges.set(HartToDecode);
-
-      // Set the TID this thread is waiting for 
-      AssignedThreads.at(HartToDecode)->SetWaitingToJoinTID(reinterpret_cast<uint64_t>(ECALL_buf));
-    } 
-  }
   
+  rtval = RevProc::ECALL_status_t::SUCCESS;
 
+  // Set current thread to blocked
+  AssignedThreads.at(HartToDecode)->SetState(ThreadState::BLOCKED);
 
+  // Signal to RevCPU this thread is has changed state
+  ThreadStateChanges.set(HartToDecode);
+
+  // Output the ecall buf
+  
+  // Set the TID this thread is waiting for 
+  AssignedThreads.at(HartToDecode)->SetWaitingToJoinTID(RegFile->RV64[10]);
 
   // // if retval is not null, store the return value of the thread in retval
   // void **retval = (void **)RegFile->RV64[11];

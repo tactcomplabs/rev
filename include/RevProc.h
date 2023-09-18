@@ -132,7 +132,7 @@ namespace SST{
       // /// RevProc: SpawnThread creates a new thread and returns its ThreadID
       // void SpawnThread(uint64_t fn);
 
-      std::bitset<_REV_HART_COUNT_> GetThreadStateChanges(){ return ThreadStateChanges; }
+      std::bitset<_REV_HART_COUNT_>& GetThreadStateChanges(){ return ThreadStateChanges; }
 
       /// RevProc: SpawnThread creates a new thread and returns its ThreadID
       void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);

@@ -54,6 +54,7 @@
 #define	IOCB_CMD_PREADV 7
 #define	IOCB_CMD_PWRITEV 8
 
+// typedef unsigned long int pthread_t;
 /*
  * Valid flags for the "aio_flags" member of the "struct iocb".
  *
@@ -3737,13 +3738,14 @@ int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int be
   return rc;
 }
 
+typedef unsigned long int rev_pthread_t;
 
 // pthread_t *restrict thread
 // const pthread_attr_t *restrict attr - NOT USED RIGHT NOW
 // void *(*start_routine)(void *)
 // void *restrict arg); - NOT USED RIGHT NOW
 // ==================== REV PTHREADS
-void* rev_pthread_create( uint32_t* thread, void* fn, void* arg ){
+int rev_pthread_create( rev_pthread_t* thread, void* fn, void* arg ){
   int rc;
   asm volatile (
     "li a7, 1000 \n\t"
@@ -3753,7 +3755,7 @@ void* rev_pthread_create( uint32_t* thread, void* fn, void* arg ){
   return rc;
 }
 
-void* rev_pthread_join( uint32_t thread, void** retval ){
+int rev_pthread_join( rev_pthread_t thread ){
   int rc;
   asm volatile (
     "li a7, 1001 \n\t"

@@ -12,7 +12,7 @@
 #ifndef _SST_REVCPU_REVTHREAD_H_
 #define _SST_REVCPU_REVTHREAD_H_
 
-#define __INVALID_TID__ 0xFFFFFFFF
+#define __INVALID_TID__ 0x0
 
 // -- Standard Headers
 #include <cstdint>
@@ -69,7 +69,7 @@ class RevThread {
     bool isBlocked(){ return (State == ThreadState::BLOCKED); }        /// RevThread: Checks if Thread's ThreadState is 
     bool isDone(){ return (State == ThreadState::DONE); }                /// RevThread: Checks if Thread's ThreadState is Done
 
-    uint32_t GetWaitingToJoinTID(){ return WaitingToJoinTID; }
+    const uint32_t& GetWaitingToJoinTID(){ return WaitingToJoinTID; }
     void SetWaitingToJoinTID(uint32_t ThreadToWaitOn){ WaitingToJoinTID = ThreadToWaitOn; }
 
     // Override the printing 

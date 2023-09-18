@@ -2254,7 +2254,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }else if( GetPC() == 0x00ull ) {
       // std::cout << "PC IS ZERO" << std::endl;
       AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
-      ThreadStateChanges.set(HartToExec);
+      ThreadStateChanges.set(HartToDecode);
       // PAN execution contexts not enabled, this is our last PC
       // AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
       done = true;
@@ -2313,32 +2313,6 @@ uint32_t RevProc::HartToExecThreadID(){
   }
 }
 
-// TODO: Replace with ThreadManager logic
-// std::shared_ptr<RevThread> RevProc::HartToExecCtx(){
-//   if( HartToExec <= AssignedThreads.size() )
-//     return AssignedThreads.at(HartToExec);
-//   else{
-//     return 0;
-//   }
-// }
-
-
-// bool RevProc::UpdateRegFile(){
-  // uint16_t HartID = GetHartID();
-  // auto it = ThreadTable.find(ActiveThreadIDs.at(HartID));
-  // if( it != ThreadTable.end() ){
-  //   std::shared_ptr<RevThread> Ctx = it->second;
-  //   RegFile = Ctx->GetRegFile();
-  //   return true;
-  // }
-  // else {
-  //   output->fatal(CALL_INFO, -1,
-  //                 "Failed to find RegFile for ThreadID = %d on Hart = %d \n", ActiveThreadIDs.at(HartID), HartID);
-  // }
-  // return false;
-// }
-
-
 RevRegFile* RevProc::GetRegFile(uint16_t HartID){
   if( AssignedThreads.size() < HartID ){
     output->fatal(CALL_INFO, 1,
@@ -2366,91 +2340,15 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
                                         NewThreadMem->getBaseAddr()+_STACK_SIZE_,
                                         firstPC, NewThreadMem);
   NewThread->SetThreadID(NewTID);
+
   // Save the address that will hold the new ThreadID
   NewThreadInfo.emplace(NewThread);
 
   return;
 }
 
-// This function is only responsible for submitting the necessary memory requests
-// to duplicate the TLS Initialization Template and potentially the Parent's Stack
-//
-// Once the memory is set up properly it then signals back to RevCPU that a new 
-// RevThread object needs to be created
-// void RevProc::SpawnThread(uint64_t fn){
-//   std::cout << "========> Inside of SpawnThread <========" << std::endl;
-//   std::cout << "FUNCTION POINTER: 0x" << std::hex << fn << std::endl;
-//   
-//   // Need to do: 
-//   // 1) Get a new ThreadID
-//   // 2) Copy TLS
-//   // 3a) Potentially Copy Parent's stack
-//   
-//   
-//   NewThreadInfo.emplace(fn, mem->AddThreadMem());
-//   // 3b) Potentially Copy Parent's RegFile
-//   // 3c) Potentially Copy Parent's Parent ThreadID
-//   // 3d) Potentially set a priority? 
-//   // 4) Assign the correct stack ptr based on above
-//   // 5) Don't think we should do (below)... In RevCPU we should check a Proc's AssignedThreads.end() to see if any have a "START" status and then pop them off the back and into Threads
-//   //      Check if we have a Hart available (ie. AssignedThreads.size < _NUM_HARTS_ [prior to adding this one])
-//   // 6) Return threadId to the appropriate location (probably a register file -- Probably in the syscall clone tho)
-
-
-// }
-
-/* Returns vector of all ThreadIDs in the ThreadTable */
-// std::vector<uint32_t> RevProc::GetThreadIDs(){
-//   std::vector<uint32_t> ThreadIDs;
-//   for( const auto& Thread : ThreadTable ){
-//     ThreadIDs.push_back(Thread.first);
-//   }
-//   return ThreadIDs;
-// }
-
-/* 
- * There are a few assumptions made by this function
- * - The Active Thread is the one creating the child 
- * - The child duplicates the parents RegFile
- * - Automatically adds ChildCtx to the current Procs ThreadTable  
- * - The new Child will start with ThreadState::Ready
-*/
-// uint32_t RevProc::CreateChildCtx() {
-//   /* We get the currently executing ThreadID's context as this is assumed to be the parent */
-//   std::shared_ptr<RevThread> ParentCtx = ThreadTable.at(ActiveThreadIDs.at(HartToExec));
-
-//   /* Get new ThreadID from global counter in RevMem */
-//   uint32_t ChildThreadID = mem->GetNewThreadThreadID();
-
-//   /* Create ChildCtx as a copy of ParentCtx */
-//   auto ChildCtx = std::make_shared<RevThread>(ChildThreadID,
-//                                        ActiveThreadIDs.at(HartToExec));
-
-//   /* Child's Regfile is the same as the parent's with the exception of return value */
-//   ChildCtx->DuplicateRegFile(*RegFile);
-
-//   /* Add child to Proc's ThreadTable */
-//   ThreadTable.emplace(ChildThreadID, ChildCtx);
-
-//   /* Get Child's regfile so we can make the below modifications */
-//   RevRegFile* ChildRegFile = ChildCtx->GetRegFile();
-
-//   /* Zero the childs cause registers as they have no exceptions raised */
-//   ChildRegFile->RV64_SCAUSE = 0;
-//   ChildRegFile->RV32_SCAUSE = 0;
-
-//   /* The child's return value from fork/clone is 0 */
-//   ChildRegFile->RV64[10] = 0;
-
-//   /* Add ChildThreadID to list of Parent's Children */
-//   ParentCtx->AddChildThreadID(ChildThreadID); /* NOTE: This has no functionality at this point */
-
-//   return ChildThreadID;
-// }
-
-
 /* ========================================= */
-/* System Call (ecall) Implementations Below */
+/* System Calls (ecall) - Declarations only,  */
 /* ========================================= */
 void RevProc::InitEcallTable(){
   Ecalls = {

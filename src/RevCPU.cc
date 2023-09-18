@@ -229,6 +229,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
   }
 
+  // std::cout << "Loader: " << Loader << std::endl;
+
   Opts->SetArgs(Loader->GetArgv());
 
   AssignedThreads.resize(numCores);
@@ -311,7 +313,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
   // Create the first copy of the TLS Segment 
   Threads.emplace(MainThreadID, 
-                  std::make_shared<RevThread>(__INVALID_TID__,
+                  std::make_shared<RevThread>(0,
                                               Mem->GetStackTop(),
                                               StartAddr,
                                               Mem->GetThreadMemSegs().front())); 
@@ -2417,12 +2419,6 @@ void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
   TLBMissesPerCore[coreNum]->addData(stats.memStats.TLBMisses);
 }
 
-// =============== OLD CLOCKTICK
-// Things to do: 
-//  1. Execute ClockTick for all Enabled Proc's
-//  2. Upon a thread's completion (ie. ThreadState::DONE)
-//     a) Remove from AssignedThreads.at(i) for that Proc
-//     b) Put TID inside of CompletedThreads
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
@@ -2441,6 +2437,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       // Check if we have any threads to schedule
       if( ThreadQueue.size() ){
         // Add to this proc's thread list
+        Threads.at(ThreadQueue.front())->SetState(ThreadState::RUNNING);
         AssignedThreads.at(i).emplace_back(Threads.at(ThreadQueue.front()));
         output.verbose(CALL_INFO, 6, 1, "Assigning Thread %u to Core %u\n", ThreadQueue.front(), i);
         // Remove from thread queue
@@ -2449,11 +2446,15 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         // if( !Enabled[i] ){ Enabled[i] = true; }
         Enabled[i] = true;
       }
-      // if( Util == 0.0 ){ Enabled[i] = false; }
     } // Utilization is 100%, so change nothing 
       
     if( Enabled[i] ){
-      std::cout << "Proc " << i << " is enabled" << std::endl;
+      if( Procs[i]->GetUtilization() == 0.0 ){
+        Enabled[i] = false;
+        std::cout << "Disabled Proc " << i << std::endl;
+        break;
+      }
+      // std::cout << "Proc " << i << " is enabled" << std::endl;
       if( !Procs[i]->ClockTick(currentCycle) ){
         if(EnableCoProc && !CoProcs.empty()){
          CoProcs[i]->Teardown();
@@ -2469,7 +2470,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       }
     }
     // Handle any thread state changes for this core
-    std::bitset<_REV_HART_COUNT_> Changes = Procs[i]->GetThreadStateChanges();
+    std::bitset<_REV_HART_COUNT_>& Changes = Procs[i]->GetThreadStateChanges();
     
     if( Changes.any() ){
       for( unsigned j=0; j<Changes.size(); j++ ){
@@ -2479,8 +2480,10 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
             case ThreadState::DONE:
               output.verbose(CALL_INFO, 8, 0, "Thread %u on Core %u is DONE\n", Thread->GetThreadID(), i);
               CompletedThreads.emplace(Thread->GetThreadID());
+              // std::cout << "Made it here" << std::endl;
               AssignedThreads.at(i).erase(AssignedThreads.at(i).begin()+j);
-              j--;
+              // std::cout << "Made it there" << std::endl;
+              // Changes.flip(j);
               break;
             case ThreadState::BLOCKED:
               output.verbose(CALL_INFO, 8, 0, "Thread %u on Core %u is BLOCKED\n", Thread->GetThreadID(), i);
@@ -2498,6 +2501,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
                 AssignedThreads.at(i).erase(AssignedThreads.at(i).begin()+j);
               }
+              // Changes.flip(j);
               break;
             case ThreadState::START: // Should never happen
               output.fatal(CALL_INFO, 99, "Error: Thread %u on Core %u is assigned but is in START state... This is a bug\n",
@@ -2527,13 +2531,15 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     if( !Procs[i]->GetNewThreadInfo().empty() ){
       output.verbose(CALL_INFO, 8, 0, "Core %d has new threads\n", i);
       // There are new thread(s) to create
-      auto NewThreadInfo = Procs[i]->GetNewThreadInfo();
-      while( !NewThreadInfo.empty() ){
-        auto NewThread = NewThreadInfo.front();
+      // auto NewThreadInfo = Procs[i]->GetNewThreadInfo();
+      // std::cout << "NewThreadInfo.size() = " << NewThreadInfo.size() << std::endl;
+      for( unsigned j=0; j<Procs[i]->GetNewThreadInfo().size(); j++ ){
+        auto NewThread = Procs[i]->GetNewThreadInfo().front();
+        Procs[i]->GetNewThreadInfo().pop();
         InitThread(NewThread);
-        NewThreadInfo.pop();
       }
     }
+    if( Procs[i]->GetUtilization() == 0 ){ Enabled[i] = false; }
   }
   // Clock the PAN network transport module
   if( EnablePAN ){
@@ -2584,6 +2590,12 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   if( ThreadQueue.size() ){
     rtn = false;
   } else if ( BlockedThreads.size() ){
+    if( ThreadCanProceed(*BlockedThreads.begin()) ){
+      Threads.at(*(BlockedThreads.begin()))->SetState(ThreadState::READY);
+      Threads.at(*(BlockedThreads.begin()))->SetWaitingToJoinTID(__INVALID_TID__);
+      ThreadQueue.emplace_back(*BlockedThreads.begin());
+      BlockedThreads.erase(BlockedThreads.begin());
+    }
     rtn = false;
   }
 
@@ -2606,6 +2618,9 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   if( rtn && CompletedThreads.size() ){
+    for( unsigned i=0; i<numCores; i++ ){
+      Procs[i]->EndExecution();
+    }
     primaryComponentOKToEndSim();
     output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
   } else {
@@ -2616,6 +2631,66 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 }
 
 
+
+///==== Thread Management Functions ====///
+void RevCPU::InitThread(std::shared_ptr<RevThread> ThreadToInit){
+  std::cout << "INIT THREAD CALLED" << std::endl;
+  uint32_t TID = ThreadToInit->GetThreadID();
+  // Check if this ThreadID has already been assigned... if so... something has gone horribly wrong
+  // print out all threads
+  auto it = Threads.find(TID);
+  if( it != Threads.end() && it->second->GetState() != ThreadState::START ){
+    std::cout << *Threads.at(TID) << std::endl;
+    output.fatal(CALL_INFO, 99, "Error: ThreadID %d has already been assigned... this is a bug.\n", TID);
+  }
+  output.verbose(CALL_INFO, 4, 0, "Initializing Thread %d\n", TID);
+  ThreadToInit->SetState(ThreadState::READY);
+  Threads.emplace(ThreadToInit->GetThreadID(), ThreadToInit);
+  ThreadQueue.emplace_back(ThreadToInit->GetThreadID());
+}
+
+// @brief Check if any BlockedThreads have had their counterpart complete execution
+// if so, move its TID to the ThreadQueue
+bool RevCPU::ThreadCanProceed(uint32_t TID){
+  bool rtn = false;
+  // Get the thread's waiting to join TID
+  uint32_t WaitingOnTID = (Threads.at(TID))->GetWaitingToJoinTID();
+  // If 
+  if( WaitingOnTID != __INVALID_TID__ ){
+    // Check if WaitingOnTID has completed... if so, return = true, else return false
+    std::cout << "Thread " << TID << " is waiting on Thread " << WaitingOnTID << std::endl;
+    rtn = ( CompletedThreads.find(WaitingOnTID) != CompletedThreads.end() ) ? true : false;
+  }
+  else if ( WaitingOnTID == __INVALID_TID__ ){
+    rtn = true;
+  }
+  return rtn;
+}
+
+// Check if any BlockedThreads have had their counterpart complete execution
+// if so, move its TID to the ThreadQueue
+void RevCPU::CheckBlockedThreads(){
+  for( auto ThreadID : BlockedThreads ){
+    if( ThreadCanProceed(ThreadID) ){
+      // Mark thread as ready (no longer blocked)
+      Threads.at(ThreadID)->SetState(ThreadState::READY);
+      // Remove the waiting to join TID
+      Threads.at(ThreadID)->SetWaitingToJoinTID(__INVALID_TID__);
+      // Add the thread to the ThreadQueue
+      ThreadQueue.emplace_back(ThreadID);
+      // Remove the thread from the BlockedThreads list
+      BlockedThreads.erase(ThreadID);
+    } else {
+      continue;
+    }
+  }
+  return;
+}
+
+// EOF
+//
+//
+//
 // ---------------- OLD CLOCKTICK
 /// @brief Clock tick function for the RevCPU
 /// @param currentCycle The current cycle of the simulation
@@ -2902,51 +2977,3 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 //   return rtn;
 // }
 
-
-///==== Thread Management Functions ====///
-void RevCPU::InitThread(std::shared_ptr<RevThread> ThreadToInit){
-  uint32_t TID = ThreadToInit->GetThreadID();
-  // Check if this ThreadID has already been assigned... if so... something has gone horribly wrong
-  if( Threads.find(TID) != Threads.end() ){
-    output.fatal(CALL_INFO, -1, "Error: ThreadID %d has already been assigned... this is a bug.\n", TID);
-  }
-  output.verbose(CALL_INFO, 4, 0, "Initializing Thread %d\n", TID);
-  Threads.emplace(ThreadToInit->GetThreadID(), ThreadToInit);
-  ThreadQueue.emplace_back(ThreadToInit->GetThreadID());
-}
-
-// @brief Check if any BlockedThreads have had their counterpart complete execution
-// if so, move its TID to the ThreadQueue
-bool RevCPU::ThreadCanProceed(uint32_t TID){
-  bool rtn = false;
-  // Get the thread's waiting to join TID
-  uint32_t WaitingOnTID = Threads.at(TID)->GetWaitingToJoinTID();
-  // If 
-  if( WaitingOnTID != __INVALID_TID__ ){
-    // Check if WaitingOnTID has completed... if so, return = true, else return false
-    rtn = ( CompletedThreads.find(WaitingOnTID) != CompletedThreads.end() ) ? true : false;
-  }
-  return rtn;
-}
-
-// Check if any BlockedThreads have had their counterpart complete execution
-// if so, move its TID to the ThreadQueue
-void RevCPU::CheckBlockedThreads(){
-  for( auto ThreadID : BlockedThreads ){
-    if( ThreadCanProceed(ThreadID) ){
-      // Mark thread as ready (no longer blocked)
-      Threads.at(ThreadID)->SetState(ThreadState::READY);
-      // Remove the waiting to join TID
-      Threads.at(ThreadID)->SetWaitingToJoinTID(__INVALID_TID__);
-      // Add the thread to the ThreadQueue
-      ThreadQueue.emplace_back(ThreadID);
-      // Remove the thread from the BlockedThreads list
-      BlockedThreads.erase(ThreadID);
-    } else {
-      continue;
-    }
-  }
-  return;
-}
-
-// EOF
