@@ -1938,6 +1938,7 @@ bool *RevProc::createLoadHazard(){
 void RevProc::destroyLoadHazard(bool *LH){
   if( LH != nullptr ){
     LoadHazards.remove(LH);
+    delete LH;
   }
 }
 
