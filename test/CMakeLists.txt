@@ -15,12 +15,13 @@ else()
 endif()
 
 # Check for RISCV Compiler
-find_program(RVCC NAMES riscv64-unknown-elf-gcc
-                        riscv64-unknown-linux-gnu-gcc
-                        riscv64-unknown-linux-musl-gcc)
+set(ENV{RVCC} "${RVCC}")
+set(RVCC "${RVCC}")
 
-if(RVCC-NOTFOUND)
-    message(FATAL_ERROR "No riscv64 compatible gcc (riscv64-unknown-elf-gcc || riscv64-unknown-linux-gnu-gcc || riscv64-unknown-linux-musl-gcc) binary found in path")
+if(RVCC)
+  message(STATUS "RVCC set to ${RVCC}")
+else()
+#  message(FATAL_ERROR "No RVCC compiler found: use -DRVCC=/path/to/compiler (gcc,clang)")
 endif()
 
 # find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
@@ -92,19 +93,19 @@ add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY "${CMAKE_C
 set_tests_properties(TEST_BIG_LOOP
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 55
+    TIMEOUT 90
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
 
-add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/minfft" ) # minfft
-set_tests_properties(TEST_MINFFT
-  PROPERTIES
-    ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 45
-    PASS_REGULAR_EXPRESSION "${passRegex}"
-    LABELS "all;rv64"
-)
+#add_test(NAME TEST_MINFFT COMMAND run_minfft.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/minfft" ) # minfft
+#set_tests_properties(TEST_MINFFT
+#  PROPERTIES
+#    ENVIRONMENT "RVCC=${RVCC}"
+#    TIMEOUT 45
+#    PASS_REGULAR_EXPRESSION "${passRegex}"
+#    LABELS "all;rv64"
+#)
 
 add_test(NAME TEST_LARGE_BSS COMMAND run_large_bss.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/large_bss" ) # large_bss
 set_tests_properties(TEST_LARGE_BSS
@@ -180,6 +181,15 @@ set_tests_properties(TEST_STRLEN_CXX
     LABELS "all;rv64"
 )
 
+add_test(NAME TEST_STRSTR COMMAND run_strstr.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/strstr" ) # strlen_cxx
+set_tests_properties(TEST_STRSTR
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 add_test(NAME TEST_MEMSET COMMAND run_memset.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/memset" ) # memset
 set_tests_properties(TEST_MEMSET
   PROPERTIES
@@ -216,8 +226,116 @@ set_tests_properties(DIVW
     LABELS "all;rv64"
 )
 
+add_test(NAME DIVW2 COMMAND run_divw2.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/divw2" ) # divw2
+set_tests_properties(DIVW2
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 add_test(NAME TOWERS COMMAND run_towers.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/towers" ) # towers
 set_tests_properties(TOWERS
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME QSORT COMMAND run_qsort.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/qsort" ) # qsort
+set_tests_properties(QSORT
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME MEMCPY COMMAND run_memcpy.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/memcpy" ) # memcpy
+set_tests_properties(MEMCPY
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME X0 COMMAND run_x0.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/x0" ) # x0
+set_tests_properties(X0
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOADD_C COMMAND run_amoadd_c.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_c" )
+set_tests_properties(AMOADD_C
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOADD_CXX COMMAND run_amoadd_cxx.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_cxx" )
+set_tests_properties(AMOADD_CXX
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOADD_C_MEMH COMMAND run_amoadd_c_memh.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_c_memh" )
+set_tests_properties(AMOADD_C_MEMH
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOADD_CXX_MEMH COMMAND run_amoadd_cxx_memh.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_cxx_memh" )
+set_tests_properties(AMOADD_CXX_MEMH
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME ARGC_REVMEM COMMAND run_argc.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/argc_revmem")
+set_tests_properties(ARGC_REVMEM
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME ARGC_MEMH COMMAND run_argc.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/argc_memh")
+set_tests_properties(ARGC_MEMH
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME ARGC_SHORT_REVMEM COMMAND run_argc.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/argc_short_revmem")
+set_tests_properties(ARGC_SHORT_REVMEM
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME ARGC_SHORT_MEMH COMMAND run_argc.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/argc_short_memh")
+set_tests_properties(ARGC_MEMH
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30

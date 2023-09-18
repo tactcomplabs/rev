@@ -80,8 +80,9 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
   }
 
   // execute the instruction
-  if( !(*func)(feature,(regFile),mem,payload) )
+  if( !(*func)(feature,(regFile),mem,payload) ){
     return false;
+  }
 
 #if 0
   if( payload.compressed ){

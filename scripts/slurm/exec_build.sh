@@ -13,7 +13,7 @@
 
 #-- execute the job
 SCRIPT=$1
-SLURM_ID=`sbatch -N1 --export=ALL ./scripts/slurm/$SCRIPT | awk '{print $4}'`
+SLURM_ID=`sbatch -N1 --export=ALL $SCRIPT | awk '{print $4}'`
 
 #-- wait for completion
 COMPLETE=`squeue -u builduser | grep ${SLURM_ID}`
@@ -25,16 +25,20 @@ done
 cat rev.jenkins.${SLURM_ID}.out
 
 #-- job has completed, test for status
-STATE=`cat slurm-${SLURM_ID}.out | grep "FAILED"`
+STATE=`cat rev.jenkins.${SLURM_ID}.out | grep "tests failed out of"`
+NUM_FAILED=`cat rev.jenkins.${SLURM_ID}.out | grep "tests failed out of" | awk '{print $4}'`
 
-if [ -z "$STATE" ]
+
+if [ "$NUM_FAILED" -eq "0" ];
 then
   echo "TEST PASSED FOR JOB_ID = ${JOB_ID}; SLURM_JOB=${SLURM_ID}"
+  echo $STATE
   exit 0
 else
   echo "TEST FAILED FOR JOB_ID = ${JOB_ID}; SLURM_JOB=${SLURM_ID}"
+  echo $STATE
   exit -1
-fi;
+fi
 
 exit 0
 #-- EOF

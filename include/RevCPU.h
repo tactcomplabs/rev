@@ -35,6 +35,7 @@
 #include "RevNIC.h"
 #include "PanNet.h"
 #include "PanExec.h"
+#include "RevCoProc.h"
 
 // -- PAN Common Headers
 #include "../common/include/PanAddr.h"
@@ -102,6 +103,7 @@ namespace SST {
         {"enable_pan_stats","Enable PAN network statistics",                "1"},
         {"enable_memH",     "Enable memHierarchy",                          "0"},
         {"enableRDMAMbox",  "Enable the RDMA mailbox",                      "1"},
+        {"enableCoProc",    "Enable an attached coProcessor for all cores", "0"},
         {"enable_faults",   "Enable the fault injection logic",             "0"},
         {"faults",          "Enable specific faults",                       "decode,mem,reg,alu"},
         {"fault_width",     "Specify the bit width of potential faults",    "single,word,N"},
@@ -124,7 +126,8 @@ namespace SST {
       SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
         {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
-        {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"}
+        {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
+        {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"}
       )
 
       // -------------------------------------------------------
@@ -188,6 +191,10 @@ namespace SST {
         {"BytesRead",           "Total bytes read",                                     "count",  1},
         {"BytesWritten",        "Total bytes written",                                  "count",  1},
         {"FloatsExec",          "Total SP or DP float instructions executed",           "count",  1},
+        {"TLBHits",             "TLB hits",                                             "count",  1},
+        {"TLBMisses",           "TLB misses",                                           "count",  1},
+        {"TLBHitsPerCore",      "TLB hits per core",                                    "count",  1},
+        {"TLBMissesPerCore",    "TLB misses per core",                                  "count",  1},
       )
 
     private:
@@ -222,6 +229,7 @@ namespace SST {
       bool EnableRDMAMBox;                ///< RevCPU: Enable the RDMA Mailbox
 
       bool EnableMemH;                    ///< RevCPU: Enable memHierarchy
+      bool EnableCoProc;                  ///< RevCPU: Enable a co-processor attached to all cores
 
       bool EnableFaults;                  ///< RevCPU: Enable fault injection logic
       bool EnableCrackFaults;             ///< RevCPU: Enable Crack+Decode Faults
@@ -239,6 +247,9 @@ namespace SST {
       panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
       PanExec *PExec;                     ///< RevCPU: PAN execution context
       RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
+
+      std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
+
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
       std::queue<std::pair<uint32_t,char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size,Data>
@@ -318,6 +329,8 @@ namespace SST {
       std::vector<Statistic<uint64_t>*> BytesRead;
       std::vector<Statistic<uint64_t>*> BytesWritten;
       std::vector<Statistic<uint64_t>*> FloatsExec;
+      std::vector<Statistic<uint64_t>*> TLBMissesPerCore;
+      std::vector<Statistic<uint64_t>*> TLBHitsPerCore;
 
       //-------------------------------------------------------
       // -- FUNCTIONS

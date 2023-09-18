@@ -56,6 +56,11 @@ if(NOT SST_CONFIG)
   message(FATAL_ERROR "No sst-config binary found in path")
 endif()
 
+set(REV_BASE "${CMAKE_CURRENT_SOURCE_DIR}")
+set(ENV{REV_BASE} "${REV_BASE}")
+message(STATUS "REV_BASE set to ${REV_BASE}")
+
+set(ENV{RVCC} "${RVCC}")
 
 #------------------------------------------------------------------------
 #-- DERIVE SST ENV
@@ -115,7 +120,7 @@ if(BUILD_DOCUMENTATION)
     VERBATIM)
 
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/html DESTINATION share/doc)
-  # install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/man DESTINATION share/man) # NOTE: No 
+  # install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/man DESTINATION share/man) # NOTE: No
 
 
 

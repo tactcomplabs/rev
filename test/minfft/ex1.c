@@ -127,8 +127,8 @@ int main()
   a.sub1 = a.sub2 = NULL;
 
 	// do transforms
-  volatile int* rev = 0xDEADBEEF;
-  *rev = 0x0AAA0001;
+  // volatile int* rev = 0xDEADBEEF;
+  // *rev = 0x0AAA0001;
 	  minfft_dft(x,y,&a);
 	//minfft_invdft(y,x,&a);
 	// free aux data

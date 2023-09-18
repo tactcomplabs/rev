@@ -23,7 +23,7 @@ void (*s_cx_1d_t)
 // by repeated application of its strided one-dimensional routine
 inline static void
 mkcx (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a, s_cx_1d_t s_1d) {
-  volatile int* rev = 0xDEADBEEF;
+  // volatile int* rev = 0xDEADBEEF;
 //  *rev = 0x0BBB0004;
 	if (a->sub2==NULL)
 		(*s_1d)(x,y,sy,a);
@@ -72,7 +72,7 @@ inline static void
 rs_dft_1d (int N, minfft_cmpl *x, minfft_cmpl *t, minfft_cmpl *y, int sy, const minfft_cmpl *e) {
 	int n; // counter
 	// split-radix DIF
-  volatile int* rev = 0xDEADBEEF;
+  // volatile int* rev = 0xDEADBEEF;
 	if (N==1) {
 		// terminal case
 		minfft_real *xr=(minfft_real*)x,*yr=(minfft_real*)y;
@@ -229,7 +229,7 @@ rs_dft_1d (int N, minfft_cmpl *x, minfft_cmpl *t, minfft_cmpl *y, int sy, const 
 	// prepare sub-transform inputs
   int loopCount = N / 4;
 	for (n=0; n<loopCount; n++) {
-    *rev = n + N;
+    // *rev = n + N;
 		register minfft_real t0r,t1r,t2r,t3r;
 		register minfft_real t0i,t1i,t2i,t3i;
 		// t0=x[n]+x[n+N/2];
@@ -276,16 +276,16 @@ s_dft_1d (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a) {
 // strided DFT of arbitrary dimension
 inline static void
 s_dft (minfft_cmpl *x, minfft_cmpl *y, int sy, const minfft_aux *a) {
-  volatile int* rev = 0xDEADBEEF;
-  *rev = 0x0CCC0003;
+  // volatile int* rev = 0xDEADBEEF;
+  // *rev = 0x0CCC0003;
 	mkcx(x,y,sy,a,s_dft_1d);
 }
 
 // user interface
 void
 minfft_dft (minfft_cmpl *x, minfft_cmpl *y, const minfft_aux *a) {
-  volatile int* rev = 0xDEADBEEF;
-  *rev = 0x0CCC0002;
+  // volatile int* rev = 0xDEADBEEF;
+  // *rev = 0x0CCC0002;
 	s_dft(x,y,1,a);
 }
 

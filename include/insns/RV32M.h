@@ -26,18 +26,15 @@ namespace SST{
         uint64_t a0 = (uint32_t)A, a1 = A >> 32;
         uint64_t b0 = (uint32_t)B, b1 = B >> 32;
 
-        t = a1*b0 + ((a0+b0) >> 32);
-        y1 = t;
-        y2 = t >> 32;
+        //Compute partial products
+        __uint128_t pp1 = a0*b0;
+        __uint128_t pp2 = a1*b0;
+        __uint128_t pp3 = a0*b1;
+        __uint128_t pp4 = a1*b1;
 
-        t = a0+b1 + y1;
-        y1 = t;
+        __uint128_t sum = pp1 + (pp2 << 32) + (pp3 << 32) + (pp4 << 64);
 
-        t = a1*b1 + y2 + (t >> 32);
-        y2 = t;
-        y3 = t >> 32;
-
-        return ((uint64_t)y3 << 32) | y2;
+        return (uint64_t)(sum >> 64);
       }
 
       static int64_t mulh_impl(int64_t A, int64_t B){
@@ -79,7 +76,8 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((td_u32(R->RV32[Inst.rs1],32)*td_u32(R->RV32[Inst.rs2],32))>>32,32);
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),td_u64(R->RV64[Inst.rs2],32)),32);
+          //R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),td_u64(R->RV64[Inst.rs2],32)),32);
+          R->RV64[Inst.rd] = dt_u64(mulhsu_impl(td_u64(R->RV64[Inst.rs1],32),R->RV64[Inst.rs2]),32);
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -90,7 +88,8 @@ namespace SST{
           R->RV32[Inst.rd] = dt_u32((td_u32(R->RV32[Inst.rs1],32)*td_u32(R->RV32[Inst.rs2],32))>>32,32);
           R->RV32_PC += Inst.instSize;
         }else{
-          R->RV64[Inst.rd] = dt_u64(mulhu_impl(td_u64(R->RV64[Inst.rs1],32),td_u64(R->RV64[Inst.rs2],32)),32);
+          //R->RV64[Inst.rd] = dt_u64(mulhu_impl(td_u64(R->RV64[Inst.rs1],64),td_u64(R->RV64[Inst.rs2],32)),64);
+          R->RV64[Inst.rd] = dt_u64(mulhu_impl(R->RV64[Inst.rs1], R->RV64[Inst.rs2]),64);
           R->RV64_PC += Inst.instSize;
         }
         return true;
@@ -98,27 +97,31 @@ namespace SST{
 
       static bool div(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          uint32_t lhs = td_u32(R->RV32[Inst.rs1],32);
-          uint32_t rhs = td_u32(R->RV32[Inst.rs2],32);
+          int32_t lhs = td_u32(R->RV32[Inst.rs1],32);
+          int32_t rhs = td_u32(R->RV32[Inst.rs2],32);
           if( rhs == 0 ){
             R->RV32[Inst.rd] = UINT32_MAX;
+            R->RV32_PC += Inst.instSize;
             return true;
           }else if( (lhs == INT32_MIN) &&
                     ((int32_t)(rhs) == -1) ){
             R->RV32[Inst.rd] = dt_u32(lhs,32);
+            R->RV32_PC += Inst.instSize;
             return true;
           }
           R->RV32[Inst.rd] = dt_u32(lhs/rhs,32);
           R->RV32_PC += Inst.instSize;
         }else{
-          uint64_t lhs = td_u64(R->RV64[Inst.rs1],64);
-          uint64_t rhs = td_u64(R->RV64[Inst.rs2],64);
+          int64_t lhs = td_u64(R->RV64[Inst.rs1],64);
+          int64_t rhs = td_u64(R->RV64[Inst.rs2],64);
           if( rhs == 0 ){
             R->RV64[Inst.rd] = UINT64_MAX;
+            R->RV64_PC += Inst.instSize;
             return true;
           }else if( (lhs == INT64_MIN) &&
                     ((int64_t)(rhs) == -1) ){
             R->RV64[Inst.rd] = dt_u64(lhs,64);
+            R->RV64_PC += Inst.instSize;
             return true;
           }
           R->RV64[Inst.rd] = dt_u64(lhs/rhs,64);
@@ -131,10 +134,9 @@ namespace SST{
         if( F->IsRV32() ){
           uint32_t lhs = R->RV32[Inst.rs1];
           uint32_t rhs = R->RV32[Inst.rs2];
-          ZEXTI(lhs,32);
-          ZEXTI(rhs,32);
           if( rhs == 0 ){
             R->RV32[Inst.rd] = UINT32_MAX;
+            R->RV32_PC += Inst.instSize;
             return true;
           }
           SEXT(R->RV32[Inst.rd], lhs/rhs, 32);
@@ -142,10 +144,9 @@ namespace SST{
         }else{
           uint64_t lhs = R->RV64[Inst.rs1];
           uint64_t rhs = R->RV64[Inst.rs2];
-          ZEXTI64(lhs,64);
-          ZEXTI64(rhs,64);
           if( rhs == 0 ){
             R->RV64[Inst.rd] = UINT64_MAX;
+            R->RV64_PC += Inst.instSize;
             return true;
           }
           SEXT(R->RV64[Inst.rd], lhs/rhs, 64);
@@ -156,29 +157,31 @@ namespace SST{
 
       static bool rem(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
         if( F->IsRV32() ){
-          uint32_t lhs = td_u32(R->RV32[Inst.rs1],32);
-          uint32_t rhs = td_u32(R->RV32[Inst.rs2],32);
-          SEXTI(lhs,32);
-          SEXTI(rhs,32);
+          int32_t lhs = td_u32(R->RV32[Inst.rs1],32);
+          int32_t rhs = td_u32(R->RV32[Inst.rs2],32);
           if( rhs == 0 ){
             R->RV32[Inst.rd] = dt_u32(lhs,32);
+            R->RV32_PC += Inst.instSize;
             return true;
           }else if( (lhs == INT32_MIN) &&
                     ((int32_t)(rhs) == -1) ){
             R->RV32[Inst.rd] = 0;
+            R->RV32_PC += Inst.instSize;
             return true;
           }
           R->RV32[Inst.rd] = dt_u32(lhs%rhs,32);
           R->RV32_PC += Inst.instSize;
         }else{
-          uint64_t lhs = td_u64(R->RV64[Inst.rs1],64);
-          uint64_t rhs = td_u64(R->RV64[Inst.rs2],64);
+          int64_t lhs = td_u64(R->RV64[Inst.rs1],64);
+          int64_t rhs = td_u64(R->RV64[Inst.rs2],64);
           if( rhs == 0 ){
             R->RV64[Inst.rd] = dt_u64(lhs,64);
+            R->RV64_PC += Inst.instSize;
             return true;
           }else if( (lhs == INT64_MIN) &&
                     ((int64_t)(rhs) == -1) ){
             R->RV64[Inst.rd] = 0;
+            R->RV64_PC += Inst.instSize;
             return true;
           }
           R->RV64[Inst.rd] = dt_u64(lhs%rhs,64);
@@ -193,8 +196,11 @@ namespace SST{
           uint32_t rhs = R->RV32[Inst.rs2];
           ZEXTI(lhs,32);
           ZEXTI(rhs,32);
-          if( rhs == 0 ){
-            SEXT(R->RV32[Inst.rd], R->RV32[Inst.rs1], 32);
+          uint64_t signRhs = (R->RV64[Inst.rs2] & 0x80000000) >> 31;
+          if(( rhs == 0 ) || (signRhs > 0)){
+            //SEXT(R->RV32[Inst.rd], R->RV32[Inst.rs1], 32);
+            R->RV32[Inst.rd] = R->RV32[Inst.rs1];
+            R->RV32_PC += Inst.instSize;
             return true;
           }
           SEXT(R->RV32[Inst.rd], lhs%rhs, 32);
@@ -202,13 +208,16 @@ namespace SST{
         }else{
           uint64_t lhs = R->RV64[Inst.rs1];
           uint64_t rhs = R->RV64[Inst.rs2];
-          ZEXTI64(lhs,64);
-          ZEXTI64(rhs,64);
-          if( rhs == 0 ){
-            SEXT(R->RV64[Inst.rd], R->RV64[Inst.rs1], 64);
+          uint64_t signRhs = (R->RV64[Inst.rs2] & 0x8000000000000000) >> 63;
+          if(( rhs == 0 ) || (signRhs > 0)){
+            //SEXT(R->RV64[Inst.rd], R->RV64[Inst.rs1], 64);
+            R->RV64[Inst.rd] = R->RV64[Inst.rs1];
+            R->RV64_PC += Inst.instSize;
             return true;
           }
-          SEXT(R->RV64[Inst.rd], lhs%rhs, 64);
+          uint64_t tmp = 0;
+          SEXT(tmp, lhs%rhs, 64);
+          R->RV64[Inst.rd] = tmp;
           R->RV64_PC += Inst.instSize;
         }
         return true;
