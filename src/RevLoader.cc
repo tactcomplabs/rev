@@ -17,6 +17,7 @@ RevLoader::RevLoader( std::string Exe, std::string Args,
     RV32Entry(0x00l), RV64Entry(0x00ull) {
   if( !LoadElf() )
     output->fatal(CALL_INFO, -1, "Error: failed to load executable into memory\n");
+
 }
 
 RevLoader::~RevLoader(){
@@ -425,9 +426,17 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     }
   }
 
+  SectionHeaderInfo = CreateSectionHeaderString(eh, sh, shstrtab, ph);
+  ProgramHeaderInfo = CreateProgramHeaderString(eh, sh, shstrtab, ph);
+  std::cout << "Section Header Info: " << std::endl;
+  std::cout << SectionHeaderInfo << std::endl;
+  std::cout << "Program Header Info: " << std::endl;
+  std::cout << ProgramHeaderInfo << std::endl;
+
   // Initialize the heap 
   mem->InitHeap(StaticDataEnd);
 
+  // ProgramHeaderInfo = CreateProgramHeaderString(membuf);
   return true;
 }
 
@@ -616,6 +625,164 @@ uint64_t RevLoader::GetSymbolAddr(std::string Symbol){
     tmp = symtable[Symbol];
   }
   return tmp;
+}
+
+
+// std::string RevLoader::CreateProgramHeaderString(Elf64_Ehdr *ehdr,  Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs) {
+//     std::ostringstream os;
+//     
+//     os << std::left << std::setw(25) << "Program Header"
+//        << std::setw(10) << "Type"
+//        << std::setw(10) << "Flags"
+//        << "Virtual Address" << std::endl;
+//     os << std::string(55, '-') << std::endl;
+
+//     for (int i = 0; i < ehdr->e_phnum; ++i) {
+//         Elf64_Phdr &phdr = phdrs[i];
+//         os << std::left << std::setw(25) << ("Program Header " + std::to_string(i))
+//            << std::setw(10) << phdr.p_type
+//            << std::setw(10) << phdr.p_flags
+//            << phdr.p_vaddr << std::endl;
+
+//         os << "Sections in this segment:" << std::endl;
+//         for (int j = 0; j < ehdr->e_shnum; ++j) {
+//             Elf64_Shdr &shdr = shdrs[j];
+//             if (phdr.p_offset <= shdr.sh_offset &&
+//                 (shdr.sh_offset + shdr.sh_size) <= (phdr.p_offset + phdr.p_filesz)) {
+//                 os << "  - " << (strtab + shdr.sh_name) << "\n";
+//             }
+//         }
+//     }
+//     return os.str();
+// }
+
+
+// std::string RevLoader::CreateSectionHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs) {
+//     std::ostringstream os;
+//     
+//     os << std::left << std::setw(25) << "Section"
+//        << std::setw(10) << "Type"
+//        << std::setw(10) << "Flags"
+//        << std::setw(15) << "Address"
+//        << std::setw(20) << "Address Alignment"
+//        << "Lives in Program Header Segment" << std::endl;
+//     os << std::string(90, '-') << std::endl;
+
+//     for (int i = 0; i < ehdr->e_shnum; ++i) {
+//         Elf64_Shdr &shdr = shdrs[i];
+//         const char *name = strtab + shdr.sh_name;
+//         
+//         os << std::left << std::setw(25) << name
+//            << std::setw(10) << shdr.sh_type
+//            << std::setw(10) << shdr.sh_flags
+//            << std::setw(15) << shdr.sh_addr
+//            << std::setw(20) << shdr.sh_addralign;
+//         
+//         // Find which program header segment the section resides in
+//         for (int j = 0; j < ehdr->e_phnum; ++j) {
+//             Elf64_Phdr &phdr = phdrs[j];
+//             if (shdr.sh_addr >= phdr.p_vaddr && shdr.sh_addr < (phdr.p_vaddr + phdr.p_memsz)) {
+//                 os << j << std::endl;
+//                 break;
+//             }
+//         }
+//     }
+//     return os.str();
+// }
+
+std::string join(const std::vector<std::string> &strings, const std::string &delimiter) {
+    std::ostringstream os;
+    for (size_t i = 0; i < strings.size(); ++i) {
+        os << strings[i];
+        if (i < strings.size() - 1) {
+            os << delimiter;
+        }
+    }
+    return os.str();
+}
+
+#include <sstream>
+#include <iomanip>
+#include <vector>
+#include <string>
+
+std::string RevLoader::CreateProgramHeaderString(Elf64_Ehdr *ehdr,  Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs) {
+    std::ostringstream os;
+    os << std::showbase << std::hex;  // Output numbers in hex format with '0x' prefix
+
+    // Table Header
+    os << "Program Headers:\n";
+    os << std::setw(20) << "Type" << std::setw(15) << "Flags" << std::setw(25) << "Virtual Address" << std::setw(30) << "Contained Sections" << '\n';
+    os << std::string(90, '-') << '\n';
+
+    // Table Body
+    for (int i = 0; i < ehdr->e_phnum; ++i) {
+        Elf64_Phdr &phdr = phdrs[i];
+        
+        // List sections contained in this segment
+        std::vector<std::string> containedSections;
+        for (int j = 0; j < ehdr->e_shnum; ++j) {
+            Elf64_Shdr &shdr = shdrs[j];
+            if (shdr.sh_addr >= phdr.p_vaddr && 
+                shdr.sh_addr + shdr.sh_size <= phdr.p_vaddr + phdr.p_memsz) {
+                containedSections.push_back(strtab + shdr.sh_name);
+            }
+        }
+        
+        // Assuming 'join' is a function you've defined to concatenate strings with a delimiter
+        std::string sectionList = containedSections.empty() ? "None" : join(containedSections, ", "); 
+        
+        os << std::setw(20) << phdr.p_type << std::setw(15) << phdr.p_flags << std::setw(25) << phdr.p_vaddr << '\t' << std::setw(30) << sectionList << '\n';
+
+    }
+    return os.str();
+}
+
+// std::string RevLoader::CreateSectionHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs) {
+//     std::ostringstream os;
+//     os << std::showbase << std::hex;  // Output numbers in hex format with '0x' prefix
+
+//     // Table Header
+//     os << "Section Headers:\n";
+//     os << std::setw(25) << "Section" << std::setw(15) << "Type" << std::setw(15) << "Flags" << std::setw(25) << "Address" << std::setw(20) << "Address Alignment" << '\n';
+//     os << std::string(100, '-') << '\n';
+
+//     // Table Body
+//     for (int i = 0; i < ehdr->e_shnum; ++i) {
+//       Elf64_Shdr &shdr = shdrs[i];
+//       const char *name = strtab + shdr.sh_name;
+//       os << std::setw(25) << name << std::setw(15) << shdr.sh_type << std::setw(15) << shdr.sh_flags << std::setw(25) << shdr.sh_addr << std::setw(20) << shdr.sh_addralign << '\n';
+//     }
+//     return os.str();
+// }
+std::string RevLoader::CreateSectionHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs) {
+    std::ostringstream os;
+    os << std::showbase << std::hex;  // Output numbers in hex format with '0x' prefix
+
+    // Table Header
+    os << "Section Headers:\n";
+    os << std::left
+       << std::setw(25) << "Section"
+       << std::setw(15) << "Type"
+       << std::setw(15) << "Flags"
+       << std::setw(20) << "Address"
+       << std::setw(15) << "Size"
+       << std::setw(20) << "Address Alignment" << '\n';
+    os << std::string(110, '-') << '\n';
+
+    // Table Body
+    for (int i = 0; i < ehdr->e_shnum; ++i) {
+        Elf64_Shdr &shdr = shdrs[i];
+        const char *name = strtab + shdr.sh_name;
+        os << std::left
+           << std::setw(25) << name
+           << std::setw(15) << shdr.sh_type
+           << std::setw(15) << shdr.sh_flags
+           << std::setw(20) << shdr.sh_addr
+           << std::setw(15) << shdr.sh_size  // Added "Size" field
+           << std::setw(20) << shdr.sh_addralign << '\n';
+    }
+    return os.str();
 }
 
 // EOF

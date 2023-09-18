@@ -16,6 +16,8 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <sstream>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -30,6 +32,24 @@
 
 // -- RevCPU Headers
 #include "RevMem.h"
+
+
+#define 	EI_NIDENT   16  // Length of ELF identifier
+#define 	EI_MAG0   0
+#define 	EI_MAG1   1
+#define 	EI_MAG2   2
+#define 	EI_MAG3   3
+#define 	EI_CLASS   4
+#define 	EI_DATA   5
+#define 	EI_VERSION   6
+#define 	ELFMAG0   0x7f
+#define 	ELFMAG1   'E'
+#define 	ELFMAG2   'L'
+#define 	ELFMAG3   'F'
+#define 	ELFCLASS32   1
+#define 	ELFDATA2LSB   1
+#define 	EV_CURRENT   1
+#define 	PT_LOAD   1
 
 #ifndef PT_LOAD
 #define PT_LOAD 1
@@ -308,6 +328,8 @@ namespace SST {
       /// RevLoader: Gets TLS size
       uint64_t GetTLSSize() { return TLSSize; }
 
+      // friend std::ostream& operator<<(std::ostream &os, const Elf64_Ehdr &header){ };
+
     private:
       std::string exe;          ///< RevLoader: binary executable
       std::string args;         ///< RevLoader: program args
@@ -320,12 +342,19 @@ namespace SST {
       uint64_t TLSBaseAddr = 0;
       uint64_t TLSSize = 0;
 
-      ElfInfo elfinfo;          ///< RevLoader: elf info from the loaded program
+      ElfInfo elfinfo;                          ///< RevLoader: elf info from the loaded program
 
       std::map<std::string,uint64_t> symtable;  ///< RevLoader: loaded symbol table
 
       std::vector<std::string> argv;            ///< RevLoader: The actual argv table
+    
+      /// Output Strings 
+      std::string ProgramHeaderInfo = "";
+      std::string CreateProgramHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs);
 
+      std::string SectionHeaderInfo = "";
+      std::string CreateSectionHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs);
+    
       /// Loads the target executable into memory
       bool LoadElf();
 
