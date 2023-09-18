@@ -2368,7 +2368,7 @@ void RevProc::InitEcallTable(){
 
 /// Parse a string for an ECALL starting at address straddr, updating the state
 /// as characters are read, and call action() when the end of string is reached.
-RevProc::ECALL_status_t RevProc::ECALL_ParseString(RevInst& inst,
+RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
                                                    uint64_t straddr,
                                                    std::function<void()> action){
   auto rtval = ECALL_status_t::ERROR;
@@ -2433,7 +2433,7 @@ RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
     auto action = [&]{
       ECALL.path_string = std::move(ECALL.string);
     };
-    auto rtv = ECALL_ParseString(inst, path, action);
+    auto rtv = ECALL_LoadAndParseString(inst, path, action);
 
     // When the parsing of path_string returns SUCCESS, we change it to
     // CONTINUE to continue the later stages
@@ -2467,7 +2467,7 @@ RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
     };
 
     // Parse the name string, then call setxattr() using path and name
-    return ECALL_ParseString(inst, name, action);
+    return ECALL_LoadAndParseString(inst, name, action);
   }
 #else
   return ECALL_status_t::SUCCESS;
@@ -2653,7 +2653,7 @@ RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
     int rc = chdir(ECALL.string.c_str());
     RegFile->SetX(feature, 10, rc);
   };
-  return ECALL_ParseString(inst, path, action);
+  return ECALL_LoadAndParseString(inst, path, action);
 }
 
 /* ============================================================ */
@@ -3046,7 +3046,7 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
     RegFile->SetX(feature, 10, fd);
   };
 
-  return ECALL_ParseString(inst, pathname, action);
+  return ECALL_LoadAndParseString(inst, pathname, action);
 }
 
 /* =================================================== */
@@ -3148,7 +3148,7 @@ RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
     int rc = mkdirat(dirfd, ECALL.string.c_str(), mode);
     RegFile->SetX(feature, 10, rc);
   };
-  return ECALL_ParseString(inst, path, action);
+  return ECALL_LoadAndParseString(inst, path, action);
 }
 
 /* =========================================================== */
