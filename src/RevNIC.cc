@@ -16,14 +16,14 @@ using namespace RevCPU;
 RevNIC::RevNIC(ComponentId_t id, Params& params)
   : nicAPI(id, params) {
   // setup the initial logging functions
-  int verbosity = params.find<int>("verbose",0);
+  int verbosity = params.find<int>("verbose", 0);
   output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
 
   const std::string nicClock = params.find<std::string>("clock", "1GHz");
-  registerClock(nicClock, new Clock::Handler<RevNIC>(this,&RevNIC::clockTick));
+  registerClock(nicClock, new Clock::Handler<RevNIC>(this, &RevNIC::clockTick));
 
   // load the SimpleNetwork interfaces
-  iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1); 
+  iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1);
   if( !iFace ){
     // load the anonymous nic
     Params netparams;
@@ -119,7 +119,7 @@ SST::Interfaces::SimpleNetwork::nid_t RevNIC::getAddress(){
 
 bool RevNIC::clockTick(Cycle_t cycle){
   while( !sendQ.empty() ){
-    if( iFace->spaceToSend(0,512) && iFace->send(sendQ.front(),0)) {
+    if( iFace->spaceToSend(0, 512) && iFace->send(sendQ.front(), 0)) {
       sendQ.pop();
     }else{
       break;

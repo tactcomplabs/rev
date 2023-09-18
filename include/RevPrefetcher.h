@@ -13,28 +13,21 @@
 
 #include <vector>
 
-#include "../include/RevMem.h"
-#include "../include/RevFeature.h"
+#include "RevMem.h"
+#include "RevFeature.h"
 
-namespace SST{
-namespace RevCPU {
+namespace SST::RevCPU{
 
-#define REVPREF_INIT_ADDR ((uint32_t)(0xdeadbeef))
+#define REVPREF_INIT_ADDR 0xDEADBEEF
 
 class RevPrefetcher{
 public:
-  /// RevPrefetcher: default constructor
+  /// RevPrefetcher: constructor
   RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth)
     : mem(Mem), feature(Feature), depth(Depth){}
 
-  /// RevPrefetcher: default destructor
-  ~RevPrefetcher(){
-    // delete all the existing streams
-    baseAddr.clear();
-    for( unsigned i=0; i<iStack.size(); i++ ){
-      delete [] iStack[i];
-    }
-  }
+  /// RevPrefetcher: destructor
+  ~RevPrefetcher();
 
   /// RevPrefetcher: fetch the next instruction
   bool InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst);
@@ -60,7 +53,6 @@ private:
   bool FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst);
 };
 
-} // namespace RevCPU
-} // namespace SST
+} // namespace SST::RevCPU
 
 #endif // _SST_REVCPU_REVPREFETCHER_H_

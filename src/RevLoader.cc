@@ -11,6 +11,8 @@
 #include "../include/RevLoader.h"
 #include "RevMem.h"
 
+using namespace SST::RevCPU;
+
 RevLoader::RevLoader( std::string Exe, std::string Args,
                       RevMem *Mem, SST::Output *Output )
   : exe(Exe), args(Args), mem(Mem), output(Output),
@@ -75,7 +77,7 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   // block the writes as cache lines
   if( Len < lineSize ){
     // one cache line to write, dispatch it
-    return mem->WriteMem(0,Addr,Len,Data);
+    return mem->WriteMem(0, Addr, Len, Data);
   }
 
   // calculate the base address of the first cache line
@@ -83,22 +85,22 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   bool done = false;
   uint64_t BaseCacheAddr = Addr;
   while( !done ){
-    if( (BaseCacheAddr%(uint64_t)(lineSize)) == 0 ){
+    if( BaseCacheAddr % lineSize == 0 ){
       done = true;
     }else{
-      BaseCacheAddr-=1;
+      BaseCacheAddr--;
     }
   }
 
   // write the first cache line
-  size_t TmpSize = (size_t)((BaseCacheAddr+lineSize)-Addr);
-  uint64_t TmpData = (uint64_t)(Data);
+  size_t TmpSize = BaseCacheAddr + lineSize - Addr;
+  uint64_t TmpData = uint64_t(Data);
   uint64_t TmpAddr = Addr;
-  if( !mem->WriteMem(0,TmpAddr,TmpSize,(void *)(TmpData)) ){
+  if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
     output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
   }
 
-  TmpAddr += (uint64_t)(TmpSize);
+  TmpAddr += TmpSize;
   TmpData += TmpSize;
   Total += TmpSize;
 
@@ -112,12 +114,12 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
       TmpSize = (Len-Total);
     }
 
-    if( !mem->WriteMem(0, TmpAddr, TmpSize, (void *)(TmpData)) ){
+    if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
       output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
     }
 
     // incrememnt the temp counters
-    TmpAddr += (uint64_t)(TmpSize);
+    TmpAddr += TmpSize;
     TmpData += TmpSize;
     Total += TmpSize;
 
@@ -152,10 +154,10 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     }
   }
 
-  uint64_t StaticDataEnd = 0; 
-  uint64_t BSSEnd = 0; 
-  uint64_t DataEnd = 0; 
-  uint64_t TextEnd = 0; 
+  uint64_t StaticDataEnd = 0;
+  uint64_t BSSEnd = 0;
+  uint64_t DataEnd = 0;
+  uint64_t TextEnd = 0;
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
@@ -175,7 +177,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     // BSS Doesn't exist, but data does
     StaticDataEnd = DataEnd;
   } else if ( TextEnd > 0 ){
-    // Text is last resort 
+    // Text is last resort
     StaticDataEnd = TextEnd;
   } else {
     // Can't find any (Text, BSS, or Data) sections
@@ -194,7 +196,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
 
   // set the first stack pointer
   uint32_t sp = mem->GetStackTop() - (uint32_t)(elfinfo.phdr_size);
-  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -294,11 +296,11 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     }
   }
 
-  uint64_t StaticDataEnd = 0; 
-  uint64_t BSSEnd = 0; 
-  uint64_t DataEnd = 0; 
-  uint64_t TextEnd = 0; 
-  // Add memory segments for each section header 
+  uint64_t StaticDataEnd = 0;
+  uint64_t BSSEnd = 0;
+  uint64_t DataEnd = 0;
+  uint64_t TextEnd = 0;
+  // Add memory segments for each section header
   // - This should automatically handle overlap and not add segments
   //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
@@ -320,7 +322,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     // BSS Doesn't exist, but data does
     StaticDataEnd = DataEnd;
   } else if ( TextEnd > 0 ){
-    // Text is last resort 
+    // Text is last resort
     StaticDataEnd = TextEnd;
   } else {
     // Can't find any (Text, BSS, or Data) sections
@@ -338,8 +340,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
 
   // set the first stack pointer
-  uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
+  uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -409,7 +411,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     }
   }
 
-  // Initialize the heap 
+  // Initialize the heap
   mem->InitHeap(StaticDataEnd);
 
   return true;
@@ -441,7 +443,7 @@ bool RevLoader::LoadProgramArgs(){
   // [MemTop] --> [Memtop-1024]
   //
   // This is addressable memory, but exists BEYOND the top of the standard stack
-  // The data is written in two parts.  First, we write the ARGV strings (null terminated) 
+  // The data is written in two parts.  First, we write the ARGV strings (null terminated)
   // in reverse order into the most significant addresses as follows:
   //
   // [MemTop]
@@ -471,7 +473,7 @@ bool RevLoader::LoadProgramArgs(){
   argv.push_back(exe);
 
   // split the rest of the arguments into tokens
-  splitStr(args,' ',argv);
+  splitStr(args, ' ', argv);
 
   if( argv.size() == 0 ){
     output->fatal(CALL_INFO, -1, "Error: failed to initialize the program arguments\n");
@@ -483,7 +485,7 @@ bool RevLoader::LoadProgramArgs(){
 
   // setup the argc argument values
   uint32_t Argc = (uint32_t)(argv.size());
-  WriteCacheLine(ArgArray, 4, (void *)(&Argc));
+  WriteCacheLine(ArgArray, 4, &Argc);
   ArgArray += 4;
 
   // write the argument values
@@ -492,26 +494,26 @@ bool RevLoader::LoadProgramArgs(){
                     "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
 
     // retrieve the current stack pointer
-    char tmpc[argv[i].size() + 1];
-    argv[i].copy(tmpc,argv[i].size()+1);
+    std::vector<char> tmpc(argv[i].size() + 1);
+    argv[i].copy(&tmpc[0], argv[i].size()+1);
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
 
     OldStackTop -= len;
 
-    WriteCacheLine(OldStackTop, len,(void *)(&tmpc));
+    WriteCacheLine(OldStackTop, len, &tmpc[0]);
   }
 
   // now reverse engineer the address alignments
   // -- this is the address of the argv pointers (address + 8) in the stack
   // -- Note: this is NOT the actual addresses of the argv[n]'s
   uint64_t ArgBase = ArgArray+8;
-  WriteCacheLine(ArgArray, 8, (void *)(&ArgBase));
+  WriteCacheLine(ArgArray, 8, &ArgBase);
   ArgArray += 8;
 
   // -- these are the addresses of each argv entry
   for( unsigned i=0; i<argv.size(); i++ ){
-    WriteCacheLine(ArgArray, 8, (void *)(&OldStackTop));
+    WriteCacheLine(ArgArray, 8, &OldStackTop);
     OldStackTop += (argv[i].size()+1);
     ArgArray += 8;
   }
@@ -544,13 +546,13 @@ bool RevLoader::LoadElf(){
   // open the target file
   int fd = open(exe.c_str(), O_RDONLY);
   struct stat FileStats;
-  if( fstat(fd,&FileStats) < 0 )
+  if( fstat(fd, &FileStats) < 0 )
     output->fatal(CALL_INFO, -1, "Error: failed to stat executable file: %s\n", exe.c_str() );
 
   size_t FileSize = FileStats.st_size;
 
   // map the executable into memory
-  char *membuf = (char *)(mmap(NULL,FileSize, PROT_READ, MAP_PRIVATE, fd, 0));
+  char *membuf = (char *)(mmap(NULL, FileSize, PROT_READ, MAP_PRIVATE, fd, 0));
   if( membuf == MAP_FAILED )
     output->fatal(CALL_INFO, -1, "Error: failed to map executable file: %s\n", exe.c_str() );
 
@@ -569,10 +571,10 @@ bool RevLoader::LoadElf(){
     output->fatal(CALL_INFO, -1, "Error: Not in little endian format\n" );
 
   if( IsRVElf32(*eh64) ){
-    if( !LoadElf32(membuf,FileSize) )
+    if( !LoadElf32(membuf, FileSize) )
       output->fatal(CALL_INFO, -1, "Error: could not load Elf32 binary\n" );
   }else{
-    if( !LoadElf64(membuf,FileSize) )
+    if( !LoadElf64(membuf, FileSize) )
       output->fatal(CALL_INFO, -1, "Error: could not load Elf64 binary\n" );
   }
 
@@ -580,9 +582,9 @@ bool RevLoader::LoadElf(){
   munmap( membuf, FileSize );
 
   // print the symbol table entries
-  std::map<std::string,uint64_t>::iterator it = symtable.begin();
+  std::map<std::string, uint64_t>::iterator it = symtable.begin();
   while( it != symtable.end() ){
-    output->verbose(CALL_INFO,6,0,
+    output->verbose(CALL_INFO, 6, 0,
                     "Symbol Table Entry [%s:0x%" PRIx64 "]\n",
                     it->first.c_str(), it->second );
     it++;

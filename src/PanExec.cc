@@ -27,14 +27,14 @@ bool PanExec::AddEntry(uint64_t Addr, unsigned *Idx){
 
   ExecQueue.push_back(std::tuple<unsigned,
                                  PanExec::PanStatus,
-                                 uint64_t>(Entry,PanExec::QValid,Addr));
+                                 uint64_t>(Entry, PanExec::QValid, Addr));
 
   *Idx = Entry;
   return true;
 }
 
 bool PanExec::RemoveEntry(unsigned Idx){
-  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
+  std::vector<std::tuple<unsigned, PanExec::PanStatus, uint64_t>>::iterator it;
 
   for( it=ExecQueue.begin(); it != ExecQueue.end(); ++it ){
     if( Idx == std::get<0>(*it) ){
@@ -47,7 +47,7 @@ bool PanExec::RemoveEntry(unsigned Idx){
 }
 
 PanExec::PanStatus PanExec::StatusEntry(unsigned Idx){
-  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
+  std::vector<std::tuple<unsigned, PanExec::PanStatus, uint64_t>>::iterator it;
 
   for( it=ExecQueue.begin(); it != ExecQueue.end(); ++it ){
     if( Idx == std::get<0>(*it) )
@@ -58,7 +58,7 @@ PanExec::PanStatus PanExec::StatusEntry(unsigned Idx){
 }
 
 PanExec::PanStatus PanExec::GetNextEntry(uint64_t *Addr, unsigned *Idx){
-  std::vector<std::tuple<unsigned,PanExec::PanStatus,uint64_t>>::iterator it;
+  std::vector<std::tuple<unsigned, PanExec::PanStatus, uint64_t>>::iterator it;
 
   // if no work to do, return null
   if( ExecQueue.size() == 0 )

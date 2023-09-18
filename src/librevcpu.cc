@@ -8,41 +8,36 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include <sst/core/sst_config.h>
+#include "SST.h"
 #include "../include/RevCPU.h"
 
-// Install the python library
-#include <sst/core/model/element_python.h>
+namespace SST::RevCPU{
 
-namespace SST {
-  namespace RevCPU {
+char pyrevcpu[] = {
+#include "../include/pyrevcpu.inc"
+  0x00};
 
-    char pyrevcpu[] = {
-      #include "../include/pyrevcpu.inc"
-      0x00};
+class RevCPUPyModule : public SSTElementPythonModule {
+public:
 
-    class RevCPUPyModule : public SSTElementPythonModule {
-    public:
+  /// Constructor
+  explicit RevCPUPyModule(std::string library) :
+    SSTElementPythonModule(std::move(library)) {
+    createPrimaryModule(pyrevcpu, "pyrevcpu.py");
+  }
 
-      /// Constructor
-      RevCPUPyModule(std::string library) :
-        SSTElementPythonModule(library) {
-        auto primary_module = createPrimaryModule(pyrevcpu,
-                                                  "pyrevcpu.py");
-      }
+  // Register the library with ELI
+  SST_ELI_REGISTER_PYTHON_MODULE(
+                                 SST::RevCPU::RevCPUPyModule,      // python class
+                                 "revcpu",                         // component library
+                                 SST_ELI_ELEMENT_VERSION(1, 0, 0)
+                                 )
 
-      // Register the library with ELI
-      SST_ELI_REGISTER_PYTHON_MODULE(
-        SST::RevCPU::RevCPUPyModule,      // python class
-        "revcpu",                         // component library
-        SST_ELI_ELEMENT_VERSION(1,0,0)
-      )
+  // Export the library via ELI
+  SST_ELI_EXPORT(SST::RevCPU::RevCPUPyModule)
 
-      // Export the library via ELI
-      SST_ELI_EXPORT(SST::RevCPU::RevCPUPyModule)
+}; // RevCPUPyModule
 
-    }; // RevCPUPyModule
-  } // namespace RevCPU
-} // namespace SST
+} // namespace SST::RevCPU
 
 // EOF

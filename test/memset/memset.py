@@ -22,12 +22,12 @@ max_addr_gb = 1
 # Define the simulation components
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
-	"verbose" : 3,                                # Verbosity
+	"verbose" : 6,                                # Verbosity
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV64IMAFDC]",                      # Core:Config; RV32I for core 0
-        "startSymbol" : "[0:_start]",
+        "startAddr" : "[0:0x00000000]",
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "memset.exe"),  # Target executable
         "splash" : 1                                  # Display the splash message

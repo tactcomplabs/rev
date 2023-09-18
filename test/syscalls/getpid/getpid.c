@@ -1,5 +1,5 @@
 
-#include "../../../common/syscalls.h"
+#include "../../../common/syscalls/syscalls.h"
 #include "unistd.h"
 
 int main(){

@@ -34,7 +34,7 @@ RevCoProc::~RevCoProc(){
 // RevSimpleCoProc
 // ---------------------------------------------------------------
 RevSimpleCoProc::RevSimpleCoProc(ComponentId_t id, Params& params)
-  : RevCoProc(id,params), num_instRetired(0) {
+  : RevCoProc(id, params), num_instRetired(0) {
 
   std::string ClockFreq = params.find<std::string>("clock", "1Ghz");
 
@@ -42,7 +42,7 @@ RevSimpleCoProc::RevSimpleCoProc(ComponentId_t id, Params& params)
 
   //This would be used ot register the clock with SST Core
   /*registerClock( ClockFreq,
-              new Clock::Handler<RevSimpleCoProc>(this,&RevSimpleCoProc::ClockTick));
+              new Clock::Handler<RevSimpleCoProc>(this, &RevSimpleCoProc::ClockTick));
   output->output("Registering subcomponent RevSimpleCoProc with frequency=%s\n", ClockFreq.c_str());*/
 }
 
@@ -62,19 +62,16 @@ void RevSimpleCoProc::registerStats(){
 }
 
 bool RevSimpleCoProc::Reset(){
-  while(!InstQ.empty()) {
-    InstQ.pop();
-  }
+  InstQ = {};
   return true;
 }
 
 bool RevSimpleCoProc::ClockTick(SST::Cycle_t cycle){
-
   if(!InstQ.empty()){
     uint32_t inst = InstQ.front().Inst;
     num_instRetired->addData(1);
     InstQ.pop();
-    std::cout << "CoProcessor to execute instruction: " << std::hex << inst << std::endl; 
+    std::cout << "CoProcessor to execute instruction: " << std::hex << inst << std::endl;
   }
   return true;
 }
