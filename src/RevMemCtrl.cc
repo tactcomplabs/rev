@@ -1429,9 +1429,10 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
       // split request exists, determine how to handle it
       if( getNumSplitRqsts(op) == 1 ){
         // this was the last request to service, delete the op
-        if( op->getHazard() != nullptr ){
+        auto Hazard = op->getHazard();
+        if( Hazard != nullptr ){
           // this was a write request for an AMO, clear the hazard
-          *(op->getHazard()) = false;
+          *Hazard = false;
         }
         delete op;
       }
@@ -1442,9 +1443,10 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     }
 
     // no split request exists; handle as normal
-    if( op->getHazard() != nullptr ){
+    auto Hazard = op->getHazard();
+    if( Hazard != nullptr ){
       // this was a write request for an AMO, clear the hazard
-      *(op->getHazard()) = false;
+      *Hazard = false;
     }
     delete op;
     outstanding.erase(ev->getID());

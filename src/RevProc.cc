@@ -1708,18 +1708,6 @@ uint16_t RevProc::GetHartID()const{
   return nextID;
 }
 
-std::shared_ptr<bool> RevProc::createLoadHazard(){
-  auto LH = std::make_shared<bool>(false);
-  LoadHazards.push_back(LH);
-  return LH;
-}
-
-void RevProc::destroyLoadHazard(const std::shared_ptr<bool>& LH){
-  if( LH != nullptr ){
-    LoadHazards.remove(LH);
-  }
-}
-
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   RevInst Inst;
 
@@ -1837,7 +1825,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // -- BEGIN new pipelining implementation
       if( !PendingCtxSwitch ){
         Pipeline.push_back(std::make_pair(HartToExec, Inst));
-        Pipeline.back().second.hazard = createLoadHazard();
+        Pipeline.back().second.hazard = std::make_shared<bool>(false);
       }
 
       if( (Ext->GetName() == "RV32F") ||
@@ -2000,7 +1988,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       id, tID, ExecPC);
       Retired++;
       DependencyClear(tID, &(Pipeline.front().second));
-      destroyLoadHazard(Pipeline.front().second.hazard);
       Pipeline.erase(Pipeline.begin());
       GetRegFile(tID)->cost = 0;
     }else{
