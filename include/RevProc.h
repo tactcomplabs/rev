@@ -61,7 +61,7 @@ public:
            RevCoProc* CoProc, SST::Output *Output );
 
   /// RevProc: standard desctructor
-  ~RevProc();
+  ~RevProc() = default;
 
   /// RevProc: per-processor clock function
   bool ClockTick( SST::Cycle_t currentCycle );
@@ -196,10 +196,11 @@ private:
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
   SST::Output *output;      ///< RevProc: output handler
-  RevFeature *feature;      ///< RevProc: feature handler
+  std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler
+  RevFeature* feature;
   PanExec *PExec;           ///< RevProc: PAN exeuction context
   RevProcStats Stats{};     ///< RevProc: collection of performance stats
-  RevPrefetcher *sfetch;    ///< RevProc: stream instruction prefetcher
+  std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
@@ -574,11 +575,11 @@ private:
 
   std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
 
-  std::vector<RevExt *> Extensions;           ///< RevProc: vector of enabled extensions
+  std::vector<std::unique_ptr<RevExt>> Extensions;           ///< RevProc: vector of enabled extensions
 
   //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
   std::vector<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
-  std::list<bool *> LoadHazards;                      ///< RevProc: list of allocated load hazards
+  std::list<std::shared_ptr<bool>> LoadHazards;        ///< RevProc: list of allocated load hazards
 
   std::map<std::string, unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
   std::map<uint32_t, unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
@@ -589,10 +590,10 @@ private:
   ///           second = pair<Extension Index, Extension Entry>
 
   /// RevProc: creates a new pipeline load hazard and returns a pointer to it
-  bool *createLoadHazard();
+  std::shared_ptr<bool> createLoadHazard();
 
   /// RevProc: destroys the target load hazard object and removes it from the list
-  void destroyLoadHazard(bool *hazard);
+  void destroyLoadHazard(const std::shared_ptr<bool>& hazard);
 
   /// RevProc: splits a string into tokens
   void splitStr(const std::string& s, char c, std::vector<std::string>& v);

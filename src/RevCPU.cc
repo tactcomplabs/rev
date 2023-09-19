@@ -328,27 +328,24 @@ RevCPU::~RevCPU(){
   delete[] Enabled;
 
   // delete the processors objects
-  for( unsigned i=0; i<Procs.size(); i++ ){
+  for( size_t i = 0; i < Procs.size(); i++ ){
     delete Procs[i];
   }
 
-  for (unsigned i=0; i<CoProcs.size(); i++){
+  for (size_t i = 0; i < CoProcs.size(); i++){
     delete CoProcs[i];
   }
 
-  if( PExec )
-    delete PExec;
+  delete PExec;
 
   // delete the memory controller if present
-  if( Ctrl )
-    delete Ctrl;
+  delete Ctrl;
 
   // delete the memory object
   delete Mem;
 
   // delete the loader object
-  if( Loader )
-    delete Loader;
+  delete Loader;
 
   // delete the options object
   delete Opts;
