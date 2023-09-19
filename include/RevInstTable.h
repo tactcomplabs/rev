@@ -21,6 +21,7 @@
 
 #include "RevMem.h"
 #include "RevFeature.h"
+#include "../common/include/RevCommon.h"
 
 #ifndef _REV_NUM_REGS_
 #define _REV_NUM_REGS_ 32
@@ -38,9 +39,7 @@
 #define _REV_HART_COUNT_ 1
 #endif
 
-#ifndef _REV_INVALID_HART_ID_
-#define _REV_INVALID_HART_ID_ (uint16_t)~(uint16_t(0))
-#endif
+
 
 // Register Decoding Macros
 #define DECODE_RD(x)    (((x)>>(7))&(0b11111))
@@ -138,6 +137,9 @@ struct RevRegFile {
   bool SPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for SPF RF to manage pipeline hazard
   bool DPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
 
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
+  std::function<void(MemReq)> MarkLoadComplete;
+
   uint32_t RV32_PC;                 ///< RevRegFile: RV32 PC
   uint64_t RV64_PC;                 ///< RevRegFile: RV64 PC
   uint64_t FCSR;                    ///< RevRegFile: FCSR
@@ -147,6 +149,8 @@ struct RevRegFile {
   unsigned Entry;                   ///< RevRegFile: Instruction entry
 
   explicit RevRegFile() = default;  // prevent aggregate initialization
+
+
 
   /// GetX: Get the specifed X register cast to a specific integral type
   template<typename T>
@@ -224,8 +228,8 @@ struct RevRegFile {
   }
 }; // RevRegFile
 
-static_assert(std::is_trivially_copyable_v<RevRegFile>,
-              "RevRegFile must be trivially copyable to be able to use memcpy() and memset()");
+/*static_assert(std::is_trivially_copyable_v<RevRegFile>,
+              "RevRegFile must be trivially copyable to be able to use memcpy() and memset()");*/
 
 inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
 inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
@@ -251,13 +255,7 @@ enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVCTypeCJ     = 18,    ///< RevInstF: Compressed CJ-Type
 };
 
-enum RevRegClass : int { ///< Rev CPU Register Classes
-  RegUNKNOWN    = 0,     ///< RevRegClass: Unknown register file
-  RegIMM        = 1,     ///< RevRegClass: Treat the reg class like an immediate: S-Format
-  RegGPR        = 2,     ///< RevRegClass: GPR reg file
-  RegCSR        = 3,     ///< RevRegClass: CSR reg file
-  RegFLOAT      = 4,     ///< RevRegClass: Float register file
-};
+
 
 enum RevImmFunc : int {  ///< Rev Immediate Values
   FUnk          = 0,     ///< RevRegClass: Imm12 is not used
@@ -502,30 +500,36 @@ unsigned fclass(T val, bool quietNaN = true) {
 /// Load template
 template<typename T>
 bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+   MemReq req = MemReq();
   if( sizeof(T) < sizeof(int64_t) && F->IsRV32() ){
     static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
                    RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
                Inst.hazard,
+               req,
                flags);
     R->SetX(F, Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
   }else{
     static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                    RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
                Inst.hazard,
+               req,
                flags);
     R->SetX(F, Inst.rd, static_cast<T>(R->RV64[Inst.rd]));
   }
   // update the cost
   R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-
   R->AdvancePC(F, Inst.instSize);
   return true;
 }
@@ -543,14 +547,18 @@ bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 /// Floating-point load template
 template<typename T>
 bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+   MemReq req = MemReq();
   if(std::is_same_v<T, double> || F->HasD()){
     static constexpr auto flags = sizeof(T) < sizeof(double) ?
       REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
 
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<T*>(&R->DPF[Inst.rd]),
                Inst.hazard,
+               req,
                flags);
 
     // Box float value into 64-bit FP register
@@ -558,15 +566,17 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
     }
   }else{
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                &R->SPF[Inst.rd],
                Inst.hazard,
+               req,
                REVMEM_FLAGS(0));
   }
   // update the cost
   R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-
   R->AdvancePC(F, Inst.instSize);
   return true;
 }

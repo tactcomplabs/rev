@@ -41,6 +41,9 @@ RevProc::RevProc( unsigned Id,
     coProc = NULL;
   }
 
+  LSQueue = std::make_shared<std::unordered_map<uint64_t, MemReq>>();
+  LSQueue->clear();
+
   feature = new RevFeature(Machine, output, MinCost, MaxCost, Id);
   if( !feature )
     output->fatal(CALL_INFO, -1,
@@ -52,7 +55,7 @@ RevProc::RevProc( unsigned Id,
     Depth = 16;
   }
 
-  sfetch = new RevPrefetcher(Mem, feature, Depth);
+  sfetch = new RevPrefetcher(Mem, feature, Depth, LSQueue);
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%u\n", id);
@@ -72,6 +75,7 @@ RevProc::RevProc( unsigned Id,
   if( Ecalls.size() <= 0 )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the Ecall Table for core=%u\n", id );
+
 
   // reset the core
   if( !Reset() )
@@ -394,8 +398,17 @@ bool RevProc::Reset(){
   for (int t=0;  t < _REV_HART_COUNT_; t++){
     RevRegFile* regFile = GetRegFile(t);
 
+    regFile->RV32_PC = 0x00l;
+    regFile->RV64_PC = 0x00ull;
     // Zero all register data
-    memset(regFile, 0, sizeof(*regFile));
+    memset(regFile->RV32, 0, sizeof(*(regFile->RV32)));
+    memset(regFile->RV64, 0, sizeof(*(regFile->RV64)));
+    memset(regFile->SPF, 0, sizeof(*(regFile->SPF)));
+    memset(regFile->DPF, 0, sizeof(*(regFile->DPF)));
+    memset(regFile->RV32_Scoreboard, 0, sizeof(*(regFile->RV32_Scoreboard)));
+    memset(regFile->RV64_Scoreboard, 0, sizeof(*(regFile->RV64_Scoreboard)));
+    memset(regFile->SPF_Scoreboard, 0, sizeof(*(regFile->SPF_Scoreboard)));
+    memset(regFile->DPF_Scoreboard, 0, sizeof(*(regFile->DPF_Scoreboard)));
 
     // initialize all the relevant program registers
 
@@ -409,8 +422,17 @@ bool RevProc::Reset(){
     // -- x8 : frame pointer
     regFile->SetX(feature, 8, gp);
 
-    Pipeline.clear();
+    // Set shared pointer to proc's load store queue
+    regFile->LSQueue = LSQueue;
+
+    regFile->cost = 0;
+
+    regFile->MarkLoadComplete = std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1);
+
   }
+
+   Pipeline.clear();
+   LSQueue->clear();
 
   // set the pc
   uint64_t StartAddr = 0x00ull;
@@ -1646,6 +1668,11 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
 
+    //chek LS queue for outstanding load - ignore r0
+  if((0 != I->rs1) && (regFile->LSQueue->count(make_lsq_hash(I->rs1, E->rs1Class, HartID))) > 0){ return true;}
+  if((0 != I->rs2) && (regFile->LSQueue->count(make_lsq_hash(I->rs2, E->rs2Class, HartID))) > 0){ return true;}
+  if((0 != I->rs3) && (regFile->LSQueue->count(make_lsq_hash(I->rs3, E->rs3Class, HartID))) > 0){ return true;}
+
   // Iterate through the source registers rs1, rs2, rs3 and find any dependency
   // based on the class of the source register and the associated scoreboard
   for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
@@ -1734,6 +1761,15 @@ void RevProc::destroyLoadHazard(bool *LH){
   }
 }
 
+void RevProc::MarkLoadComplete(MemReq req){
+
+  auto it = LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
+  if( it != LSQueue->end()){
+    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RegFLOAT));
+    LSQueue->erase(it);
+  }
+}
+
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   RevInst Inst;
 
@@ -1774,6 +1810,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }
   }
+
+  //Clear dependency bits for any loads that have returned
+for (auto it = LSQueue->begin(); it != LSQueue->end();) {
+  if(!it->second.isOutstanding){
+    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RegFLOAT));
+    it = LSQueue->erase(it);
+  }
+}
 
   for (int tID = 0; tID < _REV_HART_COUNT_; tID++){
     HART_CTS[tID] = (GetRegFile(tID)->cost == 0);
@@ -2397,10 +2441,13 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
     rtval = ECALL_status_t::SUCCESS;
   }else{
     //We are in the middle of the string - read one byte
+    MemReq req (straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, LSQueue );
+    LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
     mem->ReadVal(HartToExec,
                  straddr + ECALL.string.size(),
                  ECALL.buf.data(),
                  inst.hazard,
+                 req,
                  REVMEM_FLAGS(0));
     ECALL.bytesRead = 1;
     DependencySet(HartToExec, 10, false);
@@ -2503,7 +2550,9 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
     // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
                                 // using the 1st uint64, so that's all we're going to fetch
    uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
-   mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
+   MemReq req (CloneArgsAddr, 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, LSQueue );
+   LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+   mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, req, REVMEM_FLAGS(0x00));
    ECALL.bytesRead = sizeof(*args);
    rtval = ECALL_status_t::CONTINUE;
  }else{
@@ -2767,10 +2816,13 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     rtv = ECALL_status_t::SUCCESS;
   }else {
     auto readfunc = [&](auto* buf){
+      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, LSQueue );
+      LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       mem->ReadVal(HartToExec,
                    addr + ECALL.string.size(),
                    buf,
                    inst.hazard,
+                   req,
                    REVMEM_FLAGS(0));
       ECALL.bytesRead = sizeof(*buf);
     };

@@ -39,14 +39,13 @@
 #include "RevOpts.h"
 #include "RevMemCtrl.h"
 #include "RevRand.h"
+#include "../common/include/RevCommon.h"
 
 #ifndef _REVMEM_BASE_
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
 #define REVMEM_FLAGS(x) (static_cast<StandardMem::Request::flags_t>(x))
-
-#define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
 
 #define _STACK_SIZE_ (size_t{1024*1024})
 
@@ -153,6 +152,7 @@ public:
   /// RevMem: read data from the target memory location
   bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
                 bool *Hazard,
+                MemReq req,
                 StandardMem::Request::flags_t flags);
 
   /// RevMem: DEPRECATED: read data from the target memory location
@@ -174,8 +174,9 @@ public:
   template <typename T>
   bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
                 bool *Hazard,
+                MemReq req,
                 StandardMem::Request::flags_t flags){
-    return ReadMem(Hart, Addr, sizeof(T), Target, Hazard, flags);
+    return ReadMem(Hart, Addr, sizeof(T), Target, Hazard, req, flags);
   }
 
   ///  RevMem: template LOAD RESERVE memory interface
@@ -198,8 +199,9 @@ public:
   template <typename T>
   bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
                bool *Hazard,
+               MemReq req,
                StandardMem::Request::flags_t flags){
-    return AMOMem(Hart, Addr, sizeof(T), Data, Target, Hazard, flags);
+    return AMOMem(Hart, Addr, sizeof(T), Data, Target, Hazard, req, flags);
   }
 
   // ----------------------------------------------------
@@ -237,7 +239,7 @@ public:
 
   /// RevMem: Initiated an AMO request
   bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, void *Target, bool *Hazard,
+              void *Data, void *Target, bool *Hazard, MemReq req,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Initiates a future operation [RV64P only]

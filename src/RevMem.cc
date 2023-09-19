@@ -535,6 +535,7 @@ bool RevMem::FenceMem(unsigned Hart){
 bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
                     bool *Hazard,
+                    MemReq req,
                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -558,7 +559,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                          static_cast<char *>(Data), Target, Hazard, flags);
   }else{
     // process the request locally
-    ReadMem(Hart, Addr, Len, Target, Hazard, flags);
+    ReadMem(Hart, Addr, Len, Target, Hazard, req, flags);
 
     if( Len == 4 ){
       ApplyAMO(flags, Target, *static_cast<uint32_t*>(Data));
@@ -780,7 +781,7 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 }
 
 bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                     bool *Hazard, StandardMem::Request::flags_t flags){
+                     bool *Hazard, MemReq req, StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -819,6 +820,11 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       }
       // clear the hazard
       *Hazard = false;
+      auto it = req.LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
+      if(it == req.LSQueue->end()){
+        output->fatal(CALL_INFO, 11, "Failed to locate load in LSQueue\n");
+      }
+      it->second.isOutstanding = false;
     }
 #ifdef _REV_DEBUG_
     std::cout << "Warning: Reading off end of page... " << std::endl;
@@ -832,6 +838,11 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       }
       // clear the hazard
       *Hazard = false;
+      auto it = req.LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
+      if(it == req.LSQueue->end()){
+        output->fatal(CALL_INFO, 11, "Failed to locate load in LSQueue\n");
+      }
+      it->second.isOutstanding = false;
     }
   }
 
