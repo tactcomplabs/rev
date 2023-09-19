@@ -505,7 +505,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
                    RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
@@ -518,7 +518,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                    RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
@@ -552,7 +552,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(double) ?
       REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
 
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
@@ -566,7 +566,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
     }
   }else{
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->LSQueue);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHart()), req});
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),

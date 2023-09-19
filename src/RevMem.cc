@@ -820,11 +820,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       }
       // clear the hazard
       *Hazard = false;
-      auto it = req.LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
-      if(it == req.LSQueue->end()){
-        output->fatal(CALL_INFO, 11, "Failed to locate load in LSQueue\n");
-      }
-      it->second.isOutstanding = false;
+      req.MarkLoadComplete(req);
     }
 #ifdef _REV_DEBUG_
     std::cout << "Warning: Reading off end of page... " << std::endl;
@@ -838,11 +834,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       }
       // clear the hazard
       *Hazard = false;
-      auto it = req.LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
-      if(it == req.LSQueue->end()){
-        output->fatal(CALL_INFO, 11, "Failed to locate load in LSQueue\n");
-      }
-      it->second.isOutstanding = false;
+      req.MarkLoadComplete(req);
     }
   }
 

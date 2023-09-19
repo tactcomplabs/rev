@@ -69,7 +69,7 @@ class RV32A : public RevExt {
 
     MemReq req;
     if( F->IsRV32() ){
-      req.Set(R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpAMO, true, R->LSQueue);
+      req.Set(R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete);
       R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
       M->AMOVal(F->GetHart(),
                 R->RV32[Inst.rs1],
@@ -80,7 +80,7 @@ class RV32A : public RevExt {
                 flags);
     }else{
       flags |= uint32_t(RevCPU::RevFlag::F_SEXT64);
-      req.Set(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpAMO, true, R->LSQueue);
+      req.Set(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete);
       R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
       M->AMOVal(F->GetHart(),
                 R->RV64[Inst.rs1],

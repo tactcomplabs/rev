@@ -54,7 +54,7 @@ class RV64A : public RevExt {
       flags |= uint32_t(RevCPU::RevFlag::F_RL);
     }
 
-    MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpAMO, true, R->LSQueue);
+    MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete);
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RegGPR, F->GetHart()), req});
     M->AMOVal(F->GetHart(),
               R->RV64[Inst.rs1],

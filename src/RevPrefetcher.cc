@@ -177,7 +177,7 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // now fill it
   for( unsigned y=0; y<depth; y++ ){
-    MemReq req (Addr+(y*4), 0, RevRegClass::RegGPR, feature->GetHart(), MemOpREAD, true, LSQueue );
+    MemReq req (Addr+(y*4), 0, RevRegClass::RegGPR, feature->GetHart(), MemOpREAD, true, MarkLoadAsComplete);
     LSQueue->insert({make_lsq_hash(0, RevRegClass::RegGPR, feature->GetHart()), req});
     mem->ReadVal( feature->GetHart(), Addr+(y*4),
                   &iStack[x][y],

@@ -55,7 +55,8 @@ RevProc::RevProc( unsigned Id,
     Depth = 16;
   }
 
-  sfetch = new RevPrefetcher(Mem, feature, Depth, LSQueue);
+  std::function<void(MemReq)> f = std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1);
+  sfetch = new RevPrefetcher(Mem, feature, Depth, LSQueue, f);
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%u\n", id);
@@ -2441,7 +2442,7 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
     rtval = ECALL_status_t::SUCCESS;
   }else{
     //We are in the middle of the string - read one byte
-    MemReq req (straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, LSQueue );
+    MemReq req (straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true,  std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1));
     LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
     mem->ReadVal(HartToExec,
                  straddr + ECALL.string.size(),
@@ -2550,7 +2551,7 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
     // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
                                 // using the 1st uint64, so that's all we're going to fetch
    uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
-   MemReq req (CloneArgsAddr, 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, LSQueue );
+   MemReq req (CloneArgsAddr, 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, RegFile->MarkLoadComplete);
    LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
    mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, req, REVMEM_FLAGS(0x00));
    ECALL.bytesRead = sizeof(*args);
@@ -2816,7 +2817,7 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     rtv = ECALL_status_t::SUCCESS;
   }else {
     auto readfunc = [&](auto* buf){
-      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, LSQueue );
+      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, RegFile->MarkLoadComplete);
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       mem->ReadVal(HartToExec,
                    addr + ECALL.string.size(),

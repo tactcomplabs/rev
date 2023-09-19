@@ -55,15 +55,15 @@ namespace SST{
       {};
       MemReq():
         Addr(_INVALID_ADDR_), DestReg(0), RegType(RegUNKNOWN), Hart(_REV_INVALID_HART_ID_), 
-        ReqType(MemOpCUSTOM), isOutstanding(false)
-      {LSQueue.reset();};
+        ReqType(MemOpCUSTOM), isOutstanding(false), MarkLoadComplete(nullptr)
+      {};
 
       void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, uint16_t hart, MemOp req, bool outstanding,
-      std::shared_ptr<std::unordered_map<uint64_t, MemReq>> q)
+      std::function<void(MemReq)> func)
       {
         Addr = addr; DestReg = dest; RegType = regclass; Hart = hart; 
         ReqType = req; isOutstanding = outstanding;
-        LSQueue = q;
+        MarkLoadComplete = func;
       }; 
       uint64_t    Addr;
       uint16_t    DestReg;
@@ -71,7 +71,7 @@ namespace SST{
       uint16_t    Hart;
       MemOp       ReqType;
       bool        isOutstanding;
-      std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
+      //std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
       std::function<void(MemReq)> MarkLoadComplete;
     //  std::function<void((MemOp req)>) SetComplete;
       // add lambda that clears the dependency bit directly so we don't need to search the hash
