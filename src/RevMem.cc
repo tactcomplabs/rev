@@ -110,7 +110,7 @@ bool RevMem::StatusFuture(uint64_t Addr){
 
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
-                    bool *Hazard,
+                    const std::shared_ptr<bool>& Hazard,
                     StandardMem::Request::flags_t flags){
   for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
     if( (Hart == std::get<LRSC_HART>(*it)) &&
@@ -148,9 +148,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
     ctrl->sendREADLOCKRequest(Hart, Addr, (uint64_t)(BaseMem),
                               Len, Target, Hazard, flags);
   }else{
-    for( unsigned i=0; i<Len; i++ ){
-      DataMem[i] = BaseMem[i];
-    }
+    memcpy(DataMem, BaseMem, Len);
     // clear the hazard
     *Hazard = false;
   }
@@ -534,7 +532,7 @@ bool RevMem::FenceMem(unsigned Hart){
 
 bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
-                    bool *Hazard,
+                    const std::shared_ptr<bool>& Hazard,
                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -780,7 +778,8 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 }
 
 bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                     bool *Hazard, StandardMem::Request::flags_t flags){
+                     const std::shared_ptr<bool>& Hazard,
+                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
