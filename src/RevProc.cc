@@ -1730,7 +1730,10 @@ bool *RevProc::createLoadHazard(){
 void RevProc::destroyLoadHazard(bool *LH){
   if( LH != nullptr ){
     LoadHazards.remove(LH);
-    delete LH;
+    // TODO: There may still be references to this object
+    // -- maybe investigate using std::shared_ptr<bool> to
+    // intelligently manage shared storage.
+    // delete LH;
   }
 }
 
