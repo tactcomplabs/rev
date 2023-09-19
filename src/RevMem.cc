@@ -377,8 +377,6 @@ bool RevMem::isValidVirtAddr(const uint64_t& vAddr){
 }
 
 std::shared_ptr<MemSegment> RevMem::AddThreadMem(){
-  // std::cout << "NextThreadMemAddr: 0x" << std::hex << NextThreadMemAddr << std::endl;
-  // std::cout << "ThreadMemSize: 0x" << std::hex << ThreadMemSize << std::endl;
   // Calculate the BaseAddr of the segment 
   uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
   ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));

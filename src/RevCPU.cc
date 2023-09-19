@@ -2428,11 +2428,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   for( unsigned i=0; i<Procs.size(); i++ ){
     float Util = Procs[i]->GetUtilization();
     if( Util > 0.0 ){ 
-      output.verbose(CALL_INFO, 10, 0, "Core %d utilization: %f\n", i, Util);
+      output.verbose(CALL_INFO, 10, 0, "Core %d utilization: %.2f%%\n", i, Util);
     }
     // Check if we have room to schedule another thread
     if( Util < 100 && ThreadQueue.size() ){
-      output.verbose(CALL_INFO, 10, 0, "Core %d utilization: %f\n", i, Util);
+      output.verbose(CALL_INFO, 10, 0, "Core %d utilization: %.2f%%\n", i, Util);
       // We can schedule another thread
       // Check if we have any threads to schedule
       if( ThreadQueue.size() ){
@@ -2634,7 +2634,6 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
 ///==== Thread Management Functions ====///
 void RevCPU::InitThread(std::shared_ptr<RevThread> ThreadToInit){
-  std::cout << "INIT THREAD CALLED" << std::endl;
   uint32_t TID = ThreadToInit->GetThreadID();
   // Check if this ThreadID has already been assigned... if so... something has gone horribly wrong
   // print out all threads
@@ -2658,11 +2657,15 @@ bool RevCPU::ThreadCanProceed(uint32_t TID){
   // If 
   if( WaitingOnTID != __INVALID_TID__ ){
     // Check if WaitingOnTID has completed... if so, return = true, else return false
-    std::cout << "Thread " << TID << " is waiting on Thread " << WaitingOnTID << std::endl;
+    std::cout << "Thread " << TID << " is waiting on Thread " << std::dec << WaitingOnTID << std::endl;
     rtn = ( CompletedThreads.find(WaitingOnTID) != CompletedThreads.end() ) ? true : false;
   }
   else if ( WaitingOnTID == __INVALID_TID__ ){
     rtn = true;
+  }
+  
+  if( rtn ){
+    std::cout << "Thread " << TID << " was waiting on Thread " << std::dec << WaitingOnTID << std::endl;
   }
   return rtn;
 }

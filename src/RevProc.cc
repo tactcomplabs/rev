@@ -1900,14 +1900,20 @@ uint16_t RevProc::GetHartID(){
   uint16_t NextHartID = HartToDecode;
   if(HART_CTS[HartToDecode]){
     NextHartID = HartToDecode;
-  }else{
+  }
+  else{
     for(int HartID = 0; HartID < _REV_HART_COUNT_; HartID++){
+      if( NextHartID > AssignedThreads.size() - 1 ){
+        return HartToDecode;
+        break;
+      }
       NextHartID++;
       if(NextHartID >= _REV_HART_COUNT_){
         NextHartID = 0;
       }
       if(HART_CTS[NextHartID]){ break; };
     }
+    std::cout << "AssignedTheads Size = " << AssignedThreads.size() << std::endl;
     output->verbose(CALL_INFO, 6, 0,
                     "Core %d ; Hart switch from %d to %d \n",
                     id, HartToDecode, NextHartID);
@@ -1961,7 +1967,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   if( AssignedThreads.size() ){
     for (int HartID = 0; HartID < _REV_HART_COUNT_; HartID++){
       // Only execute the hart if it is assigned a thread
-      if( AssignedThreads.size() > HartID ){
+      if( AssignedThreads.size() - 1 > HartID ){
         HART_CTS[HartID] = AssignedThreads.at(HartID)->GetRegFile()->cost == 0;
       }
     }
