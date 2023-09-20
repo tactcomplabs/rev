@@ -43,7 +43,6 @@
 #include "RevLoader.h"
 #include "RevInstTable.h"
 #include "AllRevInstTables.h"
-#include "PanExec.h"
 #include "RevPrefetcher.h"
 #include "RevCoProc.h"
 #include "RevThreadCtx.h"
@@ -86,11 +85,6 @@ public:
 
   /// RevProc: Is this an RV32 machine?
   bool DebugIsRV32() { return feature->IsRV32(); }
-
-#ifdef _PAN_
-  /// RevProc: Set the PAN execution context
-  void SetExecCtx(PanExec *P) { PExec = P; }
-#endif
 
   /// RevProc: Retrieve a random memory cost value
   unsigned RandCost() { return mem->RandCost(feature->GetMinCost(), feature->GetMaxCost()); }
@@ -200,9 +194,6 @@ private:
   SST::Output *output;      ///< RevProc: output handler
   std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler
   RevFeature* feature;
-  #ifdef _PAN_
-  PanExec *PExec;           ///< RevProc: PAN exeuction context
-  #endif
   
   RevProcStats Stats{};     ///< RevProc: collection of performance stats
   std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher

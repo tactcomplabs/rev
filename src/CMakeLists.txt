@@ -22,13 +22,6 @@ set(RevCPUSrcs
   RevCoProc.cc
 )
 
-if(${PAN_ENABLED})
- list(APPEND RevCPUSrcs 
-    PanExec.cc
-    PanNet.cc
-)
-endif()
-
 add_library(revcpu SHARED ${RevCPUSrcs})
 target_include_directories(revcpu PRIVATE ${REVCPU_INCLUDE_PATH})
 target_include_directories(revcpu PUBLIC ${SST_INSTALL_DIR}/include)
