@@ -810,8 +810,10 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
         DataMem[Cur] = BaseMem[i];
         Cur++;
       }
-      // clear the hazard
-      req.MarkLoadComplete(req);
+      // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
+      if(MemOpAMO != req.ReqType){
+        req.MarkLoadComplete(req);
+      }
     }
 #ifdef _REV_DEBUG_
     std::cout << "Warning: Reading off end of page... " << std::endl;
@@ -823,8 +825,10 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       for( unsigned i=0; i<Len; i++ ){
         DataMem[i] = BaseMem[i];
       }
-      // clear the hazard
-      req.MarkLoadComplete(req);
+      // clear the hazard- if this was an AMO operation then we will clear outside of this function in AMOMem()
+      if(MemOpAMO != req.ReqType){
+        req.MarkLoadComplete(req);
+      }
     }
   }
 

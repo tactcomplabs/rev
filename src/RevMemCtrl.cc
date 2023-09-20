@@ -1312,8 +1312,12 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     if( isAMO ){
       handleAMO(op);
     }
+    
     MemReq r = op->getMemReq();
-    r.MarkLoadComplete(r);
+    //if this is an AMO op then we cleared the load in the handleAMO() function, so do not clear again
+    if(MemOpAMO != r.ReqType){
+      r.MarkLoadComplete(r);
+    }
     delete op;
     outstanding.erase(ev->getID());
     delete ev;

@@ -1753,7 +1753,7 @@ void RevProc::MarkLoadComplete(MemReq req){
     LSQueue->erase(it);
   }else if(0 != req.DestReg){ //instruction pre-fetch fills target r0, we can ignore these
     output->fatal(CALL_INFO, -1,
-               "Core %u ; Hart %u; Cannot find outstanding load for reg %u from address %" PRIu64 "\n",
+               "Core %u ; Hart %u; Cannot find outstanding load for reg %u from address %" PRIx64 "\n",
                 id, req.Hart, req.DestReg, req.Addr);
   }
 }
@@ -1816,6 +1816,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     //Determine the active thread
     HartToDecode = GetHartID();
+    feature->SetHartToExec(HartToDecode);
 
     if( !PrefetchInst() ){
       Stalled = true;
@@ -2733,7 +2734,7 @@ RevProc::ECALL_status_t RevProc::ECALL_getcwd(RevInst& inst){
   auto BufAddr = RegFile->GetX<uint64_t>(feature, 10);
   auto size = RegFile->GetX<uint64_t>(feature, 11);
   auto CWD = std::filesystem::current_path();
-  mem->WriteMem(feature->GetHart(), BufAddr, size, CWD.c_str());
+  mem->WriteMem(feature->GetHartToExec(), BufAddr, size, CWD.c_str());
 
   // Returns null-terminated string in buf
   // (no need to set x10 since it's already got BufAddr)
@@ -3120,7 +3121,7 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
   int rc = read(fd, &TmpBuf[0], BufSize);
 
   // Write that data to the buffer inside of Rev
-  mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf[0]);
+  mem->WriteMem(feature->GetHartToExec(), BufAddr, BufSize, &TmpBuf[0]);
 
   RegFile->SetX(feature, 10, rc);
   return ECALL_status_t::SUCCESS;

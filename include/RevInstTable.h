@@ -504,9 +504,9 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
                    RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
-    M->ReadVal(F->GetHart(),
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOpREAD, true, R->MarkLoadComplete);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+    M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
                req,
@@ -516,9 +516,9 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                    RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHart()), req});
-    M->ReadVal(F->GetHart(),
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOpREAD, true, R->MarkLoadComplete);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+    M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
                req,
@@ -534,7 +534,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 /// Store template
 template<typename T>
 bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  M->Write(F->GetHart(),
+  M->Write(F->GetHartToExec(),
            R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<T>(F, Inst.rs2));
   R->AdvancePC(F, Inst.instSize);
@@ -549,9 +549,9 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(double) ?
       REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
 
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHart()), req});
-    M->ReadVal(F->GetHart(),
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec(), MemOpREAD, true, R->MarkLoadComplete);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec()), req});
+    M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<T*>(&R->DPF[Inst.rd]),
                req,
@@ -562,9 +562,9 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
     }
   }else{
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHart(), MemOpREAD, true, R->MarkLoadComplete);
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHart()), req});
-    M->ReadVal(F->GetHart(),
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec(), MemOpREAD, true, R->MarkLoadComplete);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec()), req});
+    M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                &R->SPF[Inst.rd],
                req,
@@ -585,7 +585,7 @@ bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   }else{
     val = R->GetFP32(F, Inst.rs2);
   }
-  M->Write(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), val);
+  M->Write(F->GetHartToExec(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), val);
   R->AdvancePC(F, Inst.instSize);
   return true;
 }

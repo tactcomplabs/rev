@@ -21,9 +21,9 @@ namespace SST::RevCPU{
 class RV64A : public RevExt {
 
   static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    MemReq req(R->RV64[Inst.rs1],Inst.rd, RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete );
+    MemReq req(R->RV64[Inst.rs1],Inst.rd, RegGPR, F->GetHartToExec(), MemOpAMO, true, R->MarkLoadComplete );
     R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart),req});
-    M->LR(F->GetHart(),
+    M->LR(F->GetHartToExec(),
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rd],
           Inst.aq, Inst.rl, req,
@@ -33,7 +33,7 @@ class RV64A : public RevExt {
   }
 
   static bool scd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    M->SC(F->GetHart(),
+    M->SC(F->GetHartToExec(),
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rs2],
           &R->RV64[Inst.rd],
@@ -56,9 +56,9 @@ class RV64A : public RevExt {
       flags |= uint32_t(RevCPU::RevFlag::F_RL);
     }
 
-    MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete);
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RegGPR, F->GetHart()), req});
-    M->AMOVal(F->GetHart(),
+    MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOpAMO, true, R->MarkLoadComplete);
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RegGPR, F->GetHartToExec()), req});
+    M->AMOVal(F->GetHartToExec(),
               R->RV64[Inst.rs1],
               &R->RV64[Inst.rs2],
               &R->RV64[Inst.rd],
