@@ -346,11 +346,13 @@ struct ElfInfo{
     
       /// Output Strings 
       std::string ProgramHeaderInfo = "";
-      std::string CreateProgramHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs);
+      template<typename EHDR, typename SHDR, typename PHDR>
+      std::string CreateProgramHeaderString(EHDR *ehdr, SHDR *shdrs, const char *strtab, PHDR *phdrs);
 
       std::string SectionHeaderInfo = "";
-      std::string CreateSectionHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs);
-    
+      template<typename EHDR, typename SHDR, typename PHDR>
+      std::string CreateSectionHeaderString(EHDR *ehdr, SHDR *shdrs, const char *strtab, PHDR *phdrs);
+
       /// Loads the target executable into memory
       bool LoadElf();
 

@@ -149,16 +149,31 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
     }
+    // Check if the program header is PT_TLS
+    // - If so, save the addr & size of the TLS segment
+    if( ph[i].p_type == PT_TLS ){
+      std::cout << "TLS Segment: " << std::endl;
+      std::cout << "  Addr: 0x" << std::hex << ph[i].p_paddr << std::endl;
+      std::cout << "  Size: 0x" << std::hex << ph[i].p_memsz << std::endl;
+      std::cout << "  Align: 0x" << std::hex << ph[i].p_align << std::endl;
+      TLSBaseAddr = ph[i].p_paddr;
+      TLSSize = ph[i].p_memsz;
+      mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
+    }
+
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
       mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
     }
   }
 
-  uint64_t StaticDataEnd = 0; 
-  uint64_t BSSEnd = 0; 
-  uint64_t DataEnd = 0; 
-  uint64_t TextEnd = 0; 
+  // Add the first thread's memory
+  mem->AddThreadMem();
+
+  uint64_t StaticDataEnd = 0;
+  uint64_t BSSEnd = 0;
+  uint64_t DataEnd = 0;
+  uint64_t TextEnd = 0;
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
@@ -265,6 +280,13 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
       symtable[strtab+sym[i].st_name] = sym[i].st_value;
     }
   }
+
+  SectionHeaderInfo = CreateSectionHeaderString(eh, sh, shstrtab, ph);
+  ProgramHeaderInfo = CreateProgramHeaderString(eh, sh, shstrtab, ph);
+  std::cout << "Section Header Info: " << std::endl;
+  std::cout << SectionHeaderInfo << std::endl;
+  std::cout << "Program Header Info: " << std::endl;
+  std::cout << ProgramHeaderInfo << std::endl;
 
   // Initialize the heap
   mem->InitHeap(StaticDataEnd);
@@ -714,7 +736,8 @@ std::string join(const std::vector<std::string> &strings, const std::string &del
 #include <vector>
 #include <string>
 
-std::string RevLoader::CreateProgramHeaderString(Elf64_Ehdr *ehdr,  Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs) {
+template<typename EHDR, typename SHDR, typename PHDR>
+std::string RevLoader::CreateProgramHeaderString(EHDR *ehdr, SHDR *shdrs, const char *strtab, PHDR *phdrs) {
     std::ostringstream os;
     os << std::showbase << std::hex;  // Output numbers in hex format with '0x' prefix
 
@@ -725,13 +748,13 @@ std::string RevLoader::CreateProgramHeaderString(Elf64_Ehdr *ehdr,  Elf64_Shdr *
 
     // Table Body
     for (int i = 0; i < ehdr->e_phnum; ++i) {
-        Elf64_Phdr &phdr = phdrs[i];
-        
+        auto &phdr = phdrs[i];
+
         // List sections contained in this segment
         std::vector<std::string> containedSections;
         for (int j = 0; j < ehdr->e_shnum; ++j) {
-            Elf64_Shdr &shdr = shdrs[j];
-            if (shdr.sh_addr >= phdr.p_vaddr && 
+            auto &shdr = shdrs[j];
+            if (shdr.sh_addr >= phdr.p_vaddr &&
                 shdr.sh_addr + shdr.sh_size <= phdr.p_vaddr + phdr.p_memsz) {
                 containedSections.push_back(strtab + shdr.sh_name);
             }
@@ -763,7 +786,8 @@ std::string RevLoader::CreateProgramHeaderString(Elf64_Ehdr *ehdr,  Elf64_Shdr *
 //     }
 //     return os.str();
 // }
-std::string RevLoader::CreateSectionHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *shdrs, const char *strtab, Elf64_Phdr *phdrs) {
+template<typename EHDR, typename SHDR, typename PHDR>
+std::string RevLoader::CreateSectionHeaderString(EHDR *ehdr, SHDR *shdrs, const char *strtab, PHDR *phdrs) {
     std::ostringstream os;
     os << std::showbase << std::hex;  // Output numbers in hex format with '0x' prefix
 
@@ -780,7 +804,7 @@ std::string RevLoader::CreateSectionHeaderString(Elf64_Ehdr *ehdr, Elf64_Shdr *s
 
     // Table Body
     for (int i = 0; i < ehdr->e_shnum; ++i) {
-        Elf64_Shdr &shdr = shdrs[i];
+        auto &shdr = shdrs[i];
         const char *name = strtab + shdr.sh_name;
         os << std::left
            << std::setw(25) << name
