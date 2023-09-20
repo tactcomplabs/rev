@@ -1,5 +1,5 @@
 //
-// _RevThreadCtx_cc_
+// _RevThread_cc_
 //
 // Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -9,7 +9,7 @@
 //
 //
 
-#include "../include/RevThreadCtx.h"
+#include "../include/RevThread.h"
 
 using namespace SST::RevCPU;
 
