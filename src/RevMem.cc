@@ -299,12 +299,12 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 
       // #ifdef _REV_DEBUG_
       std::cout << "============ MemSegs: =============" << std::endl;
-      for( auto Seg : MemSegs ){
+      for( auto& Seg : MemSegs ){
         std::cout << *Seg << std::endl;
       }
       // #endif
       std::cout << "============ ThreadMemSegs: =============" << std::endl;
-      for( auto Seg : ThreadMemSegs ){
+      for( auto& Seg : ThreadMemSegs ){
         std::cout << *Seg << std::endl;
       }
 
@@ -379,7 +379,7 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
   bool Added = false;
 
   // Check if memory segment is already allocated
-  for( auto Seg : MemSegs ){
+  for( auto& Seg : MemSegs ){
     // If it contains the base address
     if( Seg->contains(BaseAddr) ){
       // If it doesn't contain the top address, we need to expand it
@@ -522,7 +522,7 @@ uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
   }
 
   // Check if any addresses in the segment are already
-  for( auto Seg : MemSegs ){
+  for( auto& Seg : MemSegs ){
     // Check if either the baseAddr or topAddr of the potential new segment exists inside of an already allocated segment
     if( Seg->contains(BaseAddr) || Seg->contains(BaseAddr + SegSize) ){
       output->fatal(CALL_INFO, 11,
@@ -886,7 +886,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
   int ret = -1;
   // Search through allocated segments for the segment that begins on the baseAddr
   for( unsigned i=0; i<MemSegs.size(); i++ ){
-    auto AllocedSeg = MemSegs[i];
+    auto& AllocedSeg = MemSegs[i];
     // We don't allow memory to be deallocated if it's not on a segment boundary
     if( AllocedSeg->getBaseAddr() != BaseAddr ){
       continue;
@@ -930,7 +930,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
     // - Before: |--- FreeSeg ---|---- NewFreeSeg ----|--- AllocedSeg ---|
     // - After:  |--- FreeSeg ------------------------|--- AllocedSeg ---|
     bool hasMerged = false;
-    for( auto FreeSeg : FreeMemSegs ){
+    for( auto& FreeSeg : FreeMemSegs ){
       // Check if the address that precedes the baseAddr is free
       if( FreeSeg->contains(BaseAddr-1) ){
         // We can merge the two segments
