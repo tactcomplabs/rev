@@ -5,6 +5,10 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-set(CommonSrcs 
-  PanAddr.h  
+if(${PAN_ENABLED})
+  set(CommonSrcs 
+    PanAddr.h  
+  )
 )
+
+
