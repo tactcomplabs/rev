@@ -38,6 +38,5 @@ int main(int argc, char **argv){
   assert(argv[3][2] == 'r')
   assert(argv[3][3] == 'e')
   assert(argv[3][4] == 'e')
-
   return 0;
 }

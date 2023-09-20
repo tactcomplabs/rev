@@ -11,6 +11,8 @@
 #include "../include/RevLoader.h"
 #include "RevMem.h"
 
+using namespace SST::RevCPU;
+
 RevLoader::RevLoader( std::string Exe, std::string Args,
                       RevMem *Mem, SST::Output *Output )
   : exe(Exe), args(Args), mem(Mem), output(Output),
@@ -84,22 +86,22 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   bool done = false;
   uint64_t BaseCacheAddr = Addr;
   while( !done ){
-    if( (BaseCacheAddr%(uint64_t)(lineSize)) == 0 ){
+    if( BaseCacheAddr % lineSize == 0 ){
       done = true;
     }else{
-      BaseCacheAddr-=1;
+      BaseCacheAddr--;
     }
   }
 
   // write the first cache line
-  size_t TmpSize = (size_t)((BaseCacheAddr+lineSize)-Addr);
-  uint64_t TmpData = (uint64_t)(Data);
+  size_t TmpSize = BaseCacheAddr + lineSize - Addr;
+  uint64_t TmpData = uint64_t(Data);
   uint64_t TmpAddr = Addr;
-  if( !mem->WriteMem(0,TmpAddr,TmpSize,(void *)(TmpData)) ){
+  if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
     output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
   }
 
-  TmpAddr += (uint64_t)(TmpSize);
+  TmpAddr += TmpSize;
   TmpData += TmpSize;
   Total += TmpSize;
 
@@ -113,12 +115,12 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
       TmpSize = (Len-Total);
     }
 
-    if( !mem->WriteMem(0, TmpAddr, TmpSize, (void *)(TmpData)) ){
+    if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
       output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
     }
 
     // incrememnt the temp counters
-    TmpAddr += (uint64_t)(TmpSize);
+    TmpAddr += TmpSize;
     TmpData += TmpSize;
     Total += TmpSize;
 
@@ -195,7 +197,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
 
   // set the first stack pointer
   uint32_t sp = mem->GetStackTop() - (uint32_t)(elfinfo.phdr_size);
-  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -355,8 +357,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
 
   // set the first stack pointer
-  uint64_t sp = mem->GetStackTop() - (uint64_t)(elfinfo.phdr_size);
-  WriteCacheLine(sp,elfinfo.phdr_size,(void *)(ph));
+  uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
+  WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
   // iterate over the program headers
@@ -508,7 +510,7 @@ bool RevLoader::LoadProgramArgs(){
 
   // setup the argc argument values
   uint32_t Argc = (uint32_t)(argv.size());
-  WriteCacheLine(ArgArray, 4, (void *)(&Argc));
+  WriteCacheLine(ArgArray, 4, &Argc);
   ArgArray += 4;
 
   // write the argument values
@@ -517,26 +519,26 @@ bool RevLoader::LoadProgramArgs(){
                     "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
 
     // retrieve the current stack pointer
-    char tmpc[argv[i].size() + 1];
-    argv[i].copy(tmpc,argv[i].size()+1);
+    std::vector<char> tmpc(argv[i].size() + 1);
+    argv[i].copy(&tmpc[0], argv[i].size()+1);
     tmpc[argv[i].size()] = '\0';
     size_t len = argv[i].size() + 1;
 
     OldStackTop -= len;
 
-    WriteCacheLine(OldStackTop, len,(void *)(&tmpc));
+    WriteCacheLine(OldStackTop, len, &tmpc[0]);
   }
 
   // now reverse engineer the address alignments
   // -- this is the address of the argv pointers (address + 8) in the stack
   // -- Note: this is NOT the actual addresses of the argv[n]'s
   uint64_t ArgBase = ArgArray+8;
-  WriteCacheLine(ArgArray, 8, (void *)(&ArgBase));
+  WriteCacheLine(ArgArray, 8, &ArgBase);
   ArgArray += 8;
 
   // -- these are the addresses of each argv entry
   for( unsigned i=0; i<argv.size(); i++ ){
-    WriteCacheLine(ArgArray, 8, (void *)(&OldStackTop));
+    WriteCacheLine(ArgArray, 8, &OldStackTop);
     OldStackTop += (argv[i].size()+1);
     ArgArray += 8;
   }
@@ -551,6 +553,11 @@ void RevLoader::splitStr(const std::string& s,
   std::string::size_type i = 0;
   std::string::size_type j = s.find(c);
 
+  if( (j==std::string::npos) && (s.length() > 0) ){
+    v.push_back(s);
+    return ;
+  }
+
   while (j != std::string::npos) {
     v.push_back(s.substr(i, j-i));
     i = ++j;
@@ -558,6 +565,7 @@ void RevLoader::splitStr(const std::string& s,
     if (j == std::string::npos)
       v.push_back(s.substr(i, s.length()));
   }
+
 }
 
 bool RevLoader::LoadElf(){

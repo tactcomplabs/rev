@@ -11,30 +11,25 @@
 #ifndef _SST_REVCPU_REVPREFETCHER_H_
 #define _SST_REVCPU_REVPREFETCHER_H_
 
+#include <cstdint>
+#include <memory>
 #include <vector>
 
-#include "../include/RevMem.h"
-#include "../include/RevFeature.h"
+#include "RevMem.h"
+#include "RevFeature.h"
 
-namespace SST{
-namespace RevCPU {
+namespace SST::RevCPU{
 
-#define REVPREF_INIT_ADDR ((uint32_t)(0xdeadbeef))
+#define REVPREF_INIT_ADDR 0xDEADBEEF
 
 class RevPrefetcher{
 public:
-  /// RevPrefetcher: default constructor
+  /// RevPrefetcher: constructor
   RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth)
     : mem(Mem), feature(Feature), depth(Depth){}
 
-  /// RevPrefetcher: default destructor
-  ~RevPrefetcher(){
-    // delete all the existing streams
-    baseAddr.clear();
-    for( unsigned i=0; i<iStack.size(); i++ ){
-      delete [] iStack[i];
-    }
-  }
+  /// RevPrefetcher: destructor
+  ~RevPrefetcher() = default;
 
   /// RevPrefetcher: fetch the next instruction
   bool InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst);
@@ -47,20 +42,19 @@ private:
   RevFeature *feature;                        ///< RevFeature object
   unsigned depth;                             ///< Depth of each prefetcher stream
   std::vector<uint64_t> baseAddr;             ///< Vector of base addresses for each stream
-  std::vector<uint32_t*> iStack;              ///< Vector of instruction vectors
-  std::vector<bool*> iHazard;                 ///< Vector of instruction cost vectors
+  std::vector<std::vector<uint32_t>> iStack; ///< Vector of instruction vectors
+  std::vector<std::vector<std::shared_ptr<bool>>> iHazard; ///< Vector of instruction cost vectors
 
   /// fills a missed stream cache instruction
   void Fill(uint64_t Addr);
 
   /// deletes the target stream buffer
-  void DeleteStream(unsigned i);
+  void DeleteStream(size_t i);
 
   /// attempts to fetch the upper half of a 32bit word of an unaligned base address
   bool FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst);
 };
 
-} // namespace RevCPU
-} // namespace SST
+} // namespace SST::RevCPU
 
 #endif // _SST_REVCPU_REVPREFETCHER_H_

@@ -60,8 +60,6 @@ set(REV_BASE "${CMAKE_CURRENT_SOURCE_DIR}")
 set(ENV{REV_BASE} "${REV_BASE}")
 message(STATUS "REV_BASE set to ${REV_BASE}")
 
-set(ENV{RVCC} "${RVCC}")
-
 #------------------------------------------------------------------------
 #-- DERIVE SST ENV
 #------------------------------------------------------------------------
@@ -87,7 +85,13 @@ message (LDFLAGS="${LDFLAGS}")
 #------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
-set(CMAKE_CXX_FLAGS "-O2 -Wall ${CMAKE_CXX_FLAGS} -std=c++17 -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set(WERROR_FLAG "")
+else()
+  set(WERROR_FLAG "-Werror")
+endif()
+
+set(CMAKE_CXX_FLAGS "-std=c++17 -O2 -Wall -Wextra ${WERROR_FLAG} -Wvla -Wuninitialized -Wfloat-conversion -Wdouble-promotion -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
 

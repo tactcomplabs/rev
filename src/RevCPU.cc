@@ -13,7 +13,9 @@
 #include "RevMem.h"
 #include "RevThread.h"
 
-const char *splash_msg = "\
+using namespace SST::RevCPU;
+
+const char splash_msg[] = "\
 \n\
 *******                   \n\
 /**////**                  \n\
@@ -26,7 +28,7 @@ const char *splash_msg = "\
 \n\
 ";
 
-const char *pan_splash_msg = "\
+const char pan_splash_msg[] = "\
 \n\
        __|__\n\
 --@--@--(_)--@--@--\n\
@@ -34,10 +36,11 @@ const char *pan_splash_msg = "\
     PAN PAN PAN!\n\
 ";
 
-RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
+RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), PrevAddr(_PAN_RDMA_MAILBOX_),
     EnableNIC(false), EnablePAN(false), EnablePANStats(false), EnableMemH(false),
-    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr) {
+    ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr),
+    ClockHandler(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
@@ -51,16 +54,16 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   {
     const std::string cpuClock = params.find<std::string>("clock", "1GHz");
     if( EnablePANTest ){
-      timeConverter  = registerClock(cpuClock,
-                                     new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTickPANTest));
+      ClockHandler = new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTickPANTest);
+      timeConverter = registerClock(cpuClock, ClockHandler);
       testIters = params.find<unsigned>("testIters", 255);
     }else{
-      timeConverter  = registerClock(cpuClock,
-                                     new SST::Clock::Handler<RevCPU>(this,&RevCPU::clockTick));
+      ClockHandler = new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTick);
+      timeConverter = registerClock(cpuClock, ClockHandler);
     }
   }
 
-  // Inform SST to wait unti we authorize it to exit
+  // Inform SST to wait until we authorize it to exit
   registerAsPrimaryComponent();
   primaryComponentDoNotEndSim();
 
@@ -70,7 +73,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   numCores = params.find<unsigned>("numCores", "1");
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
-  output.verbose(CALL_INFO, 1, 0, "Building Rev with %d cores\n", numCores);
+  output.verbose(CALL_INFO, 1, 0, "Building Rev with %u cores\n", numCores);
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");
@@ -79,6 +82,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   Args = params.find<std::string>("args", "");
 
   // Create the options object
+  // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
   Opts = new RevOpts(numCores,Verbosity);
   if( !Opts )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
@@ -151,6 +155,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
 
     // setup the PAN target device execution context
     if( !PNic->IsHost() ){
+      // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
       PExec = new PanExec();
       if( PExec == nullptr ){
       for( unsigned i=0; i<Procs.size(); i++ ){
@@ -193,9 +198,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Create the memory object
-  const unsigned long memSize = params.find<unsigned long>("memSize", 1073741824);
+  const uint64_t memSize = params.find<unsigned long>("memSize", 1073741824);
   EnableMemH = params.find<bool>("enable_memH", 0);
   if( !EnableMemH ){
+    // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
     Mem = new RevMem( memSize, Opts,  &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
@@ -207,6 +213,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     if( !Ctrl )
       output.fatal(CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n");
 
+    // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
     Mem = new RevMem( memSize, Opts, Ctrl, &output );
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
@@ -216,14 +223,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   }
 
   // Set TLB Size
-  const unsigned long tlbSize = params.find<unsigned long>("tlbSize", 512);
+  const uint64_t tlbSize = params.find<unsigned long>("tlbSize", 512);
   Mem->SetTLBSize(tlbSize);
 
   // Set max heap size
-  const unsigned long maxHeapSize = params.find<unsigned long>("maxHeapSize", std::floor((memSize/4)));
+  const uint64_t maxHeapSize = params.find<unsigned long>("maxHeapSize", memSize/4);
   Mem->SetMaxHeapSize(maxHeapSize);
 
   // Load the binary into memory
+  // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
   Loader = new RevLoader( Exe, Args, Mem, &output );
   if( !Loader ){
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
@@ -270,7 +278,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
   TLBHitsPerCore.reserve(TLBHitsPerCore.size() + numCores);
   TLBMissesPerCore.reserve(TLBMissesPerCore.size() + numCores);
 
-  for(int s = 0; s < numCores; s++){
+  for(unsigned s = 0; s < numCores; s++){
     TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
     CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
     FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
@@ -284,9 +292,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
   }
 
-  
+
   uint32_t MainThreadID = 1;
-  uint32_t MainParentThreadID = 0;
+  // uint32_t MainParentThreadID = 0;  // commented out to prevent compiler warning
 
   // set the pc
   uint64_t StartAddr = 0x00ull;
@@ -311,18 +319,18 @@ RevCPU::RevCPU( SST::ComponentId_t id, SST::Params& params )
     }
   }
 
-  // Create the first copy of the TLS Segment 
-  Threads.emplace(MainThreadID, 
+  // Create the first copy of the TLS Segment
+  Threads.emplace(MainThreadID,
                   std::make_shared<RevThread>(0,
                                               Mem->GetStackTop(),
                                               StartAddr,
-                                              Mem->GetThreadMemSegs().front())); 
+                                              Mem->GetThreadMemSegs().front()));
 
   Threads.at(MainThreadID)->SetThreadID(MainThreadID);
 
   std::cout << "First Thread Info: " << std::endl;
   std::cout << *Threads[MainThreadID] << std::endl;
-  
+
   Threads.at(MainThreadID)->GetRegFile()->RV32[3] = (uint32_t)(Loader->GetSymbolAddr("__global_pointer$"));
   Threads.at(MainThreadID)->GetRegFile()->RV64[3] = Loader->GetSymbolAddr("__global_pointer$");
 
@@ -378,34 +386,33 @@ RevCPU::~RevCPU(){
   delete[] Enabled;
 
   // delete the processors objects
-  for( unsigned i=0; i<Procs.size(); i++ ){
+  for( size_t i = 0; i < Procs.size(); i++ ){
     delete Procs[i];
   }
 
-  for (unsigned i=0; i<CoProcs.size(); i++){
+  for (size_t i = 0; i < CoProcs.size(); i++){
     delete CoProcs[i];
   }
 
-  if( PExec )
     delete PExec;
 
   // delete the memory controller if present
-  if( Ctrl )
     delete Ctrl;
 
   // delete the memory object
   delete Mem;
 
   // delete the loader object
-  if( Loader )
     delete Loader;
 
   // delete the options object
   delete Opts;
 
+  // delete the clock handler object
+  delete ClockHandler;
 }
 
-void RevCPU::DecodeFaultWidth(std::string width){
+void RevCPU::DecodeFaultWidth(const std::string& width){
   fault_width = 1;  // default to single bit failures
 
   if( width == "single" ){
@@ -421,78 +428,70 @@ void RevCPU::DecodeFaultWidth(std::string width){
   }
 }
 
-void RevCPU::DecodeFaultCodes(std::vector<std::string> faults){
-  if( faults.size() == 0 ){
+void RevCPU::DecodeFaultCodes(const std::vector<std::string>& faults){
+  if( faults.empty() ){
     output.fatal(CALL_INFO, -1, "No fault codes defined");
   }
 
-  EnableCrackFaults = false;
-  EnableMemFaults = false;
-  EnableRegFaults = false;
-  EnableALUFaults = false;
+  EnableCrackFaults = EnableMemFaults = EnableRegFaults = EnableALUFaults = false;
 
-  for( unsigned i=0; i<faults.size(); i++ ){
-    if( faults[i] == "decode"){
+  for(auto& fault : faults){
+    if( fault == "decode"){
       EnableCrackFaults = true;
-    }else if( faults[i] == "mem"){
+    }else if( fault == "mem"){
       EnableMemFaults = true;
-    }else if( faults[i] == "reg"){
+    }else if( fault == "reg"){
       EnableRegFaults = true;
-    }else if( faults[i] == "alu"){
+    }else if( fault == "alu"){
       EnableALUFaults = true;
-    }else if( faults[i] == "all" ){
-      EnableCrackFaults = true;
-      EnableMemFaults = true;
-      EnableRegFaults = true;
-      EnableALUFaults = true;
+    }else if( fault == "all" ){
+      EnableCrackFaults = EnableMemFaults =  EnableRegFaults = EnableALUFaults = true;
     }else{
-      output.fatal(CALL_INFO, -1, "Undefined fault code: %s", faults[i].c_str() );
+      output.fatal( CALL_INFO, -1, "Undefined fault code: %s", fault.c_str() );
     }
   }
 }
 
 void RevCPU::initNICMem(){
   output.verbose(CALL_INFO,1,0,"Initializing NIC memory.\n");
-
+  #if 1
+  // See PanAddr.h
+  Mem->AddMemSegAt(_PAN_COMPLETION_ADDR_, sizeof(uint64_t));
+  Mem->AddMemSegAt(_PAN_COMPLETION_ADDR_, sizeof(MBoxEntry) * _PAN_RDMA_MAX_ENTRIES_);
+  Mem->AddMemSegAt(_PAN_PE_TABLE_ADDR_,   sizeof(PEMap) * _PAN_PE_TABLE_MAX_ENTRIES_);
+  Mem->AddMemSegAt(_PAN_XFER_BUF_ADDR_,   sizeof(PRTIME_XFER) * _PAN_XFER_BUF_);
+  #endif
   // init all the entries to -1
-  uint64_t ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+  uint64_t ptr = _PAN_PE_TABLE_ADDR_;
   uint64_t host = 2;
   int64_t id = -1;
   for( unsigned i=0; i<_PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
-    Mem->WriteU64(0, ptr,(uint64_t)(id));
-    Mem->WriteU64(0, ptr+8,(uint64_t)(host));
+    Mem->Write(0, ptr, id);
+    Mem->Write(0, ptr+8, host);
     ptr += sizeof(PEMap);
   }
-  ptr = (uint64_t)(_PAN_PE_TABLE_ADDR_);
+  ptr = _PAN_PE_TABLE_ADDR_;
 
   // the first entry in the table is our own, then its
   // all the other nodes sequentially
-  id = (int64_t)(PNic->getAddress());
-  Mem->WriteU64(0, ptr,(uint64_t)(id));
+  id = PNic->getAddress();
+  Mem->Write(0, ptr, id);
   ptr += 8;
-  if( PNic->IsHost() ){
-    host = 1;
-  }else{
-    host = 0;
-  }
-  Mem->WriteU64(0, ptr,host);
+  host = PNic->IsHost();
+  Mem->Write(0, ptr, host);
   ptr += 8;
 
-  output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+  output.verbose(CALL_INFO, 4, 0, "--> MY_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
                  id, host );
 
   for( unsigned i=0; i<PNic->getNumPEs(); i++ ){
     id = PNic->getHostFromIdx(i);
-    Mem->WriteU64(0, ptr,(uint64_t)(id));
+    Mem->Write(0, ptr, id);
     ptr += 8;
-    if( PNic->IsRemoteHost((SST::Interfaces::SimpleNetwork::nid_t)(id)) ){
-      host = 1;
-    }else{
-      host = 0;
-    }
-    output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRId64 "\n",
+    host = PNic->IsRemoteHost(id);
+    output.verbose(CALL_INFO, 4, 0, "--> REMOTE_PE = %" PRId64 "; IS_HOST = %" PRIu64 "\n",
                   id, host);
-    Mem->WriteU64(0, ptr,host);
+    Mem->Write(0, ptr, host);
     ptr += 8;
   }
 }
@@ -645,8 +644,7 @@ void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
 
 void RevCPU::PANHandleSuccess(panNicEvent *event){
   // search for the tag in the tag list
-  std::pair<uint8_t,int> Entry = std::make_pair(event->getTag(),
-                                                event->getSrc());
+  std::pair Entry{event->getTag(), event->getSrc()};
   auto it = std::find(TrackTags.begin(),TrackTags.end(),Entry);
   if( it == TrackTags.end() ){
     // nothing found, raise an error
@@ -658,15 +656,14 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
   }
 
   // search for the tag in the outstanding get list
-  std::vector<std::tuple<uint8_t,uint64_t,uint32_t>>::iterator GetIter;
-  for( GetIter = TrackGets.begin(); GetIter != TrackGets.end(); ++GetIter ){
-    if( std::get<0>(*GetIter) = event->getTag() ){
+  for( auto GetIter = TrackGets.begin(); GetIter != TrackGets.end(); ++GetIter ){
+    if( std::get<0>(*GetIter) == event->getTag() ){
       // found a valid entry; setup the memory write
       uint64_t *Data = new uint64_t [event->getNumBlocks(std::get<2>(*GetIter))];
       Mem->WriteMem(0,
                     std::get<1>(*GetIter),
                     std::get<2>(*GetIter),
-                    (void *)(Data));
+                    Data);
       delete[] Data;
 
       // erase the entry
@@ -800,11 +797,11 @@ void RevCPU::PANHandleSyncPut(panNicEvent *event){
   // check for zero address
   if( event->getAddr() == 0x00ull ){
     // handle the special zero put messages
-    if( !PANHandleZeroAddrPut(Size,(void *)(Data)) ){
+    if( !PANHandleZeroAddrPut(Size, Data) ){
       delete[] Data;
       PANBuildFailedToken(event);
     }
-  }else if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  }else if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -856,11 +853,11 @@ void RevCPU::PANHandleAsyncPut(panNicEvent *event){
   // check for zero address
   if( event->getAddr() == 0x00ull ){
     // handle the special zero put messages
-    if( !PANHandleZeroAddrPut(Size,(void *)(Data)) ){
+    if( !PANHandleZeroAddrPut(Size, Data) ){
       delete[] Data;
       PANBuildFailedToken(event);
     }
-  }else if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  }else if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
   }
@@ -910,7 +907,7 @@ void RevCPU::PANHandleSyncStreamPut(panNicEvent *event){
   event->getData(Data);
 
   // write it to memory
-  if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
     return ;
@@ -961,7 +958,7 @@ void RevCPU::PANHandleAsyncStreamPut(panNicEvent *event){
   event->getData(Data);
 
   // write it to memory
-  if( !Mem->WriteMem(0, event->getAddr(), Size, (void *)(Data)) ){
+  if( !Mem->WriteMem(0, event->getAddr(), Size, Data) ){
     delete[] Data;
     PANBuildFailedToken(event);
     return ;
@@ -1004,7 +1001,7 @@ void RevCPU::PANHandleStatus(panNicEvent *event){
     PANBuildFailedToken(event);
     return ;
   }
-  unsigned Idx = (unsigned)(event->getSize());
+  unsigned Idx = event->getSize();
   PanExec::PanStatus Status = PExec->StatusEntry(Idx);
   if( Status == PanExec::QNull ){
     PANBuildFailedToken(event);
@@ -1026,7 +1023,7 @@ void RevCPU::PANHandleCancel(panNicEvent *event){
     return ;
   }
 
-  unsigned Idx = (unsigned)(event->getSize());
+  unsigned Idx = event->getSize();
   if( !PExec->RemoveEntry(Idx) ){
     PANBuildFailedToken(event);
     return ;
@@ -1259,7 +1256,8 @@ void RevCPU::PANHandleBOTW(panNicEvent *event){
     return ;
   }
 
-  uint8_t VarArgs = event->getVarArgs();
+  // commented out to prevent warnings
+  // uint8_t VarArgs = event->getVarArgs();
   uint64_t Entry  = (uint64_t)(event->getOffset()) + Loader->GetSymbolAddr("_start");
   unsigned Idx    = 0;
 
@@ -1587,7 +1585,6 @@ bool RevCPU::processPANZeroAddr(){
 
   output.verbose(CALL_INFO, 5, 0, "Processing Zero Address Put Commands\n");
 
-  // bool done = false;
   // size_t XferSize = sizeof(PRTIME_XFER);
   PRTIME_XFER *XferPtr = (PRTIME_XFER *)(_PAN_XFER_BUF_ADDR_);
   uint8_t TmpValid = _PAN_ENTRY_INVALID_;
@@ -1601,7 +1598,7 @@ bool RevCPU::processPANZeroAddr(){
 
     if( !Mem->ReadMem((uint64_t)(&XferPtr[i].Valid),
                       8,
-                      (void *)(&TmpValid)) ){
+                      &TmpValid) ){
       output.fatal(CALL_INFO, -1,
                    "Error: Could not read valid bit for zero address data insertion; Addr=0x%" PRIx64 "\n",
                    (uint64_t)(&XferPtr[i].Valid));
@@ -1613,8 +1610,8 @@ bool RevCPU::processPANZeroAddr(){
       TmpSize = ZeroRqst.front().first;
       TmpPtr  = ZeroRqst.front().second;
 
-      Mem->WriteU8(0, (uint64_t)(&XferPtr[i].Valid),TmpValid);
-      Mem->WriteMem(0, (uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, (void *)(TmpPtr));
+      Mem->Write(0, (uint64_t)(&XferPtr[i].Valid), TmpValid);
+      Mem->WriteMem(0, (uint64_t)(&XferPtr[i].Buffer[0]), TmpSize, TmpPtr);
 
       ZeroRqst.pop();
       delete[] TmpPtr;
@@ -1651,7 +1648,7 @@ bool RevCPU::processPANMemRead(){
       uint64_t *Data = new uint64_t [SCmd->getNumBlocks(tmp_size)];
       if( !Mem->ReadMem( tmp_addr,
                          (size_t)(tmp_size),
-                         (void *)(Data))){
+                         Data)){
         // build a failed response
         SCmd->buildFailed(PNic->GetToken(),tmp_tag);
         SCmd->setSrc(address);
@@ -1971,15 +1968,15 @@ bool RevCPU::PANProcessRDMAMailbox(){
     // Stage 2: Interrogate the payload
     if( Payload[0] == _PAN_ENTRY_VALID_ ){
       // found a valid payload, process it
-      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command; Entry=%d\n", iter);
+      output.verbose(CALL_INFO, 8, 0, "Processing RDMA Mailbox Command; Entry=%u\n", iter);
 
       // Stage 2.a: Convert the buffer into an event
       panNicEvent *FEvent = new panNicEvent(getName());
 
       if( !PANConvertRDMAtoEvent(Payload[2],FEvent) )
         output.fatal(CALL_INFO, -1,
-                     "Error: could not convert RDMA command to event from address=0x%llx\n",
-                     (long long unsigned int)(Payload[1]));
+                     "Error: could not convert RDMA command to event from address=0x%" PRIx64 "\n",
+                     Payload[1]);
 
       // Stage 2.b: Insert the event into the send queue
       SendMB.push(std::make_pair(FEvent,(int)(Payload[1])));
@@ -2242,7 +2239,7 @@ void RevCPU::ExecPANTest(){
     SendMB.push(std::make_pair(TEvent,dest));
 
     // write the completion command to our local CPU
-    Mem->WriteU64(0, (uint64_t)(_PAN_COMPLETION_ADDR_),0xdeadbeef);
+    Mem->Write(0, (uint64_t)(_PAN_COMPLETION_ADDR_), uint64_t{0xdeadbeef});
     break;
   case 10:
     // revoke reservation
@@ -2262,7 +2259,7 @@ void RevCPU::ExecPANTest(){
 
 bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
   bool rtn = true;
-  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", currentCycle);
 
   // run test harness
   ExecPANTest();
@@ -2304,7 +2301,7 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
 
 void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: Crack fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                 currentCycle);
 
   // select a random processor core
   unsigned Core = 0;
@@ -2320,13 +2317,13 @@ void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
 
 void RevCPU::HandleMemFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: Memory fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                 currentCycle);
   Mem->HandleMemFault(fault_width);
 }
 
 void RevCPU::HandleRegFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: Register fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                currentCycle);
 
   // select a random processor core
   unsigned Core = 0;
@@ -2342,7 +2339,7 @@ void RevCPU::HandleRegFault(SST::Cycle_t currentCycle){
 
 void RevCPU::HandleALUFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: ALU fault injected at cycle: %" PRIu64 "\n",
-                 static_cast<uint64_t>(currentCycle));
+                 currentCycle);
 
   // select a random processor core
   unsigned Core = 0;
@@ -2378,16 +2375,9 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
                  "Error: no faults enabled; add a fault vector in the 'faults' param\n" );
   }
 
-  srand(time(NULL));
-
   unsigned selector = 0;
-  if( myfaults.size() == 1 ){
-    selector = 0;
-  }else{
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(0, myfaults.size()-1); // define the range
-    selector = distr(gen);
+  if( myfaults.size() != 1 ){
+    selector = RevRand(0, int(myfaults.size())-1);
   }
 
   // handle the selected fault
@@ -2422,12 +2412,12 @@ void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
-  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", currentCycle);
 
   // Execute each enabled core
   for( unsigned i=0; i<Procs.size(); i++ ){
-    float Util = Procs[i]->GetUtilization();
-    if( Util > 0.0 ){ 
+   double Util = Procs[i]->GetUtilization();
+    if( Util > 0.0 ){
       output.verbose(CALL_INFO, 10, 0, "Core %d utilization: %.2f%%\n", i, Util);
     }
     // Check if we have room to schedule another thread
@@ -2442,12 +2432,12 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         output.verbose(CALL_INFO, 6, 1, "Assigning Thread %u to Core %u\n", ThreadQueue.front(), i);
         // Remove from thread queue
         ThreadQueue.erase(ThreadQueue.begin());
-        // If this Proc was previously disabled, enable it 
+        // If this Proc was previously disabled, enable it
         // if( !Enabled[i] ){ Enabled[i] = true; }
         Enabled[i] = true;
       }
-    } // Utilization is 100%, so change nothing 
-      
+    } // Utilization is 100%, so change nothing
+
     if( Enabled[i] ){
       if( Procs[i]->GetUtilization() == 0.0 ){
         Enabled[i] = false;
@@ -2461,17 +2451,17 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         }
         UpdateCoreStatistics(i);
         Enabled[i] = false;
-        output.verbose(CALL_INFO, 5, 0, "Closing Processor %d at Cycle: %" PRIu64 "\n",
-                    i, static_cast<uint64_t>(currentCycle));
+      output.verbose(CALL_INFO, 5, 0, "Closing Processor %u at Cycle: %" PRIu64 "\n",
+                     i, currentCycle);
       }
       if(EnableCoProc && !CoProcs[i]->ClockTick(currentCycle)){
-        output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %d at Cycle: %" PRIu64 "\n",
-                       i, static_cast<uint64_t>(currentCycle));
+        output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %u at Cycle: %" PRIu64 "\n",
+                       i, currentCycle);
       }
     }
     // Handle any thread state changes for this core
     std::bitset<_REV_HART_COUNT_>& Changes = Procs[i]->GetThreadStateChanges();
-    
+
     if( Changes.any() ){
       for( unsigned j=0; j<Changes.size(); j++ ){
         if( Changes[j] ){
@@ -2507,15 +2497,15 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
               output.fatal(CALL_INFO, 99, "Error: Thread %u on Core %u is assigned but is in START state... This is a bug\n",
                            Thread->GetThreadID(), i);
               break;
-            case ThreadState::RUNNING: 
+            case ThreadState::RUNNING:
               output.verbose(CALL_INFO, 11, 0, "Thread %u on Core %u is RUNNING\n", Thread->GetThreadID(), i);
               break;
-            case ThreadState::READY: // If this happens we are not setting state when assigning thread somewhere 
+            case ThreadState::READY: // If this happens we are not setting state when assigning thread somewhere
               output.fatal(CALL_INFO, 99, "Error: Thread %u on Core %u is assigned but is in START state... This is a bug\n",
                            Thread->GetThreadID(), i);
               break;
             default: // Should DEFINITELY never happen
-              output.fatal(CALL_INFO, 99, "Error: Thread %u on Core %u is in an unknown state... This is a bug\n", 
+              output.fatal(CALL_INFO, 99, "Error: Thread %u on Core %u is in an unknown state... This is a bug\n",
                            Thread->GetThreadID(), i);
               break;
           }
@@ -2610,7 +2600,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         output.verbose(CALL_INFO,5,0,"ZeroRqst not empty\n");
       }
       if( !TrackTags.empty() ){
-        output.verbose(CALL_INFO,5,0,"TrackTags not empty: %d\n", TrackTags.size());
+        output.verbose(CALL_INFO, 5, 0, "TrackTags not empty: %zu\n", TrackTags.size());
       }
     }
 #endif
@@ -2622,15 +2612,13 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       Procs[i]->EndExecution();
     }
     primaryComponentOKToEndSim();
-    output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+    output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", currentCycle);
   } else {
     rtn = false;
   }
 
   return rtn;
 }
-
-
 
 ///==== Thread Management Functions ====///
 void RevCPU::InitThread(std::shared_ptr<RevThread> ThreadToInit){
@@ -2654,7 +2642,7 @@ bool RevCPU::ThreadCanProceed(uint32_t TID){
   bool rtn = false;
   // Get the thread's waiting to join TID
   uint32_t WaitingOnTID = (Threads.at(TID))->GetWaitingToJoinTID();
-  // If 
+  // If
   if( WaitingOnTID != __INVALID_TID__ ){
     // Check if WaitingOnTID has completed... if so, return = true, else return false
     std::cout << "Thread " << TID << " is waiting on Thread " << std::dec << WaitingOnTID << std::endl;
@@ -2663,7 +2651,7 @@ bool RevCPU::ThreadCanProceed(uint32_t TID){
   else if ( WaitingOnTID == __INVALID_TID__ ){
     rtn = true;
   }
-  
+
   if( rtn ){
     std::cout << "Thread " << TID << " was waiting on Thread " << std::dec << WaitingOnTID << std::endl;
   }
@@ -2736,7 +2724,7 @@ void RevCPU::CheckBlockedThreads(){
 //             // Remove the thread from the Proc
 //             std::cout << "===========> Thread " << Thread->GetThreadID() << " is DONE" << std::endl;
 //             // Remove the thread from the Proc
-//             // TODO: Save this object to an archive of some sort 
+//             // TODO: Save this object to an archive of some sort
 //             CompletedThreads.emplace(Thread->GetThreadID());
 //             // Remove the thread from the AssignedThreads
 //             AssignedThreads.at(i).erase(AssignedThreads.at(i).begin()+j);
@@ -2751,7 +2739,7 @@ void RevCPU::CheckBlockedThreads(){
 //             std::cout << "===========> Thread " << Thread->GetThreadID() << " is waiting on Thread " << AssignedThreads.at(i).at(j)->GetWaitingToJoinTID() << std::endl;
 //             // Remove the thread from the Proc
 //             // std::cout << "===========> Found a thread that's BLOCKED" << std::endl;
-//             // TODO: Check for outstanding Loads first 
+//             // TODO: Check for outstanding Loads first
 //             // TODO: Add a list of thread ids to RevThread for what it's waiting on and then check that if the entries are in the BlockedThreads list
 //             uint32_t BlockedTID = Thread->GetThreadID();
 //             if( !CanThreadProceed(BlockTID) ){
@@ -2761,9 +2749,9 @@ void RevCPU::CheckBlockedThreads(){
 //               AssignedThreads.at(i).erase(AssignedThreads.at(i).begin()+j);
 
 //             }
-//               
-//               // Try to find if this thread is already in the waiting queue 
-//               
+//
+//               // Try to find if this thread is already in the waiting queue
+//
 //               // uint32_t TID = Thread->GetThreadID();
 //               // for( unsigned i=0; i<BlockedThreads.size(); i++ ){
 //               //   if( TID == BlockedThreads.at(i) ){
@@ -2772,7 +2760,7 @@ void RevCPU::CheckBlockedThreads(){
 //               //   ThreadQueue.emplace_back(TID);
 //               // }
 //               break;
-//             } 
+//             }
 //             else {
 //               AssignedThreads.at(i).erase(AssignedThreads.at(i).begin()+j);
 //               BlockedThreads.emplace(BlockedTID);
@@ -2796,12 +2784,12 @@ void RevCPU::CheckBlockedThreads(){
 //           }
 //         }
 //       }
-//       
+//
 //       if( Procs[i]->GetUtilization() < 100 && ThreadQueue.size() ){
 //         AssignedThreads.at(i).emplace_back(Threads.at(ThreadQueue.front()));
 //         ThreadQueue.erase(ThreadQueue.begin());
 //       }
-//       // Check if we need to create a new thread 
+//       // Check if we need to create a new thread
 //       if( Procs[i]->GetNewThreadInfo().size() ){
 //         // std::cout << "Creating a new thread for Proc: " << i << std::endl;
 //         // TODO: Figure out if we'll do multiple of these if present (ie. size > 1)
@@ -2832,8 +2820,8 @@ void RevCPU::CheckBlockedThreads(){
 //                    i, static_cast<uint64_t>(currentCycle));
 
 //     }
-//   } // === End Per Proc tasks 
-//   
+//   } // === End Per Proc tasks
+//
 
 //   // TODO: Check if any BlockedThreads have had their counterpart complete execution
 //   //       if so, move its TID to the ThreadQueue
@@ -2851,7 +2839,7 @@ void RevCPU::CheckBlockedThreads(){
 //       }
 //     }
 //   }
-//   
+//
 //   // Clock the PAN network transport module
 //   if( EnablePAN ){
 
@@ -2899,7 +2887,7 @@ void RevCPU::CheckBlockedThreads(){
 //   if( ThreadQueue.size() ){
 //     std::cout << "Thread Queue: ";
 //     for( unsigned i=0; i<ThreadQueue.size(); i++ ){
-//       std::cout << ThreadQueue.at(i) << ", "; 
+//       std::cout << ThreadQueue.at(i) << ", ";
 //     }
 //     std::cout << std::endl;
 //     rtn = false;
@@ -2911,7 +2899,7 @@ void RevCPU::CheckBlockedThreads(){
 //   // if no threads in queue, no threads in waiting, and at least 1 thread has completed, we're done
 //   if( !ThreadQueue.size() ){
 //     rtn = true;
-//     if( BlockedThreads.size() ){ 
+//     if( BlockedThreads.size() ){
 //       rtn = false;
 //       for( unsigned i=0; i<BlockedThreads.size(); i++ ){
 //         std::shared_ptr<RevThread> Thread = Threads.at(BlockedThreads[i]);
@@ -2939,9 +2927,9 @@ void RevCPU::CheckBlockedThreads(){
 //     } else {
 //         rtn = false;
 //     }
-//   } 
+//   }
 
-//   
+//
 //   // check to see if the network has any outstanding messages: fixme
 //   if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() || !RevokeHasArrived ){
 // #ifdef _REV_DEBUG_
@@ -2961,7 +2949,7 @@ void RevCPU::CheckBlockedThreads(){
 //   }
 
 //   if( rtn ){
-//     // Temporary sanity check 
+//     // Temporary sanity check
 //     for( auto Thread : Threads ){
 //       if( Thread.second->GetState() != ThreadState::DONE ){
 //         std::cout << "Thread " << Thread.first << "did not finish but the simulation is about to end" << std::endl;
@@ -2969,7 +2957,7 @@ void RevCPU::CheckBlockedThreads(){
 //     }
 //     std::cout << " ThreadQueue Size: " << ThreadQueue.size() << std::endl;
 //     std::cout << " BlockedThreads Size: " << BlockedThreads.size() << std::endl;
-//     // End execution for all RevProcs 
+//     // End execution for all RevProcs
 //     for( unsigned i=0; i<numCores; i++ ){
 //       Procs[i]->EndExecution();
 //     }
@@ -2979,4 +2967,3 @@ void RevCPU::CheckBlockedThreads(){
 
 //   return rtn;
 // }
-

@@ -12,20 +12,20 @@
 #define _SST_REVCPU_H_
 
 // -- Standard Headers
-#include <vector>
-#include <queue>
-#include <tuple>
+#include <functional>
 #include <list>
+#include <queue>
+#include <random>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include <time.h>
-#include <random>
-#include <functional>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
-#include <sst/core/interfaces/simpleNetwork.h>
+#include "SST.h"
 
 // -- Rev Headers
 #include "RevOpts.h"
@@ -37,19 +37,20 @@
 #include "PanNet.h"
 #include "PanExec.h"
 #include "RevCoProc.h"
+#include "RevRand.h"
 
 // -- PAN Common Headers
 #include "../common/include/PanAddr.h"
 
 #define _MAX_PAN_TEST_ 11
 
-namespace SST {
-  namespace RevCPU {
+namespace SST::RevCPU{
+
     class RevCPU : public SST::Component {
 
     public:
       /// RevCPU: top-level SST component constructor
-      RevCPU( SST::ComponentId_t id, SST::Params& params );
+  RevCPU( SST::ComponentId_t id, const SST::Params& params );
 
       /// RevCPU: top-level SST component destructor
       ~RevCPU();
@@ -112,7 +113,7 @@ namespace SST {
         {"msgPerCycle",     "Number of messages per cycle to inject",       "1"},
         {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject",  "1"},
         {"testIters",       "Number of PAN test messages to send",          "255"},
-        {"splash",          "Display the splash logo",                      "0"}
+                          {"splash",          "Display the splash logo",                      "0"},
       )
 
       // -------------------------------------------------------
@@ -128,7 +129,7 @@ namespace SST {
         {"nic", "Network interface", "SST::RevCPU::RevNIC"},
         {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
         {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
-        {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"}
+                                                              {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"},
       )
 
       // -------------------------------------------------------
@@ -197,10 +198,10 @@ namespace SST {
         {"TLBHitsPerCore",      "TLB hits per core",                                    "count",  1},
         {"TLBMissesPerCore",    "TLB misses per core",                                  "count",  1},
       )
-      
 
-      // Passed as a function pointer to each RevProc for when they encounter a function that 
-      // results in a new RevThread being spawned 
+
+      // Passed as a function pointer to each RevProc for when they encounter a function that
+      // results in a new RevThread being spawned
       std::function<uint32_t()> GetNewTID() {
           return std::function<uint32_t()>([this]() { return GetNewThreadID(); });
       }
@@ -217,27 +218,27 @@ namespace SST {
       RevOpts *Opts;                      ///< RevCPU: Simulation options object
       RevMem *Mem;                        ///< RevCPU: RISC-V main memory object
       RevLoader *Loader;                  ///< RevCPU: RISC-V loader
-      
-      /// New Thread Logic 
-      std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
-      
-      // Vector of vectors of threads assigned to each processor
-      std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads; 
 
-      // Init Thread 
+      /// New Thread Logic
+      std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
+
+      // Vector of vectors of threads assigned to each processor
+      std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads;
+
+      // Init Thread
       void CreateThread(std::pair<uint64_t, std::shared_ptr<MemSegment>>);
 
       void InitThread(std::shared_ptr<RevThread> ThreadToInit);
 
       void CheckBlockedThreads();
-      
+
       // Used to check if a thread that is waiting to join can proceed
       bool ThreadCanProceed(uint32_t TID);
 
       // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
       // Create a priority_queue for the RevThreads based on the value of Threads.at(ThreadID)->GetPriority()
       std::vector<uint32_t> ThreadQueue = {};
-      
+
       // Used for tracking which threads are waiting for pthread_join
       std::set<uint32_t> BlockedThreads = {};
 
@@ -249,10 +250,11 @@ namespace SST {
       uint32_t GetNewThreadID(){ return NextThreadID++; }
 
       std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
-      bool *Enabled;                      ///< RevCPU: Completion structure 
+      bool *Enabled;                      ///< RevCPU: Completion structure
 
       uint8_t PrivTag;                    ///< RevCPU: private tag locator
-      uint64_t LToken;                    ///< RevCPU: token identifier for PAN Test
+  // TODO: LToken is used everywhere as uint32_t but was declared as uint64_t
+  uint32_t LToken;                    ///< RevCPU: token identifier for PAN Test
 
       int address;                        ///< RevCPU: local network address
 
@@ -290,6 +292,7 @@ namespace SST {
 
       std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
 
+  SST::Clock::Handler<RevCPU>* ClockHandler;  ///< RevCPU: Clock Handler
 
       std::queue<std::pair<panNicEvent *,int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd,Dest>
       std::queue<std::pair<uint32_t,char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size,Data>
@@ -380,10 +383,10 @@ namespace SST {
       void initNICMem();
 
       /// RevCPU: decode the fault codes
-      void DecodeFaultCodes(std::vector<std::string> faults);
+  void DecodeFaultCodes(const std::vector<std::string>& faults);
 
       /// RevCPU:: decode the fault width
-      void DecodeFaultWidth(std::string width);
+  void DecodeFaultWidth(const std::string& width);
 
       /// RevCPU: executes the PAN test harness
       void ExecPANTest();
@@ -533,8 +536,8 @@ namespace SST {
       void UpdateCoreStatistics(uint16_t coreNum);
 
     }; // class RevCPU
-  } // namespace RevCPU
-} // namespace SST
+
+} // namespace SST::RevCPU
 
 #endif
 

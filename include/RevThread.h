@@ -15,12 +15,17 @@
 #define __INVALID_TID__ 0x0
 
 // -- Standard Headers
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 #include <iomanip>
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <vector>
 
 // -- Rev Headers
-#include "../include/RevMem.h"
+#include "RevMem.h"
 #include "RevInstTable.h"
 
 using MemSegment = SST::RevCPU::RevMem::MemSegment;
@@ -35,8 +40,8 @@ enum class ThreadState {
 };
 
 class RevThread {
-
-  public:
+  using RevRegFile = SST::RevCPU::RevRegFile;
+public:
     // Constructor that takes a RevRegFile object and a uint32_t ParentThreadID
     RevThread( uint32_t ParentThreadID,
                uint64_t inputStackPtr,

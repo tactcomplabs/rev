@@ -15,13 +15,13 @@ else()
 endif()
 
 # Check for RISCV Compiler
-set(ENV{RVCC} "${RVCC}")
-set(RVCC "${RVCC}")
-
+if(NOT RVCC)
+  set(RVCC "$ENV{RVCC}")
+endif()  
 if(RVCC)
   message(STATUS "RVCC set to ${RVCC}")
 else()
-#  message(FATAL_ERROR "No RVCC compiler found: use -DRVCC=/path/to/compiler (gcc,clang)")
+  message(FATAL_ERROR "RVCC environment varible is not set.")
 endif()
 
 # find_program(RVLINUX riscv64-unknown-linux-gnu-gcc)
@@ -324,6 +324,25 @@ set_tests_properties(ARGC_MEMH
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
+
+add_test(NAME ARGC_SHORT_REVMEM COMMAND run_argc.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/argc_short_revmem")
+set_tests_properties(ARGC_SHORT_REVMEM
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME ARGC_SHORT_MEMH COMMAND run_argc.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/argc_short_memh")
+set_tests_properties(ARGC_MEMH
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 
 
 # -- PROCESS CTest Config Variables

@@ -14,49 +14,55 @@
 #define __PAGE_SIZE__ 4096
 
 // -- C++ Headers
-#include <ctime>
-#include <vector>
 #include <algorithm>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <cinttypes>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
+#include <list>
+#include <map>
+#include <memory>
+#include <mutex>
 #include <random>
 #include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 // -- SST Headers
-#include <sst/core/sst_config.h>
-#include <sst/core/component.h>
-#include <sst/core/interfaces/stdMem.h>
+#include "SST.h"
 
 // -- RevCPU Headers
 #include "RevOpts.h"
 #include "RevMemCtrl.h"
+#include "RevRand.h"
 
 #ifndef _REVMEM_BASE_
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
-#define REVMEM_FLAGS(x) ((StandardMem::Request::flags_t)(x))
+#define REVMEM_FLAGS(x) (static_cast<StandardMem::Request::flags_t>(x))
 
 #define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
 
-#define _STACK_SIZE_ (1024*1024*sizeof(char))
+#define _STACK_SIZE_ (size_t{1024*1024})
 
-using namespace SST::RevCPU;
-
-namespace SST {
-  namespace RevCPU {
+namespace SST::RevCPU{
 
     class RevMem {
     public:
       /// RevMem: standard constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output );
+      RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output );
 
       /// RevMem: standard memory controller constructor
-      RevMem( unsigned long MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
+      RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output );
 
       /// RevMem: standard destructor
-      ~RevMem();
+      ~RevMem(){
+        delete[] physMem;
+      }
 
       /* Virtual Memory Blocks  */
       class MemSegment {
@@ -128,26 +134,34 @@ namespace SST {
       bool FenceMem(unsigned Hart);
 
       /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
-      unsigned getLineSize(){ if( ctrl ){return ctrl->getLineSize();}else{return 64;} }
+      unsigned getLineSize(){ return ctrl ? ctrl->getLineSize() : 64;}
 
       // ----------------------------------------------------
       // ---- Base Memory Interfaces
       // ----------------------------------------------------
       /// RevMem: write to the target memory location
-      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data );
+      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data );
 
       /// RevMem: write to the target memory location with the target flags
-      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
+      bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data,
                      StandardMem::Request::flags_t flags );
 
       /// RevMem: read data from the target memory location
       bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                    bool *Hazard,
+                const std::shared_ptr<bool>& Hazard,
                     StandardMem::Request::flags_t flags);
 
       /// RevMem: DEPRECATED: read data from the target memory location
       [[deprecated("Simple RevMem interfaces have been deprecated")]]
       bool ReadMem( uint64_t Addr, size_t Len, void *Data );
+
+  [[deprecated("ReadU* interfaces have been deprecated")]]
+  uint64_t ReadU64( uint64_t Addr ){
+    uint64_t Value;
+    if( !ReadMem( Addr, sizeof(Value), &Value ) )
+      output->fatal(CALL_INFO, -1, "Error: could not read memory (U64)\n");
+    return Value;
+  }
 
       // ----------------------------------------------------
       // ---- Read Memory Interfaces
@@ -155,17 +169,18 @@ namespace SST {
       /// RevMem: template read memory interface
       template <typename T>
       bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
-                    bool *Hazard,
+                const std::shared_ptr<bool>& Hazard,
                     StandardMem::Request::flags_t flags){
-        return ReadMem(Hart, Addr, sizeof(T), (void *)(Target), Hazard, flags);
+    return ReadMem(Hart, Addr, sizeof(T), Target, Hazard, flags);
       }
 
       ///  RevMem: template LOAD RESERVE memory interface
       template <typename T>
       bool LR( unsigned Hart, uint64_t Addr, T *Target,
-               uint8_t aq, uint8_t rl, bool *Hazard,
+           uint8_t aq, uint8_t rl,
+           const std::shared_ptr<bool>& Hazard,
                StandardMem::Request::flags_t flags){
-        return LRBase(Hart, Addr, sizeof(T), (void *)(Target), aq, rl, Hazard, flags);
+    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, Hazard, flags);
       }
 
       ///  RevMem: template STORE CONDITIONAL memory interface
@@ -173,68 +188,44 @@ namespace SST {
       bool SC( unsigned Hart, uint64_t Addr, T *Data, T *Target,
                uint8_t aq, uint8_t rl,
                StandardMem::Request::flags_t flags){
-        return SCBase(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), aq, rl, flags);
+        return SCBase(Hart, Addr, sizeof(T), Data, Target, aq, rl, flags);
       }
 
       /// RevMem: template AMO memory interface
       template <typename T>
       bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
-                   bool *Hazard,
+               const std::shared_ptr<bool>& Hazard,
                    StandardMem::Request::flags_t flags){
-        return AMOMem(Hart, Addr, sizeof(T), (void *)(Data), (void *)(Target), Hazard, flags);
+        return AMOMem(Hart, Addr, sizeof(T), Data, Target, Hazard, flags);
       }
-
-      /// RevMem: DEPRECATED: Read uint8 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint8_t ReadU8( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read uint16 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint16_t ReadU16( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read uint32 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint32_t ReadU32( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read uint64 from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      uint64_t ReadU64( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read float from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      float ReadFloat( uint64_t Addr );
-
-      /// RevMem: DEPRECATED: Read double from the target memory location
-      [[deprecated("Simple RevMem interfaces have been deprecated")]]
-      double ReadDouble( uint64_t Addr );
 
       // ----------------------------------------------------
       // ---- Write Memory Interfaces
       // ----------------------------------------------------
-      /// RevMem: Write a uint8 to the target memory location
-      void WriteU8( unsigned Hart, uint64_t Addr, uint8_t Value );
 
-      /// RevMem: Write a uint16 to the target memory location
-      void WriteU16( unsigned Hart, uint64_t Addr, uint16_t Value );
+  template<typename T>
+  void Write( unsigned Hart, uint64_t Addr, T Value ){
+    if( std::is_same_v<T, float>){
+      memStats.floatsWritten++;
+    }else if(std::is_same_v<T, double>){
+      memStats.doublesWritten++;
+    }
 
-      /// RevMem: Write a uint32 to the target memory location
-      void WriteU32( unsigned Hart, uint64_t Addr, uint32_t Value );
-
-      /// RevMem: Write a uint64 to the target memory location
-      void WriteU64( unsigned Hart, uint64_t Addr, uint64_t Value );
-
-      /// RevMem: Write a float to the target memory location
-      void WriteFloat( unsigned Hart, uint64_t Addr, float Value );
-
-      /// RevMem: Write a double to the target memory location
-      void WriteDouble( unsigned Hart, uint64_t Addr, double Value );
+    if( !WriteMem(Hart, Addr, sizeof(T), &Value) ){
+      output->fatal(CALL_INFO, -1, std::is_floating_point_v<T> ?
+                    "Error: could not write memory (FP%zu)\n" :
+                    "Error: could not write memory (U%zu)\n",
+                    sizeof(T) * 8);
+    }
+  }
 
       // ----------------------------------------------------
       // ---- Atomic/Future/LRSC Interfaces
       // ----------------------------------------------------
       /// RevMem: Add a memory reservation for the target address
       bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
-                  void *Data, uint8_t aq, uint8_t rl, bool *Hazard,
+              void *Data, uint8_t aq, uint8_t rl,
+              const std::shared_ptr<bool>& Hazard,
                   StandardMem::Request::flags_t flags);
 
       /// RevMem: Clear a memory reservation for the target address
@@ -244,7 +235,8 @@ namespace SST {
 
       /// RevMem: Initiated an AMO request
       bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
-                  void *Data, void *Target, bool *Hazard,
+              void *Data, void *Target,
+              const std::shared_ptr<bool>& Hazard,
                   StandardMem::Request::flags_t flags);
 
       /// RevMem: Initiates a future operation [RV64P only]
@@ -257,7 +249,7 @@ namespace SST {
       bool StatusFuture( uint64_t Addr );
 
       /// RevMem: Randomly assign a memory cost
-      unsigned RandCost( unsigned Min, unsigned Max );
+      unsigned RandCost( unsigned Min, unsigned Max ) { return RevRand(Min, Max); }
 
       /// RevMem: Used to set the size of the TLBSize
       void SetTLBSize(unsigned numEntries){ tlbSize = numEntries; }
@@ -266,24 +258,24 @@ namespace SST {
       void SetMaxHeapSize(const unsigned MaxHeapSize){ maxHeapSize = MaxHeapSize; }
 
       /// RevMem: Get memSize value set in .py file
-      const uint64_t GetMemSize(){ return memSize; }
+      uint64_t GetMemSize() const { return memSize; }
 
       /// RevMem: Sets the next stack top address
       void SetNextThreadMemAddr(const uint64_t& NextAddr){ NextThreadMemAddr = NextAddr; }
-  
+
       ///< RevMem: Get MemSegs vector
-      std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; } 
+      std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; }
 
       ///< RevMem: Get ThreadMemSegs vector
-      std::vector<std::shared_ptr<MemSegment>>& GetThreadMemSegs(){ return ThreadMemSegs; } 
+      std::vector<std::shared_ptr<MemSegment>>& GetThreadMemSegs(){ return ThreadMemSegs; }
 
       ///< RevMem: Get FreeMemSegs vector
-      std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; } 
+      std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; }
 
       /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
       uint64_t AddMemSeg(const uint64_t& SegSize);
 
-      /// RevMem: Add new thread mem (starting at TopAddr [growing down]) 
+      /// RevMem: Add new thread mem (starting at TopAddr [growing down])
       std::shared_ptr<MemSegment> AddThreadMem();
 
       /// RevMem: Add new MemSegment (starting at BaseAddr)
@@ -306,6 +298,7 @@ namespace SST {
 
       /// RevMem: Sets the HeapStart & HeapEnd to EndOfStaticData
       void InitHeap(const uint64_t& EndOfStaticData);
+
       void SetHeapStart(const uint64_t& HeapStart){ heapstart = HeapStart; }
       void SetHeapEnd(const uint64_t& HeapEnd){ heapend = HeapEnd; }
       const uint64_t& GetHeapEnd(){ return heapend; }
@@ -330,10 +323,10 @@ namespace SST {
       uint32_t bytesWritten;
     };
 
-    RevMemStats memStats;
+  RevMemStats memStats = {};
 
     protected:
-      char *physMem;                          ///< RevMem: memory container
+  char *physMem = nullptr;                 ///< RevMem: memory container
 
     private:
       std::unordered_map<uint64_t, std::pair<uint64_t, std::list<uint64_t>::iterator>> TLB;
@@ -341,15 +334,17 @@ namespace SST {
       std::vector<std::shared_ptr<MemSegment>> MemSegs;     // Currently Allocated MemSegs
       std::vector<std::shared_ptr<MemSegment>> FreeMemSegs; // MemSegs that have been unallocated
       std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // Pair of ThreadID with their ThreadMemSeg that contains TLS & Stack
-  
+
       unsigned long memSize;        ///< RevMem: size of the target memory
       unsigned tlbSize;             ///< RevMem: size of the target memory
       unsigned maxHeapSize;         ///< RevMem: size of the target memory
+
       uint64_t TLSBaseAddr;         ///< RevMem: TLS Base Address
       uint64_t TLSSize = sizeof(uint32_t);             ///< RevMem: TLS Size (minimum size is enough to write the TID)
       uint64_t ThreadIDCount = 1024;      ///< RevMem: Thread ID counter
       uint64_t ThreadMemSize = _STACK_SIZE_;       ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
-      uint64_t NextThreadMemAddr = memSize - 1024;   ///< RevMem: Next top address for a new thread's memory 
+      uint64_t NextThreadMemAddr = memSize - 1024;   ///< RevMem: Next top address for a new thread's memory
+
       RevOpts *opts;                ///< RevMem: options object
       RevMemCtrl *ctrl;             ///< RevMem: memory controller object
       SST::Output *output;          ///< RevMem: output handler
@@ -362,13 +357,13 @@ namespace SST {
 
       std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
       uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
-      uint32_t                                      addrShift; ///< RevMem: Bits to shift to caclulate page of address 
-      uint32_t                                      nextPage;  ///< RevMem: next physical page to be allocated. Will result in index 
+      uint32_t                                      addrShift; ///< RevMem: Bits to shift to caclulate page of address
+      uint32_t                                      nextPage;  ///< RevMem: next physical page to be allocated. Will result in index
                                                                     /// nextPage * pageSize into physMem
 
       uint64_t heapend;        ///< RevMem: top of the stack
       uint64_t heapstart;        ///< RevMem: top of the stack
-      uint64_t stacktop;        ///< RevMem: top of the stack
+      uint64_t stacktop = 0;   ///< RevMem: top of the stack
 
       std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 
@@ -381,8 +376,8 @@ namespace SST {
                              unsigned,uint64_t*>> LRSC;   ///< RevMem: load reserve/store conditional vector
 
     }; // class RevMem
-  } // namespace RevCPU
-} // namespace SST
+
+} // namespace SST::RevCPU
 
 #endif
 

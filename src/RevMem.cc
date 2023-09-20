@@ -9,15 +9,22 @@
 //
 
 #include "../include/RevMem.h"
-#include <math.h>
+#include "../include/RevRand.h"
+#include <cstring>
+#include <cmath>
+#include <utility>
 #include <memory>
+#include <mutex>
+#include <functional>
 
 using MemSegment = SST::RevCPU::RevMem::MemSegment;
-  
+using namespace SST::RevCPU;
+
 RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
                 RevMemCtrl *Ctrl, SST::Output *Output )
   : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output),
-    stacktop(0x00ull) {
+    stacktop(0) {
+
   // Note: this constructor assumes the use of the memHierarchy backend
   pageSize = 262144; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
@@ -27,38 +34,22 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts,
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
-  
+
   // Add the 1024 bytes for the program header information
   AddMemSegAt(stacktop+1, 1024);
-
-  memStats.bytesRead = 0;
-  memStats.bytesWritten = 0;
-  memStats.doublesRead = 0;
-  memStats.doublesWritten = 0;
-  memStats.floatsRead = 0;
-  memStats.floatsWritten = 0;
-  memStats.TLBHits = 0;
-  memStats.TLBMisses = 0;
-
 }
 
-RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
-  : physMem(nullptr), memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output),
-    stacktop(0x00ull) {
+RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
+  : memSize(MemSize), opts(Opts), ctrl(nullptr), output(Output) {
 
-  // allocate the backing memory
-  physMem = new char [memSize];
+  // allocate the backing memory, zeroing it
+  physMem = new char [memSize]{};
   pageSize = 262144; //Page Size (in Bytes)
   addrShift = int(log(pageSize) / log(2.0));
   nextPage = 0;
 
   if( !physMem )
     output->fatal(CALL_INFO, -1, "Error: could not allocate backing memory\n");
-
-  // zero the memory
-  for( unsigned long i=0; i<memSize; i++ ){
-    physMem[i] = 0;
-  }
 
   // We initialize StackTop to the size of memory minus 1024 bytes
   // This allocates 1024 bytes for program header information to contain
@@ -67,20 +58,6 @@ RevMem::RevMem( unsigned long MemSize, RevOpts *Opts, SST::Output *Output )
 
   // Add the 1024 bytes for the program header information
   AddMemSegAt(stacktop+1, 1024);
-
-  memStats.bytesRead = 0;
-  memStats.bytesWritten = 0;
-  memStats.doublesRead = 0;
-  memStats.doublesWritten = 0;
-  memStats.floatsRead = 0;
-  memStats.floatsWritten = 0;
-  memStats.TLBHits = 0;
-  memStats.TLBMisses = 0;
-}
-
-RevMem::~RevMem(){
-  if( physMem )
-    delete[] physMem;
 }
 
 bool RevMem::outstandingRqsts(){
@@ -94,21 +71,17 @@ bool RevMem::outstandingRqsts(){
 
 void RevMem::HandleMemFault(unsigned width){
   // build up the fault payload
-  srand(time(NULL));
-  uint64_t rval = rand() % (2^(width));
+  uint64_t rval = RevRand(0, (uint32_t{1} << width) - 1);
 
   // find an address to fault
-  std::random_device rd; // obtain a random number from hardware
-  std::mt19937 gen(rd()); // seed the generator
-  std::uniform_int_distribution<> distr(0, memSize-8); // define the range
-  unsigned NBytes = distr(gen);
+  unsigned NBytes = RevRand(0, memSize-8);
   uint64_t *Addr = (uint64_t *)(&physMem[0] + NBytes);
 
   // write the fault (read-modify-write)
   *Addr |= rval;
   output->verbose(CALL_INFO, 5, 0,
-                  "FAULT:MEM: Memory fault %d bits at address : 0x%" PRIu64 "\n",
-                 width, (uint64_t)(Addr));
+                  "FAULT:MEM: Memory fault %u bits at address : 0x%" PRIxPTR "\n",
+                  width, reinterpret_cast<uintptr_t>(Addr));
 }
 
 bool RevMem::SetFuture(uint64_t Addr){
@@ -139,11 +112,9 @@ bool RevMem::StatusFuture(uint64_t Addr){
 
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
-                    bool *Hazard,
+                    const std::shared_ptr<bool>& Hazard,
                     StandardMem::Request::flags_t flags){
-  std::vector<std::tuple<unsigned,uint64_t,unsigned,uint64_t*>>::iterator it;
-
-  for( it = LRSC.begin(); it != LRSC.end(); ++it ){
+  for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
     if( (Hart == std::get<LRSC_HART>(*it)) &&
         (Addr == std::get<LRSC_ADDR>(*it)) ){
       // existing reservation; return w/ error
@@ -179,9 +150,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
     ctrl->sendREADLOCKRequest(Hart, Addr, (uint64_t)(BaseMem),
                               Len, Target, Hazard, flags);
   }else{
-    for( unsigned i=0; i<Len; i++ ){
-      DataMem[i] = BaseMem[i];
-    }
+    memcpy(DataMem, BaseMem, Len);
     // clear the hazard
     *Hazard = false;
   }
@@ -199,30 +168,28 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
         (Addr == std::get<LRSC_ADDR>(*it)) ){
       // existing reservation; test to see if the value matches
       uint64_t *TmpTarget = std::get<LRSC_VAL>(*it);
-      uint64_t *TmpData = reinterpret_cast<uint64_t *>(Data);
+      uint64_t *TmpData = static_cast<uint64_t *>(Data);
 
       if( Len == 32 ){
         uint32_t A = 0;
         uint32_t B = 0;
-        for( unsigned i=0; i<Len; i++ ){
-          A |= ((uint32_t)(TmpTarget[i]) << i);
-          B |= ((uint32_t)(TmpData[i]) << i);
+        for( size_t i = 0; i < Len; i++ ){
+          A |= uint32_t(TmpTarget[i]) << i;
+          B |= uint32_t(TmpData[i]) << i;
         }
         if( (A & B) == 0 ){
-          uint32_t *Tmp = (uint32_t *)(Target);
-          Tmp[0] = 0x1;
+          static_cast<uint32_t *>(Target)[0] = 1;
           return false;
         }
       }else{
         uint64_t A = 0;
         uint64_t B = 0;
-        for( unsigned i=0; i<Len; i++ ){
-          A |= ((uint64_t)(TmpTarget[i]) << i);
-          B |= ((uint64_t)(TmpData[i]) << i);
+        for( size_t i = 0; i < Len; i++ ){
+          A |= TmpTarget[i] << i;
+          B |= TmpData[i] << i;
         }
         if( (A & B) == 0 ){
-          uint64_t *Tmp = reinterpret_cast<uint64_t *>(Target);
-          Tmp[0] = 0x1;
+          static_cast<uint64_t *>(Target)[0] = 1;
           return false;
         }
       }
@@ -248,16 +215,6 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
   Tmp[0] = 0x1;
 
   return false;
-}
-
-unsigned RevMem::RandCost( unsigned Min, unsigned Max ){
-  unsigned R = 0;
-
-  srand(time(NULL));
-
-  R = (unsigned)((rand() % Max) + Min);
-
-  return R;
 }
 
 void RevMem::FlushTLB(){
@@ -310,12 +267,12 @@ void RevMem::AddToTLB(uint64_t vAddr, uint64_t physAddr){
 }
 
 uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
-  // Check if vAddr is in the TLB 
+  // Check if vAddr is in the TLB
   uint64_t physAddr = SearchTLB(vAddr);
 
-  // If not in TLB, physAddr will equal _INVALID_ADDR_ 
+  // If not in TLB, physAddr will equal _INVALID_ADDR_
   if( physAddr == _INVALID_ADDR_ ){
-    // Check if vAddr is a valid address before translating to physAddr 
+    // Check if vAddr is a valid address before translating to physAddr
     if( isValidVirtAddr(vAddr) ){
       if(pageMap.count(pageNum) == 0){
         // First touch of this page, mark it as in use
@@ -326,13 +283,13 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 #endif
         nextPage++;
       }else if(pageMap.count(pageNum) == 1){
-        // We've accessed this page before, just get the physical address 
+        // We've accessed this page before, just get the physical address
         physAddr = (pageMap[pageNum].first << addrShift) + ((pageSize - 1) & vAddr);
 #ifdef _REV_DEBUG_
         std::cout << "Access for page:" << pageNum << " addrShift:" << addrShift << " vAddr: 0x" << std::hex << vAddr << " PhsyAddr: 0x" << physAddr << std::dec << " Next Page: " << nextPage << std::endl;
 #endif
       }else{
-        output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times");
+        output->fatal(CALL_INFO, -1, "Error: Page allocated multiple times\n");
       }
       AddToTLB(vAddr, physAddr);
     }
@@ -351,9 +308,8 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
         std::cout << *Seg << std::endl;
       }
 
-      
-      output->fatal(CALL_INFO, 11, 
-                    "Segmentation Fault: Virtual address 0x%lx (PhysAddr = 0x%lx) was not found in any mem segments\n",
+      output->fatal(CALL_INFO, 11,
+                    "Segmentation Fault: Virtual address 0x%" PRIx64 " (PhysAddr = 0x%" PRIx64 ") was not found in any mem segments\n",
                     vAddr, physAddr);
     }
   }
@@ -365,10 +321,10 @@ bool RevMem::isValidVirtAddr(const uint64_t& vAddr){
   for(const auto& Seg : MemSegs ){
     if( Seg->contains(vAddr) ){
       return true;
-    } 
+    }
   }
 
-  for( const auto& Seg : ThreadMemSegs ){ 
+  for( const auto& Seg : ThreadMemSegs ){
     if( Seg->contains(vAddr) ){
       return true;
     }
@@ -377,10 +333,10 @@ bool RevMem::isValidVirtAddr(const uint64_t& vAddr){
 }
 
 std::shared_ptr<MemSegment> RevMem::AddThreadMem(){
-  // Calculate the BaseAddr of the segment 
+  // Calculate the BaseAddr of the segment
   uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
   ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
-  // Page boundary between 
+  // Page boundary between
   NextThreadMemAddr = BaseAddr - pageSize - 1;
   return ThreadMemSegs.back();
 }
@@ -401,8 +357,8 @@ uint64_t RevMem::AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
 // Check if memory segment is already allocated (We are okay with overlap... for now per ZMAGIC but not duplicate segments)
 // Currently only the loader calls this (Static Mem allocation does not have to worry about checking the FreeMemSegs
 // vector because there will be no FreeMemSegs that contain addresses in the static segments)
-// 
-// AllocMem is the only way that a user can allocate & deallocate memory 
+//
+// AllocMem is the only way that a user can allocate & deallocate memory
 uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, size_t RoundUpSize){
   size_t RoundedSegSize = 0;
 
@@ -422,17 +378,17 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
   uint64_t NewSegTopAddr = BaseAddr + RoundedSegSize;
   bool Added = false;
 
-  // Check if memory segment is already allocated 
+  // Check if memory segment is already allocated
   for( auto Seg : MemSegs ){
     // If it contains the base address
     if( Seg->contains(BaseAddr) ){
-      // If it doesn't contain the top address, we need to expand it 
+      // If it doesn't contain the top address, we need to expand it
       if( !Seg->contains(NewSegTopAddr) ){
         size_t BytesToExpandBy = NewSegTopAddr - Seg->getTopAddr();
         Seg->setSize(Seg->getSize() + BytesToExpandBy);
       } else {
         // If it contains the top address, we don't need to do anything
-        output->verbose(CALL_INFO, 10, 99, 
+        output->verbose(CALL_INFO, 10, 99,
         "Warning: Memory segment already allocated that contains the requested rounded allocation at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
       }
       // Return the containing segments Base Address
@@ -440,7 +396,7 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
       Added = true;
       break;
     } // --- End (if contains BaseAddr)
-    
+
     else if ( !Seg->contains(BaseAddr) && Seg->contains(NewSegTopAddr) ){
       // Existing segment only contains the top part of the new segment, expand downwards
       Seg->setBaseAddr(BaseAddr);
@@ -456,7 +412,7 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
       // Add rounded segment
       MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedSegSize));
   }
-  
+
   return BaseAddr;
 }
 
@@ -470,7 +426,7 @@ uint64_t RevMem::AllocMem(const uint64_t& SegSize){
   // Check if there is a free segment that can fit the new data
   for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
     auto FreeSeg = FreeMemSegs[i];
-    // if the FreeSeg is bigger than the new data, we can shrink it so it starts 
+    // if the FreeSeg is bigger than the new data, we can shrink it so it starts
     // after the new segment (SegSize)
     uint64_t oldFreeSegSize = FreeSeg->getSize();
     if( oldFreeSegSize > SegSize ){
@@ -497,7 +453,7 @@ uint64_t RevMem::AllocMem(const uint64_t& SegSize){
 
 
   }
-  
+
   // If we still haven't allocated, expand the heap
   if( !NewSegBaseAddr ){
     NewSegBaseAddr = heapend;
@@ -541,14 +497,14 @@ uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
 
       // If were allocating at the beginning of a FreeSeg (That doesn't take up the whole segment)
       else if( FreeSeg->getBaseAddr() == BaseAddr && FreeSeg->getTopAddr() != (BaseAddr + SegSize) ){
-        // - Before: |--------------- FreeSeg --------------| 
+        // - Before: |--------------- FreeSeg --------------|
         // - After:  |---- AllocedSeg ----|---- FreeSeg ----|
         FreeSeg->setBaseAddr(BaseAddr + SegSize);
-      }  
+      }
 
       // If were allocating at the end of a FreeSeg (ie. TopAddr is last allocated address)
       else if( FreeSeg->getBaseAddr() != BaseAddr && FreeSeg->getTopAddr() == (BaseAddr + SegSize) ) {
-        // - Before: |--------------- FreeSeg --------------| 
+        // - Before: |--------------- FreeSeg --------------|
         // - After:  |---- FreeSeg ----|---- AllocedSeg ----|
         FreeSeg->setSize(FreeSeg->getSize() - SegSize);
       }
@@ -564,12 +520,12 @@ uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
       ret = BaseAddr;
     }
   }
- 
+
   // Check if any addresses in the segment are already
   for( auto Seg : MemSegs ){
     // Check if either the baseAddr or topAddr of the potential new segment exists inside of an already allocated segment
     if( Seg->contains(BaseAddr) || Seg->contains(BaseAddr + SegSize) ){
-      output->fatal(CALL_INFO, 11, 
+      output->fatal(CALL_INFO, 11,
                     "Error: Attempting to allocate memory at address 0x%lx of size 0x%lx which contains memory that is"
                     "already allocated in the segment with BaseAddr = 0x%lx and Size 0x%lx\n",
                     BaseAddr, SegSize, Seg->getBaseAddr(), Seg->getSize());
@@ -591,7 +547,7 @@ bool RevMem::FenceMem(unsigned Hart){
 
 bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
-                    bool *Hazard,
+                    const std::shared_ptr<bool>& Hazard,
                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -611,101 +567,20 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
 
   if( ctrl ){
     // sending to the RevMemCtrl
-    ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem),
-                              Len, reinterpret_cast<char *>(Data),
-                              Target, Hazard, flags);
+    ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem), Len,
+                         static_cast<char *>(Data), Target, Hazard, flags);
   }else{
     // process the request locally
+    ReadMem(Hart, Addr, Len, Target, Hazard, flags);
+
     if( Len == 4 ){
-      // 32bit amo
-      int32_t *TmpTarget = reinterpret_cast<int32_t *>(Target);
-      uint32_t *TmpTargetU = reinterpret_cast<uint32_t *>(Target);
-      int32_t *TmpData = reinterpret_cast<int32_t *>(Data);
-      uint32_t *TmpDataU = reinterpret_cast<uint32_t *>(Data);
-
-      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget += *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget ^= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget &= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget |= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::min(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::max(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }
-
+      ApplyAMO(flags, Target, *static_cast<uint32_t*>(Data));
     }else{
-      // 64bit amo
-      int64_t *TmpTarget = reinterpret_cast<int64_t *>(Target);
-      uint64_t *TmpTargetU = reinterpret_cast<uint64_t *>(Target);
-      int64_t *TmpData = reinterpret_cast<int64_t *>(Data);
-      uint64_t *TmpDataU = reinterpret_cast<uint64_t *>(Data);
-
-      if(       ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOADD) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget += *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOXOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget ^= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOAND) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget &= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOOR) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget |= *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMIN) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::min(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAX) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = std::max(*TmpTarget,*TmpData);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMINU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::min(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOMAXU) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTargetU),Hazard,flags);
-        *TmpTargetU = std::max(*TmpTargetU,*TmpDataU);
-        WriteMem(Hart,Addr,Len,(void *)(TmpTargetU));
-      }else if( ((uint32_t)(flags) & (uint32_t)(RevCPU::RevFlag::F_AMOSWAP) ) > 0 ){
-        ReadMem(Hart,Addr,Len,(void *)(TmpTarget),Hazard,flags);
-        *TmpTarget = *TmpData;
-        WriteMem(Hart,Addr,Len,(void *)(TmpTarget));
-      }
+      ApplyAMO(flags, Target, *static_cast<uint64_t*>(Data));
     }
+
+    WriteMem(Hart, Addr, Len, Target);
+
     // clear the hazard
     *Hazard = false;
   }
@@ -713,7 +588,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
   return true;
 }
 
-bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
+bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data,
                        StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -787,7 +662,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data,
 }
 
 
-bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, void *Data ){
+bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -918,7 +793,8 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 }
 
 bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                     bool *Hazard, StandardMem::Request::flags_t flags){
+                     const std::shared_ptr<bool>& Hazard,
+                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -929,7 +805,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
-  char *DataMem = (char *)(Target);
+  char *DataMem = static_cast<char *>(Target);
 
   // set the hazard
   *Hazard = true;
@@ -977,131 +853,41 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   return true;
 }
 
-uint8_t RevMem::ReadU8( uint64_t Addr ){
-  uint8_t Value;
-  if( !ReadMem( Addr, 1, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U8)");
-  return Value;
-}
-
-uint16_t RevMem::ReadU16( uint64_t Addr ){
-  uint16_t Value;
-  if( !ReadMem( Addr, 2, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U16)");
-  return Value;
-}
-
-uint32_t RevMem::ReadU32( uint64_t Addr ){
-  uint32_t Value;
-  if( !ReadMem( Addr, 4, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U32)");
-  return Value;
-}
-
-uint64_t RevMem::ReadU64( uint64_t Addr ){
-  uint64_t Value;
-  if( !ReadMem( Addr, 8, (void *)(&Value) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (U64)");
-  return Value;
-}
-
-float RevMem::ReadFloat( uint64_t Addr ){
-  float Value = 0.;
-  uint32_t Tmp = 0x00;
-  if( !ReadMem( Addr, 4, (void *)(&Tmp) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (FLOAT)");
-  std::memcpy(&Value,&Tmp,sizeof(float));
-  memStats.floatsRead++;
-  return Value;
-}
-
-double RevMem::ReadDouble( uint64_t Addr ){
-  double Value = 0.;
-  uint64_t Tmp = 0x00;
-  if( !ReadMem( Addr, 8, (void *)(&Tmp) ) )
-    output->fatal(CALL_INFO, -1, "Error: could not read memory (DOUBLE)");
-  std::memcpy(&Value,&Tmp,sizeof(double));
-  memStats.doublesRead++;
-  return Value;
-}
-
-void RevMem::WriteU8( unsigned Hart, uint64_t Addr, uint8_t Value ){
-  uint8_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,1,(void *)(&Tmp)) )
-    output->fatal(CALL_INFO, -1, "Error: could not write memory (U8)");
-}
-
-void RevMem::WriteU16( unsigned Hart, uint64_t Addr, uint16_t Value ){
-  uint16_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,2,(void *)(&Tmp)) )
-    output->fatal(CALL_INFO, -1, "Error: could not write memory (U16)");
-}
-
-void RevMem::WriteU32( unsigned Hart, uint64_t Addr, uint32_t Value ){
-  uint32_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,4,(void *)(&Tmp)) )
-    output->fatal(CALL_INFO, -1, "Error: could not write memory (U32)");
-}
-
-void RevMem::WriteU64( unsigned Hart, uint64_t Addr, uint64_t Value ){
-  uint64_t Tmp = Value;
-  if( !WriteMem(Hart, Addr,8,(void *)(&Tmp)) )
-    output->fatal(CALL_INFO, -1, "Error: could not write memory (U64)");
-}
-
-void RevMem::WriteFloat( unsigned Hart, uint64_t Addr, float Value ){
-  uint32_t Tmp = 0x00;
-  std::memcpy(&Tmp,&Value,sizeof(float));
-  memStats.floatsWritten++;
-  if( !WriteMem(Hart, Addr,4,(void *)(&Tmp)) )
-    output->fatal(CALL_INFO, -1, "Error: could not write memory (FLOAT)");
-}
-
-void RevMem::WriteDouble( unsigned Hart, uint64_t Addr, double Value ){
-  uint64_t Tmp = 0x00;
-  std::memcpy(&Tmp,&Value,sizeof(double));
-  memStats.doublesWritten++;
-  if( !WriteMem(Hart, Addr,8,(void *)(&Tmp)) )
-    output->fatal(CALL_INFO, -1, "Error: could not write memory (DOUBLE)");
-}
-
-
- 
 // This function is used to remove/shrink a memory segment
 // You *must* deallocate a chunk of memory that STARTS on a previously
-// allocated baseAddr 
+// allocated baseAddr
 //
 // Said in another way... you can't deallocate:
 // - Across multiple segments
-// - In the middle of segments 
+// - In the middle of segments
 //
 // Three possible scenarios:
-    // 1. Deallocating the entire segment
-    // - |---------- AllocedSeg -----------| 
-    // - |----------- FreeSeg -------------| 
-    //
-    // 2. Deallocating a partial part of a segment
-    // - |------------- AllocedSeg --------------|
-    // - |---- NewFreeSeg ----|--- AllocedSeg ---|
-    // If this is the situation, we also need to check if the segment 
-    // before (ie. baseAddr - 1) is also free and if so, find that 
-    // segment and merge it with the new free segment
-    // - |--- FreeSeg ---|------------- AllocedSeg --------------|
-    // - |--- FreeSeg ---|---- NewFreeSeg ----|--- AllocedSeg ---|
-    // - |--- FreeSeg ------------------------|--- AllocedSeg ---|
-    //
-    // 3. Deallocating memory that hasn't been allocated 
-    // - |---- FreeSeg ----| ==> SegFault :/ 
+// 1. Deallocating the entire segment
+// - |---------- AllocedSeg -----------|
+// - |----------- FreeSeg -------------|
+//
+// 2. Deallocating a partial part of a segment
+// - |------------- AllocedSeg --------------|
+// - |---- NewFreeSeg ----|--- AllocedSeg ---|
+// If this is the situation, we also need to check if the segment
+// before (ie. baseAddr - 1) is also free and if so, find that
+// segment and merge it with the new free segment
+// - |--- FreeSeg ---|------------- AllocedSeg --------------|
+// - |--- FreeSeg ---|---- NewFreeSeg ----|--- AllocedSeg ---|
+// - |--- FreeSeg ------------------------|--- AllocedSeg ---|
+//
+// 3. Deallocating memory that hasn't been allocated
+// - |---- FreeSeg ----| ==> SegFault :/
 uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
-  output->verbose(CALL_INFO, 10, 99, 
+  output->verbose(CALL_INFO, 10, 99,
                   "Attempting to deallocate %lul bytes starting at BaseAddr = 0x%lx\n",
                   Size, BaseAddr);
 
   int ret = -1;
   // Search through allocated segments for the segment that begins on the baseAddr
   for( unsigned i=0; i<MemSegs.size(); i++ ){
-    auto AllocedSeg = MemSegs[i]; 
-    // We don't allow memory to be deallocated if it's not on a segment boundary 
+    auto AllocedSeg = MemSegs[i];
+    // We don't allow memory to be deallocated if it's not on a segment boundary
     if( AllocedSeg->getBaseAddr() != BaseAddr ){
       continue;
     } else {
@@ -1112,7 +898,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
         output->fatal(CALL_INFO, 11, "Dealloc Error: Cannot free beyond the segment bounds. Attempted to"
                                      "free from 0x%lx to 0x%lx however the highest address in the segment is 0x%lx",
                                      BaseAddr, BaseAddr+Size, AllocedSeg->getTopAddr());
-      } 
+      }
       // (2.) Check if we're only deallocating a part of a segment
       else if( Size < AllocedSeg->getSize() ){
         output->verbose(CALL_INFO, 10, 99, "  => partial deallocation detected\n");
@@ -1125,7 +911,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
         AllocedSeg->setSize(oldAllocedSize - Size);
         ret = 0;
         break;
-      } // --- End Partial Deallocation 
+      } // --- End Partial Deallocation
       // We are deallocating the entire segment (1.)
       else {
         output->verbose(CALL_INFO, 10, 99, "  => entire deallocation\n");
@@ -1178,7 +964,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
 void RevMem::InitHeap(const uint64_t& EndOfStaticData){
   if( EndOfStaticData == 0x00ull ){
     // Program didn't contain .text, .data, or .bss sections
-    output->fatal(CALL_INFO, 7, 
+    output->fatal(CALL_INFO, 7,
                   "The loader was unable"
                   "to find a .text section in your executable. This is a bug."
                   "EndOfStaticData = 0x%lx which is less than or equal to 0",
@@ -1194,14 +980,15 @@ void RevMem::InitHeap(const uint64_t& EndOfStaticData){
 }
 
 uint64_t RevMem::ExpandHeap(uint64_t Size){
-   // We don't want multiple concurrent processes changing the heapend 
+   // We don't want multiple concurrent processes changing the heapend
    // at the same time (ie. two ThreadCtx calling brk)
   uint64_t NewHeapEnd = heapend + Size;
-  
+
   // Check if we are out of heap space (ie. heapend >= bottom of stack)
   if( NewHeapEnd > maxHeapSize ){
-    output->fatal(CALL_INFO, 7,  "Out Of Memory --- Attempted to expand heap to 0x%lx which goes beyond the maxHeapSize = 0x%x set in the python configuration. If unset, this value will be equal to 1/4 of memSize.",
-                  NewHeapEnd, maxHeapSize);
+    output->fatal(CALL_INFO, 7,  "Out Of Memory --- Attempted to expand heap to 0x%" PRIx64
+                  " which goes beyond the maxHeapSize = 0x%x set in the python configuration. "
+                  "If unset, this value will be equal to 1/4 of memSize.\n", NewHeapEnd, maxHeapSize);
   }
   // update the heapend
   heapend = NewHeapEnd;

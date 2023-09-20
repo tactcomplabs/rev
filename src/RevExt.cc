@@ -9,38 +9,16 @@
 //
 
 #include "../include/RevExt.h"
+using namespace SST::RevCPU;
 
-RevExt::RevExt( std::string Name,
-                RevFeature *Feature,
-                RevRegFile *RegFile,
-                RevMem *RevMem,
-                SST::Output *Output )
-  : feature(Feature), mem(RevMem), name(Name),
-    output(Output) {
-  regFile = RegFile;
-}
-
-RevExt::~RevExt(){
-}
-
-void RevExt::SetTable(std::vector<RevInstEntry> InstVect){
-  table = InstVect;
-}
-
-void RevExt::SetCTable(std::vector<RevInstEntry> InstVect){
-  ctable = InstVect;
-}
-
-void RevExt::SetOTable(std::vector<RevInstEntry> InstVect){
-  otable = InstVect;
-}
+#define TRACE_EXECUTE 0
 
 bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
 
   // ensure that the target instruction is within scope
-  if( Inst > (table.size()-1) ){
+  if( Inst >= table.size() ){
     output->fatal(CALL_INFO, -1,
-                  "Error: instruction at index=%d does not exist in extension=%s",
+                  "Error: instruction at index=%u does not exist in extension=%s",
                   Inst,
                   name.c_str());
   }
@@ -50,7 +28,7 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
                RevMem *,
                RevInst) = nullptr;
   if( payload.compressed ){
-#if 0
+#if TRACE_EXECUTE
     if( feature->IsRV32() ){
       std::cout << "EXECUTING COMPRESSED INSTRUCTION: " << ctable[Inst].mnemonic
                 << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec
@@ -64,7 +42,7 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
     // this is a compressed instruction, grab the compressed trampoline function
     func = ctable[Inst].func;
   }else{
-#if 0
+#if TRACE_EXECUTE
     if( feature->IsRV32() ){
       std::cout << "EXECUTING INSTRUCTION: " << table[Inst].mnemonic
                 << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec
@@ -80,11 +58,11 @@ bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
   }
 
   // execute the instruction
-  if( !(*func)(feature,(regFile),mem,payload) ){
+  if( !func(feature, regFile, mem, payload) ){
     return false;
   }
 
-#if 0
+#if TRACE_EXECUTE
   if( payload.compressed ){
     if( feature->IsRV32() ){
       std::cout << "COMPLETING INSTRUCTION: " << ctable[Inst].mnemonic

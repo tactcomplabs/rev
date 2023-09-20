@@ -1,7 +1,7 @@
 #include <string.h>
 
-int main(int argc, char **argv){
-  char* txt = "some really nice text";
+int main(){
+  char txt[] = "some really nice text";
   int l = strlen(txt);
   return l;
 }
