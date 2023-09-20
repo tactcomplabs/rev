@@ -269,21 +269,23 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   
   // set the pc
   uint64_t StartAddr = 0x00ull;
-  if( !Opts->GetStartAddr( id, StartAddr ) )
+  if( !Opts->GetStartAddr( id, StartAddr ) ){
     output.fatal(CALL_INFO, -1, "Error: failed to init the start address for the main thread\n");
-  std::string StartSymbol = "main";
-  //std::string StartSymbol = "_start";
+  }
+  std::string StartSymbol = "_start";
+  // std::string StartSymbol = "_start";
   if( StartAddr == 0x00ull ){
-    if( !Opts->GetStartSymbol( id, StartSymbol ) )
+    if( !Opts->GetStartSymbol( id, StartSymbol ) ){
       output.fatal(CALL_INFO, -1,
                     "Error: failed to init the start symbol address for main thread=\n");
+    }
 
     StartAddr = Loader->GetSymbolAddr(StartSymbol);
   }
   if( StartAddr == 0x00ull ){
     // load "main" symbol
-    StartAddr = Loader->GetSymbolAddr("main");
-    //StartAddr = loader->GetSymbolAddr("_start");
+    // StartAddr = Loader->GetSymbolAddr("main");
+    StartAddr = Loader->GetSymbolAddr("_start");
     if( StartAddr == 0x00ull ){
       output.fatal(CALL_INFO, -1,
                     "Error: failed to auto discover address for <main> for main thread\n");
@@ -295,15 +297,16 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
                   std::make_shared<RevThread>(0,
                                               Mem->GetStackTop(),
                                               StartAddr,
-                                              Mem->GetThreadMemSegs().front())); 
+                                              Mem->GetThreadMemSegs().front(),
+                                              Procs[0]->GetRevFeature())); 
 
   Threads.at(MainThreadID)->SetThreadID(MainThreadID);
+  Threads.at(MainThreadID)->GetRegFile()->SetX(Procs[0]->GetRevFeature(), 3, Loader->GetSymbolAddr("__global_pointer$"));
+  Threads.at(MainThreadID)->GetRegFile()->SetX(Procs[0]->GetRevFeature(), 8, Loader->GetSymbolAddr("__global_pointer$"));
 
   ThreadQueue.emplace_back(MainThreadID);
 
   SetupArgs(MainThreadID, Procs[0]->GetRevFeature());
-
-
 
   // setup the per-proc statistics
   TotalCycles.reserve(TotalCycles.size() + numCores);

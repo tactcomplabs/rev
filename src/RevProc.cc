@@ -2023,7 +2023,8 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   std::shared_ptr<RevThread> NewThread =
             std::make_shared<RevThread>(ParentPID, 
                                         NewThreadMem->getBaseAddr()+_STACK_SIZE_,
-                                        firstPC, NewThreadMem);
+                                        firstPC, NewThreadMem,
+                                        feature);
   NewThread->SetThreadID(NewTID);
 
   // Save the address that will hold the new ThreadID

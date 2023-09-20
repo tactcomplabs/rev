@@ -16,25 +16,23 @@ using namespace SST::RevCPU;
 RevThread::RevThread( uint32_t inputParentThreadID,
                       uint64_t inputStackPtr,
                       uint64_t inputFirstPC,
-                      std::shared_ptr<MemSegment>& inputThreadMem)
-   : ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),  FirstPC(inputFirstPC), ThreadMem(inputThreadMem) {
+                      std::shared_ptr<MemSegment>& inputThreadMem,
+                      RevFeature* inputFeature)
+   : ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),  
+     FirstPC(inputFirstPC), ThreadMem(inputThreadMem), Feature(inputFeature) {
   // Create the RegFile for this thread
   RegFile = RevRegFile(); 
   
   ThreadPtr = inputThreadMem->getTopAddr() - 1;
   // Set the stack pointer 
-  RegFile.RV32[2] = (uint32_t)StackPtr - 1024;
-  RegFile.RV64[2] = StackPtr - 1024;
+  RegFile.SetX(Feature, 2, StackPtr - 1024);
 
   // Set the thread pointer
   ThreadPtr = ThreadMem->getTopAddr();
-  RegFile.RV32[2] = (uint32_t)ThreadPtr;
-  RegFile.RV64[4] = ThreadPtr;
+  RegFile.SetX(Feature, 2, ThreadPtr);
 
   // Set the PC 
-  RegFile.RV32_PC = (uint32_t)FirstPC;
-  RegFile.RV64_PC = FirstPC;
-  
+  RegFile.SetPC(Feature, FirstPC);
 }
 
 bool RevThread::AddChildThreadID(uint32_t tid){

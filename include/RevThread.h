@@ -39,7 +39,8 @@ class RevThread {
 
 public:
   RevThread( uint32_t ParentThreadID, uint64_t inputStackPtr,
-             uint64_t inputFirstPC, std::shared_ptr<MemSegment>& inputThreadMem);
+             uint64_t inputFirstPC, std::shared_ptr<MemSegment>& inputThreadMem,
+             RevFeature* inputFeature );
 
   void SetTIDAddr(uint64_t tidAddr){ ThreadIDAddr = tidAddr; } /// RevThread: Sets the address of the ThreadID
   uint64_t GetTIDAddr(){ return ThreadIDAddr; }   /// RevThread: Gets the address of the ThreadID
@@ -124,6 +125,7 @@ private:
   uint64_t StackPtr;                             /// Starting stack pointer for this thread
   uint64_t FirstPC;
   std::shared_ptr<MemSegment> ThreadMem;         /// Pointer to its thread memory (TLS & Stack) 
+  RevFeature* Feature;                           /// Pointer to the feature 
   
   uint32_t ThreadID;
   uint64_t ThreadPtr;                            /// Thread pointer for this thread

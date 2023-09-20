@@ -293,11 +293,15 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       /* vAddr not a valid address */
 
 
-      // #ifdef _REV_DEBUG_
+      #ifdef _REV_DEBUG_
       for( auto Seg : MemSegs ){
         std::cout << *Seg << std::endl;
       }
-      // #endif
+
+      for( auto Seg : ThreadMemSegs ){
+        std::cout << *Seg << std::endl;
+      }
+      #endif
 
       output->fatal(CALL_INFO, 11,
                     "Segmentation Fault: Virtual address 0x%" PRIx64 " (PhysAddr = 0x%" PRIx64 ") was not found in any mem segments\n",
