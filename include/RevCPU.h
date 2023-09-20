@@ -235,6 +235,10 @@ private:
 
   void CheckBlockedThreads();
 
+  void UpdateThreadAssignments(uint32_t i);
+  void CheckForStateChanges(uint32_t i);
+  void CheckForNewThreads(uint32_t i);
+
   // Used to check if a thread that is waiting to join can proceed
   bool ThreadCanProceed(uint32_t TID);
 
