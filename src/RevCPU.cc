@@ -331,13 +331,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   std::cout << "First Thread Info: " << std::endl;
   std::cout << *Threads[MainThreadID] << std::endl;
 
-  Threads.at(MainThreadID)->GetRegFile()->RV32[3] = (uint32_t)(Loader->GetSymbolAddr("__global_pointer$"));
-  Threads.at(MainThreadID)->GetRegFile()->RV64[3] = Loader->GetSymbolAddr("__global_pointer$");
+  RevRegFile* R = Threads.at(MainThreadID)->GetRegFile();
 
-  Threads.at(MainThreadID)->GetRegFile()->RV32[8] = Threads.at(MainThreadID)->GetRegFile()->RV32[3];
-  Threads.at(MainThreadID)->GetRegFile()->RV64[8] = Threads.at(MainThreadID)->GetRegFile()->RV64[3];
+  // Global Pointer
+  uint64_t gp = Loader->GetSymbolAddr("__global_pointer$");
 
-  Threads.at(MainThreadID)->GetRegFile()->cost = 0;
+  // Set X3 and X8 to gp
+  R->RV32[3] = R->RV32[8] = uint32_t(R->RV64[3] = R->RV64[8] = gp);
+  R->cost = 0;
 
   // Assign the first thread
   // AssignedThreads.front().emplace_back(Threads[1]);
