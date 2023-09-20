@@ -182,9 +182,9 @@ public:
   ///  RevMem: template LOAD RESERVE memory interface
   template <typename T>
   bool LR( unsigned Hart, uint64_t Addr, T *Target,
-           uint8_t aq, uint8_t rl, bool *Hazard,
+           uint8_t aq, uint8_t rl, bool *Hazard, MemReq req,
            StandardMem::Request::flags_t flags){
-    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, Hazard, flags);
+    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, Hazard, req, flags);
   }
 
   ///  RevMem: template STORE CONDITIONAL memory interface
@@ -229,7 +229,7 @@ public:
   // ----------------------------------------------------
   /// RevMem: Add a memory reservation for the target address
   bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, uint8_t aq, uint8_t rl, bool *Hazard,
+              void *Data, uint8_t aq, uint8_t rl, bool *Hazard, MemReq req,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Clear a memory reservation for the target address

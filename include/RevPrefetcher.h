@@ -25,8 +25,10 @@ namespace SST::RevCPU{
 class RevPrefetcher{
 public:
   /// RevPrefetcher: constructor
-  RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth, std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq)
-    : mem(Mem), feature(Feature), depth(Depth), LSQueue(lsq){}
+  RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth, 
+                std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq,
+                std::function<void(MemReq)> func)
+    : mem(Mem), feature(Feature), depth(Depth), LSQueue(lsq), MarkLoadAsComplete(func){}
 
   /// RevPrefetcher: destructor
   ~RevPrefetcher();
@@ -45,7 +47,7 @@ private:
   std::vector<uint32_t*> iStack;              ///< Vector of instruction vectors
   std::vector<bool*> iHazard;                 ///< Vector of instruction cost vectors
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
-
+  std::function<void(MemReq)> MarkLoadAsComplete;
 
   /// fills a missed stream cache instruction
   void Fill(uint64_t Addr);

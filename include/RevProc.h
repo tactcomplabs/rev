@@ -713,6 +713,8 @@ private:
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;
 
+  bool DependencyCheck(uint16_t HartID, uint16_t RegNum, RevRegClass RegType) const;
+
   /// RevProc: Set or clear scoreboard based on instruction destination
   void DependencySet(uint16_t HartID, const RevInst* Inst, bool value = true){
     DependencySet(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RegFLOAT, value);

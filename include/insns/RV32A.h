@@ -21,15 +21,20 @@ namespace SST::RevCPU{
 class RV32A : public RevExt {
 
   static bool lrw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    MemReq req;
     if( F->IsRV32() ){
+      req.Set(uint64_t(R->RV32[Inst.rs1]), Inst.rd, RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete);
+      R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       M->LR(F->GetHart(), uint64_t(R->RV32[Inst.rs1]),
             &R->RV32[Inst.rd],
-            Inst.aq, Inst.rl, Inst.hazard,
+            Inst.aq, Inst.rl, Inst.hazard, req,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
     }else{
+      req.Set(R->RV64[Inst.rs1], Inst.rd, RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete);
+      R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       M->LR(F->GetHart(), R->RV64[Inst.rs1],
             reinterpret_cast<uint32_t*>(&R->RV64[Inst.rd]),
-            Inst.aq, Inst.rl, Inst.hazard,
+            Inst.aq, Inst.rl, Inst.hazard, req,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
     }
     R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());

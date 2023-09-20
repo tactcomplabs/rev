@@ -21,10 +21,12 @@ namespace SST::RevCPU{
 class RV64A : public RevExt {
 
   static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    MemReq req(R->RV64[Inst.rs1],Inst.rd, RegGPR, F->GetHart(), MemOpAMO, true, R->MarkLoadComplete );
+    R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart),req});
     M->LR(F->GetHart(),
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rd],
-          Inst.aq, Inst.rl, Inst.hazard,
+          Inst.aq, Inst.rl, Inst.hazard, req,
           REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
     R->AdvancePC(F, Inst.instSize);
     return true;

@@ -1660,11 +1660,40 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
+bool RevProc::DependencyCheck(uint16_t HartID, uint16_t RegNum, RevRegClass RegType) const{
+
+  const auto* regFile = GetRegFile(HartID);
+
+  if((0 != RegNum) && (regFile->LSQueue->count(make_lsq_hash(RegNum, RegType, HartID))) > 0){ return true;}
+    if(RegNum < _REV_NUM_REGS_){
+    switch(RegType){
+      case RegFLOAT:
+        if(feature->HasD()){
+          if(regFile->DPF_Scoreboard[RegNum]) return true;
+        }else{
+          if(regFile->SPF_Scoreboard[RegNum]) return true;
+        }
+        break;
+
+      case RegGPR:
+        if(feature->IsRV32()){
+          if(regFile->RV32_Scoreboard[RegNum]) return true;
+        }else {
+          if(regFile->RV64_Scoreboard[RegNum]) return true;
+        }
+        break;
+
+      default:
+        break;
+      }
+    }
+}
+    bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
+
   // check the load hazard bit
-  if( I->hazard != nullptr && *I->hazard ){
-      return true;
-  }
+  //if( I->hazard != nullptr && *I->hazard ){
+  //    return true;
+ // }
 
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
@@ -1704,6 +1733,8 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
   }
   return false;
 }
+
+
 
 /// Set or clear scoreboard based on register number and floating point
 void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
@@ -1768,6 +1799,10 @@ void RevProc::MarkLoadComplete(MemReq req){
   if( it != LSQueue->end()){
     DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RegFLOAT));
     LSQueue->erase(it);
+  }else if(0 != req.DestReg){ //instruction pre-fetch fills target r0, we can ignore these
+    output->fatal(CALL_INFO, -1,
+               "Core %u ; Hart %u; Cannot find outstanding load for reg %u from address %" PRIu64 "\n",
+                id, req.Hart, req.DestReg, req.Addr);
   }
 }
 
@@ -1813,12 +1848,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   }
 
   //Clear dependency bits for any loads that have returned
-for (auto it = LSQueue->begin(); it != LSQueue->end();) {
+/*for (auto it = LSQueue->begin(); it != LSQueue->end();) {
   if(!it->second.isOutstanding){
     DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RegFLOAT));
     it = LSQueue->erase(it);
   }
-}
+}*/
 
   for (int tID = 0; tID < _REV_HART_COUNT_; tID++){
     HART_CTS[tID] = (GetRegFile(tID)->cost == 0);
@@ -2041,18 +2076,18 @@ for (auto it = LSQueue->begin(); it != LSQueue->end();) {
   }
 
   // walk the pipeline hazards.  if a load hazard is set, increase the cost to > 0
-  for( auto i : Pipeline ){
+  /*for( auto i : Pipeline ){
     if( *(i.second.hazard) ){
       i.second.cost++;
     }
-  }
+  }*/
 
   // Check for pipeline hazards
   if(!Pipeline.empty() &&
      (Pipeline.front().second.cost > 0)){
     Pipeline.front().second.cost--;
-    if((Pipeline.front().second.cost == 0) &&
-       (!*(Pipeline.front().second.hazard))){
+    if((Pipeline.front().second.cost == 0)){ // &&
+     //  (!*(Pipeline.front().second.hazard))){
       // Ready to retire this instruction
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
@@ -2815,7 +2850,7 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
 
     DependencyClear(HartToExec, 10, false);
     rtv = ECALL_status_t::SUCCESS;
-  }else {
+  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  { 
     auto readfunc = [&](auto* buf){
       MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, RegFile->MarkLoadComplete);
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
@@ -2837,6 +2872,8 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
       readfunc(reinterpret_cast<uint8_t*>(ECALL.buf.data()));
     }
     DependencySet(HartToExec, 10, false);
+    rtv = ECALL_status_t::CONTINUE;
+  }else{
     rtv = ECALL_status_t::CONTINUE;
   }
   return rtv;

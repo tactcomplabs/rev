@@ -30,6 +30,7 @@
 
 // -- RevCPU Headers
 #include "RevOpts.h"
+#include "../common/include/RevCommon.h"
 
 namespace SST::RevCPU{
 
@@ -167,6 +168,9 @@ public:
   /// RevMemOp: set the hazard pointer
   void setHazard(bool *H) { hazard = H;}
 
+  ///RevMemOp: set the originating memory request
+  void setMemReq(MemReq req) { procReq = req;}
+
   /// RevMemOp: retrieve the invalidate flag
   bool getInv() const { return Inv; }
 
@@ -181,6 +185,9 @@ public:
 
   /// RevMemOp: retrieve the hazard pointer
   bool *getHazard() const { return hazard; }
+
+  /// RevMemOp: Get the originating proc memory request
+  MemReq getMemReq() const { return procReq; }
 
   // RevMemOp: determine if the request is cache-able
   bool isCacheable() const { return (flags & 0b10) == 0; }
@@ -198,6 +205,7 @@ private:
   StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
   void *target;                         ///< RevMemOp: target register pointer
   bool *hazard;                         ///< RevMemOp: load hazard
+  MemReq procReq;                       ///< RevMemOp: original request from RevProc
 };
 
 // ----------------------------------------
@@ -235,7 +243,7 @@ public:
 
   /// RevMemCtrl: send a read request
   virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                               uint32_t Size, void *target, bool *Hazard,
+                               uint32_t Size, void *target, MemReq req,
                                StandardMem::Request::flags_t flags) = 0;
 
   /// RevMemCtrl: send a write request
@@ -246,12 +254,12 @@ public:
   /// RevMemCtrl: send an AMO request
   virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                               uint32_t Size, char *buffer, void *target,
-                              bool *Hazard,
+                              MemReq req,
                               StandardMem::Request::flags_t flags) = 0;
 
   /// RevMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                   uint32_t Size, void *target, bool *Hazard,
+                                   uint32_t Size, void *target, MemReq req,
                                    StandardMem::Request::flags_t flags) = 0;
 
   /// RevMemCtrl: send a writelock request
@@ -460,7 +468,7 @@ public:
 
   /// RevBasicMemCtrl: send a read request
   virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                               uint32_t Size, void *target, bool *Hazard,
+                               uint32_t Size, void *target, MemReq req,
                                StandardMem::Request::flags_t flags) override;
 
   /// RevBasicMemCtrl: send a write request
@@ -471,12 +479,12 @@ public:
   /// RevBasicMemCtrl: send an AMO request
   virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                               uint32_t Size, char *buffer, void *target,
-                              bool *Hazard,
+                              MemReq req,
                               StandardMem::Request::flags_t flags) override;
 
   // RevBasicMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                   uint32_t Size, void *target, bool *Hazard,
+                                   uint32_t Size, void *target, MemReq req,
                                    StandardMem::Request::flags_t flags) override;
 
   // RevBasicMemCtrl: send a writelock request

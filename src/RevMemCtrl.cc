@@ -24,7 +24,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    RevMemOp::MemOp Op, StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false),
     Op(Op), CustomOpc(0),
-    SplitRqst(1), flags(flags), target(nullptr), hazard(nullptr){
+    SplitRqst(1), flags(flags), target(nullptr), procReq(){
 }
 
 RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
@@ -32,7 +32,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                    RevMemOp::MemOp Op, StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false),
     Op(Op), CustomOpc(0),
-    SplitRqst(1), flags(flags), target(target), hazard(nullptr){
+    SplitRqst(1), flags(flags), target(target), procReq(){
 }
 
 RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
@@ -40,7 +40,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size),
     Inv(false), Op(Op), CustomOpc(0),
-    SplitRqst(1), flags(flags), target(nullptr), hazard(nullptr){
+    SplitRqst(1), flags(flags), target(nullptr), procReq(){
   for(uint32_t i = 0; i < Size; i++){
     membuf.push_back(buffer[i]);
   }
@@ -51,7 +51,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size),
     Inv(false), Op(Op), CustomOpc(0),
-    SplitRqst(1), flags(flags), target(target), hazard(nullptr){
+    SplitRqst(1), flags(flags), target(target), procReq(){
   for(uint32_t i = 0; i < Size; i++){
     membuf.push_back(buffer[i]);
   }
@@ -62,7 +62,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size),
     Inv(false), Op(Op), CustomOpc(0),
-    SplitRqst(1), membuf(buffer), flags(flags), target(nullptr), hazard(nullptr){
+    SplitRqst(1), membuf(buffer), flags(flags), target(nullptr), procReq(){
 }
 
 RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
@@ -70,7 +70,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
                    StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
     CustomOpc(CustomOpc), SplitRqst(1), flags(flags),
-    target(target), hazard(nullptr){
+    target(target), procReq(){
 }
 
 RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
@@ -78,7 +78,7 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                    unsigned CustomOpc, RevMemOp::MemOp Op,
                    StandardMem::Request::flags_t flags )
   : Hart(Hart), Addr(Addr), PAddr(PAddr), Size(Size), Inv(false), Op(Op),
-    CustomOpc(CustomOpc), SplitRqst(1), flags(flags), target(nullptr), hazard(nullptr){
+    CustomOpc(CustomOpc), SplitRqst(1), flags(flags), target(nullptr), procReq(){
   for(uint32_t i = 0; i< Size; i++){
     membuf.push_back((uint8_t)(buffer[i]));
   }
@@ -225,14 +225,13 @@ bool RevBasicMemCtrl::sendREADRequest(unsigned Hart,
                                       uint64_t PAddr,
                                       uint32_t Size,
                                       void *target,
-                                      bool *Hazard,
+                                      MemReq req,
                                       StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, target,
                               RevMemOp::MemOp::MemOpREAD, flags);
-  Op->setHazard(Hazard);
-  *Hazard = true;
+  Op->setMemReq(req);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadPending, 1);
   return true;
@@ -259,7 +258,7 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
                                      uint32_t Size,
                                      char *buffer,
                                      void *target,
-                                     bool *Hazard,
+                                     MemReq req,
                                      StandardMem::Request::flags_t flags){
 
   if( Size == 0 )
@@ -278,8 +277,7 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
   // is a MemOpREAD.
   RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, buffer, target,
                               RevMemOp::MemOp::MemOpREAD, flags);
-  Op->setHazard(Hazard);
-  *Hazard = true;
+  Op->setMemReq(req);
 
   // Store the first operation in the AMOTable.  When the read
   // response comes back, we will catch the response, perform
@@ -319,14 +317,13 @@ bool RevBasicMemCtrl::sendREADLOCKRequest(unsigned Hart,
                                           uint64_t PAddr,
                                           uint32_t Size,
                                           void *target,
-                                          bool *Hazard,
+                                          MemReq req,
                                           StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Addr, PAddr, Size, target,
                               RevMemOp::MemOp::MemOpREADLOCK, flags);
-  Op->setHazard(Hazard);
-  *Hazard = true;
+  Op->setMemReq(req);
   rqstQ.push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadLockPending, 1);
   return true;
@@ -1261,8 +1258,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     for( unsigned i=0; i < op->getSize(); i++ ){
       std::cout << "               : data[" << i << "] = " << (unsigned)(ev->data[i]) << std::endl;
     }
-    std::cout << "hazard ptr = 0x" << std::hex << op->getHazard() << std::dec << std::endl;
-    std::cout << "hazard value before processing = " << *op->getHazard() << std::endl;
+    std::cout << "isOutstanding val = 0x" << std::hex << op->getMemReq().isOutstanding << std::dec << std::endl;
     std::cout << "Address of the target register = 0x" << std::hex
               << (uint64_t *)(op->getTarget()) << std::dec << std::endl;
 #endif
@@ -1296,9 +1292,8 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
         if( isAMO ){
           handleAMO(op);
         }
-        bool *Hazard = op->getHazard();
-        *Hazard = false;
-        delete op;
+        MemReq r = op->getMemReq();
+        r.MarkLoadComplete(r);
       }
       outstanding.erase(ev->getID());
       delete ev;
@@ -1317,10 +1312,8 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     if( isAMO ){
       handleAMO(op);
     }
-    bool *Hazard = op->getHazard();
-    if( Hazard != nullptr ){
-      *Hazard = false;
-    }
+    MemReq r = op->getMemReq();
+    r.MarkLoadComplete(r);
     delete op;
     outstanding.erase(ev->getID());
     delete ev;
@@ -1369,9 +1362,8 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
                               RevMemOp::MemOp::MemOpWRITE,
                               Tmp->getFlags());
 
-  bool *Hazard = Tmp->getHazard();
-  Op->setHazard(Hazard);
-  *Hazard = true;
+  MemReq r = Tmp->getMemReq();
+  r.MarkLoadComplete(r);
 
   // insert a new entry into the AMO Table
   auto NewEntry = std::make_tuple(Op->getHart(),
@@ -1427,9 +1419,9 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
       // split request exists, determine how to handle it
       if( getNumSplitRqsts(op) == 1 ){
         // this was the last request to service, delete the op
-        if( op->getHazard() != nullptr ){
-          // this was a write request for an AMO, clear the hazard
-          *(op->getHazard()) = false;
+        MemReq r = op->getMemReq();
+        if(MemOpAMO == r.ReqType){
+            r.MarkLoadComplete(r);
         }
         delete op;
       }
@@ -1440,9 +1432,10 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     }
 
     // no split request exists; handle as normal
-    if( op->getHazard() != nullptr ){
-      // this was a write request for an AMO, clear the hazard
-      *(op->getHazard()) = false;
+    // this was a write request for an AMO, clear the hazard
+    MemReq r = op->getMemReq();
+    if(MemOpAMO == r.ReqType){
+        r.MarkLoadComplete(r);
     }
     delete op;
     outstanding.erase(ev->getID());
