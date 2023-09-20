@@ -504,7 +504,7 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
     // Do the openat on the host
     int fd = openat(dirfd, ECALL.string.c_str(), O_RDWR);
 
-    HartToExecCtx()->AddFD(fd);
+    AssignedThreads.at(HartToDecode)->AddFD(fd);
 
     // openat returns the file descriptor of the opened file
     RegFile->SetX(feature, 10, fd);

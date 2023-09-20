@@ -161,9 +161,6 @@ namespace SST::RevCPU{
       uint32_t HartToExecThreadID();
       uint32_t HartToDecodeThreadID();
 
-      ///< RevProc: Returns pointer to current ctx loaded into HartToExec
-      std::shared_ptr<RevThread> HartToExecCtx();
-
       ///< RevProc: Returns pointer to current ctx loaded into HartToDecode
       std::shared_ptr<RevThread> HartToDecodeCtx();
 
