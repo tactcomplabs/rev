@@ -44,7 +44,8 @@ RevProc::RevProc( unsigned Id,
   LSQueue = std::make_shared<std::unordered_map<uint64_t, MemReq>>();
   LSQueue->clear();
 
-  feature = new RevFeature(Machine, output, MinCost, MaxCost, Id);
+  featureUP = std::make_unique<RevFeature>(Machine, output, MinCost, MaxCost, Id);
+  feature = featureUP.get();
   if( !feature )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevFeature object for core=%u\n", id);
@@ -56,7 +57,7 @@ RevProc::RevProc( unsigned Id,
   }
 
   std::function<void(MemReq)> f = std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1);
-  sfetch = new RevPrefetcher(Mem, feature, Depth, LSQueue, f);
+  sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth, LSQueue, f);
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%u\n", id);
@@ -82,13 +83,6 @@ RevProc::RevProc( unsigned Id,
   if( !Reset() )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to reset the core resources for core=%u\n", id );
-}
-
-RevProc::~RevProc(){
-  for(auto* p : Extensions)
-    delete p;
-  delete sfetch;
-  delete feature;
 }
 
 bool RevProc::Halt(){
@@ -121,7 +115,7 @@ bool RevProc::SingleStepHart(){
   }
 }
 
-bool RevProc::EnableExt(RevExt *Ext, bool Opt){
+bool RevProc::EnableExt(RevExt* Ext, bool Opt){
   if( !Ext )
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
 
@@ -130,7 +124,7 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
                   id, Ext->GetName().c_str());
 
   // add the extension to our vector of enabled objects
-  Extensions.push_back(Ext);
+  Extensions.push_back(std::unique_ptr<RevExt>(Ext));
 
   // retrieve all the target instructions
   const std::vector<RevInstEntry>& IT = Ext->GetInstTable();
@@ -140,8 +134,7 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
 
   for( unsigned i=0; i<IT.size(); i++ ){
     InstTable.push_back(IT[i]);
-    std::pair<unsigned, unsigned> ExtObj =
-      std::pair<unsigned, unsigned>(Extensions.size()-1, i);
+    auto ExtObj = std::pair<unsigned, unsigned>(Extensions.size()-1, i);
     EntryToExt.insert(
       std::pair<unsigned,
         std::pair<unsigned, unsigned>>(InstTable.size()-1, ExtObj));
@@ -191,7 +184,6 @@ bool RevProc::SeedInstTable(){
   output->verbose(CALL_INFO, 6, 0,
                     "Core %u ; Seeding instruction table for machine model=%s\n",
                     id, feature->GetMachineModel().c_str());
-
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
@@ -1874,7 +1866,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
       // found the instruction extension
       std::pair<unsigned, unsigned> EToE = it->second;
-      RevExt *Ext = Extensions[EToE.first];
+      RevExt *Ext = Extensions[EToE.first].get();
 
       // Update RegFile (in case of prior context switch)
       Ext->SetRegFile(RegFile);
@@ -1974,7 +1966,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // inject the ALU fault
       if( ALUFault ){
         // inject ALU fault
-        RevExt *Ext = Extensions[EToE.first];
+        RevExt *Ext = Extensions[EToE.first].get();
         if( (Ext->GetName() == "RV64F") ||
             (Ext->GetName() == "RV64D") ){
           // write an rv64 float rd

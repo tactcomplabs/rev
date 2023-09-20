@@ -11,11 +11,11 @@
 #include "../include/RevPrefetcher.h"
 using namespace SST::RevCPU;
 
-RevPrefetcher::~RevPrefetcher(){
+/*RevPrefetcher::~RevPrefetcher(){
   // delete all the existing streams
   for(auto* s : iStack)
       delete[] s;
-}
+}*/
 
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 
@@ -163,16 +163,16 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // allocate a new stream buffer
   baseAddr.push_back(Addr);
-  iStack.push_back( new uint32_t[depth] );
+  iStack.push_back( std::vector<uint32_t>(depth) );
 
   // initialize it
-  unsigned x = baseAddr.size()-1;
-  for( unsigned y = 0; y<depth; y++ ){
+  size_t x = baseAddr.size() - 1;
+  for( size_t y = 0; y < depth; y++ ){
     iStack[x][y] = REVPREF_INIT_ADDR;
   }
 
   // now fill it
-  for( unsigned y=0; y<depth; y++ ){
+  for( size_t y=0; y<depth; y++ ){
     MemReq req (Addr+(y*4), 0, RevRegClass::RegGPR, feature->GetHartToExec(), MemOpREAD, true, MarkLoadAsComplete);
     LSQueue->insert({make_lsq_hash(0, RevRegClass::RegGPR, feature->GetHartToExec()), req});
     mem->ReadVal( feature->GetHartToExec(), Addr+(y*4),
@@ -182,16 +182,12 @@ void RevPrefetcher::Fill(uint64_t Addr){
   }
 }
 
-void RevPrefetcher::DeleteStream(unsigned i){
+void RevPrefetcher::DeleteStream(size_t i){
   // delete the target stream as we no longer need it
-  if( i > (baseAddr.size()-1) ){
-    return ;
+  if( i < baseAddr.size() ){
+    iStack.erase(iStack.begin() + i);
+    baseAddr.erase(baseAddr.begin() + i);
   }
-
-  // delete it
-  delete [] iStack[i];
-  iStack.erase(iStack.begin() + i);
-  baseAddr.erase(baseAddr.begin() + i);
 }
 
 // EOF

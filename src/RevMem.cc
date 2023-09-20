@@ -147,9 +147,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
     ctrl->sendREADLOCKRequest(Hart, Addr, (uint64_t)(BaseMem),
                               Len, Target, req, flags);
   }else{
-    for( unsigned i=0; i<Len; i++ ){
-      DataMem[i] = BaseMem[i];
-    }
+    memcpy(DataMem, BaseMem, Len);
     // clear the hazard
     req.MarkLoadComplete(req);
   }

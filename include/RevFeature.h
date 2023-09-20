@@ -19,29 +19,31 @@
 
 namespace SST::RevCPU{
 
+/// Table of RISC-V extension flags. They must be powers of two which can be
+/// ORed to indicate multiple extensions being present.
 enum RevFeatureType : uint32_t {
   RV_UNKNOWN  = 0,      ///< RevFeatureType: unknown feature
-    RV_E        = 1<<0,   ///< RevFeatureType: E-extension
-    RV_I        = 1<<1,   ///< RevFeatureType: I-extension
-    RV_M        = 1<<2,   ///< RevFeatureType: M-extension
-    RV_A        = 1<<3,   ///< RevFeatureType: A-extension
-    RV_F        = 1<<4,   ///< RevFeatureType: F-extension
-    RV_D        = 1<<5,   ///< RevFeatureType: D-extension
-    RV_Q        = 1<<6,   ///< RevFeatureType: Q-extension
-    RV_L        = 1<<7,   ///< RevFeatureType: L-extension
-    RV_C        = 1<<8,   ///< RevFeatureType: C-extension
-    RV_B        = 1<<9,   ///< RevFeatureType: B-extension
-    RV_J        = 1<<10,  ///< RevFeatureType: J-extension
-    RV_T        = 1<<11,  ///< RevFeatureType: T-extension
-    RV_P        = 1<<12,  ///< RevFeatureType: P-Extension
-    RV_V        = 1<<13,  ///< RevFeatureType: V-extension
-    RV_N        = 1<<14,  ///< RevFeatureType: N-extension
-    RV_ZICSR    = 1<<15,  ///< RevFEatureType: Zicsr-extension
-    RV_ZIFENCEI = 1<<16,  ///< RevFeatureType: Zifencei-extension
-    RV_ZAM      = 1<<17,  ///< RevFeatureType: Zam-extension
-    RV_ZTSO     = 1<<18,  ///< RevFeatureType: Ztso-extension
-    RV_ZFA      = 1<<19,  ///< RevFeatureType: Zfa-extension
-    };
+  RV_E        = 1<<0,   ///< RevFeatureType: E-extension
+  RV_I        = 1<<1,   ///< RevFeatureType: I-extension
+  RV_M        = 1<<2,   ///< RevFeatureType: M-extension
+  RV_A        = 1<<3,   ///< RevFeatureType: A-extension
+  RV_F        = 1<<4,   ///< RevFeatureType: F-extension
+  RV_D        = 1<<5,   ///< RevFeatureType: D-extension
+  RV_Q        = 1<<6,   ///< RevFeatureType: Q-extension
+  RV_L        = 1<<7,   ///< RevFeatureType: L-extension
+  RV_C        = 1<<8,   ///< RevFeatureType: C-extension
+  RV_B        = 1<<9,   ///< RevFeatureType: B-extension
+  RV_J        = 1<<10,  ///< RevFeatureType: J-extension
+  RV_T        = 1<<11,  ///< RevFeatureType: T-extension
+  RV_P        = 1<<12,  ///< RevFeatureType: P-Extension
+  RV_V        = 1<<13,  ///< RevFeatureType: V-extension
+  RV_N        = 1<<14,  ///< RevFeatureType: N-extension
+  RV_ZICSR    = 1<<15,  ///< RevFEatureType: Zicsr-extension
+  RV_ZIFENCEI = 1<<16,  ///< RevFeatureType: Zifencei-extension
+  RV_ZAM      = 1<<17,  ///< RevFeatureType: Zam-extension
+  RV_ZTSO     = 1<<18,  ///< RevFeatureType: Ztso-extension
+  RV_ZFA      = 1<<19,  ///< RevFeatureType: Zfa-extension
+};
 
 class RevFeature{
 public:

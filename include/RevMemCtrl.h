@@ -12,18 +12,19 @@
 #define _SST_REVCPU_REVMEMCTRL_H_
 
 // -- C++ Headers
-#include <ctime>
-#include <vector>
-#include <list>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <random>
-#include <map>
-#include <tuple>
+#include <ctime>
 #include <functional>
+#include <list>
+#include <map>
+#include <memory>
+#include <random>
+#include <tuple>
 #include <type_traits>
+#include <vector>
 
 // -- SST Headers
 #include "SST.h"

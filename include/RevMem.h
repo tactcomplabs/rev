@@ -14,23 +14,22 @@
 #define __PAGE_SIZE__ 4096
 
 // -- C++ Headers
-#include <ctime>
-#include <vector>
 #include <algorithm>
+#include <cinttypes>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <random>
-#include <mutex>
-#include <cinttypes>
-#include <cstddef>
-#include <tuple>
-#include <map>
-#include <unordered_map>
-#include <list>
-#include <memory>
-#include <utility>
 #include <iostream>
+#include <list>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 // -- SST Headers
 #include "SST.h"

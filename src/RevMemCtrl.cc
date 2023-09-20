@@ -303,9 +303,9 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
     { RevCPU::RevFlag::F_AMOSWAP, RevBasicMemCtrl::MemCtrlStats::AMOSwapPending },
   };
 
-  for(auto& entry : table){
-    if(flags & uint32_t(entry.first)){
-      recordStat(entry.second, 1);
+  for(auto [flag, stat] : table){
+    if(flags & uint32_t(flag)){
+      recordStat(stat, 1);
       break;
     }
   }
@@ -1294,6 +1294,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
         }
         MemReq r = op->getMemReq();
         r.MarkLoadComplete(r);
+        delete op;
       }
       outstanding.erase(ev->getID());
       delete ev;

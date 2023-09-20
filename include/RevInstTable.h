@@ -12,11 +12,13 @@
 #define _SST_REVCPU_REVINSTTABLE_H_
 
 #include <bitset>
-#include <string>
-#include <map>
-#include <cstdint>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <map>
+#include <memory>
+#include <string>
 #include <type_traits>
 
 #include "RevMem.h"
@@ -301,9 +303,6 @@ struct RevInst {
     return SignExt(imm, bits);
   }
 }; // RevInst
-
-static_assert(std::is_trivially_copyable_v<RevInst>,
-              "RevInst must be trivially copyable to be able to use memcpy() and memset()");
 
 #if 0
 
