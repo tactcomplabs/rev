@@ -49,8 +49,6 @@
 #include "../common/syscalls/SysFlags.h"
 #include "RevRand.h"
 
-#define _PAN_FWARE_JUMP_            0x0000000000010000
-
 namespace SST::RevCPU{
 
 class RevProc{

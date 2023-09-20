@@ -60,9 +60,6 @@ public:
   /// RevCPU: standard SST component clock function
   bool clockTick( SST::Cycle_t currentCycle );
 
-  /// RevCPU: test harness clock tick function
-  bool clockTickPANTest( SST::Cycle_t currentCycle );
-
   // -------------------------------------------------------
   // RevCPU Component Registration Data
   // -------------------------------------------------------

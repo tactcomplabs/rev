@@ -1345,8 +1345,7 @@ bool RevProc::PrefetchInst(){
 
   // These are addresses that we can't decode
   // Return false back to the main program loop
-  if( (PC == 0x00ull) ||
-      (PC == _PAN_FWARE_JUMP_) ){
+  if( PC == 0x00ull ){
     return false;
   }
 
@@ -1769,7 +1768,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // If the next instruction is our special bounce address
     // DO NOT decode it.  It will decode to a bogus instruction.
     // We do not want to retire this instruction until we're ready
-    if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
+    if( !Stalled ){
       Inst = DecodeInst();
       Inst.entry = RegFile->Entry;
     }
@@ -1805,7 +1804,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     // attempt to execute the instruction as long as it is NOT
     // the firmware jump PC
+    #if 0
     if( ExecPC != _PAN_FWARE_JUMP_ ){
+    #else
+    if ( true ){
+    #endif
 
       // Find the instruction extension
       auto it = EntryToExt.find(RegFile->Entry);
@@ -2002,7 +2005,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // if no work is found, don't update the PC
     // just wait and spin
     bool done = true;
-    
+
     if( GetPC() == 0x00ull ) {
       // PAN execution contexts not enabled, this is our last PC
       done = true;
