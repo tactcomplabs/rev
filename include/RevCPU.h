@@ -34,15 +34,17 @@
 #include "RevLoader.h"
 #include "RevProc.h"
 #include "RevNIC.h"
-//#include "PanNet.h"
-// #include "PanExec.h"
+#include "PanNet.h"
+#include "PanExec.h"
 #include "RevCoProc.h"
 #include "RevRand.h"
 
 // -- PAN Common Headers
-//#include "../common/include/PanAddr.h"
+#include "../common/include/PanAddr.h"
 
-//#define _MAX_PAN_TEST_ 11
+#ifdef _PAN_
+#define _MAX_PAN_TEST_ 11
+#endif
 
 namespace SST::RevCPU{
 

@@ -83,6 +83,13 @@ set(LDFLAGS "${SST_LDFLAGS}  -fno-stack-protector")
 message (LDFLAGS="${LDFLAGS}")
 
 #------------------------------------------------------------------------
+#-- PAN
+#------------------------------------------------------------------------
+option(PAN_ENABLED "Compile PAN into core" OFF)
+if(${PAN_ENABLED})
+  add_definitions(-D_PAN_)
+endif()
+#------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

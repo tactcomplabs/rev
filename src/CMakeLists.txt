@@ -7,9 +7,6 @@
 #
 
 set(RevCPUSrcs
-  # TODO conditionaly add based on ENV{_PAN_}
-  #   PanExec.cc
-  #   PanNet.cc
   RevCPU.cc
   RevExt.cc
   RevFeature.cc
@@ -23,7 +20,14 @@ set(RevCPUSrcs
   librevcpu.cc
   RevPrefetcher.cc
   RevCoProc.cc
-  )
+)
+
+if(${PAN_ENABLED})
+ list(APPEND RevCPUSrcs 
+    PanExec.cc
+    PanNet.cc
+)
+endif()
 
 add_library(revcpu SHARED ${RevCPUSrcs})
 target_include_directories(revcpu PRIVATE ${REVCPU_INCLUDE_PATH})

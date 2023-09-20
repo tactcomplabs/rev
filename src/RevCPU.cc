@@ -435,14 +435,12 @@ void RevCPU::initNICMem(){
   uint64_t ptr = _PAN_PE_TABLE_ADDR_;
   uint64_t host = 2;
   int64_t id = -1;
-
   for( unsigned i = 0; i < _PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
     Mem->Write(0, ptr, id);
     Mem->Write(0, ptr+8, host);
     ptr += sizeof(PEMap);
   }
   ptr = _PAN_PE_TABLE_ADDR_;
-
 
   // the first entry in the table is our own, then its
   // all the other nodes sequentially
@@ -468,7 +466,6 @@ void RevCPU::initNICMem(){
   }
   #endif
 }
-
 
 void RevCPU::registerStatistics(){
   SyncGetSend = registerStatistic<uint64_t>("SyncGetSend");
@@ -575,7 +572,6 @@ void RevCPU::handlePANMessage(Event *ev){
 
   delete event;
 }
-
 
 void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
   unsigned iter = 0;
@@ -1043,9 +1039,16 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
 
   ReadyForRevoke = true;
 
+#if 0
+  // write the completion
+  uint64_t Addr = _PAN_COMPLETION_ADDR_;
+  uint64_t Payload = 0x01ull;
+  Mem->WriteMem(Addr, 8, &Payload);
+
+  PNic->RevokeToken();
+#endif
   PANBuildRawSuccess(event);
 }
-
 
 void RevCPU::PANHandleHalt(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN HALT Request\n");
@@ -1424,7 +1427,6 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
     break;
   }
 }
-
 
 void RevCPU::registerSendCmd(panNicEvent *event){
   switch( event->getOpcode() ){
