@@ -293,7 +293,6 @@ struct RevInst {
   bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
   uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
-  bool *hazard        = 0; ///< RevInst: signals a load hazard
 
   explicit RevInst() = default; // prevent aggregate initialization
 
@@ -510,7 +509,6 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
-               Inst.hazard,
                req,
                flags);
     R->SetX(F, Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
@@ -523,7 +521,6 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
-               Inst.hazard,
                req,
                flags);
     R->SetX(F, Inst.rd, static_cast<T>(R->RV64[Inst.rd]));
@@ -557,7 +554,6 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<T*>(&R->DPF[Inst.rd]),
-               Inst.hazard,
                req,
                flags);
 
@@ -571,7 +567,6 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                &R->SPF[Inst.rd],
-               Inst.hazard,
                req,
                REVMEM_FLAGS(0));
   }

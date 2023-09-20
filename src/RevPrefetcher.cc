@@ -15,8 +15,6 @@ RevPrefetcher::~RevPrefetcher(){
   // delete all the existing streams
   for(auto* s : iStack)
       delete[] s;
-  for(auto* h : iHazard)
-      delete[] h;
 }
 
 bool RevPrefetcher::IsAvail(uint64_t Addr){
@@ -166,13 +164,11 @@ void RevPrefetcher::Fill(uint64_t Addr){
   // allocate a new stream buffer
   baseAddr.push_back(Addr);
   iStack.push_back( new uint32_t[depth] );
-  iHazard.push_back( new bool[depth] );
 
   // initialize it
   unsigned x = baseAddr.size()-1;
   for( unsigned y = 0; y<depth; y++ ){
     iStack[x][y] = REVPREF_INIT_ADDR;
-    iHazard[x][y] = true;
   }
 
   // now fill it
@@ -181,7 +177,6 @@ void RevPrefetcher::Fill(uint64_t Addr){
     LSQueue->insert({make_lsq_hash(0, RevRegClass::RegGPR, feature->GetHart()), req});
     mem->ReadVal( feature->GetHart(), Addr+(y*4),
                   &iStack[x][y],
-                  &iHazard[x][y],
                   req,
                   REVMEM_FLAGS(0x00) );
   }
@@ -195,9 +190,7 @@ void RevPrefetcher::DeleteStream(unsigned i){
 
   // delete it
   delete [] iStack[i];
-  delete [] iHazard[i];
   iStack.erase(iStack.begin() + i);
-  iHazard.erase(iHazard.begin() + i);
   baseAddr.erase(baseAddr.begin() + i);
 }
 

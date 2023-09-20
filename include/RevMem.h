@@ -151,7 +151,6 @@ public:
 
   /// RevMem: read data from the target memory location
   bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                bool *Hazard,
                 MemReq req,
                 StandardMem::Request::flags_t flags);
 
@@ -173,18 +172,17 @@ public:
   /// RevMem: template read memory interface
   template <typename T>
   bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
-                bool *Hazard,
                 MemReq req,
                 StandardMem::Request::flags_t flags){
-    return ReadMem(Hart, Addr, sizeof(T), Target, Hazard, req, flags);
+    return ReadMem(Hart, Addr, sizeof(T), Target, req, flags);
   }
 
   ///  RevMem: template LOAD RESERVE memory interface
   template <typename T>
   bool LR( unsigned Hart, uint64_t Addr, T *Target,
-           uint8_t aq, uint8_t rl, bool *Hazard, MemReq req,
+           uint8_t aq, uint8_t rl, MemReq req,
            StandardMem::Request::flags_t flags){
-    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, Hazard, req, flags);
+    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, req, flags);
   }
 
   ///  RevMem: template STORE CONDITIONAL memory interface
@@ -198,10 +196,9 @@ public:
   /// RevMem: template AMO memory interface
   template <typename T>
   bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
-               bool *Hazard,
                MemReq req,
                StandardMem::Request::flags_t flags){
-    return AMOMem(Hart, Addr, sizeof(T), Data, Target, Hazard, req, flags);
+    return AMOMem(Hart, Addr, sizeof(T), Data, Target, req, flags);
   }
 
   // ----------------------------------------------------
@@ -229,7 +226,7 @@ public:
   // ----------------------------------------------------
   /// RevMem: Add a memory reservation for the target address
   bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, uint8_t aq, uint8_t rl, bool *Hazard, MemReq req,
+              void *Data, uint8_t aq, uint8_t rl, MemReq req,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Clear a memory reservation for the target address
@@ -239,7 +236,7 @@ public:
 
   /// RevMem: Initiated an AMO request
   bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, void *Target, bool *Hazard, MemReq req,
+              void *Data, void *Target, MemReq req,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Initiates a future operation [RV64P only]

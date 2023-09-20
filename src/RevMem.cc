@@ -110,7 +110,7 @@ bool RevMem::StatusFuture(uint64_t Addr){
 
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
-                    bool *Hazard, MemReq req,
+                    MemReq req,
                     StandardMem::Request::flags_t flags){
   for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
     if( (Hart == std::get<LRSC_HART>(*it)) &&
@@ -533,7 +533,6 @@ bool RevMem::FenceMem(unsigned Hart){
 
 bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
-                    bool *Hazard,
                     MemReq req,
                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
@@ -555,7 +554,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                          static_cast<char *>(Data), Target, req, flags);
   }else{
     // process the request locally
-    ReadMem(Hart, Addr, Len, Target, Hazard, req, flags);
+    ReadMem(Hart, Addr, Len, Target, req, flags);
 
     if( Len == 4 ){
       ApplyAMO(flags, Target, *static_cast<uint32_t*>(Data));
@@ -777,7 +776,7 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 }
 
 bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                     bool *Hazard, MemReq req, StandardMem::Request::flags_t flags){
+                     MemReq req, StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -789,9 +788,6 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
   char *DataMem = static_cast<char *>(Target);
-
-  // set the hazard
-  *Hazard = true;
 
   if((physAddr + Len) > endOfPage){
     uint32_t span = (physAddr + Len) - endOfPage;
@@ -815,7 +811,6 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
         Cur++;
       }
       // clear the hazard
-      *Hazard = false;
       req.MarkLoadComplete(req);
     }
 #ifdef _REV_DEBUG_
@@ -829,7 +824,6 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
         DataMem[i] = BaseMem[i];
       }
       // clear the hazard
-      *Hazard = false;
       req.MarkLoadComplete(req);
     }
   }

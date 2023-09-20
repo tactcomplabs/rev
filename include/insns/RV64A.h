@@ -26,7 +26,7 @@ class RV64A : public RevExt {
     M->LR(F->GetHart(),
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rd],
-          Inst.aq, Inst.rl, Inst.hazard, req,
+          Inst.aq, Inst.rl, req,
           REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
     R->AdvancePC(F, Inst.instSize);
     return true;
@@ -62,7 +62,6 @@ class RV64A : public RevExt {
               R->RV64[Inst.rs1],
               &R->RV64[Inst.rs2],
               &R->RV64[Inst.rd],
-              Inst.hazard,
               req,
               flags);
 

@@ -45,7 +45,6 @@ private:
   unsigned depth;                             ///< Depth of each prefetcher stream
   std::vector<uint64_t> baseAddr;             ///< Vector of base addresses for each stream
   std::vector<uint32_t*> iStack;              ///< Vector of instruction vectors
-  std::vector<bool*> iHazard;                 ///< Vector of instruction cost vectors
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
   std::function<void(MemReq)> MarkLoadAsComplete;
 

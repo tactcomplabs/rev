@@ -165,9 +165,6 @@ public:
   /// RevMemOp: set the hart
   void setHart(unsigned H) { Hart = H ;}
 
-  /// RevMemOp: set the hazard pointer
-  void setHazard(bool *H) { hazard = H;}
-
   ///RevMemOp: set the originating memory request
   void setMemReq(MemReq req) { procReq = req;}
 
@@ -182,9 +179,6 @@ public:
 
   /// RevMemOp: retrieve the hart
   unsigned getHart() const { return Hart; }
-
-  /// RevMemOp: retrieve the hazard pointer
-  bool *getHazard() const { return hazard; }
 
   /// RevMemOp: Get the originating proc memory request
   MemReq getMemReq() const { return procReq; }
@@ -204,7 +198,6 @@ private:
   std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
   StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
   void *target;                         ///< RevMemOp: target register pointer
-  bool *hazard;                         ///< RevMemOp: load hazard
   MemReq procReq;                       ///< RevMemOp: original request from RevProc
 };
 
