@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <limits.h>
+#include <stdarg.h>
 
 /* Clone Flags */
 #define CSIGNAL              0x000000ff /* Signal mask to be sent at exit */
@@ -3736,3 +3738,30 @@ int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int be
     );
   return rc;
 }
+typedef unsigned long int rev_pthread_t;
+
+// pthread_t *restrict thread
+// const pthread_attr_t *restrict attr - NOT USED RIGHT NOW
+// void *(*start_routine)(void *)
+// void *restrict arg); - NOT USED RIGHT NOW
+// ==================== REV PTHREADS
+int rev_pthread_create( rev_pthread_t* thread, void* fn, void* arg ){
+  int rc;
+  asm volatile (
+    "li a7, 1000 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
+int rev_pthread_join( rev_pthread_t thread ){
+  int rc;
+  asm volatile (
+    "li a7, 1001 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
