@@ -13,13 +13,13 @@
 .PHONY: src
 
 EXAMPLE=strlen_cxx
-CC="${RVCC}"
-#ARCH?=rv64g
+CXX="${RVCXX}"
 ARCH?=rv64imafd
+ABI?=lp64d
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+	$(CXX) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

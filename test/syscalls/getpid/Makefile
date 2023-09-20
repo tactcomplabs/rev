@@ -13,9 +13,7 @@
 .PHONY: src
 
 EXAMPLE=getpid
-#CC=riscv64-unknown-linux-gnu-gcc
 CC="${RVCC}"
-#ARCH?=rv64g
 ARCH?=rv64imafdc
 
 all: $(EXAMPLE).exe

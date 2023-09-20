@@ -13,14 +13,12 @@
 .PHONY: src
 
 EXAMPLE=vector
-#CC=riscv64-unknown-linux-gnu-gcc
-CC="${RVCC}"
-#ARCH?=rv64g
+CXX="${RVCXX}"
 ARCH?=rv64imafdc
 
 all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
+$(EXAMPLE).exe: $(EXAMPLE).cpp
+	$(CXX) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).cpp -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

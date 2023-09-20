@@ -13,9 +13,7 @@
 .PHONY: src
 
 EXAMPLE=write
-#CC=riscv64-unknown-elf-gcc
 CC="${RVCC}"
-#ARCH?=rv64g
 ARCH?=rv64imafdc
 
 all: $(EXAMPLE).exe

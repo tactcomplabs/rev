@@ -15,10 +15,11 @@
 EXAMPLE=strlen_c
 CC=${RVCC}
 ARCH?=rv64imafdc
+ABI?=lp64d
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c -static
+	$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

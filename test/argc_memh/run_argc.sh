@@ -5,6 +5,7 @@ make clean && make
 REV_SST_CONFIG=${REV_SST_CONFIG-./rev-test-argc.py}
 REV_EXE=argc.exe
 
+echo "DBG ${REV_EXE_ARGS}"
 # Check that the exec was built...
 if [ -f ${REV_EXE} ]; then
   REV_EXE_ARGS=${REV_EXE_ARGS} REV_EXE=${REV_EXE} sst --add-lib-path=../../build/src/ ${REV_SST_CONFIG}

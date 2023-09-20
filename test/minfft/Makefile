@@ -13,8 +13,9 @@
 .PHONY: src
 
 EXAMPLE=minfft
-CC=${RVCC}
+CXX=${RVCXX}
 ARCH?=rv64imfd
+ABI?=lp64d
 #ARCH?=rv32i
 #ABI?=ilp32
 
@@ -22,7 +23,7 @@ all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
 	#$(CC) -O1 -mcmodel=medlow -march=$(ARCH) -mabi=lp64d -o $(EXAMPLE).exe minfft.c $(EXAMPLE).c -lm
 	#$(CC) -O2 -mno-explicit-relocs -mno-save-restore -march=$(ARCH) -mabi=lp64d -static -o $(EXAMPLE).exe $(EXAMPLE).c ex1.c -lm
-	$(CC) -O2 -march=$(ARCH) -mabi=lp64d -static -o $(EXAMPLE).exe minfft_new.cc -lm
+	$(CXX) -O2 -march=$(ARCH) -mabi=$(ABI) -static -o $(EXAMPLE).exe minfft_new.cc -lm
 clean:
 	rm -Rf $(EXAMPLE).exe
 
