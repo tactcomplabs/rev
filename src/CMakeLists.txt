@@ -22,6 +22,7 @@ set(RevCPUSrcs
   librevcpu.cc
   RevPrefetcher.cc
   RevCoProc.cc
+  RevSysCalls.cc
   )
 
 add_library(revcpu SHARED ${RevCPUSrcs})
