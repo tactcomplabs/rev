@@ -1658,35 +1658,7 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-bool RevProc::DependencyCheck(uint16_t HartID, uint16_t RegNum, RevRegClass RegType) const{
-
-  const auto* regFile = GetRegFile(HartID);
-
-  if((0 != RegNum) && (regFile->LSQueue->count(make_lsq_hash(RegNum, RegType, HartID))) > 0){ return true;}
-    if(RegNum < _REV_NUM_REGS_){
-    switch(RegType){
-      case RegFLOAT:
-        if(feature->HasD()){
-          if(regFile->DPF_Scoreboard[RegNum]) return true;
-        }else{
-          if(regFile->SPF_Scoreboard[RegNum]) return true;
-        }
-        break;
-
-      case RegGPR:
-        if(feature->IsRV32()){
-          if(regFile->RV32_Scoreboard[RegNum]) return true;
-        }else {
-          if(regFile->RV64_Scoreboard[RegNum]) return true;
-        }
-        break;
-
-      default:
-        break;
-      }
-    }
-}
-    bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
+bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
 
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
