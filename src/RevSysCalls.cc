@@ -232,9 +232,6 @@ RevProc::ECALL_status_t RevProc::ECALL_mknodat(RevInst& inst){
 
 #if USE_OLD_SYSCALLS || 1
 
-/* ======================================================================*/
-/* rev_mkdirat(int dirfd, const char * path, unsigned short mode)        */
-/* ======================================================================*/
 // 34, rev_mkdirat(int dirfd, const char  * pathname, umode_t mode)
 RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL_mkdirat called");
@@ -399,12 +396,12 @@ RevProc::ECALL_status_t RevProc::ECALL_faccessat(RevInst& inst){
 RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: chdir called by thread %i\n", GetActiveThreadID());
 
-  uint64_t path = RegFile->GetX<uint64_t>(feature, 10);
+  uint64_t filenameAddr = RegFile->GetX<uint64_t>(feature, 10);
   auto action = [&]{
     int rc = chdir(ECALL.string.c_str());
     RegFile->SetX(feature, 10, rc);
   };
-  return ECALL_LoadAndParseString(inst, path, action);
+  return ECALL_LoadAndParseString(inst, filenameAddr, action);
 }
 
 #else // Old code is replaced with ECALL_LoadAndParseString
