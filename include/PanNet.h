@@ -362,7 +362,7 @@ namespace SST {
         PanNet,
         "revcpu",
         "PanNet",
-        SST_ELI_ELEMENT_VERSION(1,0,0),
+        SST_ELI_ELEMENT_VERSION(1, 0, 0),
         "PAN Network Transport Module",
         SST::RevCPU::panNicAPI
       )
@@ -442,7 +442,7 @@ namespace SST {
     private:
       bool isHost;                            ///< PanNet: Determines if this is a host device
 
-      std::map<SST::Interfaces::SimpleNetwork::nid_t,bool> hostMap;///< PanNet: Maps an endpoint ID to whether it is a host device
+      std::map<SST::Interfaces::SimpleNetwork::nid_t, bool> hostMap;///< PanNet: Maps an endpoint ID to whether it is a host device
 
     }; // end PanNet
 

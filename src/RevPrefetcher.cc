@@ -9,6 +9,7 @@
 //
 
 #include "../include/RevPrefetcher.h"
+using namespace SST::RevCPU;
 
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 
@@ -19,12 +20,7 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         return false;
@@ -66,12 +62,7 @@ bool RevPrefetcher::FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst){
   for( unsigned i=0; i<baseAddr.size(); i++ ){
     lastAddr = baseAddr[i] + (depth*4);
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         Fetched = false;
@@ -107,12 +98,7 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         Fetched = false;
@@ -171,38 +157,33 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // allocate a new stream buffer
   baseAddr.push_back(Addr);
-  iStack.push_back( new uint32_t[depth] );
-  iHazard.push_back( new bool[depth] );
+  iStack.push_back( std::vector<uint32_t>(depth) );
+  iHazard.push_back( std::vector<std::shared_ptr<bool>>(depth) );
 
   // initialize it
-  unsigned x = baseAddr.size()-1;
-  for( unsigned y = 0; y<depth; y++ ){
+  size_t x = baseAddr.size() - 1;
+  for( size_t y = 0; y < depth; y++ ){
     iStack[x][y] = REVPREF_INIT_ADDR;
-    iHazard[x][y] = true;
+    iHazard[x][y] = std::make_shared<bool>(true);
   }
 
   // now fill it
-  for( unsigned y=0; y<depth; y++ ){
+  for( size_t y = 0; y < depth; y++ ){
     mem->ReadVal( feature->GetHart(), Addr+(y*4),
-                  (uint32_t *)(&iStack[x][y]),
-                  &(iHazard[x][y]),
+                  &iStack[x][y],
+                  iHazard[x][y],
                   REVMEM_FLAGS(0x00) );
 
   }
 }
 
-void RevPrefetcher::DeleteStream(unsigned i){
+void RevPrefetcher::DeleteStream(size_t i){
   // delete the target stream as we no longer need it
-  if( i > (baseAddr.size()-1) ){
-    return ;
+  if( i < baseAddr.size() ){
+    iStack.erase(iStack.begin() + i);
+    iHazard.erase(iHazard.begin() + i);
+    baseAddr.erase(baseAddr.begin() + i);
   }
-
-  // delete it
-  delete [] iStack[i];
-  delete [] iHazard[i];
-  iStack.erase(iStack.begin() + i);
-  iHazard.erase(iHazard.begin() + i);
-  baseAddr.erase(baseAddr.begin() + i);
 }
 
 // EOF

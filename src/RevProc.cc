@@ -9,9 +9,8 @@
 //
 
 #include "../include/RevProc.h"
-#include <bitset>
-#include <filesystem>
-#include <sys/xattr.h>
+
+using namespace SST::RevCPU;
 
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
@@ -27,14 +26,14 @@ RevProc::RevProc( unsigned Id,
 
   // initialize the machine model for the target core
   std::string Machine;
-  if( !Opts->GetMachineModel(id,Machine) )
+  if( !Opts->GetMachineModel(id, Machine) )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to retrieve the machine model for core=%d\n", id);
+                  "Error: failed to retrieve the machine model for core=%u\n", id);
 
   unsigned MinCost = 0;
   unsigned MaxCost = 0;
 
-  Opts->GetMemCost(Id,MinCost,MaxCost);
+  Opts->GetMemCost(Id, MinCost, MaxCost);
 
   if(CoProc){
     coProc = CoProc;
@@ -42,10 +41,8 @@ RevProc::RevProc( unsigned Id,
     coProc = NULL;
   }
 
-  feature = new RevFeature(Machine,output,MinCost,MaxCost,Id);
-  if( !feature )
-    output->fatal(CALL_INFO, -1,
-                  "Error: failed to create the RevFeature object for core=%d\n", id);
+  featureUP = std::make_unique<RevFeature>(Machine, output, MinCost, MaxCost, Id);
+  feature = featureUP.get();
 
   unsigned Depth = 0;
   Opts->GetPrefetchDepth(Id, Depth);
@@ -53,65 +50,31 @@ RevProc::RevProc( unsigned Id,
     Depth = 16;
   }
 
-  sfetch = new RevPrefetcher(Mem,feature,Depth);
+  sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth);
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to create the RevPrefetcher object for core=%d\n", id);
+                  "Error: failed to create the RevPrefetcher object for core=%u\n", id);
 
   // Initialize ThreadTable (NOTE: Default PID = 1024 + ProcID)
   if( !InitThreadTable() )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to initialize the ThreadTable for core=%d\n", id );
+                  "Error: failed to initialize the ThreadTable for core=%u\n", id );
 
   // load the instruction tables
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
-                  "Error : failed to load instruction table for core=%d\n", id );
+                  "Error : failed to load instruction table for core=%u\n", id );
 
   // Initialize EcallTable
   InitEcallTable();
   if( Ecalls.size() <= 0 )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to initialize the Ecall Table for core=%d\n", id );
-
-  ECALL_buf = new char[64];
-  ECALL_buf[0] = '\0';
-  ECALL_string = "";
-  ECALL_bytesRead = 0;
+                  "Error: failed to initialize the Ecall Table for core=%u\n", id );
 
   // reset the core
   if( !Reset() )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to reset the core resources for core=%d\n", id );
-
-  Stats.totalCycles = 0;
-  Stats.cyclesBusy = 0;
-  Stats.cyclesIdle_Total = 0;
-  Stats.cyclesIdle_Pipeline = 0;
-  Stats.cyclesIdle_MemoryFetch= 0;
-  Stats.cyclesStalled = 0;
-  Stats.percentEff = 0.0;
-  Stats.floatsExec = 0;
-}
-
-RevProc::~RevProc(){
-  for( unsigned i=0; i<Extensions.size(); i++ )
-    delete Extensions[i];
-  delete sfetch;
-  delete feature;
-  delete[] ECALL_buf;
-}
-
-RevProc::RevProcStats RevProc::GetStats(){
-  Stats.memStats.bytesRead      = mem->memStats.bytesRead;
-  Stats.memStats.bytesWritten   = mem->memStats.bytesWritten;
-  Stats.memStats.doublesRead    = mem->memStats.doublesRead;
-  Stats.memStats.doublesWritten = mem->memStats.doublesWritten;
-  Stats.memStats.floatsRead     = mem->memStats.floatsRead;
-  Stats.memStats.floatsWritten  = mem->memStats.floatsWritten;
-  Stats.memStats.TLBMisses      = mem->memStats.TLBMisses;
-  Stats.memStats.TLBHits        = mem->memStats.TLBHits;
-  return Stats;
+                  "Error: failed to reset the core resources for core=%u\n", id );
 }
 
 bool RevProc::Halt(){
@@ -144,36 +107,35 @@ bool RevProc::SingleStepHart(){
   }
 }
 
-bool RevProc::EnableExt(RevExt *Ext, bool Opt){
+bool RevProc::EnableExt(RevExt* Ext, bool Opt){
   if( !Ext )
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
 
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %d ; Enabling extension=%s\n",
+                  "Core %u ; Enabling extension=%s\n",
                   id, Ext->GetName().c_str());
 
   // add the extension to our vector of enabled objects
-  Extensions.push_back(Ext);
+  Extensions.push_back(std::unique_ptr<RevExt>(Ext));
 
   // retrieve all the target instructions
-  std::vector<RevInstEntry> IT = Ext->GetInstTable();
+  const std::vector<RevInstEntry>& IT = Ext->GetInstTable();
 
   // setup the mapping of InstTable to Ext objects
   InstTable.reserve(InstTable.size() + IT.size());
 
   for( unsigned i=0; i<IT.size(); i++ ){
     InstTable.push_back(IT[i]);
-    std::pair<unsigned,unsigned> ExtObj =
-      std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+    auto ExtObj = std::pair<unsigned, unsigned>(Extensions.size()-1, i);
     EntryToExt.insert(
       std::pair<unsigned,
-        std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+        std::pair<unsigned, unsigned>>(InstTable.size()-1, ExtObj));
   }
 
   // load the compressed instructions
   if( feature->IsModeEnabled(RV_C) ){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Enabling compressed extension=%s\n",
+                    "Core %u ; Enabling compressed extension=%s\n",
                     id, Ext->GetName().c_str());
 
     std::vector<RevInstEntry> CT = Ext->GetCInstTable();
@@ -181,16 +143,16 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
 
     for( unsigned i=0; i<CT.size(); i++ ){
       InstTable.push_back(CT[i]);
-      std::pair<unsigned,unsigned> ExtObj =
-        std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+      std::pair<unsigned, unsigned> ExtObj =
+        std::pair<unsigned, unsigned>(Extensions.size()-1, i);
       EntryToExt.insert(
         std::pair<unsigned,
-          std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+          std::pair<unsigned, unsigned>>(InstTable.size()-1, ExtObj));
     }
     // load the optional compressed instructions
     if( Opt ){
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; Enabling optional compressed extension=%s\n",
+                      "Core %u ; Enabling optional compressed extension=%s\n",
                       id, Ext->GetName().c_str());
       CT = Ext->GetOInstTable();
 
@@ -198,11 +160,11 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
 
       for( unsigned i=0; i<CT.size(); i++ ){
         InstTable.push_back(CT[i]);
-        std::pair<unsigned,unsigned> ExtObj =
-          std::pair<unsigned,unsigned>(Extensions.size()-1,i);
+        std::pair<unsigned, unsigned> ExtObj =
+          std::pair<unsigned, unsigned>(Extensions.size()-1, i);
         EntryToExt.insert(
           std::pair<unsigned,
-            std::pair<unsigned,unsigned>>(InstTable.size()-1,ExtObj));
+            std::pair<unsigned, unsigned>>(InstTable.size()-1, ExtObj));
       }
     }
   }
@@ -212,65 +174,64 @@ bool RevProc::EnableExt(RevExt *Ext, bool Opt){
 
 bool RevProc::SeedInstTable(){
   output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Seeding instruction table for machine model=%s\n",
+                    "Core %u ; Seeding instruction table for machine model=%s\n",
                     id, feature->GetMachineModel().c_str());
 
-  
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // load RV32I & RV64; no optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),false);
-      EnableExt(static_cast<RevExt *>(new RV64I(feature,RegFile,mem,output)),false);
+      EnableExt(new RV32I(feature, RegFile, mem, output), false);
+      EnableExt(new RV64I(feature, RegFile, mem, output), false);
     }else{
       // load RV32I w/ optional compressed
-      EnableExt(static_cast<RevExt *>(new RV32I(feature,RegFile,mem,output)),true);
+      EnableExt(new RV32I(feature, RegFile, mem, output), true);
     }
   }
 
   // M-Extension
   if( feature->IsModeEnabled(RV_M) ){
-    EnableExt(static_cast<RevExt *>(new RV32M(feature,RegFile,mem,output)),false);
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64M(feature,RegFile,mem,output)),false);
+    EnableExt(new RV32M(feature, RegFile, mem, output), false);
+    if( feature->IsRV64() ){
+      EnableExt(new RV64M(feature, RegFile, mem, output), false);
     }
   }
 
   // A-Extension
   if( feature->IsModeEnabled(RV_A) ){
-    EnableExt(static_cast<RevExt *>(new RV32A(feature,RegFile,mem,output)),false);
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64A(feature,RegFile,mem,output)),false);
+    EnableExt(new RV32A(feature, RegFile, mem, output), false);
+    if( feature->IsRV64() ){
+      EnableExt(new RV64A(feature, RegFile, mem, output), false);
     }
   }
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
-    if( (!feature->IsModeEnabled(RV_D)) && (feature->GetXlen() == 32) ){
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),true);
+    if( !feature->IsModeEnabled(RV_D) && feature->IsRV32() ){
+      EnableExt(new RV32F(feature, RegFile, mem, output), true);
     }else{
-      EnableExt(static_cast<RevExt *>(new RV32F(feature,RegFile,mem,output)),false);
-      EnableExt(static_cast<RevExt *>(new RV64F(feature,RegFile,mem,output)),false);
+      EnableExt(new RV32F(feature, RegFile, mem, output), false);
+      EnableExt(new RV64F(feature, RegFile, mem, output), false);
 
     }
 #if 0
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)));
+    if( feature->IsRV64() ){
+      EnableExt(new RV64D(feature, RegFile, mem, output));
     }
 #endif
   }
 
   // D-Extension
   if( feature->IsModeEnabled(RV_D) ){
-    EnableExt(static_cast<RevExt *>(new RV32D(feature,RegFile,mem,output)),false);
-    if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64D(feature,RegFile,mem,output)),false);
+    EnableExt(new RV32D(feature, RegFile, mem, output), false);
+    if( feature->IsRV64() ){
+      EnableExt(new RV64D(feature, RegFile, mem, output), false);
     }
   }
 
   // PAN Extension
   if( feature->IsModeEnabled(RV_P) ){
-    EnableExt(static_cast<RevExt *>(new RV64P(feature,RegFile,mem,output)),false);
+    EnableExt(new RV64P(feature, RegFile, mem, output), false);
   }
 
   return true;
@@ -279,11 +240,11 @@ bool RevProc::SeedInstTable(){
 uint32_t RevProc::CompressCEncoding(RevInstEntry Entry){
   uint32_t Value = 0x00;
 
-  Value |= (uint32_t)(Entry.opcode);
-  Value |= (uint32_t)((uint32_t)(Entry.funct2)<<2);
-  Value |= (uint32_t)((uint32_t)(Entry.funct3)<<4);
-  Value |= (uint32_t)((uint32_t)(Entry.funct4)<<8);
-  Value |= (uint32_t)((uint32_t)(Entry.funct6)<<12);
+  Value |= Entry.opcode;
+  Value |= uint32_t(Entry.funct2) << 2;
+  Value |= uint32_t(Entry.funct3) << 4;
+  Value |= uint32_t(Entry.funct4) << 8;
+  Value |= uint32_t(Entry.funct6) << 12;
 
   return Value;
 }
@@ -291,12 +252,12 @@ uint32_t RevProc::CompressCEncoding(RevInstEntry Entry){
 uint32_t RevProc::CompressEncoding(RevInstEntry Entry){
   uint32_t Value = 0x00;
 
-  Value |= (uint32_t)(Entry.opcode);
-  Value |= (uint32_t)((uint32_t)(Entry.funct3)<<8);
-  Value |= (uint32_t)((uint32_t)(Entry.funct7)<<11);
-  Value |= (uint32_t)((uint32_t)(Entry.imm12)<<18);
-  Value |= (uint32_t)((uint32_t)(Entry.fpcvtOp)<<30);  //this is a 5 bit field, but only the lower two bits are used, so it *just* fits 
-                                                          //without going to a uint64
+  Value |= Entry.opcode;
+  Value |= uint32_t(Entry.funct3)  << 8;
+  Value |= uint32_t(Entry.funct7)  << 11;
+  Value |= uint32_t(Entry.imm12)   << 18;
+  Value |= uint32_t(Entry.fpcvtOp) << 30;  //this is a 5 bit field, but only the lower two bits are used, so it *just* fits
+                                           //without going to a uint64
 
   return Value;
 }
@@ -325,34 +286,34 @@ void RevProc::splitStr(const std::string& s,
 std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
   std::string Tmp = Entry.mnemonic;
   std::vector<std::string> vstr;
-  splitStr(Tmp,' ',vstr);
+  splitStr(Tmp, ' ', vstr);
 
   return vstr[0];
 }
 
 bool RevProc::InitTableMapping(){
   output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Initializing table mapping for machine model=%s\n",
+                    "Core %u ; Initializing table mapping for machine model=%s\n",
                     id, feature->GetMachineModel().c_str());
 
   for( unsigned i=0; i<InstTable.size(); i++ ){
     NameToEntry.insert(
-      std::pair<std::string,unsigned>(ExtractMnemonic(InstTable[i]),i) );
+      std::pair<std::string, unsigned>(ExtractMnemonic(InstTable[i]), i) );
     if( !InstTable[i].compressed ){
       // map normal instruction
       EncToEntry.insert(
-        std::pair<uint32_t,unsigned>(CompressEncoding(InstTable[i]),i) );
+        std::pair<uint32_t, unsigned>(CompressEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; Table Entry %d = %s\n",
+                      "Core %u ; Table Entry %u = %s\n",
                       id,
                       CompressEncoding(InstTable[i]),
                       ExtractMnemonic(InstTable[i]).c_str() );
     }else{
       // map compressed instruction
       CEncToEntry.insert(
-        std::pair<uint32_t,unsigned>(CompressCEncoding(InstTable[i]),i) );
+        std::pair<uint32_t, unsigned>(CompressCEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; Compressed Table Entry %d = %s\n",
+                      "Core %u ; Compressed Table Entry %u = %s\n",
                       id,
                       CompressCEncoding(InstTable[i]),
                       ExtractMnemonic(InstTable[i]).c_str() );
@@ -363,7 +324,7 @@ bool RevProc::InitTableMapping(){
 
 bool RevProc::ReadOverrideTables(){
   output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Reading override tables for machine model=%s\n",
+                    "Core %u ; Reading override tables for machine model=%s\n",
                     id, feature->GetMachineModel().c_str());
 
   std::string Table;
@@ -377,20 +338,20 @@ bool RevProc::ReadOverrideTables(){
   // open the file
   std::ifstream infile(Table);
   if( !infile.is_open() )
-    output->fatal(CALL_INFO, -1, "Error: failed to read instruction table for core=%d\n", id);
+    output->fatal(CALL_INFO, -1, "Error: failed to read instruction table for core=%u\n", id);
 
   // read all the values
   std::string Inst;
   std::string Cost;
   unsigned Entry;
-  std::map<std::string,unsigned>::iterator it;
+  std::map<std::string, unsigned>::iterator it;
   while( infile >> Inst >> Cost ){
     it = NameToEntry.find(Inst);
     if( it == NameToEntry.end() )
       output->fatal(CALL_INFO, -1, "Error: could not find instruction in table for map value=%s\n", Inst.c_str() );
 
     Entry = it->second;
-    InstTable[Entry].cost = (unsigned)(std::stoi(Cost,nullptr,0));
+    InstTable[Entry].cost = (unsigned)(std::stoi(Cost, nullptr, 0));
   }
 
   // close the file
@@ -419,33 +380,21 @@ bool RevProc::Reset(){
   // reset the register file
   for (int t=0;  t < _REV_HART_COUNT_; t++){
     RevRegFile* regFile = GetRegFile(t);
-    regFile->RV32_PC = 0x00l;
-    regFile->RV64_PC = 0x00ull;
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      regFile->RV32[i] = 0x00l;
-      regFile->RV64[i] = 0x00ull;
-      regFile->SPF[i]  = 0.f;
-      regFile->DPF[i]  = 0.f;
-      regFile->RV32_Scoreboard[i] = false;
-      regFile->RV64_Scoreboard[i] = false;
-      regFile->SPF_Scoreboard[i] = false;
-      regFile->DPF_Scoreboard[i] = false;
-    }
+
+    // Zero all register data
+    memset(regFile, 0, sizeof(*regFile));
 
     // initialize all the relevant program registers
+
     // -- x2 : stack pointer
-    regFile->RV32[2] = (uint32_t)(mem->GetStackTop());
-    regFile->RV64[2] = mem->GetStackTop();
+    regFile->SetX(feature, 2, mem->GetStackTop());
 
     // -- x3 : global pointer
-    regFile->RV32[3] = (uint32_t)(loader->GetSymbolAddr("__global_pointer$"));
-    regFile->RV64[3] = loader->GetSymbolAddr("__global_pointer$");
+    auto gp = loader->GetSymbolAddr("__global_pointer$");
+    regFile->SetX(feature, 3, gp);
 
     // -- x8 : frame pointer
-    regFile->RV32[8] = regFile->RV32[3];
-    regFile->RV64[8] = regFile->RV64[3];
-
-    regFile->cost = 0;
+    regFile->SetX(feature, 8, gp);
 
     Pipeline.clear();
   }
@@ -454,12 +403,12 @@ bool RevProc::Reset(){
   uint64_t StartAddr = 0x00ull;
   if( !opts->GetStartAddr( id, StartAddr ) )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to init the start address for core=%d\n", id);
+                  "Error: failed to init the start address for core=%u\n", id);
   std::string StartSymbol = "main";
   if( StartAddr == 0x00ull ){
     if( !opts->GetStartSymbol( id, StartSymbol ) )
       output->fatal(CALL_INFO, -1,
-                    "Error: failed to init the start symbol address for core=%d\n", id);
+                    "Error: failed to init the start symbol address for core=%u\n", id);
 
     StartAddr = loader->GetSymbolAddr(StartSymbol);
   }
@@ -469,7 +418,7 @@ bool RevProc::Reset(){
     StartAddr = loader->GetSymbolAddr("main");
     if( StartAddr == 0x00ull ){
       output->fatal(CALL_INFO, -1,
-                    "Error: failed to auto discover address for <main> for core=%d\n", id);
+                    "Error: failed to auto discover address for <main> for core=%u\n", id);
     }
   }
 
@@ -477,14 +426,11 @@ bool RevProc::Reset(){
 
   for (int t=0;  t < _REV_HART_COUNT_; t++){
     RevRegFile* regFile = GetRegFile(t);
-    regFile->RV32_PC = (uint32_t)(StartAddr);
-    regFile->RV64_PC = StartAddr;
+    regFile->SetPC(feature, StartAddr);
   }
   HART_CTS.set();
 
-  ECALL_buf[0] = '\0';
-  ECALL_bytesRead = 0;
-  ECALL_string.clear();
+  ECALL.clear();
 
   return true;
 }
@@ -501,33 +447,20 @@ void RevProc::SetupArgs(){
   // ----------------------------------
 
   // calculate the total size of the argv's
-  uint64_t TotalSize = 0x00ull;
-  for( unsigned i=0; i<Argv.size(); i++ ){
-    TotalSize += (Argv[i].size()+1);
+  uint64_t TotalSize = 0;
+  for( size_t i=0; i < Argv.size(); i++ ){
+    TotalSize += Argv[i].size() + 1;
   }
 
-  for( int r=0; r < _REV_HART_COUNT_; r++ ){
+  for( int r = 0; r < _REV_HART_COUNT_; r++ ){
     // setup argc
     RevRegFile* regFile = GetRegFile(r);
-    regFile->RV32[10] = Argv.size();
-    regFile->RV64[10] = Argv.size();
-
-    regFile->RV32[11] = (uint32_t)(mem->GetStackTop()+60);
-    regFile->RV64[11] = mem->GetStackTop()+60;
+    regFile->SetX(feature, 10, Argv.size());
+    regFile->SetX(feature, 11, mem->GetStackTop() + 60);
   }
 }
 
-bool RevProc::IsFloat(unsigned Entry){
-  if( (InstTable[Entry].rdClass == RegFLOAT) ||
-      (InstTable[Entry].rs1Class == RegFLOAT) ||
-      (InstTable[Entry].rs2Class == RegFLOAT) ||
-      (InstTable[Entry].rs3Class == RegFLOAT) ){
-    return true;
-  }
-  return false;
-}
-
-RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -549,7 +482,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -582,7 +515,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
   }else if( (CompInst.opcode == 0b10) &&
             (CompInst.funct3 == 0b011) ){
     CompInst.imm = 0;
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.ldsp
       CompInst.imm =  ((Inst & 0b1100000) >> 2);        // [4:3]
       CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
@@ -642,7 +575,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -668,7 +601,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry){
     CompInst.imm |= ((Inst & 0b110000000) >> 1);        // [7:6]
   }else if( CompInst.funct3 == 0b111 ){
     CompInst.imm = 0;
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.sdsp
       CompInst.imm =  ((Inst & 0b1110000000000) >> 7);    // [5:3]
       CompInst.imm |= ((Inst & 0b1110000000) >> 1);       // [8:6]
@@ -685,7 +618,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -719,7 +652,7 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -743,7 +676,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
     CompInst.imm |= ((Inst & 0b1000000) >> 4);        // [2]
     CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
   }else if( CompInst.funct3 == 0b011 ){
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.ld
       CompInst.imm =  ((Inst & 0b1100000) << 1);        // [7:6]
       CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
@@ -763,7 +696,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
     CompInst.imm |= ((Inst & 0b1000000) >> 4);        // [2]
     CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
   }else if( CompInst.funct3 == 0b111 ){
-    if( feature->GetXlen() == 64 ){
+    if( feature->IsRV64() ){
       // c.sd
       CompInst.imm =  ((Inst & 0b1100000) << 1);        // [7:6]
       CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
@@ -782,7 +715,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -803,7 +736,7 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
     CompInst.imm    |= ((Inst & 0b01110000000000) >> 6);   //offset[5:3]
     CompInst.imm    |= ((Inst & 0b01000000) >> 4);          //offset[2]
   }else{
-    if(feature->GetXlen() == 32){
+    if( feature->IsRV32() ){
       //c.fsw
       CompInst.imm     = ((Inst & 0b00100000) << 1);         //imm[6]
       CompInst.imm     = ((Inst & 0b01000000) << 4);         //imm[2]
@@ -821,7 +754,7 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -843,7 +776,7 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -871,8 +804,8 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
     tmp[5] = o[3];
     tmp[6] = o[4];
     tmp[7] = o[7];
-  } else if( (CompInst.opcode == 0b01) && (CompInst.funct3 == 0b100)) { 
-    //We have a shift or a andi 
+  } else if( (CompInst.opcode == 0b01) && (CompInst.funct3 == 0b100)) {
+    //We have a shift or a andi
     CompInst.rd = CompInst.rs1;
   }
 
@@ -902,7 +835,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
+RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
@@ -939,7 +872,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry){
   return CompInst;
 }
 
-RevInst RevProc::DecodeCompressed(uint32_t Inst){
+RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
   uint16_t TmpInst = (uint16_t)(Inst&0b1111111111111111);
   uint8_t opc     = 0;
   uint8_t funct2  = 0;
@@ -949,7 +882,6 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   uint8_t l3      = 0;
   uint32_t Enc    = 0x00ul;
   uint64_t PC     = GetPC();
-  RevInst TInst;
 
   if( !feature->HasCompressed() ){
     output->fatal(CALL_INFO, -1,
@@ -957,8 +889,6 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
                   PC);
 
   }
-
-  ResetInst(&TInst);
 
   // decode the opcode
   opc = (TmpInst & 0b11);
@@ -1009,12 +939,12 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   Enc |= (uint32_t)(funct6 << 12);
 
   bool isCoProcInst = false;
-  std::map<uint32_t,unsigned>::iterator it = CEncToEntry.find(Enc);
+  auto it = CEncToEntry.find(Enc);
   if( it == CEncToEntry.end() ){
       if(coProc){
         isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
       }
-      if(isCoProcInst){ 
+      if(isCoProcInst){
         //Create NOP - ADDI x0, x0 0
         uint8_t caddi_op= 0b01;
         Inst = 0;
@@ -1023,7 +953,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
         it = CEncToEntry.find(Enc);
       }else{
         output->fatal(CALL_INFO, -1,
-                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n opc=%x; funct2=%x, funct3=%x, funct4=%x, funct6=%x\n",
+                  "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%" PRIu32 "\n opc=%x; funct2=%x, funct3=%x, funct4=%x, funct6=%x\n",
                   PC,
                   Enc, opc, funct2, funct3, funct4, funct6 );
       }
@@ -1039,36 +969,35 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
   }
 
   RegFile->Entry = Entry;
-
   RegFile->trigger = false;
 
   switch( InstTable[Entry].format ){
   case RVCTypeCR:
-    return DecodeCRInst(TmpInst,Entry);
+    return DecodeCRInst(TmpInst, Entry);
     break;
   case RVCTypeCI:
-    return DecodeCIInst(TmpInst,Entry);
+    return DecodeCIInst(TmpInst, Entry);
     break;
   case RVCTypeCSS:
-    return DecodeCSSInst(TmpInst,Entry);
+    return DecodeCSSInst(TmpInst, Entry);
     break;
   case RVCTypeCIW:
-    return DecodeCIWInst(TmpInst,Entry);
+    return DecodeCIWInst(TmpInst, Entry);
     break;
   case RVCTypeCL:
-    return DecodeCLInst(TmpInst,Entry);
+    return DecodeCLInst(TmpInst, Entry);
     break;
   case RVCTypeCS:
-    return DecodeCSInst(TmpInst,Entry);
+    return DecodeCSInst(TmpInst, Entry);
     break;
   case RVCTypeCA:
-    return DecodeCAInst(TmpInst,Entry);
+    return DecodeCAInst(TmpInst, Entry);
     break;
   case RVCTypeCB:
-    return DecodeCBInst(TmpInst,Entry);
+    return DecodeCBInst(TmpInst, Entry);
     break;
   case RVCTypeCJ:
-    return DecodeCJInst(TmpInst,Entry);
+    return DecodeCJInst(TmpInst, Entry);
     break;
   default:
     output->fatal(CALL_INFO, -1,
@@ -1078,10 +1007,10 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst){
 
   // we should never arrive here
   // we return a null instruction in order to forego a compiler warning
-  return TInst;
+  return RevInst{};
 }
 
-RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
+RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
@@ -1111,7 +1040,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
 
   // imm
   if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RegUNKNOWN)){
-    DInst.imm  = DECODE_IMM12(Inst) & 0b011111; 
+    DInst.imm  = DECODE_IMM12(Inst) & 0b011111;
   }else{
     DInst.imm     = 0x0;
   }
@@ -1139,7 +1068,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
-RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry){
+RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
@@ -1183,7 +1112,7 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
-RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry){
+RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
@@ -1227,7 +1156,7 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
-RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry){
+RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
@@ -1263,7 +1192,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
-RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
+RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
@@ -1289,10 +1218,10 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
   }
 
   // imm
-  DInst.imm =   (uint32_t)((Inst << 4)&0b100000000000)|   // [11]
-                (uint32_t)((Inst & 0b111100000000)>>7)|   // [4:1]
-                (uint32_t)((Inst >> 20)&0b11111100000)|   // [10:5]
-                (uint32_t)((Inst >> 19)&0b1000000000000);  // [12]
+  DInst.imm = ( (Inst >> 19) & 0b1000000000000 ) | // [12]
+              ( (Inst <<  4) &  0b100000000000 ) | // [11]
+              ( (Inst >> 20) &   0b11111100000 ) | // [10:5]
+              ( (Inst >>  7) &         0b11110 ) ; // [4:1]
 
   // SP/DP Float
   DInst.fmt     = 0;
@@ -1305,7 +1234,7 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
-RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry){
+RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
@@ -1328,11 +1257,10 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry){
   }
 
   // immA
-  DInst.imm     = 0x00;
-  DInst.imm     = ( (uint32_t)((Inst >> 20) & 0b11111111110) |            // imm[10:1]
-                    (uint32_t)(Inst & 0b11111111000000000000) |           // imm[19:12]
-                    (uint32_t)((Inst >> 9) & 0b100000000000) |            // imm[11]
-                    (uint32_t)((Inst >> 11) & 0b100000000000000000000) ); // imm[20]
+  DInst.imm     = ( (Inst >> 11) & 0b100000000000000000000 ) | // imm[20]
+                  ( (Inst)       &  0b11111111000000000000 ) | // imm[19:12]
+                  ( (Inst >> 9)  &          0b100000000000 ) | // imm[11]
+                  ( (Inst >> 20) &           0b11111111110 ) ; // imm[10:1]
 
   // SP/DP Float
   DInst.fmt     = 0;
@@ -1345,7 +1273,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
-RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry){
+RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
@@ -1390,61 +1318,30 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry){
   return DInst;
 }
 
-bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value){
+bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value) const {
+  if( !Halted )
+    return false;
+  if( Idx >= _REV_NUM_REGS_ ){
+    return false;
+  }
+  RevRegFile* regFile = GetRegFile(HartToExec);
+  *Value = regFile->GetX<uint64_t>(feature, Idx);
+  return true;
+}
+
+bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value) const {
   RevRegFile* regFile = GetRegFile(HartToExec);
   if( !Halted )
     return false;
-  if( Idx > (_REV_NUM_REGS_-1) ){
+  if( Idx >= _REV_NUM_REGS_ ){
     return false;
   }
-  if( feature->GetXlen() == 32 ){
-    *Value = regFile->RV32[Idx];
-    return true;
-  }else{
-    *Value = regFile->RV64[Idx];
-    return true;
-  }
-}
-
-bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value){
-  RevRegFile* regFile = GetRegFile(HartToExec);
-  if( !Halted )
-    return false;
-  if( Idx > (_REV_NUM_REGS_-1) ){
-    return false;
-  }
-  if( feature->GetXlen() == 32 ){
-    regFile->RV32[Idx] = (uint32_t)(Value&0xFFFFFFFF);
-    return true;
-  }else{
-    regFile->RV64[Idx] = Value;
-    return true;
-  }
-}
-
-uint64_t RevProc::GetPC(){
-  if( feature->GetXlen() == 32 ){
-    return (uint64_t)(RegFile->RV32_PC);
-  }else{
-    return RegFile->RV64_PC;
-  }
-}
-
-void RevProc::SetPC(uint64_t PC){
-  if( feature->GetXlen() == 32 ){
-    RegFile->RV32_PC = (uint32_t)(PC);
-  }else{
-    RegFile->RV64_PC = PC;
-  }
+  regFile->SetX(feature, Idx, Value);
+  return true;
 }
 
 bool RevProc::PrefetchInst(){
-  uint64_t PC   = 0x00ull;
-  if( feature->GetXlen() == 32 ){
-    PC = (uint64_t)(RegFile->RV32_PC);
-  }else{
-    PC = RegFile->RV64_PC;
-  }
+  uint64_t PC = RegFile->GetPC(feature);
 
   // These are addresses that we can't decode
   // Return false back to the main program loop
@@ -1461,16 +1358,9 @@ RevInst RevProc::DecodeInst(){
   uint32_t Inst = 0x00ul;
   uint64_t PC   = 0x00ull;
   bool Fetched  = false;
-  RevInst TInst;
-
-  ResetInst(&TInst);
 
   // Stage 1: Retrieve the instruction
-  if( feature->GetXlen() == 32 ){
-    PC = (uint64_t)(RegFile->RV32_PC);
-  }else{
-    PC = RegFile->RV64_PC;
-  }
+  PC = RegFile->GetPC(feature);
 
   if( !sfetch->InstFetch(PC, Fetched, Inst) ){
     output->fatal(CALL_INFO, -1,
@@ -1480,11 +1370,11 @@ RevInst RevProc::DecodeInst(){
 
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
+                    "Core %u ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
                     id, HartToDecode, PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
-                  "Error: Core %d failed to decode instruction at PC=0x%" PRIx64 "; Inst=%d\n",
+                  "Error: Core %u failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
                   id,
                   PC,
                   Inst );
@@ -1492,8 +1382,7 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 1a: handle the crack fault injection
   if( CrackFault ){
-    srand(time(NULL));
-    uint64_t rval = rand() % (2^(fault_width));
+    uint64_t rval = RevRand(0, (uint32_t{1} << fault_width) - 1);
     Inst |= rval;
 
     // clear the fault
@@ -1501,7 +1390,7 @@ RevInst RevProc::DecodeInst(){
   }
 
   // Stage 2: Retrieve the opcode
-  const uint32_t Opcode = (uint32_t)(Inst&0b1111111);
+  const uint32_t Opcode = Inst & 0b1111111;
 
   // If we find a compressed instruction, then take
   // the compressed decode path
@@ -1572,7 +1461,7 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 7: Look up the value in the table
   bool isCoProcInst = false;
-  std::map<uint32_t,unsigned>::iterator it;
+  std::map<uint32_t, unsigned>::iterator it;
   it = EncToEntry.find(Enc);
    if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
     //This is kind of a hack, but we may not have found the instruction becasue
@@ -1588,7 +1477,7 @@ RevInst RevProc::DecodeInst(){
       if(coProc){
         isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
       }
-      if(isCoProcInst){ 
+      if(isCoProcInst){
         //Create NOP - ADDI x0, x0 0
         uint32_t addi_op= 0b0010011;
         Inst = 0;
@@ -1598,7 +1487,7 @@ RevInst RevProc::DecodeInst(){
       }else{
         // failed to decode the instruction
         output->fatal(CALL_INFO, -1,
-                    "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
+                    "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%" PRIu32 "\n",
                     PC,
                     Enc );
       }
@@ -1607,7 +1496,7 @@ RevInst RevProc::DecodeInst(){
       if(coProc){
         isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
       }
-      if(isCoProcInst){ 
+      if(isCoProcInst){
         //Create NOP - ADDI x0, x0 0
         uint32_t addi_op= 0b0010011;
         Inst = 0;
@@ -1629,7 +1518,7 @@ RevInst RevProc::DecodeInst(){
       if(coProc){
         isCoProcInst = coProc->IssueInst(feature, RegFile, mem, Inst);
       }
-      if(isCoProcInst){ 
+      if(isCoProcInst){
         //Create NOP - ADDI x0, x0 0
         uint32_t addi_op= 0b0010011;
         Inst = 0;
@@ -1654,25 +1543,25 @@ RevInst RevProc::DecodeInst(){
   // Stage 8: Do a full deocode using the target format
   switch( InstTable[Entry].format ){
   case RVTypeR:
-    return DecodeRInst(Inst,Entry);
+    return DecodeRInst(Inst, Entry);
     break;
   case RVTypeI:
-    return DecodeIInst(Inst,Entry);
+    return DecodeIInst(Inst, Entry);
     break;
   case RVTypeS:
-    return DecodeSInst(Inst,Entry);
+    return DecodeSInst(Inst, Entry);
     break;
   case RVTypeU:
-    return DecodeUInst(Inst,Entry);
+    return DecodeUInst(Inst, Entry);
     break;
   case RVTypeB:
-    return DecodeBInst(Inst,Entry);
+    return DecodeBInst(Inst, Entry);
     break;
   case RVTypeJ:
-    return DecodeJInst(Inst,Entry);
+    return DecodeJInst(Inst, Entry);
     break;
   case RVTypeR4:
-    return DecodeR4Inst(Inst,Entry);
+    return DecodeR4Inst(Inst, Entry);
     break;
   default:
     output->fatal(CALL_INFO, -1,
@@ -1682,98 +1571,43 @@ RevInst RevProc::DecodeInst(){
 
   // we should never arrive here
   // we return a null instruction to forego a compiler warning
-  return TInst;
-}
-
-void RevProc::ResetInst(RevInst *I){
-  I->opcode     = 0;
-  I->funct2     = 0;
-  I->funct3     = 0;
-  I->funct4     = 0;
-  I->funct6     = 0;
-  I->funct7     = 0;
-  I->rd         = ~0;  // Set registers to value that is clearly invalid
-  I->rs1        = ~0;
-  I->rs2        = ~0;
-  I->rs3        = ~0;
-  I->imm        = 0;
-  I->fmt        = 0;
-  I->rm         = 0;
-  I->aq         = 0;
-  I->rl         = 0;
-  I->offset     = 0;
-  I->jumpTarget = 0;
-  I->instSize   = 0;
-  I->compressed = false;
-  I->hazard     = nullptr;
+  return RevInst{};
 }
 
 void RevProc::HandleRegFault(unsigned width){
-  // build the permissible set of registers available to fault
-  unsigned LWidth = 0;
-  std::vector<std::pair<std::string,void*>> RRegs;
-
-  RevRegFile* regFile = GetRegFile(HartToExec); 
-
-  if( feature->GetXlen() == 32 ){
-    if( width > feature->GetXlen() ){
-      LWidth = feature->GetXlen();
-    }else{
-      LWidth = width;
-    }
-
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      std::string Name = "x" + std::to_string(i);
-      RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->RV32[i])));
-    }
-  }else{
-    // rv64
-    LWidth = width;
-
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      std::string Name = "x" + std::to_string(i);
-      RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->RV64[i])));
-    }
-  }
-
-  if( feature->IsModeEnabled(RV_F) ){
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      std::string Name = "f" + std::to_string(i);
-      RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->SPF[i])));
-    }
-  }else if( feature->IsModeEnabled(RV_D) ){
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      std::string Name = "f" + std::to_string(i);
-      RRegs.push_back( std::make_pair(Name,
-                                      (void *)(&regFile->DPF[i])));
-    }
-  }
-
-  // build the payload
-  srand(time(NULL));
-  uint64_t rval = rand() % (2^(LWidth));
+  const char* RegPrefix;
+  RevRegFile* regFile = GetRegFile(HartToExec);
 
   // select a register
-  std::random_device rd; // obtain a random number from hardware
-  std::mt19937 gen(rd()); // seed the generator
-  std::uniform_int_distribution<> distr(0, RRegs.size()-1); // define the range
-  unsigned RegIdx = distr(gen);
+  unsigned RegIdx = RevRand(0, _REV_NUM_REGS_ - 1);
 
-  std::string RegName = RRegs[RegIdx].first;
-  if( feature->GetXlen() == 32 ){
-    uint32_t *ptr = (uint32_t *)(RRegs[RegIdx].second);
-    *ptr |= (uint32_t)(rval);
+  if(!feature->HasF() || RevRand(0, 1)){
+    // X registers
+    if( feature->IsRV32() ){
+      regFile->RV32[RegIdx] |= RevRand(0, ~(~uint32_t{0} << width));
+    }else{
+      regFile->RV64[RegIdx] |= RevRand(0, ~(~uint64_t{0} << width));
+    }
+    RegPrefix = "x";
   }else{
-    uint64_t *ptr = (uint64_t *)(RRegs[RegIdx].second);
-    *ptr |= rval;
-  }
+    // F registers
+    if( feature->HasD() ){
+      uint64_t tmp;
+      memcpy(&tmp, &regFile->DPF[RegIdx], sizeof(tmp));
+      tmp |= RevRand(0, ~(~uint32_t{0} << width));
+      memcpy(&regFile->DPF[RegIdx], &tmp, sizeof(tmp));
+    }else{
+      uint32_t tmp;
+      memcpy(&tmp, &regFile->SPF[RegIdx], sizeof(tmp));
+      tmp |= RevRand(0, ~(~uint64_t{0} << width));
+      memcpy(&regFile->SPF[RegIdx], &tmp, sizeof(tmp));
+    }
+    RegPrefix = "f";
+ }
 
   output->verbose(CALL_INFO, 5, 0,
-                  "FAULT:REG: Register fault of %d bits into register %s\n",
-                  LWidth,RegName.c_str());
+                  "FAULT:REG: Register fault of %u bits into register %s%u\n",
+                  width, RegPrefix, RegIdx);
 }
 
 void RevProc::HandleCrackFault(unsigned width){
@@ -1790,124 +1624,70 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-bool RevProc::DependencyCheck(uint16_t HartID, RevInst* I){
-
-  bool depFound = false;
-  bool isFloat = IsFloat(I->entry);
-
-  RevRegFile* regFile = GetRegFile(HartID);
-
+bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
   // check the load hazard bit
-  if( I->hazard != nullptr ){
-    bool *Hazard = I->hazard;
-    if( *Hazard ){
+  if( I->hazard != nullptr && *I->hazard ){
       return true;
-    }
   }
 
-  if(feature->IsRV32()){
-    if(isFloat){
-      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs1] || depFound : depFound;
-      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs2] || depFound : depFound;
-      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->SPF_Scoreboard[I->rs3] || depFound : depFound;
-    }else{
-      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs1] || depFound : depFound;
-      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs2] || depFound : depFound;
-      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->RV32_Scoreboard[I->rs3] || depFound : depFound;
-    }
-  }else {
-    if(isFloat){
-      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs1] || depFound : depFound;
-      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs2] || depFound : depFound;
-      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->DPF_Scoreboard[I->rs3] || depFound : depFound;
-    }else{
-      depFound = (I->rs1 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs1] || depFound : depFound;
-      depFound = (I->rs2 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs2] || depFound : depFound;
-      depFound = (I->rs3 <= _REV_NUM_REGS_) ? regFile->RV64_Scoreboard[I->rs3] || depFound : depFound;
+  const auto* E = &InstTable[I->entry];
+  const auto* regFile = GetRegFile(HartID);
+
+  // Iterate through the source registers rs1, rs2, rs3 and find any dependency
+  // based on the class of the source register and the associated scoreboard
+  for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
+                                      std::tie(I->rs2, E->rs2Class),
+                                      std::tie(I->rs3, E->rs3Class) }){
+    if(reg < _REV_NUM_REGS_){
+      switch(regClass){
+      case RegFLOAT:
+        if(feature->HasD()){
+          if(regFile->DPF_Scoreboard[reg]) return true;
+        }else{
+          if(regFile->SPF_Scoreboard[reg]) return true;
+        }
+        break;
+
+      case RegGPR:
+        if(feature->IsRV32()){
+          if(regFile->RV32_Scoreboard[reg]) return true;
+        }else {
+          if(regFile->RV64_Scoreboard[reg]) return true;
+        }
+        break;
+
+      default:
+        break;
+      }
     }
   }
-  return depFound;
+  return false;
 }
 
-void RevProc::DependencySet(uint16_t HartID, RevInst* Inst){
-      RevRegFile* regFile = GetRegFile(HartID);
-      if(Inst->rd != 0 && Inst->rd < _REV_NUM_REGS_){
-        bool isFloat = IsFloat(Inst->entry);
-        if(feature->IsRV32()){
-          if(isFloat){
-            regFile->SPF_Scoreboard[Inst->rd] = true;
-          }else{
-            regFile->RV32_Scoreboard[Inst->rd] = true;
-          }
+/// Set or clear scoreboard based on register number and floating point
+void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
+                            bool isFloat, bool value){
+  RevRegFile* regFile = GetRegFile(HartID);
+  if(isFloat){
+    if(RegNum < _REV_NUM_REGS_){
+      if(feature->HasD()){
+        regFile->DPF_Scoreboard[RegNum] = value;
       }else{
-          if(isFloat){
-            regFile->DPF_Scoreboard[Inst->rd] = true;
-          }else{
-            regFile->RV64_Scoreboard[Inst->rd] = true;
-          }
+        regFile->SPF_Scoreboard[RegNum] = value;
       }
     }
-}
-
-void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat){
-      RevRegFile* regFile = GetRegFile(HartID);
-      if(RegNum != 0 && RegNum < _REV_NUM_REGS_){
-        if(feature->IsRV32()){
-          if(isFloat){
-            regFile->SPF_Scoreboard[RegNum] = true;
-          }else{
-            regFile->RV32_Scoreboard[RegNum] = true;
-          }
+  }else{
+    if(RegNum != 0 && RegNum < _REV_NUM_REGS_){
+      if(feature->IsRV32()){
+        regFile->RV32_Scoreboard[RegNum] = value;
       }else{
-          if(isFloat){
-            regFile->DPF_Scoreboard[RegNum] = true;
-          }else{
-            regFile->RV64_Scoreboard[RegNum] = true;
-          }
+        regFile->RV64_Scoreboard[RegNum] = value;
       }
     }
+  }
 }
 
-void RevProc::DependencyClear(uint16_t HartID, RevInst* Inst){
-    RevRegFile* regFile = GetRegFile(HartID);
-    if(Inst->rd < _REV_NUM_REGS_){
-        bool isFloat = IsFloat(Inst->entry);
-        if(feature->IsRV32()){
-          if(isFloat){
-            regFile->SPF_Scoreboard[Inst->rd] = false;
-          }else{
-            regFile->RV32_Scoreboard[Inst->rd] = false;
-          }
-      }else{
-          if(isFloat){
-            regFile->DPF_Scoreboard[Inst->rd] = false;
-          }else{
-            regFile->RV64_Scoreboard[Inst->rd] = false;
-          }
-      }
-    }
-}
-
-void RevProc::DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
-      RevRegFile* regFile = GetRegFile(HartID);
-      if(RegNum != 0 && RegNum < _REV_NUM_REGS_){
-        if(feature->IsRV32()){
-          if(isFloat){
-            regFile->SPF_Scoreboard[RegNum] = false;
-          }else{
-            regFile->RV32_Scoreboard[RegNum] = false;
-          }
-      }else{
-          if(isFloat){
-            regFile->DPF_Scoreboard[RegNum] = false;
-          }else{
-            regFile->RV64_Scoreboard[RegNum] = false;
-          }
-      }
-    }
-}
-
-uint16_t RevProc::GetHartID(){
+uint16_t RevProc::GetHartID()const{
   if(HART_CTS.none()) { return HartToDecode;};
 
   uint16_t nextID = HartToDecode;
@@ -1922,26 +1702,15 @@ uint16_t RevProc::GetHartID(){
       if(HART_CTS[nextID]){ break; };
     }
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Thread switch from %d to %d \n",
+                    "Core %u ; Thread switch from %d to %d\n",
                     id, HartToDecode, nextID);
   }
   return nextID;
 }
 
-bool *RevProc::createLoadHazard(){
-  bool *LH = new bool;
-  *LH = false;
-  LoadHazards.push_back(LH);
-  return LH;
-}
-
-void RevProc::destroyLoadHazard(bool *LH){
-  if( LH != nullptr ){
-    LoadHazards.remove(LH);
-  }
-}
-
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
+  RevInst Inst;
+
   bool rtn = false;
   Stats.totalCycles++;
 
@@ -1968,7 +1737,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( Pipeline.empty() ) {
       if( !ChangeActivePID(NextPID) ){
         output->fatal(CALL_INFO, -1,
-                      "Core %d ; Hart %u; PID %d Failed to change active PID to %u\n",
+                      "Core %u ; Hart %u; PID %" PRIu32 " Failed to change active PID to %u\n",
                       id, HartToDecode, GetActivePID(), NextPID);
       } else {
         RegFile->trigger = 0;
@@ -1986,7 +1755,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   if( HART_CTS.any() && (!Halted)) {
     // fetch the next instruction
-    ResetInst(&Inst);
 
     //Determine the active thread
     HartToDecode = GetHartID();
@@ -2009,7 +1777,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     Inst.hazard = nullptr;
 
     // Now that we have decoded the instruction, check for pipeline hazards
-    if(Stalled || DependencyCheck(HartToDecode, &Inst)) {
+    if(Stalled || DependencyCheck(HartToDecode, &Inst)){
       RegFile->cost = 0; // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
@@ -2032,7 +1800,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Thread %d; Executing PC= 0x%" PRIx64 "\n",
+                    "Core %u ; Thread %d; Executing PC= 0x%" PRIx64 "\n",
                     id, HartToExec, ExecPC);
 
     // attempt to execute the instruction as long as it is NOT
@@ -2040,8 +1808,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( ExecPC != _PAN_FWARE_JUMP_ ){
 
       // Find the instruction extension
-      std::map<unsigned,std::pair<unsigned,unsigned>>::iterator it;
-      it = EntryToExt.find(RegFile->Entry);
+      auto it = EntryToExt.find(RegFile->Entry);
       if( it == EntryToExt.end() ){
         // failed to find the extension
         output->fatal(CALL_INFO, -1,
@@ -2049,17 +1816,16 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
 
       // found the instruction extension
-      std::pair<unsigned,unsigned> EToE = it->second;
-      RevExt *Ext = Extensions[EToE.first];
+      std::pair<unsigned, unsigned> EToE = it->second;
+      RevExt *Ext = Extensions[EToE.first].get();
 
       // Update RegFile (in case of prior context switch)
       Ext->SetRegFile(RegFile);
 
       // -- BEGIN new pipelining implementation
       if( !PendingCtxSwitch ){
-        bool *LH = createLoadHazard();
-        Pipeline.push_back(std::make_pair(HartToExec,Inst));
-        Pipeline.back().second.hazard = LH;
+        Pipeline.push_back(std::make_pair(HartToExec, Inst));
+        Pipeline.back().second.hazard = std::make_shared<bool>(false);
       }
 
       if( (Ext->GetName() == "RV32F") ||
@@ -2120,31 +1886,31 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
         // Ecall found
         output->verbose(CALL_INFO, 6, 0,
-                  "Core %d; HartID %d; PID %d - Exception Raised: ECALL with code = %lu\n", 
-                  id, HartToExec, GetActivePID(), RegFile->RV64[17]);
+                        "Core %u; HartID %d; PID %" PRIu32 " - Exception Raised: ECALL with code = %lu\n",
+                        id, HartToExec, GetActivePID(), RegFile->GetX<uint64_t>(feature, 17));
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-                  << code << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+        //                  << cRegFile->RV64[17] << std::endl;
         #endif
 
         /* Execute system call on this RevProc */
         ExecEcall(Pipeline.back().second); //ExecEcall will also set the exception cause registers
 
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-                  << rc << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+        //        << rc << std::endl;
         #endif
 
         // } else {
         //   ExecEcall();
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-                  << code << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+        //                  << code << std::endl;
         #endif
 
         #ifdef _REV_DEBUG_
-        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-                  << rc << std::endl;
+        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+        //                  << rc << std::endl;
         #endif
         // }
       }
@@ -2152,29 +1918,28 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // inject the ALU fault
       if( ALUFault ){
         // inject ALU fault
-        RevExt *Ext = Extensions[EToE.first];
-        if( (Ext->GetName() == "RV32F") ||
-            (Ext->GetName() == "RV32D") ){
-          // write an rv32 float rd
-          uint32_t rval = rand() % (2^(fault_width));
-          uint32_t tmp = (uint32_t)(RegFile->SPF[Inst.rd]);
-          tmp |= rval;
-          RegFile->SPF[Inst.rd] = (float)(tmp);
-        }else if( (Ext->GetName() == "RV64F") ||
-                  (Ext->GetName() == "RV64D") ){
+        RevExt *Ext = Extensions[EToE.first].get();
+        if( (Ext->GetName() == "RV64F") ||
+            (Ext->GetName() == "RV64D") ){
           // write an rv64 float rd
-          uint64_t rval = rand() % (2^(fault_width));
-          uint64_t tmp = (uint64_t)(RegFile->DPF[Inst.rd]);
-          tmp |= rval;
-          RegFile->DPF[Inst.rd] = (double)(tmp);
-        }else if( feature->GetXlen() == 32 ){
-          // write an rv32 gpr rd
-          uint32_t rval = rand() % (2^(fault_width));
-          RegFile->RV32[Inst.rd] |= rval;
+          uint64_t tmp;
+          static_assert(sizeof(tmp) == sizeof(RegFile->DPF[Inst.rd]));
+          memcpy(&tmp, &RegFile->DPF[Inst.rd], sizeof(tmp));
+          tmp |= RevRand(0, ~(~uint64_t{0} << fault_width));
+          memcpy(&RegFile->DPF[Inst.rd], &tmp, sizeof(tmp));
+        }else if( (Ext->GetName() == "RV32F") ||
+                  (Ext->GetName() == "RV32D") ){
+          // write an rv32 float rd
+          uint32_t tmp;
+          static_assert(sizeof(tmp) == sizeof(RegFile->SPF[Inst.rd]));
+          memcpy(&tmp, &RegFile->SPF[Inst.rd], sizeof(tmp));
+          tmp |= RevRand(0, ~(uint32_t{0} << fault_width));
+          memcpy(&RegFile->SPF[Inst.rd], &tmp, sizeof(tmp));
         }else{
-          // write an rv64 gpr rd
-          uint64_t rval = rand() % (2^(fault_width));
-          RegFile->RV64[Inst.rd] |= rval;
+          // write an X register
+          uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
+          RegFile->SetX(feature, Inst.rd, rval |
+                        RegFile->GetX<uint64_t>(feature, Inst.rd));
         }
 
         // clear the fault
@@ -2194,7 +1959,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // note that this will continue to occur until the counter is drained
     // and the HART is halted
     output->verbose(CALL_INFO, 9, 0,
-                    "Core %d ; No available thread to exec PC= 0x%" PRIx64 "\n",
+                    "Core %u ; No available thread to exec PC= 0x%" PRIx64 "\n",
                     id, ExecPC);
     rtn = true;
     Stats.cyclesIdle_Total++;
@@ -2219,11 +1984,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // Ready to retire this instruction
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
+                      "Core %u ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
                       id, tID, ExecPC);
       Retired++;
       DependencyClear(tID, &(Pipeline.front().second));
-      destroyLoadHazard(Pipeline.front().second.hazard);
       Pipeline.erase(Pipeline.begin());
       GetRegFile(tID)->cost = 0;
     }else{
@@ -2242,11 +2006,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       if( PExec != nullptr){
         uint64_t Addr = 0x00ull;
         unsigned Idx = 0;
-        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr,&Idx);
+        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr, &Idx);
         switch( Status ){
         case PanExec::QExec:
           output->verbose(CALL_INFO, 5, 0,
-                      "Core %d ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
+                      "Core %u ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
                       id, Addr);
           SetPC(Addr);
           done = false;
@@ -2254,7 +2018,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         case PanExec::QNull:
           // no work to do; spin on the firmware jump PC
           output->verbose(CALL_INFO, 6, 0,
-                      "Core %d ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
+                      "Core %u ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
                       id, ExecPC);
           done = false;
           SetPC(_PAN_FWARE_JUMP_);
@@ -2297,21 +2061,24 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
     if( done ){
       // we are really done, return
-      output->verbose(CALL_INFO,2,0,"Program execution complete\n");
+      output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
       Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
-      output->verbose(CALL_INFO,2,0,
-                      "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64 " Idle Cycles: %" PRIu64 " Eff: %f\n",
+      output->verbose(CALL_INFO, 2, 0,
+                      "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
+                      " Idle Cycles: %" PRIu64 " Eff: %f\n",
                       Stats.totalCycles, Stats.cyclesBusy,
-                      Stats.cyclesIdle_Total, Stats.percentEff);
-      output->verbose(CALL_INFO,3,0,"\t Bytes Read: %d Bytes Written: %d Floats Read: %d Doubles Read %d Floats Exec: %" PRIu64 " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
-                                      mem->memStats.bytesRead,
-                                      mem->memStats.bytesWritten,
-                                      mem->memStats.floatsRead,
-                                      mem->memStats.doublesRead,
-                                      Stats.floatsExec,
-                                      mem->memStats.TLBHits,
-                                      mem->memStats.TLBMisses,
-                                      Retired);
+                      Stats.cyclesIdle_Total, static_cast<double>(Stats.percentEff));
+      output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu32 " Bytes Written: %" PRIu32
+                      " Floats Read: %" PRIu32 " Doubles Read %" PRIu32 " Floats Exec: %" PRIu64
+                      " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
+                      mem->memStats.bytesRead,
+                      mem->memStats.bytesWritten,
+                      mem->memStats.floatsRead,
+                      mem->memStats.doublesRead,
+                      Stats.floatsExec,
+                      mem->memStats.TLBHits,
+                      mem->memStats.TLBMisses,
+                      Retired);
       return false;
     }
   }
@@ -2337,7 +2104,6 @@ std::shared_ptr<RevThreadCtx> RevProc::HartToExecCtx(){
   }
 }
 
-
 uint32_t RevProc::HartToDecodePID(){
   if( ActivePIDs.size() <= HartToDecode )
     return ActivePIDs.at(HartToDecode);
@@ -2359,13 +2125,13 @@ bool RevProc::UpdateRegFile(){
   }
   else {
     output->fatal(CALL_INFO, -1,
-                  "Failed to find RegFile for PID = %d on Hart = %d \n", ActivePIDs.at(HartID), HartID);
+                  "Failed to find RegFile for PID = %u on Hart = %u \n", ActivePIDs.at(HartID), HartID);
   }
   return false;
 }
 
 
-RevRegFile* RevProc::GetRegFile(uint16_t HartID){
+RevRegFile* RevProc::GetRegFile(uint16_t HartID) const {
   auto it = ThreadTable.find(ActivePIDs.at(HartID));
   if( it != ThreadTable.end() ){
     std::shared_ptr<RevThreadCtx> Ctx = it->second;
@@ -2373,7 +2139,7 @@ RevRegFile* RevProc::GetRegFile(uint16_t HartID){
   }
   else {
     output->fatal(CALL_INFO, -1,
-                  "Failed to find RegFile for PID = %d on Hart = %d \n", ActivePIDs.at(HartID), HartID);
+                  "Failed to find RegFile for PID = %u on Hart = %u \n", ActivePIDs.at(HartID), HartID);
   }
   return 0;
 }
@@ -2381,7 +2147,7 @@ RevRegFile* RevProc::GetRegFile(uint16_t HartID){
 
 bool RevProc::InitThreadTable(){
   /*
-   * We need to create the first Ctx for each HART which will have the following attributes: 
+   * We need to create the first Ctx for each HART which will have the following attributes:
    * - PID = 1024 + However many already initialized Ctx objects there are
    * - ParentPID = 0 : (Only the first thread on every RevProc has ParentPID = 0)
    * - MemStartAddr : Top of stack (NOTE: No functionality yet)
@@ -2392,17 +2158,15 @@ bool RevProc::InitThreadTable(){
     uint32_t ParentPID = 0;
     uint32_t FirstActivePID = mem->GetNewThreadPID();
 
-    std::shared_ptr<RevThreadCtx> DefaultCtx = std::make_shared<RevThreadCtx>(
-        FirstActivePID,
-        ParentPID);
+    auto DefaultCtx = std::make_shared<RevThreadCtx>(FirstActivePID, ParentPID);
 
-    /* Set the first RegFile as ActiveRegFile */
+    // Set the first RegFile as ActiveRegFile
     RegFile = DefaultCtx->GetRegFile();
 
-    /* Add first PID to ActivePIDs */
+    // Add first PID to ActivePIDs
     ActivePIDs.emplace_back(FirstActivePID);
 
-    /* Add to ThreadTable */
+    // Add to ThreadTable
     ThreadTable.emplace(FirstActivePID, DefaultCtx);
   }
   return true;
@@ -2426,9 +2190,9 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
   auto it = ThreadTable.find(NewPID);
   if( it != ThreadTable.end() ){
     std::shared_ptr<RevThreadCtx> NewCtx = it->second;
-    /* If switching to parent, output the child is being removed from the ThreadTable */
+    // If switching to parent, output the child is being removed from the ThreadTable
     if( SwapToParent ){
-      output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %d from the ThreadTable\n",
+      output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %u from the ThreadTable\n",
                       ActivePIDs.at(HartToExec));
       ThreadTable.erase(ActivePIDs.at(HartToExec));
     }
@@ -2437,15 +2201,15 @@ bool RevProc::ChangeActivePID(uint32_t NewPID){
     UpdateRegFile();
     return true;
   }else{
-    /* TODO: Maybe don't output fatal? */
+    // TODO: Maybe don't output fatal?
     output->fatal(CALL_INFO, -1,
-                  "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable\n",
+                  "Failed to load ctx w/ PID=%u into Hart=%d because PID does not exist in ThreadTable\n",
                   NewPID, HartToExec);
     return false;
   }
 }
 
-/* NOTE: This is currently not used but will once more complex scheduling is supported */
+/* NOTE: This is currently not used but will be once more complex scheduling is supported */
 /* ChangeActivePID(PID, HartID)
  * This function changes the active pid of HartID
  *
@@ -2464,15 +2228,15 @@ bool RevProc::ChangeActivePID(uint32_t PID, uint16_t HartID){
       ActivePIDs.at(HartToExec) = PID;
       return true;
     } else {
-    /* TODO: Maybe don't output fatal? */
-      output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%d into Hart=%d because Hart does not exist",
+      // TODO: Maybe don't output fatal?
+      output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%u into Hart=%u because Hart does not exist",
                     PID, HartToExec);
       return false;
     }
   }else{
-    /* TODO: Maybe don't output fatal? */
+    // TODO: Maybe don't output fatal?
     output->fatal(CALL_INFO, -1,
-                  "Failed to load ctx w/ PID=%d into Hart=%d because PID does not exist in ThreadTable", 
+                  "Failed to load ctx w/ PID=%u into Hart=%u because PID does not exist in ThreadTable",
                   PID, HartToExec);
     return false;
   }
@@ -2487,42 +2251,42 @@ std::vector<uint32_t> RevProc::GetPIDs(){
   return PIDs;
 }
 
-/* 
+/*
  * There are a few assumptions made by this function
- * - The Active Thread is the one creating the child 
+ * - The Active Thread is the one creating the child
  * - The child duplicates the parents RegFile
- * - Automatically adds ChildCtx to the current Procs ThreadTable  
+ * - Automatically adds ChildCtx to the current Procs ThreadTable
  * - The new Child will start with ThreadState::Ready
 */
 uint32_t RevProc::CreateChildCtx() {
-  /* We get the currently executing PID's context as this is assumed to be the parent */
+  // We get the currently executing PID's context as this is assumed to be the parent
   std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
 
-  /* Get new PID from global counter in RevMem */
+  // Get new PID from global counter in RevMem
   uint32_t ChildPID = mem->GetNewThreadPID();
 
-  /* Create ChildCtx as a copy of ParentCtx */
+  // Create ChildCtx as a copy of ParentCtx
   auto ChildCtx = std::make_shared<RevThreadCtx>(ChildPID,
                                        ActivePIDs.at(HartToExec));
 
-  /* Child's Regfile is the same as the parent's with the exception of return value */
+  // Child's Regfile is the same as the parent's with the exception of return value
   ChildCtx->DuplicateRegFile(*RegFile);
 
-  /* Add child to Proc's ThreadTable */
+  // Add child to Proc's ThreadTable
   ThreadTable.emplace(ChildPID, ChildCtx);
 
-  /* Get Child's regfile so we can make the below modifications */
+  // Get Child's regfile so we can make the below modifications
   RevRegFile* ChildRegFile = ChildCtx->GetRegFile();
 
-  /* Zero the childs cause registers as they have no exceptions raised */
+  // Zero the child's cause registers as they have no exceptions raised
   ChildRegFile->RV64_SCAUSE = 0;
   ChildRegFile->RV32_SCAUSE = 0;
 
-  /* The child's return value from fork/clone is 0 */
-  ChildRegFile->RV64[10] = 0;
+  // The child's return value from fork/clone is 0
+  ChildRegFile->SetX(feature, 10, 0);
 
-  /* Add ChildPID to list of Parent's Children */
-  ParentCtx->AddChildPID(ChildPID); /* NOTE: This has no functionality at this point */
+  // Add ChildPID to list of Parent's Children
+  ParentCtx->AddChildPID(ChildPID); // NOTE: This has no functionality at this point
 
   return ChildPID;
 }
@@ -2574,30 +2338,117 @@ void RevProc::InitEcallTable(){
     };
 }
 
+/// Parse a string for an ECALL starting at address straddr, updating the state
+/// as characters are read, and call action() when the end of string is reached.
+RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
+                                                   uint64_t straddr,
+                                                   std::function<void()> action){
+  auto rtval = ECALL_status_t::ERROR;
+
+  // we don't know how long the path string is so read a byte (char)
+  // at a time and search for the string terminator character '\0'
+  if(ECALL.bytesRead != 0){
+    ECALL.string += std::string_view(ECALL.buf.data(), ECALL.bytesRead);
+    ECALL.bytesRead = 0;
+  }
+
+  // We store the 0-terminator byte in ECALL.string to distinguish an empty
+  // C string from no data read at all. If we read an empty string in the
+  // program, ECALL.string.size() == 1 with front() == back() == '\0'. If no
+  // data has been read yet, ECALL.string.size() == 0.
+  if(ECALL.string.size() && !ECALL.string.back()){
+    //found the null terminator - we're done
+    // action is usually passed in as a lambda with local code and captures
+    // from the caller, such as performing a syscall using ECALL.string.
+    action();
+
+    ECALL.string.clear();   //reset the ECALL buffers
+    ECALL.bytesRead = 0;
+
+    DependencyClear(HartToExec, 10, false);
+    rtval = ECALL_status_t::SUCCESS;
+  }else{
+    //We are in the middle of the string - read one byte
+    mem->ReadVal(HartToExec,
+                 straddr + ECALL.string.size(),
+                 ECALL.buf.data(),
+                 inst.hazard,
+                 REVMEM_FLAGS(0));
+    ECALL.bytesRead = 1;
+    DependencySet(HartToExec, 10, false);
+    rtval = ECALL_status_t::CONTINUE;
+  }
+  return rtval;
+}
+
 /* ======================================================= */
-/* rev_setxattr(const char *path, const char *name,        */
+/* int rev_setxattr(const char *path, const char *name,    */
 /*              const void *value, size_t size, int flags) */
 /*======================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
-  const char *path = (char*)RegFile->RV64[10];
-  const char *name = (char*)RegFile->RV64[11];
-  const void *value = (void*)RegFile->RV64[12];
-  size_t size = RegFile->RV64[13];
-  uint64_t flags = RegFile->RV64[14];
+#if 0
+  // TODO: Need to load the data from (value, size bytes) into
+  // hostValue vector before it can be passed to setxattr() on host.
+
+  auto path = RegFile->GetX<uint64_t>(feature, 10);
+  auto name = RegFile->GetX<uint64_t>(feature, 11);
+  auto value = RegFile->GetX<uint64_t>(feature, 12);
+  auto size = RegFile->GetX<size_t>(feature, 13);
+  auto flags = RegFile->GetX<uint64_t>(feature, 14);
+
+  // host-side value which has size bytes
+  std::vector<char> hostValue(size);
+
+  if(ECALL.path_string.empty()){
+    // We are still parsing the path string. When it is finished, we
+    // will move the ECALL.string to ECALL.path_string and continue below
+    auto action = [&]{
+      ECALL.path_string = std::move(ECALL.string);
+    };
+    auto rtv = ECALL_LoadAndParseString(inst, path, action);
+
+    // When the parsing of path_string returns SUCCESS, we change it to
+    // CONTINUE to continue the later stages
+    return rtv == ECALL_status_t::SUCCESS ? ECALL_status_t::CONTINUE : rtv;
+  }else{
+    // We have set path_string. Now we are parsing the name string.
+    // When it is finished, we will call setxattr(path, name, ...);
+    auto action = [&]{
 
 #ifdef __APPLE__
-  uint32_t position = 0;
-  uint64_t rc = setxattr(path, name, value, size, position, flags);
+      uint32_t position = 0;
+      int rc = setxattr(ECALL.path_string.c_str(),
+                        ECALL.string.c_str(),
+                        &hostValue[0],
+                        size,
+                        position,
+                        flags);
 #else
-  uint64_t rc = setxattr(path, name, value, size, flags);
+      int rc = setxattr(ECALL.path_string.c_str(),
+                        ECALL.string.c_str(),
+                        &hostValue[0],
+                        size,
+                        flags);
 #endif
-  RegFile->RV64[10] = rc;
+
+      // Clear path_string so that later calls parse path_string first
+      ECALL.path_string.clear();
+
+      // setxattr return code
+      RegFile->SetX(feature, 10, rc);
+    };
+
+    // Parse the name string, then call setxattr() using path and name
+    return ECALL_LoadAndParseString(inst, name, action);
+  }
+#else
   return ECALL_status_t::SUCCESS;
+#endif
 }
 
 /* Increments program break by n bytes  */
 RevProc::ECALL_status_t RevProc::ECALL_brk(RevInst& inst){
-  uint64_t Addr = RegFile->RV64[10];
+  auto Addr = RegFile->GetX<uint64_t>(feature, 10);
 
   const uint64_t heapend = mem->GetHeapEnd();
   if( Addr > 0 && Addr > heapend ){
@@ -2607,32 +2458,32 @@ RevProc::ECALL_status_t RevProc::ECALL_brk(RevInst& inst){
     output->fatal(CALL_INFO, 11,
                   "Out of memory / Unable to expand system break (brk) to Addr = 0x%lx", Addr);
   }
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ======================================================= */
 /* rev_clone3(struct clone_args*, size_t args_size)        */
 /* ======================================================= */
 RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
-  uint64_t CloneArgsAddr = RegFile->RV64[10];
-  RevProc::ECALL_status_t rtval = RevProc::ECALL_status_t::SUCCESS;
-  // size_t SizeOfCloneArgs = RegFile()->RV64[11];
+  auto rtval = ECALL_status_t::ERROR;
+  auto CloneArgsAddr = RegFile->GetX<uint64_t>(feature, 10);
+  // auto SizeOfCloneArgs = RegFile()->GetX<size_t>(feature, 11);
 
- if(0 == ECALL_bytesRead){
-    // First time through the function... 
+ if(0 == ECALL.bytesRead){
+    // First time through the function...
     /* Fetch the clone_args */
     // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
                                 // using the 1st uint64, so that's all we're going to fetch
-    uint64_t* args = reinterpret_cast<uint64_t*>(ECALL_buf);
-    mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
-    ECALL_bytesRead = 8;
-    rtval = RevProc::ECALL_status_t::CONTINUE;
+   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
+   mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
+   ECALL.bytesRead = sizeof(*args);
+   rtval = ECALL_status_t::CONTINUE;
  }else{
     /*
     * Parse clone flags
     * NOTE: if no flags are set, we get fork() like behavior
     */
-   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL_buf);
+   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
     for( uint64_t bit=1; bit != 0; bit <<= 1 ){
       switch (*args & bit) {
         case CLONE_VM:
@@ -2744,21 +2595,20 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
 
     /*
     Alert the Proc there needs to be a Ctx switch
-    Pass the PID that will be switched to once the 
+    Pass the PID that will be switched to once the
     current pipeline is executed until completion
     */
     CtxSwitchAlert(ChildPID);
 
-    /* Parent's return value is the child's PID */
-    RegFile->RV64[10] = ChildPID;
+    // Parent's return value is the child's PID
+    RegFile->SetX(feature, 10, ChildPID);
 
-    /* Child's return value is 0 */
-    ChildCtx->GetRegFile()->RV64[10] = 0;
+    // Child's return value is 0
+    ChildCtx->GetRegFile()->SetX(feature, 10, 0);
 
-    /*clean up ecall state*/
+    // clean up ecall state
     rtval = RevProc::ECALL_status_t::SUCCESS;
-    ECALL_bytesRead = 0;
-    ECALL_buf[0] = '\0';
+    ECALL.bytesRead = 0;
 
   } //else
   return rtval;
@@ -2770,32 +2620,12 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
 /* =============================== */
 RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL_chdir called\n");
-  RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
-
-  // we don't know how long the path string is so read a byte (char)
-  // at a time and search for the string terminator character '\0'
-  if('\0' != ECALL_buf[0]){
-    //We are in the middle of the string
-    ECALL_string = ECALL_string + ECALL_buf[0];
-    mem->ReadVal<char>(HartToExec, RegFile->RV64[10] + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-    rtval = RevProc::ECALL_status_t::CONTINUE;
-  }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
-    //found the null terminator - we're done
-    ECALL_string = ECALL_string + ECALL_buf[0];
-    const int rc = chdir(ECALL_string.data());
-    RegFile->RV64[10] = rc;
-    ECALL_string.clear();   //reset the ECALL buffers
-    ECALL_buf[0] = '\0';
-    DependencyClear(HartToExec, 10, false);
-    rtval = RevProc::ECALL_status_t::SUCCESS;
-  }else{
-    //first time through the ECALL
-    mem->ReadVal<char>(HartToExec, RegFile->RV64[10], &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-    rtval = RevProc::ECALL_status_t::CONTINUE;
-    DependencySet(HartToExec, 10, false);
-  }
-
-  return rtval;
+  auto path = RegFile->GetX<uint64_t>(feature, 10);
+  auto action = [&]{
+    int rc = chdir(ECALL.string.c_str());
+    RegFile->SetX(feature, 10, rc);
+  };
+  return ECALL_LoadAndParseString(inst, path, action);
 }
 
 /* ============================================================ */
@@ -2805,18 +2635,9 @@ RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
 //   output->verbose(CALL_INFO, 2, 0, "ECALL_mkdir called\n");
 //   std::string path = "";
 //   unsigned i=0;
-
-//   // we don't know how long the path string is so read a byte (char)
-//   // at a time and search for the string terminator character '\0'
-//   do {
-//     char dirchar;
-//     mem->ReadMem(RegFile->RV64[10] + sizeof(char)*i, sizeof(char), &dirchar);
-//     path = path + dirchar;
-//     i++;
-//   } while( path.back() != '\0');
-
+//
 //   const int rc = chdir(path.data());
-//   RegFile->RV64[10] = rc;
+//   RegFile->SetX(feature, 10, rc);
 // }
 
 
@@ -2826,124 +2647,119 @@ RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
 /* ======================== */
 RevProc::ECALL_status_t RevProc::ECALL_exit(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL_exit called\n");
-  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
-  const uint64_t status = RegFile->RV64[10];
+  auto CurrCtx = HartToExecCtx();
+  auto status = RegFile->GetX<uint64_t>(feature, 10);
 
-  /* If the current ctx has ParentPID = 0,
-     it has no parent and we should terminate the sim */
+  // If the current ctx has ParentPID = 0,
+  // it has no parent and we should terminate the sim
   if( CurrCtx->GetParentPID() == 0 ){
     output->verbose(CALL_INFO, 0, 0,
                     "Process %u exiting with status %lu\n",
                     CurrCtx->GetPID(), status );
     exit(status);
   } else {
-    /* Parent exists & Child is exiting... switch back to parent */
+    // Parent exists & Child is exiting... switch back to parent
     CtxSwitchAlert(CurrCtx->GetParentPID());
     output->verbose(CALL_INFO, 0, 0,
                     "Process %u exiting with status %lu\n",
                     CurrCtx->GetPID(), status );
-    return RevProc::ECALL_status_t::SUCCESS;
   }
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ========================================= */
 /* rev_getcwd(char *buf, unsigned long size) */
 /* ========================================= */
 RevProc::ECALL_status_t RevProc::ECALL_getcwd(RevInst& inst){
-  uint64_t BufAddr = RegFile->RV64[10];
-  uint64_t size = RegFile->RV64[11];
-  std::string CWD = std::filesystem::current_path().c_str();
-  mem->WriteMem(feature->GetHart(), BufAddr, size, &CWD);
+  auto BufAddr = RegFile->GetX<uint64_t>(feature, 10);
+  auto size = RegFile->GetX<uint64_t>(feature, 11);
+  auto CWD = std::filesystem::current_path();
+  mem->WriteMem(feature->GetHart(), BufAddr, size, CWD.c_str());
 
-  /* Returns null-terminated string in buf */
-  RegFile->RV64[10] = BufAddr;
+  // Returns null-terminated string in buf
+  // (no need to set x10 since it's already got BufAddr)
+  // RegFile->SetX(feature, 10, BufAddr);
 
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ================ */
 /* rev_getpid(void) */
 /* ================ */
 RevProc::ECALL_status_t RevProc::ECALL_getpid(RevInst& inst){
-  /* TODO: Implement error handling */
+  // TODO: Implement error handling
   output->verbose(CALL_INFO, 2, 0, "ECALL_getpid called\n");
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
-  RegFile->RV64[10] = ActivePIDs.at(HartToExec);
-  return RevProc::ECALL_status_t::SUCCESS;
+  RegFile->SetX(feature, 10, ActivePIDs.at(HartToExec));
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ================= */
 /* rev_getppid(void) */
 /* ================= */
 RevProc::ECALL_status_t RevProc::ECALL_getppid(RevInst& inst){
-/* TODO: Implement error handling */
+  // TODO: Implement error handling
   output->verbose(CALL_INFO, 2, 0, "ECALL_getppid called\n");
   uint32_t CurrentPID = ActivePIDs.at(HartToExec);
   auto CurrentCtx = ThreadTable.at(CurrentPID);
   uint32_t ParentPID = CurrentCtx->GetParentPID();
-  RegFile->RV64[10] = ParentPID;
-  return RevProc::ECALL_status_t::SUCCESS;
+  RegFile->SetX(feature, 10, ParentPID);
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================== */
-/* rev_write(unsigned int fd, const char *buf, size_t nbytes) */
+/* rev_write(int fd, const char *buf, size_t nbytes)          */
 /* ========================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL_write called\n");
-  int fildes = RegFile->RV64[10];
-  std::size_t nbytes = RegFile->RV64[12];
+  auto fd = RegFile->GetX<int>(feature, 10);
+  auto addr = RegFile->GetX<uint64_t>(feature, 11);
+  auto nbytes = RegFile->GetX<uint64_t>(feature, 12);
+  auto rtv = ECALL_status_t::ERROR;
 
-  RevProc::ECALL_status_t rtv = RevProc::ECALL_status_t::SUCCESS;
+  if(ECALL.bytesRead){
+    // Not our first time through... so capture previous read data
+    ECALL.string += std::string_view(ECALL.buf.data(), ECALL.bytesRead);
+    ECALL.bytesRead = 0;
+  }
 
-  if(ECALL_bytesRead == nbytes){
-    //Read is complete - send to host
-    ECALL_string = ECALL_string.append(ECALL_buf);
-    /* Perform the write on the host system */
-    const int rc = write(fildes, ECALL_string.data(), nbytes);
+  auto nleft = nbytes - ECALL.string.size();
+  if(nleft == 0){
+    // Perform the write on the host system
+    int rc = write(fd, ECALL.string.data(), ECALL.string.size());
 
-    /* write returns the number of bytes written */
-    RegFile->RV64[10] = rc;
+    // write returns the number of bytes written
+    RegFile->SetX(feature, 10, rc);
 
-    /*Reset our tracking state*/
-    ECALL_bytesRead = 0;
-    ECALL_buf[0] = '\0';
-    ECALL_string.clear();
-    rtv = RevProc::ECALL_status_t::SUCCESS;
+    // Reset our tracking state
+    ECALL.clear();
+
     DependencyClear(HartToExec, 10, false);
-
+    rtv = ECALL_status_t::SUCCESS;
   }else {
-    if(ECALL_bytesRead > 0){
-      //Not our first time through... so capture previous read data
-      ECALL_string = ECALL_string.append(ECALL_buf);
+    auto readfunc = [&](auto* buf){
+      mem->ReadVal(HartToExec,
+                   addr + ECALL.string.size(),
+                   buf,
+                   inst.hazard,
+                   REVMEM_FLAGS(0));
+      ECALL.bytesRead = sizeof(*buf);
+    };
+    if(nleft >= 8){
+      readfunc(reinterpret_cast<uint64_t*>(ECALL.buf.data()));
+    } else if(nleft >= 4){
+      readfunc(reinterpret_cast<uint32_t*>(ECALL.buf.data()));
+    } else if(nleft >= 2){
+      readfunc(reinterpret_cast<uint16_t*>(ECALL.buf.data()));
+    } else{
+      readfunc(reinterpret_cast<uint8_t*>(ECALL.buf.data()));
     }
-    if(1 == (nbytes - ECALL_bytesRead)){
-      mem->ReadVal<char>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, ECALL_buf, inst.hazard, REVMEM_FLAGS(0x0));
-      ECALL_buf[1] = '\0';  //Pre-null terminate to allow for succesful string cat later
-      ECALL_bytesRead += sizeof(char);
-    }
-    else if(3 >= (nbytes - ECALL_bytesRead )){
-      mem->ReadVal<int16_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int16_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
-      ECALL_buf[2] = '\0'; //Pre-null terminate to allow for succesful string cat later
-      ECALL_bytesRead += sizeof(int16_t);
-    }
-    else if(7 >= (nbytes - ECALL_bytesRead )){
-      mem->ReadVal<int32_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int32_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
-      ECALL_buf[4] = '\0'; //Pre-null terminate to allow for succesful string cat later
-      ECALL_bytesRead += sizeof(int32_t);
-    }
-    else {
-      mem->ReadVal<int64_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int64_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
-      ECALL_buf[8] = '\0'; //Pre-null terminate to allow for succesful string cat later
-     ECALL_bytesRead += sizeof(int64_t);
-    }
-    rtv = RevProc::ECALL_status_t::CONTINUE;
     DependencySet(HartToExec, 10, false);
+    rtv = ECALL_status_t::CONTINUE;
   }
   return rtv;
 }
-
 
 /* ========================================================================== */
 /* rev_timer_settime(timer_t timer_id, int flags, */
@@ -2952,16 +2768,15 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
 /* ========================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_timer_settime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_settime called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
-
 
 /* ======================================================================== */
 /* rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec *setting) */
 /* ======================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_timer_gettime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_gettime called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================================== */
@@ -2970,7 +2785,7 @@ RevProc::ECALL_status_t RevProc::ECALL_timer_gettime(RevInst& inst){
 /* ========================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_clock_settime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clock_settime called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ============================================================ */
@@ -2978,9 +2793,8 @@ RevProc::ECALL_status_t RevProc::ECALL_clock_settime(RevInst& inst){
 /* ============================================================ */
 RevProc::ECALL_status_t RevProc::ECALL_clock_gettime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clock_gettime called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
-
 
 /* ====================================== */
 /* rev_mmap(struct mmap_arg_struct *args) */
@@ -2988,50 +2802,50 @@ RevProc::ECALL_status_t RevProc::ECALL_clock_gettime(RevInst& inst){
 // void *mmap(void *addr, size_t length, int prot, int flags,
 //          int fd, off_t offset);
 RevProc::ECALL_status_t RevProc::ECALL_mmap(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n"); 
+  output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n");
 
-  uint64_t Addr = RegFile->RV64[10];
-  uint64_t Size = RegFile->RV64[11];
-  // uint64_t Prot = RegFile->RV64[12];
-  // uint64_t Flags = RegFile->RV64[13];
-  // uint64_t fd = RegFile->RV64[14];
-  // uint64_t offset = RegFile->RV64[15];
+  auto addr = RegFile->GetX<uint64_t>(feature, 10);
+  auto size = RegFile->GetX<uint64_t>(feature, 11);
+  // auto prot = RegFile->GetX<int>(feature, 12);
+  // auto Flags = RegFile->GetX<int>(feature, 13);
+  // auto fd = RegFile->GetX<int>(feature, 14);
+  // auto offset = RegFile->GetX<off_t>(feature, 15);
 
-  if( !Addr ){
+  if( !addr ){
     // If address is NULL... We add it to MemSegs.end()->getTopAddr()+1
-    Addr = mem->AllocMem(Size+1);
-    // Addr = mem->AddMemSeg(Size); 
+    addr = mem->AllocMem(size+1);
+    // addr = mem->AddMemSeg(Size);
   } else {
     // We were passed an address... try to put a segment there.
-    // Currently there is no handling of getting it 'close' to the 
-    // suggested address... instead if it can't allocate a new segment 
+    // Currently there is no handling of getting it 'close' to the
+    // suggested address... instead if it can't allocate a new segment
     // there it fails.
-    if( !mem->AllocMemAt(Addr, Size) ){
+    if( !mem->AllocMemAt(addr, size) ){
       output->fatal(CALL_INFO, 11, "Failed to add mem segment\n");
     }
   }
-  RegFile->RV64[10] = Addr;
-  return RevProc::ECALL_status_t::SUCCESS;
+  RegFile->SetX(feature, 10, addr);
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ================================== */
 /* munmap(void *addr, size_t length); */
 /* ================================== */
 RevProc::ECALL_status_t RevProc::ECALL_munmap(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n"); 
-  uint64_t Addr = RegFile->RV64[10];
-  uint64_t Size = RegFile->RV64[11];
+  output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n");
+  auto Addr = RegFile->GetX<uint64_t>(feature, 10);
+  auto Size = RegFile->GetX<uint64_t>(feature, 11);
 
-  int rc =  mem->DeallocMem(Addr, Size) == -1;
+  int rc =  mem->DeallocMem(Addr, Size) == uint64_t(-1);
   if(rc == -1){
-    output->fatal(CALL_INFO, 11, 
+    output->fatal(CALL_INFO, 11,
                   "Failed to perform munmap(Addr = 0x%lx, Size = 0x%lx)"
-                  "likely because the memory was not allocated to begin with" , 
+                  "likely because the memory was not allocated to begin with" ,
                   Addr, Size);
   }
 
-  RegFile->RV64[10] = rc;
-  return RevProc::ECALL_status_t::SUCCESS;
+  RegFile->SetX(feature, 10, rc);
+  return ECALL_status_t::SUCCESS;
 }
 
 
@@ -3043,8 +2857,8 @@ RevProc::ECALL_status_t RevProc::ECALL_gettid(RevInst& inst){
   RevRegFile* regFile = RegFile;
 
   /* rc = Currently Executing Hart */
-  regFile->RV64[10] = HartToExec;
-  return RevProc::ECALL_status_t::SUCCESS;
+  regFile->SetX(feature, 10, HartToExec);
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================= */
@@ -3052,7 +2866,7 @@ RevProc::ECALL_status_t RevProc::ECALL_gettid(RevInst& inst){
 /* ========================================================= */
 RevProc::ECALL_status_t RevProc::ECALL_settimeofday(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: settimeofday called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ============================================================= */
@@ -3060,7 +2874,7 @@ RevProc::ECALL_status_t RevProc::ECALL_settimeofday(RevInst& inst){
 /* ============================================================= */
 RevProc::ECALL_status_t RevProc::ECALL_gettimeofday(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: gettimeofday called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 
@@ -3070,7 +2884,7 @@ RevProc::ECALL_status_t RevProc::ECALL_gettimeofday(RevInst& inst){
 /* ========================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_rt_sigprocmask(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: rt_sigprocmask called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ================================== */
@@ -3078,7 +2892,7 @@ RevProc::ECALL_status_t RevProc::ECALL_rt_sigprocmask(RevInst& inst){
 /* ================================== */
 RevProc::ECALL_status_t RevProc::ECALL_timer_delete(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_delete called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ===========================================================================*/
@@ -3087,7 +2901,7 @@ RevProc::ECALL_status_t RevProc::ECALL_timer_delete(RevInst& inst){
 /* ===========================================================================*/
 RevProc::ECALL_status_t RevProc::ECALL_timer_create(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: timer_create called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 
@@ -3097,7 +2911,7 @@ RevProc::ECALL_status_t RevProc::ECALL_timer_create(RevInst& inst){
 /* ========================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_nanosleep(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: nanosleep called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================================== */
@@ -3106,7 +2920,7 @@ RevProc::ECALL_status_t RevProc::ECALL_nanosleep(RevInst& inst){
 /* ========================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_get_robust_list(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: get_robust_list called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ============================================================== */
@@ -3114,7 +2928,7 @@ RevProc::ECALL_status_t RevProc::ECALL_get_robust_list(RevInst& inst){
 /* ============================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_set_robust_list(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: set_robust_list called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ========================================================================== */
@@ -3123,7 +2937,7 @@ RevProc::ECALL_status_t RevProc::ECALL_set_robust_list(RevInst& inst){
 /* ==========================================================================*/
 RevProc::ECALL_status_t RevProc::ECALL_waitid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: waitid called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ============================== */
@@ -3131,7 +2945,7 @@ RevProc::ECALL_status_t RevProc::ECALL_waitid(RevInst& inst){
 /* ============================== */
 RevProc::ECALL_status_t RevProc::ECALL_exit_group(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit_group called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ============================== */
@@ -3139,7 +2953,7 @@ RevProc::ECALL_status_t RevProc::ECALL_exit_group(RevInst& inst){
 /* ============================== */
 RevProc::ECALL_status_t RevProc::ECALL_fdatasync(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: fdatasync called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ========================== */
@@ -3147,7 +2961,7 @@ RevProc::ECALL_status_t RevProc::ECALL_fdatasync(RevInst& inst){
 /* ========================== */
 RevProc::ECALL_status_t RevProc::ECALL_fsync(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: fsync called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ============== */
@@ -3155,7 +2969,7 @@ RevProc::ECALL_status_t RevProc::ECALL_fsync(RevInst& inst){
 /* ============== */
 RevProc::ECALL_status_t RevProc::ECALL_sync(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: sync called\n");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* =================================================================== */
@@ -3165,105 +2979,88 @@ RevProc::ECALL_status_t RevProc::ECALL_tee(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: tee called\n");
 #if 0
   // commented out to remove warnings
-  int fd_in      = RegFile->RV64[10];
-  int fd_out     = RegFile->RV64[11];
-  size_t len     = RegFile->RV64[12];
-  uint64_t flags = RegFile->RV64[13];
+  auto fd_in  = RegFile->GetX<int>(feature, 10);
+  auto fd_out = RegFile->GetX<int>(feature, 11);
+  auto len    = RegFile->GetX<uint64_t>(feature, 12);
+  auto flags  = RegFile->GetX<uint32_t>(feature, 13);
 #endif
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
+
 
 /* =================================================================== */
 /* int openat(int dirfd, const char *pathname, int flags, mode_t mode) */
 /* =================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
-  int dfd = RegFile->RV64[10];
-  int filenameAddr = RegFile->RV64[11];
-  int flags = RegFile->RV64[12]; /* NOTE: Unused for now */
-  uint64_t mode = RegFile->RV64[13];
+  auto dirfd = RegFile->GetX<int>(feature, 10);
+  auto pathname = RegFile->GetX<uint64_t>(feature, 11);
 
-  RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
+  // commented out to remove warnings
+  // auto flags = RegFile->GetX<int>(feature, 12);
+  // auto mode = RegFile->GetX<int>(feature, 13);
+
   /*
    * NOTE: this is currently only opening files in the current directory
    *       because of some oddities in parsing the arguments & flags
    *       but this will be fixed in the near future
   */
 
-
   /* Read the filename from memory one character at a time until we find '\0' */
 
-  if('\0' != ECALL_buf[0]){
-    //We are in the middle of the string
-    ECALL_string = ECALL_string + ECALL_buf[0];
-    mem->ReadVal<char>(HartToExec, filenameAddr + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-    rtval = RevProc::ECALL_status_t::CONTINUE;
-    DependencySet(HartToExec, 10, false);
-  }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
-    //found the null terminator - we're done
-    ECALL_string = ECALL_string + ECALL_buf[0];
-
-    /* Do the openat on the host */
-    dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
-    int fd = openat(dfd, ECALL_string.c_str(), O_RDWR);
+  auto action = [&]{
+    // Do the openat on the host
+    dirfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
+    int fd = openat(dirfd, ECALL.string.c_str(), O_RDWR);
 
     HartToExecCtx()->AddFD(fd);
 
-    /* openat returns the file descriptor of the opened file */
-    RegFile->RV64[10] = fd;
+    // openat returns the file descriptor of the opened file
+    RegFile->SetX(feature, 10, fd);
+  };
 
-    ECALL_string.clear();   //reset the ECALL buffers
-    ECALL_buf[0] = '\0';
-    rtval = RevProc::ECALL_status_t::SUCCESS;
-    DependencyClear(HartToExec, 10, false);
-  }else{
-    //first time through the ECALL
-    mem->ReadVal<char>(HartToExec, filenameAddr, &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-    DependencySet(HartToExec, 10, false);
-    rtval = RevProc::ECALL_status_t::CONTINUE;
-  }
-
-  return rtval;
+  return ECALL_LoadAndParseString(inst, pathname, action);
 }
 
 /* =================================================== */
 /* rev_read(unsigned int fd, char *buf, size_t nbytes) */
 /* =================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
-  int fd = RegFile->RV64[10];
-  uint64_t BufAddr = RegFile->RV64[11];
-  size_t BufSize = RegFile->RV64[12];
+  auto fd = RegFile->GetX<int>(feature, 10);
+  auto BufAddr = RegFile->GetX<uint64_t>(feature, 11);
+  auto BufSize = RegFile->GetX<uint64_t>(feature, 12);
 
   /* Check if Current Ctx has access to the fd */
-  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+  auto CurrCtx = HartToExecCtx();
 
   if( !CurrCtx->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
-                  "Core %d; Hart %d; PID %" PRIu32 " tried to read from file descriptor: %" PRIu64 " but did not have access to it\n",
+                  "Core %u; Hart %" PRIu16 "; PID %" PRIu32
+                  " tried to read from file descriptor: %d, but did not have access to it\n",
                   id, HartToExec, HartToExecPID(), fd);
-    return RevProc::ECALL_status_t::SUCCESS;
+    return ECALL_status_t::SUCCESS;
   }
   /*
-   * This buffer is an intermediate buffer for storing the data read from host 
+   * This buffer is an intermediate buffer for storing the data read from host
    * for later use in writing to RevMem
   */
-  char TmpBuf[BufSize];
+  std::vector<char> TmpBuf(BufSize);
 
   /*
    * Read nbytes of fd from host
    *
    * NOTE: Because the fd is in the Ctx's fildes vector, we can reasonably
-   *       assume the file is already open on the host system because we 
+   *       assume the file is already open on the host system because we
    *       try to maintain parity between those
    */
 
-  /* Do the read on the host */
-  uint64_t rc = read(fd, &TmpBuf, BufSize);
+  // Do the read on the host
+  int rc = read(fd, &TmpBuf[0], BufSize);
 
-  /* Write that data to the buffer inside of Rev */
-  mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf);
+  // Write that data to the buffer inside of Rev
+  mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf[0]);
 
-  RegFile->RV64[10] = rc;
-  return RevProc::ECALL_status_t::SUCCESS;
+  RegFile->SetX(feature, 10, rc);
+  return ECALL_status_t::SUCCESS;
 }
 
 
@@ -3271,105 +3068,67 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
 /* rev_close(unsigned int fd) */
 /* ========================== */
 RevProc::ECALL_status_t RevProc::ECALL_close(RevInst& inst){
-  int fd = RegFile->RV64[10];
-  std::shared_ptr<RevThreadCtx> CurrCtx = HartToExecCtx();
+  auto fd = RegFile->GetX<int>(feature, 10);
+  auto CurrCtx = HartToExecCtx();
 
-  /* Check if CurrCtx has fd in fildes vector */
+  // Check if CurrCtx has fd in fildes vector
   if( !CurrCtx->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
-                  "Core %d; Hart %d; PID %" PRIu32 " tried to close file descriptor %d but did not have access to it\n",
+                  "Core %u; Hart %d; PID %" PRIu32 " tried to close file descriptor %d but did not have access to it\n",
                   id, HartToExec, HartToExecPID(), fd);
-    return RevProc::ECALL_status_t::SUCCESS;
+    return ECALL_status_t::SUCCESS;
   }
-  /* Close file on host */
-  uint64_t rc = close(fd);
+  // Close file on host
+  int rc = close(fd);
 
-  /* Remove from Ctx's fildes */
+  // Remove from Ctx's fildes
   CurrCtx->RemoveFD(fd);
 
-  /* rc is propogated to rev from host */
-  RegFile->RV64[10] = rc;
+  // rc is propogated to rev from host
+  RegFile->SetX(feature, 10, rc);
 
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ====================================================================== */
-/* rev_fchown(unsigned int fd, unsigned short user, unsigned short group) */         
+/* rev_fchown(unsigned int fd, unsigned short user, unsigned short group) */
 /* ====================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_fchown(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: fchown called"); 
-  return RevProc::ECALL_status_t::SUCCESS;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fchown called");
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ==================================================================================== */
 /* rev_fchownat(int dfd, const char *filename, unsigned user, unsigned group, int flag) */
 /* ==================================================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_fchownat(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: fchownat called"); 
-  return RevProc::ECALL_status_t::SUCCESS;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: fchownat called");
+  return ECALL_status_t::SUCCESS;
 }
 
 /* ======================================================================*/
-/* rev_mkdirat(int dfd, const char * path, unsigned short mode)          */
+/* rev_mkdirat(int dirfd, const char * path, unsigned short mode)        */
 /* ======================================================================*/
 RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0, "ECALL_mkdirat called");
+  auto dirfd = RegFile->GetX<int>(feature, 10);
+  auto path = RegFile->GetX<uint64_t>(feature, 11);
+  auto mode = RegFile->GetX<unsigned short>(feature, 12);
 
-  output->verbose(CALL_INFO, 2, 0, "ECALL_mkdirat called"); 
-
-  unsigned fd = RegFile->RV64[10];
-  unsigned Mode = RegFile->RV64[12];
-  RevProc::ECALL_status_t rtval = ECALL_status_t::SUCCESS;
-
-  if('\0' != ECALL_buf[0]){
-    //We are in the middle of the string
-    ECALL_string = ECALL_string + ECALL_buf[0];
-    mem->ReadVal<char>(HartToExec, RegFile->RV64[11] + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-    rtval = RevProc::ECALL_status_t::CONTINUE;
-    DependencySet(HartToExec, 10, false);
-  }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
-    //found the null terminator - we're done
-    ECALL_string = ECALL_string + ECALL_buf[0];
-
-    /* Do the mkdirat on the host */
-    const int rc = mkdirat(fd, ECALL_string.data(), Mode);
-    RegFile->RV64[10] = rc;
-
-    ECALL_string.clear();   //reset the ECALL buffers
-    ECALL_buf[0] = '\0';
-    rtval = RevProc::ECALL_status_t::SUCCESS;
-    DependencyClear(HartToExec, 10, false);
-  }else{
-    //first time through the ECALL
-    mem->ReadVal<char>(HartToExec, RegFile->RV64[11], &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-    DependencySet(HartToExec, 10, false);
-    rtval = RevProc::ECALL_status_t::CONTINUE;
-  }
-/*
-  std::string path = "";
-  unsigned i=0;
-  
-  // we don't know how long the path string is so read a byte (char)
-  // at a time and search for the string terminator character '\0'
-  do {
-    char dirchar;
-    mem->ReadMem(RegFile->RV64[11] + sizeof(char)*i, sizeof(char), &dirchar);
-    path = path + dirchar;
-    i++;
-  } while( path.back() != '\0');
-
-  const int rc = mkdirat(fd, path.data(), Mode);
-  RegFile->RV64[10] = rc;*/
-
-
-  return rtval;
+  auto action = [&]{
+    // Do the mkdirat on the host
+    int rc = mkdirat(dirfd, ECALL.string.c_str(), mode);
+    RegFile->SetX(feature, 10, rc);
+  };
+  return ECALL_LoadAndParseString(inst, path, action);
 }
 
 /* =========================================================== */
 /* rev_dup3(unsigned int oldfd, unsigned int newfd, int flags) */
 /* =========================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_dup3(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: dup3 called"); 
-  return RevProc::ECALL_status_t::SUCCESS;
+  output->verbose(CALL_INFO, 2, 0, "ECALL: dup3 called");
+  return ECALL_status_t::SUCCESS;
 }
 
 
@@ -3378,7 +3137,7 @@ RevProc::ECALL_status_t RevProc::ECALL_dup3(RevInst& inst){
 /* =========================================================== */
 RevProc::ECALL_status_t RevProc::ECALL_dup(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: dup called");
-  return RevProc::ECALL_status_t::SUCCESS;
+  return ECALL_status_t::SUCCESS;
 }
 
 
@@ -3391,31 +3150,20 @@ RevProc::ECALL_status_t RevProc::ECALL_dup(RevInst& inst){
  */
 void RevProc::ExecEcall(RevInst& inst){
   // a7 register = ecall code
-  uint64_t EcallCode;
-  if( feature->IsRV32() )
-    EcallCode = (uint64_t)RegFile->RV32[17];
-  else if( feature->IsRV64() )
-    EcallCode = RegFile->RV64[17];
-  else {
-    return;
-  }
-
+  auto EcallCode = RegFile->GetX<uint64_t>(feature, 17);
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
-    /* call the function */
-    ECALL_status_t status = (it->second)(this, inst);
-    /* Trap handled... 0 cause registers */
-    RegFile->RV64_SCAUSE = status;
-    RegFile->RV32_SCAUSE = status;
-    //For now, rewind the PC and keep executing the ECALL until we
-    // have completed 
-    if(RevProc::ECALL_status_t::SUCCESS != status){
-      if( feature->IsRV32() ){
-        RegFile->RV32_PC -= inst.instSize;
-      }else{
-        RegFile->RV64_PC -= inst.instSize;
-      }
+    // call the function
+    ECALL_status_t status = it->second(this, inst);
 
+    // Trap handled... 0 cause registers
+    RegFile->RV64_SCAUSE = uint64_t(status);
+    RegFile->RV32_SCAUSE = uint32_t(status);
+
+    // For now, rewind the PC and keep executing the ECALL until we
+    // have completed
+    if(ECALL_status_t::SUCCESS != status){
+      RegFile->AdvancePC( feature, -int32_t(inst.instSize) );
     }
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %lu not found", EcallCode);

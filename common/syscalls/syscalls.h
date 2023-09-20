@@ -234,7 +234,7 @@ union sigval {
 	void *sival_ptr;
 };
 
-typedef struct {
+typedef struct{
 	int si_signo;
 	int si_code;
 	union sigval si_value;
@@ -244,7 +244,7 @@ typedef struct {
 	void *si_addr;
 	int si_status;
 	int si_band;
-} siginfo_t;
+}siginfo_t;
 
 typedef struct __user_cap_data_struct {
   uint32_t effective;
@@ -3617,7 +3617,7 @@ int rev_open_tree(int dfd, const char  *path, unsigned flags){
   return rc;
 }
 
-int rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags){ 
+int rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags){
   int rc;
   asm volatile (
     "li a7, 429 \n\t"

@@ -9,150 +9,96 @@
 //
 
 #include "../include/RevFeature.h"
+#include <utility>
+#include <cstring>
+#include <string_view>
+
+using namespace SST::RevCPU;
 
 RevFeature::RevFeature( std::string Machine,
                         SST::Output *Output,
                         unsigned Min,
                         unsigned Max,
                         unsigned Id )
-  : machine(Machine), output(Output),
-    MinCost(Min), MaxCost(Max), Hart(Id),
-    features(0x00ull), xlen(64) {
+  : machine(std::move(Machine)), output(Output), MinCost(Min), MaxCost(Max),
+    Hart(Id), features(RV_UNKNOWN), xlen(0) {
   output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Initializing feature set from machine string=%s\n",
-                    Hart,
-                    machine.c_str());
+                  "Core %u ; Initializing feature set from machine string=%s\n",
+                  Hart,
+                  machine.c_str());
   if( !ParseMachineModel() )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to parse the machine model: %s\n", Machine.c_str());
-}
-
-RevFeature::~RevFeature(){
-}
-
-bool RevFeature::HasCompressed(){
-  if( IsModeEnabled(RV_C) )
-    return true;
-  return false;
-}
-
-bool RevFeature::IsRV32C(){
-  if( IsRV32() && !IsRV64() && IsModeEnabled(RV_C) )
-    return true;
-  return false;
-}
-
-bool RevFeature::IsRV32F(){
-  if( IsRV32() && IsModeEnabled(RV_F) )
-    return true;
-  return false;
-}
-
-bool RevFeature::IsRV64F(){
-  if( IsRV64() && IsModeEnabled(RV_F) )
-    return true;
-  return false;
-}
-
-bool RevFeature::IsRV32D(){
-  if( IsRV32() && IsModeEnabled(RV_D) )
-    return true;
-  return false;
-}
-
-bool RevFeature::IsRV64D(){
-  if( IsRV64() && IsModeEnabled(RV_D) )
-    return true;
-  return false;
-}
-
-bool RevFeature::IsModeEnabled( RevFeatureType Type ){
-  uint64_t mask = 0x01ull << Type;
-  if( (features & mask) > 0x00ull )
-    return true;
-
-  return false;
-}
-
-void RevFeature::SetMachineEntry( RevFeatureType Type ){
-  features |= (0x01ull << Type);
+                  "Error: failed to parse the machine model: %s\n", machine.c_str());
 }
 
 bool RevFeature::ParseMachineModel(){
-  if( machine.length() < 4 )
-    return false;
-
   // walk the feature string
+  const char* mac = machine.c_str();
 
   // -- step 1: parse the memory model
-  std::size_t found = machine.find("RV32",0);
-  if( found != std::string::npos)
+  if(!strncasecmp(mac, "RV32", 4))
     xlen = 32;
-
-  found = machine.find("RV64",0);
-  if( found != std::string::npos )
+  else if(!strncasecmp(mac, "RV64", 4))
     xlen = 64;
+  else
+    return false;
+  mac += 4;
 
-  output->verbose(CALL_INFO, 6, 0,
-                    "Core %d ; Setting XLEN to %d\n",
-                    Hart,
-                    xlen);
+  output->verbose(CALL_INFO, 6, 0, "Core %u ; Setting XLEN to %u\n", Hart, xlen);
+  output->verbose(CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", Hart, mac);
 
-  found += 5;
-  std::string arch = machine.substr(4,std::string::npos);
-  output->verbose(CALL_INFO,6,0,"Core %d ; Architecture string=%s\n", Hart, arch.c_str());
-  found = 0;
+  ///< List of architecture extensions. These must listed in canonical order
+  ///< as shown in Table 27.11, Chapter 27, of the RiSC-V Unpriviledged Spec.
+  ///< By using a canonical ordering, the extensions' presence can be tested
+  ///< in linear time complexity of the table and the string. Some of the
+  ///< extensions imply other extensions, so the extension flags are ORed.
+  static constexpr std::pair<std::string_view, uint32_t> table[] = {
+    { "E",          RV_E                                                      },
+    { "I",          RV_I                                                      },
+    { "M",          RV_M                                                      },
+    { "A",          RV_A                                                      },
+    { "F",          RV_F | RV_ZICSR                                           },
+    { "D",          RV_D | RV_F | RV_ZICSR                                    },
+    { "G",          RV_I | RV_M | RV_A | RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI },
+    { "Q",          RV_Q | RV_D | RV_F | RV_ZICSR                             },
+    { "L",          RV_L                                                      },
+    { "C",          RV_C                                                      },
+    { "B",          RV_B                                                      },
+    { "J",          RV_J                                                      },
+    { "T",          RV_T                                                      },
+    { "P",          RV_P                                                      },
+    { "V",          RV_V | RV_D | RV_F | RV_ZICSR                             },
+    { "N",          RV_N                                                      },
+    { "Zicsr",      RV_ZICSR                                                  },
+    { "Zifencei",   RV_ZIFENCEI                                               },
+    { "Zam",        RV_ZAM | RV_A                                             },
+    { "Ztso",       RV_ZTSO                                                   },
+    { "Zfa",        RV_ZFA | RV_F | RV_ZICSR                                  },
+  };
 
   // -- step 2: parse all the features
-  while( found < arch.length() ){
-    switch( arch[found] ){
-    case 'I':
-      SetMachineEntry(RV_I);
-      break;
-    case 'M':
-      SetMachineEntry(RV_M);
-      break;
-    case 'A':
-      SetMachineEntry(RV_A);
-      break;
-    case 'F':
-      SetMachineEntry(RV_F);
-      break;
-    case 'D':
-      SetMachineEntry(RV_D);
-      break;
-    case 'G':
-      xlen = 64;
-      SetMachineEntry(RV_I);
-      SetMachineEntry(RV_M);
-      SetMachineEntry(RV_A);
-      SetMachineEntry(RV_F);
-      SetMachineEntry(RV_D);
-      break;
-    case 'C':
-      SetMachineEntry(RV_C);
-      break;
-    case 'P':
-      SetMachineEntry(RV_P);
-      break;
-    default:
-    case 'E':
-    case 'Q':
-    case 'L':
-    case 'B':
-    case 'J':
-    case 'T':
-    case 'V':
-    case 'N':
-    case 'H':
-    case 'S':
-      return false;
-      break;
-    }
-    found = found + 1;
-  }
+  // Note: Extension strings, if present, must appear in the order listed in the table above.
+  if (*mac){
+    for (const auto& tab : table) {
+      // Look for an architecture string matching the current extension
+      if(!strncasecmp(mac, tab.first.data(), tab.first.size())){
 
-  return true;
+        // Set the machine entries for the matching extension
+        SetMachineEntry(RevFeatureType{tab.second});
+
+        // Move past the currently matching extension
+        mac += tab.first.size();
+
+        // Skip underscore separators
+        while (*mac == '_') ++mac;
+
+        // Success if end of string is reached
+        if (!*mac)
+          return true;
+      }
+    }
+  }
+  return false;
 }
 
 // EOF
