@@ -12,18 +12,22 @@
 #include "RevSysCalls.cc"
 
 using namespace SST::RevCPU;
+using MemSegment = RevMem::MemSegment;
 
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
                   RevLoader *Loader,
+                  std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
+                  std::function<uint32_t()> GetNewTID,
                   RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
-    opts(Opts), mem(Mem), loader(Loader), output(Output),
-    feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+    opts(Opts), mem(Mem), loader(Loader), AssignedThreads(AssignedThreads),
+    GetNewThreadID(GetNewTID), output(Output), feature(nullptr), 
+    PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -55,11 +59,6 @@ RevProc::RevProc( unsigned Id,
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%u\n", id);
-
-  // Initialize ThreadTable (NOTE: Default PID = 1024 + ProcID)
-  if( !InitThreadTable() )
-    output->fatal(CALL_INFO, -1,
-                  "Error: failed to initialize the ThreadTable for core=%u\n", id );
 
   // load the instruction tables
   if( !LoadInstructionTable() )
@@ -378,87 +377,21 @@ bool RevProc::LoadInstructionTable(){
 }
 
 bool RevProc::Reset(){
-  // reset the register file
-  for (int t=0;  t < _REV_HART_COUNT_; t++){
-    RevRegFile* regFile = GetRegFile(t);
-
-    // Zero all register data
-    memset(regFile, 0, sizeof(*regFile));
-
-    // initialize all the relevant program registers
-
-    // -- x2 : stack pointer
-    regFile->SetX(feature, 2, mem->GetStackTop());
-
-    // -- x3 : global pointer
-    auto gp = loader->GetSymbolAddr("__global_pointer$");
-    regFile->SetX(feature, 3, gp);
-
-    // -- x8 : frame pointer
-    regFile->SetX(feature, 8, gp);
-
-    Pipeline.clear();
+  // Reset the AssignedThreads
+  for( auto& Thread : AssignedThreads ){
+    // TODO: Make sure this is the correct way to reset the thread
+    Thread.reset();
   }
 
-  // set the pc
-  uint64_t StartAddr = 0x00ull;
-  if( !opts->GetStartAddr( id, StartAddr ) )
-    output->fatal(CALL_INFO, -1,
-                  "Error: failed to init the start address for core=%u\n", id);
-  std::string StartSymbol = "main";
-  if( StartAddr == 0x00ull ){
-    if( !opts->GetStartSymbol( id, StartSymbol ) )
-      output->fatal(CALL_INFO, -1,
-                    "Error: failed to init the start symbol address for core=%u\n", id);
+  Pipeline.clear();
+  
+  // SetupArgs();
 
-    StartAddr = loader->GetSymbolAddr(StartSymbol);
-  }
-
-  if( StartAddr == 0x00ull ){
-    // load "main" symbol
-    StartAddr = loader->GetSymbolAddr("main");
-    if( StartAddr == 0x00ull ){
-      output->fatal(CALL_INFO, -1,
-                    "Error: failed to auto discover address for <main> for core=%u\n", id);
-    }
-  }
-
-  SetupArgs();
-
-  for (int t=0;  t < _REV_HART_COUNT_; t++){
-    RevRegFile* regFile = GetRegFile(t);
-    regFile->SetPC(feature, StartAddr);
-  }
   HART_CTS.set();
 
   ECALL.clear();
 
   return true;
-}
-
-void RevProc::SetupArgs(){
-  auto Argv = opts->GetArgv();
-
-  // ----------------------------------
-  // We need to initialize the x10 register to include the value of ARGC
-  // This is >= 1 (the executable name is always included)
-  // We also need to initialize the ARGV pointer to the value
-  // of the ARGV base pointer in memory which is currently set to the
-  // program header region.  When we come out of reset, this is StackTop+60 bytes
-  // ----------------------------------
-
-  // calculate the total size of the argv's
-  uint64_t TotalSize = 0;
-  for( size_t i=0; i < Argv.size(); i++ ){
-    TotalSize += Argv[i].size() + 1;
-  }
-
-  for( int r = 0; r < _REV_HART_COUNT_; r++ ){
-    // setup argc
-    RevRegFile* regFile = GetRegFile(r);
-    regFile->SetX(feature, 10, Argv.size());
-    regFile->SetX(feature, 11, mem->GetStackTop() + 60);
-  }
 }
 
 RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
@@ -1722,6 +1655,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   }
 #endif
 
+ 
+  // Check for oversubsciprtion
+  if( AssignedThreads.size() > _REV_HART_COUNT_ ){
+    output->fatal(CALL_INFO, 99, "Proc has become oversubscribed which is not currently supported\n");
+  }
+  
   // -- MAIN PROGRAM LOOP --
   //
   // If the clock is down to zero, then fetch the next instruction
@@ -1729,29 +1668,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else, wait until the counter is decremented to zero to retire the instruction
   //
   //
-  if( PendingCtxSwitch ){
-    /*
-     * There was a ctx switch event triggered
-     * - Either a call to fork/clone
-     * - Child process finished executing
-     */
-    if( Pipeline.empty() ) {
-      if( !ChangeActivePID(NextPID) ){
-        output->fatal(CALL_INFO, -1,
-                      "Core %u ; Hart %u; PID %" PRIu32 " Failed to change active PID to %u\n",
-                      id, HartToDecode, GetActivePID(), NextPID);
-      } else {
-        RegFile->trigger = 0;
-        RegFile->cost = 0;
-        ExecPC = GetPC();
-        PendingCtxSwitch = false;
-        NextPID = 0;
-      }
-    }
-  }
-
-  for (int tID = 0; tID < _REV_HART_COUNT_; tID++){
-    HART_CTS[tID] = (GetRegFile(tID)->cost == 0);
+  
+  for( unsigned HartID=0; HartID<AssignedThreads.size(); HartID++ ){
+    HART_CTS[HartID] = (AssignedThreads.at(HartID)->GetRegFile()->cost == 0);
   }
 
   if( HART_CTS.any() && (!Halted)) {
@@ -1759,6 +1678,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     //Determine the active thread
     HartToDecode = GetHartID();
+    RegFile = AssignedThreads.at(HartToDecode)->GetRegFile();
 
     if( !PrefetchInst() ){
       Stalled = true;
@@ -1801,8 +1721,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %u ; Thread %d; Executing PC= 0x%" PRIx64 "\n",
-                    id, HartToExec, ExecPC);
+                    "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; Executing PC= 0x%" PRIx64 "\n",
+                    id, HartToExec, GetActiveThreadID(), ExecPC);
 
     // attempt to execute the instruction as long as it is NOT
     // the firmware jump PC
@@ -1824,10 +1744,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Ext->SetRegFile(RegFile);
 
       // -- BEGIN new pipelining implementation
-      if( !PendingCtxSwitch ){
-        Pipeline.push_back(std::make_pair(HartToExec, Inst));
-        Pipeline.back().second.hazard = std::make_shared<bool>(false);
-      }
+      Pipeline.push_back(std::make_pair(HartToExec, Inst));
+      Pipeline.back().second.hazard = std::make_shared<bool>(false);
 
       if( (Ext->GetName() == "RV32F") ||
           (Ext->GetName() == "RV32D") ||
@@ -1887,8 +1805,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
         // Ecall found
         output->verbose(CALL_INFO, 6, 0,
-                        "Core %u; HartID %d; PID %" PRIu32 " - Exception Raised: ECALL with code = %lu\n",
-                        id, HartToExec, GetActivePID(), RegFile->GetX<uint64_t>(feature, 17));
+                        "Core %u; HartID %d; ThreadID %" PRIu32 " - Exception Raised: ECALL with code = %lu\n",
+                        id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(feature, 17));
         #ifdef _REV_DEBUG_
         //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
         //                  << cRegFile->RV64[17] << std::endl;
@@ -2002,7 +1920,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
-    bool done = true;
+    // bool done = true;
     if( GetPC() == _PAN_FWARE_JUMP_ ){
       if( PExec != nullptr){
         uint64_t Addr = 0x00ull;
@@ -2014,329 +1932,426 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       "Core %u ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
                       id, Addr);
           SetPC(Addr);
-          done = false;
+          // done = false;
           break;
         case PanExec::QNull:
           // no work to do; spin on the firmware jump PC
           output->verbose(CALL_INFO, 6, 0,
                       "Core %u ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
                       id, ExecPC);
-          done = false;
+          // done = false;
           SetPC(_PAN_FWARE_JUMP_);
           break;
         case PanExec::QValid:
         case PanExec::QError:
-          done = true;
+          // done = true;
         default:
           break;
         }
       }
     }else if( GetPC() == 0x00ull ) {
+      // std::cout << "PC IS ZERO" << std::endl;
+      AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
+      ThreadStateChanges.set(HartToDecode);
       // PAN execution contexts not enabled, this is our last PC
-      done = true;
+      // AssignedThreads.at(HartToDecode)->SetState(ThreadState::DONE);
+      // done = true;
     }
 
     // determine if we have any outstanding memory requests
     if( mem->outstandingRqsts() ){
-      done = false;
+      // done = false;
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ ){
-      if( ActivePIDs.size() > HartToExec ) {
-        uint32_t CurrPID = ActivePIDs.at(HartToExec);
-        uint32_t ParentPID = ThreadTable.at(ActivePIDs.at(HartToExec))->GetParentPID();
-        output->verbose(CALL_INFO, 2, 0,
-                      "Thread %u completed execution.\n", CurrPID);
-        if(ParentPID != 0 ){
-          done = false;
-          output->verbose(CALL_INFO, 2, 0,
-                          "Switching from thread with PID = %u to its parent PID = %u\n",
-                          ActivePIDs.at(HartToExec), ParentPID);
-          CtxSwitchAlert(ParentPID);
-          SwapToParent = true;
-          ThreadTable.at(ActivePIDs.at(HartToExec))->SetState(ThreadState::Dead);
-        } else {
-          done = true;
-        }
+    if( AssignedThreads.size() >= HartToExec ){
+      output->verbose(CALL_INFO, 2, 0,
+                      "Thread %d is done\n", AssignedThreads.at(HartToExec)->GetThreadID());
+      AssignedThreads.at(HartToExec)->SetState(ThreadState::DONE);
+      ThreadStateChanges.set(HartToExec);
+      // done = true;
       }
     }
-    if( done ){
-      // we are really done, return
-      output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
-      Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
-      output->verbose(CALL_INFO, 2, 0,
-                      "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
-                      " Idle Cycles: %" PRIu64 " Eff: %f\n",
-                      Stats.totalCycles, Stats.cyclesBusy,
-                      Stats.cyclesIdle_Total, static_cast<double>(Stats.percentEff));
-      output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu32 " Bytes Written: %" PRIu32
-                      " Floats Read: %" PRIu32 " Doubles Read %" PRIu32 " Floats Exec: %" PRIu64
-                      " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
-                      mem->memStats.bytesRead,
-                      mem->memStats.bytesWritten,
-                      mem->memStats.floatsRead,
-                      mem->memStats.doublesRead,
-                      Stats.floatsExec,
-                      mem->memStats.TLBHits,
-                      mem->memStats.TLBMisses,
-                      Retired);
-      return false;
-    }
-  }
 
   return rtn;
 }
 
 
-/* System Call & Thread Stuff Below */
-uint32_t RevProc::HartToExecPID(){
-  if( ActivePIDs.size() <= HartToExec )
-    return ActivePIDs.at(HartToExec);
-  else{
-    return 0;
-  }
+void RevProc::EndExecution(){
+  output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
+  Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
+  output->verbose(CALL_INFO, 2, 0,
+                  "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
+                  " Idle Cycles: %" PRIu64 " Eff: %f\n",
+                  Stats.totalCycles, Stats.cyclesBusy,
+                  Stats.cyclesIdle_Total, static_cast<double>(Stats.percentEff));
+  output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu32 " Bytes Written: %" PRIu32
+                  " Floats Read: %" PRIu32 " Doubles Read %" PRIu32 " Floats Exec: %" PRIu64
+                  " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
+                  mem->memStats.bytesRead,
+                  mem->memStats.bytesWritten,
+                  mem->memStats.floatsRead,
+                  mem->memStats.doublesRead,
+                  Stats.floatsExec,
+                  mem->memStats.TLBHits,
+                  mem->memStats.TLBMisses,
+                  Retired);
+  return; 
 }
 
-std::shared_ptr<RevThreadCtx> RevProc::HartToExecCtx(){
-  if( HartToExec <= ActivePIDs.size() )
-    return ThreadTable.at(ActivePIDs.at(HartToExec));
-  else{
-    return 0;
+RevRegFile* RevProc::GetRegFile(uint16_t HartID) const{
+  if( AssignedThreads.size() < HartID ){
+    output->fatal(CALL_INFO, 1,
+                  "Tried to get RegFile for HartID = %d but there is no AssignedThread for that Hart\n", HartID);
   }
+  return AssignedThreads.at(HartID)->GetRegFile();
 }
 
-uint32_t RevProc::HartToDecodePID(){
-  if( ActivePIDs.size() <= HartToDecode )
-    return ActivePIDs.at(HartToDecode);
-  else{
-    output->fatal(CALL_INFO, -1,
-                  "Tried to get active PID for HartToDecode = %d but there is no ActivePID for that Hart\n",
-                  HartToExec);
-    return 1;
-  }
+void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
+  // tidAddr is the address we have to write the new thread's id to
+  output->verbose(CALL_INFO, 2, 0,
+                  "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC);
+  uint64_t ParentPID = GetActiveThreadID();
+
+  
+  // Create the new thread's memory
+  std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
+
+  // TODO: Copy TLS into new memory
+  // TODO: Potentially copy Parent's Stack to child's
+
+  // Create a new RevThread Object
+  std::shared_ptr<RevThread> NewThread =
+            std::make_shared<RevThread>(ParentPID, 
+                                        NewThreadMem->getBaseAddr()+_STACK_SIZE_,
+                                        firstPC, NewThreadMem);
+  NewThread->SetThreadID(NewTID);
+
+  // Save the address that will hold the new ThreadID
+  NewThreadInfo.emplace(NewThread);
+
+  return;
 }
-
-bool RevProc::UpdateRegFile(){
-  uint16_t HartID = GetHartID();
-  auto it = ThreadTable.find(ActivePIDs.at(HartID));
-  if( it != ThreadTable.end() ){
-    std::shared_ptr<RevThreadCtx> Ctx = it->second;
-    RegFile = Ctx->GetRegFile();
-    return true;
-  }
-  else {
-    output->fatal(CALL_INFO, -1,
-                  "Failed to find RegFile for PID = %u on Hart = %u \n", ActivePIDs.at(HartID), HartID);
-  }
-  return false;
-}
-
-
-RevRegFile* RevProc::GetRegFile(uint16_t HartID) const {
-  auto it = ThreadTable.find(ActivePIDs.at(HartID));
-  if( it != ThreadTable.end() ){
-    std::shared_ptr<RevThreadCtx> Ctx = it->second;
-    return Ctx->GetRegFile();
-  }
-  else {
-    output->fatal(CALL_INFO, -1,
-                  "Failed to find RegFile for PID = %u on Hart = %u \n", ActivePIDs.at(HartID), HartID);
-  }
-  return 0;
-}
-//
-
-bool RevProc::InitThreadTable(){
-  /*
-   * We need to create the first Ctx for each HART which will have the following attributes:
-   * - PID = 1024 + However many already initialized Ctx objects there are
-   * - ParentPID = 0 : (Only the first thread on every RevProc has ParentPID = 0)
-   * - MemStartAddr : Top of stack (NOTE: No functionality yet)
-   * - MemStartSize : _DEFAULT_THREAD_MEM_SIZE_ (NOTE: No functionality yet)
-  */
-
-  for( unsigned HartID=0; HartID<_REV_HART_COUNT_; HartID++){
-    uint32_t ParentPID = 0;
-    uint32_t FirstActivePID = mem->GetNewThreadPID();
-
-    auto DefaultCtx = std::make_shared<RevThreadCtx>(FirstActivePID, ParentPID);
-
-    // Set the first RegFile as ActiveRegFile
-    RegFile = DefaultCtx->GetRegFile();
-
-    // Add first PID to ActivePIDs
-    ActivePIDs.emplace_back(FirstActivePID);
-
-    // Add to ThreadTable
-    ThreadTable.emplace(FirstActivePID, DefaultCtx);
-  }
-  return true;
-}
-
-
-/* =====================================================
- * ChangeActivePID(NewPID)
- * =====================================================
- * This function changes the active pid of HartToExec
- *
- * Returns:
- * - True if successfully changed
- * - False if not (ie. PID doesn't exist)
- *
- * NOTES:
- * - This function automatically sets the new Ctx state to Running
- * - This function automatically sets old Ctx state to Waiting
- */
-bool RevProc::ChangeActivePID(uint32_t NewPID){
-  auto it = ThreadTable.find(NewPID);
-  if( it != ThreadTable.end() ){
-    std::shared_ptr<RevThreadCtx> NewCtx = it->second;
-    // If switching to parent, output the child is being removed from the ThreadTable
-    if( SwapToParent ){
-      output->verbose(CALL_INFO, 2, 0, "Removing ThreadCtx w/ PID = %u from the ThreadTable\n",
-                      ActivePIDs.at(HartToExec));
-      ThreadTable.erase(ActivePIDs.at(HartToExec));
-    }
-    ActivePIDs.at(HartToExec) = NewPID;
-    ActivePIDs.at(HartToDecode) = NewPID;
-    UpdateRegFile();
-    return true;
-  }else{
-    // TODO: Maybe don't output fatal?
-    output->fatal(CALL_INFO, -1,
-                  "Failed to load ctx w/ PID=%u into Hart=%d because PID does not exist in ThreadTable\n",
-                  NewPID, HartToExec);
-    return false;
-  }
-}
-
-/* NOTE: This is currently not used but will be once more complex scheduling is supported */
-/* ChangeActivePID(PID, HartID)
- * This function changes the active pid of HartID
- *
- * Returns:
- * - True if successfully changed
- * - False if not (ie. PID doesn't exist)
- *
- * NOTES:
- * - This function automatically sets the new Ctx state to Running
- * - This function automatically sets old Ctx state to Waiting
- */
-bool RevProc::ChangeActivePID(uint32_t PID, uint16_t HartID){
-  auto NewActiveCtx = ThreadTable.find(PID);
-  if( NewActiveCtx != ThreadTable.end() ){
-    if( ActivePIDs.size() >= HartID ){
-      ActivePIDs.at(HartToExec) = PID;
-      return true;
-    } else {
-      // TODO: Maybe don't output fatal?
-      output->fatal(CALL_INFO, -1, "Failed to load ctx w/ PID=%u into Hart=%u because Hart does not exist",
-                    PID, HartToExec);
-      return false;
-    }
-  }else{
-    // TODO: Maybe don't output fatal?
-    output->fatal(CALL_INFO, -1,
-                  "Failed to load ctx w/ PID=%u into Hart=%u because PID does not exist in ThreadTable",
-                  PID, HartToExec);
-    return false;
-  }
-}
-
-/* Returns vector of all PIDs in the ThreadTable */
-std::vector<uint32_t> RevProc::GetPIDs(){
-  std::vector<uint32_t> PIDs;
-  for( const auto& Thread : ThreadTable ){
-    PIDs.push_back(Thread.first);
-  }
-  return PIDs;
-}
-
-/*
- * There are a few assumptions made by this function
- * - The Active Thread is the one creating the child
- * - The child duplicates the parents RegFile
- * - Automatically adds ChildCtx to the current Procs ThreadTable
- * - The new Child will start with ThreadState::Ready
-*/
-uint32_t RevProc::CreateChildCtx() {
-  // We get the currently executing PID's context as this is assumed to be the parent
-  std::shared_ptr<RevThreadCtx> ParentCtx = ThreadTable.at(ActivePIDs.at(HartToExec));
-
-  // Get new PID from global counter in RevMem
-  uint32_t ChildPID = mem->GetNewThreadPID();
-
-  // Create ChildCtx as a copy of ParentCtx
-  auto ChildCtx = std::make_shared<RevThreadCtx>(ChildPID,
-                                       ActivePIDs.at(HartToExec));
-
-  // Child's Regfile is the same as the parent's with the exception of return value
-  ChildCtx->DuplicateRegFile(*RegFile);
-
-  // Add child to Proc's ThreadTable
-  ThreadTable.emplace(ChildPID, ChildCtx);
-
-  // Get Child's regfile so we can make the below modifications
-  RevRegFile* ChildRegFile = ChildCtx->GetRegFile();
-
-  // Zero the child's cause registers as they have no exceptions raised
-  ChildRegFile->RV64_SCAUSE = 0;
-  ChildRegFile->RV32_SCAUSE = 0;
-
-  // The child's return value from fork/clone is 0
-  ChildRegFile->SetX(feature, 10, 0);
-
-  // Add ChildPID to list of Parent's Children
-  ParentCtx->AddChildPID(ChildPID); // NOTE: This has no functionality at this point
-
-  return ChildPID;
-}
-
 
 /* ========================================= */
 /* System Call (ecall) Implementations Below */
 /* ========================================= */
 void RevProc::InitEcallTable(){
   Ecalls = {
-    {5,   &RevProc::ECALL_setxattr},
-    {17,  &RevProc::ECALL_getcwd},          // Not implemented
-    {23,  &RevProc::ECALL_dup},             // Not implemented
-    {24,  &RevProc::ECALL_dup3},            // Not implemented
-    {34,  &RevProc::ECALL_mkdirat},
-    {49,  &RevProc::ECALL_chdir},
-    {54,  &RevProc::ECALL_fchownat},        // Not implemented
-    {55,  &RevProc::ECALL_fchown},          // Not implemented
-    {56,  &RevProc::ECALL_openat},
-    {57,  &RevProc::ECALL_close},           // Not implemented
-    {63,  &RevProc::ECALL_read},            // Not implemented
-    {64,  &RevProc::ECALL_write},
-    {77,  &RevProc::ECALL_tee},             // Not implemented
-    {81,  &RevProc::ECALL_sync},            // Not implemented
-    {82,  &RevProc::ECALL_fsync},           // Not implemented
-    {83,  &RevProc::ECALL_fdatasync},       // Not implemented
-    {93,  &RevProc::ECALL_exit},
-    {94,  &RevProc::ECALL_exit_group},      // Not implemented
-    {95,  &RevProc::ECALL_waitid},          // Not implemented
-    {99,  &RevProc::ECALL_set_robust_list}, // Not implemented
-    {100, &RevProc::ECALL_get_robust_list}, // Not implementedt
-    {101, &RevProc::ECALL_nanosleep},       // Not implemented
-    {107, &RevProc::ECALL_timer_create},    // Not implemented
-    {110, &RevProc::ECALL_timer_delete},    // Not implemented
-    {135, &RevProc::ECALL_rt_sigprocmask},  // Not implemented
-    {169, &RevProc::ECALL_gettimeofday},    // Not implemented
-    {170, &RevProc::ECALL_settimeofday},    // Not implemented
-    {172, &RevProc::ECALL_getpid},
-    {173, &RevProc::ECALL_getppid},
-    {178, &RevProc::ECALL_gettid},
-    {214, &RevProc::ECALL_brk},             // Not implemented
-    {215, &RevProc::ECALL_munmap},
-    {220, &RevProc::ECALL_clone},           // Fork functionality works but not clone3
-    {222, &RevProc::ECALL_mmap},            //
-    {403, &RevProc::ECALL_clock_gettime},   // Not implemented
-    {404, &RevProc::ECALL_clock_settime},   // Not implemented
-    {408, &RevProc::ECALL_timer_gettime},   // Not implemented
-    {409, &RevProc::ECALL_timer_settime},   // Not implemented
-    };
+     { 0,   &RevProc::ECALL_io_setup},               //  rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
+     { 1,   &RevProc::ECALL_io_destroy},             //  rev_io_destroy(aio_context_t ctx)
+     { 2,   &RevProc::ECALL_io_submit},              //  rev_io_submit(aio_context_t, long, struct iocb  *  *)
+     { 3,   &RevProc::ECALL_io_cancel},              //  rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result)
+     { 4,   &RevProc::ECALL_io_getevents},           //  rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout)
+     { 5,   &RevProc::ECALL_setxattr},               //  rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
+     { 6,   &RevProc::ECALL_lsetxattr},              //  rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
+     { 7,   &RevProc::ECALL_fsetxattr},              //  rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags)
+     { 8,   &RevProc::ECALL_getxattr},               //  rev_getxattr(const char  *path, const char  *name, void  *value, size_t size)
+     { 9,   &RevProc::ECALL_lgetxattr},              //  rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size)
+    { 10,  &RevProc::ECALL_fgetxattr},              //  rev_fgetxattr(int fd, const char  *name, void  *value, size_t size)
+    { 11,  &RevProc::ECALL_listxattr},              //  rev_listxattr(const char  *path, char  *list, size_t size)
+    { 12,  &RevProc::ECALL_llistxattr},             //  rev_llistxattr(const char  *path, char  *list, size_t size)
+    { 13,  &RevProc::ECALL_flistxattr},             //  rev_flistxattr(int fd, char  *list, size_t size)
+    { 14,  &RevProc::ECALL_removexattr},            //  rev_removexattr(const char  *path, const char  *name)
+    { 15,  &RevProc::ECALL_lremovexattr},           //  rev_lremovexattr(const char  *path, const char  *name)
+    { 16,  &RevProc::ECALL_fremovexattr},           //  rev_fremovexattr(int fd, const char  *name)
+    { 17,  &RevProc::ECALL_getcwd},                 //  rev_getcwd(char  *buf, unsigned long size)
+    { 18,  &RevProc::ECALL_lookup_dcookie},         //  rev_lookup_dcookie(u64 cookie64, char  *buf, size_t len)
+    { 19,  &RevProc::ECALL_eventfd2},               //  rev_eventfd2(unsigned int count, int flags)
+    { 20,  &RevProc::ECALL_epoll_create1},          //  rev_epoll_create1(int flags)
+    { 21,  &RevProc::ECALL_epoll_ctl},              //  rev_epoll_ctl(int epfd, int op, int fd, struct epoll_event  *event)
+    { 22,  &RevProc::ECALL_epoll_pwait},            //  rev_epoll_pwait(int epfd, struct epoll_event  *events, int maxevents, int timeout, const sigset_t  *sigmask, size_t sigsetsize)
+    { 23,  &RevProc::ECALL_dup},                    //  rev_dup(unsigned int fildes)
+    { 24,  &RevProc::ECALL_dup3},                   //  rev_dup3(unsigned int oldfd, unsigned int newfd, int flags)
+    { 25,  &RevProc::ECALL_fcntl64},                //  rev_fcntl64(unsigned int fd, unsigned int cmd, unsigned long arg)
+    { 26,  &RevProc::ECALL_inotify_init1},          //  rev_inotify_init1(int flags)
+    { 27,  &RevProc::ECALL_inotify_add_watch},      //  rev_inotify_add_watch(int fd, const char  *path, u32 mask)
+    { 28,  &RevProc::ECALL_inotify_rm_watch},       //  rev_inotify_rm_watch(int fd, __s32 wd)
+    { 29,  &RevProc::ECALL_ioctl},                  //  rev_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
+    { 30,  &RevProc::ECALL_ioprio_set},             //  rev_ioprio_set(int which, int who, int ioprio)
+    { 31,  &RevProc::ECALL_ioprio_get},             //  rev_ioprio_get(int which, int who)
+    { 32,  &RevProc::ECALL_flock},                  //  rev_flock(unsigned int fd, unsigned int cmd)
+    { 33,  &RevProc::ECALL_mknodat},                //  rev_mknodat(int dfd, const char  * filename, umode_t mode, unsigned dev)
+    { 34,  &RevProc::ECALL_mkdirat},                //  rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
+    { 35,  &RevProc::ECALL_unlinkat},               //  rev_unlinkat(int dfd, const char  * pathname, int flag)
+    { 36,  &RevProc::ECALL_symlinkat},              //  rev_symlinkat(const char  * oldname, int newdfd, const char  * newname)
+    { 37,  &RevProc::ECALL_linkat},                 //  rev_unlinkat(int dfd, const char  * pathname, int flag)
+    { 38,  &RevProc::ECALL_renameat},               //  rev_renameat(int olddfd, const char  * oldname, int newdfd, const char  * newname)
+    { 39,  &RevProc::ECALL_umount},                 //  rev_umount(char  *name, int flags)
+    { 40,  &RevProc::ECALL_mount},                  //  rev_umount(char  *name, int flags)
+    { 41,  &RevProc::ECALL_pivot_root},             //  rev_pivot_root(const char  *new_root, const char  *put_old)
+    { 42,  &RevProc::ECALL_ni_syscall},             //  rev_ni_syscall(void)
+    { 43,  &RevProc::ECALL_statfs64},               //  rev_statfs64(const char  *path, size_t sz, struct statfs64  *buf)
+    { 44,  &RevProc::ECALL_fstatfs64},              //  rev_fstatfs64(unsigned int fd, size_t sz, struct statfs64  *buf)
+    { 45,  &RevProc::ECALL_truncate64},             //  rev_truncate64(const char  *path, loff_t length)
+    { 46,  &RevProc::ECALL_ftruncate64},            //  rev_ftruncate64(unsigned int fd, loff_t length)
+    { 47,  &RevProc::ECALL_fallocate},              //  rev_fallocate(int fd, int mode, loff_t offset, loff_t len)
+    { 48,  &RevProc::ECALL_faccessat},              //  rev_faccessat(int dfd, const char  *filename, int mode)
+    { 49,  &RevProc::ECALL_chdir},                  //  rev_chdir(const char  *filename)
+    { 50,  &RevProc::ECALL_fchdir},                 //  rev_fchdir(unsigned int fd)
+    { 51,  &RevProc::ECALL_chroot},                 //  rev_chroot(const char  *filename)
+    { 52,  &RevProc::ECALL_fchmod},                 //  rev_fchmod(unsigned int fd, umode_t mode)
+    { 53,  &RevProc::ECALL_fchmodat},               //  rev_fchmodat(int dfd, const char  * filename, umode_t mode)
+    { 54,  &RevProc::ECALL_fchownat},               //  rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag)
+    { 55,  &RevProc::ECALL_fchown},                 //  rev_fchown(unsigned int fd, uid_t user, gid_t group)
+    { 56,  &RevProc::ECALL_openat},                 //  rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
+    { 57,  &RevProc::ECALL_close},                  //  rev_close(unsigned int fd)
+    { 58,  &RevProc::ECALL_vhangup},                //  rev_vhangup(void)
+    { 59,  &RevProc::ECALL_pipe2},                  //  rev_pipe2(int  *fildes, int flags)
+    { 60,  &RevProc::ECALL_quotactl},               //  rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr)
+    { 61,  &RevProc::ECALL_getdents64},             //  rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int count)
+    { 62,  &RevProc::ECALL_lseek},                  //  rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence)
+    { 63,  &RevProc::ECALL_read},                   //  rev_read(unsigned int fd, char  *buf, size_t count)
+    { 64,  &RevProc::ECALL_write},                  //  rev_write(unsigned int fd, const char  *buf, size_t count)
+    { 65,  &RevProc::ECALL_readv},                  //  rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
+    { 66,  &RevProc::ECALL_writev},                 //  rev_writev(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
+    { 67,  &RevProc::ECALL_pread64},                //  rev_pread64(unsigned int fd, char  *buf, size_t count, loff_t pos)
+    { 68,  &RevProc::ECALL_pwrite64},               //  rev_pwrite64(unsigned int fd, const char  *buf, size_t count, loff_t pos)
+    { 69,  &RevProc::ECALL_preadv},                 //  rev_preadv(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
+    { 70,  &RevProc::ECALL_pwritev},                //  rev_pwritev(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
+    { 71,  &RevProc::ECALL_sendfile64},             //  rev_sendfile64(int out_fd, int in_fd, loff_t  *offset, size_t count)
+    { 72,  &RevProc::ECALL_pselect6_time32},        //  rev_pselect6_time32(int, fd_set  *, fd_set  *, fd_set  *, struct old_timespec32  *, void  *)
+    { 73,  &RevProc::ECALL_ppoll_time32},           //  rev_ppoll_time32(struct pollfd  *, unsigned int, struct old_timespec32  *, const sigset_t  *, size_t)
+    { 74,  &RevProc::ECALL_signalfd4},              //  rev_signalfd4(int ufd, sigset_t  *user_mask, size_t sizemask, int flags)
+    { 75,  &RevProc::ECALL_vmsplice},               //  rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
+    { 76,  &RevProc::ECALL_splice},                 //  rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
+    { 77,  &RevProc::ECALL_tee},                    //  rev_tee(int fdin, int fdout, size_t len, unsigned int flags)
+    { 78,  &RevProc::ECALL_readlinkat},             //  rev_readlinkat(int dfd, const char  *path, char  *buf, int bufsiz)
+    { 79,  &RevProc::ECALL_newfstatat},             //  rev_newfstatat(int dfd, const char  *filename, struct stat  *statbuf, int flag)
+    { 80,  &RevProc::ECALL_newfstat},               //  rev_newfstat(unsigned int fd, struct stat  *statbuf)
+    { 81,  &RevProc::ECALL_sync},                   //  rev_sync(void)
+    { 82,  &RevProc::ECALL_fsync},                  //  rev_fsync(unsigned int fd)
+    { 83,  &RevProc::ECALL_fdatasync},              //  rev_fdatasync(unsigned int fd)
+    { 84,  &RevProc::ECALL_sync_file_range2},       //  rev_sync_file_range2(int fd, unsigned int flags, loff_t offset, loff_t nbytes)
+    { 84,  &RevProc::ECALL_sync_file_range},        //  rev_sync_file_range(int fd, loff_t offset, loff_t nbytes, unsigned int flags)
+    { 85,  &RevProc::ECALL_timerfd_create},         //  rev_timerfd_create(int clockid, int flags)
+    { 86,  &RevProc::ECALL_timerfd_settime},        //  rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
+    { 87,  &RevProc::ECALL_timerfd_gettime},        //  rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
+    { 88,  &RevProc::ECALL_utimensat},              //  rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
+    { 89,  &RevProc::ECALL_acct},                   //  rev_acct(const char  *name)
+    { 90,  &RevProc::ECALL_capget},                 //  rev_capget(cap_user_header_t header, cap_user_data_t dataptr)
+    { 91,  &RevProc::ECALL_capset},                 //  rev_capset(cap_user_header_t header, const cap_user_data_t data)
+    { 92,  &RevProc::ECALL_personality},            //  rev_personality(unsigned int personality)
+    { 93,  &RevProc::ECALL_exit},                   //  rev_exit(int error_code)
+    { 94,  &RevProc::ECALL_exit_group},             //  rev_exit_group(int error_code)
+    { 95,  &RevProc::ECALL_waitid},                 //  rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru)
+    { 96,  &RevProc::ECALL_set_tid_address},        //  rev_set_tid_address(int  *tidptr)
+    { 97,  &RevProc::ECALL_unshare},                //  rev_unshare(unsigned long unshare_flags)
+    { 98,  &RevProc::ECALL_futex},                  //  rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
+    { 99,  &RevProc::ECALL_set_robust_list},        //  rev_set_robust_list(struct robust_list_head  *head, size_t len)
+    { 100, &RevProc::ECALL_get_robust_list},        //  rev_get_robust_list(int pid, struct robust_list_head  *  *head_ptr, size_t  *len_ptr)
+    { 101, &RevProc::ECALL_nanosleep},              //  rev_nanosleep(struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
+    { 102, &RevProc::ECALL_getitimer},              //  rev_getitimer(int which, struct __kernel_old_itimerval  *value)
+    { 103, &RevProc::ECALL_setitimer},              //  rev_setitimer(int which, struct __kernel_old_itimerval  *value, struct __kernel_old_itimerval  *ovalue)
+    { 104, &RevProc::ECALL_kexec_load},             //  rev_kexec_load(unsigned long entry, unsigned long nr_segments, struct kexec_segment  *segments, unsigned long flags)
+    { 105, &RevProc::ECALL_init_module},            //  rev_init_module(void  *umod, unsigned long len, const char  *uargs)
+    { 106, &RevProc::ECALL_delete_module},          //  rev_delete_module(const char  *name_user, unsigned int flags)
+    { 107, &RevProc::ECALL_timer_create},           //  rev_timer_create(clockid_t which_clock, struct sigevent  *timer_event_spec, timer_t  * created_timer_id)
+    { 108, &RevProc::ECALL_timer_gettime},          //  rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
+    { 109, &RevProc::ECALL_timer_getoverrun},       //  rev_timer_getoverrun(timer_t timer_id)
+    { 110, &RevProc::ECALL_timer_settime},          //  rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
+    { 111, &RevProc::ECALL_timer_delete},           //  rev_timer_delete(timer_t timer_id)
+    { 112, &RevProc::ECALL_clock_settime},          //  rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
+    { 113, &RevProc::ECALL_clock_gettime},          //  rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 114, &RevProc::ECALL_clock_getres},           //  rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 115, &RevProc::ECALL_clock_nanosleep},        //  rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
+    { 116, &RevProc::ECALL_syslog},                 //  rev_syslog(int type, char  *buf, int len)
+    { 117, &RevProc::ECALL_ptrace},                 //  rev_ptrace(long request, long pid, unsigned long addr, unsigned long data)
+    { 118, &RevProc::ECALL_sched_setparam},         //  rev_sched_setparam(pid_t pid, struct sched_param  *param)
+    { 119, &RevProc::ECALL_sched_setscheduler},     //  rev_sched_setscheduler(pid_t pid, int policy, struct sched_param  *param)
+    { 120, &RevProc::ECALL_sched_getscheduler},     //  rev_sched_getscheduler(pid_t pid)
+    { 121, &RevProc::ECALL_sched_getparam},         //  rev_sched_getparam(pid_t pid, struct sched_param  *param)
+    { 122, &RevProc::ECALL_sched_setaffinity},      //  rev_sched_setaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
+    { 123, &RevProc::ECALL_sched_getaffinity},      //  rev_sched_getaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
+    { 124, &RevProc::ECALL_sched_yield},            //  rev_sched_yield(void)
+    { 125, &RevProc::ECALL_sched_get_priority_max}, //  rev_sched_get_priority_max(int policy)
+    { 126, &RevProc::ECALL_sched_get_priority_min}, //  rev_sched_get_priority_min(int policy)
+    { 127, &RevProc::ECALL_sched_rr_get_interval},  //  rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
+    { 128, &RevProc::ECALL_restart_syscall},        //  rev_restart_syscall(void)
+    { 129, &RevProc::ECALL_kill},                   //  rev_kill(pid_t pid, int sig)
+    { 130, &RevProc::ECALL_tkill},                  //  rev_tkill(pid_t pid, int sig)
+    { 131, &RevProc::ECALL_tgkill},                 //  rev_tgkill(pid_t tgid, pid_t pid, int sig)
+    { 132, &RevProc::ECALL_sigaltstack},            //  rev_sigaltstack(const struct sigaltstack  *uss, struct sigaltstack  *uoss)
+    { 133, &RevProc::ECALL_rt_sigsuspend},          //  rev_rt_sigsuspend(sigset_t  *unewset, size_t sigsetsize)
+    { 134, &RevProc::ECALL_rt_sigaction},           //  rev_rt_sigaction(int, const struct sigaction  *, struct sigaction  *, size_t)
+    { 135, &RevProc::ECALL_rt_sigprocmask},         //  rev_rt_sigprocmask(int how, sigset_t  *set, sigset_t  *oset, size_t sigsetsize)
+    { 136, &RevProc::ECALL_rt_sigpending},          //  rev_rt_sigpending(sigset_t  *set, size_t sigsetsize)
+    { 137, &RevProc::ECALL_rt_sigtimedwait_time32}, //  rev_rt_sigtimedwait_time32(const sigset_t  *uthese, siginfo_t  *uinfo, const struct old_timespec32  *uts, size_t sigsetsize)
+    { 138, &RevProc::ECALL_rt_sigqueueinfo},        //  rev_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t  *uinfo)
+    { 140, &RevProc::ECALL_setpriority},            //  rev_setpriority(int which, int who, int niceval)
+    { 141, &RevProc::ECALL_getpriority},            //  rev_getpriority(int which, int who)
+    { 142, &RevProc::ECALL_reboot},                 //  rev_reboot(int magic1, int magic2, unsigned int cmd, void  *arg)
+    { 143, &RevProc::ECALL_setregid},               //  rev_setregid(gid_t rgid, gid_t egid)
+    { 144, &RevProc::ECALL_setgid},                 //  rev_setgid(gid_t gid)
+    { 145, &RevProc::ECALL_setreuid},               //  rev_setreuid(uid_t ruid, uid_t euid)
+    { 146, &RevProc::ECALL_setuid},                 //  rev_setuid(uid_t uid)
+    { 147, &RevProc::ECALL_setresuid},              //  rev_setresuid(uid_t ruid, uid_t euid, uid_t suid)
+    { 148, &RevProc::ECALL_getresuid},              //  rev_getresuid(uid_t  *ruid, uid_t  *euid, uid_t  *suid)
+    { 149, &RevProc::ECALL_setresgid},              //  rev_setresgid(gid_t rgid, gid_t egid, gid_t sgid)
+    { 150, &RevProc::ECALL_getresgid},              //  rev_getresgid(gid_t  *rgid, gid_t  *egid, gid_t  *sgid)
+    { 151, &RevProc::ECALL_setfsuid},               //  rev_setfsuid(uid_t uid)
+    { 152, &RevProc::ECALL_setfsgid},               //  rev_setfsgid(gid_t gid)
+    { 153, &RevProc::ECALL_times},                  //  rev_times(struct tms  *tbuf)
+    { 154, &RevProc::ECALL_setpgid},                //  rev_setpgid(pid_t pid, pid_t pgid)
+    { 155, &RevProc::ECALL_getpgid},                //  rev_getpgid(pid_t pid)
+    { 156, &RevProc::ECALL_getsid},                 //  rev_getsid(pid_t pid)
+    { 157, &RevProc::ECALL_setsid},                 //  rev_setsid(void)
+    { 158, &RevProc::ECALL_getgroups},              //  rev_getgroups(int gidsetsize, gid_t  *grouplist)
+    { 159, &RevProc::ECALL_setgroups},              //  rev_setgroups(int gidsetsize, gid_t  *grouplist)
+    { 160, &RevProc::ECALL_newuname},               //  rev_newuname(struct new_utsname  *name)
+    { 161, &RevProc::ECALL_sethostname},            //  rev_sethostname(char  *name, int len)
+    { 162, &RevProc::ECALL_setdomainname},          //  rev_setdomainname(char  *name, int len)
+    { 163, &RevProc::ECALL_getrlimit},              //  rev_getrlimit(unsigned int resource, struct rlimit  *rlim)
+    { 164, &RevProc::ECALL_setrlimit},              //  rev_setrlimit(unsigned int resource, struct rlimit  *rlim)
+    { 165, &RevProc::ECALL_getrusage},              //  rev_getrusage(int who, struct rusage  *ru)
+    { 166, &RevProc::ECALL_umask},                  //  rev_umask(int mask)
+    { 167, &RevProc::ECALL_prctl},                  //  rev_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
+    { 168, &RevProc::ECALL_getcpu},                 //  rev_getcpu(unsigned  *cpu, unsigned  *node, struct getcpu_cache  *cache)
+    { 169, &RevProc::ECALL_gettimeofday},           //  rev_gettimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
+    { 170, &RevProc::ECALL_settimeofday},           //  rev_settimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
+    { 171, &RevProc::ECALL_adjtimex},               //  rev_adjtimex(struct __kernel_timex  *txc_p)
+    { 172, &RevProc::ECALL_getpid},                 //  rev_getpid(void)
+    { 173, &RevProc::ECALL_getppid},                //  rev_getppid(void)
+    { 174, &RevProc::ECALL_getuid},                 //  rev_getuid(void)
+    { 175, &RevProc::ECALL_geteuid},                //  rev_geteuid(void)
+    { 176, &RevProc::ECALL_getgid},                 //  rev_getgid(void)
+    { 177, &RevProc::ECALL_getegid},                //  rev_getegid(void)
+    { 178, &RevProc::ECALL_gettid},                 //  rev_gettid(void)
+    { 179, &RevProc::ECALL_sysinfo},                //  rev_sysinfo(struct sysinfo  *info)
+    { 180, &RevProc::ECALL_mq_open},                //  rev_mq_open(const char  *name, int oflag, umode_t mode, struct mq_attr  *attr)
+    { 181, &RevProc::ECALL_mq_unlink},              //  rev_mq_unlink(const char  *name)
+    { 182, &RevProc::ECALL_mq_timedsend},           //  rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 183, &RevProc::ECALL_mq_timedreceive},        //  rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 184, &RevProc::ECALL_mq_notify},              //  rev_mq_notify(mqd_t mqdes, const struct sigevent  *notification)
+    { 185, &RevProc::ECALL_mq_getsetattr},          //  rev_mq_getsetattr(mqd_t mqdes, const struct mq_attr  *mqstat, struct mq_attr  *omqstat)
+    { 186, &RevProc::ECALL_msgget},                 //  rev_msgget(key_t key, int msgflg)
+    { 187, &RevProc::ECALL_msgctl},                 //  rev_old_msgctl(int msqid, int cmd, struct msqid_ds  *buf)
+    { 188, &RevProc::ECALL_msgrcv},                 //  rev_msgrcv(int msqid, struct msgbuf  *msgp, size_t msgsz, long msgtyp, int msgflg)
+    { 189, &RevProc::ECALL_msgsnd},                 //  rev_msgsnd(int msqid, struct msgbuf  *msgp, size_t msgsz, int msgflg)
+    { 190, &RevProc::ECALL_semget},                 //  rev_semget(key_t key, int nsems, int semflg)
+    { 191, &RevProc::ECALL_semctl},                 //  rev_semctl(int semid, int semnum, int cmd, unsigned long arg)
+    { 192, &RevProc::ECALL_semtimedop},             //  rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
+    { 193, &RevProc::ECALL_semop},                  //  rev_semop(int semid, struct sembuf  *sops, unsigned nsops)
+    { 194, &RevProc::ECALL_shmget},                 //  rev_shmget(key_t key, size_t size, int flag)
+    { 195, &RevProc::ECALL_shmctl},                 //  rev_old_shmctl(int shmid, int cmd, struct shmid_ds  *buf)
+    { 196, &RevProc::ECALL_shmat},                  //  rev_shmat(int shmid, char  *shmaddr, int shmflg)
+    { 197, &RevProc::ECALL_shmdt},                  //  rev_shmdt(char  *shmaddr)
+    { 198, &RevProc::ECALL_socket},                 //  rev_socket(int, int, int)
+    { 199, &RevProc::ECALL_socketpair},             //  rev_socketpair(int, int, int, int  *)
+    { 200, &RevProc::ECALL_bind},                   //  rev_bind(int, struct sockaddr  *, int)
+    { 201, &RevProc::ECALL_listen},                 //  rev_listen(int, int)
+    { 202, &RevProc::ECALL_accept},                 //  rev_accept(int, struct sockaddr  *, int  *)
+    { 203, &RevProc::ECALL_connect},                //  rev_connect(int, struct sockaddr  *, int)
+    { 204, &RevProc::ECALL_getsockname},            //  rev_getsockname(int, struct sockaddr  *, int  *)
+    { 205, &RevProc::ECALL_getpeername},            //  rev_getpeername(int, struct sockaddr  *, int  *)
+    { 206, &RevProc::ECALL_sendto},                 //  rev_sendto(int, void  *, size_t, unsigned, struct sockaddr  *, int)
+    { 207, &RevProc::ECALL_recvfrom},               //  rev_recvfrom(int, void  *, size_t, unsigned, struct sockaddr  *, int  *)
+    { 208, &RevProc::ECALL_setsockopt},             //  rev_setsockopt(int fd, int level, int optname, char  *optval, int optlen)
+    { 209, &RevProc::ECALL_getsockopt},             //  rev_getsockopt(int fd, int level, int optname, char  *optval, int  *optlen)
+    { 210, &RevProc::ECALL_shutdown},               //  rev_shutdown(int, int)
+    { 211, &RevProc::ECALL_sendmsg},                //  rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags)
+    { 212, &RevProc::ECALL_recvmsg},                //  rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags)
+    { 213, &RevProc::ECALL_readahead},              //  rev_readahead(int fd, loff_t offset, size_t count)
+    { 214, &RevProc::ECALL_brk},                    //  rev_brk(unsigned long brk)
+    { 215, &RevProc::ECALL_munmap},                 //  rev_munmap(unsigned long addr, size_t len)
+    { 216, &RevProc::ECALL_mremap},                 //  rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr)
+    { 217, &RevProc::ECALL_add_key},                //  rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid)
+    { 218, &RevProc::ECALL_request_key},            //  rev_request_key(const char  *_type, const char  *_description, const char  *_callout_info, key_serial_t destringid)
+    { 219, &RevProc::ECALL_keyctl},                 //  rev_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
+    { 220, &RevProc::ECALL_clone},                  //  rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *)
+    { 221, &RevProc::ECALL_execve},                 //  rev_execve(const char  *filename, const char  *const  *argv, const char  *const  *envp)
+    { 222, &RevProc::ECALL_mmap},                   //  rev_old_mmap(struct mmap_arg_struct  *arg)
+    { 223, &RevProc::ECALL_fadvise64_64},           //  rev_fadvise64_64(int fd, loff_t offset, loff_t len, int advice)
+    { 224, &RevProc::ECALL_swapon},                 //  rev_swapon(const char  *specialfile, int swap_flags)
+    { 225, &RevProc::ECALL_swapoff},                //  rev_swapoff(const char  *specialfile)
+    { 226, &RevProc::ECALL_mprotect},               //  rev_mprotect(unsigned long start, size_t len, unsigned long prot)
+    { 227, &RevProc::ECALL_msync},                  //  rev_msync(unsigned long start, size_t len, int flags)
+    { 228, &RevProc::ECALL_mlock},                  //  rev_mlock(unsigned long start, size_t len)
+    { 229, &RevProc::ECALL_munlock},                //  rev_munlock(unsigned long start, size_t len)
+    { 230, &RevProc::ECALL_mlockall},               //  rev_mlockall(int flags)
+    { 231, &RevProc::ECALL_munlockall},             //  rev_munlockall(void)
+    { 232, &RevProc::ECALL_mincore},                //  rev_mincore(unsigned long start, size_t len, unsigned char  * vec)
+    { 233, &RevProc::ECALL_madvise},                //  rev_madvise(unsigned long start, size_t len, int behavior)
+    { 234, &RevProc::ECALL_remap_file_pages},       //  rev_remap_file_pages(unsigned long start, unsigned long size, unsigned long prot, unsigned long pgoff, unsigned long flags)
+    { 235, &RevProc::ECALL_mbind},                  //  rev_mbind(unsigned long start, unsigned long len, unsigned long mode, const unsigned long  *nmask, unsigned long maxnode, unsigned flags)
+    { 236, &RevProc::ECALL_get_mempolicy},          //  rev_get_mempolicy(int  *policy, unsigned long  *nmask, unsigned long maxnode, unsigned long addr, unsigned long flags)
+    { 237, &RevProc::ECALL_set_mempolicy},          //  rev_set_mempolicy(int mode, const unsigned long  *nmask, unsigned long maxnode)
+    { 238, &RevProc::ECALL_migrate_pages},          //  rev_migrate_pages(pid_t pid, unsigned long maxnode, const unsigned long  *from, const unsigned long  *to)
+    { 239, &RevProc::ECALL_move_pages},             //  rev_move_pages(pid_t pid, unsigned long nr_pages, const void  *  *pages, const int  *nodes, int  *status, int flags)
+    { 240, &RevProc::ECALL_rt_tgsigqueueinfo},      //  rev_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig, siginfo_t  *uinfo)
+    { 241, &RevProc::ECALL_perf_event_open},        //  rev_perf_event_open(")
+    { 242, &RevProc::ECALL_accept4},                //  rev_accept4(int, struct sockaddr  *, int  *, int)
+    { 243, &RevProc::ECALL_recvmmsg_time32},        //  rev_recvmmsg_time32(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags, struct old_timespec32  *timeout)
+    { 260, &RevProc::ECALL_wait4},                  //  rev_wait4(pid_t pid, int  *stat_addr, int options, struct rusage  *ru)
+    { 261, &RevProc::ECALL_prlimit64},              //  rev_prlimit64(pid_t pid, unsigned int resource, const struct rlimit64  *new_rlim, struct rlimit64  *old_rlim)
+    { 262, &RevProc::ECALL_fanotify_init},          //  rev_fanotify_init(unsigned int flags, unsigned int event_f_flags)
+    { 263, &RevProc::ECALL_fanotify_mark},          //  rev_fanotify_mark(int fanotify_fd, unsigned int flags, u64 mask, int fd, const char  *pathname)
+    { 264, &RevProc::ECALL_name_to_handle_at},      //  rev_name_to_handle_at(int dfd, const char  *name, struct file_handle  *handle, int  *mnt_id, int flag)
+    { 265, &RevProc::ECALL_open_by_handle_at},      //  rev_open_by_handle_at(int mountdirfd, struct file_handle  *handle, int flags)
+    { 266, &RevProc::ECALL_clock_adjtime},          //  rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
+    { 267, &RevProc::ECALL_syncfs},                 //  rev_syncfs(int fd)
+    { 268, &RevProc::ECALL_setns},                  //  rev_setns(int fd, int nstype)
+    { 269, &RevProc::ECALL_sendmmsg},               //  rev_sendmmsg(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags)
+    { 270, &RevProc::ECALL_process_vm_readv},       //  rev_process_vm_readv(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
+    { 271, &RevProc::ECALL_process_vm_writev},      //  rev_process_vm_writev(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
+    { 272, &RevProc::ECALL_kcmp},                   //  rev_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long idx2)
+    { 273, &RevProc::ECALL_finit_module},           //  rev_finit_module(int fd, const char  *uargs, int flags)
+    { 274, &RevProc::ECALL_sched_setattr},          //  rev_sched_setattr(pid_t pid, struct sched_attr  *attr, unsigned int flags)
+    { 275, &RevProc::ECALL_sched_getattr},          //  rev_sched_getattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags)
+    { 276, &RevProc::ECALL_renameat2},              //  rev_renameat2(int olddfd, const char  *oldname, int newdfd, const char  *newname, unsigned int flags)
+    { 277, &RevProc::ECALL_seccomp},                //  rev_seccomp(unsigned int op, unsigned int flags, void  *uargs)
+    { 278, &RevProc::ECALL_getrandom},              //  rev_getrandom(char  *buf, size_t count, unsigned int flags)
+    { 279, &RevProc::ECALL_memfd_create},           //  rev_memfd_create(const char  *uname_ptr, unsigned int flags)
+    { 280, &RevProc::ECALL_bpf},                    //  rev_bpf(int cmd, union bpf_attr *attr, unsigned int size)
+    { 281, &RevProc::ECALL_execveat},               //  rev_execveat(int dfd, const char  *filename, const char  *const  *argv, const char  *const  *envp, int flags)
+    { 282, &RevProc::ECALL_userfaultfd},            //  rev_userfaultfd(int flags)
+    { 283, &RevProc::ECALL_membarrier},             //  rev_membarrier(int cmd, unsigned int flags, int cpu_id)
+    { 284, &RevProc::ECALL_mlock2},                 //  rev_mlock2(unsigned long start, size_t len, int flags)
+    { 285, &RevProc::ECALL_copy_file_range},        //  rev_copy_file_range(int fd_in, loff_t  *off_in, int fd_out, loff_t  *off_out, size_t len, unsigned int flags)
+    { 286, &RevProc::ECALL_preadv2},                //  rev_preadv2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
+    { 287, &RevProc::ECALL_pwritev2},               //  rev_pwritev2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
+    { 288, &RevProc::ECALL_pkey_mprotect},          //  rev_pkey_mprotect(unsigned long start, size_t len, unsigned long prot, int pkey)
+    { 289, &RevProc::ECALL_pkey_alloc},             //  rev_pkey_alloc(unsigned long flags, unsigned long init_val)
+    { 290, &RevProc::ECALL_pkey_free},              //  rev_pkey_free(int pkey)
+    { 291, &RevProc::ECALL_statx},                  //  rev_statx(int dfd, const char  *path, unsigned flags, unsigned mask, struct statx  *buffer)
+    { 292, &RevProc::ECALL_io_pgetevents},          //  rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
+    { 293, &RevProc::ECALL_rseq},                   //  rev_rseq(struct rseq  *rseq, uint32_t rseq_len, int flags, uint32_t sig)
+    { 294, &RevProc::ECALL_kexec_file_load},        //  rev_kexec_file_load(int kernel_fd, int initrd_fd, unsigned long cmdline_len, const char  *cmdline_ptr, unsigned long flags)
+    { 403, &RevProc::ECALL_clock_gettime},          //  rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 404, &RevProc::ECALL_clock_settime},          //  rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
+    { 405, &RevProc::ECALL_clock_adjtime},          //  rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
+    { 406, &RevProc::ECALL_clock_getres},           //  rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 407, &RevProc::ECALL_clock_nanosleep},        //  rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
+    { 408, &RevProc::ECALL_timer_gettime},          //  rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
+    { 409, &RevProc::ECALL_timer_settime},          //  rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
+    { 410, &RevProc::ECALL_timerfd_gettime},        //  rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
+    { 411, &RevProc::ECALL_timerfd_settime},        //  rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
+    { 412, &RevProc::ECALL_utimensat},              //  rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
+    { 416, &RevProc::ECALL_io_pgetevents},          //  rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
+    { 418, &RevProc::ECALL_mq_timedsend},           //  rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 419, &RevProc::ECALL_mq_timedreceive},        //  rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 420, &RevProc::ECALL_semtimedop},             //  rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
+    { 422, &RevProc::ECALL_futex},                  //  rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
+    { 423, &RevProc::ECALL_sched_rr_get_interval},  //  rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
+    { 424, &RevProc::ECALL_pidfd_send_signal},      //  rev_pidfd_send_signal(int pidfd, int sig, siginfo_t  *info, unsigned int flags)
+    { 425, &RevProc::ECALL_io_uring_setup},         //  rev_io_uring_setup(u32 entries, struct io_uring_params  *p)
+    { 426, &RevProc::ECALL_io_uring_enter},         //  rev_io_uring_enter(unsigned int fd, u32 to_submit, u32 min_complete, u32 flags, const sigset_t  *sig, size_t sigsz)
+    { 427, &RevProc::ECALL_io_uring_register},      //  rev_io_uring_register(unsigned int fd, unsigned int op, void  *arg, unsigned int nr_args)
+    { 428, &RevProc::ECALL_open_tree},              //  rev_open_tree(int dfd, const char  *path, unsigned flags)
+    { 429, &RevProc::ECALL_move_mount},             //  rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags)
+    { 430, &RevProc::ECALL_fsopen},                 //  rev_fsopen(const char  *fs_name, unsigned int flags)
+    { 431, &RevProc::ECALL_fsconfig},               //  rev_fsconfig(int fs_fd, unsigned int cmd, const char  *key, const void  *value, int aux)
+    { 432, &RevProc::ECALL_fsmount},                //  rev_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags)
+    { 433, &RevProc::ECALL_fspick},                 //  rev_fspick(int dfd, const char  *path, unsigned int flags)
+    { 434, &RevProc::ECALL_pidfd_open},             //  rev_pidfd_open(pid_t pid, unsigned int flags)
+    { 435, &RevProc::ECALL_clone3},                 //  rev_clone3(struct clone_args  *uargs, size_t size)
+    { 436, &RevProc::ECALL_close_range},            //  rev_close_range(unsigned int fd, unsigned int max_fd, unsigned int flags)
+    { 437, &RevProc::ECALL_openat2},                //  rev_openat2(int dfd, const char  *filename, struct open_how *how, size_t size)
+    { 438, &RevProc::ECALL_pidfd_getfd},            //  rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
+    { 439, &RevProc::ECALL_faccessat2},             //  rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
+    { 440, &RevProc::ECALL_process_madvise},        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
+    { 1000, &RevProc::ECALL_pthread_create},        //  
+    { 1001, &RevProc::ECALL_pthread_join},          //  
+  };
 }
 
 /// Parse a string for an ECALL starting at address straddr, updating the state
@@ -2412,5 +2427,20 @@ void RevProc::ExecEcall(RevInst& inst){
   }
 }
 
-// EOF
+uint32_t RevProc::GetActiveThreadID(){
+  uint32_t ActiveThreadID = 0;
+  if( HartToDecode != _REV_INVALID_HART_ID_ ){
+    if( AssignedThreads.size() >= HartToDecode ){
+      ActiveThreadID = AssignedThreads.at(HartToDecode)->GetThreadID();
+    } 
+    else {
+      output->fatal(CALL_INFO, 1, "HartToDecode = %d but there are only %zu threads assigned to this Proc. This might be a bug\n", HartToDecode, AssignedThreads.size());
+    }
+  } 
+  else {
+    output->fatal(CALL_INFO, 1, "HartToDecode = %d is invalid. This is a bug\n", HartToDecode);
+  }
+  return ActiveThreadID;
+}
+
 // EOF

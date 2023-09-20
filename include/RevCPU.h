@@ -23,6 +23,7 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include <functional>
 
 // -- SST Headers
 #include "SST.h"
@@ -33,6 +34,7 @@
 #include "RevMemCtrl.h"
 #include "RevLoader.h"
 #include "RevProc.h"
+#include "RevThread.h"
 #include "RevNIC.h"
 #include "PanNet.h"
 #include "PanExec.h"
@@ -198,6 +200,15 @@ public:
                               {"TLBHitsPerCore",      "TLB hits per core",                                    "count",  1},
                               {"TLBMissesPerCore",    "TLB misses per core",                                  "count",  1},
                       )
+      
+  // Passed as a function pointer to each RevProc for when they encounter a function that 
+  // results in a new RevThread being spawned 
+  std::function<uint32_t()> GetNewTID() {
+      return std::function<uint32_t()>([this]() { return GetNewThreadID(); });
+  }
+
+private:
+  unsigned numCores;                  ///< RevCPU: number of RISC-V cores
   unsigned msgPerCycle;               ///< RevCPU: number of messages to send per cycle
   unsigned RDMAPerCycle;              ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
   unsigned testStage;                 ///< RevCPU: controls the PAN Test harness staging
@@ -209,6 +220,37 @@ public:
   RevLoader *Loader;                  ///< RevCPU: RISC-V loader
   std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
   bool *Enabled;                      ///< RevCPU: Completion structure
+
+  std::map<uint32_t, std::shared_ptr<RevThread>> Threads;                ///< RevCPU: Global table of threads (Actual object lives here... all other mentions of a RevThread are simply pointers to the instance in this table)
+
+  ///< RevCPU: Threads assigned to each processor 
+  /// Ex.
+  ///   AssignedThreads[i][j] = RevThread that is currently  
+  std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads;  
+
+  // Init Thread 
+  void InitThread(std::shared_ptr<RevThread> ThreadToInit);
+
+  void SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature);
+
+  void CheckBlockedThreads();
+
+  // Used to check if a thread that is waiting to join can proceed
+  bool ThreadCanProceed(uint32_t TID);
+
+  // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
+  // Create a priority_queue for the RevThreads based on the value of Threads.at(ThreadID)->GetPriority()
+  std::vector<uint32_t> ThreadQueue = {};
+
+  // Used for tracking which threads are waiting for pthread_join
+  std::set<uint32_t> BlockedThreads = {};
+
+  // Used for tracking threads that are complete
+  std::set<uint32_t> CompletedThreads = {};
+
+  uint32_t NextThreadID = 1024;
+
+  uint32_t GetNewThreadID(){ return NextThreadID++; }
 
   uint8_t PrivTag;                    ///< RevCPU: private tag locator
   // TODO: LToken is used everywhere as uint32_t but was declared as uint64_t

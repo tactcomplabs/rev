@@ -18,6 +18,7 @@
 #include <functional>
 
 using namespace SST::RevCPU;
+using MemSegment = RevMem::MemSegment;
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
   : memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output) {
@@ -31,13 +32,9 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
 
-  /*
-   * The first mem segment is the entirety of the memory space specified in the .py
-   * This is updated once RevLoader initializes and we know where the static
-   * memory ends (ie. __BSS_END__) at which point we replace this first segment with
-   * a segment representing the static memory (0 -> __BSS_END__)
-   */
-  // AddMemSeg(0, memSize+1);
+  // Add the 1024 bytes for the program header information
+  AddMemSegAt(stacktop, 1024);
+
 }
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
@@ -56,6 +53,7 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
+  AddMemSegAt(stacktop, 1024);
 }
 
 bool RevMem::outstandingRqsts(){
@@ -310,23 +308,17 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 }
 
 // This function will change a decent amount in an upcoming PR
-bool RevMem::isValidVirtAddr(const uint64_t vAddr){
-  for(const auto& MemSeg : MemSegs ){
-    if( MemSeg->contains(vAddr) ){
+bool RevMem::isValidVirtAddr(const uint64_t& vAddr){
+  for(const auto& Seg : MemSegs ){
+    if( Seg->contains(vAddr) ){
       return true;
-    }
-  }
-  if( vAddr >= (stacktop - _STACK_SIZE_ ) ){
-    if( vAddr < memSize ){
-      return true;
-    }
-    else {
-      return false;
-    }
+    } 
   }
 
-  if( vAddr >= heapstart && vAddr <= heapend ){
-    return true;
+  for( const auto& Seg : ThreadMemSegs ){ 
+    if( Seg->contains(vAddr) ){
+      return true;
+    }
   }
   return false;
 }
@@ -399,6 +391,23 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
 
   return BaseAddr;
 }
+
+std::shared_ptr<MemSegment> RevMem::AddThreadMem(){
+  // Calculate the BaseAddr of the segment 
+  uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
+  ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
+  // Page boundary between 
+  NextThreadMemAddr = BaseAddr - pageSize - 1;
+  return ThreadMemSegs.back();
+}
+
+void RevMem::SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size){
+  TLSBaseAddr = BaseAddr;
+  TLSSize += Size;
+  ThreadMemSize = _STACK_SIZE_ + TLSSize;
+  return;
+}
+
 
 // AllocMem differs from AddMemSeg because it first searches the FreeMemSegs
 // vector to see if there is a free segment that will fit the new data
@@ -838,28 +847,6 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   return true;
 }
 
-/*
-* Func: GetNewThreadPID
-* - This function is used to interact with the global
-*   PID counter inside of RevMem
-* - When a new RevThreadCtx is created, it is assigned
-*   the value of PIDCount++
-* - This ensures no collisions because all RevProcs access
-*   the same RevMem instance
-*/
-uint32_t RevMem::GetNewThreadPID(){
-
-  #ifdef _REV_DEBUG_
-  std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl;
-  #endif
-  /*
-  * NOTE: A mutex is acquired solely to prevent race conditions
-  *       if multiple RevProc's create new Ctx objects at the
-  *       same time
-  */
-  PIDCount++;
-  return PIDCount;
-}
 
 
 // This function is used to remove/shrink a memory segment
