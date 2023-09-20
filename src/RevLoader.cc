@@ -12,6 +12,7 @@
 #include "RevMem.h"
 
 using namespace SST::RevCPU;
+using MemSegment = RevMem::MemSegment;
 
 RevLoader::RevLoader( std::string Exe, std::string Args,
                       RevMem *Mem, SST::Output *Output )
@@ -290,11 +291,26 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
+    // Check if the program header is PT_TLS
+    // - If so, save the addr & size of the TLS segment
+    if( ph[i].p_type == PT_TLS ){
+      // std::cout << "TLS Segment: " << std::endl;
+      // std::cout << "  Addr: 0x" << std::hex << ph[i].p_paddr << std::endl;
+      // std::cout << "  Size: 0x" << std::hex << ph[i].p_memsz << std::endl;
+      // std::cout << "  Align: 0x" << std::hex << ph[i].p_align << std::endl;
+      TLSBaseAddr = ph[i].p_paddr;
+      TLSSize = ph[i].p_memsz;
+      mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
+    }
+    
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
       mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
     }
   }
+
+  // Add the first thread's memory
+  mem->AddThreadMem();
 
   uint64_t StaticDataEnd = 0;
   uint64_t BSSEnd = 0;
@@ -518,6 +534,7 @@ bool RevLoader::LoadProgramArgs(){
     ArgArray += 8;
   }
 
+  mem->SetNextThreadMemAddr(OldStackTop - _STACK_SIZE_ - mem->GetTLSSize() - __PAGE_SIZE__);
   return true;
 }
 
