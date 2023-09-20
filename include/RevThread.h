@@ -23,7 +23,7 @@
 #include "RevMem.h"
 #include "RevInstTable.h"
 
-namespace SST::RevCPU{
+using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
 
 /// RevThread: Enum for tracking state of a software thread (Unused)
@@ -136,5 +136,4 @@ private:
   uint32_t WaitingToJoinTID = __INVALID_TID__;
 };
 
-} // namespace SST::RevCPU
 #endif
