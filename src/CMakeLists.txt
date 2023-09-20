@@ -7,8 +7,9 @@
 #
 
 set(RevCPUSrcs
-  PanExec.cc
-  PanNet.cc
+  # TODO conditionaly add based on ENV{_PAN_}
+  #   PanExec.cc
+  #   PanNet.cc
   RevCPU.cc
   RevExt.cc
   RevFeature.cc

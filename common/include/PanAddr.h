@@ -11,6 +11,8 @@
 #ifndef _PANADDR_H_
 #define _PANADDR_H_
 
+#ifdef _PAN_
+
 #define _PAN_COMPLETION_ADDR_       0x30000000
 #define _PAN_RDMA_MAILBOX_          0x30000008
 #define _PAN_RDMA_MAX_ENTRIES_      255
@@ -42,6 +44,8 @@ typedef struct{
   char Buffer[_PAN_XFER_BUF_];        ///< PRTIME_XFER: Bounce buffers for base packets
 }PRTIME_XFER;
 
-#endif
+#endif // _PAN_
+
+#endif // _PANADDR_H_
 
 // EOF

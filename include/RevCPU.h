@@ -34,15 +34,15 @@
 #include "RevLoader.h"
 #include "RevProc.h"
 #include "RevNIC.h"
-#include "PanNet.h"
-#include "PanExec.h"
+//#include "PanNet.h"
+// #include "PanExec.h"
 #include "RevCoProc.h"
 #include "RevRand.h"
 
 // -- PAN Common Headers
-#include "../common/include/PanAddr.h"
+//#include "../common/include/PanAddr.h"
 
-#define _MAX_PAN_TEST_ 11
+//#define _MAX_PAN_TEST_ 11
 
 namespace SST::RevCPU{
 
@@ -226,10 +226,12 @@ public:
   uint64_t PrevAddr;                  ///< RevCPU: previous address for handling PAN messages
 
   bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
+  #ifdef _PAN_
   bool EnablePAN;                     ///< RevCPU: Flag for enabling the PAN operations
   bool EnablePANTest;                 ///< RevCPU: Flag for enabling the PAN test operations
   bool EnablePANStats;                ///< RevCPU: Flag for enabling PAN statistics
   bool EnableRDMAMBox;                ///< RevCPU: Enable the RDMA Mailbox
+  #endif
 
   bool EnableMemH;                    ///< RevCPU: Enable memHierarchy
   bool EnableCoProc;                  ///< RevCPU: Enable a co-processor attached to all cores
@@ -247,15 +249,19 @@ public:
   SST::Output output;                 ///< RevCPU: SST output handler
 
   nicAPI *Nic;                        ///< RevCPU: Network interface controller
+  #ifdef _PAN_
   panNicAPI *PNic;                    ///< RevCPU: PAN network interface controller
   PanExec *PExec;                     ///< RevCPU: PAN execution context
+  #endif
   RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
 
   std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
 
   SST::Clock::Handler<RevCPU>* ClockHandler;  ///< RevCPU: Clock Handler
 
+#ifdef _PAN_
   std::queue<std::pair<panNicEvent *, int>> SendMB;  ///< RevCPU: outgoing command mailbox; pair<Cmd, Dest>
+#endif
   std::queue<std::pair<uint32_t, char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
   std::list<std::pair<uint8_t, int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>
   std::vector<std::tuple<uint8_t,
@@ -349,12 +355,15 @@ public:
   /// RevCPU:: decode the fault width
   void DecodeFaultWidth(const std::string& width);
 
+#ifdef _PAN_
   /// RevCPU: executes the PAN test harness
   void ExecPANTest();
+#endif
 
   /// RevCPU: RevNIC message handler
   void handleMessage(SST::Event *ev);
 
+#ifdef _PAN_
   /// RevCPU: PAN NIC message handler
   void handlePANMessage(SST::Event *ev);
 
@@ -378,6 +387,7 @@ public:
 
   /// RevCPU: converts an RDMA payload to a panNicEvent command
   bool PANConvertRDMAtoEvent(uint64_t Addr, panNicEvent *event);
+#endif
 
   /// RevCPU: Creates a unique tag for this message
   uint8_t createTag();
@@ -385,11 +395,15 @@ public:
   /// RevCPU: Registers all the internal statistics
   void registerStatistics();
 
+#ifdef _PAN_
   // RevCPU: Register send message statistics
   void registerSendCmd(panNicEvent *event);
+#endif
 
+#ifdef _PAN_
   /// RevCPU: handle a zero address Put command where the NIC chooses the destination buffer
   bool PANHandleZeroAddrPut(uint32_t Size, void *Data);
+#endif
 
   /// RevCPU: handle fault injection
   void HandleFaultInjection(SST::Cycle_t currentCycle);
@@ -406,6 +420,7 @@ public:
   /// RevCPU: handle ALU fault
   void HandleALUFault(SST::Cycle_t currentCycle);
 
+#ifdef _PAN_
   /// RevCPU: handle the SyncGet command
   void PANHandleSyncGet(panNicEvent *event);
 
@@ -492,6 +507,7 @@ public:
   /// RevCPU: construct a generic success command response in the target rtn packet.
   ///         Does not push onto the send mailbox
   void PANBuildBasicSuccess(panNicEvent *event, panNicEvent *rtn);
+#endif
 
   /// RevCPU: updates sst statistics on a per core basis
   void UpdateCoreStatistics(uint16_t coreNum);

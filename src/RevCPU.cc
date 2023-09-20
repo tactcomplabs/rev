@@ -26,6 +26,7 @@ const char splash_msg[] = "\
 \n\
 ";
 
+#ifdef _PAN_
 const char pan_splash_msg[] = "\
 \n\
        __|__\n\
@@ -39,23 +40,34 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     EnableNIC(false), EnablePAN(false), EnablePANStats(false), EnableMemH(false),
     ReadyForRevoke(false), Nic(nullptr), PNic(nullptr), PExec(nullptr), Ctrl(nullptr),
     ClockHandler(nullptr) {
+#else
+RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
+  : SST::Component(id), testStage(0), PrivTag(0), address(-1), EnableMemH(false),
+    ReadyForRevoke(false), Nic(nullptr), Ctrl(nullptr),
+    ClockHandler(nullptr) {
+#endif
 
   const int Verbosity = params.find<int>("verbose", 0);
 
   // Initialize the output handler
   output.init("RevCPU[" + getName() + ":@p:@t]: ", Verbosity, 0, SST::Output::STDOUT);
 
+  #ifdef _PAN_
   // Determine whether we're running the test harness
   EnablePANTest = params.find<bool>("enable_test", 0);
+  #endif
 
   // Register a new clock handler
   {
     const std::string cpuClock = params.find<std::string>("clock", "1GHz");
+    #ifdef _PAN_
     if( EnablePANTest ){
       ClockHandler = new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTickPANTest);
       timeConverter = registerClock(cpuClock, ClockHandler);
       testIters = params.find<unsigned>("testIters", 255);
-    }else{
+    } else 
+    #endif
+    {
       ClockHandler = new SST::Clock::Handler<RevCPU>(this, &RevCPU::clockTick);
       timeConverter = registerClock(cpuClock, ClockHandler);
     }
@@ -69,8 +81,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // We must always derive the number of cores before initializing the options
   // If the PAN tests are enabled, override the number cores and force them to '0'
   numCores = params.find<unsigned>("numCores", "1");
+  #ifdef _PAN_
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
+  #endif
   output.verbose(CALL_INFO, 1, 0, "Building Rev with %u cores\n", numCores);
 
   // read the binary executable name
@@ -136,6 +150,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
   }
 
+#ifdef _PAN_
   // See if we should the load PAN network interface controller
   EnablePAN = params.find<bool>("enable_pan", 0);
   EnablePANStats = params.find<bool>("enable_pan_stats", 0);
@@ -171,15 +186,19 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
     if( EnablePANStats )
       registerStatistics();
-  }else{
+  }else
+  #endif
+  {
     RevokeHasArrived = true;
   }
 
+
+#ifdef _PAN_
   // See if we should load the test harness as opposed to a binary payload
   if( EnablePANTest && (!EnablePAN) ){
     output.fatal(CALL_INFO, -1, "Error: enabling PAN tests requires a pan_nic");
   }
-
+#endif
   // Look for the fault injection logic
   EnableFaults = params.find<bool>("enable_faults", 0);
   if( EnableFaults ){
@@ -203,8 +222,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     if( !Mem )
       output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
   }else{
+    #ifdef _PAN_
     if( EnablePAN )
       output.fatal(CALL_INFO, -1, "Error: PAN does not currently support memHierarchy\n");
+    #endif
 
     Ctrl = loadUserSubComponent<RevMemCtrl>("memory");
     if( !Ctrl )
@@ -287,6 +308,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   }
 
 
+#ifdef _PAN_
   // setup the PAN execution contexts
   if( EnablePAN ){
     // setup the PAN target device execution context
@@ -297,6 +319,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       }
     }
   }
+#endif
 
   // Create the completion array
   Enabled = new bool [numCores];
@@ -308,17 +331,21 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     const unsigned Splash = params.find<bool>("splash", 0);
 
     if( Splash > 0 ){
+      #ifdef _PAN_
       if( EnablePANTest )
         output.verbose(CALL_INFO, 1, 0, pan_splash_msg);
       else
+      #endif
         output.verbose(CALL_INFO, 1, 0, splash_msg);
     }
   }
 
   // Done with initialization
+  #ifdef _PAN_
   if( EnablePANTest )
     output.verbose(CALL_INFO, 1, 0, "Initialization of PANTest harness complete.\n");
   else
+  #endif
     output.verbose(CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n");
 }
 
@@ -336,7 +363,9 @@ RevCPU::~RevCPU(){
     delete CoProcs[i];
   }
 
+  #ifdef _PAN_
   delete PExec;
+  #endif
 
   // delete the memory controller if present
   delete Ctrl;
@@ -395,24 +424,25 @@ void RevCPU::DecodeFaultCodes(const std::vector<std::string>& faults){
 }
 
 void RevCPU::initNICMem(){
+  #ifdef _PAN_
   output.verbose(CALL_INFO, 1, 0, "Initializing NIC memory.\n");
-  #if 1
   // See PanAddr.h
   Mem->AddMemSegAt(_PAN_COMPLETION_ADDR_, sizeof(uint64_t));
   Mem->AddMemSegAt(_PAN_COMPLETION_ADDR_, sizeof(MBoxEntry) * _PAN_RDMA_MAX_ENTRIES_);
   Mem->AddMemSegAt(_PAN_PE_TABLE_ADDR_,   sizeof(PEMap) * _PAN_PE_TABLE_MAX_ENTRIES_);
   Mem->AddMemSegAt(_PAN_XFER_BUF_ADDR_,   sizeof(PRTIME_XFER) * _PAN_XFER_BUF_);
-  #endif
   // init all the entries to -1
   uint64_t ptr = _PAN_PE_TABLE_ADDR_;
   uint64_t host = 2;
   int64_t id = -1;
+
   for( unsigned i = 0; i < _PAN_PE_TABLE_MAX_ENTRIES_; i++ ){
     Mem->Write(0, ptr, id);
     Mem->Write(0, ptr+8, host);
     ptr += sizeof(PEMap);
   }
   ptr = _PAN_PE_TABLE_ADDR_;
+
 
   // the first entry in the table is our own, then its
   // all the other nodes sequentially
@@ -436,7 +466,9 @@ void RevCPU::initNICMem(){
     Mem->Write(0, ptr, host);
     ptr += 8;
   }
+  #endif
 }
+
 
 void RevCPU::registerStatistics(){
   SyncGetSend = registerStatistic<uint64_t>("SyncGetSend");
@@ -494,11 +526,13 @@ void RevCPU::setup(){
     Nic->setup();
     address = Nic->getAddress();
   }
+  #ifdef _PAN_
   if( EnablePAN ){
     PNic->setup();
     address = PNic->getAddress();
     initNICMem();
   }
+  #endif
   if( EnableMemH ){
     Ctrl->setup();
   }
@@ -510,8 +544,10 @@ void RevCPU::finish(){
 void RevCPU::init( unsigned int phase ){
   if( EnableNIC )
     Nic->init(phase);
+  #ifdef _PAN_
   if( EnablePAN )
     PNic->init(phase);
+  #endif
   if( EnableMemH )
     Ctrl->init(phase);
 }
@@ -522,6 +558,7 @@ void RevCPU::handleMessage(Event *ev){
   delete event;
 }
 
+#ifdef _PAN_
 //
 // This is the PAN Network Transport Module Handler
 //
@@ -538,6 +575,7 @@ void RevCPU::handlePANMessage(Event *ev){
 
   delete event;
 }
+
 
 void RevCPU::PANSignalMsgRecv(uint8_t tag, uint64_t sig){
   unsigned iter = 0;
@@ -1005,16 +1043,9 @@ void RevCPU::PANHandleRevoke(panNicEvent *event){
 
   ReadyForRevoke = true;
 
-#if 0
-  // write the completion
-  uint64_t Addr = _PAN_COMPLETION_ADDR_;
-  uint64_t Payload = 0x01ull;
-  Mem->WriteMem(Addr, 8, &Payload);
-
-  PNic->RevokeToken();
-#endif
   PANBuildRawSuccess(event);
 }
+
 
 void RevCPU::PANHandleHalt(panNicEvent *event){
   output.verbose(CALL_INFO, 5, 0, "Handling PAN HALT Request\n");
@@ -1393,6 +1424,7 @@ void RevCPU::handleNetPANMessage(panNicEvent *event){
     break;
   }
 }
+
 
 void RevCPU::registerSendCmd(panNicEvent *event){
   switch( event->getOpcode() ){
@@ -1957,6 +1989,7 @@ bool RevCPU::PANProcessRDMAMailbox(){
 
   return true;
 }
+#endif
 
 uint8_t RevCPU::createTag(){
   uint8_t rtn = 0;
@@ -1964,13 +1997,14 @@ uint8_t RevCPU::createTag(){
     rtn = 0b00000000;
     PrivTag = 0b00000001;
     return 0b00000000;
-  }else{
+ }else{
     rtn = PrivTag;
     PrivTag +=1;
   }
   return rtn;
 }
 
+#ifdef _PAN_
 void RevCPU::ExecPANTest(){
 
   // wait for the previous test to finish
@@ -2242,6 +2276,8 @@ bool RevCPU::clockTickPANTest( SST::Cycle_t currentCycle ){
   return rtn;
 }
 
+#endif
+
 void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
   output.verbose(CALL_INFO, 4, 0, "FAULT: Crack fault injected at cycle: %" PRIu64 "\n",
                  currentCycle);
@@ -2376,6 +2412,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       }
     }
   }
+  #ifdef _PAN_
   // Clock the PAN network transport module
   if( EnablePAN ){
 
@@ -2399,6 +2436,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     if( !processPANZeroAddr() )
       output.fatal(CALL_INFO, -1, "Error: failed to process the PAN zero address put queue\n" );
   }
+  #endif
 
   // check to see if we need to inject a fault
   if( EnableFaults ){
@@ -2420,7 +2458,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   // check to see if the network has any outstanding messages: fixme
+  #ifdef _PAN_
   if( !SendMB.empty() || !TrackTags.empty() || !ZeroRqst.empty() || !RevokeHasArrived ){
+  #else
+  if( !TrackTags.empty() || !ZeroRqst.empty() || !RevokeHasArrived ){
+  #endif
 #ifdef _REV_DEBUG_
     if( RevokeHasArrived && !PNic->IsHost() ){
       if( !SendMB.empty() ){

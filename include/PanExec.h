@@ -11,6 +11,8 @@
 #ifndef _SST_PANEXEC_H_
 #define _SST_PANEXEC_H_
 
+#ifdef _PAN_
+
 #include <vector>
 #include <tuple>
 #include <cstdint>
@@ -61,7 +63,8 @@ namespace SST {
   } // namespace RevCPU
 } // namespace SST
 
+#endif // _PAN_
 
-#endif
+#endif // _SST_PANEXEC_H_
 
 // EOF

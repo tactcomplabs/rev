@@ -12,6 +12,7 @@
 
 using namespace SST::RevCPU;
 
+#ifdef _PAN_
 RevProc::RevProc( unsigned Id,
                   RevOpts *Opts,
                   RevMem *Mem,
@@ -23,6 +24,19 @@ RevProc::RevProc( unsigned Id,
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
     opts(Opts), mem(Mem), loader(Loader), output(Output),
     feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+#else
+RevProc::RevProc( unsigned Id,
+                  RevOpts *Opts,
+                  RevMem *Mem,
+                  RevLoader *Loader,
+                  RevCoProc* CoProc,
+                  SST::Output *Output )
+  : Halted(false), Stalled(false), SingleStep(false),
+    CrackFault(false), ALUFault(false), fault_width(0),
+    id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
+    opts(Opts), mem(Mem), loader(Loader), output(Output),
+    feature(nullptr), sfetch(nullptr) {
+#endif
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -1997,11 +2011,16 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   }
 
   // Check for completion states and new tasks
+  #if _PAN_
   if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
+  #else
+  if( GetPC() == 0x00ull ){
+  #endif
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
     bool done = true;
+    #if _PAN_
     if( GetPC() == _PAN_FWARE_JUMP_ ){
       if( PExec != nullptr){
         uint64_t Addr = 0x00ull;
@@ -2030,7 +2049,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           break;
         }
       }
-    }else if( GetPC() == 0x00ull ) {
+    }else 
+    #endif
+    if( GetPC() == 0x00ull ) {
       // PAN execution contexts not enabled, this is our last PC
       done = true;
     }
