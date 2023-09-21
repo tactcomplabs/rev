@@ -15,7 +15,7 @@
 #include <cstdint>
 
 #ifndef _REV_INVALID_HART_ID_
-#define _REV_INVALID_HART_ID_ (~uint16_t{0})
+#define _REV_INVALID_HART_ID_ (uint16_t(~0))
 #endif
 
 #define _INVALID_ADDR_ (~uint64_t{0})

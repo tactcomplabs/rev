@@ -101,7 +101,7 @@ public:
   auto GetProcID() const { return ProcID; }
 
   /// GetHartToExec: Retrieve the current executing Hart
-  auto GetHartToExec() const { return HartToExec; }
+  uint16_t GetHartToExec() const { return HartToExec; }
 
   /// SetHartToExec: Set the current executing Hart
   void SetHartToExec(unsigned hart) { HartToExec = hart; }
