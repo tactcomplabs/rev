@@ -1,5 +1,4 @@
 #include "../../../../common/syscalls/syscalls.h"
-#define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
 // create the function to be executed as a thread
 void *thread1()
 {
