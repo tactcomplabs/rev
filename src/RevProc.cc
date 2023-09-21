@@ -389,17 +389,8 @@ bool RevProc::Reset(){
   for (int t=0;  t < _REV_HART_COUNT_; t++){
     RevRegFile* regFile = GetRegFile(t);
 
-    regFile->RV32_PC = 0x00l;
-    regFile->RV64_PC = 0x00ull;
     // Zero all register data
-    memset(regFile->RV32, 0, sizeof(*(regFile->RV32)));
-    memset(regFile->RV64, 0, sizeof(*(regFile->RV64)));
-    memset(regFile->SPF, 0, sizeof(*(regFile->SPF)));
-    memset(regFile->DPF, 0, sizeof(*(regFile->DPF)));
-    memset(regFile->RV32_Scoreboard, 0, sizeof(*(regFile->RV32_Scoreboard)));
-    memset(regFile->RV64_Scoreboard, 0, sizeof(*(regFile->RV64_Scoreboard)));
-    memset(regFile->SPF_Scoreboard, 0, sizeof(*(regFile->SPF_Scoreboard)));
-    memset(regFile->DPF_Scoreboard, 0, sizeof(*(regFile->DPF_Scoreboard)));
+    *regFile = RevRegFile{};
 
     // initialize all the relevant program registers
 
@@ -1054,18 +1045,18 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
 
   // imm
-  if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RegUNKNOWN)){
+  if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RevRegClass::RegUNKNOWN)){
     DInst.imm  = DECODE_IMM12(Inst) & 0b011111;
   }else{
     DInst.imm     = 0x0;
@@ -1112,10 +1103,10 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
 
@@ -1156,10 +1147,10 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
 
@@ -1200,7 +1191,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
 
@@ -1236,10 +1227,10 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
 
@@ -1278,7 +1269,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
 
@@ -1317,16 +1308,16 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
-  if( InstTable[Entry].rs3Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs3Class != RevRegClass::RegUNKNOWN ){
     DInst.rs3  = DECODE_RS3(Inst);
   }
 
@@ -1667,7 +1658,7 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
                                       std::tie(I->rs3, E->rs3Class) }){
     if(reg < _REV_NUM_REGS_){
       switch(regClass){
-      case RegFLOAT:
+      case RevRegClass::RegFLOAT:
         if(feature->HasD()){
           if(regFile->DPF_Scoreboard[reg]) return true;
         }else{
@@ -1675,7 +1666,7 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
         }
         break;
 
-      case RegGPR:
+      case RevRegClass::RegGPR:
         if(feature->IsRV32()){
           if(regFile->RV32_Scoreboard[reg]) return true;
         }else {
@@ -1737,11 +1728,11 @@ uint16_t RevProc::GetHartID()const{
   return nextID;
 }
 
-void RevProc::MarkLoadComplete(MemReq req){
+void RevProc::MarkLoadComplete(const MemReq& req){
 
   auto it = LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
   if( it != LSQueue->end()){
-    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RegFLOAT));
+    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
     LSQueue->erase(it);
   }else if(0 != req.DestReg){ //instruction pre-fetch fills target r0, we can ignore these
     output->fatal(CALL_INFO, -1,
@@ -1794,7 +1785,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   //Clear dependency bits for any loads that have returned
 /*for (auto it = LSQueue->begin(); it != LSQueue->end();) {
   if(!it->second.isOutstanding){
-    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RegFLOAT));
+    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
     it = LSQueue->erase(it);
   }
 }*/
@@ -2417,7 +2408,7 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
     rtval = ECALL_status_t::SUCCESS;
   }else{
     //We are in the middle of the string - read one byte
-    MemReq req (straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true,  std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1));
+    MemReq req (straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true,  std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1));
     LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
     mem->ReadVal(HartToExec,
                  straddr + ECALL.string.size(),
@@ -2525,7 +2516,7 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
     // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
                                 // using the 1st uint64, so that's all we're going to fetch
    uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
-   MemReq req (CloneArgsAddr, 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, RegFile->MarkLoadComplete);
+   MemReq req (CloneArgsAddr, 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->MarkLoadComplete);
    LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
    mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, req, REVMEM_FLAGS(0x00));
    ECALL.bytesRead = sizeof(*args);
@@ -2789,9 +2780,9 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
 
     DependencyClear(HartToExec, 10, false);
     rtv = ECALL_status_t::SUCCESS;
-  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  { 
+  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  {
     auto readfunc = [&](auto* buf){
-      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOpREAD, true, RegFile->MarkLoadComplete);
+      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->MarkLoadComplete);
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       mem->ReadVal(HartToExec,
                    addr + ECALL.string.size(),

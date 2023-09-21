@@ -110,7 +110,7 @@ bool RevMem::StatusFuture(uint64_t Addr){
 
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
-                    MemReq req,
+                    const MemReq& req,
                     StandardMem::Request::flags_t flags){
   for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
     if( (Hart == std::get<LRSC_HART>(*it)) &&
@@ -531,7 +531,7 @@ bool RevMem::FenceMem(unsigned Hart){
 
 bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
-                    MemReq req,
+                    const MemReq& req,
                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -774,7 +774,7 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 }
 
 bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                     MemReq req, StandardMem::Request::flags_t flags){
+                     const MemReq& req, StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -809,7 +809,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
         Cur++;
       }
       // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
-      if(MemOpAMO != req.ReqType){
+      if(MemOp::MemOpAMO != req.ReqType){
         req.MarkLoadComplete(req);
       }
     }
@@ -824,7 +824,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
         DataMem[i] = BaseMem[i];
       }
       // clear the hazard- if this was an AMO operation then we will clear outside of this function in AMOMem()
-      if(MemOpAMO != req.ReqType){
+      if(MemOp::MemOpAMO != req.ReqType){
         req.MarkLoadComplete(req);
       }
     }

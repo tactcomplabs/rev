@@ -60,9 +60,9 @@ class RV64D : public RevExt {
   // ----------------------------------------------------------------------
   struct Rev64DInstDefaults : RevInstDefaults {
     static constexpr uint8_t     opcode   = 0b1010011;
-    static constexpr RevRegClass rdClass  = RegFLOAT;
-    static constexpr RevRegClass rs1Class = RegFLOAT;
-    static constexpr RevRegClass rs2Class = RegUNKNOWN;
+    static constexpr RevRegClass rdClass  = RevRegClass::RegFLOAT;
+    static constexpr RevRegClass rs1Class = RevRegClass::RegFLOAT;
+    static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
   };
   std::vector<RevInstEntry> RV64DTable = {
     {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.l.d %rd, %rs1"  ).SetFunct7(0b1100001).SetImplFunc( &fcvtld ).InstEntry},

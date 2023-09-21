@@ -176,7 +176,7 @@ public:
   ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
   std::unordered_map<uint32_t, std::shared_ptr<RevThreadCtx>> ThreadTable;
 
-  void MarkLoadComplete(MemReq req);
+  void MarkLoadComplete(const MemReq& req);
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -694,10 +694,10 @@ private:
     // InstTable[...].r<reg>Class should be used when doing hazard
     // detection on particular registers, since some instructions
     // combine integer and FP register operands. See DependencySet().
-    return( InstTable[Entry].rdClass  == RegFLOAT ||
-            InstTable[Entry].rs1Class == RegFLOAT ||
-            InstTable[Entry].rs2Class == RegFLOAT ||
-            InstTable[Entry].rs3Class == RegFLOAT );
+    return( InstTable[Entry].rdClass  == RevRegClass::RegFLOAT ||
+            InstTable[Entry].rs1Class == RevRegClass::RegFLOAT ||
+            InstTable[Entry].rs2Class == RevRegClass::RegFLOAT ||
+            InstTable[Entry].rs3Class == RevRegClass::RegFLOAT );
   }
 
   /// RevProc: Determine next thread to execute
@@ -708,7 +708,7 @@ private:
 
   /// RevProc: Set or clear scoreboard based on instruction destination
   void DependencySet(uint16_t HartID, const RevInst* Inst, bool value = true){
-    DependencySet(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RegFLOAT, value);
+    DependencySet(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RevRegClass::RegFLOAT, value);
   }
 
   /// RevProc: Clear scoreboard on instruction retirement
