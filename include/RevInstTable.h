@@ -12,11 +12,13 @@
 #define _SST_REVCPU_REVINSTTABLE_H_
 
 #include <bitset>
-#include <string>
-#include <map>
-#include <cstdint>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <map>
+#include <memory>
+#include <string>
 #include <type_traits>
 
 #include "RevMem.h"
@@ -295,7 +297,7 @@ struct RevInst {
   bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
   uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
-  bool *hazard        = 0; ///< RevInst: signals a load hazard
+  std::shared_ptr<bool> hazard = nullptr; ///< RevInst: signals a load hazard
 
   explicit RevInst() = default; // prevent aggregate initialization
 
@@ -304,9 +306,6 @@ struct RevInst {
     return SignExt(imm, bits);
   }
 }; // RevInst
-
-static_assert(std::is_trivially_copyable_v<RevInst>,
-              "RevInst must be trivially copyable to be able to use memcpy() and memset()");
 
 #if 0
 

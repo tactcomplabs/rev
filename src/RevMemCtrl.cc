@@ -225,7 +225,7 @@ bool RevBasicMemCtrl::sendREADRequest(unsigned Hart,
                                       uint64_t PAddr,
                                       uint32_t Size,
                                       void *target,
-                                      bool *Hazard,
+                                      const std::shared_ptr<bool>& Hazard,
                                       StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
@@ -259,7 +259,7 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
                                      uint32_t Size,
                                      char *buffer,
                                      void *target,
-                                     bool *Hazard,
+                                     const std::shared_ptr<bool>& Hazard,
                                      StandardMem::Request::flags_t flags){
 
   if( Size == 0 )
@@ -305,9 +305,9 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
     { RevCPU::RevFlag::F_AMOSWAP, RevBasicMemCtrl::MemCtrlStats::AMOSwapPending },
   };
 
-  for(auto& entry : table){
-    if(flags & uint32_t(entry.first)){
-      recordStat(entry.second, 1);
+  for(auto [flag, stat] : table){
+    if(flags & uint32_t(flag)){
+      recordStat(stat, 1);
       break;
     }
   }
@@ -319,7 +319,7 @@ bool RevBasicMemCtrl::sendREADLOCKRequest(unsigned Hart,
                                           uint64_t PAddr,
                                           uint32_t Size,
                                           void *target,
-                                          bool *Hazard,
+                                          const std::shared_ptr<bool>& Hazard,
                                           StandardMem::Request::flags_t flags){
   if( Size == 0 )
     return true;
@@ -1261,7 +1261,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     for( unsigned i=0; i < op->getSize(); i++ ){
       std::cout << "               : data[" << i << "] = " << (unsigned)(ev->data[i]) << std::endl;
     }
-    std::cout << "hazard ptr = 0x" << std::hex << op->getHazard() << std::dec << std::endl;
+    std::cout << "hazard ptr = 0x" << std::hex << op->getHazard().get() << std::dec << std::endl;
     std::cout << "hazard value before processing = " << *op->getHazard() << std::endl;
     std::cout << "Address of the target register = 0x" << std::hex
               << (uint64_t *)(op->getTarget()) << std::dec << std::endl;
@@ -1296,8 +1296,10 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
         if( isAMO ){
           handleAMO(op);
         }
-        bool *Hazard = op->getHazard();
-        *Hazard = false;
+        auto Hazard = op->getHazard();
+        if( Hazard != nullptr ){
+          *Hazard = false;
+        }
         delete op;
       }
       outstanding.erase(ev->getID());
@@ -1317,7 +1319,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     if( isAMO ){
       handleAMO(op);
     }
-    bool *Hazard = op->getHazard();
+    auto Hazard = op->getHazard();
     if( Hazard != nullptr ){
       *Hazard = false;
     }
@@ -1369,7 +1371,7 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
                               RevMemOp::MemOp::MemOpWRITE,
                               Tmp->getFlags());
 
-  bool *Hazard = Tmp->getHazard();
+  auto Hazard = Tmp->getHazard();
   Op->setHazard(Hazard);
   *Hazard = true;
 
@@ -1427,9 +1429,10 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
       // split request exists, determine how to handle it
       if( getNumSplitRqsts(op) == 1 ){
         // this was the last request to service, delete the op
-        if( op->getHazard() != nullptr ){
+        auto Hazard = op->getHazard();
+        if( Hazard != nullptr ){
           // this was a write request for an AMO, clear the hazard
-          *(op->getHazard()) = false;
+          *Hazard = false;
         }
         delete op;
       }
@@ -1440,9 +1443,10 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     }
 
     // no split request exists; handle as normal
-    if( op->getHazard() != nullptr ){
+    auto Hazard = op->getHazard();
+    if( Hazard != nullptr ){
       // this was a write request for an AMO, clear the hazard
-      *(op->getHazard()) = false;
+      *Hazard = false;
     }
     delete op;
     outstanding.erase(ev->getID());

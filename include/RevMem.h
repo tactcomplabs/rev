@@ -14,23 +14,22 @@
 #define __PAGE_SIZE__ 4096
 
 // -- C++ Headers
-#include <ctime>
-#include <vector>
 #include <algorithm>
+#include <cinttypes>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <random>
-#include <mutex>
-#include <cinttypes>
-#include <cstddef>
-#include <tuple>
-#include <map>
-#include <unordered_map>
-#include <list>
-#include <memory>
-#include <utility>
 #include <iostream>
+#include <list>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 // -- SST Headers
 #include "SST.h"
@@ -152,7 +151,7 @@ public:
 
   /// RevMem: read data from the target memory location
   bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                bool *Hazard,
+                const std::shared_ptr<bool>& Hazard,
                 StandardMem::Request::flags_t flags);
 
   /// RevMem: DEPRECATED: read data from the target memory location
@@ -173,7 +172,7 @@ public:
   /// RevMem: template read memory interface
   template <typename T>
   bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
-                bool *Hazard,
+                const std::shared_ptr<bool>& Hazard,
                 StandardMem::Request::flags_t flags){
     return ReadMem(Hart, Addr, sizeof(T), Target, Hazard, flags);
   }
@@ -181,7 +180,8 @@ public:
   ///  RevMem: template LOAD RESERVE memory interface
   template <typename T>
   bool LR( unsigned Hart, uint64_t Addr, T *Target,
-           uint8_t aq, uint8_t rl, bool *Hazard,
+           uint8_t aq, uint8_t rl,
+           const std::shared_ptr<bool>& Hazard,
            StandardMem::Request::flags_t flags){
     return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, Hazard, flags);
   }
@@ -197,7 +197,7 @@ public:
   /// RevMem: template AMO memory interface
   template <typename T>
   bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
-               bool *Hazard,
+               const std::shared_ptr<bool>& Hazard,
                StandardMem::Request::flags_t flags){
     return AMOMem(Hart, Addr, sizeof(T), Data, Target, Hazard, flags);
   }
@@ -227,7 +227,8 @@ public:
   // ----------------------------------------------------
   /// RevMem: Add a memory reservation for the target address
   bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, uint8_t aq, uint8_t rl, bool *Hazard,
+              void *Data, uint8_t aq, uint8_t rl,
+              const std::shared_ptr<bool>& Hazard,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Clear a memory reservation for the target address
@@ -237,7 +238,8 @@ public:
 
   /// RevMem: Initiated an AMO request
   bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, void *Target, bool *Hazard,
+              void *Data, void *Target,
+              const std::shared_ptr<bool>& Hazard,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Initiates a future operation [RV64P only]
