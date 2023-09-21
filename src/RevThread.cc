@@ -13,12 +13,13 @@
 
 using namespace SST::RevCPU;
 
-RevThread::RevThread( uint32_t inputParentThreadID,
+RevThread::RevThread( uint32_t inputThreadID,
+                      uint32_t inputParentThreadID,
                       uint64_t inputStackPtr,
                       uint64_t inputFirstPC,
                       std::shared_ptr<MemSegment>& inputThreadMem,
                       RevFeature* inputFeature)
-   : ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),  
+   : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),  
      FirstPC(inputFirstPC), ThreadMem(inputThreadMem), Feature(inputFeature) {
   // Create the RegFile for this thread
   RegFile = RevRegFile(); 

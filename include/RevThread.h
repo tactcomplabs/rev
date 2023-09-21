@@ -29,7 +29,7 @@ using MemSegment = RevMem::MemSegment;
 /// RevThread: Enum for tracking state of a software thread (Unused)
 enum class ThreadState {
   START,    // Allocate Resources 
-  RUNNING,  // Has the CPU 
+  RUNNING,  // Assigned & executing on a Proc/HART
   BLOCKED,  // Waiting for I/O OR synchronization with another thread (mutex, condition variable, sempahore)
   READY,    // On the ready list (not implemented yet) waiting for CPU availability 
   DONE,     // Deallocate resources
@@ -38,19 +38,20 @@ enum class ThreadState {
 class RevThread {
 
 public:
-  RevThread( uint32_t ParentThreadID, uint64_t inputStackPtr,
-             uint64_t inputFirstPC, std::shared_ptr<MemSegment>& inputThreadMem,
+  RevThread( uint32_t inputThreadID, uint32_t ParentThreadID,
+             uint64_t inputStackPtr, uint64_t inputFirstPC,
+             std::shared_ptr<MemSegment>& inputThreadMem,
              RevFeature* inputFeature );
 
   void SetTIDAddr(uint64_t tidAddr){ ThreadIDAddr = tidAddr; } /// RevThread: Sets the address of the ThreadID
-  uint64_t GetTIDAddr(){ return ThreadIDAddr; }   /// RevThread: Gets the address of the ThreadID
-  void AddFD(int fd);                             /// RevThread: Add fd to Thread's fildes 
-  bool RemoveFD(int fd);                          /// RevThread: Remove fd to Thread's fildes 
-  bool FindFD(int fd);                            /// RevThread: See if Thread has ownership of fd
-  std::vector<int> GetFildes(){ return fildes; }  /// RevThread: Get list of file descriptors owned by Thread
+  uint64_t GetTIDAddr(){ return ThreadIDAddr; }                /// RevThread: Gets the address of the ThreadID
+  void AddFD(int fd);                                          /// RevThread: Add fd to Thread's fildes 
+  bool RemoveFD(int fd);                                       /// RevThread: Remove fd to Thread's fildes 
+  bool FindFD(int fd);                                         /// RevThread: See if Thread has ownership of fd
+  std::vector<int> GetFildes(){ return fildes; }               /// RevThread: Get list of file descriptors owned by Thread
 
-  RevRegFile* GetRegFile() { return &RegFile; }   /// RevThread: Returns pointer to its register file
-  void SetRegFile(RevRegFile r) { RegFile = r; }  /// RevThread: Sets pointer to its register file
+  RevRegFile* GetRegFile() { return &RegFile; }                /// RevThread: Returns pointer to its register file
+  void SetRegFile(RevRegFile r) { RegFile = r; }               /// RevThread: Sets pointer to its register file
 
   uint32_t GetThreadID() { return ThreadID; }                                  /// RevThread: Gets Thread's ThreadID
   void SetThreadID(uint32_t NewThreadID) { ThreadID = NewThreadID; }           /// RevThread: Sets Thread's ThreadID
@@ -66,13 +67,13 @@ public:
 
   bool isRunning(){ return ( State == ThreadState::RUNNING ); }      /// RevThread: Checks if Thread's ThreadState is Running
   bool isBlocked(){ return (State == ThreadState::BLOCKED); }        /// RevThread: Checks if Thread's ThreadState is 
-  bool isDone(){ return (State == ThreadState::DONE); }                /// RevThread: Checks if Thread's ThreadState is Done
+  bool isDone(){ return (State == ThreadState::DONE); }              /// RevThread: Checks if Thread's ThreadState is Done
 
   const uint32_t& GetWaitingToJoinTID(){ return WaitingToJoinTID; }
   void SetWaitingToJoinTID(uint32_t ThreadToWaitOn){ WaitingToJoinTID = ThreadToWaitOn; }
 
   // Override the printing 
-  friend std::ostream& operator<<(std::ostream& os, RevThread& Thread) {
+  friend std::ostream& operator<<(std::ostream& os, RevThread& Thread){
     os << "Thread " << Thread.ThreadID << ":" << std::endl; 
     os << "\tThreadMem = " << *Thread.ThreadMem << std::endl;
     os << std::hex << std::internal; // set hex output & internal padding 
@@ -121,13 +122,13 @@ public:
   }
 
 private:
+  uint32_t ThreadID;
   uint32_t ParentThreadID;
   uint64_t StackPtr;                             /// Starting stack pointer for this thread
   uint64_t FirstPC;
   std::shared_ptr<MemSegment> ThreadMem;         /// Pointer to its thread memory (TLS & Stack) 
   RevFeature* Feature;                           /// Pointer to the feature 
   
-  uint32_t ThreadID;
   uint64_t ThreadPtr;                            /// Thread pointer for this thread
   ThreadState State = ThreadState::START;        /// Thread state (unused)
   RevRegFile RegFile;                            /// Each context has its own register file

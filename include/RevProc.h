@@ -69,7 +69,7 @@ public:
   bool ClockTick( SST::Cycle_t currentCycle );
 
   /// RevProc: Called by RevCPU when there is no more work to do (ie. All RevThreads are ThreadState::DONE )
-  void EndExecution();
+  void PrintStatSummary();
 
   /// RevProc: halt the CPU
   bool Halt();
@@ -141,7 +141,7 @@ public:
   bool ChangeActiveThreadID(uint32_t ThreadID, uint16_t HartID);
 
   ///< RevProc: Holds the info for all new threads to be spawned
-  ///           Right now this is through the following ECALLS:
+  ///           Right now this is through the following functions:
   ///           - rev_pthread_create
   std::queue<std::shared_ptr<RevThread>> NewThreadInfo;
 

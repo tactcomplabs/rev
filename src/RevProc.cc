@@ -1976,7 +1976,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 }
 
 
-void RevProc::EndExecution(){
+// TODO: Print Summary 
+void RevProc::PrintStatSummary(){
   output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
   Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
   output->verbose(CALL_INFO, 2, 0,
@@ -2021,13 +2022,11 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
 
   // Create a new RevThread Object
   std::shared_ptr<RevThread> NewThread =
-            std::make_shared<RevThread>(ParentPID, 
+            std::make_shared<RevThread>(NewTID,
+                                        ParentPID, 
                                         NewThreadMem->getBaseAddr()+_STACK_SIZE_,
                                         firstPC, NewThreadMem,
                                         feature);
-  NewThread->SetThreadID(NewTID);
-
-  // Save the address that will hold the new ThreadID
   NewThreadInfo.emplace(NewThread);
 
   return;

@@ -45,6 +45,7 @@
 #include "../common/include/PanAddr.h"
 
 #define _MAX_PAN_TEST_ 11
+#define LARGE_PRIME 2147483647
 
 namespace SST::RevCPU{
 
@@ -220,41 +221,59 @@ private:
   RevLoader *Loader;                  ///< RevCPU: RISC-V loader
   std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
   bool *Enabled;                      ///< RevCPU: Completion structure
+      
+  // Global table of threads
+  // - The actual RevThread objects live in this table 
+  // - Only place to guarantee the presence of a thread on this CPU
+  std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
 
-  std::map<uint32_t, std::shared_ptr<RevThread>> Threads;                ///< RevCPU: Global table of threads (Actual object lives here... all other mentions of a RevThread are simply pointers to the instance in this table)
+  // 2D vector to hold threads assigned to each processor and its corresponding harts.
+  // AssignedThreads[i][j] holds the RevThread executing on processor 'i' and hart 'j'.
+  // Oversubscription is not supported in hardware 
+  // (ie. AssignedThreads.at(i).size() will never exceed the number of HARTS)
+  std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads;
 
-  ///< RevCPU: Threads assigned to each processor 
-  /// Ex.
-  ///   AssignedThreads[i][j] = RevThread that is currently  
-  std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads;  
-
-  // Init Thread 
+  // Initializes a RevThread object.
+  // - Moves it to the 'Threads' map 
+  // - Adds it's ThreadID to the ThreadQueue to be scheduled
   void InitThread(std::shared_ptr<RevThread> ThreadToInit);
 
+  // Sets up arguments for a thread with a given ID and feature set.
   void SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature);
 
+  // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();
 
+  // Checks core 'i' to see if it has any available harts to assign work to
+  // if it does and there is work to assign (ie. ThreadQueue is not empty)
+  // assign it and enable the processor if not already enabled.
   void UpdateThreadAssignments(uint32_t i);
+
+  // Checks for state changes in the threads of a given processor index 'i'
+  // and handle appropriately
   void CheckForStateChanges(uint32_t i);
+
+  // Checks for new threads that may have been added to a given processor's NewThreadInfo 
   void CheckForNewThreads(uint32_t i);
 
-  // Used to check if a thread that is waiting to join can proceed
+  // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
+  // it does this by seeing if a given thread's WaitingOnTID has completed
   bool ThreadCanProceed(uint32_t TID);
 
-  // Queue of Thread ID's that have yet to be assigned (RevThread object for them lives in the Threads map)
-  // Create a priority_queue for the RevThreads based on the value of Threads.at(ThreadID)->GetPriority()
+  // Queue of Thread IDs waiting to be assigned. The actual RevThread objects reside in the 'Threads' map.
   std::vector<uint32_t> ThreadQueue = {};
 
-  // Used for tracking which threads are waiting for pthread_join
+  // Set of Thread IDs that are currently blocked (waiting for their WaitingOnTID to be present in CompletedThreads).
   std::set<uint32_t> BlockedThreads = {};
 
-  // Used for tracking threads that are complete
+  // Set of Thread IDs that have completed their execution.
   std::set<uint32_t> CompletedThreads = {};
 
-  uint32_t NextThreadID = 1024;
+  // Random Number Generator for generating new Thread IDs.
+  SST::RNG::MarsagliaRNG* RNG;
 
-  uint32_t GetNewThreadID(){ return NextThreadID++; }
+  // Generates a new Thread ID using the RNG.
+  uint32_t GetNewThreadID() { return RNG->generateNextUInt32(); }
 
   uint8_t PrivTag;                    ///< RevCPU: private tag locator
   // TODO: LToken is used everywhere as uint32_t but was declared as uint64_t
