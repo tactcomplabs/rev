@@ -31,6 +31,7 @@
 
 // -- RevCPU Headers
 #include "RevOpts.h"
+#include "../common/include/RevCommon.h"
 
 namespace SST::RevCPU{
 
@@ -64,18 +65,6 @@ enum class RevFlag : uint32_t {
 // ----------------------------------------
 class RevMemOp {
 public:
-  enum MemOp {
-    MemOpREAD           = 0,
-    MemOpWRITE          = 1,
-    MemOpFLUSH          = 2,
-    MemOpREADLOCK       = 3,
-    MemOpWRITEUNLOCK    = 4,
-    MemOpLOADLINK       = 5,
-    MemOpSTORECOND      = 6,
-    MemOpCUSTOM         = 7,
-    MemOpFENCE          = 8,
-    MemOpAMO            = 9,
-  };
 
   /// RevMemOp constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
@@ -165,8 +154,8 @@ public:
   /// RevMemOp: set the hart
   void setHart(unsigned H) { Hart = H ;}
 
-  /// RevMemOp: set the hazard pointer
-  void setHazard(const std::shared_ptr<bool>& H) { hazard = H;}
+  ///RevMemOp: set the originating memory request
+  void setMemReq(const MemReq& req) { procReq = req;}
 
   /// RevMemOp: retrieve the invalidate flag
   bool getInv() const { return Inv; }
@@ -180,8 +169,8 @@ public:
   /// RevMemOp: retrieve the hart
   unsigned getHart() const { return Hart; }
 
-  /// RevMemOp: retrieve the hazard pointer
-  std::shared_ptr<bool> getHazard() const { return hazard; }
+  /// RevMemOp: Get the originating proc memory request
+  const MemReq& getMemReq() const { return procReq; }
 
   // RevMemOp: determine if the request is cache-able
   bool isCacheable() const { return (flags & 0b10) == 0; }
@@ -198,7 +187,7 @@ private:
   std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
   StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
   void *target;                         ///< RevMemOp: target register pointer
-  std::shared_ptr<bool> hazard;         ///< RevMemOp: load hazard
+  MemReq procReq;                       ///< RevMemOp: original request from RevProc
 };
 
 // ----------------------------------------
@@ -236,8 +225,7 @@ public:
 
   /// RevMemCtrl: send a read request
   virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                               uint32_t Size, void *target,
-                               const std::shared_ptr<bool>& Hazard,
+                               uint32_t Size, void *target, const MemReq& req,
                                StandardMem::Request::flags_t flags) = 0;
 
   /// RevMemCtrl: send a write request
@@ -248,13 +236,12 @@ public:
   /// RevMemCtrl: send an AMO request
   virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                               uint32_t Size, char *buffer, void *target,
-                              const std::shared_ptr<bool>& Hazard,
+                              const MemReq& req,
                               StandardMem::Request::flags_t flags) = 0;
 
   /// RevMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                   uint32_t Size, void *target,
-                                   const std::shared_ptr<bool>& Hazard,
+                                   uint32_t Size, void *target, const MemReq& req,
                                    StandardMem::Request::flags_t flags) = 0;
 
   /// RevMemCtrl: send a writelock request
@@ -463,8 +450,7 @@ public:
 
   /// RevBasicMemCtrl: send a read request
   virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                               uint32_t Size, void *target,
-                               const std::shared_ptr<bool>& Hazard,
+                               uint32_t Size, void *target, const MemReq& req,
                                StandardMem::Request::flags_t flags) override;
 
   /// RevBasicMemCtrl: send a write request
@@ -475,13 +461,12 @@ public:
   /// RevBasicMemCtrl: send an AMO request
   virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                               uint32_t Size, char *buffer, void *target,
-                              const std::shared_ptr<bool>& Hazard,
+                              const MemReq& req,
                               StandardMem::Request::flags_t flags) override;
 
   // RevBasicMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
-                                   uint32_t Size, void *target,
-                                   const std::shared_ptr<bool>& Hazard,
+                                   uint32_t Size, void *target, const MemReq& req,
                                    StandardMem::Request::flags_t flags) override;
 
   // RevBasicMemCtrl: send a writelock request

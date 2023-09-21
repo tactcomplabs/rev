@@ -14,6 +14,8 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <memory>
+#include <unordered_map>
 
 #include "RevMem.h"
 #include "RevFeature.h"
@@ -25,8 +27,10 @@ namespace SST::RevCPU{
 class RevPrefetcher{
 public:
   /// RevPrefetcher: constructor
-  RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth)
-    : mem(Mem), feature(Feature), depth(Depth){}
+  RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth,
+                std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq,
+                std::function<void(const MemReq&)> func)
+    : mem(Mem), feature(Feature), depth(Depth), LSQueue(lsq), MarkLoadAsComplete(func){}
 
   /// RevPrefetcher: destructor
   ~RevPrefetcher() = default;
@@ -43,7 +47,8 @@ private:
   unsigned depth;                             ///< Depth of each prefetcher stream
   std::vector<uint64_t> baseAddr;             ///< Vector of base addresses for each stream
   std::vector<std::vector<uint32_t>> iStack; ///< Vector of instruction vectors
-  std::vector<std::vector<std::shared_ptr<bool>>> iHazard; ///< Vector of instruction cost vectors
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
+  std::function<void(const MemReq&)> MarkLoadAsComplete;
 
   /// fills a missed stream cache instruction
   void Fill(uint64_t Addr);

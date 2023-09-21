@@ -108,7 +108,7 @@ bool RevMem::StatusFuture(uint64_t Addr){
 
 bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
-                    const std::shared_ptr<bool>& Hazard,
+                    const MemReq& req,
                     StandardMem::Request::flags_t flags){
   for( auto it = LRSC.begin(); it != LRSC.end(); ++it ){
     if( (Hart == std::get<LRSC_HART>(*it)) &&
@@ -142,13 +142,12 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
   char *DataMem = (char *)(Target);
 
   if( ctrl ){
-    *Hazard = true;
     ctrl->sendREADLOCKRequest(Hart, Addr, (uint64_t)(BaseMem),
-                              Len, Target, Hazard, flags);
+                              Len, Target, req, flags);
   }else{
     memcpy(DataMem, BaseMem, Len);
     // clear the hazard
-    *Hazard = false;
+    req.MarkLoadComplete(req);
   }
 
   return true;
@@ -544,7 +543,7 @@ bool RevMem::FenceMem(unsigned Hart){
 
 bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
-                    const std::shared_ptr<bool>& Hazard,
+                    const MemReq& req,
                     StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -559,16 +558,13 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
   char *BaseMem = &physMem[physAddr];
   // char *DataMem = (char *)(Target);
 
-  // set the hazard
-  *Hazard = true;
-
   if( ctrl ){
     // sending to the RevMemCtrl
     ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem), Len,
-                         static_cast<char *>(Data), Target, Hazard, flags);
+                         static_cast<char *>(Data), Target, req, flags);
   }else{
     // process the request locally
-    ReadMem(Hart, Addr, Len, Target, Hazard, flags);
+    ReadMem(Hart, Addr, Len, Target, req, flags);
 
     if( Len == 4 ){
       ApplyAMO(flags, Target, *static_cast<uint32_t*>(Data));
@@ -579,7 +575,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
     WriteMem(Hart, Addr, Len, Target);
 
     // clear the hazard
-    *Hazard = false;
+    req.MarkLoadComplete(req);
   }
 
   return true;
@@ -790,8 +786,7 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 }
 
 bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                     const std::shared_ptr<bool>& Hazard,
-                     StandardMem::Request::flags_t flags){
+                     const MemReq& req, StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -804,15 +799,12 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   char *BaseMem = &physMem[physAddr];
   char *DataMem = static_cast<char *>(Target);
 
-  // set the hazard
-  *Hazard = true;
-
   if((physAddr + Len) > endOfPage){
     uint32_t span = (physAddr + Len) - endOfPage;
     adjPageNum = ((Addr+Len)-span) >> addrShift;
     adjPhysAddr = CalcPhysAddr(adjPageNum, ((Addr+Len)-span));
     if( ctrl ){
-      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, Hazard, flags);
+      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, req, flags);
     }else{
       for( unsigned i=0; i< (Len-span); i++ ){
         DataMem[i] = BaseMem[i];
@@ -821,28 +813,32 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
     BaseMem = &physMem[adjPhysAddr];
     if( ctrl ){
       unsigned Cur = (Len-span);
-      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, Hazard, flags);
+      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, req, flags);
     }else{
       unsigned Cur = (Len-span);
       for( unsigned i=0; i< span; i++ ){
         DataMem[Cur] = BaseMem[i];
         Cur++;
       }
-      // clear the hazard
-      *Hazard = false;
+      // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
+      if(MemOp::MemOpAMO != req.ReqType){
+        req.MarkLoadComplete(req);
+      }
     }
 #ifdef _REV_DEBUG_
     std::cout << "Warning: Reading off end of page... " << std::endl;
 #endif
   }else{
     if( ctrl ){
-      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, Hazard, flags);
+      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, req, flags);
     }else{
       for( unsigned i=0; i<Len; i++ ){
         DataMem[i] = BaseMem[i];
       }
-      // clear the hazard
-      *Hazard = false;
+      // clear the hazard- if this was an AMO operation then we will clear outside of this function in AMOMem()
+      if(MemOp::MemOpAMO != req.ReqType){
+        req.MarkLoadComplete(req);
+      }
     }
   }
 

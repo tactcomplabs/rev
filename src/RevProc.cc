@@ -46,8 +46,14 @@ RevProc::RevProc( unsigned Id,
     coProc = NULL;
   }
 
+  LSQueue = std::make_shared<std::unordered_map<uint64_t, MemReq>>();
+  LSQueue->clear();
+
   featureUP = std::make_unique<RevFeature>(Machine, output, MinCost, MaxCost, Id);
   feature = featureUP.get();
+  if( !feature )
+    output->fatal(CALL_INFO, -1,
+                  "Error: failed to create the RevFeature object for core=%u\n", id);
 
   unsigned Depth = 0;
   Opts->GetPrefetchDepth(Id, Depth);
@@ -55,7 +61,7 @@ RevProc::RevProc( unsigned Id,
     Depth = 16;
   }
 
-  sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth);
+  sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth, LSQueue, [=](const MemReq& req){ this->MarkLoadComplete(req); });
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%u\n", id);
@@ -70,6 +76,7 @@ RevProc::RevProc( unsigned Id,
   if( Ecalls.size() <= 0 )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the Ecall Table for core=%u\n", id );
+
 
   // reset the core
   if( !Reset() )
@@ -962,18 +969,18 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
 
   // imm
-  if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RegUNKNOWN)){
+  if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RevRegClass::RegUNKNOWN)){
     DInst.imm  = DECODE_IMM12(Inst) & 0b011111;
   }else{
     DInst.imm     = 0x0;
@@ -1020,10 +1027,10 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
 
@@ -1064,10 +1071,10 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
 
@@ -1108,7 +1115,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
 
@@ -1144,10 +1151,10 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
 
@@ -1186,7 +1193,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
 
@@ -1225,16 +1232,16 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2     = 0x0;
   DInst.rs3     = 0x0;
 
-  if( InstTable[Entry].rdClass != RegUNKNOWN ){
+  if( InstTable[Entry].rdClass != RevRegClass::RegUNKNOWN ){
     DInst.rd  = DECODE_RD(Inst);
   }
-  if( InstTable[Entry].rs1Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs1Class != RevRegClass::RegUNKNOWN ){
     DInst.rs1  = DECODE_RS1(Inst);
   }
-  if( InstTable[Entry].rs2Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs2Class != RevRegClass::RegUNKNOWN ){
     DInst.rs2  = DECODE_RS2(Inst);
   }
-  if( InstTable[Entry].rs3Class != RegUNKNOWN ){
+  if( InstTable[Entry].rs3Class != RevRegClass::RegUNKNOWN ){
     DInst.rs3  = DECODE_RS3(Inst);
   }
 
@@ -1559,13 +1566,21 @@ void RevProc::HandleALUFault(unsigned width){
 }
 
 bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
-  // check the load hazard bit
-  if( I->hazard != nullptr && *I->hazard ){
-      return true;
-  }
 
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
+
+  // check LS queue for outstanding load - ignore r0
+  for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
+                                      std::tie(I->rs2, E->rs2Class),
+                                      std::tie(I->rs3, E->rs3Class),
+                                      std::tie(I->rd,  E->rdClass) }){
+    if((reg != 0) && (regFile->LSQueue->count(make_lsq_hash(reg,
+                                                         regClass,
+                                                         HartID))) > 0){
+      return true;
+    }
+  }
 
   // Iterate through the source registers rs1, rs2, rs3 and find any dependency
   // based on the class of the source register and the associated scoreboard
@@ -1574,22 +1589,20 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
                                       std::tie(I->rs3, E->rs3Class) }){
     if(reg < _REV_NUM_REGS_){
       switch(regClass){
-      case RegFLOAT:
+      case RevRegClass::RegFLOAT:
         if(feature->HasD()){
           if(regFile->DPF_Scoreboard[reg]) return true;
         }else{
           if(regFile->SPF_Scoreboard[reg]) return true;
         }
         break;
-
-      case RegGPR:
+      case RevRegClass::RegGPR:
         if(feature->IsRV32()){
           if(regFile->RV32_Scoreboard[reg]) return true;
         }else {
           if(regFile->RV64_Scoreboard[reg]) return true;
         }
         break;
-
       default:
         break;
       }
@@ -1642,6 +1655,19 @@ uint16_t RevProc::GetHartID()const{
   return nextID;
 }
 
+void RevProc::MarkLoadComplete(const MemReq& req){
+
+  auto it = LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
+  if( it != LSQueue->end()){
+    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
+    LSQueue->erase(it);
+  }else if(0 != req.DestReg){ //instruction pre-fetch fills target x0, we can ignore these
+    output->fatal(CALL_INFO, -1,
+               "Core %u ; Hart %u; Cannot find outstanding load for reg %u from address %" PRIx64 "\n",
+                id, req.Hart, req.DestReg, req.Addr);
+  }
+}
+
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   RevInst Inst;
 
@@ -1679,6 +1705,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     //Determine the active thread
     HartToDecode = GetHartID();
     RegFile = AssignedThreads.at(HartToDecode)->GetRegFile();
+    feature->SetHartToExec(HartToDecode);
 
     if( !PrefetchInst() ){
       Stalled = true;
@@ -1694,8 +1721,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Inst = DecodeInst();
       Inst.entry = RegFile->Entry;
     }
-
-    Inst.hazard = nullptr;
 
     // Now that we have decoded the instruction, check for pipeline hazards
     if(Stalled || DependencyCheck(HartToDecode, &Inst)){
@@ -1764,8 +1789,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
 
-//      #define __REV_DEEP_TRACE__
-      #ifdef __REV_DEEP_TRACE__
+#ifdef __REV_DEEP_TRACE__
       if(feature->IsRV32()){
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC
                   << " Inst: " << std::setw(23)
@@ -1795,7 +1819,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   << (uint64_t *)(&RegFile->RV64[Inst.rd])
                   << std::dec << std::endl;
       }
-      #endif
+#endif
 
       /*
        * Exception Handling
@@ -1887,19 +1911,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
 
-  // walk the pipeline hazards.  if a load hazard is set, increase the cost to > 0
-  for( auto i : Pipeline ){
-    if( *(i.second.hazard) ){
-      i.second.cost++;
-    }
-  }
-
   // Check for pipeline hazards
   if(!Pipeline.empty() &&
      (Pipeline.front().second.cost > 0)){
     Pipeline.front().second.cost--;
-    if((Pipeline.front().second.cost == 0) &&
-       (!*(Pipeline.front().second.hazard))){
+    if((Pipeline.front().second.cost == 0)){ // &&
       // Ready to retire this instruction
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
@@ -2385,10 +2401,12 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
     rtval = ECALL_status_t::SUCCESS;
   }else{
     //We are in the middle of the string - read one byte
+    MemReq req{straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
+    LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
     mem->ReadVal(HartToExec,
                  straddr + ECALL.string.size(),
                  ECALL.buf.data(),
-                 inst.hazard,
+                 req,
                  REVMEM_FLAGS(0));
     ECALL.bytesRead = 1;
     DependencySet(HartToExec, 10, false);

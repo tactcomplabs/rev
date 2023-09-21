@@ -97,15 +97,22 @@ public:
   /// HasCompressed: Returns whether RV32 or RV64 "C" is enabled
   bool HasCompressed() const { return IsModeEnabled(RV_C); }
 
-  /// GetHart: Retrieve the hart of the target object
-  auto GetHart() const { return Hart; }
+  /// GetProcID: Retrieve the ProcID of the target object
+  auto GetProcID() const { return ProcID; }
+
+  /// GetHartToExec: Retrieve the current executing Hart
+  uint16_t GetHartToExec() const { return HartToExec; }
+
+  /// SetHartToExec: Set the current executing Hart
+  void SetHartToExec(unsigned hart) { HartToExec = hart; }
 
 private:
   std::string machine;      ///< RevFeature: feature string
   SST::Output *output;      ///< RevFeature: output handler
   unsigned MinCost;         ///< RevFeature: min memory cost
   unsigned MaxCost;         ///< RevFeature: max memory cost
-  unsigned Hart;            ///< RevFeature: RISC-V CPU ID, aka "hart"
+  unsigned ProcID;          ///< RevFeature: RISC-V Proc ID
+  unsigned HartToExec;      ///< RevFeature: The current executing Hart on RevProc
   RevFeatureType features;  ///< RevFeature: feature elements
   unsigned xlen;            ///< RevFeature: RISC-V Xlen
 
