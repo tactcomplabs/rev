@@ -1293,7 +1293,9 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
           handleAMO(op);
         }
         MemReq r = op->getMemReq();
-        r.MarkLoadComplete(r);
+        if(MemOpAMO != r.ReqType){
+          r.MarkLoadComplete(r);
+        }
         delete op;
       }
       outstanding.erase(ev->getID());
