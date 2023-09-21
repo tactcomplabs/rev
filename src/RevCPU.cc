@@ -12,6 +12,7 @@
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
+#include <iosfwd>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -305,6 +306,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
                                                                       Procs[0]->GetRevFeature());      // RevFeature
 
   InitThread(MainThread);
+  
+  output.verbose(CALL_INFO, 11, 0, "Main thread initialized %s", MainThread->print());
 
   SetupArgs(MainThreadID, Procs[0]->GetRevFeature());
 

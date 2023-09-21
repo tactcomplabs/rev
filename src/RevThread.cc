@@ -9,6 +9,7 @@
 //
 //
 
+#include <iostream>
 #include "../include/RevThread.h"
 
 using namespace SST::RevCPU;
@@ -52,13 +53,14 @@ bool RevThread::RemoveChildThreadID(uint32_t tid){
   return false;
 }
 
-/* Add new file descriptor */
+// Add new file descriptor 
 void RevThread::AddFD(int fd){
   fildes.push_back(fd);
 }
-/* See if file descriptor exists/is owned by Ctx */
+
+// See if file descriptor exists/is owned by Ctx 
 bool RevThread::FindFD(int fd){
-  /* Check if the fd is owned by the current ctx */
+  // Check if the fd is owned by the current ctx 
   auto it = std::find(fildes.begin(), fildes.end(), fd);
   if( it != fildes.end() ){
     return true;
@@ -66,22 +68,84 @@ bool RevThread::FindFD(int fd){
   return false;
 }
 
-/* Remove file descriptor from Ctx (ie. rev_close) */
+// Remove file descriptor from Ctx (ie. rev_close)
 bool RevThread::RemoveFD(int fd){
-  /* Check if the fd is owned by the current ctx */
+  // Check if the fd is owned by the current ctx 
   auto it = std::find(fildes.begin(), fildes.end(), fd);
 
   if( it != fildes.end() ){
-    /* fd found, return true */
+    // fd found, return true 
     fildes.erase(it);
     return true;
   }
-  /* Not found, return false */
+  // Not found, return false
   return false;  
 }
-/// Used for duplicating register files (currently only in ECALL_clone)
-// bool RevThread::DuplicateRegFile(const RevRegFile& regToDup){
-//   RegFile = regToDup;
-//   RegFile.RV32_SCAUSE = 0;
-//   return true;
-// }
+
+// Get a string representation of the thread's state
+std::string RevThread::GetStateString() {
+  switch (State){
+    case ThreadState::READY:
+      return "READY";
+    case ThreadState::RUNNING:
+      return "RUNNING";
+    case ThreadState::BLOCKED:
+      return "BLOCKED";
+    case ThreadState::DONE:
+      return "DONE";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+// Override the << operator for printing the thread
+std::ostream& operator<<(std::ostream& os, RevThread& thread) {
+  os << "\n";
+  auto RegFile = thread.GetRegFile();
+  RevFeature* Feature = thread.GetFeature();
+
+  // Calculate total width of the table
+  int tableWidth = 6 /*Reg*/ + 7 /*Alias*/ + 16 /*Value*/ + 23 /*Info*/ + 9 /*Separators*/;
+
+  // Print a top border
+  os << std::string(tableWidth, '=') << '\n';
+  
+  // Print Thread ID
+  os << "| Thread " << thread.GetThreadID() << std::setw(6) <<  std::string(tableWidth-10, ' ') << "|\n";
+
+  // Print the middle border
+  os << "|" << std::string(tableWidth-1, '-') << "|" << '\n';
+
+  // Print a nice header
+  os << " ==> State: " << thread.GetStateString() << "\n";
+  os << " ==> ParentTID: " << thread.GetParentThreadID() << "\n";
+  os << " ==> Blocked by TID: " ;
+  if (thread.GetWaitingToJoinTID() != __INVALID_TID__) {
+    os << thread.GetWaitingToJoinTID();
+  } else {
+    os << "N/A";
+  }
+  os << "\n";
+
+  os << std::string(tableWidth, '-') << '\n';
+  // Table header
+  os << "| " << std::setw(4) << "Reg" << " | " << std::setw(5) << "Alias" << " | " << std::setw(19) << "Value" << " | " << std::setw(21) << "Info" << " |\n";
+  os << "|------|-------|---------------------|-----------------------|\n";
+
+  // Register aliases and descriptions
+  static constexpr const char* aliases[] = {"zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
+  static constexpr const char* info[] = {"Zero Register", "Return Address", "Stack Pointer", "Global Pointer", "Thread Pointer", "Temp", "Temp", "Temp", "Saved", "Saved", "Arg/Ret", "Arg", "Arg", "Arg", "Arg", "Arg", "Arg", "Arg", "Saved", "Saved", "Saved", "Saved", "Saved", "Saved", "Saved", "Saved", "Saved", "Saved", "Temp", "Temp", "Temp", "Temp"};
+
+  // Loop over the registers
+  for (size_t i = 0; i < _REV_NUM_REGS_; ++i) {
+    uint64_t value = RegFile->GetX<uint64_t>(Feature, i);
+    
+    os << "| " << std::setw(4) << ("x" + std::to_string(i));
+    os << " | " << std::setw(5) << aliases[i];
+    os << " | " << std::setw(19) << ("0x" + std::to_string(value));
+    os << " | " << std::setw(21) << info[i] << " |\n";
+  }
+  return os;
+}
+
+// EOF
