@@ -153,6 +153,9 @@ public:
   RevFeature* GetRevFeature(){ return feature; }
 
   void MarkLoadComplete(const MemReq& req);
+  
+  ///< RevProc: Get pointer to Load / Store queue used to track memory operations
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; } 
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -562,11 +565,6 @@ private:
 
   /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
   RevRegFile* GetRegFile(uint16_t HartID) const;
-
-  /// RevProc: Vector of ThreadIDs where index of ActiveThreadIDs is the pid of the RevThread loaded into Hart #Idx
-  std::vector<uint32_t> ActiveThreadIDs;
-
-  //RevInst Inst{};             ///< RevProc: instruction payload: NOTE: Moved to local variable in RevProc::ClockTick() because of local variables of same name shadowing it and of confusing uninitialized memory errors
 
   std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
 

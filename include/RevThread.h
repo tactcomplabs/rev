@@ -37,7 +37,7 @@ enum class ThreadState {
 
 class RevThread {
 public:
-    RevThread(uint32_t inputThreadID, uint32_t ParentThreadID,
+    RevThread(uint32_t inputThreadID, uint32_t inputParentThreadID,
               uint64_t inputStackPtr, uint64_t inputFirstPC,
               std::shared_ptr<MemSegment>& inputThreadMem,
               RevFeature* inputFeature);
@@ -82,7 +82,6 @@ public:
     friend std::ostream& operator<<(std::ostream& os, RevThread& Thread);
 
     const char* print() {
-      std::cout << "In Print" << std::endl;
       std::ostringstream oss;
       oss << *this;  // Assuming operator<< is already overloaded for RevThread
       SSTOutputBuffer = oss.str();  // Store the string
