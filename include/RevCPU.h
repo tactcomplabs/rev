@@ -224,7 +224,7 @@ private:
       
   // Global table of threads
   // - The actual RevThread objects live in this table 
-  // - Only place to guarantee the presence of a thread on this CPU
+  // - Only place where the presence of a RevThread on this CPU is guanranteed throughout execution
   std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
 
   // 2D vector to hold threads assigned to each processor and its corresponding harts.
@@ -248,17 +248,17 @@ private:
   // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();
 
-  // Checks core 'i' to see if it has any available harts to assign work to
+  // Checks core w/ ProcID to see if it has any available harts to assign work to
   // if it does and there is work to assign (ie. ThreadQueue is not empty)
   // assign it and enable the processor if not already enabled.
-  void UpdateThreadAssignments(uint32_t i);
+  void UpdateThreadAssignments(uint32_t ProcID);
 
-  // Checks for state changes in the threads of a given processor index 'i'
+  // Checks for state changes in the threads of a given processor index 'ProcID'
   // and handle appropriately
-  void CheckForStateChanges(uint32_t i);
+  void CheckForThreadStateChanges(uint32_t ProcID);
 
   // Checks for new threads that may have been added to a given processor's NewThreadInfo 
-  void CheckForNewThreads(uint32_t i);
+  void CheckForNewThreads(uint32_t ProcID);
 
   // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
   // it does this by seeing if a given thread's WaitingOnTID has completed

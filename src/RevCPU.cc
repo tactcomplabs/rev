@@ -2436,7 +2436,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     }
 
     // See if any of the threads on this proc changes state
-    CheckForStateChanges(i);
+    CheckForThreadStateChanges(i);
 
     // See if this proc encountered something that created a new thread
     CheckForNewThreads(i);
@@ -2672,7 +2672,7 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
 
 // Checks for state changes in the threads of a given processor index 'i'
 // and handle appropriately
-void RevCPU::CheckForStateChanges(uint32_t ProcID){
+void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
   // Handle any thread state changes for this core
   std::bitset<_REV_HART_COUNT_>& Changes = Procs[ProcID]->GetThreadStateChanges();
   
