@@ -44,7 +44,7 @@ class RV64P : public RevExt{
   // ----------------------------------------------------------------------
   struct Rev64PInstDefaults : RevInstDefaults {
     static constexpr uint8_t     opcode   = 0b1110111;
-    static constexpr RevRegClass rs2Class = RegUNKNOWN;
+    static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
     static constexpr RevImmFunc  imm      = FImm;
     static constexpr RevInstF    format   = RVTypeI;
   };

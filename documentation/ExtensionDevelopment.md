@@ -274,13 +274,13 @@ struct Rev32ZInstDefaults : RevInstDefaults {
 }
 std::vector<RevInstEntry> RV32ZTable = {
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zadd %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0000000).
-   SetrdClass(RegGPR).Setrs1Class(RegGPR)Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zadd).InstEntry },
+   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR)Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zadd).InstEntry },
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsub %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0100000).
-   SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zsub).InstEntry },
+   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zsub).InstEntry },
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zlb %rd, $imm(%rs1)").SetCost(1).SetOpcode(0b0000011).SetFunct3(0b000).SetFunct7(0b0).
-   SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&zlb).InstEntry },
+   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&zlb).InstEntry },
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsb %rs2, $imm(%rs1)").SetCost(1).SetOpcode(0b0100011).SetFunct3(0b000).SetFunct7(0b0).
-   SetrdClass(RegIMM).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeS).SetImplFunc(&zsub).InstEntry },
+   SetrdClass(RegIMM).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeS).SetImplFunc(&zsub).InstEntry },
 };
 ```
 
@@ -293,10 +293,10 @@ For this, we've created four instructions: `zadd`, `zsub`, `zlb` and `zsb` to re
 | 3 | opcode | This is the seven bit opcode of the instruction. |
 | 4 | funct3 | This is the funct3 encoding field.  If the respective instruction does not utilize the field, set this value to `0b000` |
 | 5 | funct7 | This is the funct7 encoding field.  If the respective instruction does not utilize the field, set this value to `0b0000000` |
-| 6 | rdClass | If the instruction has an `rd` register slot, this denotes the register class utilized.  Values for this can be one of `RegGPR` for the general purpose register file, `RegCSR` for the CSR register file, `RegFloat` for the floating point register file, `RegIMM` (treat the reg class like an immediate, only utilized in the S-format) or `RegUNKNOWN` if the field is not utilized. |
-| 7 | rs1Class | Defines the register class for the `rs1` slot.  Use `RegUNKNOWN` if this slot is not utilized | 
-| 8 | rs2Class | Defines the register class for the `rs2` slot.  Use `RegUNKNOWN` if this slot is not utilized | 
-| 9 | rs3Class | Defines the register class for the `rs3` slot.  Use `RegUNKNOWN` if this slot is not utilized | 
+| 6 | rdClass | If the instruction has an `rd` register slot, this denotes the register class utilized.  Values for this can be one of `RevRegClass::RegGPR` for the general purpose register file, `RegCSR` for the CSR register file, `RegFloat` for the floating point register file, `RegIMM` (treat the reg class like an immediate, only utilized in the S-format) or `RevRegClass::RegUNKNOWN` if the field is not utilized. |
+| 7 | rs1Class | Defines the register class for the `rs1` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 8 | rs2Class | Defines the register class for the `rs2` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 9 | rs3Class | Defines the register class for the `rs3` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
 | 10 | imm12 | Defines the value of the `imm12` slot if the immediate is hardwired to a single value. |
 | 11 | imm | Defines the functionality of th `imm12` field.  If the field is not used, set this to `Funk`.  `FImm` indicates that the field is present and utilized, `FEnc` indicates that this field is an encoding value and `FVal` is an incoming register value.  When using `FEnc`, the `imm12` entry (10) must also be set. |
 | 12 | format | Defines the instruction format.  This is one of: `RVTypeUNKNOWN`, `RVTypeR`, `RVTypeI`, `RVTypeS`, `RVTypeU`, `RVTypeB`, `RVTypeJ` or `RVTypeR4` |

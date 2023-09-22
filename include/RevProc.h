@@ -49,6 +49,7 @@
 #include "RevThreadCtx.h"
 #include "../common/syscalls/SysFlags.h"
 #include "RevRand.h"
+#include "../common/include/RevCommon.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
@@ -175,6 +176,8 @@ public:
   ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
   std::unordered_map<uint32_t, std::shared_ptr<RevThreadCtx>> ThreadTable;
 
+  void MarkLoadComplete(const MemReq& req);
+
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
   bool Stalled;             ///< RevProc: determines if the core is stalled on instruction fetch
@@ -201,6 +204,8 @@ private:
   PanExec *PExec;           ///< RevProc: PAN exeuction context
   RevProcStats Stats{};     ///< RevProc: collection of performance stats
   std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher
+
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
@@ -689,10 +694,10 @@ private:
     // InstTable[...].r<reg>Class should be used when doing hazard
     // detection on particular registers, since some instructions
     // combine integer and FP register operands. See DependencySet().
-    return( InstTable[Entry].rdClass  == RegFLOAT ||
-            InstTable[Entry].rs1Class == RegFLOAT ||
-            InstTable[Entry].rs2Class == RegFLOAT ||
-            InstTable[Entry].rs3Class == RegFLOAT );
+    return( InstTable[Entry].rdClass  == RevRegClass::RegFLOAT ||
+            InstTable[Entry].rs1Class == RevRegClass::RegFLOAT ||
+            InstTable[Entry].rs2Class == RevRegClass::RegFLOAT ||
+            InstTable[Entry].rs3Class == RevRegClass::RegFLOAT );
   }
 
   /// RevProc: Determine next thread to execute
@@ -703,7 +708,7 @@ private:
 
   /// RevProc: Set or clear scoreboard based on instruction destination
   void DependencySet(uint16_t HartID, const RevInst* Inst, bool value = true){
-    DependencySet(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RegFLOAT, value);
+    DependencySet(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RevRegClass::RegFLOAT, value);
   }
 
   /// RevProc: Clear scoreboard on instruction retirement

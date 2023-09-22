@@ -45,17 +45,17 @@ class RV64F : public RevExt {
   // ----------------------------------------------------------------------
   struct Rev64FInstDefaults : RevInstDefaults {
     static constexpr uint8_t     opcode   = 0b1010011;
-    static constexpr RevRegClass rdClass  = RegFLOAT;
-    static constexpr RevRegClass rs1Class = RegFLOAT;
-    static constexpr RevRegClass rs2Class = RegUNKNOWN;
-    static constexpr RevRegClass rs3Class = RegUNKNOWN;
+    static constexpr RevRegClass rdClass  = RevRegClass::RegFLOAT;
+    static constexpr RevRegClass rs1Class = RevRegClass::RegFLOAT;
+    static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
+    static constexpr RevRegClass rs3Class = RevRegClass::RegUNKNOWN;
   };
 
   std::vector<RevInstEntry> RV64FTable = {
-    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.l.s  %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00010).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtls ).InstEntry},
-    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.lu.s %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00011).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtlus ).InstEntry},
-    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.l %rd, %rs1" ).SetFunct7( 0b1101000).SetfpcvtOp(0b00010).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtsl ).InstEntry},
-    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct7( 0b1101000).SetfpcvtOp(0b00011).Setrs2Class(RegUNKNOWN).SetImplFunc(&fcvtslu ) .InstEntry},
+    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.l.s  %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00010).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&fcvtls ).InstEntry},
+    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.lu.s %rd, %rs1").SetFunct7( 0b1100000).SetfpcvtOp(0b00011).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&fcvtlus ).InstEntry},
+    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.l %rd, %rs1" ).SetFunct7( 0b1101000).SetfpcvtOp(0b00010).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&fcvtsl ).InstEntry},
+    {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct7( 0b1101000).SetfpcvtOp(0b00011).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&fcvtslu ) .InstEntry},
   };
 
 

@@ -21,15 +21,20 @@ namespace SST::RevCPU{
 class RV32A : public RevExt {
 
   static bool lrw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+    MemReq req;
     if( F->IsRV32() ){
-      M->LR(F->GetHart(), uint64_t(R->RV32[Inst.rs1]),
+      req.Set(uint64_t(R->RV32[Inst.rs1]), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->MarkLoadComplete);
+      R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+      M->LR(F->GetHartToExec(), uint64_t(R->RV32[Inst.rs1]),
             &R->RV32[Inst.rd],
-            Inst.aq, Inst.rl, Inst.hazard,
+            Inst.aq, Inst.rl, req,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
     }else{
-      M->LR(F->GetHart(), R->RV64[Inst.rs1],
+      req.Set(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->MarkLoadComplete);
+      R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+      M->LR(F->GetHartToExec(), R->RV64[Inst.rs1],
             reinterpret_cast<uint32_t*>(&R->RV64[Inst.rd]),
-            Inst.aq, Inst.rl, Inst.hazard,
+            Inst.aq, Inst.rl, req,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
     }
     R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
@@ -39,13 +44,13 @@ class RV32A : public RevExt {
 
   static bool scw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     if( F->IsRV32() ){
-      M->SC(F->GetHart(), R->RV32[Inst.rs1],
+      M->SC(F->GetHartToExec(), R->RV32[Inst.rs1],
             &R->RV32[Inst.rs2],
             &R->RV32[Inst.rd],
             Inst.aq, Inst.rl,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
     }else{
-      M->SC(F->GetHart(), R->RV64[Inst.rs1],
+      M->SC(F->GetHartToExec(), R->RV64[Inst.rs1],
             reinterpret_cast<uint32_t*>(&R->RV64[Inst.rs2]),
             reinterpret_cast<uint32_t*>(&R->RV64[Inst.rd]),
             Inst.aq, Inst.rl,
@@ -67,20 +72,25 @@ class RV32A : public RevExt {
       flags |= uint32_t(RevCPU::RevFlag::F_RL);
     }
 
+    MemReq req;
     if( F->IsRV32() ){
-      M->AMOVal(F->GetHart(),
+      req.Set(R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->MarkLoadComplete);
+      R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+      M->AMOVal(F->GetHartToExec(),
                 R->RV32[Inst.rs1],
                 &R->RV32[Inst.rs2],
                 &R->RV32[Inst.rd],
-                Inst.hazard,
+                req,
                 flags);
     }else{
       flags |= uint32_t(RevCPU::RevFlag::F_SEXT64);
-      M->AMOVal(F->GetHart(),
+      req.Set(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->MarkLoadComplete);
+      R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+      M->AMOVal(F->GetHartToExec(),
                 R->RV64[Inst.rs1],
                 reinterpret_cast<int32_t*>(&R->RV64[Inst.rs2]),
                 reinterpret_cast<int32_t*>(&R->RV64[Inst.rd]),
-                Inst.hazard,
+                req,
                 flags);
     }
     // update the cost
@@ -108,7 +118,7 @@ class RV32A : public RevExt {
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   std::vector<RevInstEntry> RV32ATable = {
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("lr.w %rd, (%rs1)").SetCost(          1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00010).SetImplFunc( &lrw).Setrs2Class(RegUNKNOWN).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("lr.w %rd, (%rs1)").SetCost(          1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00010).SetImplFunc( &lrw).Setrs2Class(RevRegClass::RegUNKNOWN).InstEntry},
     {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("sc.w %rd, %rs1, %rs2").SetCost(      1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00011).SetImplFunc( &scw ).InstEntry},
     {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoswap.w %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00001).SetImplFunc( &amoswapw ).InstEntry},
     {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoadd.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00000).SetImplFunc( &amoaddw ).InstEntry},
