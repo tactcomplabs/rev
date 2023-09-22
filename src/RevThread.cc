@@ -85,6 +85,8 @@ bool RevThread::RemoveFD(int fd){
 // Get a string representation of the thread's state
 std::string RevThread::GetStateString() {
   switch (State){
+    case ThreadState::START:
+      return "START";
     case ThreadState::READY:
       return "READY";
     case ThreadState::RUNNING:
