@@ -238,6 +238,10 @@ private:
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
   void InitThread(std::shared_ptr<RevThread> ThreadToInit);
 
+  // Adds Thread with ThreadID to AssignedThreads vector for ProcID 
+  // - Handles updating LSQueue & MarkLoadComplete function pointers
+  void AssignThread(uint32_t ThreadID, uint32_t ProcID);
+
   // Sets up arguments for a thread with a given ID and feature set.
   void SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature);
 

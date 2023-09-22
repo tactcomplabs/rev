@@ -391,8 +391,6 @@ bool RevProc::Reset(){
   }
 
   Pipeline.clear();
-  
-  // SetupArgs();
 
   HART_CTS.set();
 
@@ -1713,7 +1711,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }else{
       Stalled = false;
     }
-
+    
     // If the next instruction is our special bounce address
     // DO NOT decode it.  It will decode to a bogus instruction.
     // We do not want to retire this instruction until we're ready
@@ -1770,7 +1768,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
       // -- BEGIN new pipelining implementation
       Pipeline.push_back(std::make_pair(HartToExec, Inst));
-      Pipeline.back().second.hazard = std::make_shared<bool>(false);
 
       if( (Ext->GetName() == "RV32F") ||
           (Ext->GetName() == "RV32D") ||
@@ -1919,7 +1916,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // Ready to retire this instruction
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %u ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
+                      "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
                       id, tID, ExecPC);
       Retired++;
       DependencyClear(tID, &(Pipeline.front().second));
@@ -2027,7 +2024,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // tidAddr is the address we have to write the new thread's id to
   output->verbose(CALL_INFO, 2, 0,
                   "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC);
-  uint64_t ParentPID = GetActiveThreadID();
+  uint64_t ParentThreadID = GetActiveThreadID();
 
   
   // Create the new thread's memory
@@ -2039,7 +2036,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // Create a new RevThread Object
   std::shared_ptr<RevThread> NewThread =
             std::make_shared<RevThread>(NewTID,
-                                        ParentPID, 
+                                        ParentThreadID,
                                         NewThreadMem->getBaseAddr()+_STACK_SIZE_,
                                         firstPC, NewThreadMem,
                                         feature);

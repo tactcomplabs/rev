@@ -7,17 +7,16 @@
 using namespace SST::RevCPU;
 
 // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx) 
-RevProc::ECALL_status_t RevProc::ECALL_io_setup(RevInst& inst){ output->verbose(CALL_INFO, 2, 0, "ECALL: io_setup called by thread %" PRIu32 "\n", GetActiveThreadID());
+RevProc::ECALL_status_t RevProc::ECALL_io_setup(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: io_setup called by thread %" PRIu32 "\n", GetActiveThreadID());
   return RevProc::ECALL_status_t::SUCCESS;
 }
-
 
 // 1, rev_io_destroy(aio_context_t ctx) 
 RevProc::ECALL_status_t RevProc::ECALL_io_destroy(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: io_destroy called by thread %" PRIu32 "\n", GetActiveThreadID());
   return RevProc::ECALL_status_t::SUCCESS;
 }
-
 
 // 2, rev_io_submit(aio_context_t, long, struct iocb  *  *) 
 RevProc::ECALL_status_t RevProc::ECALL_io_submit(RevInst& inst){
@@ -170,7 +169,7 @@ RevProc::ECALL_status_t RevProc::ECALL_getcwd(RevInst& inst){
   auto BufAddr = RegFile->GetX<uint64_t>(feature, 10);
   auto size = RegFile->GetX<uint64_t>(feature, 11);
   auto CWD = std::filesystem::current_path();
-  mem->WriteMem(feature->GetHart(), BufAddr, size, CWD.c_str());
+  mem->WriteMem(feature->GetHartToExec(), BufAddr, size, CWD.c_str());
 
   // Returns null-terminated string in buf
   // (no need to set x10 since it's already got BufAddr)
@@ -467,32 +466,32 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
 
 //   /* Read the filename from memory one character at a time until we find '\0' */
 
-//   if('\0' != ECALL_buf[0]){
+//   if('\0' != ECALL.buf[0]){
 //     //We are in the middle of the string
-//     ECALL_string = ECALL_string + ECALL_buf[0];
-//     mem->ReadVal<char>(HartToExec, filenameAddr + sizeof(char)*ECALL_string.length(), &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+//     ECALL.string = ECALL.string + ECALL.buf[0];
+//     mem->ReadVal<char>(HartToExec, filenameAddr + sizeof(char)*ECALL.string.length(), &ECALL.buf[0], inst.hazard, REVMEM_FLAGS(0x00));
 //     rtval = RevProc::ECALL_status_t::CONTINUE;
 //     DependencySet(HartToExec, 10, false);
-//   }else if(('\0' == ECALL_buf[0]) && (ECALL_string.length() > 0)) {
+//   }else if(('\0' == ECALL.buf[0]) && (ECALL.string.length() > 0)) {
 //     //found the null terminator - we're done
-//     ECALL_string = ECALL_string + ECALL_buf[0];
+//     ECALL.string = ECALL.string + ECALL.buf[0];
 
 //     /* Do the openat on the host */
 //     dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
-//     int fd = openat(dfd, ECALL_string.c_str(), O_RDWR);
+//     int fd = openat(dfd, ECALL.string.c_str(), O_RDWR);
 
 //     AssignedThreads.at(HartToDecode)->AddFD(fd);
 
 //     /* openat returns the file descriptor of the opened file */
 //     RegFile->RV64[10] = fd;
 
-//     ECALL_string.clear();   //reset the ECALL buffers
-//     ECALL_buf[0] = '\0';
+//     ECALL.string.clear();   //reset the ECALL buffers
+//     ECALL.buf[0] = '\0';
 //     rtval = RevProc::ECALL_status_t::SUCCESS;
 //     DependencyClear(HartToExec, 10, false);
 //   }else{
 //     //first time through the ECALL
-//     mem->ReadVal<char>(HartToExec, filenameAddr, &ECALL_buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+//     mem->ReadVal<char>(HartToExec, filenameAddr, &ECALL.buf[0], inst.hazard, REVMEM_FLAGS(0x00));
 //     DependencySet(HartToExec, 10, false);
 //     rtval = RevProc::ECALL_status_t::CONTINUE;
 //   }
@@ -588,7 +587,7 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
   int rc = read(fd, &TmpBuf[0], BufSize);
 
   // Write that data to the buffer inside of Rev
-  mem->WriteMem(feature->GetHart(), BufAddr, BufSize, &TmpBuf[0]);
+  mem->WriteMem(feature->GetHartToExec(), BufAddr, BufSize, &TmpBuf[0]);
 
   RegFile->SetX(feature, 10, rc);
   return ECALL_status_t::SUCCESS;
@@ -634,7 +633,7 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
 
 // 64, rev_write(unsigned int fd, const char  *buf, size_t count) 
 RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 "\n", GetActiveThreadID());
+  output->verbose(CALL_INFO, 2, 0, "ECALL_write called\n");
   auto fd = RegFile->GetX<int>(feature, 10);
   auto addr = RegFile->GetX<uint64_t>(feature, 11);
   auto nbytes = RegFile->GetX<uint64_t>(feature, 12);
@@ -659,12 +658,14 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
 
     DependencyClear(HartToExec, 10, false);
     rtv = ECALL_status_t::SUCCESS;
-  }else {
+  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  {
     auto readfunc = [&](auto* buf){
+      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->MarkLoadComplete);
+      LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       mem->ReadVal(HartToExec,
                    addr + ECALL.string.size(),
                    buf,
-                   inst.hazard,
+                   req,
                    REVMEM_FLAGS(0));
       ECALL.bytesRead = sizeof(*buf);
     };
@@ -679,63 +680,11 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     }
     DependencySet(HartToExec, 10, false);
     rtv = ECALL_status_t::CONTINUE;
+  }else{
+    rtv = ECALL_status_t::CONTINUE;
   }
   return rtv;
 }
-// RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
-//   int fildes = RegFile->RV64[10];
-//   std::size_t nbytes = RegFile->RV64[12];
-
-//   output->verbose(CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 "\n", GetActiveThreadID());
-//   RevProc::ECALL_status_t rtv = RevProc::ECALL_status_t::SUCCESS;
-
-//   if(ECALL_bytesRead == nbytes){
-//     // Read is complete - send to host
-//     ECALL_string = ECALL_string.append(ECALL_buf);
-//     // Perform the write on the host system 
-//     const int rc = write(fildes, ECALL_string.data(), nbytes);
-
-
-//     // write returns the number of bytes written
-//     RegFile->RV64[10] = rc;
-
-//     // Reset our tracking state
-//     ECALL_bytesRead = 0;
-//     ECALL_buf[0] = '\0';
-//     ECALL_string.clear();
-//     rtv = RevProc::ECALL_status_t::SUCCESS;
-//     DependencyClear(HartToExec, 10, false);
-
-//   }else {
-//     if(ECALL_bytesRead > 0){
-//       // Not our first time through... so capture previous read data
-//       ECALL_string = ECALL_string.append(ECALL_buf);
-//     }
-//     if(1 == (nbytes - ECALL_bytesRead)){
-//       mem->ReadVal<char>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, ECALL_buf, inst.hazard, REVMEM_FLAGS(0x0));
-//       ECALL_buf[1] = '\0';  //Pre-null terminate to allow for succesful string cat later
-//       ECALL_bytesRead += sizeof(char);
-//     }
-//     else if(3 >= (nbytes - ECALL_bytesRead )){
-//       mem->ReadVal<int16_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int16_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
-//       ECALL_buf[2] = '\0'; //Pre-null terminate to allow for succesful string cat later
-//       ECALL_bytesRead += sizeof(int16_t);
-//     }
-//     else if(7 >= (nbytes - ECALL_bytesRead )){
-//       mem->ReadVal<int32_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int32_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
-//       ECALL_buf[4] = '\0'; //Pre-null terminate to allow for succesful string cat later
-//       ECALL_bytesRead += sizeof(int32_t);
-//     }
-//     else {
-//       mem->ReadVal<int64_t>(HartToExec, RegFile->RV64[11] + ECALL_bytesRead, reinterpret_cast<int64_t*>(ECALL_buf), inst.hazard, REVMEM_FLAGS(0x0));
-//       ECALL_buf[8] = '\0'; //Pre-null terminate to allow for succesful string cat later
-//      ECALL_bytesRead += sizeof(int64_t);
-//     }
-//     rtv = RevProc::ECALL_status_t::CONTINUE;
-//     DependencySet(HartToExec, 10, false);
-//   }
-//   return rtv;
-// }
 
 // 65, rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen) 
 RevProc::ECALL_status_t RevProc::ECALL_readv(RevInst& inst){
@@ -2588,7 +2537,7 @@ RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   std::cout << "New TID = " << NewTID << std::endl;
   CreateThread(NewTID, NewThreadPC, (void*)ArgPtr);
 
-  mem->WriteMem(feature->GetHart(), tidAddr, sizeof(unsigned long int), &NewTID, REVMEM_FLAGS(0x00));
+  mem->WriteMem(feature->GetHartToExec(), tidAddr, sizeof(unsigned long int), &NewTID, REVMEM_FLAGS(0x00));
   return RevProc::ECALL_status_t::SUCCESS;
 }
 
