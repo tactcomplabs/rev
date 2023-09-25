@@ -83,13 +83,12 @@ class RevThread {
 
   // Printing functions
   std::string GetStateString();
-  friend std::ostream& operator<<(std::ostream& os, RevThread& Thread);
+  friend std::ostream& operator<<(std::ostream& os, const RevThread& Thread);
 
-  const char* print() {
+  std::string to_string() const {
     std::ostringstream oss;
-    oss << *this;  // Assuming operator<< is already overloaded for RevThread
-    SSTOutputBuffer = oss.str();     // Store the string
-    return SSTOutputBuffer.c_str();  // Return C-string
+    oss << *this;      // << operator is overloaded above
+    return oss.str();  // Return the string
   }
 
  private:

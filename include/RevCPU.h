@@ -236,7 +236,7 @@ private:
   // Initializes a RevThread object.
   // - Moves it to the 'Threads' map 
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
-  void InitThread(std::shared_ptr<RevThread> ThreadToInit);
+  void InitThread(std::shared_ptr<RevThread>& ThreadToInit);
 
   // Adds Thread with ThreadID to AssignedThreads vector for ProcID 
   // - Handles updating LSQueue & MarkLoadComplete function pointers

@@ -308,7 +308,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   InitThread(MainThread);
   
-  output.verbose(CALL_INFO, 11, 0, "Main thread initialized %s", MainThread->print());
+  output.verbose(CALL_INFO, 11, 0, "Main thread initialized %s", MainThread->to_string().c_str());
 
   SetupArgs(MainThreadID, Procs[0]->GetRevFeature());
 
@@ -2538,7 +2538,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 // Initializes a RevThread object.
 // - Moves it to the 'Threads' map 
 // - Adds it's ThreadID to the ThreadQueue to be scheduled
-void RevCPU::InitThread(std::shared_ptr<RevThread> ThreadToInit){
+void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
 
   ThreadToInit->GetRegFile()->SetX(Procs[0]->GetRevFeature(), 3, Loader->GetSymbolAddr("__global_pointer$"));
   ThreadToInit->GetRegFile()->SetX(Procs[0]->GetRevFeature(), 8, Loader->GetSymbolAddr("__global_pointer$"));
@@ -2552,7 +2552,7 @@ void RevCPU::InitThread(std::shared_ptr<RevThread> ThreadToInit){
     output.fatal(CALL_INFO, 99, "Error: ThreadID %d has already been assigned... this is a bug.\n", TID);
   }
   output.verbose(CALL_INFO, 4, 0, "Initializing Thread %d\n", TID);
-  output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->print());
+  output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->to_string().c_str());
   ThreadToInit->SetState(ThreadState::READY);
   Threads.emplace(ThreadToInit->GetThreadID(), ThreadToInit);
   ThreadQueue.emplace_back(TID);
