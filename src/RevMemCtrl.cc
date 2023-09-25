@@ -1293,8 +1293,9 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
           handleAMO(op);
         }
         const MemReq& r = op->getMemReq();
-        if((MemOp::MemOpAMO != r.ReqType) &&
-           (!isAMO)){
+        //if((MemOp::MemOpAMO != r.ReqType) &&
+        //   (!isAMO)){
+        if( !isAMO ){
           r.MarkLoadComplete(r);
         }
         delete op;
@@ -1318,8 +1319,9 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     }
 
     const MemReq& r = op->getMemReq();
-    if((MemOp::MemOpAMO != r.ReqType) &&
-       (!isAMO)){
+    //if((MemOp::MemOpAMO != r.ReqType) &&
+    //   (!isAMO)){
+    if( !isAMO ){
       r.MarkLoadComplete(r);
     }
     delete op;
@@ -1434,8 +1436,9 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
       if( getNumSplitRqsts(op) == 1 ){
         // this was the last request to service, delete the op
         const MemReq& r = op->getMemReq();
-        if((MemOp::MemOpAMO == r.ReqType) &&
-           (isAMO)){
+        //if((MemOp::MemOpAMO == r.ReqType) &&
+        //   (isAMO)){
+        if( isAMO ){
             r.MarkLoadComplete(r);
         }
         delete op;
@@ -1449,8 +1452,9 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     // no split request exists; handle as normal
     // this was a write request for an AMO, clear the hazard
     const MemReq& r = op->getMemReq();
-    if((MemOp::MemOpAMO == r.ReqType) &&
-       (isAMO)){
+    //if((MemOp::MemOpAMO == r.ReqType) &&
+    //   (isAMO)){
+    if( isAMO ){
         r.MarkLoadComplete(r);
     }
     delete op;
