@@ -1369,8 +1369,13 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
                               MemOp::MemOpWRITE,
                               Tmp->getFlags());
 
+  // Retrieve the memory request object, but DO NOT mark the load
+  // as complete.  The actual write response from the read-modify-write
+  // process will mark the load as complete.  At this point, copy the
+  // MemReq object to the new request
   const MemReq& r = Tmp->getMemReq();
-  r.MarkLoadComplete(r);
+  Op->setMemReq(r);
+  //r.MarkLoadComplete(r);
 
   // insert a new entry into the AMO Table
   auto NewEntry = std::make_tuple(Op->getHart(),
