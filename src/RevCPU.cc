@@ -160,7 +160,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
       PExec = new PanExec();
       if( PExec == nullptr ){
-        for( unsigned i=0; i<Procs.size(); i++ ){
+        for( size_t i=0; i<Procs.size(); i++ ){
           Procs[i]->SetExecCtx(PExec);
         }
       }
@@ -342,7 +342,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     // setup the PAN target device execution context
     if( !PNic->IsHost() ){
       PExec = new PanExec();
-      for( unsigned i=0; i<Procs.size(); i++ ){
+      for( size_t i=0; i<Procs.size(); i++ ){
         Procs[i]->SetExecCtx(PExec);
       }
     }
@@ -2478,7 +2478,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   }
 
   // check to see if all the processors are completed
-  for( unsigned i=0; i<Procs.size(); i++ ){
+  for( size_t i=0; i<Procs.size(); i++ ){
     if( Enabled[i] ){
       rtn = false;
     }
@@ -2673,7 +2673,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
   
   // Check if any threads on Procs[ProcID]] have changed state
   if( Changes.any() ){
-    for( unsigned HartID=0; HartID<Changes.size(); HartID++ ){
+    for( size_t HartID=0; HartID<Changes.size(); HartID++ ){
       // Only check the ones that have changed
       if( Changes[HartID] ){
         std::shared_ptr<RevThread>& Thread = AssignedThreads.at(ProcID).at(HartID);

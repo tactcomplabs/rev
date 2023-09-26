@@ -1693,7 +1693,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   //
   //
   
-  for( unsigned HartID=0; HartID<AssignedThreads.size(); HartID++ ){
+  for( size_t HartID=0; HartID<AssignedThreads.size(); HartID++ ){
     HART_CTS[HartID] = (AssignedThreads.at(HartID)->GetRegFile()->cost == 0);
   }
 
@@ -1989,10 +1989,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 }
 
 
-// TODO: Print Summary 
 void RevProc::PrintStatSummary(){
   output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
-  Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
+  Stats.percentEff = double(Stats.cyclesBusy)/Stats.totalCycles;
   output->verbose(CALL_INFO, 2, 0,
                   "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
                   " Idle Cycles: %" PRIu64 " Eff: %f\n",

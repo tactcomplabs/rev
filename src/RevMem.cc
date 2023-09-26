@@ -367,7 +367,7 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
       } else {
         // If it contains the top address, we don't need to do anything
         output->verbose(CALL_INFO, 10, 99,
-        "Warning: Memory segment already allocated that contains the requested rounded allocation at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
+        "Warning: Memory segment already allocated that contains the requested rounded allocation at " PRIx64 "of size " PRIu64 " Bytes\n", BaseAddr, SegSize);
       }
       // Return the containing segments Base Address
       BaseAddr = Seg->getBaseAddr();
@@ -415,11 +415,11 @@ void RevMem::SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size){
 // vector to see if there is a free segment that will fit the new data
 // If there is not a free segment, it will allocate a new segment at the end of the heap
 uint64_t RevMem::AllocMem(const uint64_t& SegSize){
-  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap\n", SegSize);
+  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating " PRIu64 " bytes on the heap\n", SegSize);
 
   uint64_t NewSegBaseAddr = 0;
   // Check if there is a free segment that can fit the new data
-  for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
+  for( size_t i=0; i < FreeMemSegs.size(); i++ ){
     auto FreeSeg = FreeMemSegs[i];
     // if the FreeSeg is bigger than the new data, we can shrink it so it starts
     // after the new segment (SegSize)
