@@ -1991,7 +1991,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
 void RevProc::PrintStatSummary(){
   output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
-  Stats.percentEff = double(Stats.cyclesBusy)/Stats.totalCycles;
+  Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
   output->verbose(CALL_INFO, 2, 0,
                   "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
                   " Idle Cycles: %" PRIu64 " Eff: %f\n",
@@ -2437,7 +2437,7 @@ void RevProc::ExecEcall(RevInst& inst){
       RegFile->AdvancePC( feature, -int32_t(inst.instSize) );
     }
   } else {
-    output->fatal(CALL_INFO, -1, "Ecall Code = %lu not found", EcallCode);
+    output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu64 " not found", EcallCode);
   }
 }
 
@@ -2448,11 +2448,11 @@ uint32_t RevProc::GetActiveThreadID(){
       ActiveThreadID = AssignedThreads.at(HartToDecode)->GetThreadID();
     } 
     else {
-      output->fatal(CALL_INFO, 1, "HartToDecode = %d but there are only %zu threads assigned to this Proc. This might be a bug\n", HartToDecode, AssignedThreads.size());
+      output->fatal(CALL_INFO, 1, "HartToDecode = %" PRIu32 " but there are only %" PRIu64 " threads assigned to this Proc. This might be a bug\n", HartToDecode, AssignedThreads.size());
     }
   } 
   else {
-    output->fatal(CALL_INFO, 1, "HartToDecode = %d is invalid. This is a bug\n", HartToDecode);
+    output->fatal(CALL_INFO, 1, "HartToDecode = %" PRIu32 " is invalid. This is a bug\n", HartToDecode);
   }
   return ActiveThreadID;
 }
