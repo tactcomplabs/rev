@@ -1734,7 +1734,7 @@ void RevProc::MarkLoadComplete(const MemReq& req){
   if( it != LSQueue->end()){
     DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
     LSQueue->erase(it);
-  }else if(0 != req.DestReg){ //instruction pre-fetch fills target r0, we can ignore these
+  }else if(0 != req.DestReg){ //instruction pre-fetch fills target x0, we can ignore these
     output->fatal(CALL_INFO, -1,
                "Core %u ; Hart %u; Cannot find outstanding load for reg %u from address %" PRIx64 "\n",
                 id, req.Hart, req.DestReg, req.Addr);
@@ -1781,14 +1781,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }
   }
-
-  //Clear dependency bits for any loads that have returned
-/*for (auto it = LSQueue->begin(); it != LSQueue->end();) {
-  if(!it->second.isOutstanding){
-    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
-    it = LSQueue->erase(it);
-  }
-}*/
 
   for (int tID = 0; tID < _REV_HART_COUNT_; tID++){
     HART_CTS[tID] = (GetRegFile(tID)->cost == 0);
@@ -2007,19 +1999,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
 
-  // walk the pipeline hazards.  if a load hazard is set, increase the cost to > 0
-  /*for( auto i : Pipeline ){
-    if( *(i.second.hazard) ){
-      i.second.cost++;
-    }
-  }*/
-
   // Check for pipeline hazards
   if(!Pipeline.empty() &&
      (Pipeline.front().second.cost > 0)){
     Pipeline.front().second.cost--;
     if((Pipeline.front().second.cost == 0)){ // &&
-     //  (!*(Pipeline.front().second.hazard))){
       // Ready to retire this instruction
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
