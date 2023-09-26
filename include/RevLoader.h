@@ -298,13 +298,13 @@ public:
   /// RevLoader: retrives the elf info structure
   ElfInfo GetInfo() { return elfinfo; }
 
-      /// RevLoader: Gets TLS base address
-      uint64_t GetTLSBaseAddr() { return TLSBaseAddr; }
-  
-      /// RevLoader: Gets TLS size
-      uint64_t GetTLSSize() { return TLSSize; }
+  /// RevLoader: Gets TLS base address
+  const uint64_t& GetTLSBaseAddr() { return TLSBaseAddr; }
 
-      // friend std::ostream& operator<<(std::ostream &os, const Elf64_Ehdr &header){ };
+  /// RevLoader: Gets TLS size
+  const uint64_t& GetTLSSize() { return TLSSize; }
+
+  // friend std::ostream& operator<<(std::ostream &os, const Elf64_Ehdr &header){ };
 
 private:
   std::string exe;          ///< RevLoader: binary executable

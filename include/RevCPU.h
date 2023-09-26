@@ -273,11 +273,8 @@ private:
   // Set of Thread IDs that have completed their execution.
   std::set<uint32_t> CompletedThreads = {};
 
-  // Random Number Generator for generating new Thread IDs.
-  SST::RNG::MarsagliaRNG* RNG;
-
   // Generates a new Thread ID using the RNG.
-  uint32_t GetNewThreadID() { return RNG->generateNextUInt32(); }
+  uint32_t GetNewThreadID() { return RevRand(0, UINT32_MAX); }
 
   uint8_t PrivTag;                    ///< RevCPU: private tag locator
   // TODO: LToken is used everywhere as uint32_t but was declared as uint64_t

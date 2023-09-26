@@ -310,7 +310,7 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 }
 
 // This function will change a decent amount in an upcoming PR
-bool RevMem::isValidVirtAddr(const uint64_t& vAddr){
+bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   for(const auto& Seg : MemSegs ){
     if( Seg->contains(vAddr) ){
       return true;

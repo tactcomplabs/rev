@@ -47,8 +47,8 @@
 #include "RevPrefetcher.h"
 #include "RevCoProc.h"
 #include "RevThread.h"
-#include "../common/syscalls/SysFlags.h"
 #include "RevRand.h"
+#include "../common/syscalls/SysFlags.h"
 #include "../common/include/RevCommon.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
@@ -124,7 +124,11 @@ public:
 
   RevMem& GetMem() const { return *mem; }
 
-  std::bitset<_REV_HART_COUNT_>& GetThreadStateChanges(){ return ThreadStateChanges; }
+  // Get the bitset of state changes
+  const std::bitset<_REV_HART_COUNT_>& GetThreadStateChanges() { return ThreadStateChanges; }
+
+  // Zeros the bitset of state changes
+  void ClearThreadStateChanges(){ ThreadStateChanges.reset(); }
 
   /// RevProc: SpawnThread creates a new thread and returns its ThreadID
   void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
@@ -133,13 +137,7 @@ public:
   uint32_t GetActiveThreadID();
 
   /// RevProc: Queue of threads to be spawned (RevProc creates the thread, RevCPU readies it for execution)
-  std::queue<std::shared_ptr<RevThread>>& GetNewThreadInfo() { return NewThreadInfo; }
-
-  /// RevProc: Retires currently executing thread & then swaps to its parent. If no parent terminates program
-  uint32_t RetireAndSwap(); // Returns new pid
-
-  ///< RevProc: Change HartID active pid
-  bool ChangeActiveThreadID(uint32_t ThreadID, uint16_t HartID);
+  const std::queue<std::shared_ptr<RevThread>>& GetNewThreadInfo() { return NewThreadInfo; }
 
   ///< RevProc: Holds the info for all new threads to be spawned
   ///           Right now this is through the following functions:
@@ -147,11 +145,12 @@ public:
   std::queue<std::shared_ptr<RevThread>> NewThreadInfo;
 
   ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
-  double GetUtilization(){ return ((double)AssignedThreads.size() / _REV_HART_COUNT_) * 100; }
+  double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / _REV_HART_COUNT_; }
 
   ///< RevProc: Get this Proc's feature
-  RevFeature* GetRevFeature(){ return feature; }
+  RevFeature* GetRevFeature() const { return feature; }
 
+  ///< RevProc: Mark a current request as complete
   void MarkLoadComplete(const MemReq& req);
   
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations

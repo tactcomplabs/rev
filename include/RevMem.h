@@ -98,8 +98,8 @@ public:
 
 
     // Override for easy std::cout << *Seg << std::endl;
-    friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
-          return os << " | BaseAddr:  0x" << std::hex << obj.getBaseAddr() << " | TopAddr: 0x" << std::hex << obj.getTopAddr() << " | Size: " << std::dec << obj.getSize() << " Bytes";
+    friend std::ostream& operator<<(std::ostream& os, const MemSegment& Seg) {
+      return os << " | BaseAddr:  0x" << std::hex << Seg.getBaseAddr() << " | TopAddr: 0x" << std::hex << Seg.getTopAddr() << " | Size: " << std::dec << Seg.getSize() << " Bytes";
     }
 
   private:
@@ -257,7 +257,7 @@ public:
   void SetMaxHeapSize(const unsigned MaxHeapSize){ maxHeapSize = MaxHeapSize; }
 
   /// RevMem: Get memSize value set in .py file
-  uint64_t GetMemSize(){ return memSize; }
+  uint64_t GetMemSize() const { return memSize; }
 
   /// RevMem: Sets the next stack top address
   void SetNextThreadMemAddr(const uint64_t& NextAddr){ NextThreadMemAddr = NextAddr; }
@@ -348,7 +348,7 @@ private:
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
   void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
   uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
-  bool isValidVirtAddr(const uint64_t& vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
+  bool isValidVirtAddr(uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
 
   std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
   uint32_t                                      pageSize;  ///< RevMem: size of allocated pages

@@ -18,7 +18,7 @@ RevThread::RevThread( uint32_t inputThreadID,
                       uint32_t inputParentThreadID,
                       uint64_t inputStackPtr,
                       uint64_t inputFirstPC,
-                      std::shared_ptr<MemSegment>& inputThreadMem,
+                      std::shared_ptr<RevMem::MemSegment>& inputThreadMem,
                       RevFeature* inputFeature)
    : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),  
      FirstPC(inputFirstPC), ThreadMem(inputThreadMem), Feature(inputFeature) {
@@ -83,7 +83,7 @@ bool RevThread::RemoveFD(int fd){
 }
 
 // Get a string representation of the thread's state
-std::string RevThread::GetStateString() {
+const std::string RevThread::GetStateString() {
   switch (State){
     case ThreadState::START:
       return "START";
@@ -100,55 +100,5 @@ std::string RevThread::GetStateString() {
   }
 }
 
-// Override the << operator for printing the thread
-std::ostream& operator<<(std::ostream& os, RevThread& thread) {
-  os << "\n";
-  auto RegFile = thread.GetRegFile();
-  RevFeature* Feature = thread.GetFeature();
-
-  // Calculate total width of the table
-  int tableWidth = 6 /*Reg*/ + 7 /*Alias*/ + 16 /*Value*/ + 23 /*Info*/ + 9 /*Separators*/;
-
-  // Print a top border
-  os << "|" << std::string(tableWidth-1, '=') << "|" << '\n';
-  
-  // Print Thread ID
-  os << "| Thread " << thread.GetThreadID() << std::setw(6) <<  std::string(tableWidth-10, ' ') << "|\n";
-
-  // Print the middle border
-  os << "|" << std::string(tableWidth-1, '-') << "|" << '\n';
-
-  // Print a nice header
-  os << " ==> State: " << thread.GetStateString() << "\n";
-  os << " ==> ParentTID: " << thread.GetParentThreadID() << "\n";
-  os << " ==> Blocked by TID: " ;
-  if (thread.GetWaitingToJoinTID() != __INVALID_TID__) {
-    os << thread.GetWaitingToJoinTID();
-  } else {
-    os << "N/A";
-  }
-  os << "\n";
-
-  os << '|' << std::string(tableWidth-1, '-') << '|' << '\n';
-  // Table header
-  os << "| " << std::setw(4) << "Reg" << " | " << std::setw(5) << "Alias" << " | " << std::setw(19) << "Value" << " | " << std::setw(21) << "Info" << " |\n";
-  os << "|------|-------|---------------------|-----------------------|\n";
-
-  // Register aliases and descriptions
-  static constexpr const char* aliases[] = {"zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
-  static constexpr const char* info[] = {"Zero Register", "Return Address", "Stack Pointer", "Global Pointer", "Thread Pointer", "Temporary Register", "Temporary Register", "Temporary Register", "Callee Saved Register", "Callee Saved Register", "Arg/Return Register", "Arg/Return Register", "Argument Register", "Argument Register", "Argument Register", "Argument Register", "Argument Register", "Argument Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Temporary Register", "Temporary Register", "Temporary Register", "Temporary Register"};
-
-  // Loop over the registers
-  for (size_t i = 0; i < _REV_NUM_REGS_; ++i) {
-    uint64_t value = RegFile->GetX<uint64_t>(Feature, i);
-    
-    os << "| " << std::setw(4) << ("x" + std::to_string(i));
-    os << " | " << std::setw(5) << aliases[i];
-    os << " | " << std::setw(19) << ("0x" + std::to_string(value));
-    os << " | " << std::setw(21) << info[i] << " |\n";
-  }
-  os << "|" << std::string(tableWidth-1, '-') << "|" << '\n';
-  return os;
-}
 
 // EOF

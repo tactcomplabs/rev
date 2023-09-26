@@ -265,9 +265,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     }
   }
 
-  // Initialize the RNG
-  RNG = new SST::RNG::MarsagliaRNG(id, LARGE_PRIME);
-
   // Initial thread setup
   uint32_t MainThreadID = id+1; // Prevents having MainThreadID == 0 which is reserved for INVALID
 
@@ -407,8 +404,6 @@ RevCPU::~RevCPU(){
   // delete the clock handler object
   delete ClockHandler;
 
-  // delete the RNG for ThreadID generation
-  delete RNG;
 }
 
 void RevCPU::DecodeFaultWidth(const std::string& width){
@@ -2441,7 +2436,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     // See if this proc encountered something that created a new thread
     CheckForNewThreads(i);
 
-    if( Procs[i]->GetUtilization() == 0 ){
+    if( Procs[i]->GetHartUtilization() == 0 ){
       Enabled[i] = false; 
     }
   }
@@ -2643,7 +2638,7 @@ void RevCPU::SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature){
 // assign it and enable the processor if not already enabled.
 void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
   // Get utilization info
-  double Util = Procs[ProcID]->GetUtilization();
+  double Util = Procs[ProcID]->GetHartUtilization();
   if( Util > 0.0 ){
     output.verbose(CALL_INFO, 10, 0, "Core %d utilization: %.2f%%\n", ProcID, Util);
   }
@@ -2674,7 +2669,7 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
 // and handle appropriately
 void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
   // Handle any thread state changes for this core
-  std::bitset<_REV_HART_COUNT_>& Changes = Procs[ProcID]->GetThreadStateChanges();
+  std::bitset<_REV_HART_COUNT_> Changes = Procs[ProcID]->GetThreadStateChanges();
   
   // Check if any threads on Procs[ProcID]] have changed state
   if( Changes.any() ){
@@ -2746,6 +2741,8 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
         continue;
       }
     }
+    // Clear the changes for this core
+    Procs[ProcID]->ClearThreadStateChanges();
   }
   return;
 }
@@ -2756,9 +2753,9 @@ void RevCPU::CheckForNewThreads(uint32_t i){
   if( !Procs[i]->GetNewThreadInfo().empty() ){
     output.verbose(CALL_INFO, 8, 0, "Core %d has new threads\n", i);
     // There are new thread(s) to create
-    for( unsigned j=0; j<Procs[i]->GetNewThreadInfo().size(); j++ ){
-      auto NewThread = Procs[i]->GetNewThreadInfo().front();
-      Procs[i]->GetNewThreadInfo().pop();
+    for( size_t j=0; j<Procs[i]->GetNewThreadInfo().size(); j++ ){
+      auto NewThread = Procs[i]->NewThreadInfo.front();
+      Procs[i]->NewThreadInfo.pop();
       InitThread(NewThread);
     }
   }
