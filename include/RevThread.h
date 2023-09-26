@@ -25,8 +25,6 @@
 
 namespace SST::RevCPU{
 
-// using MemSegment = RevMem::MemSegment;
-
 // Enum for tracking the state of a RevThread.
 enum class ThreadState {
   START,    // Initial state; resources are allocated.
@@ -83,9 +81,6 @@ class RevThread {
   bool isBlocked();
   bool isDone();
 
-  // Printing functions
-  std::string const GetStateString();
-
   friend std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
 
     os << "\n";
@@ -105,8 +100,29 @@ class RevThread {
     // Print the middle border
     os << "|" << std::string(tableWidth-1, '-') << "|" << '\n';
 
+    std::string StateString = "";
+    switch (Thread.GetState()){
+      case ThreadState::START:
+        StateString = "START";
+        break;
+      case ThreadState::READY:
+        StateString = "READY";
+        break;
+      case ThreadState::RUNNING:
+        StateString = "RUNNING";
+        break;
+      case ThreadState::BLOCKED:
+        StateString = "BLOCKED";
+        break;
+      case ThreadState::DONE:
+        StateString = "DONE";
+        break;
+      default:
+        StateString = "UNKNOWN";
+        break;
+    }
     // Print a nice header
-    // os << " ==> State: " << Thread.GetStateString() << "\n";
+    os << " ==> State: " << StateString << "\n";
     os << " ==> ParentTID: " << Thread.GetParentThreadID() << "\n";
     os << " ==> Blocked by TID: " ;
     if (Thread.GetWaitingToJoinTID() != __INVALID_TID__) {
@@ -145,17 +161,17 @@ class RevThread {
   }
 
  private:
-  uint32_t ThreadID;                       // Thread ID
-  uint32_t ParentThreadID;                 // Parent ThreadID
-  uint64_t StackPtr;                       // Initial stack pointer
-  uint64_t FirstPC;                        // Initial PC
-  std::shared_ptr<RevMem::MemSegment> ThreadMem;   // TLS and Stack memory
-  RevFeature* Feature;                     // Feature set for this thread
-  uint64_t ThreadPtr;                      // Thread pointer
-  ThreadState State = ThreadState::START;  // Thread state (Initializes as )
-  RevRegFile RegFile;                      // Register file
-  std::vector<uint32_t> ChildrenThreadIDs = {};
-  std::vector<int> fildes = {0, 1, 2};  // Default file descriptors
+  uint32_t ThreadID;                                   // Thread ID
+  uint32_t ParentThreadID;                             // Parent ThreadID
+  uint64_t StackPtr;                                   // Initial stack pointer
+  uint64_t FirstPC;                                    // Initial PC
+  std::shared_ptr<RevMem::MemSegment> ThreadMem;       // TLS and Stack memory
+  RevFeature* Feature;                                 // Feature set for this thread
+  uint64_t ThreadPtr;                                  // Thread pointer
+  ThreadState State = ThreadState::START;              // Thread state (Initializes as )
+  RevRegFile RegFile;                                  // Register file
+  std::unordered_set<uint32_t> ChildrenThreadIDs = {}; // Child thread IDs
+  std::set<int> fildes = {0, 1, 2  };      // Default file descriptors
 
   uint32_t WaitingToJoinTID = __INVALID_TID__;
 

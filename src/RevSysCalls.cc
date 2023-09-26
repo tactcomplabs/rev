@@ -507,7 +507,7 @@ RevProc::ECALL_status_t RevProc::ECALL_close(RevInst& inst){
   // Check if CurrCtx has fd in fildes vector
   if( !ActiveThread->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
-                  "Core %u; Hart %d; ThreadID %" PRIu32 " tried to close file descriptor %d but did not have access to it\n",
+                  "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 " tried to close file descriptor %" PRIu32 " but did not have access to it\n",
                   id, HartToExec, GetActiveThreadID(), fd);
     return ECALL_status_t::SUCCESS;
   }

@@ -528,7 +528,7 @@ bool RevLoader::LoadProgramArgs(){
   ArgArray += 8;
 
   // -- these are the addresses of each argv entry
-  for( unsigned i=0; i<argv.size(); i++ ){
+  for( size_t i=0; i<argv.size(); i++ ){
     WriteCacheLine(ArgArray, 8, &OldStackTop);
     OldStackTop += (argv[i].size()+1);
     ArgArray += 8;

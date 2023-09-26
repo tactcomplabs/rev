@@ -38,7 +38,7 @@ RevThread::RevThread( uint32_t inputThreadID,
 
 bool RevThread::AddChildThreadID(uint32_t tid){
   if( std::find(ChildrenThreadIDs.begin(), ChildrenThreadIDs.end(), tid) != ChildrenThreadIDs.end() ){
-    ChildrenThreadIDs.push_back(tid);
+    ChildrenThreadIDs.emplace(tid);
     return true;
   }
   return false;
@@ -55,7 +55,7 @@ bool RevThread::RemoveChildThreadID(uint32_t tid){
 
 // Add new file descriptor 
 void RevThread::AddFD(int fd){
-  fildes.push_back(fd);
+  fildes.emplace(fd);
 }
 
 // See if file descriptor exists/is owned by Ctx 
@@ -81,24 +81,5 @@ bool RevThread::RemoveFD(int fd){
   // Not found, return false
   return false;  
 }
-
-// Get a string representation of the thread's state
-const std::string RevThread::GetStateString() {
-  switch (State){
-    case ThreadState::START:
-      return "START";
-    case ThreadState::READY:
-      return "READY";
-    case ThreadState::RUNNING:
-      return "RUNNING";
-    case ThreadState::BLOCKED:
-      return "BLOCKED";
-    case ThreadState::DONE:
-      return "DONE";
-    default:
-      return "UNKNOWN";
-  }
-}
-
 
 // EOF
