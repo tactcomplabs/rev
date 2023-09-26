@@ -12,7 +12,6 @@
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
-#include <iosfwd>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
