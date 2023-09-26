@@ -350,7 +350,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // Create the completion array
   Enabled = new bool [numCores];
   for( unsigned i=0; i<numCores; i++ ){
-    // FIXME: This may break PAN
     Enabled[i] = false;
   }
 
