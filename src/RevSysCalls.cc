@@ -2534,8 +2534,7 @@ RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   uint64_t NewThreadPC = RegFile->RV64[11];
   uint64_t ArgPtr = RegFile->RV64[12];
   unsigned long int NewTID = GetNewThreadID();
-  std::cout << "New TID = " << NewTID << std::endl;
-  CreateThread(NewTID, NewThreadPC, (void*)ArgPtr);
+  CreateThread(NewTID, NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 
   mem->WriteMem(feature->GetHartToExec(), tidAddr, sizeof(NewTID), &NewTID, REVMEM_FLAGS(0x00));
   return RevProc::ECALL_status_t::SUCCESS;
