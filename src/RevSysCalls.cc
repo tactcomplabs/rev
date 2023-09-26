@@ -2537,7 +2537,7 @@ RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   std::cout << "New TID = " << NewTID << std::endl;
   CreateThread(NewTID, NewThreadPC, (void*)ArgPtr);
 
-  mem->WriteMem(feature->GetHartToExec(), tidAddr, sizeof(unsigned long int), &NewTID, REVMEM_FLAGS(0x00));
+  mem->WriteMem(feature->GetHartToExec(), tidAddr, sizeof(NewTID), &NewTID, REVMEM_FLAGS(0x00));
   return RevProc::ECALL_status_t::SUCCESS;
 }
 
