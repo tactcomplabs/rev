@@ -2529,10 +2529,9 @@ RevProc::ECALL_status_t RevProc::ECALL_process_madvise(RevInst& inst){
 //                          void *restrict arg);
 RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_create called by thread %" PRIu32 "\n", GetActiveThreadID());
-  uint64_t tidAddr = RegFile->RV64[10]; // Used to hold the new ThreadID
-  // const pthread_attr_t *restrict attr = (const pthread_attr_t *)RegFile->RV64[11];
-  uint64_t NewThreadPC = RegFile->RV64[11];
-  uint64_t ArgPtr = RegFile->RV64[12];
+  uint64_t tidAddr     = RegFile->GetX<uint64_t>(feature, 10);
+  uint64_t NewThreadPC = RegFile->GetX<uint64_t>(feature, 11);
+  uint64_t ArgPtr      = RegFile->GetX<uint64_t>(feature, 12);
   unsigned long int NewTID = GetNewThreadID();
   CreateThread(NewTID, NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 
