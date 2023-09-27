@@ -2029,8 +2029,8 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // Create the new thread's memory
   std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
 
+
   // TODO: Copy TLS into new memory
-  // TODO: Potentially copy Parent's Stack to child's
 
   // Create a new RevThread Object
   std::shared_ptr<RevThread> NewThread =
@@ -2039,6 +2039,10 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
                                         NewThreadMem->getBaseAddr()+_STACK_SIZE_,
                                         firstPC, NewThreadMem,
                                         feature);
+  
+  // Copy the arg to the new threads a0 register
+  NewThread->GetRegFile()->SetX(feature, 10, (uint64_t)arg);
+
   NewThreadInfo.emplace(NewThread);
 
   return;
