@@ -12,20 +12,21 @@ EOF
 fi
 
 if [ -z ${NO_COLOR+x} ] && tty -s; then
-  RED="\033[41;97m\n"
+  RED="\033[91m"
   END="\033[0m"
 else
   RED=
   END=
 fi
 
-printf "${RED}"
+printf "\n${RED}"
 if ldd -r "$1" 2>&1 | c++filt | grep "\bundefined\b.*\bSST::RevCPU::"; then
-  echo ""
   rc=1
 else
   rc=0
 fi
 printf "${END}"
+
+[ "$rc" -ne 0 ] && echo ""
 
 exit $rc
