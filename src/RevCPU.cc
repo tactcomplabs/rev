@@ -269,12 +269,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   // set the pc
   uint64_t StartAddr = 0x00ull;
-  if( !Opts->GetStartAddr( id, StartAddr ) ){
-    output.fatal(CALL_INFO, -1, "Error: failed to init the start address for the main thread\n");
-  }
   // std::string StartSymbol = "main";
   // QUESTION: 100% tests pass at start... Any reason to keep it "main"?
-  std::string StartSymbol = "_start";
+  std::string StartSymbol = "main";
   if( StartAddr == 0x00ull ){
     if( !Opts->GetStartSymbol( id, StartSymbol ) ){
       output.fatal(CALL_INFO, -1,
@@ -287,7 +284,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     // load "main" symbol
     // StartAddr = Loader->GetSymbolAddr("main");
     // QUESTION: 100% tests pass at start... Any reason to keep it "main"?
-    StartAddr = Loader->GetSymbolAddr("_start");
+    StartAddr = Loader->GetSymbolAddr("main");
     if( StartAddr == 0x00ull ){
       output.fatal(CALL_INFO, -1,
                     "Error: failed to auto discover address for <main> for main thread\n");
