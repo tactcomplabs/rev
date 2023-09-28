@@ -1646,10 +1646,17 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
 
-    //chek LS queue for outstanding load - ignore r0
-  if((0 != I->rs1) && (regFile->LSQueue->count(make_lsq_hash(I->rs1, E->rs1Class, HartID))) > 0){ return true;}
-  if((0 != I->rs2) && (regFile->LSQueue->count(make_lsq_hash(I->rs2, E->rs2Class, HartID))) > 0){ return true;}
-  if((0 != I->rs3) && (regFile->LSQueue->count(make_lsq_hash(I->rs3, E->rs3Class, HartID))) > 0){ return true;}
+  // check LS queue for outstanding load - ignore r0
+  for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
+                                      std::tie(I->rs2, E->rs2Class),
+                                      std::tie(I->rs3, E->rs3Class),
+                                      std::tie(I->rd,  E->rdClass) }){
+    if((reg != 0) && (regFile->LSQueue->count(make_lsq_hash(reg,
+                                                         regClass,
+                                                         HartID))) > 0){
+      return true;
+    }
+  }
 
   // Iterate through the source registers rs1, rs2, rs3 and find any dependency
   // based on the class of the source register and the associated scoreboard
@@ -1665,7 +1672,6 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
           if(regFile->SPF_Scoreboard[reg]) return true;
         }
         break;
-
       case RevRegClass::RegGPR:
         if(feature->IsRV32()){
           if(regFile->RV32_Scoreboard[reg]) return true;
@@ -1673,7 +1679,6 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
           if(regFile->RV64_Scoreboard[reg]) return true;
         }
         break;
-
       default:
         break;
       }
@@ -1681,8 +1686,6 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
   }
   return false;
 }
-
-
 
 /// Set or clear scoreboard based on register number and floating point
 void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
@@ -1734,7 +1737,7 @@ void RevProc::MarkLoadComplete(const MemReq& req){
   if( it != LSQueue->end()){
     DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
     LSQueue->erase(it);
-  }else if(0 != req.DestReg){ //instruction pre-fetch fills target r0, we can ignore these
+  }else if(0 != req.DestReg){ //instruction pre-fetch fills target x0, we can ignore these
     output->fatal(CALL_INFO, -1,
                "Core %u ; Hart %u; Cannot find outstanding load for reg %u from address %" PRIx64 "\n",
                 id, req.Hart, req.DestReg, req.Addr);
@@ -1781,14 +1784,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }
   }
-
-  //Clear dependency bits for any loads that have returned
-/*for (auto it = LSQueue->begin(); it != LSQueue->end();) {
-  if(!it->second.isOutstanding){
-    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
-    it = LSQueue->erase(it);
-  }
-}*/
 
   for (int tID = 0; tID < _REV_HART_COUNT_; tID++){
     HART_CTS[tID] = (GetRegFile(tID)->cost == 0);
@@ -1884,8 +1879,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
 
-//      #define __REV_DEEP_TRACE__
-      #ifdef __REV_DEEP_TRACE__
+#ifdef __REV_DEEP_TRACE__
       if(feature->IsRV32()){
         std::cout << "RDT: Executed PC = " << std::hex << ExecPC
                   << " Inst: " << std::setw(23)
@@ -1915,7 +1909,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                   << (uint64_t *)(&RegFile->RV64[Inst.rd])
                   << std::dec << std::endl;
       }
-      #endif
+#endif
 
       /*
        * Exception Handling
@@ -1927,31 +1921,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         output->verbose(CALL_INFO, 6, 0,
                         "Core %u; HartID %d; PID %" PRIu32 " - Exception Raised: ECALL with code = %lu\n",
                         id, HartToExec, GetActivePID(), RegFile->GetX<uint64_t>(feature, 17));
-        #ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-        //                  << cRegFile->RV64[17] << std::endl;
-        #endif
-
-        /* Execute system call on this RevProc */
-        ExecEcall(Pipeline.back().second); //ExecEcall will also set the exception cause registers
-
-        #ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-        //        << rc << std::endl;
-        #endif
-
-        // } else {
-        //   ExecEcall();
-        #ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-        //                  << code << std::endl;
-        #endif
-
-        #ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-        //                  << rc << std::endl;
-        #endif
-        // }
       }
 
       // inject the ALU fault
@@ -2007,19 +1976,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
 
-  // walk the pipeline hazards.  if a load hazard is set, increase the cost to > 0
-  /*for( auto i : Pipeline ){
-    if( *(i.second.hazard) ){
-      i.second.cost++;
-    }
-  }*/
-
   // Check for pipeline hazards
   if(!Pipeline.empty() &&
      (Pipeline.front().second.cost > 0)){
     Pipeline.front().second.cost--;
     if((Pipeline.front().second.cost == 0)){ // &&
-     //  (!*(Pipeline.front().second.hazard))){
       // Ready to retire this instruction
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
@@ -2182,7 +2143,6 @@ RevRegFile* RevProc::GetRegFile(uint16_t HartID) const {
   }
   return 0;
 }
-//
 
 bool RevProc::InitThreadTable(){
   /*
@@ -2780,9 +2740,17 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
 
     DependencyClear(HartToExec, 10, false);
     rtv = ECALL_status_t::SUCCESS;
-  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  {
+  }else if (0 == LSQueue->count(make_lsq_hash(10,
+                                              RevRegClass::RegGPR,
+                                              HartToExec)))  {
     auto readfunc = [&](auto* buf){
-      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->MarkLoadComplete);
+      MemReq req (addr + ECALL.string.size(),
+                  10,
+                  RevRegClass::RegGPR,
+                  HartToExec,
+                  MemOp::MemOpREAD,
+                  true,
+                  RegFile->MarkLoadComplete);
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       mem->ReadVal(HartToExec,
                    addr + ECALL.string.size(),

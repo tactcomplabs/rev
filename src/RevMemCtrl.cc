@@ -1293,7 +1293,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
           handleAMO(op);
         }
         const MemReq& r = op->getMemReq();
-        if(MemOp::MemOpAMO != r.ReqType){
+        if( !isAMO ){
           r.MarkLoadComplete(r);
         }
         delete op;
@@ -1317,8 +1317,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     }
 
     const MemReq& r = op->getMemReq();
-    //if this is an AMO op then we cleared the load in the handleAMO() function, so do not clear again
-    if(MemOp::MemOpAMO != r.ReqType){
+    if( !isAMO ){
       r.MarkLoadComplete(r);
     }
     delete op;
@@ -1330,7 +1329,12 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
   num_read--;
 }
 
-void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMem::Request::flags_t, RevMemOp *, bool> Entry){
+void RevBasicMemCtrl::performAMO(std::tuple<unsigned,
+                                            char *,
+                                            void *,
+                                            StandardMem::Request::flags_t,
+                                            RevMemOp *,
+                                            bool> Entry){
   RevMemOp *Tmp = std::get<AMOTABLE_MEMOP>(Entry);
   if( Tmp == nullptr ){
     output->fatal(CALL_INFO, -1, "Error : AMOTable entry is null\n" );
@@ -1369,8 +1373,12 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned, char *, void *, StandardMe
                               MemOp::MemOpWRITE,
                               Tmp->getFlags());
 
+  // Retrieve the memory request object, but DO NOT mark the load
+  // as complete.  The actual write response from the read-modify-write
+  // process will mark the load as complete.  At this point, copy the
+  // MemReq object to the new request
   const MemReq& r = Tmp->getMemReq();
-  r.MarkLoadComplete(r);
+  Op->setMemReq(r);
 
   // insert a new entry into the AMO Table
   auto NewEntry = std::make_tuple(Op->getHart(),
@@ -1409,6 +1417,7 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
 
     // walk the AMOTable and clear any matching AMO ops
     // note that we must match on both the target address and the RevMemOp pointer
+    bool isAMO = false;
     auto range = AMOTable.equal_range(op->getAddr());
     for( auto i = range.first; i != range.second; ){
       auto Entry = i->second;
@@ -1416,6 +1425,7 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
       // then delete it
       if( std::get<AMOTABLE_MEMOP>(Entry) == op ){
         AMOTable.erase(i++);
+        isAMO = true;
       }else{
         ++i;
       }
@@ -1427,8 +1437,8 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
       if( getNumSplitRqsts(op) == 1 ){
         // this was the last request to service, delete the op
         const MemReq& r = op->getMemReq();
-        if(MemOp::MemOpAMO == r.ReqType){
-            r.MarkLoadComplete(r);
+        if( isAMO ){
+          r.MarkLoadComplete(r);
         }
         delete op;
       }
@@ -1441,8 +1451,8 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     // no split request exists; handle as normal
     // this was a write request for an AMO, clear the hazard
     const MemReq& r = op->getMemReq();
-    if(MemOp::MemOpAMO == r.ReqType){
-        r.MarkLoadComplete(r);
+    if( isAMO ){
+      r.MarkLoadComplete(r);
     }
     delete op;
     outstanding.erase(ev->getID());
