@@ -708,7 +708,10 @@ private:
 
   /// RevProc: Set or clear scoreboard based on instruction destination
   void DependencySet(uint16_t HartID, const RevInst* Inst, bool value = true){
-    DependencySet(HartID, Inst->rd, InstTable[Inst->entry].rdClass == RevRegClass::RegFLOAT, value);
+    DependencySet(HartID,
+                  Inst->rd,
+                  InstTable[Inst->entry].rdClass == RevRegClass::RegFLOAT,
+                  value);
   }
 
   /// RevProc: Clear scoreboard on instruction retirement
