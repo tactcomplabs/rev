@@ -140,7 +140,7 @@ struct RevRegFile {
   bool DPF_Scoreboard[_REV_NUM_REGS_]{};  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
 
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue{};
-  std::function<void(MemReq)> MarkLoadComplete{};
+  std::function<void(const MemReq&)> MarkLoadComplete{};
 
   uint32_t RV32_PC{};                 ///< RevRegFile: RV32 PC
   uint64_t RV64_PC{};                 ///< RevRegFile: RV64 PC

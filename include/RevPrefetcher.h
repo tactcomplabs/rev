@@ -27,9 +27,9 @@ namespace SST::RevCPU{
 class RevPrefetcher{
 public:
   /// RevPrefetcher: constructor
-  RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth, 
+  RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth,
                 std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq,
-                std::function<void(MemReq)> func)
+                std::function<void(const MemReq&)> func)
     : mem(Mem), feature(Feature), depth(Depth), LSQueue(lsq), MarkLoadAsComplete(func){}
 
   /// RevPrefetcher: destructor
@@ -48,7 +48,7 @@ private:
   std::vector<uint64_t> baseAddr;             ///< Vector of base addresses for each stream
   std::vector<std::vector<uint32_t>> iStack; ///< Vector of instruction vectors
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
-  std::function<void(MemReq)> MarkLoadAsComplete;
+  std::function<void(const MemReq&)> MarkLoadAsComplete;
 
   /// fills a missed stream cache instruction
   void Fill(uint64_t Addr);
