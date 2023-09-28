@@ -267,35 +267,18 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // Initial thread setup
   uint32_t MainThreadID = id+1; // Prevents having MainThreadID == 0 which is reserved for INVALID
 
-  // PAN: Create a thread for every startAddr 
-  for( unsigned i=0; i<numCores; i++ ){
-    uint64_t StartAddr = 0x00ull;
-    std::shared_ptr<MemSegment> PanThreadMem = Mem->AddThreadMem();
-    Opts->GetStartAddr(i, StartAddr);
-    // Make a thread with the startAddr
-    std::shared_ptr<RevThread> PanThread = std::make_shared<RevThread>(MainThreadID+i+1,
-                                                                       __INVALID_TID__,
-                                                                       Mem->GetStackTop(),
-                                                                       StartAddr,
-                                                                       PanThreadMem,
-                                                                       Procs[i]->GetRevFeature());
-  }
   // set the pc
   uint64_t StartAddr = 0x00ull;
-  // std::string StartSymbol = "main";
   std::string StartSymbol = "main";
   if( StartAddr == 0x00ull ){
-    if( !Opts->GetStartSymbol( id, StartSymbol ) ){
-      output.fatal(CALL_INFO, -1,
-                    "Error: failed to init the start symbol address for main thread=\n");
-    }
-
+    // if( !Opts->GetStartSymbol( id, StartSymbol ) ){
+    //   output.fatal(CALL_INFO, -1,
+    //                 "Error: failed to init the start symbol address for main thread=\n");
+    // }
     StartAddr = Loader->GetSymbolAddr(StartSymbol);
   }
   if( StartAddr == 0x00ull ){
     // load "main" symbol
-    // StartAddr = Loader->GetSymbolAddr("main");
-    // QUESTION: 100% tests pass at start... Any reason to keep it "main"?
     StartAddr = Loader->GetSymbolAddr("main");
     if( StartAddr == 0x00ull ){
       output.fatal(CALL_INFO, -1,
