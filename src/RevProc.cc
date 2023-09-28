@@ -1647,32 +1647,15 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
   const auto* regFile = GetRegFile(HartID);
 
   // check LS queue for outstanding load - ignore r0
-  if((0 != I->rs1) &&
-     (regFile->LSQueue->count(make_lsq_hash(I->rs1,
-                                            E->rs1Class,
-                                            HartID))) > 0){
-    return true;
-  }
-
-  if((0 != I->rs2) &&
-     (regFile->LSQueue->count(make_lsq_hash(I->rs2,
-                                            E->rs2Class,
-                                            HartID))) > 0){
-    return true;
-  }
-
-  if((0 != I->rs3) &&
-     (regFile->LSQueue->count(make_lsq_hash(I->rs3,
-                                            E->rs3Class,
-                                            HartID))) > 0){
-    return true;
-  }
-
-  if((0 != I->rd) &&
-     (regFile->LSQueue->count(make_lsq_hash(I->rd,
-                                            E->rdClass,
-                                            HartID))) > 0){
-    return true;
+  for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
+                                      std::tie(I->rs2, E->rs2Class),
+                                      std::tie(I->rs3, E->rs3Class),
+                                      std::tie(I->rd,  E->rdClass) }){
+    if((reg != 0) && (regFile->LSQueue->count(make_lsq_hash(reg,
+                                                         regClass,
+                                                         HartID))) > 0){
+      return true;
+    }
   }
 
   // Iterate through the source registers rs1, rs2, rs3 and find any dependency
