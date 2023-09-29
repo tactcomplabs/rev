@@ -65,7 +65,7 @@ class RevThread {
 
   // Set the thread pointer
   ThreadPtr = ThreadMem->getTopAddr();
-  RegFile.SetX(Feature, 2, ThreadPtr);
+  RegFile.SetX(Feature, 4, ThreadPtr);
 
   // Set the PC 
   RegFile.SetPC(Feature, FirstPC);
