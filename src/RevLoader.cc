@@ -76,7 +76,8 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   // begin writing the data, if we have a small write
   // then dispatch the write as normal.  Otherwise,
   // block the writes as cache lines
-  if( Len < lineSize ){
+  // #131 added case for when Len==lineSize
+  if( Len <= lineSize ){
     // one cache line to write, dispatch it
     return mem->WriteMem(0, Addr, Len, Data);
   }
@@ -105,7 +106,7 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   TmpData += TmpSize;
   Total += TmpSize;
 
-  // no perform the remainder of the writes
+  // now perform the remainder of the writes
   do{
     if( (Len-Total) > lineSize ){
       // setup another full cache line write
