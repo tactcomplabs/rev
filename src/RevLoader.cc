@@ -147,6 +147,27 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   // Add memory segments for each program header
   for (unsigned i = 0; i < eh->e_phnum; i++) {
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
+      output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
+    }
+    // Check if the program header is PT_TLS
+    // - If so, save the addr & size of the TLS segment
+    if( ph[i].p_type == PT_TLS ){
+      TLSBaseAddr = ph[i].p_paddr;
+      TLSSize = ph[i].p_memsz;
+      mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
+    }
+    
+    // Add a memory segment for the program header
+    if( ph[i].p_memsz ){
+      mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
+    }
+  }
+
+  mem->AddThreadMem();
+
+  // Add memory segments for each program header
+  for (unsigned i = 0; i < eh->e_phnum; i++) {
+    if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
     }
     // Add a memory segment for the program header
@@ -294,10 +315,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     // Check if the program header is PT_TLS
     // - If so, save the addr & size of the TLS segment
     if( ph[i].p_type == PT_TLS ){
-      // std::cout << "TLS Segment: " << std::endl;
-      // std::cout << "  Addr: 0x" << std::hex << ph[i].p_paddr << std::endl;
-      // std::cout << "  Size: 0x" << std::hex << ph[i].p_memsz << std::endl;
-      // std::cout << "  Align: 0x" << std::hex << ph[i].p_align << std::endl;
       TLSBaseAddr = ph[i].p_paddr;
       TLSSize = ph[i].p_memsz;
       mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
@@ -316,9 +333,6 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   uint64_t BSSEnd = 0;
   uint64_t DataEnd = 0;
   uint64_t TextEnd = 0;
-  // Add memory segments for each section header
-  // - This should automatically handle overlap and not add segments
-  //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
