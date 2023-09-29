@@ -1978,7 +1978,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     if( AssignedThreads.size() >= HartToExec ){
       output->verbose(CALL_INFO, 2, 0,
-                      "Thread %d is done\n", AssignedThreads.at(HartToExec)->GetThreadID());
+                      "Thread %" PRIu32 " is done\n", AssignedThreads.at(HartToExec)->GetThreadID());
       AssignedThreads.at(HartToExec)->SetState(ThreadState::DONE);
       ThreadStateChanges.set(HartToExec);
       // done = true;
