@@ -298,6 +298,14 @@ public:
   /// RevLoader: retrives the elf info structure
   ElfInfo GetInfo() { return elfinfo; }
 
+  /// RevLoader: Gets TLS base address
+  const uint64_t& GetTLSBaseAddr() { return TLSBaseAddr; }
+
+  /// RevLoader: Gets TLS size
+  const uint64_t& GetTLSSize() { return TLSSize; }
+
+  // friend std::ostream& operator<<(std::ostream &os, const Elf64_Ehdr &header){ };
+
 private:
   std::string exe;          ///< RevLoader: binary executable
   std::string args;         ///< RevLoader: program args
@@ -306,6 +314,9 @@ private:
 
   uint32_t RV32Entry;       ///< RevLoader: RV32 entry
   uint64_t RV64Entry;       ///< RevLoader: RV64 entry
+
+      uint64_t TLSBaseAddr = 0;
+      uint64_t TLSSize = 0;
 
   ElfInfo elfinfo;          ///< RevLoader: elf info from the loaded program
 

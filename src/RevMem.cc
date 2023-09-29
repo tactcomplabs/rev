@@ -18,6 +18,7 @@
 #include <functional>
 
 using namespace SST::RevCPU;
+using MemSegment = RevMem::MemSegment;
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
   : memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output) {
@@ -31,13 +32,9 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
 
-  /*
-   * The first mem segment is the entirety of the memory space specified in the .py
-   * This is updated once RevLoader initializes and we know where the static
-   * memory ends (ie. __BSS_END__) at which point we replace this first segment with
-   * a segment representing the static memory (0 -> __BSS_END__)
-   */
-  // AddMemSeg(0, memSize+1);
+  // Add the 1024 bytes for the program header information
+  AddMemSegAt(stacktop, 1024);
+
 }
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
@@ -56,6 +53,7 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
   stacktop = (_REVMEM_BASE_ + memSize) - 1024;
+  AddMemSegAt(stacktop, 1024);
 }
 
 bool RevMem::outstandingRqsts(){
@@ -298,7 +296,10 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
       for( auto Seg : MemSegs ){
         std::cout << *Seg << std::endl;
       }
-      // #endif
+
+      for( auto Seg : ThreadMemSegs ){
+        std::cout << *Seg << std::endl;
+      }
 
       output->fatal(CALL_INFO, 11,
                     "Segmentation Fault: Virtual address 0x%" PRIx64 " (PhysAddr = 0x%" PRIx64 ") was not found in any mem segments\n",
@@ -310,22 +311,16 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
 
 // This function will change a decent amount in an upcoming PR
 bool RevMem::isValidVirtAddr(const uint64_t vAddr){
-  for(const auto& MemSeg : MemSegs ){
-    if( MemSeg->contains(vAddr) ){
+  for(const auto& Seg : MemSegs ){
+    if( Seg->contains(vAddr) ){
       return true;
-    }
-  }
-  if( vAddr >= (stacktop - _STACK_SIZE_ ) ){
-    if( vAddr < memSize ){
-      return true;
-    }
-    else {
-      return false;
-    }
+    } 
   }
 
-  if( vAddr >= heapstart && vAddr <= heapend ){
-    return true;
+  for( const auto& Seg : ThreadMemSegs ){ 
+    if( Seg->contains(vAddr) ){
+      return true;
+    }
   }
   return false;
 }
@@ -372,7 +367,7 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
       } else {
         // If it contains the top address, we don't need to do anything
         output->verbose(CALL_INFO, 10, 99,
-        "Warning: Memory segment already allocated that contains the requested rounded allocation at 0x%lx of size %lu Bytes\n", BaseAddr, SegSize);
+        "Warning: Memory segment already allocated that contains the requested rounded allocation at %" PRIx64 "of size %" PRIu64 " Bytes\n", BaseAddr, SegSize);
       }
       // Return the containing segments Base Address
       BaseAddr = Seg->getBaseAddr();
@@ -399,15 +394,32 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
   return BaseAddr;
 }
 
+std::shared_ptr<MemSegment> RevMem::AddThreadMem(){
+  // Calculate the BaseAddr of the segment 
+  uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
+  ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
+  // Page boundary between 
+  NextThreadMemAddr = BaseAddr - pageSize - 1;
+  return ThreadMemSegs.back();
+}
+
+void RevMem::SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size){
+  TLSBaseAddr = BaseAddr;
+  TLSSize += Size;
+  ThreadMemSize = _STACK_SIZE_ + TLSSize;
+  return;
+}
+
+
 // AllocMem differs from AddMemSeg because it first searches the FreeMemSegs
 // vector to see if there is a free segment that will fit the new data
 // If there is not a free segment, it will allocate a new segment at the end of the heap
 uint64_t RevMem::AllocMem(const uint64_t& SegSize){
-  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap\n", SegSize);
+  output->verbose(CALL_INFO, 10, 99, "Attempting to allocate %" PRIu64 " bytes on the heap\n", SegSize);
 
   uint64_t NewSegBaseAddr = 0;
   // Check if there is a free segment that can fit the new data
-  for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
+  for( size_t i=0; i < FreeMemSegs.size(); i++ ){
     auto FreeSeg = FreeMemSegs[i];
     // if the FreeSeg is bigger than the new data, we can shrink it so it starts
     // after the new segment (SegSize)
@@ -451,7 +463,7 @@ uint64_t RevMem::AllocMem(const uint64_t& SegSize){
 // If its unable to allocate at the location requested it will error. This may change in the future.
 uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
   int ret = 0;
-  output->verbose(CALL_INFO, 10, 99, "Attempting to allocating %lul bytes on the heap", SegSize);
+  output->verbose(CALL_INFO, 10, 99, "Attempting to allocate %" PRIu64 " bytes on the heap", SegSize);
 
   // Check if this range exists in the FreeMemSegs vector
   for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
@@ -834,28 +846,6 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   return true;
 }
 
-/*
-* Func: GetNewThreadPID
-* - This function is used to interact with the global
-*   PID counter inside of RevMem
-* - When a new RevThreadCtx is created, it is assigned
-*   the value of PIDCount++
-* - This ensures no collisions because all RevProcs access
-*   the same RevMem instance
-*/
-uint32_t RevMem::GetNewThreadPID(){
-
-  #ifdef _REV_DEBUG_
-  std::cout << "RevMem: New PID being given: " << PIDCount+1 << std::endl;
-  #endif
-  /*
-  * NOTE: A mutex is acquired solely to prevent race conditions
-  *       if multiple RevProc's create new Ctx objects at the
-  *       same time
-  */
-  PIDCount++;
-  return PIDCount;
-}
 
 
 // This function is used to remove/shrink a memory segment

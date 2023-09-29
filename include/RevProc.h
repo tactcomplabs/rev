@@ -46,9 +46,9 @@
 #include "PanExec.h"
 #include "RevPrefetcher.h"
 #include "RevCoProc.h"
-#include "RevThreadCtx.h"
-#include "../common/syscalls/SysFlags.h"
+#include "RevThread.h"
 #include "RevRand.h"
+#include "../common/syscalls/SysFlags.h"
 #include "../common/include/RevCommon.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
@@ -59,6 +59,8 @@ class RevProc{
 public:
   /// RevProc: standard constructor
   RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
+               std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
+               std::function<uint32_t()> GetNewThreadID,
            RevCoProc* CoProc, SST::Output *Output );
 
   /// RevProc: standard desctructor
@@ -66,6 +68,9 @@ public:
 
   /// RevProc: per-processor clock function
   bool ClockTick( SST::Cycle_t currentCycle );
+
+  /// RevProc: Called by RevCPU when there is no more work to do (ie. All RevThreads are ThreadState::DONE )
+  void PrintStatSummary();
 
   /// RevProc: halt the CPU
   bool Halt();
@@ -103,9 +108,6 @@ public:
   /// RevProc: Handle ALU faults
   void HandleALUFault(unsigned width);
 
-  /// RevProc: Initialize ThreadTable & First Thread
-  bool InitThreadTable();
-
   struct RevProcStats {
     uint64_t totalCycles;
     uint64_t cyclesBusy;
@@ -122,61 +124,37 @@ public:
 
   RevMem& GetMem() const { return *mem; }
 
-  /// RevProc: Add a RevThreadCtx to the Proc's ThreadTable
-  bool AddCtx(RevThreadCtx& Ctx);
+  // Get the bitset of state changes
+  const std::bitset<_REV_HART_COUNT_>& GetThreadStateChanges() { return ThreadStateChanges; }
 
-  /// RevProc: Create a new RevThreadCtx w/ Parent is currently executing thread
-  uint32_t CreateChildCtx();
+  // Zeros the bitset of state changes
+  void ClearThreadStateChanges(){ ThreadStateChanges.reset(); }
 
-  /// RevProc: Get the ThreadState of a thread (pid) from the ThreadTable
-  // ThreadState GetThreadState(uint32_t pid) const;
-
-  /// RevProc: Set the ThreadState of a thread (pid) from the ThreadTable
-  // bool SetState(ThreadState, uint32_t pid);
-
-  /// RevProc: Used to pause RevThreadCtx w/ PID = pid
-  // bool PauseThread(uint32_t pid);
-
-  /// RevProc: Used to ready RevThreadCtx w/ PID = pid
-  // bool ReadyThread(uint32_t pid);
+  /// RevProc: SpawnThread creates a new thread and returns its ThreadID
+  void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
 
   /// RevProc: Returns the current HartToExec active pid
-  uint32_t GetActivePID() const { return GetActivePID(HartToExec); }
+  uint32_t GetActiveThreadID();
 
-  /// RevProc: Returns the active pid for HartID
-  uint32_t GetActivePID(const uint32_t HartID) const { return ActivePIDs.at(HartID); }
+  /// RevProc: Queue of threads to be spawned (RevProc creates the thread, RevCPU readies it for execution)
+  const std::queue<std::shared_ptr<RevThread>>& GetNewThreadInfo() { return NewThreadInfo; }
 
-  /// RevProc: Returns full list of PIDs (keys in ThreadTable)
-  std::vector<uint32_t> GetPIDs();
+  ///< RevProc: Holds the info for all new threads to be spawned
+  ///           Right now this is through the following functions:
+  ///           - rev_pthread_create
+  std::queue<std::shared_ptr<RevThread>> NewThreadInfo;
 
-  /// RevProc: Retires currently executing thread & then swaps to its parent. If no parent terminates program
-  uint32_t RetireAndSwap(); // Returns new pid
+  ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
+  double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / _REV_HART_COUNT_; }
 
-  /// RevProc: Used to raise an exception indicating a thread switch is coming (NewPID = PID of Ctx to switch to)
-  void CtxSwitchAlert(uint32_t NewPID) { NextPID=NewPID;PendingCtxSwitch = true; }
+  ///< RevProc: Get this Proc's feature
+  RevFeature* GetRevFeature() const { return feature; }
 
-  uint32_t HartToExecPID();
-  uint32_t HartToDecodePID();
-
-  ///< RevProc: Returns pointer to current ctx loaded into HartToExec
-  std::shared_ptr<RevThreadCtx> HartToExecCtx();
-
-  ///< RevProc: Returns pointer to current ctx loaded into HartToDecode
-  std::shared_ptr<RevThreadCtx> HartToDecodeCtx();
-
-  ///< RevProc: Change HartToExec active pid
-  bool ChangeActivePID(uint32_t PID);
-
-  ///< RevProc: Change HartID active pid
-  bool ChangeActivePID(uint32_t PID, uint16_t HartID);
-
-  bool UpdateRegFile();
-  // bool UpdateRegFile(uint16_t HartID);
-
-  ///< RevProc: PIDs & corresponding RevThreadCtx objects (Software Threads)
-  std::unordered_map<uint32_t, std::shared_ptr<RevThreadCtx>> ThreadTable;
-
+  ///< RevProc: Mark a current request as complete
   void MarkLoadComplete(const MemReq& req);
+  
+  ///< RevProc: Get pointer to Load / Store queue used to track memory operations
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; } 
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -190,33 +168,38 @@ private:
   uint16_t HartToDecode;    ///< RevProc: Current executing ThreadID
   uint16_t HartToExec;      ///< RevProc: Thread to dispatch instruction
   uint64_t Retired;         ///< RevProc: number of retired instructions
-  bool PendingCtxSwitch = false; ///< RevProc: determines if the core is halted
-  bool SwapToParent = false;///< RevProc: determines if the core is halted
-  uint32_t NextPID = 0;
 
   RevOpts *opts;            ///< RevProc: options object
   RevMem *mem;              ///< RevProc: memory object
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
-  SST::Output *output;      ///< RevProc: output handler
+  
+  /// ThreadIDs assigned to this RevProc (AssignedThreads[i] will give you the RevThread executing on Hart i)
+  std::vector<std::shared_ptr<RevThread>>& AssignedThreads;
+
+  // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
+  std::function<uint32_t()> GetNewThreadID;
+  
+  // If a given assigned thread experiences a change of state, it sets the corresponding bit 
+  // - if AssignedThreads.at(i) has a state change ==> ThreadStateChanges.set(i) 
+  // - this tells RevCPU it needs to check in on this thread and handle appropriately
+  std::bitset<_REV_HART_COUNT_> ThreadStateChanges; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
+
+  SST::Output *output;                   ///< RevProc: output handler
   std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler
   RevFeature* feature;
-  PanExec *PExec;           ///< RevProc: PAN exeuction context
-  RevProcStats Stats{};     ///< RevProc: collection of performance stats
+  PanExec *PExec;                        ///< RevProc: PAN exeuction context
+  RevProcStats Stats{};                  ///< RevProc: collection of performance stats
   std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher
 
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
-  /*
-   * ECALLs
-   * - Many of these are not implemented
-   * - Their existence in the ECalls table is solely to not throw errors
-   * - This _should_ be a comprehensive list of system calls supported on RISC-V
-   * - Beside each function declaration is the system call code followed by its corresponding declaration
-   *   that you can find in `common/syscalls.h` (the file to be included to use system calls inside of rev)
-   */
+  /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
+  // RevRegFile* GetRegFile(uint16_t HartID);
+      
+  // ============ ECALLS
   enum class ECALL_status_t{
     SUCCESS = 0,
     CONTINUE = EXCEPTION_CAUSE::ECALL_USER_MODE,
@@ -246,6 +229,12 @@ private:
 
   ECALL_status_t ECALL_LoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
 
+  // - Many of these are not implemented
+  // - Their existence in the ECalls table is solely to not throw errors
+  // - This _should_ be a comprehensive list of system calls supported on RISC-V
+  // - Beside each function declaration is the system call code followed by its corresponding declaration
+  //   that you can find in `common/syscalls.h` (the file to be included to use system calls inside of rev)
+  //
   ECALL_status_t ECALL_io_setup(RevInst& inst);               // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
   ECALL_status_t ECALL_io_destroy(RevInst& inst);             // 1, rev_io_destroy(aio_context_t ctx)
   ECALL_status_t ECALL_io_submit(RevInst& inst);              // 2, rev_io_submit(aio_context_t, long, struct iocb  *  *)
@@ -559,7 +548,10 @@ private:
   ECALL_status_t ECALL_faccessat2(RevInst& inst);             // 439, rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
   ECALL_status_t ECALL_process_madvise(RevInst& inst);        // 440, rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
 
-
+  // =============== REV pthread functions
+  ECALL_status_t ECALL_pthread_create(RevInst& inst);         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
+  ECALL_status_t ECALL_pthread_join(RevInst& inst);           // 1001, rev_pthread_join(pthread_t thread, void **retval);
+  ECALL_status_t ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
 
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
   std::unordered_map<uint32_t, std::function<ECALL_status_t(RevProc*, RevInst&)>> Ecalls;
@@ -572,11 +564,6 @@ private:
 
   /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
   RevRegFile* GetRegFile(uint16_t HartID) const;
-
-  /// RevProc: Vector of PIDs where index of ActivePIDs is the pid of the RevThreadCtx loaded into Hart #Idx
-  std::vector<uint32_t> ActivePIDs;
-
-  //RevInst Inst{};             ///< RevProc: instruction payload: NOTE: Moved to local variable in RevProc::ClockTick() because of local variables of same name shadowing it and of confusing uninitialized memory errors
 
   std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
 
