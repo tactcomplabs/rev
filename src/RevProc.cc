@@ -56,8 +56,7 @@ RevProc::RevProc( unsigned Id,
     Depth = 16;
   }
 
-  std::function<void(MemReq)> f = std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1);
-  sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth, LSQueue, f);
+  sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth, LSQueue, [=](const MemReq& req){ this->MarkLoadComplete(req); });
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
                   "Error: failed to create the RevPrefetcher object for core=%u\n", id);
@@ -409,8 +408,7 @@ bool RevProc::Reset(){
 
     regFile->cost = 0;
 
-    regFile->MarkLoadComplete = std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1);
-
+    regFile->MarkLoadComplete = [=](const MemReq& req){ this->MarkLoadComplete(req); };
   }
 
    Pipeline.clear();
@@ -2368,7 +2366,7 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
     rtval = ECALL_status_t::SUCCESS;
   }else{
     //We are in the middle of the string - read one byte
-    MemReq req (straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true,  std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1));
+    MemReq req{straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
     LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
     mem->ReadVal(HartToExec,
                  straddr + ECALL.string.size(),
