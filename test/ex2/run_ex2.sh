@@ -9,4 +9,4 @@ if [ -f ex2.exe ]; then
 else
   echo "Test EX2: ex2.exe not Found - likely build failed"
   exit 1
-fi 
+fi

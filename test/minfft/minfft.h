@@ -37,11 +37,11 @@ typedef struct minfft_aux minfft_aux;
 
 // aux structure
 struct minfft_aux {
-	int N; // number of elements to transform
-	void *t; // temporary buffer
-	void *e; // exponent vector
-	struct minfft_aux *sub1; // subtransform structure
-	struct minfft_aux *sub2; // subtransform structure
+  int N; // number of elements to transform
+  void *t; // temporary buffer
+  void *e; // exponent vector
+  struct minfft_aux *sub1; // subtransform structure
+  struct minfft_aux *sub2; // subtransform structure
 };
 
 void minfft_dft (minfft_cmpl*, minfft_cmpl*, const minfft_aux*);

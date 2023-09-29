@@ -42,19 +42,19 @@ int main(int argc, char **argv){
   TEST_IMM_OP( 15, addi, 0xfffffffffffffffe, 0xffffffffffffffff, 0xfff );
 
   TEST_IMM_OP( 16, addi, 0x0000000080000000, 0x7fffffff, 0x001 );
-  
+
   //-------------------------------------------------------------
   // Source/Destination tests
   //-------------------------------------------------------------
 
    //TEST_IMM_SRC1_EQ_DEST( 17, addi, 24, 13, 11 );
 
-  
+
 asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

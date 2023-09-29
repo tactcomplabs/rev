@@ -60,12 +60,12 @@ int main(int argc, char **argv){
   // Source/Destination tests
   //-------------------------------------------------------------
 
-  
+
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

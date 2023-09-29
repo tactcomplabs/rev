@@ -53,10 +53,10 @@ int main(int argc, char **argv){
   //TEST_IMM_SRC1_EQ_DEST( 17, slliw, 0x00000080, 0x00000001, 7 );
 
 asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
       assert(false);
 
 asm volatile("continue:");

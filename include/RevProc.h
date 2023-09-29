@@ -59,8 +59,8 @@ class RevProc{
 public:
   /// RevProc: standard constructor
   RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
-               std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
-               std::function<uint32_t()> GetNewThreadID,
+           std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
+           std::function<uint32_t()> GetNewThreadID,
            RevCoProc* CoProc, SST::Output *Output );
 
   /// RevProc: standard desctructor
@@ -152,9 +152,9 @@ public:
 
   ///< RevProc: Mark a current request as complete
   void MarkLoadComplete(const MemReq& req);
-  
+
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
-  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; } 
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -173,15 +173,15 @@ private:
   RevMem *mem;              ///< RevProc: memory object
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
-  
+
   /// ThreadIDs assigned to this RevProc (AssignedThreads[i] will give you the RevThread executing on Hart i)
   std::vector<std::shared_ptr<RevThread>>& AssignedThreads;
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;
-  
-  // If a given assigned thread experiences a change of state, it sets the corresponding bit 
-  // - if AssignedThreads.at(i) has a state change ==> ThreadStateChanges.set(i) 
+
+  // If a given assigned thread experiences a change of state, it sets the corresponding bit
+  // - if AssignedThreads.at(i) has a state change ==> ThreadStateChanges.set(i)
   // - this tells RevCPU it needs to check in on this thread and handle appropriately
   std::bitset<_REV_HART_COUNT_> ThreadStateChanges; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
 
@@ -198,7 +198,7 @@ private:
 
   /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
   // RevRegFile* GetRegFile(uint16_t HartID);
-      
+
   // ============ ECALLS
   enum class ECALL_status_t{
     SUCCESS = 0,

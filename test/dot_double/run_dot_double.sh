@@ -9,4 +9,4 @@ if [ -f dot_double.exe ]; then
 else
   echo "Test DOT_DOUBLE: dot_double.exe not Found - likely build failed"
   exit 1
-fi 
+fi

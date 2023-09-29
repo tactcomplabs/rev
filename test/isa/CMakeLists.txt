@@ -41,7 +41,7 @@ foreach(testSrc ${TEST_SRCS})
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND ./run_asm_test.sh)
   set_tests_properties( ${testName}
-	PROPERTIES
+        PROPERTIES
         ENVIRONMENT "RVASM=${testName}; RVCC=${RVCC}"
         LABELS "all;rv64"
         PASS_REGULAR_EXPRESSION "${passRegex}")

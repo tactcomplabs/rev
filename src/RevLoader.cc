@@ -156,7 +156,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
       TLSSize = ph[i].p_memsz;
       mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
     }
-    
+
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
       mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
@@ -230,8 +230,8 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
           output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
         }
         WriteCacheLine(ph[i].p_paddr,
-                      ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
+                       ph[i].p_filesz,
+                       (uint8_t*)(membuf+ph[i].p_offset));
       }
       std::vector<uint8_t> zeros(ph[i].p_memsz - ph[i].p_filesz);
       WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,
@@ -319,7 +319,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
       TLSSize = ph[i].p_memsz;
       mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
     }
-    
+
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
       mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
@@ -383,8 +383,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
           output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
         }
         WriteCacheLine(ph[i].p_paddr,
-                      ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
+                       ph[i].p_filesz,
+                       (uint8_t*)(membuf+ph[i].p_offset));
       }
       std::vector<uint8_t> zeros(ph[i].p_memsz - ph[i].p_filesz);
       WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,

@@ -35,7 +35,7 @@ enum class ThreadState {
 };
 
 class RevThread {
- private:
+private:
   uint32_t ThreadID;                                   // Thread ID
   uint32_t ParentThreadID;                             // Parent ThreadID
   uint64_t StackPtr;                                   // Initial stack pointer
@@ -50,26 +50,26 @@ class RevThread {
 
   uint32_t WaitingToJoinTID = __INVALID_TID__;
 
- public:
+public:
   RevThread(uint32_t inputThreadID, uint32_t inputParentThreadID,
             uint64_t inputStackPtr, uint64_t inputFirstPC,
             std::shared_ptr<RevMem::MemSegment>& inputThreadMem,
             RevFeature* inputFeature)
-   : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),  
-     FirstPC(inputFirstPC), ThreadMem(inputThreadMem), Feature(inputFeature) {
-  // Create the RegFile for this thread
-  RegFile = RevRegFile(); 
-  
-  // Set the stack pointer 
-  RegFile.SetX(Feature, 2, StackPtr );
+    : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),
+      FirstPC(inputFirstPC), ThreadMem(inputThreadMem), Feature(inputFeature) {
+    // Create the RegFile for this thread
+    RegFile = RevRegFile();
 
-  // Set the thread pointer
-  ThreadPtr = ThreadMem->getTopAddr();
-  RegFile.SetX(Feature, 4, ThreadPtr);
+    // Set the stack pointer
+    RegFile.SetX(Feature, 2, StackPtr );
 
-  // Set the PC 
-  RegFile.SetPC(Feature, FirstPC);
-}
+    // Set the thread pointer
+    ThreadPtr = ThreadMem->getTopAddr();
+    RegFile.SetX(Feature, 4, ThreadPtr);
+
+    // Set the PC
+    RegFile.SetPC(Feature, FirstPC);
+  }
 
   // ThreadID operations
   uint32_t GetThreadID() const { return ThreadID; }
@@ -79,7 +79,7 @@ class RevThread {
   uint32_t GetWaitingToJoinTID() const { return WaitingToJoinTID; }
   void SetWaitingToJoinTID(const uint32_t ThreadToWaitOn) { WaitingToJoinTID = ThreadToWaitOn; }
 
-  // Add new file descriptor 
+  // Add new file descriptor
   void AddFD(int fd){ fildes.insert(fd); }
 
   // Remove file descriptor from this thread (ie. rev_close)
@@ -88,7 +88,7 @@ class RevThread {
   // See if file descriptor exists/is owned by this thread
   bool FindFD(int fd){ return fildes.count(fd); }
 
-  // Get the threads 
+  // Get the threads
   std::unordered_set<int> GetFildes(){ return fildes; }
 
   // Register file operations
@@ -128,7 +128,7 @@ class RevThread {
 
     // Print a top border
     os << "|" << std::string(tableWidth-1, '=') << "|" << '\n';
-    
+
     // Print Thread ID
     os << "| Thread " << Thread.GetThreadID() << std::setw(6) <<  std::string(tableWidth-10, ' ') << "|\n";
 
@@ -137,24 +137,24 @@ class RevThread {
 
     std::string StateString = "";
     switch (Thread.GetState()){
-      case ThreadState::START:
-        StateString = "START";
-        break;
-      case ThreadState::READY:
-        StateString = "READY";
-        break;
-      case ThreadState::RUNNING:
-        StateString = "RUNNING";
-        break;
-      case ThreadState::BLOCKED:
-        StateString = "BLOCKED";
-        break;
-      case ThreadState::DONE:
-        StateString = "DONE";
-        break;
-      default:
-        StateString = "UNKNOWN";
-        break;
+    case ThreadState::START:
+      StateString = "START";
+      break;
+    case ThreadState::READY:
+      StateString = "READY";
+      break;
+    case ThreadState::RUNNING:
+      StateString = "RUNNING";
+      break;
+    case ThreadState::BLOCKED:
+      StateString = "BLOCKED";
+      break;
+    case ThreadState::DONE:
+      StateString = "DONE";
+      break;
+    default:
+      StateString = "UNKNOWN";
+      break;
     }
     // Print a nice header
     os << " ==> State: " << StateString << "\n";
@@ -179,7 +179,7 @@ class RevThread {
     // Loop over the registers
     for (size_t i = 0; i < _REV_NUM_REGS_; ++i) {
       uint64_t value = RegFile->GetX<uint64_t>(Feature, i);
-      
+
       os << "| " << std::setw(4) << ("x" + std::to_string(i));
       os << " | " << std::setw(5) << aliases[i];
       os << " | " << std::setw(19) << ("0x" + std::to_string(value));
@@ -195,6 +195,6 @@ class RevThread {
     return oss.str();  // Return the string
   }
 
-  };
+};
 };
 #endif

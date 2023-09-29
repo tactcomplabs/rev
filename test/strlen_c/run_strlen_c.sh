@@ -9,4 +9,4 @@ if [ -f strlen_c.exe ]; then
 else
   echo "Test STRLEN_C: strlen_c.exe not Found - likely build failed"
   exit 1
-fi 
+fi

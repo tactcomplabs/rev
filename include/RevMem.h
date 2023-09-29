@@ -266,16 +266,16 @@ public:
   std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; }
 
   ///< RevMem: Get ThreadMemSegs vector
-  std::vector<std::shared_ptr<MemSegment>>& GetThreadMemSegs(){ return ThreadMemSegs; } 
+  std::vector<std::shared_ptr<MemSegment>>& GetThreadMemSegs(){ return ThreadMemSegs; }
 
   ///< RevMem: Get FreeMemSegs vector
   std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; }
-  
+
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
   uint64_t AddMemSeg(const uint64_t& SegSize);
 
-      /// RevMem: Add new thread mem (starting at TopAddr [growing down]) 
-      std::shared_ptr<MemSegment> AddThreadMem();
+  /// RevMem: Add new thread mem (starting at TopAddr [growing down])
+  std::shared_ptr<MemSegment> AddThreadMem();
 
   /// RevMem: Add new MemSegment (starting at BaseAddr)
   uint64_t AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize);

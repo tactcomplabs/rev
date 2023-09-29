@@ -18,7 +18,7 @@ int main() {
     ssize_t bytes_written = rev_write(0, &msg, msg_len);
     rev_exit(0);
   }
-  else { 
+  else {
   // This is the parent process
     const char parent_msg[28] = "Greetings from the parent!\n";// {72, 69, 0};
     size_t parent_msg_len = 28; // Length of the message string, including the newline character
@@ -29,4 +29,3 @@ int main() {
   return 0;
 
 }
-

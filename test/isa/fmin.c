@@ -41,12 +41,12 @@ int main(int argc, char **argv){
   //TEST_FP_OP2_S(31,  fmin.s, 0,       -0.0,        0.0,       -0.0 );
   //TEST_FP_OP2_S(32,  fmax.s, 0,        0.0,       -0.0,        0.0 );
   //TEST_FP_OP2_S(33,  fmax.s, 0,        0.0,        0.0,       -0.0 );
-  
+
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(0);
 
 asm volatile("continue:");
@@ -56,7 +56,7 @@ asm volatile("li ra, 0x0");
 }
 
 asm(".data");
-RVTEST_DATA_BEGIN       
+RVTEST_DATA_BEGIN
   TEST_FP_OP_DATA2( 2,  1.0,        2.5,        1.0 );
   TEST_FP_OP_DATA2( 3,      -1235.1,    -1235.1,        1.1 );
   TEST_FP_OP_DATA2( 4,      -1235.1,        1.1,    -1235.1 );
@@ -77,5 +77,3 @@ RVTEST_DATA_BEGIN
   TEST_FP_OP_DATA2(32,          0.0,       -0.0,        0.0 );
   TEST_FP_OP_DATA2(33,          0.0,        0.0,       -0.0 );
 RVTEST_DATA_END
-
-

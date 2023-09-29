@@ -66,12 +66,12 @@ public:
                                 SST_ELI_ELEMENT_VERSION(1, 0, 0),
                                 "RISC-V Rev Simple Co-Processor",
                                 SST::RevCPU::RevCoProc
-                                );
+    );
 
   // Set up parameters accesible from the python configuration
   SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the co-processor",     "0" },
                           { "clock",          "Sets the clock frequency of the co-processor",         "1Ghz" },
-                          );
+    );
 
   // Register any subcomponents used by this element
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS();
@@ -81,8 +81,8 @@ public:
 
   // Add statistics
   SST_ELI_DOCUMENT_STATISTICS(
-                              {"InstRetired",        "Counts the total number of instructions retired by this coprocessor",    "count", 1}
-                              );
+    {"InstRetired",        "Counts the total number of instructions retired by this coprocessor",    "count", 1}
+    );
 
   // Enum for referencing statistics
   enum CoProcStats{

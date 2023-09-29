@@ -37,10 +37,10 @@ int main(int argc, char **argv){
 #endif
 
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(0);
 
 asm volatile("continue:");
@@ -50,7 +50,7 @@ asm volatile("li ra, 0x0");
 }
 
 asm(".data");
-RVTEST_DATA_BEGIN       
+RVTEST_DATA_BEGIN
   TEST_FP_INT_OP_DATA1( 2,  2.0,  2);
   TEST_FP_INT_OP_DATA1( 3,                 -2.0, -2);
 
@@ -63,5 +63,3 @@ RVTEST_DATA_BEGIN
   TEST_FP_INT_OP_DATA1( 8,                 2.0,  2);
   TEST_FP_INT_OP_DATA1( 9,        1.8446744e19, -2);
 RVTEST_DATA_END
-
-

@@ -9,4 +9,4 @@ if [ -f strstr.exe ]; then
 else
   echo "Test STRSTR: strstr.exe not Found - likely build failed"
   exit 1
-fi 
+fi

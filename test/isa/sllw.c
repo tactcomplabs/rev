@@ -62,12 +62,12 @@ int main(int argc, char **argv){
    TEST_RR_SRC2_EQ_DEST( 23, sllw, 0x00004000, 0x00000001, 14 );
    TEST_RR_SRC12_EQ_DEST( 24, sllw, 24, 3 );
 
-  
+
 asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");
