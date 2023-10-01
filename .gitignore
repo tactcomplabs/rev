@@ -1,4 +1,5 @@
-src/librevcpu.so
+*.so
+*.dylib
 *.exe
 *.csv
 .cache/clangd/index
