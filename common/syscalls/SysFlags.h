@@ -38,17 +38,17 @@
 #define CLONE_NEWNET         0x40000000 /* New network namespace */
 #define CLONE_IO             0x80000000 /* Clone I/O Context */
 
-#define AT_FDCWD		-100	/* Special value used to indicate the *at functions should use the current working directory. */
-#define AT_SYMLINK_NOFOLLOW	0x100	/* Do not follow symbolic links.  */
-#define AT_REMOVEDIR		0x200	/* Remove directory instead of unlinking file.  */
-#define AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic links.  */
-#define AT_NO_AUTOMOUNT	0x800	/* Suppress terminal automount traversal.  */
-#define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname.  */
-#define AT_STATX_SYNC_TYPE	0x6000
-#define AT_STATX_SYNC_AS_STAT	0x0000
-#define AT_STATX_FORCE_SYNC	0x2000
-#define AT_STATX_DONT_SYNC	0x4000
-#define AT_RECURSIVE		0x8000	/* Apply to the entire subtree.  */
+#define AT_FDCWD                -100    /* Special value used to indicate the *at functions should use the current working directory. */
+#define AT_SYMLINK_NOFOLLOW     0x100   /* Do not follow symbolic links.  */
+#define AT_REMOVEDIR            0x200   /* Remove directory instead of unlinking file.  */
+#define AT_SYMLINK_FOLLOW       0x400   /* Follow symbolic links.  */
+#define AT_NO_AUTOMOUNT 0x800   /* Suppress terminal automount traversal.  */
+#define AT_EMPTY_PATH           0x1000  /* Allow empty relative pathname.  */
+#define AT_STATX_SYNC_TYPE      0x6000
+#define AT_STATX_SYNC_AS_STAT   0x0000
+#define AT_STATX_FORCE_SYNC     0x2000
+#define AT_STATX_DONT_SYNC      0x4000
+#define AT_RECURSIVE            0x8000  /* Apply to the entire subtree.  */
 
 struct clone_args {
     uint64_t flags;        /* Flags bit mask */

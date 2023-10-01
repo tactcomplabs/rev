@@ -33,8 +33,8 @@ struct RevExt{
           RevRegFile *RegFile, RevMem *RevMem,
           SST::Output *Output )
     : feature(Feature), mem(RevMem), name(Name), output(Output) {
-        regFile = RegFile;
-      }
+    regFile = RegFile;
+  }
 
   /// RevExt: standard destructor. virtual so that Extensions[i] can be deleted
   virtual ~RevExt() = default;

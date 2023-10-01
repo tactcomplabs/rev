@@ -138,7 +138,7 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
   registerStats();
 
   registerClock( ClockFreq,
-              new Clock::Handler<RevBasicMemCtrl>(this, &RevBasicMemCtrl::clockTick));
+                 new Clock::Handler<RevBasicMemCtrl>(this, &RevBasicMemCtrl::clockTick));
 }
 
 RevBasicMemCtrl::~RevBasicMemCtrl(){
@@ -995,9 +995,9 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
     break;
   case MemOp::MemOpSTORECOND:
     rqst = new Interfaces::StandardMem::StoreConditional(op->getAddr(),
-                                                        (uint64_t)(op->getSize()),
-                                                        op->getBuf(),
-                                                        TmpFlags);
+                                                         (uint64_t)(op->getSize()),
+                                                         op->getBuf(),
+                                                         TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
     memIface->send(rqst);
@@ -1215,25 +1215,25 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
 }
 
 void RevBasicMemCtrl::handleFlagResp(RevMemOp *op){
-   StandardMem::Request::flags_t flags = op->getFlags();
-   unsigned bits = 8 * op->getSize();
+  StandardMem::Request::flags_t flags = op->getFlags();
+  unsigned bits = 8 * op->getSize();
 
-   if( flags & uint32_t(RevCPU::RevFlag::F_SEXT32) ){
-     uint32_t *target = static_cast<uint32_t*>(op->getTarget());
-     *target = SignExt(*target, bits);
-   }else if( flags & uint32_t(RevCPU::RevFlag::F_SEXT64) ){
-     uint64_t *target = static_cast<uint64_t*>(op->getTarget());
-     *target = SignExt(*target, bits);
-   }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT32) ){
-     uint32_t *target = static_cast<uint32_t*>(op->getTarget());
-     *target = ZeroExt(*target, bits);
-   }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT64) ){
-     uint64_t *target = static_cast<uint64_t*>(op->getTarget());
-     *target = ZeroExt(*target, bits);
-   }else if( flags & uint32_t(RevCPU::RevFlag::F_BOXNAN) ){
-     double *target = static_cast<double*>(op->getTarget());
-     BoxNaN(target, target);
-   }
+  if( flags & uint32_t(RevCPU::RevFlag::F_SEXT32) ){
+    uint32_t *target = static_cast<uint32_t*>(op->getTarget());
+    *target = SignExt(*target, bits);
+  }else if( flags & uint32_t(RevCPU::RevFlag::F_SEXT64) ){
+    uint64_t *target = static_cast<uint64_t*>(op->getTarget());
+    *target = SignExt(*target, bits);
+  }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT32) ){
+    uint32_t *target = static_cast<uint32_t*>(op->getTarget());
+    *target = ZeroExt(*target, bits);
+  }else if( flags & uint32_t(RevCPU::RevFlag::F_ZEXT64) ){
+    uint64_t *target = static_cast<uint64_t*>(op->getTarget());
+    *target = ZeroExt(*target, bits);
+  }else if( flags & uint32_t(RevCPU::RevFlag::F_BOXNAN) ){
+    double *target = static_cast<double*>(op->getTarget());
+    BoxNaN(target, target);
+  }
 }
 
 unsigned RevBasicMemCtrl::getNumSplitRqsts(RevMemOp *op){
@@ -1330,11 +1330,11 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
 }
 
 void RevBasicMemCtrl::performAMO(std::tuple<unsigned,
-                                            char *,
-                                            void *,
-                                            StandardMem::Request::flags_t,
-                                            RevMemOp *,
-                                            bool> Entry){
+                                 char *,
+                                 void *,
+                                 StandardMem::Request::flags_t,
+                                 RevMemOp *,
+                                 bool> Entry){
   RevMemOp *Tmp = std::get<AMOTABLE_MEMOP>(Entry);
   if( Tmp == nullptr ){
     output->fatal(CALL_INFO, -1, "Error : AMOTable entry is null\n" );
@@ -1553,7 +1553,7 @@ void RevBasicMemCtrl::handleInvResp(StandardMem::InvNotify* ev){
 
 uint64_t RevBasicMemCtrl::getTotalRqsts(){
   return num_read + num_write + num_llsc +
-         num_readlock + num_writeunlock + num_custom;
+    num_readlock + num_writeunlock + num_custom;
 }
 
 bool RevBasicMemCtrl::outstandingRqsts(){

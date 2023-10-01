@@ -21,8 +21,8 @@ namespace SST::RevCPU{
 class RV64A : public RevExt {
 
   static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    MemReq req(R->RV64[Inst.rs1],Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->MarkLoadComplete );
-    R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart),req});
+    MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->MarkLoadComplete );
+    R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
     M->LR(F->GetHartToExec(),
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rd],
@@ -99,14 +99,14 @@ class RV64A : public RevExt {
     {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("lr.d %rd, (%rs1)"          ).SetFunct7(0b00010).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&lrd ).InstEntry},
     {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("sc.d %rd, %rs1, %rs2"      ).SetFunct7(0b00011                        ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&scd ).InstEntry},
     {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoswap.d %rd, %rs1, %rs2" ).SetFunct7(0b00001                        ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoswapd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoadd.d %rd, %rs1, %rs2"  ).SetFunct7(0b00000												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoaddd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoxor.d %rd, %rs1, %rs2"  ).SetFunct7(0b00100												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoxord ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoand.d %rd, %rs1, %rs2"  ).SetFunct7(0b01100												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoandd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoor.d %rd, %rs1, %rs2"   ).SetFunct7(0b01000												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoord ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomin.d %rd, %rs1, %rs2"  ).SetFunct7(0b10000												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomind ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomax.d %rd, %rs1, %rs2"  ).SetFunct7(0b10100												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomaxd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amominu.d %rd, %rs1, %rs2" ).SetFunct7(0b11000												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amominud ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomaxu.d %rd, %rs1, %rs2" ).SetFunct7(0b11100												 ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomaxud ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoadd.d %rd, %rs1, %rs2"  ).SetFunct7(0b00000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoaddd ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoxor.d %rd, %rs1, %rs2"  ).SetFunct7(0b00100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoxord ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoand.d %rd, %rs1, %rs2"  ).SetFunct7(0b01100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoandd ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoor.d %rd, %rs1, %rs2"   ).SetFunct7(0b01000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoord ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomin.d %rd, %rs1, %rs2"  ).SetFunct7(0b10000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomind ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomax.d %rd, %rs1, %rs2"  ).SetFunct7(0b10100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomaxd ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amominu.d %rd, %rs1, %rs2" ).SetFunct7(0b11000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amominud ).InstEntry},
+    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomaxu.d %rd, %rs1, %rs2" ).SetFunct7(0b11100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomaxud ).InstEntry},
   };
 
 

@@ -38,7 +38,7 @@ int main(int argc, char **argv){
   TEST_LD_OP( 7, lwu, 0x00000000ff00ff00, -8,  tdat4 );
   TEST_LD_OP( 8, lwu, 0x000000000ff00ff0, -4,  tdat4 );
   TEST_LD_OP( 9, lwu, 0x00000000f00ff00f, 0,   tdat4 );
-  
+
 
   //# Test with a negative base
 
@@ -58,10 +58,10 @@ int main(int argc, char **argv){
 
 
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

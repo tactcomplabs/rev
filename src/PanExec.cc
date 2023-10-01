@@ -26,8 +26,8 @@ bool PanExec::AddEntry(uint64_t Addr, unsigned *Idx){
   unsigned Entry = GetNewEntry();
 
   ExecQueue.push_back(std::tuple<unsigned,
-                                 PanExec::PanStatus,
-                                 uint64_t>(Entry, PanExec::QValid, Addr));
+                      PanExec::PanStatus,
+                      uint64_t>(Entry, PanExec::QValid, Addr));
 
   *Idx = Entry;
   return true;

@@ -35,10 +35,10 @@ int main(int argc, char **argv){
   TEST_RR_OP(10, remuw,      0,      0, 0 );
 
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

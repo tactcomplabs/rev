@@ -9,4 +9,4 @@ if [ -f ex1.exe ]; then
 else
   echo "Test COPROC: File ex1.exe not found - likely build failed"
   exit 1
-fi 
+fi

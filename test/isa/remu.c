@@ -33,12 +33,12 @@ int main(int argc, char **argv){
   TEST_RR_OP( 8, remu, -1<<63, -1<<63, 0 );
   TEST_RR_OP( 9, remu,      1,      1, 0 );
   TEST_RR_OP(10, remu,      0,      0, 0 );
-  
+
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

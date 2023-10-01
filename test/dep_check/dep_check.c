@@ -17,13 +17,13 @@ int main(int argc, char **argv){
   int o;
 
 
-/* The assembly sequence below should produce a 
- * cascade of dependent instructions 
+/* The assembly sequence below should produce a
+ * cascade of dependent instructions
  * The cost of "add" in the RV32I instruction
- * table MUST be set to a value larger than 1 
+ * table MUST be set to a value larger than 1
  * otherwise you will see no change w/ or w/o a
  * Dependency Check - in other words, if cost == 1
- * then the reported eff of the core will remain 
+ * then the reported eff of the core will remain
  * at 100%, at cost > 1 eff will drop below 100%
  * */
 

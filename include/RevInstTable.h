@@ -224,13 +224,13 @@ struct RevRegFile {
 
   /// SetFP32: Set a specific FP register to a 32-bit float value
   void SetFP32(const RevFeature* F, size_t rd, float value)
-  {
-    if( F->HasD() ){
-      BoxNaN(&DPF[rd], &value);  // Store NaN-boxed in FP64 register
-    } else {
-      SPF[rd] = value;           // Store in FP32 register
+    {
+      if( F->HasD() ){
+        BoxNaN(&DPF[rd], &value);  // Store NaN-boxed in FP64 register
+      } else {
+        SPF[rd] = value;           // Store in FP32 register
+      }
     }
-  }
 }; // RevRegFile
 
 inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)

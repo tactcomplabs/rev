@@ -50,10 +50,10 @@ TEST_RR_OP( 2,  sub, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000 
   TEST_RR_SRC12_EQ_DEST( 18, sub, 0, 13 );
 
 asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

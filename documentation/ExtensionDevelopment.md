@@ -182,14 +182,14 @@ For this, we need to modify the `RevProc.cc` implementation file.  Specifically,
 bool RevProc::SeedInstTable(){
   // Z-Extension
   if( feature->IsModeEnabled(RV_Z) ){
-    EnableExt(static_cast<RevExt *>(new RV32Z(feature,&RegFile,mem,output)));
+    EnableExt(static_cast<RevExt *>(new RV32Z(feature, &RegFile, mem, output)));
   }
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
-    EnableExt(static_cast<RevExt *>(new RV32I(feature,&RegFile,mem,output)));
+    EnableExt(static_cast<RevExt *>(new RV32I(feature, &RegFile, mem, output)));
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64I(feature,&RegFile,mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64I(feature, &RegFile, mem, output)));
     }
   }
 ...
@@ -492,7 +492,7 @@ static bool zadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 }
 ```
 ```c++
-static bool zsub(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+static bool zsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
     R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) - R->GetX<uint32_t>(F, Inst.rs2));
   }else{
@@ -502,7 +502,7 @@ static bool zsub(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
   return true;
 }
 
-static bool zlb(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+static bool zlb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
@@ -520,11 +520,11 @@ static bool zlb(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
   }
   R->AdvancePC(F, Inst.instSize);
   // update the cost
-  R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+  R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
   return true;
 }
 
-static bool zsb(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+static bool zsb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   M->Write(F->GetHart(),
            R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<uint8_t>(F, Inst.rs2));

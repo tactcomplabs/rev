@@ -22,7 +22,7 @@ int main(int argc, char **argv){
  // #-------------------------------------------------------------
  // # Basic tests
  // #-------------------------------------------------------------
- 
+
   TEST_ST_OP( 2, lw, sw, 0x0000000000aa00aa, 0,  tdat );
   TEST_ST_OP( 3, lw, sw, 0xffffffffaa00aa00, 4,  tdat );
   TEST_ST_OP( 4, lw, sw, 0x000000000aa00aa0, 8,  tdat );
@@ -33,7 +33,7 @@ int main(int argc, char **argv){
   TEST_ST_OP( 6, lw, sw, 0x0000000000aa00aa, -12, tdat8 );
   TEST_ST_OP( 7, lw, sw, 0xffffffffaa00aa00, -8,  tdat8 );
   TEST_ST_OP( 8, lw, sw, 0x000000000aa00aa0, -4,  tdat8 );
-  TEST_ST_OP( 9, lw, sw, 0xffffffffa00aa00a, 0,   tdat8 ); 
+  TEST_ST_OP( 9, lw, sw, 0xffffffffa00aa00a, 0,   tdat8 );
 
 
  //# Test with a negative base
@@ -59,10 +59,10 @@ int main(int argc, char **argv){
 
 
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

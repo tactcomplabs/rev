@@ -9,4 +9,4 @@ if [ -f ex3.exe ]; then
 else
   echo "Test EX3: ex3.exe not Found - likely build failed"
   exit 1
-fi 
+fi

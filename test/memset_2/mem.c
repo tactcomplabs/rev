@@ -35,7 +35,7 @@ int test_3(void *addr, size_t size) {
 }
 
 /* Memory to test */
-#define SIZE 1000 
+#define SIZE 1000
 u8 mem[SIZE];
 
 int main(){

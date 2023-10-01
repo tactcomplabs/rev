@@ -36,7 +36,7 @@ int main(int argc, char **argv){
 
   assert( x == q );
 
-  /*TEST_FP_OP2_S(3,  fdiv.s, 1,-0.9991093838555584,      -1234,     1235.1 );*/
+  /*TEST_FP_OP2_S(3,  fdiv.s, 1, -0.9991093838555584,      -1234,     1235.1 );*/
   a = -1234;
   b = 1235.1;
   q = a / b;
@@ -56,12 +56,12 @@ int main(int argc, char **argv){
   TEST_FP_OP1_S(6,  fsqrt.s, 1,         1.7724538498928541, 3.14159265 );
   TEST_FP_OP1_S(7,  fsqrt.s, 0,         100,      10000 );
   TEST_FP_OP1_S(8,  fsqrt.s, 1,         13.076696, 171.0);
-  
+
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(0);
 
 asm volatile("continue:");
@@ -71,7 +71,7 @@ asm volatile("li ra, 0x0");
 }
 
 asm(".data");
-RVTEST_DATA_BEGIN                                               
+RVTEST_DATA_BEGIN
 TEST_FP_OP_DATA2(4, 3.14159265, 3.14159265, 1.0);
 TEST_FP_OP_DATA2(5, 1.1557273520668288, 3.14159265, 2.71828182);
 TEST_FP_OP_DATA1(6, 1.7724538498928541, 3.14159265 );

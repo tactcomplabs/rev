@@ -12,9 +12,9 @@
 using namespace SST::RevCPU;
 
 /*RevPrefetcher::~RevPrefetcher(){
-  // delete all the existing streams
-  for(auto* s : iStack)
-      delete[] s;
+// delete all the existing streams
+for(auto* s : iStack)
+delete[] s;
 }*/
 
 bool RevPrefetcher::IsAvail(uint64_t Addr){

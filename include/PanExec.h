@@ -20,45 +20,45 @@
 #endif
 
 namespace SST {
-  namespace RevCPU {
+namespace RevCPU {
 
-    class PanExec{
-    public:
-      typedef enum{
-        QExec   = 0,                  ///< PanStatus: entry is executing
-        QValid  = 1,                  ///< PanStatus: valid entry, ready to execute
-        QNull   = 13,                 ///< PanStatus: null entry
-        QError  = 0b0000000011111111  ///< PanStatus: error
-      }PanStatus;
+class PanExec{
+public:
+  typedef enum{
+    QExec   = 0,                  ///< PanStatus: entry is executing
+    QValid  = 1,                  ///< PanStatus: valid entry, ready to execute
+    QNull   = 13,                 ///< PanStatus: null entry
+    QError  = 0b0000000011111111  ///< PanStatus: error
+  }PanStatus;
 
-      /// PanExec: standard constructor
-      PanExec();
+  /// PanExec: standard constructor
+  PanExec();
 
-      /// PanExec: standard destructor
-      ~PanExec();
+  /// PanExec: standard destructor
+  ~PanExec();
 
-      /// PanExec: add an execution queue entry
-      bool AddEntry(uint64_t Addr, unsigned *Idx);
+  /// PanExec: add an execution queue entry
+  bool AddEntry(uint64_t Addr, unsigned *Idx);
 
-      /// PanExec: remove an execution queue entry
-      bool RemoveEntry(unsigned Idx);
+  /// PanExec: remove an execution queue entry
+  bool RemoveEntry(unsigned Idx);
 
-      /// PanExec: status of the entry
-      PanStatus StatusEntry(unsigned Idx);
+  /// PanExec: status of the entry
+  PanStatus StatusEntry(unsigned Idx);
 
-      /// PanExec: get execution entry
-      PanStatus GetNextEntry(uint64_t *Addr, unsigned *Idx);
+  /// PanExec: get execution entry
+  PanStatus GetNextEntry(uint64_t *Addr, unsigned *Idx);
 
-    private:
-      // private data members
-      unsigned CurEntry;
-      std::vector<std::tuple<unsigned, PanStatus, uint64_t>> ExecQueue;    ///< PanExec: execution queue
+private:
+  // private data members
+  unsigned CurEntry;
+  std::vector<std::tuple<unsigned, PanStatus, uint64_t>> ExecQueue;    ///< PanExec: execution queue
 
-      // private functions
-      unsigned GetNewEntry();
+  // private functions
+  unsigned GetNewEntry();
 
-    };  // class PanExec
-  } // namespace RevCPU
+};  // class PanExec
+} // namespace RevCPU
 } // namespace SST
 
 

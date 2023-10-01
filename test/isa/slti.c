@@ -21,7 +21,7 @@ int main(int argc, char **argv){
  // #-------------------------------------------------------------
  // # Arithmetic tests
  // #-------------------------------------------------------------
-  
+
   TEST_IMM_OP( 2,  slti, 0, 0x0000000000000000, 0x000 );
   TEST_IMM_OP( 3,  slti, 0, 0x0000000000000001, 0x001 );
   TEST_IMM_OP( 4,  slti, 1, 0x0000000000000003, 0x007 );
@@ -49,10 +49,10 @@ int main(int argc, char **argv){
 
 
 asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");
