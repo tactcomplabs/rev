@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV32I_H_
 #define _SST_REVCPU_RV32I_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 #include "../RevExt.h"
 
 #include <vector>
@@ -31,7 +31,7 @@ class RV32I : public RevExt {
     // if Inst.imm == 0; this is a HINT instruction
     // this is effectively a NOP
     if( Inst.imm == 0x00 ){
-      R->AdvancePC(F, Inst.instSize);
+      R->AdvancePC(Inst.instSize);
       return true;
     }
     //Inst.imm = (Inst.imm & 0b011111111)*4;
@@ -253,43 +253,28 @@ class RV32I : public RevExt {
 
   // Standard instructions
   static bool lui(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->SetX(F, Inst.rd, static_cast<int32_t>(Inst.imm << 12));
-    R->AdvancePC(F, Inst.instSize);
+    R->SetX(Inst.rd, static_cast<int32_t>(Inst.imm << 12));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool auipc(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     auto ui = static_cast<int32_t>(Inst.imm << 12);
-    R->SetX(F, Inst.rd, ui + R->GetPC(F));
-    R->AdvancePC(F, Inst.instSize);
+    R->SetX(Inst.rd, ui + R->GetPC());
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool jal(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->SetX(F, Inst.rd, R->GetPC(F) + Inst.instSize);
-    R->AdvancePC(F, Inst.ImmSignExt(20));
+    R->SetX(Inst.rd, R->GetPC() + Inst.instSize);
+    R->AdvancePC(Inst.ImmSignExt(20));
     return true;
   }
 
   static bool jalr(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    auto ret = R->GetPC(F) + Inst.instSize;
-    R->SetPC(F, (R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & -2);
-    R->SetX(F, Inst.rd, ret);
-    return true;
-  }
-
-  /// Conditional branch template
-  // The first template parameter is the comparison functor
-  // The second template parameter is std::make_signed_t or std::make_unsigned_t
-  template<template<class> class OP, template<class> class SIGN = std::make_unsigned_t>
-  static bool bcond(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    bool cond;
-    if( F->IsRV32() ){
-      cond = OP()(R->GetX<SIGN<int32_t>>(F, Inst.rs1), R->GetX<SIGN<int32_t>>(F, Inst.rs2));
-    }else{
-      cond = OP()(R->GetX<SIGN<int64_t>>(F, Inst.rs1), R->GetX<SIGN<int64_t>>(F, Inst.rs2));
-    }
-    R->AdvancePC(F, cond ? Inst.ImmSignExt(13) : Inst.instSize);
+    auto ret = R->GetPC() + Inst.instSize;
+    R->SetPC((R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12)) & -2);
+    R->SetX(Inst.rd, ret);
     return true;
   }
 
@@ -340,13 +325,13 @@ class RV32I : public RevExt {
 
   static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->FenceMem(F->GetHartToExec());
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;  // temporarily disabled
   }
 
   static bool fencei(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->FenceMem(F->GetHartToExec());
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;  // temporarily disabled
   }
 
@@ -360,51 +345,51 @@ class RV32I : public RevExt {
      *       to worry about machine mode with the ecalls we are supporting
      */
 
-    R->SetSEPC(F);      // Save PC of instruction that raised exception
-    R->SetSTVAL(F, 0);  // MTVAL/STVAL unused for ecall and is set to 0
-    R->SetSCAUSE(F, EXCEPTION_CAUSE::ECALL_USER_MODE);
+    R->SetSEPC();    // Save PC of instruction that raised exception
+    R->SetSTVAL(0);  // MTVAL/STVAL unused for ecall and is set to 0
+    R->SetSCAUSE(EXCEPTION_CAUSE::ECALL_USER_MODE);
 
     /*
      * Trap Handler is not implemented because we only have one exception
      * So we don't have to worry about setting `mtvec` reg
      */
 
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool ebreak(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool csrrw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool csrrs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool csrrc(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool csrrwi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool csrrsi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool csrrci(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -509,17 +494,13 @@ class RV32I : public RevExt {
 public:
   /// RV32I: standard constructor
   RV32I( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV32I", Feature, RegFile, RevMem, Output ) {
-    this->SetTable(RV32ITable);
-    this->SetCTable(RV32ICTable);
-    this->SetOTable(RV32ICOTable);
+    : RevExt( "RV32I", Feature, RevMem, Output ) {
+    SetTable(std::move(RV32ITable));
+    SetCTable(std::move(RV32ICTable));
+    SetOTable(std::move(RV32ICOTable));
   }
-
-  /// RV32I: standard destructor
-  ~RV32I() = default;
 
 }; // end class RV32I
 

@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV64F_H_
 #define _SST_REVCPU_RV64F_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 #include "../RevExt.h"
 
 #include <vector>
@@ -24,14 +24,14 @@ class RV64F : public RevExt {
   static constexpr auto& fcvtlus = CvtFpToInt<float, uint64_t>;
 
   static bool fcvtsl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->SetFP32(F, Inst.rd, static_cast<float>(R->GetX<int64_t>(F, Inst.rs1)));
-    R->AdvancePC(F, Inst.instSize);
+    R->SetFP32(Inst.rd, static_cast<float>(R->GetX<int64_t>(Inst.rs1)));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fcvtslu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->SetFP32(F, Inst.rd, static_cast<float>(R->GetX<uint64_t>(F, Inst.rs1)));
-    R->AdvancePC(F, Inst.instSize);
+    R->SetFP32(Inst.rd, static_cast<float>(R->GetX<uint64_t>(Inst.rs1)));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -58,20 +58,14 @@ class RV64F : public RevExt {
     {RevInstEntryBuilder<Rev64FInstDefaults>().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct7( 0b1101000).SetfpcvtOp(0b00011).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&fcvtslu ) .InstEntry},
   };
 
-
 public:
   /// RV364F: standard constructor
   RV64F( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV64F", Feature, RegFile, RevMem, Output) {
-    SetTable(RV64FTable);
+    : RevExt( "RV64F", Feature, RevMem, Output) {
+    SetTable(std::move(RV64FTable));
   }
-
-  /// RV64F: standard destructor
-  ~RV64F() = default;
-
 }; // end class RV64F
 
 } // namespace SST::RevCPU

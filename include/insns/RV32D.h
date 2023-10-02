@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV32D_H_
 #define _SST_REVCPU_RV32D_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 #include "../RevExt.h"
 
 #include <vector>
@@ -58,25 +58,25 @@ class RV32D : public RevExt{
 
   static bool fmaddd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->DPF[Inst.rd] = std::fma(R->DPF[Inst.rs1], R->DPF[Inst.rs2], R->DPF[Inst.rs3]);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fmsubd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->DPF[Inst.rd] = std::fma(R->DPF[Inst.rs1], R->DPF[Inst.rs2], -R->DPF[Inst.rs3]);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fnmsubd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->DPF[Inst.rd] = std::fma(-R->DPF[Inst.rs1], R->DPF[Inst.rs2], R->DPF[Inst.rs3]);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fnmaddd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->DPF[Inst.rd] = -std::fma(R->DPF[Inst.rs1], R->DPF[Inst.rs2], R->DPF[Inst.rs3]);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -96,38 +96,38 @@ class RV32D : public RevExt{
 
   static bool fsqrtd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->DPF[Inst.rd] = std::sqrt(R->DPF[Inst.rs1]);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fsgnjd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->DPF[Inst.rd] = std::copysign(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fsgnjnd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->DPF[Inst.rd] = std::copysign(R->DPF[Inst.rs1], -R->DPF[Inst.rs2]);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fsgnjxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     double rs1 = R->DPF[Inst.rs1], rs2 = R->DPF[Inst.rs2];
     R->DPF[Inst.rd] = std::copysign(rs1, std::signbit(rs1) ? -rs2 : rs2);
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fcvtsd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->DPF[Inst.rd] = double{R->GetFP32(F, Inst.rs1)};
-    R->AdvancePC(F, Inst.instSize);
+    R->DPF[Inst.rd] = double{R->GetFP32(Inst.rs1)};
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fcvtds(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->SetFP32(F, Inst.rd, static_cast<float>(R->DPF[Inst.rs1]));
-    R->AdvancePC(F, Inst.instSize);
+    R->SetFP32(Inst.rd, static_cast<float>(R->DPF[Inst.rs1]));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -136,20 +136,20 @@ class RV32D : public RevExt{
     uint64_t i64;
     memcpy(&i64, &fp64, sizeof(i64));
     bool quietNaN = (i64 & uint64_t{1}<<51) != 0;
-    R->SetX(F, Inst.rd, fclass(fp64, quietNaN));
-    R->AdvancePC(F, Inst.instSize);
+    R->SetX(Inst.rd, fclass(fp64, quietNaN));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fcvtdw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->DPF[Inst.rd] = static_cast<double>(R->GetX<int32_t>(F, Inst.rs1));
-    R->AdvancePC(F, Inst.instSize);
+    R->DPF[Inst.rd] = static_cast<double>(R->GetX<int32_t>(Inst.rs1));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fcvtdwu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->DPF[Inst.rd] = static_cast<double>(R->GetX<uint32_t>(F, Inst.rs1));
-    R->AdvancePC(F, Inst.instSize);
+    R->DPF[Inst.rd] = static_cast<double>(R->GetX<uint32_t>(Inst.rs1));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -209,17 +209,12 @@ class RV32D : public RevExt{
 public:
   /// RV32D: standard constructor
   RV32D( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV32D", Feature, RegFile, RevMem, Output) {
-    SetTable(RV32DTable);
-    SetCTable(RV32DCTable);
+    : RevExt( "RV32D", Feature, RevMem, Output) {
+    SetTable(std::move(RV32DTable));
+    SetCTable(std::move(RV32DCTable));
   }
-
-  /// RV32D: standard destructor
-  ~RV32D() = default;
-
 }; // end class RV32I
 
 } // namespace SST::RevCPU

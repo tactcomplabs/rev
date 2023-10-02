@@ -35,7 +35,6 @@ enum class ThreadState {
 };
 
 class RevThread {
-private:
   uint32_t ThreadID;                                   // Thread ID
   uint32_t ParentThreadID;                             // Parent ThreadID
   uint64_t StackPtr;                                   // Initial stack pointer
@@ -46,29 +45,26 @@ private:
   ThreadState State = ThreadState::START;              // Thread state (Initializes as )
   RevRegFile RegFile;                                  // Register file
   std::unordered_set<uint32_t> ChildrenThreadIDs = {}; // Child thread IDs
-  std::unordered_set<int> fildes = {0, 1, 2  };      // Default file descriptors
+  std::unordered_set<int> fildes = {0, 1, 2};          // Default file descriptors
 
   uint32_t WaitingToJoinTID = __INVALID_TID__;
 
 public:
-  RevThread(uint32_t inputThreadID, uint32_t inputParentThreadID,
-            uint64_t inputStackPtr, uint64_t inputFirstPC,
-            std::shared_ptr<RevMem::MemSegment>& inputThreadMem,
-            RevFeature* inputFeature)
-    : ThreadID(inputThreadID), ParentThreadID(inputParentThreadID), StackPtr(inputStackPtr),
-      FirstPC(inputFirstPC), ThreadMem(inputThreadMem), Feature(inputFeature) {
-    // Create the RegFile for this thread
-    RegFile = RevRegFile();
-
+  RevThread(uint32_t ThreadID, uint32_t ParentThreadID,
+            uint64_t StackPtr, uint64_t FirstPC,
+            std::shared_ptr<RevMem::MemSegment>& ThreadMem,
+            RevFeature* Feature)
+    : ThreadID(ThreadID), ParentThreadID(ParentThreadID), StackPtr(StackPtr),
+      FirstPC(FirstPC), ThreadMem(ThreadMem), Feature(Feature), RegFile(Feature){
     // Set the stack pointer
-    RegFile.SetX(Feature, 2, StackPtr );
+    RegFile.SetX(2, StackPtr );
 
     // Set the thread pointer
     ThreadPtr = ThreadMem->getTopAddr();
-    RegFile.SetX(Feature, 4, ThreadPtr);
+    RegFile.SetX(4, ThreadPtr);
 
     // Set the PC
-    RegFile.SetPC(Feature, FirstPC);
+    RegFile.SetPC(FirstPC);
   }
 
   // ThreadID operations
@@ -89,12 +85,11 @@ public:
   bool FindFD(int fd){ return fildes.count(fd); }
 
   // Get the threads
-  std::unordered_set<int> GetFildes(){ return fildes; }
+  const std::unordered_set<int>& GetFildes(){ return fildes; }
 
   // Register file operations
-  const RevRegFile* GetConstRegFile() const { return &RegFile; }
+  const RevRegFile* GetRegFile() const { return &RegFile; }
   RevRegFile* GetRegFile(){ return &RegFile; }
-  void SetRegFile(RevRegFile r);
 
   // RevFeature operations
   RevFeature* GetFeature() const { return Feature; }
@@ -102,7 +97,7 @@ public:
 
   // Thread state operations
   ThreadState GetState() const { return State; }
-  void SetState(ThreadState newState) { State = newState; }
+  void SetState(ThreadState newState) { State = std::move(newState); }
 
   // Add a child to this thread id
   void AddChildThreadID(uint32_t tid){ ChildrenThreadIDs.insert(tid); }
@@ -115,79 +110,8 @@ public:
   bool isBlocked();
   bool isDone();
 
-  // Overload the printing
-  friend std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
-
-    os << "\n";
-
-    auto Feature = Thread.GetFeature();
-    auto RegFile= Thread.GetConstRegFile();
-
-    // Calculate total width of the table
-    int tableWidth = 6 /*Reg*/ + 7 /*Alias*/ + 16 /*Value*/ + 23 /*Info*/ + 9 /*Separators*/;
-
-    // Print a top border
-    os << "|" << std::string(tableWidth-1, '=') << "|" << '\n';
-
-    // Print Thread ID
-    os << "| Thread " << Thread.GetThreadID() << std::setw(6) <<  std::string(tableWidth-10, ' ') << "|\n";
-
-    // Print the middle border
-    os << "|" << std::string(tableWidth-1, '-') << "|" << '\n';
-
-    std::string StateString = "";
-    switch (Thread.GetState()){
-    case ThreadState::START:
-      StateString = "START";
-      break;
-    case ThreadState::READY:
-      StateString = "READY";
-      break;
-    case ThreadState::RUNNING:
-      StateString = "RUNNING";
-      break;
-    case ThreadState::BLOCKED:
-      StateString = "BLOCKED";
-      break;
-    case ThreadState::DONE:
-      StateString = "DONE";
-      break;
-    default:
-      StateString = "UNKNOWN";
-      break;
-    }
-    // Print a nice header
-    os << " ==> State: " << StateString << "\n";
-    os << " ==> ParentTID: " << Thread.GetParentThreadID() << "\n";
-    os << " ==> Blocked by TID: " ;
-    if (Thread.GetWaitingToJoinTID() != __INVALID_TID__) {
-      os << Thread.GetWaitingToJoinTID();
-    } else {
-      os << "N/A";
-    }
-    os << "\n";
-
-    os << '|' << std::string(tableWidth-1, '-') << '|' << '\n';
-    // Table header
-    os << "| " << std::setw(4) << "Reg" << " | " << std::setw(5) << "Alias" << " | " << std::setw(19) << "Value" << " | " << std::setw(21) << "Info" << " |\n";
-    os << "|------|-------|---------------------|-----------------------|\n";
-
-    // Register aliases and descriptions
-    static constexpr const char* aliases[] = {"zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
-    static constexpr const char* info[] = {"Zero Register", "Return Address", "Stack Pointer", "Global Pointer", "Thread Pointer", "Temporary Register", "Temporary Register", "Temporary Register", "Callee Saved Register", "Callee Saved Register", "Arg/Return Register", "Arg/Return Register", "Argument Register", "Argument Register", "Argument Register", "Argument Register", "Argument Register", "Argument Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Callee Saved Register", "Temporary Register", "Temporary Register", "Temporary Register", "Temporary Register"};
-
-    // Loop over the registers
-    for (size_t i = 0; i < _REV_NUM_REGS_; ++i) {
-      uint64_t value = RegFile->GetX<uint64_t>(Feature, i);
-
-      os << "| " << std::setw(4) << ("x" + std::to_string(i));
-      os << " | " << std::setw(5) << aliases[i];
-      os << " | " << std::setw(19) << ("0x" + std::to_string(value));
-      os << " | " << std::setw(21) << info[i] << " |\n";
-    }
-    os << "|" << std::string(tableWidth-1, '-') << "|" << '\n';
-    return os;
-  }
+// Overload the printing
+  friend std::ostream& operator<<(std::ostream& os, const RevThread& Thread);
 
   std::string to_string() const {
     std::ostringstream oss;
@@ -195,6 +119,8 @@ public:
     return oss.str();  // Return the string
   }
 
-};
-};
+}; // class RevThread
+
+} // namespace SST::RevCPU
+
 #endif

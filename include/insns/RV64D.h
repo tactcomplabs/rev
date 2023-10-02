@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV64D_H_
 #define _SST_REVCPU_RV64D_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 #include "../RevExt.h"
 
 #include <vector>
@@ -24,29 +24,29 @@ class RV64D : public RevExt {
   static constexpr auto& fcvtlud = CvtFpToInt<double, uint64_t>;
 
   static bool fcvtdl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->DPF[Inst.rd] = static_cast<double>(R->GetX<int64_t>(F, Inst.rs1));
-    R->AdvancePC(F, Inst.instSize);
+    R->DPF[Inst.rd] = static_cast<double>(R->GetX<int64_t>(Inst.rs1));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fcvtdlu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->DPF[Inst.rd] = static_cast<double>(R->GetX<uint64_t>(F, Inst.rs1));
-    R->AdvancePC(F, Inst.instSize);
+    R->DPF[Inst.rd] = static_cast<double>(R->GetX<uint64_t>(Inst.rs1));
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fmvxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     uint64_t u64;
     memcpy(&u64, &R->DPF[Inst.rs1], sizeof(u64));
-    R->SetX(F, Inst.rd, u64);
-    R->AdvancePC(F, Inst.instSize);
+    R->SetX(Inst.rd, u64);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
   static bool fmvdx(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    uint64_t u64 = R->GetX<uint64_t>(F, Inst.rs1);
+    uint64_t u64 = R->GetX<uint64_t>(Inst.rs1);
     memcpy(&R->DPF[Inst.rs1], &u64, sizeof(double));
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -64,6 +64,7 @@ class RV64D : public RevExt {
     static constexpr RevRegClass rs1Class = RevRegClass::RegFLOAT;
     static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
   };
+
   std::vector<RevInstEntry> RV64DTable = {
     {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.l.d %rd, %rs1"  ).SetFunct7(0b1100001).SetImplFunc( &fcvtld ).InstEntry},
     {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.lu.d %rd, %rs1" ).SetFunct7(0b1100001).SetImplFunc( &fcvtlud ).InstEntry},
@@ -77,16 +78,11 @@ class RV64D : public RevExt {
 public:
   /// RV364D: standard constructor
   RV64D( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV64D", Feature, RegFile, RevMem, Output) {
-    this->SetTable(RV64DTable);
+    : RevExt( "RV64D", Feature, RevMem, Output) {
+    SetTable(std::move(RV64DTable));
   }
-
-  /// RV364D: standard destructor
-  ~RV64D() = default;
-
 }; // end class RV32I
 
 } // namespace SST::RevCPU
