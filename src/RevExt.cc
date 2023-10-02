@@ -15,21 +15,22 @@ bool RevExt::Execute(unsigned Inst, const RevInst& payload, uint16_t HartID, Rev
   bool (*func)(RevFeature *,
                RevRegFile *,
                RevMem *,
-               RevInst) = nullptr;
-  try{
-    if( payload.compressed ){
-      // this is a compressed instruction, grab the compressed trampoline function
-      func = ctable.at(Inst).func;
-    }else{
-      // retrieve the function pointer for this instruction
-      func = table.at(Inst).func;
-    }
-  } catch(...) {
+               RevInst);
+
+  if( payload.compressed ){
+    // this is a compressed instruction, grab the compressed trampoline function
+    func = Inst < ctable.size() ? ctable[Inst].func : nullptr;
+  }else{
+    // retrieve the function pointer for this instruction
+    func = Inst < table.size() ? table[Inst].func : nullptr;
+  }
+
+  if( !func ){
     output->fatal(CALL_INFO, -1,
                   "Error: instruction at index=%u does not exist in extension=%s",
                   Inst,
                   name.data());
-    throw;
+    return false;
   }
 
   // execute the instruction
