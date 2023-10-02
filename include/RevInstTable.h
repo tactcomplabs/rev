@@ -115,47 +115,159 @@ enum EXCEPTION_CAUSE : uint32_t {
   STORE_AMO_PAGE_FAULT      = 15,
 };
 
-struct RevRegFile {
-  uint32_t RV32[_REV_NUM_REGS_]{};    ///< RevRegFile: RV32I register file
-  uint64_t RV64[_REV_NUM_REGS_]{};    ///< RevRegFile: RV64I register file
-  float SPF[_REV_NUM_REGS_]{};        ///< RevRegFile: RVxxF register file
-  double DPF[_REV_NUM_REGS_]{};       ///< RevRegFile: RVxxD register file
+struct RevInst;
 
-  /* Supervisor Mode CSRs */
-  uint64_t RV64_SSTATUS{}; // During ecall, previous priviledge mode is saved in this register (Incomplete)
-  uint64_t RV64_SEPC{};    // Holds address of instruction that caused the exception (ie. ECALL)
-  uint64_t RV64_SCAUSE{};  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
-  uint64_t RV64_STVAL{};   // Used to store additional info about exception (ECALL does not use this and sets value to 0)
-  uint64_t RV64_STVEC{};   // Holds the base address of the exception handling routine (trap handler) that the processor jumps to when and exception occurs
+class RevRegFile {
+  union{  // Anonymous union. We zero-initialize the largest member
+    uint32_t RV32[_REV_NUM_REGS_];      ///< RevRegFile: RV32I register file
+    uint64_t RV64[_REV_NUM_REGS_]{};    ///< RevRegFile: RV64I register file
+  };
 
-  uint32_t RV32_SSTATUS{};
-  uint32_t RV32_SEPC{};
-  uint32_t RV32_SCAUSE{};
-  uint32_t RV32_STVAL{};
-  uint32_t RV32_STVEC{};
+  union{  // Anonymous union. We zero-initialize the largest member
+    float SPF[_REV_NUM_REGS_];          ///< RevRegFile: RVxxF register file
+    double DPF[_REV_NUM_REGS_]{};       ///< RevRegFile: RVxxD register file
+  };
 
-  bool RV32_Scoreboard[_REV_NUM_REGS_]{}; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
-  bool RV64_Scoreboard[_REV_NUM_REGS_]{}; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
-  bool SPF_Scoreboard[_REV_NUM_REGS_]{};  ///< RevRegFile: Scoreboard for SPF RF to manage pipeline hazard
-  bool DPF_Scoreboard[_REV_NUM_REGS_]{};  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
+  // Supervisor Mode CSRs
+#if 0 // not used
+  union{  // Anonymous union. We zero-initialize the largest member
+    uint64_t RV64_SSTATUS{}; // During ecall, previous priviledge mode is saved in this register (Incomplete)
+    uint32_t RV32_SSTATUS;
+  };
+#endif
+
+  union{  // Anonymous union. We zero-initialize the largest member
+    uint64_t RV64_SEPC{};    // Holds address of instruction that caused the exception (ie. ECALL)
+    uint32_t RV32_SEPC;
+  };
+
+  union{  // Anonymous union. We zero-initialize the largest member
+    uint64_t RV64_SCAUSE{};  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)/
+    uint32_t RV32_SCAUSE;
+  };
+
+  union{  // Anonymous union. We zero-initialize the largest member
+    uint64_t RV64_STVAL{};   // Used to store additional info about exception (ECALL does not use this and sets value to 0)
+    uint32_t RV32_STVAL;
+  };
+
+#if 0 // not used
+  union{  // Anonymous union. We zero-initialize the largest member
+    uint64_t RV64_STVEC{};   // Holds the base address of the exception handling routine (trap handler) that the processor jumps to when and exception occurs
+    uint32_t RV32_STVEC;
+  };
+#endif
+
+  union{  // Anonymous union. We zero-initialize the largest member
+    bool RV32_Scoreboard[_REV_NUM_REGS_];   ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
+    bool RV64_Scoreboard[_REV_NUM_REGS_]{}; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
+  };
+
+  union{  // Anonymous union. We zero-initialize the largest member
+    bool SPF_Scoreboard[_REV_NUM_REGS_];    ///< RevRegFile: Scoreboard for SPF RF to manage pipeline hazard
+    bool DPF_Scoreboard[_REV_NUM_REGS_]{};  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
+  };
 
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue{};
-  std::function<void(const MemReq&)> MarkLoadComplete{};
+  std::function<void(const MemReq&)> MarkLoadCompleteFunc{};
 
-  uint32_t RV32_PC{};                 ///< RevRegFile: RV32 PC
-  uint64_t RV64_PC{};                 ///< RevRegFile: RV64 PC
+  union{  // Anonymous union. We zero-initialize the largest member
+    uint32_t RV32_PC;                   ///< RevRegFile: RV32 PC
+    uint64_t RV64_PC{};                 ///< RevRegFile: RV64 PC
+  };
+
   uint64_t FCSR{};                    ///< RevRegFile: FCSR
 
   uint32_t cost{};                    ///< RevRegFile: Cost of the instruction
   bool trigger{};                     ///< RevRegFile: Has the instruction been triggered?
   unsigned Entry{};                   ///< RevRegFile: Instruction entry
 
+public:
   // Ensure that all default/copy/move constructors and copy/move assignment are available
   RevRegFile() = default;
   RevRegFile(const RevRegFile&) = default;
   RevRegFile(RevRegFile&&) = default;
   RevRegFile& operator=(const RevRegFile&) = default;
   RevRegFile& operator=(RevRegFile&&) = default;
+
+  // Getters/Setters
+
+  /// Get cost of the instruction
+  const uint32_t& GetCost() const { return cost; }
+  uint32_t& GetCost() { return cost; }
+
+  /// Set cost of the instruction
+  void SetCost(uint32_t c) { cost = c; }
+
+  /// Get whether the instruction has been triggered
+  bool GetTrigger() const { return trigger; }
+
+  /// Set whether the instruction has been triggered
+  void SetTrigger(bool t) { trigger = t; }
+
+  /// Get the instruction entry
+  unsigned GetEntry() const { return Entry; }
+
+  /// Set the instruction entry
+  void SetEntry(unsigned e) { Entry = e; }
+
+  /// Get the Load/Store Queue
+  const auto& GetLSQueue() const { return LSQueue; }
+
+  /// Set the Load/Store Queue
+  void SetLSQueue(std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq){
+    LSQueue = std::move(lsq);
+  }
+
+  /// Insert an item in the Load/Store Queue
+  void LSQueueInsert(std::pair<uint64_t, MemReq> item){
+    LSQueue->insert(std::move(item));
+  }
+
+  /// Get the MarkLoadComplete function
+  const std::function<void(const MemReq&)>& GetMarkLoadComplete() const {
+    return MarkLoadCompleteFunc;
+  }
+
+  /// Set the MarkLoadComplete function
+  void SetMarkLoadComplete(std::function<void(const MemReq&)> func){
+    MarkLoadCompleteFunc = std::move(func);
+  }
+
+  /// Invoke the MarkLoadComplete function
+  void MarkLoadComplete(const MemReq& req){
+    MarkLoadCompleteFunc(req);
+  }
+
+  /// Capture the PC of current instruction which raised exception
+  void SetSEPC(const RevFeature* F){
+    if( F->IsRV32() ){
+      RV32_SEPC = RV32_PC;
+    }else{
+      RV64_SEPC = RV64_PC;
+    }
+  }
+
+  ///Set the value for extra information about exception
+  /// (ECALL doesn't use it and sets it to 0)
+  template<typename T>
+  void SetSTVAL(const RevFeature* F, T val){
+    if( F->IsRV32() ){
+      RV32_STVAL = val;
+    }else{
+      RV64_STVAL = val;
+    }
+  }
+
+  /// Set the exception cause
+  template<typename T>
+  void SetSCAUSE(const RevFeature* F, T val){
+    if( F->IsRV32() ){
+      RV32_SCAUSE = val;
+    }else{
+      RV64_SCAUSE = val;
+    }
+  }
 
   /// GetX: Get the specifed X register cast to a specific integral type
   template<typename T>
@@ -231,6 +343,34 @@ struct RevRegFile {
         SPF[rd] = value;           // Store in FP32 register
       }
     }
+
+  // Friend functions and classes to access internal register state
+  template<typename FP, typename INT>
+  friend bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+
+  template<typename T>
+  friend bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+
+  template<typename T>
+  friend bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+
+  template<typename T>
+  friend bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+
+  template<typename T>
+  friend bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+
+  template<typename T, template<class> class OP>
+  friend bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+
+  template<typename T, template<class> class OP>
+  friend bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+
+  friend class RevProc;
+  friend class RV32A;
+  friend class RV64A;
+  friend class RV32D;
+  friend class RV64D;
 }; // RevRegFile
 
 inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
@@ -256,8 +396,6 @@ enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVCTypeCB     = 17,    ///< RevInstF: Compressed CB-Type
   RVCTypeCJ     = 18,    ///< RevInstF: Compressed CJ-Type
 };
-
-
 
 enum RevImmFunc : int {  ///< Rev Immediate Values
   FUnk          = 0,     ///< RevRegClass: Imm12 is not used
@@ -503,8 +641,8 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
                    RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpREAD, true, R->MarkLoadComplete);
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpREAD, true, R->GetMarkLoadComplete());
+    R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
     M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
@@ -515,8 +653,8 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
                    RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpREAD, true, R->MarkLoadComplete);
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpREAD, true, R->GetMarkLoadComplete());
+    R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
     M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
@@ -548,7 +686,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     static constexpr auto flags = sizeof(T) < sizeof(double) ?
       REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
 
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec(), MemOp::MemOpREAD, true, R->MarkLoadComplete);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec(), MemOp::MemOpREAD, true, R->GetMarkLoadComplete());
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec()), req});
     M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
@@ -561,7 +699,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
       BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
     }
   }else{
-    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec(), MemOp::MemOpREAD, true, R->MarkLoadComplete);
+    req.Set(R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec(), MemOp::MemOpREAD, true, R->GetMarkLoadComplete());
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExec()), req});
     M->ReadVal(F->GetHartToExec(),
                R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),

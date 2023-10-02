@@ -403,7 +403,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -425,7 +425,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -518,7 +518,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -561,7 +561,7 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -595,7 +595,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -658,7 +658,7 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -697,7 +697,7 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -719,7 +719,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost);
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -778,7 +778,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -907,8 +907,8 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
 
   }
 
-  RegFile->Entry = Entry;
-  RegFile->trigger = false;
+  RegFile->SetEntry(Entry);
+  RegFile->SetTrigger(false);
 
   switch( InstTable[Entry].format ){
   case RVCTypeCR:
@@ -953,7 +953,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1011,7 +1011,7 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1055,7 +1055,7 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1099,7 +1099,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1135,7 +1135,7 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1178,7 +1178,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1218,7 +1218,7 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->cost  = InstTable[Entry].cost;
+  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1476,9 +1476,8 @@ RevInst RevProc::DecodeInst(){
 
   }
 
-  RegFile->Entry = Entry;
-
-  RegFile->trigger = false;
+  RegFile->SetEntry(Entry);
+  RegFile->SetTrigger(false);
 
 
   // Stage 8: Do a full deocode using the target format
@@ -1571,20 +1570,22 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
   const auto* regFile = GetRegFile(HartID);
 
   // check LS queue for outstanding load - ignore r0
-  for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
+  for(const auto& [reg, regClass] : {
+      std::tie(I->rs1, E->rs1Class),
       std::tie(I->rs2, E->rs2Class),
       std::tie(I->rs3, E->rs3Class),
       std::tie(I->rd,  E->rdClass) }){
-    if((reg != 0) && (regFile->LSQueue->count(make_lsq_hash(reg,
-                                                            regClass,
-                                                            HartID))) > 0){
+    if((reg != 0) && (regFile->GetLSQueue()->count(make_lsq_hash(reg,
+                                                                 regClass,
+                                                                 HartID))) > 0){
       return true;
     }
   }
 
   // Iterate through the source registers rs1, rs2, rs3 and find any dependency
   // based on the class of the source register and the associated scoreboard
-  for(const auto& [reg, regClass] : { std::tie(I->rs1, E->rs1Class),
+  for(const auto& [reg, regClass] : {
+      std::tie(I->rs1, E->rs1Class),
       std::tie(I->rs2, E->rs2Class),
       std::tie(I->rs3, E->rs3Class) }){
     if(reg < _REV_NUM_REGS_){
@@ -1719,13 +1720,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // We do not want to retire this instruction until we're ready
     if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
       Inst = DecodeInst();
-      Inst.entry = RegFile->Entry;
+      Inst.entry = RegFile->GetEntry();
     }
 
     // Now that we have decoded the instruction, check for pipeline hazards
     if(Stalled || DependencyCheck(HartToDecode, &Inst)){
-      RegFile->cost = 0; // We failed dependency check, so set cost to 0 - this will
-      Stats.cyclesIdle_Pipeline++;        // prevent the instruction from advancing to the next stage
+      RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
+      Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
       HartToExec = _REV_INVALID_HART_ID_;
     }else {
@@ -1733,16 +1734,16 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       HART_CTE[HartToDecode] = true;
       HartToExec = HartToDecode;
     }
-    Inst.cost = RegFile->cost;
-    Inst.entry = RegFile->Entry;
+    Inst.cost = RegFile->GetCost();
+    Inst.entry = RegFile->GetEntry();
     rtn = true;
     ExecPC = GetPC();
   }
 
-  if( ( (HartToExec != _REV_INVALID_HART_ID_) && !RegFile->trigger) && !Halted && HART_CTE[HartToExec]){
+  if( ( (HartToExec != _REV_INVALID_HART_ID_) && !RegFile->GetTrigger()) && !Halted && HART_CTE[HartToExec]){
     // trigger the next instruction
     // HartToExec = HartToDecode;
-    RegFile->trigger = true;
+    RegFile->SetTrigger(true);
 
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
@@ -1754,7 +1755,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( ExecPC != _PAN_FWARE_JUMP_ ){
 
       // Find the instruction extension
-      auto it = EntryToExt.find(RegFile->Entry);
+      auto it = EntryToExt.find(RegFile->GetEntry());
       if( it == EntryToExt.end() ){
         // failed to find the extension
         output->fatal(CALL_INFO, -1,
@@ -1923,7 +1924,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Retired++;
       DependencyClear(tID, &(Pipeline.front().second));
       Pipeline.erase(Pipeline.begin());
-      GetRegFile(tID)->cost = 0;
+      GetRegFile(tID)->SetCost(0);
     }else{
       // could not retire the instruction, bump the cost
       Pipeline.front().second.cost++;
@@ -2416,7 +2417,6 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
   }
   return rtval;
 }
-
 
 /*
  * This is the function that is called when an ECALL exception is detected inside ClockTick

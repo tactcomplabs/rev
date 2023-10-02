@@ -660,7 +660,7 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     rtv = ECALL_status_t::SUCCESS;
   }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  {
     auto readfunc = [&](auto* buf){
-      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->MarkLoadComplete);
+      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       mem->ReadVal(HartToExec,
                    addr + ECALL.string.size(),
