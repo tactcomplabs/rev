@@ -260,39 +260,25 @@ class RV32I : public RevExt {
 
   static bool auipc(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     auto ui = static_cast<int32_t>(Inst.imm << 12);
-    if( F->IsRV32() ){
-      R->SetX(F, Inst.rd, ui + R->RV32_PC);
-    }else{
-      R->SetX(F, Inst.rd, ui + R->RV64_PC);
-    }
+    R->SetX(F, Inst.rd, ui + R->GetPC(F));
     R->AdvancePC(F, Inst.instSize);
     return true;
   }
 
   static bool jal(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    if( F->IsRV32() ){
-      R->SetX(F, Inst.rd, R->RV32_PC + Inst.instSize);
-    }else{
-      R->SetX(F, Inst.rd, R->RV64_PC + Inst.instSize);
-    }
+    R->SetX(F, Inst.rd, R->GetPC(F) + Inst.instSize);
     R->AdvancePC(F, Inst.ImmSignExt(20));
     return true;
   }
 
   static bool jalr(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    if( F->IsRV32() ){
-      auto ret = R->RV32_PC + Inst.instSize;
-      R->RV32_PC = (R->GetX<uint32_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & ~uint32_t{1};
-      R->SetX(F, Inst.rd, ret);
-    }else{
-      auto ret = R->RV64_PC + Inst.instSize;
-      R->RV64_PC = (R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & ~uint64_t{1};
-      R->SetX(F, Inst.rd, ret);
-    }
+    auto ret = R->GetPC(F) + Inst.instSize;
+    R->SetPC(F, (R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12)) & -2);
+    R->SetX(F, Inst.rd, ret);
     return true;
   }
 
-  // Conditional branch template
+  /// Conditional branch template
   // The first template parameter is the comparison functor
   // The second template parameter is std::make_signed_t or std::make_unsigned_t
   template<template<class> class OP, template<class> class SIGN = std::make_unsigned_t>
@@ -365,29 +351,24 @@ class RV32I : public RevExt {
   }
 
   static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
-    // Save PC of Ecall to *epc register
-    if( F->IsRV32() ){
-      R->RV32_SEPC = R->RV32_PC; // Save PC of instruction that raised exception
-      R->RV32_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0
-      R->RV32_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0
-    } else {
-      /*
-       * In reality this should be getting/setting a LOT of bits inside the
-       * CSRs however because we are only concerned with ecall right now it's
-       * not a concern.
-       * NOTE: Normally you would have to check if you are currently executing in
-       *       Supervisor mode already and set RV64_MEPC instead but we don't need
-       *       to worry about machine mode with the ecalls we are supporting
-       */
-      // R->RV64_PC += Inst.instSize; // TODO: Verify this needs to happen
-      R->RV64_SEPC = R->RV64_PC; // Save PC of instruction that raised exception
-      R->RV64_STVAL = 0; // MTVAL/STVAL unused for ecall and is set to 0
-      R->RV64_SCAUSE = EXCEPTION_CAUSE::ECALL_USER_MODE; // MTVAL/STVAL unused for ecall and is set to 0
-      /*
-       * Trap Handler is not implemented because we only have one exception
-       * So we don't have to worry about setting `mtvec` reg
-       */
-    }
+    /*
+     * In reality this should be getting/setting a LOT of bits inside the
+     * CSRs however because we are only concerned with ecall right now it's
+     * not a concern.
+     * NOTE: Normally you would have to check if you are currently executing in
+     *       Supervisor mode already and set RV64_MEPC instead but we don't need
+     *       to worry about machine mode with the ecalls we are supporting
+     */
+
+    R->SetSEPC(F);      // Save PC of instruction that raised exception
+    R->SetSTVAL(F, 0);  // MTVAL/STVAL unused for ecall and is set to 0
+    R->SetSCAUSE(F, EXCEPTION_CAUSE::ECALL_USER_MODE);
+
+    /*
+     * Trap Handler is not implemented because we only have one exception
+     * So we don't have to worry about setting `mtvec` reg
+     */
+
     R->AdvancePC(F, Inst.instSize);
     return true;
   }
