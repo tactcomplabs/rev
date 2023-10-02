@@ -22,10 +22,6 @@
 #include "RevInstTable.h"
 
 namespace SST::RevCPU{
-  class RevFeature;
-  class RevRegFile;
-  class RevMem;
-  class RevInst;
 
 /// General template for converting between Floating Point and Integer.
 /// FP values outside the range of the target integer type are clipped
