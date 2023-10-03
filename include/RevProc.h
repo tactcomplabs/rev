@@ -82,7 +82,7 @@ public:
   bool SingleStepHart();
 
   /// RevProc: retrieve the local PC for the correct feature set
-  uint64_t GetPC() const { return RegFile->GetPC(feature); }
+  uint64_t GetPC() const { return RegFile->GetPC(); }
 
   /// RevProc: Debug mode read a register
   bool DebugReadReg(unsigned Idx, uint64_t *Value) const;
@@ -616,7 +616,7 @@ private:
   void SetupArgs();
 
   /// RevProc: set the PC
-  void SetPC(uint64_t PC) { RegFile->SetPC(feature, PC); }
+  void SetPC(uint64_t PC) { RegFile->SetPC(PC); }
 
   /// RevProc: prefetch the next instruction
   bool PrefetchInst();

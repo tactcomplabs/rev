@@ -14,6 +14,14 @@
 #include <functional>
 #include <cstdint>
 
+#ifndef _REV_NUM_REGS_
+#define _REV_NUM_REGS_ 32
+#endif
+
+#ifndef _REV_HART_COUNT_
+#define _REV_HART_COUNT_ 1
+#endif
+
 #ifndef _REV_INVALID_HART_ID_
 #define _REV_INVALID_HART_ID_ (uint16_t(~0))
 #endif

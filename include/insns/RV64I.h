@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV64I_H_
 #define _SST_REVCPU_RV64I_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 
 #include <vector>
 
@@ -132,17 +132,12 @@ class RV64I : public RevExt{
 public:
   /// RV64I: standard constructor
   RV64I( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV64I", Feature, RegFile, RevMem, Output ) {
-    SetTable(RV64ITable);
-    SetCTable(RV64ICTable);
+    : RevExt( "RV64I", Feature, RevMem, Output ) {
+    SetTable(std::move(RV64ITable));
+    SetCTable(std::move(RV64ICTable));
   }
-
-  /// RV64I: standard destructor
-  ~RV64I() = default;
-
 }; // end class RV64I
 } // namespace SST::RevCPU
 

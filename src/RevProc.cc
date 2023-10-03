@@ -120,7 +120,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
 
   output->verbose(CALL_INFO, 6, 0,
                   "Core %u ; Enabling extension=%s\n",
-                  id, Ext->GetName().c_str());
+                  id, Ext->GetName().data());
 
   // add the extension to our vector of enabled objects
   Extensions.push_back(std::unique_ptr<RevExt>(Ext));
@@ -143,7 +143,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
   if( feature->IsModeEnabled(RV_C) ){
     output->verbose(CALL_INFO, 6, 0,
                     "Core %u ; Enabling compressed extension=%s\n",
-                    id, Ext->GetName().c_str());
+                    id, Ext->GetName().data());
 
     std::vector<RevInstEntry> CT = Ext->GetCInstTable();
     InstTable.reserve(InstTable.size() + CT.size());
@@ -160,7 +160,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
     if( Opt ){
       output->verbose(CALL_INFO, 6, 0,
                       "Core %u ; Enabling optional compressed extension=%s\n",
-                      id, Ext->GetName().c_str());
+                      id, Ext->GetName().data());
       CT = Ext->GetOInstTable();
 
       InstTable.reserve(InstTable.size() + CT.size());
@@ -182,63 +182,63 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
 bool RevProc::SeedInstTable(){
   output->verbose(CALL_INFO, 6, 0,
                   "Core %u ; Seeding instruction table for machine model=%s\n",
-                  id, feature->GetMachineModel().c_str());
+                  id, feature->GetMachineModel().data());
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
     if( feature->IsRV64() ){
       // load RV32I & RV64; no optional compressed
-      EnableExt(new RV32I(feature, RegFile, mem, output), false);
-      EnableExt(new RV64I(feature, RegFile, mem, output), false);
+      EnableExt(new RV32I(feature, mem, output), false);
+      EnableExt(new RV64I(feature, mem, output), false);
     }else{
       // load RV32I w/ optional compressed
-      EnableExt(new RV32I(feature, RegFile, mem, output), true);
+      EnableExt(new RV32I(feature, mem, output), true);
     }
   }
 
   // M-Extension
   if( feature->IsModeEnabled(RV_M) ){
-    EnableExt(new RV32M(feature, RegFile, mem, output), false);
+    EnableExt(new RV32M(feature, mem, output), false);
     if( feature->IsRV64() ){
-      EnableExt(new RV64M(feature, RegFile, mem, output), false);
+      EnableExt(new RV64M(feature, mem, output), false);
     }
   }
 
   // A-Extension
   if( feature->IsModeEnabled(RV_A) ){
-    EnableExt(new RV32A(feature, RegFile, mem, output), false);
+    EnableExt(new RV32A(feature, mem, output), false);
     if( feature->IsRV64() ){
-      EnableExt(new RV64A(feature, RegFile, mem, output), false);
+      EnableExt(new RV64A(feature, mem, output), false);
     }
   }
 
   // F-Extension
   if( feature->IsModeEnabled(RV_F) ){
     if( !feature->IsModeEnabled(RV_D) && feature->IsRV32() ){
-      EnableExt(new RV32F(feature, RegFile, mem, output), true);
+      EnableExt(new RV32F(feature, mem, output), true);
     }else{
-      EnableExt(new RV32F(feature, RegFile, mem, output), false);
-      EnableExt(new RV64F(feature, RegFile, mem, output), false);
+      EnableExt(new RV32F(feature, mem, output), false);
+      EnableExt(new RV64F(feature, mem, output), false);
 
     }
 #if 0
     if( feature->IsRV64() ){
-      EnableExt(new RV64D(feature, RegFile, mem, output));
+      EnableExt(new RV64D(feature, mem, output));
     }
 #endif
   }
 
   // D-Extension
   if( feature->IsModeEnabled(RV_D) ){
-    EnableExt(new RV32D(feature, RegFile, mem, output), false);
+    EnableExt(new RV32D(feature, mem, output), false);
     if( feature->IsRV64() ){
-      EnableExt(new RV64D(feature, RegFile, mem, output), false);
+      EnableExt(new RV64D(feature, mem, output), false);
     }
   }
 
   // PAN Extension
   if( feature->IsModeEnabled(RV_P) ){
-    EnableExt(new RV64P(feature, RegFile, mem, output), false);
+    EnableExt(new RV64P(feature, mem, output), false);
   }
 
   return true;
@@ -301,7 +301,7 @@ std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
 bool RevProc::InitTableMapping(){
   output->verbose(CALL_INFO, 6, 0,
                   "Core %u ; Initializing table mapping for machine model=%s\n",
-                  id, feature->GetMachineModel().c_str());
+                  id, feature->GetMachineModel().data());
 
   for( unsigned i=0; i<InstTable.size(); i++ ){
     NameToEntry.insert(
@@ -314,7 +314,7 @@ bool RevProc::InitTableMapping(){
                       "Core %u ; Table Entry %u = %s\n",
                       id,
                       CompressEncoding(InstTable[i]),
-                      ExtractMnemonic(InstTable[i]).c_str() );
+                      ExtractMnemonic(InstTable[i]).data() );
     }else{
       // map compressed instruction
       CEncToEntry.insert(
@@ -323,7 +323,7 @@ bool RevProc::InitTableMapping(){
                       "Core %u ; Compressed Table Entry %u = %s\n",
                       id,
                       CompressCEncoding(InstTable[i]),
-                      ExtractMnemonic(InstTable[i]).c_str() );
+                      ExtractMnemonic(InstTable[i]).data() );
     }
   }
   return true;
@@ -332,7 +332,7 @@ bool RevProc::InitTableMapping(){
 bool RevProc::ReadOverrideTables(){
   output->verbose(CALL_INFO, 6, 0,
                   "Core %u ; Reading override tables for machine model=%s\n",
-                  id, feature->GetMachineModel().c_str());
+                  id, feature->GetMachineModel().data());
 
   std::string Table;
   if( !opts->GetInstTable(id, Table) )
@@ -355,7 +355,7 @@ bool RevProc::ReadOverrideTables(){
   while( infile >> Inst >> Cost ){
     it = NameToEntry.find(Inst);
     if( it == NameToEntry.end() )
-      output->fatal(CALL_INFO, -1, "Error: could not find instruction in table for map value=%s\n", Inst.c_str() );
+      output->fatal(CALL_INFO, -1, "Error: could not find instruction in table for map value=%s\n", Inst.data() );
 
     Entry = it->second;
     InstTable[Entry].cost = (unsigned)(std::stoi(Cost, nullptr, 0));
@@ -1266,7 +1266,7 @@ bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value) const {
     return false;
   }
   RevRegFile* regFile = GetRegFile(HartToExec);
-  *Value = regFile->GetX<uint64_t>(feature, Idx);
+  *Value = regFile->GetX<uint64_t>(Idx);
   return true;
 }
 
@@ -1277,12 +1277,12 @@ bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value) const {
   if( Idx >= _REV_NUM_REGS_ ){
     return false;
   }
-  regFile->SetX(feature, Idx, Value);
+  regFile->SetX(Idx, Value);
   return true;
 }
 
 bool RevProc::PrefetchInst(){
-  uint64_t PC = RegFile->GetPC(feature);
+  uint64_t PC = RegFile->GetPC();
 
   // These are addresses that we can't decode
   // Return false back to the main program loop
@@ -1301,7 +1301,7 @@ RevInst RevProc::DecodeInst(){
   bool Fetched  = false;
 
   // Stage 1: Retrieve the instruction
-  PC = RegFile->GetPC(feature);
+  PC = RegFile->GetPC();
 
   if( !sfetch->InstFetch(PC, Fetched, Inst) ){
     output->fatal(CALL_INFO, -1,
@@ -1766,9 +1766,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       std::pair<unsigned, unsigned> EToE = it->second;
       RevExt *Ext = Extensions[EToE.first].get();
 
-      // Update RegFile (in case of prior context switch)
-      Ext->SetRegFile(RegFile);
-
       // -- BEGIN new pipelining implementation
       Pipeline.push_back(std::make_pair(HartToExec, Inst));
 
@@ -1784,7 +1781,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // -- END new pipelining implementation
 
       // execute the instruction
-      if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec) ){
+      if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec, RegFile) ){
         output->fatal(CALL_INFO, -1,
                       "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
@@ -1830,7 +1827,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         // Ecall found
         output->verbose(CALL_INFO, 6, 0,
                         "Core %u; HartID %d; ThreadID %" PRIu32 " - Exception Raised: ECALL with code = %lu\n",
-                        id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(feature, 17));
+                        id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(17));
 #ifdef _REV_DEBUG_
         //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
         //                  << cRegFile->RV64[17] << std::endl;
@@ -1881,8 +1878,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         }else{
           // write an X register
           uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
-          RegFile->SetX(feature, Inst.rd, rval |
-                        RegFile->GetX<uint64_t>(feature, Inst.rd));
+          RegFile->SetX(Inst.rd, rval | RegFile->GetX<uint64_t>(Inst.rd));
         }
 
         // clear the fault
@@ -2044,7 +2040,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
                                 feature);
 
   // Copy the arg to the new threads a0 register
-  NewThread->GetRegFile()->SetX(feature, 10, (uint64_t)arg);
+  NewThread->GetRegFile()->SetX(10, reinterpret_cast<uintptr_t>(arg));
 
   NewThreadInfo.emplace(NewThread);
 
@@ -2427,7 +2423,7 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
  */
 void RevProc::ExecEcall(RevInst& inst){
   // a7 register = ecall code
-  auto EcallCode = RegFile->GetX<uint64_t>(feature, 17);
+  auto EcallCode = RegFile->GetX<uint64_t>(17);
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
     // call the function
@@ -2440,7 +2436,7 @@ void RevProc::ExecEcall(RevInst& inst){
     // For now, rewind the PC and keep executing the ECALL until we
     // have completed
     if(ECALL_status_t::SUCCESS != status){
-      RegFile->AdvancePC( feature, -int32_t(inst.instSize) );
+      RegFile->AdvancePC( -int32_t(inst.instSize) );
     }
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu64 " not found", EcallCode);

@@ -11,78 +11,32 @@
 #include "../include/RevExt.h"
 using namespace SST::RevCPU;
 
-#define TRACE_EXECUTE 0
-
-bool RevExt::Execute(unsigned Inst, RevInst payload, uint16_t HartID){
-
-  // ensure that the target instruction is within scope
-  if( Inst >= table.size() ){
-    output->fatal(CALL_INFO, -1,
-                  "Error: instruction at index=%u does not exist in extension=%s",
-                  Inst,
-                  name.c_str());
-  }
-
+bool RevExt::Execute(unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile){
   bool (*func)(RevFeature *,
                RevRegFile *,
                RevMem *,
-               RevInst) = nullptr;
+               RevInst);
+
   if( payload.compressed ){
-#if TRACE_EXECUTE
-    if( feature->IsRV32() ){
-      std::cout << "EXECUTING COMPRESSED INSTRUCTION: " << ctable[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec
-                << "; instSize = " << payload.instSize << std::endl;
-    }else{
-      std::cout << "EXECUTING COMPRESSED INSTRUCTION: " << ctable[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV64_PC << std::dec
-                << "; instSize = " << payload.instSize << std::endl;
-    }
-#endif
     // this is a compressed instruction, grab the compressed trampoline function
-    func = ctable[Inst].func;
+    func = Inst < ctable.size() ? ctable[Inst].func : nullptr;
   }else{
-#if TRACE_EXECUTE
-    if( feature->IsRV32() ){
-      std::cout << "EXECUTING INSTRUCTION: " << table[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV32_PC << std::dec
-                << "; instSize = " << payload.instSize << std::endl;
-    }else{
-      std::cout << "EXECUTING INSTRUCTION: " << table[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV64_PC << std::dec
-                << "; instSize = " << payload.instSize << std::endl;
-    }
-#endif
     // retrieve the function pointer for this instruction
-    func = table[Inst].func;
+    func = Inst < table.size() ? table[Inst].func : nullptr;
   }
 
-  // execute the instruction
-  if( !func(feature, regFile, mem, payload) ){
+  if( !func ){
+    output->fatal(CALL_INFO, -1,
+                  "Error: instruction at index=%u does not exist in extension=%s",
+                  Inst,
+                  name.data());
     return false;
   }
 
-#if TRACE_EXECUTE
-  if( payload.compressed ){
-    if( feature->IsRV32() ){
-      std::cout << "COMPLETING INSTRUCTION: " << ctable[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV32_PC-payload.instSize << std::dec << std::endl;
-    }else{
-      std::cout << "COMPLETING INSTRUCTION: " << ctable[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV64_PC-payload.instSize << std::dec << std::endl;
-    }
-  }else{
-    if( feature->IsRV32() ){
-      std::cout << "COMPLETING INSTRUCTION: " << table[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV32_PC-payload.instSize << std::dec << std::endl;
-    }else{
-      std::cout << "COMPLETING INSTRUCTION: " << table[Inst].mnemonic
-                << " @ 0x" << std::hex << regFile[threadID].RV64_PC-payload.instSize << std::dec << std::endl;
-    }
-  }
-#endif
+  // execute the instruction
+  bool ret = func(feature, regFile, mem, payload);
 
-  return true;
+  return ret;
 }
 
 // EOF

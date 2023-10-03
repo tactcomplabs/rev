@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV64A_H_
 #define _SST_REVCPU_RV64A_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 #include "../RevExt.h"
 
 #include <vector>
@@ -28,7 +28,7 @@ class RV64A : public RevExt {
           &R->RV64[Inst.rd],
           Inst.aq, Inst.rl, req,
           REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -39,7 +39,7 @@ class RV64A : public RevExt {
           &R->RV64[Inst.rd],
           Inst.aq, Inst.rl,
           REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
     return true;
   }
 
@@ -65,7 +65,7 @@ class RV64A : public RevExt {
               req,
               flags);
 
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst.instSize);
 
     // update the cost
     R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
@@ -113,16 +113,11 @@ class RV64A : public RevExt {
 public:
   /// RV64A: standard constructor
   RV64A( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV64A", Feature, RegFile, RevMem, Output) {
-    this->SetTable(RV64ATable);
+    : RevExt( "RV64A", Feature, RevMem, Output) {
+    SetTable(std::move(RV64ATable));
   }
-
-  /// RV64A: standard destructor
-  ~RV64A() = default;
-
 }; // end class RV32I
 
 } // namespace SST::RevCPU

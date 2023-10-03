@@ -2525,8 +2525,9 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 // - Adds it's ThreadID to the ThreadQueue to be scheduled
 void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
 
-  ThreadToInit->GetRegFile()->SetX(Procs[0]->GetRevFeature(), 3, Loader->GetSymbolAddr("__global_pointer$"));
-  ThreadToInit->GetRegFile()->SetX(Procs[0]->GetRevFeature(), 8, Loader->GetSymbolAddr("__global_pointer$"));
+  auto gp = Loader->GetSymbolAddr("__global_pointer$");
+  ThreadToInit->GetRegFile()->SetX(3, gp);
+  ThreadToInit->GetRegFile()->SetX(8, gp);
 
   uint32_t TID = ThreadToInit->GetThreadID();
   // Check if this ThreadID has already been assigned... if so... something has gone horribly wrong
@@ -2618,8 +2619,8 @@ void RevCPU::CheckBlockedThreads(){
 void RevCPU::SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature){
   auto Argv = Opts->GetArgv();
   // setup argc
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(feature, 10, Argv.size());
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(feature, 11, Mem->GetStackTop() + 60);
+  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(10, Argv.size());
+  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(11, Mem->GetStackTop() + 60);
   return;
 }
 
