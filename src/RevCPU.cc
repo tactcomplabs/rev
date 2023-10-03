@@ -2526,8 +2526,8 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
 
   auto gp = Loader->GetSymbolAddr("__global_pointer$");
-  ThreadToInit->GetRegFile()->SetX(3, gp);
-  ThreadToInit->GetRegFile()->SetX(8, gp);
+  ThreadToInit->GetRegFile()->SetX(RevReg::gp, gp);
+  ThreadToInit->GetRegFile()->SetX(RevReg::s0, gp);
 
   uint32_t TID = ThreadToInit->GetThreadID();
   // Check if this ThreadID has already been assigned... if so... something has gone horribly wrong
@@ -2619,8 +2619,8 @@ void RevCPU::CheckBlockedThreads(){
 void RevCPU::SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature){
   auto Argv = Opts->GetArgv();
   // setup argc
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(10, Argv.size());
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(11, Mem->GetStackTop() + 60);
+  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a0, Argv.size());
+  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a1, Mem->GetStackTop() + 60);
   return;
 }
 

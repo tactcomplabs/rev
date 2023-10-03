@@ -40,14 +40,6 @@
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
 
-// RV{32,64}{F,D} macros
-#define FCSR_NX(x)  ((x)&(0b1))             // FCSR: NX field
-#define FCSR_UF(x)  (((x)&(0b10))>>1)       // FCSR: UF field
-#define FCSR_OF(x)  (((x)&(0b100))>>2)      // FCSR: OF field
-#define FCSR_DZ(x)  (((x)&(0b1000))>>3)     // FCSR: DZ field
-#define FCSR_NV(x)  (((x)&(0b10000))>>4)    // FCSR: NV field
-#define FCSR_FRM(x) (((x)&(0b11100000))>>5) // FCSR: FRM field
-
 #define FRM_RNE   0b000                     // Rounding mode: Round to Nearest, ties to Even
 #define FRM_RTZ   0b001                     // Rounding mode: Round towards Zero
 #define FRM_RDN   0b010                     // Rounding mode: Round Down (towards -INF)
@@ -74,6 +66,15 @@ enum EXCEPTION_CAUSE : uint32_t {
   STORE_AMO_PAGE_FAULT      = 15,
 };
 
+/// Floating-Point Rounding Mode
+enum class RndMode : uint8_t {
+  RNE = 0,   // Round to Nearest, ties to Even
+  RTZ = 1,   // Round towards Zero
+  RDN = 2,   // Round Down (towards -Inf)
+  RUP = 3,   // Round Up (towards +Inf)
+  RMM = 4,   // Round to Nearest, ties to Max Magnitude
+  DYN = 7,   // In instruction's rm field, selects dynamic rounding mode; invalid in FCSR
+};
 
 inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
 inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
