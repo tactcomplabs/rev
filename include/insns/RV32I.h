@@ -267,7 +267,7 @@ class RV32I : public RevExt {
 
   static bool jal(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->SetX(Inst.rd, R->GetPC() + Inst.instSize);
-    R->AdvancePC(Inst.ImmSignExt(20));
+    R->AdvancePC(Inst.ImmSignExt(21));
     return true;
   }
 
