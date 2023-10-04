@@ -1,5 +1,5 @@
 //
-// _RevInstTable_h_
+// _RevRegFile_h_
 //
 // Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -28,6 +28,8 @@
 
 namespace SST::RevCPU{
 
+struct RevInst;
+
 /// BoxNaN: Store a boxed float inside a double
 inline void BoxNaN(double* dest, const void* value){
   uint32_t i32;
@@ -48,7 +50,17 @@ enum class RevReg {
   fs8  = 24, fs9 = 25, fs10 = 26, fs11 = 27, ft8 = 28, ft9 = 29, ft10 = 30, ft11 = 31,
 };
 
-struct RevInst;
+/// Floating-point control register
+// fcsr.NX, fcsr.UF, fcsr.OF, fcsr.DZ, fcsr.NV, fcsr.frm
+struct FCSR{
+  uint32_t NX  : 1;
+  uint32_t UF  : 1;
+  uint32_t OF  : 1;
+  uint32_t DZ  : 1;
+  uint32_t NV  : 1;
+  uint32_t frm : 3;
+  uint32_t     : 24;
+};
 
 class RevRegFile {
 public:
@@ -65,17 +77,7 @@ private:
     uint64_t RV64_PC{};                 ///< RevRegFile: RV64 PC
   };
 
-  /// Floating-point control register
-  // fcsr.frm, fcsr.fflags, fcsr.NX, fcsr.UF, fcsr.OF, fcsr.DZ, fcsr.NV
-  struct FCSR{
-    uint32_t NX  : 1;
-    uint32_t UF  : 1;
-    uint32_t OF  : 1;
-    uint32_t DZ  : 1;
-    uint32_t NV  : 1;
-    uint32_t frm : 3;
-    uint32_t     : 24;
-  } fcsr{}; ///< RevRegFile: FCSR
+  FCSR fcsr{}; ///< RevRegFile: FCSR
 
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue{};
   std::function<void(const MemReq&)> MarkLoadCompleteFunc{};
@@ -181,7 +183,7 @@ public:
   }
 
   /// Invoke the MarkLoadComplete function
-  void MarkLoadComplete(const MemReq& req){
+  void MarkLoadComplete(const MemReq& req) const {
     MarkLoadCompleteFunc(req);
   }
 
