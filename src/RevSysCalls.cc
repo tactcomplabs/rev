@@ -42,11 +42,11 @@ RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
   // TODO: Need to load the data from (value, size bytes) into
   // hostValue vector before it can be passed to setxattr() on host.
 
-  auto path = RegFile->GetX<uint64_t>(10);
-  auto name = RegFile->GetX<uint64_t>(11);
-  auto value = RegFile->GetX<uint64_t>(12);
-  auto size = RegFile->GetX<size_t>(13);
-  auto flags = RegFile->GetX<uint64_t>(14);
+  auto path = RegFile->GetX<uint64_t>(RevReg::a0);
+  auto name = RegFile->GetX<uint64_t>(RevReg::a1);
+  auto value = RegFile->GetX<uint64_t>(RevReg::a2);
+  auto size = RegFile->GetX<size_t>(RevReg::a3);
+  auto flags = RegFile->GetX<uint64_t>(RevReg::a4);
 
   // host-side value which has size bytes
   std::vector<char> hostValue(size);
@@ -87,7 +87,7 @@ RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
       ECALL.path_string.clear();
 
       // setxattr return code
-      RegFile->SetX(10, rc);
+      RegFile->SetX(RevReg::a0, rc);
     };
 
     // Parse the name string, then call setxattr() using path and name
@@ -166,14 +166,14 @@ RevProc::ECALL_status_t RevProc::ECALL_fremovexattr(RevInst& inst){
 
 // 17, rev_getcwd(char  *buf, unsigned long size)
 RevProc::ECALL_status_t RevProc::ECALL_getcwd(RevInst& inst){
-  auto BufAddr = RegFile->GetX<uint64_t>(10);
-  auto size = RegFile->GetX<uint64_t>(11);
+  auto BufAddr = RegFile->GetX<uint64_t>(RevReg::a0);
+  auto size = RegFile->GetX<uint64_t>(RevReg::a1);
   auto CWD = std::filesystem::current_path();
   mem->WriteMem(feature->GetHartToExec(), BufAddr, size, CWD.c_str());
 
   // Returns null-terminated string in buf
   // (no need to set x10 since it's already got BufAddr)
-  // RegFile->SetX(10, BufAddr);
+  // RegFile->SetX(RevReg::a0, BufAddr);
 
   return ECALL_status_t::SUCCESS;
 }
@@ -277,14 +277,14 @@ RevProc::ECALL_status_t RevProc::ECALL_mknodat(RevInst& inst){
 // TODO: 34, rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
 RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: mkdirat called");
-  auto dirfd = RegFile->GetX<int>(10);
-  auto path = RegFile->GetX<uint64_t>(11);
-  auto mode = RegFile->GetX<unsigned short>(12);
+  auto dirfd = RegFile->GetX<int>(RevReg::a0);
+  auto path = RegFile->GetX<uint64_t>(RevReg::a1);
+  auto mode = RegFile->GetX<unsigned short>(RevReg::a2);
 
   auto action = [&]{
     // Do the mkdirat on the host
     int rc = mkdirat(dirfd, ECALL.string.c_str(), mode);
-    RegFile->SetX(10, rc);
+    RegFile->SetX(RevReg::a0, rc);
   };
   return ECALL_LoadAndParseString(inst, path, action);
 }
@@ -376,10 +376,10 @@ RevProc::ECALL_status_t RevProc::ECALL_faccessat(RevInst& inst){
 // 49, rev_chdir(const char  *filename)
 RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: chdir called\n");
-  auto path = RegFile->GetX<uint64_t>(10);
+  auto path = RegFile->GetX<uint64_t>(RevReg::a0);
   auto action = [&]{
     int rc = chdir(ECALL.string.c_str());
-    RegFile->SetX(10, rc);
+    RegFile->SetX(RevReg::a0, rc);
   };
   return ECALL_LoadAndParseString(inst, path, action);
 }
@@ -422,12 +422,12 @@ RevProc::ECALL_status_t RevProc::ECALL_fchown(RevInst& inst){
 
 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
 RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
-  auto dirfd = RegFile->GetX<int>(10);
-  auto pathname = RegFile->GetX<uint64_t>(11);
+  auto dirfd = RegFile->GetX<int>(RevReg::a0);
+  auto pathname = RegFile->GetX<uint64_t>(RevReg::a1);
 
   // commented out to remove warnings
-  // auto flags = RegFile->GetX<int>(12);
-  // auto mode = RegFile->GetX<int>(13);
+  // auto flags = RegFile->GetX<int>(RevReg::a2);
+  // auto mode = RegFile->GetX<int>(RevReg::a3);
 
   /*
    * NOTE: this is currently only opening files in the current directory
@@ -445,7 +445,7 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
     AssignedThreads.at(HartToExec)->AddFD(fd);
 
     // openat returns the file descriptor of the opened file
-    RegFile->SetX(10, fd);
+    RegFile->SetX(RevReg::a0, fd);
   };
 
   return ECALL_LoadAndParseString(inst, pathname, action);
@@ -501,7 +501,7 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
 
 // 57, rev_close(unsigned int fd)
 RevProc::ECALL_status_t RevProc::ECALL_close(RevInst& inst){
-  auto fd = RegFile->GetX<int>(10);
+  auto fd = RegFile->GetX<int>(RevReg::a0);
   auto ActiveThread = AssignedThreads.at(HartToExec);
 
   // Check if CurrCtx has fd in fildes vector
@@ -518,7 +518,7 @@ RevProc::ECALL_status_t RevProc::ECALL_close(RevInst& inst){
   ActiveThread->RemoveFD(fd);
 
   // rc is propogated to rev from host
-  RegFile->SetX(10, rc);
+  RegFile->SetX(RevReg::a0, rc);
 
   return ECALL_status_t::SUCCESS;
 }
@@ -555,9 +555,9 @@ RevProc::ECALL_status_t RevProc::ECALL_lseek(RevInst& inst){
 
 // 63, rev_read(unsigned int fd
 RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
-  auto fd = RegFile->GetX<int>(10);
-  auto BufAddr = RegFile->GetX<uint64_t>(11);
-  auto BufSize = RegFile->GetX<uint64_t>(12);
+  auto fd = RegFile->GetX<int>(RevReg::a0);
+  auto BufAddr = RegFile->GetX<uint64_t>(RevReg::a1);
+  auto BufSize = RegFile->GetX<uint64_t>(RevReg::a2);
 
   /* Check if Current Ctx has access to the fd */
   auto ActiveThread = AssignedThreads.at(HartToExec);
@@ -589,7 +589,7 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
   // Write that data to the buffer inside of Rev
   mem->WriteMem(feature->GetHartToExec(), BufAddr, BufSize, &TmpBuf[0]);
 
-  RegFile->SetX(10, rc);
+  RegFile->SetX(RevReg::a0, rc);
   return ECALL_status_t::SUCCESS;
 }
 
@@ -634,9 +634,9 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
 // 64, rev_write(unsigned int fd, const char  *buf, size_t count)
 RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: write called\n");
-  auto fd = RegFile->GetX<int>(10);
-  auto addr = RegFile->GetX<uint64_t>(11);
-  auto nbytes = RegFile->GetX<uint64_t>(12);
+  auto fd = RegFile->GetX<int>(RevReg::a0);
+  auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
+  auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
   auto rtv = ECALL_status_t::ERROR;
 
   if(ECALL.bytesRead){
@@ -651,7 +651,7 @@ RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
     int rc = write(fd, ECALL.string.data(), ECALL.string.size());
 
     // write returns the number of bytes written
-    RegFile->SetX(10, rc);
+    RegFile->SetX(RevReg::a0, rc);
 
     // Reset our tracking state
     ECALL.clear();
@@ -865,7 +865,7 @@ RevProc::ECALL_status_t RevProc::ECALL_personality(RevInst& inst){
 RevProc::ECALL_status_t RevProc::ECALL_exit(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit called by thread %" PRIu32 "\n", GetActiveThreadID());
   auto ActiveThread = AssignedThreads.at(HartToExec);
-  auto status = RegFile->GetX<uint64_t>(10);
+  auto status = RegFile->GetX<uint64_t>(RevReg::a0);
 
   output->verbose(CALL_INFO, 0, 0,
                   "Thread %u " PRIu32 "exiting with status %" PRIu64 "\n",
@@ -1595,7 +1595,7 @@ RevProc::ECALL_status_t RevProc::ECALL_readahead(RevInst& inst){
 
 // 214, rev_brk(unsigned long brk)
 RevProc::ECALL_status_t RevProc::ECALL_brk(RevInst& inst){
-  auto Addr = RegFile->GetX<uint64_t>(10);
+  auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
 
   const uint64_t heapend = mem->GetHeapEnd();
   if( Addr > 0 && Addr > heapend ){
@@ -1611,8 +1611,8 @@ RevProc::ECALL_status_t RevProc::ECALL_brk(RevInst& inst){
 // 215, rev_munmap(unsigned long addr, size_t len)
 RevProc::ECALL_status_t RevProc::ECALL_munmap(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: munmap called\n");
-  auto Addr = RegFile->GetX<uint64_t>(10);
-  auto Size = RegFile->GetX<uint64_t>(11);
+  auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
+  auto Size = RegFile->GetX<uint64_t>(RevReg::a1);
 
   int rc =  mem->DeallocMem(Addr, Size) == uint64_t(-1);
   if(rc == -1){
@@ -1622,7 +1622,7 @@ RevProc::ECALL_status_t RevProc::ECALL_munmap(RevInst& inst){
                   Addr, Size);
   }
 
-  RegFile->SetX(10, rc);
+  RegFile->SetX(RevReg::a0, rc);
   return ECALL_status_t::SUCCESS;
 }
 
@@ -1656,8 +1656,8 @@ RevProc::ECALL_status_t RevProc::ECALL_keyctl(RevInst& inst){
 RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clone called by thread %" PRIu32 "\n", GetActiveThreadID());
   auto rtval = ECALL_status_t::SUCCESS;
- //  auto CloneArgsAddr = RegFile->GetX<uint64_t>(10);
- //  // auto SizeOfCloneArgs = RegFile()->GetX<size_t>(11);
+ //  auto CloneArgsAddr = RegFile->GetX<uint64_t>(RevReg::a0);
+ //  // auto SizeOfCloneArgs = RegFile()->GetX<size_t>(RevReg::a1);
 
  // if(0 == ECALL.bytesRead){
  //    // First time through the function...
@@ -1791,10 +1791,10 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
  //    CtxSwitchAlert(ChildPID);
 
  //    // Parent's return value is the child's PID
- //    RegFile->SetX(10, ChildPID);
+ //    RegFile->SetX(RevReg::a0, ChildPID);
 
  //    // Child's return value is 0
- //    ChildCtx->GetRegFile()->SetX(10, 0);
+ //    ChildCtx->GetRegFile()->SetX(RevReg::a0, 0);
 
  //    // clean up ecall state
  //    rtval = RevProc::ECALL_status_t::SUCCESS;
@@ -1814,12 +1814,12 @@ RevProc::ECALL_status_t RevProc::ECALL_execve(RevInst& inst){
 RevProc::ECALL_status_t RevProc::ECALL_mmap(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: mmap called\n");
 
-  auto addr = RegFile->GetX<uint64_t>(10);
-  auto size = RegFile->GetX<uint64_t>(11);
-  // auto prot = RegFile->GetX<int>(12);
-  // auto Flags = RegFile->GetX<int>(13);
-  // auto fd = RegFile->GetX<int>(14);
-  // auto offset = RegFile->GetX<off_t>(15);
+  auto addr = RegFile->GetX<uint64_t>(RevReg::a0);
+  auto size = RegFile->GetX<uint64_t>(RevReg::a1);
+  // auto prot = RegFile->GetX<int>(RevReg::a2);
+  // auto Flags = RegFile->GetX<int>(RevReg::a3);
+  // auto fd = RegFile->GetX<int>(RevReg::a4);
+  // auto offset = RegFile->GetX<off_t>(RevReg::a5);
 
   if( !addr ){
     // If address is NULL... We add it to MemSegs.end()->getTopAddr()+1
@@ -1834,7 +1834,7 @@ RevProc::ECALL_status_t RevProc::ECALL_mmap(RevInst& inst){
       output->fatal(CALL_INFO, 11, "Failed to add mem segment\n");
     }
   }
-  RegFile->SetX(10, addr);
+  RegFile->SetX(RevReg::a0, addr);
   return ECALL_status_t::SUCCESS;
 }
 
@@ -2342,8 +2342,8 @@ RevProc::ECALL_status_t RevProc::ECALL_pidfd_open(RevInst& inst){
 RevProc::ECALL_status_t RevProc::ECALL_clone3(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clone3 called by thread %" PRIu32 "\n", GetActiveThreadID());
   auto rtval = ECALL_status_t::SUCCESS;
- //  auto CloneArgsAddr = RegFile->GetX<uint64_t>(10);
- // auto SizeOfCloneArgs = RegFile()->GetX<size_t>(11);
+ //  auto CloneArgsAddr = RegFile->GetX<uint64_t>(RevReg::a0);
+ // auto SizeOfCloneArgs = RegFile()->GetX<size_t>(RevReg::a1);
 
  // if(0 == ECALL.bytesRead){
  //    // First time through the function...
@@ -2477,10 +2477,10 @@ RevProc::ECALL_status_t RevProc::ECALL_clone3(RevInst& inst){
  //    CtxSwitchAlert(ChildPID);
 
  //    // Parent's return value is the child's PID
- //    RegFile->SetX(10, ChildPID);
+ //    RegFile->SetX(RevReg::a0, ChildPID);
 
  //    // Child's return value is 0
- //    ChildCtx->GetRegFile()->SetX(10, 0);
+ //    ChildCtx->GetRegFile()->SetX(RevReg::a0, 0);
 
  //    // clean up ecall state
  //    rtval = RevProc::ECALL_status_t::SUCCESS;
@@ -2528,9 +2528,9 @@ RevProc::ECALL_status_t RevProc::ECALL_process_madvise(RevInst& inst){
 //                          void *restrict arg);
 RevProc::ECALL_status_t RevProc::ECALL_pthread_create(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_create called by thread %" PRIu32 "\n", GetActiveThreadID());
-  uint64_t tidAddr     = RegFile->GetX<uint64_t>(10);
-  uint64_t NewThreadPC = RegFile->GetX<uint64_t>(11);
-  uint64_t ArgPtr      = RegFile->GetX<uint64_t>(12);
+  uint64_t tidAddr     = RegFile->GetX<uint64_t>(RevReg::a0);
+  uint64_t NewThreadPC = RegFile->GetX<uint64_t>(RevReg::a1);
+  uint64_t ArgPtr      = RegFile->GetX<uint64_t>(RevReg::a2);
   unsigned long int NewTID = GetNewThreadID();
   CreateThread(NewTID, NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 

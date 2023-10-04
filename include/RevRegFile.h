@@ -1,5 +1,5 @@
 //
-// _RevInstTable_h_
+// _RevRegFile_h_
 //
 // Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -28,18 +28,7 @@
 
 namespace SST::RevCPU{
 
-/// Zero-extend value of bits size
-template<typename T>
-constexpr auto ZeroExt(T val, size_t bits){
-  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << bits);
-}
-
-/// Sign-extend value of bits size
-template<typename T>
-constexpr auto SignExt(T val, size_t bits){
-  auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
-  return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
-}
+struct RevInst;
 
 /// BoxNaN: Store a boxed float inside a double
 inline void BoxNaN(double* dest, const void* value){
@@ -49,7 +38,29 @@ inline void BoxNaN(double* dest, const void* value){
   memcpy(dest, &i64, sizeof(double));                // Store in FP64 register
 }
 
-struct RevInst;
+/// RISC-V Register Mneumonics
+enum class RevReg {
+  zero =  0, ra  =  1, sp   =  2, gp   =  3, tp  =  4, t0  =  5, t1   =  6, t2   =  7,
+  s0   =  8, s1  =  9, a0   = 10, a1   = 11, a2  = 12, a3  = 13, a4   = 14, a5   = 15,
+  a6   = 16, a7  = 17, s2   = 18, s3   = 19, s4  = 20, s5  = 21, s6   = 22, s7   = 23,
+  s8   = 24, s9  = 25, s10  = 26, s11  = 27, t3  = 28, t4  = 29, t5   = 30, t6   = 31,
+  ft0  =  0, ft1 =  1, ft2  =  2, ft3  =  3, ft4 =  4, ft5 =  5, ft6  =  6, ft7  =  7,
+  fs0  =  8, fs1 =  9, fa0  = 10, fa1  = 11, fa2 = 12, fa3 = 13, fa4  = 14, fa5  = 15,
+  fa6  = 16, fa7 = 17, fs2  = 18, fs3  = 19, fs4 = 20, fs5 = 21, fs6  = 22, fs7  = 23,
+  fs8  = 24, fs9 = 25, fs10 = 26, fs11 = 27, ft8 = 28, ft9 = 29, ft10 = 30, ft11 = 31,
+};
+
+/// Floating-point control register
+// fcsr.NX, fcsr.UF, fcsr.OF, fcsr.DZ, fcsr.NV, fcsr.frm
+struct FCSR{
+  uint32_t NX  : 1;
+  uint32_t UF  : 1;
+  uint32_t OF  : 1;
+  uint32_t DZ  : 1;
+  uint32_t NV  : 1;
+  uint32_t frm : 3;
+  uint32_t     : 24;
+};
 
 class RevRegFile {
 public:
@@ -66,7 +77,7 @@ private:
     uint64_t RV64_PC{};                 ///< RevRegFile: RV64 PC
   };
 
-  uint64_t FCSR{};                    ///< RevRegFile: FCSR
+  FCSR fcsr{}; ///< RevRegFile: FCSR
 
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue{};
   std::function<void(const MemReq&)> MarkLoadCompleteFunc{};
@@ -172,7 +183,7 @@ public:
   }
 
   /// Invoke the MarkLoadComplete function
-  void MarkLoadComplete(const MemReq& req){
+  void MarkLoadComplete(const MemReq& req) const {
     MarkLoadCompleteFunc(req);
   }
 
@@ -207,22 +218,22 @@ public:
   }
 
   /// GetX: Get the specifed X register cast to a specific integral type
-  template<typename T>
-  T GetX(size_t rs) const {
+  template<typename T, typename U>
+  T GetX(U rs) const {
     if( IsRV32 ){
-      return rs ? T(RV32[rs]) : T(0);
+      return RevReg(rs) != RevReg::zero ? T(RV32[size_t(rs)]) : 0;
     }else{
-      return rs ? T(RV64[rs]) : T(0);
+      return RevReg(rs) != RevReg::zero ? T(RV64[size_t(rs)]) : 0;
     }
   }
 
   /// SetX: Set the specifed X register to a specific value
-  template<typename T>
-  void SetX(size_t rd, T val) {
+  template<typename T, typename U>
+  void SetX(U rd, T val) {
     if( IsRV32 ){
-      RV32[rd] = rd ? uint32_t(val) : uint32_t{0};
+      RV32[size_t(rd)] = RevReg(rd) != RevReg::zero ? uint32_t(val) : 0;
     }else{
-      RV64[rd] = rd ? uint64_t(val) : uint64_t{0};
+      RV64[size_t(rd)] = RevReg(rd) != RevReg::zero ? uint64_t(val) : 0;
     }
   }
 
@@ -256,10 +267,11 @@ public:
   }
 
   /// GetFP32: Get the 32-bit float value of a specific FP register
-  float GetFP32(size_t rs) const {
+  template<typename U>
+  float GetFP32(U rs) const {
     if( HasD ){
       uint64_t i64;
-      memcpy(&i64, &DPF[rs], sizeof(i64));   // The FP64 register's value
+      memcpy(&i64, &DPF[size_t(rs)], sizeof(i64));   // The FP64 register's value
       if (~i64 >> 32)                        // Check for boxed NaN
         return NAN;                          // Return NaN if it's not boxed
       auto i32 = static_cast<uint32_t>(i64); // For endian independence
@@ -267,17 +279,18 @@ public:
       memcpy(&fp32, &i32, sizeof(fp32));     // The bottom half of FP64
       return fp32;                           // Reinterpreted as FP32
     } else {
-      return SPF[rs];                        // The FP32 register's value
+      return SPF[size_t(rs)];                // The FP32 register's value
     }
   }
 
   /// SetFP32: Set a specific FP register to a 32-bit float value
-  void SetFP32(size_t rd, float value)
+  template<typename U>
+  void SetFP32(U rd, float value)
     {
       if( HasD ){
-        BoxNaN(&DPF[rd], &value);  // Store NaN-boxed in FP64 register
+        BoxNaN(&DPF[size_t(rd)], &value);    // Store NaN-boxed in FP64 register
       } else {
-        SPF[rd] = value;           // Store in FP32 register
+        SPF[size_t(rd)] = value;             // Store in FP32 register
       }
     }
 

@@ -1827,7 +1827,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         // Ecall found
         output->verbose(CALL_INFO, 6, 0,
                         "Core %u; HartID %d; ThreadID %" PRIu32 " - Exception Raised: ECALL with code = %lu\n",
-                        id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(17));
+                        id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(RevReg::a7));
 #ifdef _REV_DEBUG_
         //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
         //                  << cRegFile->RV64[17] << std::endl;
@@ -2040,7 +2040,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
                                 feature);
 
   // Copy the arg to the new threads a0 register
-  NewThread->GetRegFile()->SetX(10, reinterpret_cast<uintptr_t>(arg));
+  NewThread->GetRegFile()->SetX(RevReg::a0, reinterpret_cast<uintptr_t>(arg));
 
   NewThreadInfo.emplace(NewThread);
 
@@ -2423,7 +2423,7 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
  */
 void RevProc::ExecEcall(RevInst& inst){
   // a7 register = ecall code
-  auto EcallCode = RegFile->GetX<uint64_t>(17);
+  auto EcallCode = RegFile->GetX<uint64_t>(RevReg::a7);
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
     // call the function

@@ -11,8 +11,10 @@
 #ifndef __REV_COMMON__
 #define __REV_COMMON__
 
-#include <functional>
+#include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <type_traits>
 
 #ifndef _REV_NUM_REGS_
 #define _REV_NUM_REGS_ 32
@@ -29,6 +31,19 @@
 #define _INVALID_ADDR_ (~uint64_t{0})
 
 namespace SST::RevCPU{
+
+/// Zero-extend value of bits size
+template<typename T>
+constexpr auto ZeroExt(T val, size_t bits){
+  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << bits);
+}
+
+/// Sign-extend value of bits size
+template<typename T>
+constexpr auto SignExt(T val, size_t bits){
+  auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
+  return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
+}
 
 enum class RevRegClass : uint8_t { ///< Rev CPU Register Classes
   RegUNKNOWN  = 0,           ///< RevRegClass: Unknown register file

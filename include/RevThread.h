@@ -57,11 +57,11 @@ public:
     : ThreadID(ThreadID), ParentThreadID(ParentThreadID), StackPtr(StackPtr),
       FirstPC(FirstPC), ThreadMem(ThreadMem), Feature(Feature), RegFile(Feature){
     // Set the stack pointer
-    RegFile.SetX(2, StackPtr );
+    RegFile.SetX(RevReg::sp, StackPtr);
 
     // Set the thread pointer
     ThreadPtr = ThreadMem->getTopAddr();
-    RegFile.SetX(4, ThreadPtr);
+    RegFile.SetX(RevReg::tp, ThreadPtr);
 
     // Set the PC
     RegFile.SetPC(FirstPC);
