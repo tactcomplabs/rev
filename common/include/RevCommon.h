@@ -20,15 +20,13 @@
 #define _REV_NUM_REGS_ 32
 #endif
 
-#ifndef _REV_HART_COUNT_
-#define _REV_HART_COUNT_ 1
-#endif
-
 #ifndef _REV_INVALID_HART_ID_
 #define _REV_INVALID_HART_ID_ (uint16_t(~0))
 #endif
 
 #define _INVALID_ADDR_ (~uint64_t{0})
+
+#define _INVALID_TID_ (uint32_t{0})
 
 namespace SST::RevCPU{
 
