@@ -13,8 +13,8 @@ using namespace SST::RevCPU;
 EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
                                              uint64_t straddr,
                                              std::function<void()> action){
-  auto rtval = EcallStatus::ERROR;
-  auto EcallState = Harts.at(inst.hart)->GetEcallState();
+  auto  rtval = EcallStatus::ERROR;
+  auto& EcallState = Harts.at(inst.hart)->GetEcallState();
 
   // we don't know how long the path string is so read a byte (char)
   // at a time and search for the string terminator character '\0'
