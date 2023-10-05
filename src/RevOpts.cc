@@ -11,8 +11,8 @@
 #include "../include/RevOpts.h"
 using namespace SST::RevCPU;
 
-RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
-  : numCores(NumCores), verbosity(Verbosity) {
+RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )
+  : numCores(NumCores), numHarts(NumHarts), verbosity(Verbosity) {
 
   std::pair<unsigned, unsigned> InitialPair;
   InitialPair.first = 0;

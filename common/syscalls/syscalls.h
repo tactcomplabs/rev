@@ -310,7 +310,12 @@ struct iocb {
    uint32_t   aio_resfd;
 };
 
+struct rev_cpuinfo {
+	uint32_t cores;
+	uint32_t harts_per_core;
+};
 
+#ifndef SYSCALL_TYPES_ONLY
 // Actual System Calls
 // int rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx);
 // int rev_io_destroy(aio_context_t ctx);
@@ -3738,6 +3743,17 @@ int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int be
     );
   return rc;
 }
+
+int rev_cpuinfo(struct rev_cpuinfo *info) {
+  int rc;
+  asm volatile (
+    "li a7, 500 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
 typedef unsigned long int rev_pthread_t;
 
 // pthread_t *restrict thread
@@ -3764,3 +3780,4 @@ int rev_pthread_join( rev_pthread_t thread ){
     );
   return rc;
 }
+#endif //SYSCALL_TYPES_ONLY

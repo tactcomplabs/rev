@@ -90,7 +90,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   // Create the options object
   // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
-  Opts = new RevOpts(numCores, Verbosity);
+  Opts = new RevOpts(numCores, numHarts, Verbosity);
   if( !Opts )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
 
