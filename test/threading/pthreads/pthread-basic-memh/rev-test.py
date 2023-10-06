@@ -12,6 +12,7 @@ comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
         "verbose" : 6,                                # Verbosity
     "numCores" : 1,                               # Number of cores
+    "numHarts" : 2,                               # Number of cores
         "clock" : "2.0GHz",                           # Clock
     "memSize" : MEM_SIZE,                         # Memory size in bytes
     "machine" : "[0:RV64G]",                      # Core:Config; RV64I for core 0
