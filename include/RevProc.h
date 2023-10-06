@@ -196,6 +196,8 @@ private:
   // TODO: Add comment & potential error handling
   std::shared_ptr<RevThread>& ActiveThread(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
 
+  // TODO: Potentially make inline?
+  bool HartHasThread(uint16_t HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;

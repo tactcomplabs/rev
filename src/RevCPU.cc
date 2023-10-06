@@ -2536,7 +2536,6 @@ void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
   // print out all threads
   auto it = Threads.find(TID);
   if( it != Threads.end() && it->second->GetState() != ThreadState::START ){
-    std::cout << *Threads.at(TID) << std::endl;
     output.fatal(CALL_INFO, 99, "Error: ThreadID %" PRIu32 " has already been assigned... this is a bug.\n", TID);
   }
   output.verbose(CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", TID);
@@ -2665,7 +2664,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
   // Handle any thread state changes for this core
   // NOTE: At this point we handle EVERY thread that changed state
   while( !Procs[ProcID]->GetThreadsThatChangedState().empty() ){
-    auto Thread = Procs[ProcID]->GetThreadsThatChangedState().front();
+    auto& Thread = Procs[ProcID]->GetThreadsThatChangedState().front();
     // Handle the thread that changed state based on the new state
     switch ( Thread->GetState() ) {
     case ThreadState::DONE:
@@ -2700,8 +2699,10 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
         Thread->SetState(ThreadState::BLOCKED);
         // -- 3a.
         BlockedThreads.emplace(Thread->GetThreadID());
+        
         // -- 3b.
         AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
+
       }
       break;
     case ThreadState::START: // Should never happen

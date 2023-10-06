@@ -65,9 +65,6 @@ public:
   ///< RevHart: Get Hart's ID 
   const uint16_t& GetID(){ return ID; }
 
-  ///< RevHart: Returns true if a thread is assigned to this Hart
-  bool HasThread(){ return AssignedThreadID != _INVALID_TID_; }
-
   ///< RevHart: Returns the ThreadID of the assigned thread
   /// TODO: Potentially move the checking logic here for if a thread is not assigned? Right now it's handled elsewhere
   uint32_t GetAssignedThreadID(){ return AssignedThreadID; }

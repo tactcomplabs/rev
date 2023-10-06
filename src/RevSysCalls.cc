@@ -682,13 +682,13 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
 
 // 64, rev_write(unsigned int fd, const char  *buf, size_t count)
 EcallStatus RevProc::ECALL_write(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: write called\n");
+  output->verbose(CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 "\n", GetActiveThreadID());
   auto fd = RegFile->GetX<int>(RevReg::a0);
   auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
   auto rtv = EcallStatus::ERROR;
 
-  auto ECALL = Harts.at(inst.hart)->GetEcallState();
+  auto& ECALL = Harts.at(inst.hart)->GetEcallState();
 
   if(ECALL.bytesRead){
     // Not our first time through... so capture previous read data
@@ -2606,7 +2606,7 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
   // Output the ecall buf
 
   // Set the TID this thread is waiting for
-  AssignedThreads.at(HartToDecode)->SetWaitingToJoinTID(RegFile->RV64[10]);
+  AssignedThreads.at(Thread->GetThreadID())->SetWaitingToJoinTID(RegFile->RV64[10]);
 
   // // if retval is not null, store the return value of the thread in retval
   // void **retval = (void **)RegFile->RV64[11];
