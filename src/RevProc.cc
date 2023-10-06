@@ -1634,15 +1634,25 @@ void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
 
 uint16_t RevProc::GetNextHartToDecode() {
   // pop the most recent item from the HART_CTS queue
-  uint16_t NextHartID = HART_CTS.front();
-
-  // if it is no longer ready to decode, remove it from this queue
-  // and remain on the same hart
-  if( !Harts.at(NextHartID)->isReadyToDecode() ){
-    NextHartID = HartToDecode;
+  uint16_t NextHartID;
+  for( size_t i=HartToDecode+1; i<Harts.size(); i++ ){
+    if( HartHasThread(i) && Harts.at(i)->isReadyToDecode() ){
+      NextHartID = i;
+      break;
+    }
+    else {
+      NextHartID = HartToDecode;
+    }
   }
-
-  HART_CTS.pop();
+  if( NextHartID == HartToDecode ){
+    // Check the beginning harts 
+    for( size_t i=0; i<=HartToDecode; i++ ){
+      if( HartHasThread(i) && Harts.at(i)->isReadyToDecode() ){
+        NextHartID = i;
+        break;
+      }
+    }
+  }
 
   return NextHartID;
 }
@@ -1743,16 +1753,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // See what hart has a thread that is ready to decode
   for( const auto& Hart : Harts ){
     const uint16_t& HartID = Hart->GetID();
-    // if the Hart has a thread assigned to it
-    if( Hart->HasThread() && (GetThreadOnHart(HartID)->GetRegFile()->cost == 0) ){
-      Hart->SetReadyToDecode(true);
-      HART_CTS.emplace(HartID);
+    if( HartHasThread(HartID) ){
+      Hart->SetReadyToDecode((GetThreadOnHart(HartID)->GetRegFile()->cost == 0) );
     }
   }
 
   // If we have any harts with threads that are ready to decode
   // then lets decode 
-  if( !HART_CTS.empty() && (!Halted)) {
+  if( AssignedThreads.size() && (!Halted)) {
 
     //Determine the active thread
     // TODO: Verify this change in logic works
@@ -1762,45 +1770,47 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // popped still has a thread assigned to it
     // ... jury is still out
     HartToDecode = GetNextHartToDecode();
-    RegFile = RegFileOnHart(HartToDecode);
-    feature->SetHartToExec(HartToDecode);
+    if( HartHasThread(HartToDecode) ){
+      RegFile = RegFileOnHart(HartToDecode);
+      feature->SetHartToExec(HartToDecode);
 
-    // fetch the next instruction
-    if( !PrefetchInst() ){
-      Stalled = true;
-      Stats.cyclesStalled++;
-    }else{
-      Stalled = false;
-    }
+      // fetch the next instruction
+      if( !PrefetchInst() ){
+        Stalled = true;
+        Stats.cyclesStalled++;
+      }else{
+        Stalled = false;
+      }
 
-    // If the next instruction is our special bounce address
-    // DO NOT decode it.  It will decode to a bogus instruction.
-    // We do not want to retire this instruction until we're ready
-    if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
-      Inst = DecodeInst();
+      // If the next instruction is our special bounce address
+      // DO NOT decode it.  It will decode to a bogus instruction.
+      // We do not want to retire this instruction until we're ready
+      if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
+        Inst = DecodeInst();
+        Inst.entry = RegFile->GetEntry();
+        // TODO: Verify that this should happen
+        Inst.hart = HartToDecode;
+      }
+
+      // Now that we have decoded the instruction, check for pipeline hazards
+      if(Stalled || DependencyCheck(HartToDecode, &Inst)){
+        RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
+        Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
+        Harts.at(HartToDecode)->SetReadyToExecute(false);
+        HartToExec = _REV_INVALID_HART_ID_;
+      } else {
+        Stats.cyclesBusy++;
+        Harts.at(HartToDecode)->SetReadyToExecute(true);
+        HART_CTE.emplace(HartToDecode);
+        HartToExec = HartToDecode;
+      }
+      Inst.cost = RegFile->GetCost();
       Inst.entry = RegFile->GetEntry();
-      // TODO: Verify that this should happen
+      // TODO: Verify if we need to set the Inst's HartID here or if above is sufficient
       Inst.hart = HartToDecode;
+      rtn = true;
+      ExecPC = GetPC();
     }
-
-    // Now that we have decoded the instruction, check for pipeline hazards
-    if(Stalled || DependencyCheck(HartToDecode, &Inst)){
-      RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
-      Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
-      Harts.at(HartToDecode)->SetReadyToExecute(false);
-      HartToExec = _REV_INVALID_HART_ID_;
-    } else {
-      Stats.cyclesBusy++;
-      Harts.at(HartToDecode)->SetReadyToExecute(true);
-      HART_CTE.emplace(HartToDecode);
-      HartToExec = HartToDecode;
-    }
-    Inst.cost = RegFile->GetCost();
-    Inst.entry = RegFile->GetEntry();
-    // TODO: Verify if we need to set the Inst's HartID here or if above is sufficient
-    Inst.hart = HartToDecode;
-    rtn = true;
-    ExecPC = GetPC();
   }
 
   if( ( (HartToExec != _REV_INVALID_HART_ID_) && !RegFile->GetTrigger()) && !Halted && Harts.at(HartToExec)->isReadyToExecute() ){
@@ -2027,15 +2037,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }else if( GetPC() == 0x00ull ) {
       // TODO: Clean this up
       // TODO: Change to ThreadOnHart
-      auto Thread = GetThreadOnHart(HartToDecode);
-      std::cout << "GetPC() returned 0" << std::endl;
+      auto& Thread = GetThreadOnHart(HartToDecode);
       Thread->SetState(ThreadState::DONE);
-      std::cout << "Set thread state to DONE" << std::endl;
       Harts.at(HartToExec)->UnassignThread();
-      std::cout << "Unassigned Thread" << std::endl;
-
       ThreadsThatChangedState.emplace(Thread);
-      // PAN execution contexts not enabled, this is our last PC
     }
 
     // determine if we have any outstanding memory requests
@@ -2044,9 +2049,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // done = false;
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ && Harts.at(HartToExec)->HasThread() ){
+    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) ){
       std::cout << "===> HartToExec has Thread: " << Harts.at(HartToExec)->GetAssignedThreadID() << std::endl;
-      auto Thread = GetThreadOnHart(HartToExec);
+      auto& Thread = GetThreadOnHart(HartToExec);
       output->verbose(CALL_INFO, 2, 0,
                       // TODO: CLEAN UP
                       "Thread %" PRIu32 " is done\n", Thread->GetThreadID());
@@ -2083,7 +2088,7 @@ void RevProc::PrintStatSummary(){
 }
 
 RevRegFile* RevProc::GetRegFile(uint16_t HartID) const{
-  if( !Harts.at(HartID)->HasThread() ){
+  if( !HartHasThread(HartID) ){
     output->fatal(CALL_INFO, 1,
                   "Tried to get RegFile for HartID = %d but there is no AssignedThread for that Hart\n", HartID);
   }
@@ -2481,7 +2486,11 @@ void RevProc::AssignThread(const uint32_t& ThreadID){
   // Check for available Hart 
   for( auto Hart : Harts ){
     // If the hart has no thread assigned to it, assign it
-    if( !Hart->HasThread() ){
+    // TODO: Make a function in RevProc that takes a Hart and checks if it has a Thread instead of the hart doing it
+    if( (AssignedThreads.find(Hart->GetAssignedThreadID()) != AssignedThreads.end())){ 
+      // Don't schedule 
+    }
+    else {
       Hart->AssignThread(ThreadID);
       ThreadAssigned = true;
       break;
@@ -2500,7 +2509,7 @@ void RevProc::AssignThread(const uint32_t& ThreadID){
 
 uint32_t RevProc::GetActiveThreadID(){
   uint32_t ActiveThreadID = 0;
-  if( Harts.at(HartToDecode)->HasThread() ){
+  if( HartHasThread(HartToDecode) ){
     ActiveThreadID = Harts.at(HartToDecode)->GetAssignedThreadID();
   }
   else {
