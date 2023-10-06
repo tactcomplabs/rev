@@ -2654,7 +2654,7 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
 // and handle appropriately
 void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
   // Handle any thread state changes for this core
-  // NOTE: At this point we handle EVERY thread that changed state 
+  // NOTE: At this point we handle EVERY thread that changed state
   while( !Procs[ProcID]->GetThreadsThatChangedState().empty() ){
     auto Thread = Procs[ProcID]->GetThreadsThatChangedState().front();
     // Handle the thread that changed state based on the new state
@@ -2706,10 +2706,12 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
 
       // Add it to the thread queue to be scheduled
       ThreadQueue.emplace_back(Thread->GetThreadID());
-                     
+      break;
+
     case ThreadState::RUNNING:
       output.verbose(CALL_INFO, 11, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is RUNNING\n", Thread->GetThreadID(), ProcID);
       break;
+
     case ThreadState::READY:
       // If this happens we are not setting state when assigning thread somewhere
       output.fatal(CALL_INFO, 99, "Error: Thread %" PRIu32 " on Core %" PRIu32 " is assigned but is in START state... This is a bug\n",
@@ -2721,7 +2723,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       break;
     }
     // Pop the thread that changed state
-    // TODO: Getter is supposed to be const 
+    // TODO: Getter is supposed to be const
     Procs[ProcID]->GetThreadsThatChangedState().pop();
   }
   return;

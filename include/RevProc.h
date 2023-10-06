@@ -125,8 +125,9 @@ public:
   RevMem& GetMem() const { return *mem; }
 
   // Get the hart ids of the threads that changed state
-  // TODO: Maybe ThreadIDs? 
+  // TODO: Maybe ThreadIDs?
   std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() { return ThreadsThatChangedState; }
+  const std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() const { return ThreadsThatChangedState; }
 
   /// RevProc: SpawnThread creates a new thread and returns its ThreadID
   void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
@@ -143,7 +144,7 @@ public:
   std::queue<std::shared_ptr<RevThread>> NewThreadInfo;
 
   /// RevProc: Gets the thread that is currently executing on the HartToExec
-  /// TODO: Make this safe 
+  /// TODO: Make this safe
   const std::shared_ptr<RevThread>& GetThreadOnHart(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
 
   // TODO: Make this safe
@@ -154,7 +155,7 @@ public:
 
   std::queue<uint16_t> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
   std::queue<uint16_t> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
-  
+
   ///< RevProc: Get this Proc's feature
   RevFeature* GetRevFeature() const { return feature; }
 
@@ -163,9 +164,9 @@ public:
 
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
-  
-  // TODO: Document & Organize Thread stuff 
-  void AssignThread(const uint32_t& ThreadID); 
+
+  // TODO: Document & Organize Thread stuff
+  void AssignThread(const uint32_t& ThreadID);
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -195,7 +196,7 @@ private:
   // TODO: Add comment & potential error handling
   std::shared_ptr<RevThread>& ActiveThread(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
 
-  
+
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;
 
@@ -218,7 +219,7 @@ private:
 
   /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
   // RevRegFile* GetRegFile(uint16_t HartID);
- 
+
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
 
