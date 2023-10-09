@@ -1796,8 +1796,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   //
 
   for( size_t HartID=0; HartID<Harts.size(); HartID++ ){
+    // TODO: Can probably make this nicer
     if( HartHasThread(HartID) ){
       HART_CTS[HartID] = (GetThreadOnHart(HartID)->GetRegFile()->cost == 0);
+    } else {
+      HART_CTS[HartID] = false;
     }
   }
 
