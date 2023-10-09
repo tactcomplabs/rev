@@ -2557,8 +2557,8 @@ void RevCPU::AssignThread(uint32_t ThreadID, uint32_t ProcID){
 
   // Put the thread in the Proc's assigned threads list
   AssignedThreads.at(ProcID).emplace(ThreadID, Thread);
-  Procs[ProcID]->AssignThread(ThreadID);
 
+  Procs[ProcID]->AssignThread(ThreadID);
   return;
 
 }
@@ -2673,8 +2673,12 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       // 1. Remove it from the AssignedThreads map (The Hart will automatically be updated)
       // 2. Move its ThreadID to the CompletedThreads list
       output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is DONE\n", Thread->GetThreadID(), ProcID);
+      std::cout << "Thread " << Thread->GetThreadID() << " on Core " << ProcID << " is DONE" << std::endl;
       AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
       CompletedThreads.emplace(Thread->GetThreadID());
+      if( AssignedThreads.at(ProcID).empty() ){
+        Enabled[ProcID] = false;
+      }
       break;
     case ThreadState::BLOCKED:
       // This thread is blocked (currently only caused by a rev_pthread_join)
@@ -2699,9 +2703,18 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
         Thread->SetState(ThreadState::BLOCKED);
         // -- 3a.
         BlockedThreads.emplace(Thread->GetThreadID());
+
+        std::cout << Thread->to_string();
         
         // -- 3b.
         AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
+        
+        Threads.at(Thread->GetThreadID())->GetRegFile()->SetLSQueue(nullptr);
+        Threads.at(Thread->GetThreadID())->GetRegFile()->SetMarkLoadComplete(nullptr);
+
+        if( AssignedThreads.at(ProcID).empty() ){
+          Enabled[ProcID] = false;
+        }
 
       }
       break;

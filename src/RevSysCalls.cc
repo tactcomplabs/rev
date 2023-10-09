@@ -14,7 +14,7 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
                                              uint64_t straddr,
                                              std::function<void()> action){
   auto  rtval = EcallStatus::ERROR;
-  auto& EcallState = Harts.at(inst.hart)->GetEcallState();
+  auto& EcallState = Harts.at(HartToExec)->GetEcallState();
 
   // we don't know how long the path string is so read a byte (char)
   // at a time and search for the string terminator character '\0'
@@ -36,19 +36,20 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
     EcallState.string.clear();   //reset the ECALL buffers
     EcallState.bytesRead = 0;
 
-    DependencyClear(inst.hart, 10, false);
+    DependencyClear(HartToExec, 10, false);
     rtval = EcallStatus::SUCCESS;
   }else{
     //We are in the middle of the string - read one byte
-    MemReq req{straddr + EcallState.string.size(), 10, RevRegClass::RegGPR, inst.hart, MemOp::MemOpREAD, true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
+    MemReq req{straddr + EcallState.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
     LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
-    mem->ReadVal(inst.hart,
+    mem->ReadVal(HartToExec,
                  straddr + EcallState.string.size(),
                  EcallState.buf.data(),
                  req,
                  REVMEM_FLAGS(0));
     EcallState.bytesRead = 1;
-    DependencySet(inst.hart, 10, false);
+    std::cout << "Setting dependency for HartToExec == " << HartToExec << std::endl;
+    DependencySet(HartToExec, 10, false);
     rtval = EcallStatus::CONTINUE;
   }
   return rtval;
@@ -217,7 +218,7 @@ EcallStatus RevProc::ECALL_getcwd(RevInst& inst){
   auto BufAddr = RegFile->GetX<uint64_t>(RevReg::a0);
   auto size = RegFile->GetX<uint64_t>(RevReg::a1);
   auto CWD = std::filesystem::current_path();
-  mem->WriteMem(feature->GetHartToExec(), BufAddr, size, CWD.c_str());
+  mem->WriteMem(HartToExec, BufAddr, size, CWD.c_str());
 
   // Returns null-terminated string in buf
   // (no need to set x10 since it's already got BufAddr)
@@ -325,7 +326,7 @@ EcallStatus RevProc::ECALL_mknodat(RevInst& inst){
 // TODO: 34, rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
 EcallStatus RevProc::ECALL_mkdirat(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: mkdirat called");
-  EcallState ECALL = Harts.at(inst.hart)->GetEcallState();
+  EcallState ECALL = Harts.at(HartToExec)->GetEcallState();
   auto dirfd = RegFile->GetX<int>(RevReg::a0);
   auto path = RegFile->GetX<uint64_t>(RevReg::a1);
   auto mode = RegFile->GetX<unsigned short>(RevReg::a2);
@@ -427,7 +428,7 @@ EcallStatus RevProc::ECALL_chdir(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: chdir called\n");
   auto path = RegFile->GetX<uint64_t>(RevReg::a0);
   auto action = [&]{
-    int rc = chdir(Harts.at(inst.hart)->GetEcallState().string.c_str());
+    int rc = chdir(Harts.at(HartToExec)->GetEcallState().string.c_str());
     RegFile->SetX(RevReg::a0, rc);
   };
   return EcallLoadAndParseString(inst, path, action);
@@ -489,7 +490,7 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
   auto action = [&]{
     // Do the openat on the host
     dirfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
-    int fd = openat(dirfd, Harts.at(inst.hart)->GetEcallState().string.c_str(), O_RDWR);
+    int fd = openat(dirfd, Harts.at(HartToExec)->GetEcallState().string.c_str(), O_RDWR);
 
     GetThreadOnHart(HartToExec)->AddFD(fd);
 
@@ -636,7 +637,7 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
   int rc = read(fd, &TmpBuf[0], BufSize);
 
   // Write that data to the buffer inside of Rev
-  mem->WriteMem(feature->GetHartToExec(), BufAddr, BufSize, &TmpBuf[0]);
+  mem->WriteMem(HartToExec, BufAddr, BufSize, &TmpBuf[0]);
 
   RegFile->SetX(RevReg::a0, rc);
   return EcallStatus::SUCCESS;
@@ -682,13 +683,15 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
 
 // 64, rev_write(unsigned int fd, const char  *buf, size_t count)
 EcallStatus RevProc::ECALL_write(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 "\n", GetActiveThreadID());
+  output->verbose(CALL_INFO, 2, 0, "ECALL: write called on Hart %" PRIu16 "by thread %" PRIu32 "\n", HartToExec, GetActiveThreadID());
   auto fd = RegFile->GetX<int>(RevReg::a0);
   auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
   auto rtv = EcallStatus::ERROR;
 
-  auto& ECALL = Harts.at(inst.hart)->GetEcallState();
+  auto& ECALL = Harts.at(HartToExec)->GetEcallState();
+
+  // RevRegFile* RegFile = AssignedThreads.at(Harts.at(HartToExec)->GetAssignedThreadID())->GetRegFile();
 
   if(ECALL.bytesRead){
     // Not our first time through... so capture previous read data
@@ -709,11 +712,11 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
 
     DependencyClear(HartToExec, 10, false);
     rtv = EcallStatus::SUCCESS;
-  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, inst.hart)))  {
+  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  {
     auto readfunc = [&](auto* buf){
-      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, inst.hart, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
+      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
-      mem->ReadVal(inst.hart,
+      mem->ReadVal(HartToExec,
                    addr + ECALL.string.size(),
                    buf,
                    req,
@@ -729,7 +732,7 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
     } else{
       readfunc(reinterpret_cast<uint8_t*>(ECALL.buf.data()));
     }
-    DependencySet(inst.hart, 10, false);
+    DependencySet(HartToExec, 10, false);
     rtv = EcallStatus::CONTINUE;
   }else{
     rtv = EcallStatus::CONTINUE;
@@ -2585,7 +2588,7 @@ EcallStatus RevProc::ECALL_pthread_create(RevInst& inst){
   unsigned long int NewTID = GetNewThreadID();
   CreateThread(NewTID, NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 
-  mem->WriteMem(feature->GetHartToExec(), tidAddr, sizeof(NewTID), &NewTID, REVMEM_FLAGS(0x00));
+  mem->WriteMem(HartToExec, tidAddr, sizeof(NewTID), &NewTID, REVMEM_FLAGS(0x00));
   return EcallStatus::SUCCESS;
 }
 
@@ -2594,26 +2597,28 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
   EcallStatus rtval = EcallStatus::CONTINUE;
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_join called by thread %" PRIu32 "\n", GetActiveThreadID());
 
-  rtval = EcallStatus::SUCCESS;
+  if( ThreadCanBeRemoved(Harts.at(inst.hart)->GetAssignedThreadID() ) ) {
+    rtval = EcallStatus::SUCCESS;
 
-  // Set current thread to blocked
-  auto Thread = GetThreadOnHart(HartToExec);
-  Thread->SetState(ThreadState::BLOCKED);
+    // Set current thread to blocked
+    auto Thread = GetThreadOnHart(HartToExec);
+    Thread->SetState(ThreadState::BLOCKED);
 
-  // Signal to RevCPU this thread is has changed state
-  ThreadsThatChangedState.emplace(Thread);
+    // Signal to RevCPU this thread is has changed state
+    ThreadsThatChangedState.emplace(Thread);
 
-  // Output the ecall buf
+    // Output the ecall buf
 
-  // Set the TID this thread is waiting for
-  AssignedThreads.at(Thread->GetThreadID())->SetWaitingToJoinTID(RegFile->RV64[10]);
+    // Set the TID this thread is waiting for
+    AssignedThreads.at(Thread->GetThreadID())->SetWaitingToJoinTID(RegFile->RV64[10]);
 
-  // // if retval is not null, store the return value of the thread in retval
-  // void **retval = (void **)RegFile->RV64[11];
-  // if( retval != NULL ){
-  //   *retval = (void *)
-  //   AssignedThreads.at(HartToDecode)->GetRegFile()->RV64[10];
-  // }
-  //
+    // // if retval is not null, store the return value of the thread in retval
+    // void **retval = (void **)RegFile->RV64[11];
+    // if( retval != NULL ){
+    //   *retval = (void *)
+    //   AssignedThreads.at(HartToDecode)->GetRegFile()->RV64[10];
+    // }
+    //
+  }
   return rtval;
 }
