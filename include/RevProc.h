@@ -135,6 +135,9 @@ public:
   /// RevProc: Returns the current HartToExec active pid
   uint32_t GetActiveThreadID();
 
+  // TODO: Comment
+  bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
+
   /// RevProc: Queue of threads to be spawned (RevProc creates the thread, RevCPU readies it for execution)
   const std::queue<std::shared_ptr<RevThread>>& GetNewThreadInfo() { return NewThreadInfo; }
 
@@ -153,8 +156,8 @@ public:
   ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
   double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }
 
-  std::queue<uint16_t> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-  std::queue<uint16_t> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+  std::vector<bool> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+  std::vector<bool> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
   ///< RevProc: Get this Proc's feature
   RevFeature* GetRevFeature() const { return feature; }
@@ -691,6 +694,8 @@ private:
     const RevRegFile* regFile = GetRegFile(HartID);
     return isFloat ? regFile->FP_Scoreboard.any() : regFile->RV_Scoreboard.any();
   }
+
+  uint32_t NumReqs = 0;
 
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;
