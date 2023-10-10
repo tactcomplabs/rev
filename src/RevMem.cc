@@ -584,8 +584,8 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
 
     // clear the hazard
     req.MarkLoadComplete(req);
-    delete TmpD;
-    delete TmpT;
+    delete[] TmpD;
+    delete[] TmpT;
   }
 
   return true;
