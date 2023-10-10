@@ -56,8 +56,16 @@ class RV64A : public RevExt {
       flags |= uint32_t(RevCPU::RevFlag::F_RL);
     }
 
-    MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete());
-    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+    MemReq req(R->RV64[Inst.rs1],
+               Inst.rd,
+               RevRegClass::RegGPR,
+               F->GetHartToExec(),
+               MemOp::MemOpAMO,
+               true,
+               R->GetMarkLoadComplete());
+    R->LSQueue->insert({make_lsq_hash(Inst.rd,
+                                      RevRegClass::RegGPR,
+                                      F->GetHartToExec()), req});
     M->AMOVal(F->GetHartToExec(),
               R->RV64[Inst.rs1],
               &R->RV64[Inst.rs2],
@@ -98,15 +106,15 @@ class RV64A : public RevExt {
   std::vector<RevInstEntry> RV64ATable = {
     {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("lr.d %rd, (%rs1)"          ).SetFunct7(0b00010).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&lrd ).InstEntry},
     {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("sc.d %rd, %rs1, %rs2"      ).SetFunct7(0b00011                        ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&scd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoswap.d %rd, %rs1, %rs2" ).SetFunct7(0b00001                        ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoswapd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoadd.d %rd, %rs1, %rs2"  ).SetFunct7(0b00000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoaddd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoxor.d %rd, %rs1, %rs2"  ).SetFunct7(0b00100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoxord ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoand.d %rd, %rs1, %rs2"  ).SetFunct7(0b01100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoandd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amoor.d %rd, %rs1, %rs2"   ).SetFunct7(0b01000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amoord ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomin.d %rd, %rs1, %rs2"  ).SetFunct7(0b10000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomind ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomax.d %rd, %rs1, %rs2"  ).SetFunct7(0b10100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomaxd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amominu.d %rd, %rs1, %rs2" ).SetFunct7(0b11000                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amominud ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("amomaxu.d %rd, %rs1, %rs2" ).SetFunct7(0b11100                                                                                               ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&amomaxud ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoswap.d %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b00001).SetImplFunc( &amoswapd ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoadd.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b00000).SetImplFunc( &amoaddd ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoxor.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b00100).SetImplFunc( &amoxord ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoand.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b01100).SetImplFunc( &amoandd ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoor.w %rd, %rs1, %rs2").SetCost(   1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b01000).SetImplFunc( &amoord ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amomin.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b10000).SetImplFunc( &amomind ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amomax.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b10100).SetImplFunc( &amomaxd ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b11000).SetImplFunc( &amominud ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct7( 0b11100).SetImplFunc( &amomaxud ).InstEntry},
   };
 
 
@@ -118,7 +126,7 @@ public:
     : RevExt( "RV64A", Feature, RevMem, Output) {
     SetTable(std::move(RV64ATable));
   }
-}; // end class RV32I
+}; // end class RV64A
 
 } // namespace SST::RevCPU
 
