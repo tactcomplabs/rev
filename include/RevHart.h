@@ -63,7 +63,7 @@ public:
   void SetReadyToExecute(bool rte){ ReadyToExecute = rte; }
 
   ///< RevHart: Get Hart's ID 
-  const uint16_t& GetID(){ return ID; }
+  uint16_t GetID(){ return ID; }
 
   ///< RevHart: Returns the ThreadID of the assigned thread
   /// TODO: Potentially move the checking logic here for if a thread is not assigned? Right now it's handled elsewhere
