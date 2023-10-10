@@ -72,11 +72,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // We must always derive the number of cores before initializing the options
   // If the PAN tests are enabled, override the number cores and force them to '0'
   numCores = params.find<unsigned>("numCores", "1");
-  // TODO: Potentially move
   numHarts = params.find<unsigned>("numHarts", "1");
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
-  output.verbose(CALL_INFO, 1, 0, "Building Rev with %u cores\n", numCores);
+  output.verbose(CALL_INFO, 1, 0, "Building Rev with %" PRIu16 " cores and %" PRIu16 " hart(s) on each core \n", numCores, numHarts);
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");

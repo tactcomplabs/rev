@@ -327,7 +327,6 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
 
 
 uint64_t RevMem::AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
-  // TODO: Check to make sure there's no overlap
   MemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
   return BaseAddr;
 }

@@ -1725,7 +1725,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     // if( !AssignedThreads.size() ){ return false; }
 
-    // TODO: May be safe? May not be? 
     RegFile = GetThreadOnHart(HartToDecode)->GetRegFile();
     feature->SetHartToExec(HartToDecode);
 
@@ -2403,14 +2402,10 @@ void RevProc::InitEcallTable(){
  * supported exceptions at this point there is no need just yet.
  */
 void RevProc::ExecEcall(RevInst& inst){
-  // a7 register = ecall code
-  // TODO: Remove me 
-  auto* RegFile = GetThreadOnHart(HartToExec)->GetRegFile();
-  auto EcallCode = RegFile->GetX<uint64_t>(17);
+  auto EcallCode = RegFile->GetX<uint64_t>(RevReg::a7);
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
     // call the function
-    // TODO: Maybe change this with the new Hart infrastructure? 
     EcallStatus status = it->second(this, inst);
 
     // Trap handled... 0 cause registers

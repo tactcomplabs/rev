@@ -1704,8 +1704,6 @@ EcallStatus RevProc::ECALL_keyctl(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
-// TODO: Add ThreadManager Logic
-// TODO: Figure out the difference between this and clone3
 // 220, rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *)
 EcallStatus RevProc::ECALL_clone(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clone called by thread %" PRIu32 " on hart %" PRIu16 "\n", GetActiveThreadID());
@@ -1813,8 +1811,6 @@ EcallStatus RevProc::ECALL_clone(RevInst& inst){
  //    /* Create the child ctx */
  //    uint32_t ChildPID = CreateChildCtx();
  //    std::shared_ptr<RevThread> ChildCtx = ThreadTable.at(ChildPID);
-
- //    /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
 
  //    /*
  //    * ===========================================================================================
