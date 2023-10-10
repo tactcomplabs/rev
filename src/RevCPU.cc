@@ -73,6 +73,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // If the PAN tests are enabled, override the number cores and force them to '0'
   numCores = params.find<unsigned>("numCores", "1");
   numHarts = params.find<unsigned>("numHarts", "1");
+  
+  // Make sure someone isn't trying to have more than 65536 harts per core
+  if( numHarts > _MAX_HARTS_ ){
+    output.fatal(CALL_INFO, -1, "Error: number of harts must be <= %" PRIu16 "\n", _MAX_HARTS_);
+  }
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
   output.verbose(CALL_INFO, 1, 0, "Building Rev with %" PRIu16 " cores and %" PRIu16 " hart(s) on each core \n", numCores, numHarts);
@@ -2415,9 +2420,6 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     // See if any of the threads on this proc changes state
     CheckForThreadStateChanges(i);
 
-    // See if this proc encountered something that created a new thread
-    CheckForNewThreads(i);
-
     if( Procs[i]->GetHartUtilization() == 0 ){
       Enabled[i] = false;
     }
@@ -2663,7 +2665,6 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       // 1. Remove it from the AssignedThreads map (The Hart will automatically be updated)
       // 2. Move its ThreadID to the CompletedThreads list
       output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is DONE\n", Thread->GetThreadID(), ProcID);
-      std::cout << "Thread " << Thread->GetThreadID() << " on Core " << ProcID << " is DONE" << std::endl;
       AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
       CompletedThreads.emplace(Thread->GetThreadID());
       if( AssignedThreads.at(ProcID).empty() ){
@@ -2739,16 +2740,16 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
 }
 
 // Checks for new threads that may have been added to a given processor's NewThreadInfo
-void RevCPU::CheckForNewThreads(uint32_t i){
-  // Check for new threads
-  if( !Procs[i]->GetNewThreadInfo().empty() ){
-    output.verbose(CALL_INFO, 8, 0, "Core %" PRIu32 " has new threads\n", i);
-    // There are new thread(s) to create
-    for( size_t j=0; j<Procs[i]->GetNewThreadInfo().size(); j++ ){
-      auto NewThread = Procs[i]->NewThreadInfo.front();
-      Procs[i]->NewThreadInfo.pop();
-      InitThread(NewThread);
-    }
-  }
-}
+//void RevCPU::CheckForNewThreads(uint32_t i){
+//  // Check for new threads
+//  if( !Procs[i]->GetNewThreadInfo().empty() ){
+//    output.verbose(CALL_INFO, 8, 0, "Core %" PRIu32 " has new threads\n", i);
+//    // There are new thread(s) to create
+//    for( size_t j=0; j<Procs[i]->GetNewThreadInfo().size(); j++ ){
+//      auto NewThread = Procs[i]->NewThreadInfo.front();
+//      Procs[i]->NewThreadInfo.pop();
+//      InitThread(NewThread);
+//    }
+//  }
+//}
 // EOF

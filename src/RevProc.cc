@@ -1313,8 +1313,8 @@ RevInst RevProc::DecodeInst(){
 
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %" PRIu16 " ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
-                    id, HartToDecode, PC, Inst);
+                    "Core %" PRIu16 "; Hart %" PRIu16 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
+                    id, HartToDecode, GetActiveThreadID(),  PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
                   "Error: Core %" PRIu16 " failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
@@ -1449,7 +1449,7 @@ RevInst RevProc::DecodeInst(){
     }else{
       // failed to decode the instruction
       output->fatal(CALL_INFO, -1,
-                    "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%d\n",
+                    "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%" PRIx32 "\n",
                     PC,
                     Enc );
     }
@@ -1999,8 +1999,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && ThreadCanBeRemoved(GetThreadOnHart(HartToExec)->GetThreadID()) ){
-      output->verbose(CALL_INFO, 2, 0,
-                      "Thread %" PRIu32 " on hart %" PRIu16 " is done\n", GetThreadOnHart(HartToExec)->GetThreadID(), HartToExec);
       HART_CTE[HartToExec] = false;
       HART_CTS[HartToExec] = false;
       GetThreadOnHart(HartToExec)->SetState(ThreadState::DONE);
@@ -2422,20 +2420,16 @@ void RevProc::ExecEcall(RevInst& inst){
   }
 }
 
-// TODO: Potentially add a faster way to find available Harts
-// Also I don't think we ever get here without first knowing that there is a Hart available
-// so maybe we can just assign the thread to the first available hart and be done with it
-// but I'll need to think on it
+// Looks for a hart without a thread assigned to it and then assigns it.
+// This function should never be called if there are no available harts
+// so if for some reason we can't find a hart without a thread assigned
+// to it then we have a bug.
 void RevProc::AssignThread(const uint32_t& ThreadID){
   bool ThreadAssigned = false;
   // Check for available Hart 
   for( const auto& Hart : Harts ){
     // If the hart has no thread assigned to it, assign it
-    // TODO: Make a function in RevProc that takes a Hart and checks if it has a Thread instead of the hart doing it
-    if( (AssignedThreads.find(Hart->GetAssignedThreadID()) != AssignedThreads.end())){ 
-      // Don't schedule 
-    }
-    else {
+    if( !(HartHasThread(Hart->GetID())) ){
       Hart->AssignThread(ThreadID);
       ThreadAssigned = true;
       break;

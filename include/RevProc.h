@@ -124,8 +124,7 @@ public:
 
   RevMem& GetMem() const { return *mem; }
 
-  // Get the hart ids of the threads that changed state
-  // TODO: Maybe ThreadIDs?
+  // Called by RevCPU to handle the state changes threads may have happened during this Proc's ClockTick
   std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() { return ThreadsThatChangedState; }
   const std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() const { return ThreadsThatChangedState; }
 
@@ -135,23 +134,11 @@ public:
   /// RevProc: Returns the current HartToExec active pid
   uint32_t GetActiveThreadID();
 
-  // TODO: Comment
+  // Checks if this thread has any reason it cannot be removed by RevCPU (ie. Dependencies / outstanding loads)
   bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
 
-  /// RevProc: Queue of threads to be spawned (RevProc creates the thread, RevCPU readies it for execution)
-  const std::queue<std::shared_ptr<RevThread>>& GetNewThreadInfo() { return NewThreadInfo; }
-
-  ///< RevProc: Holds the info for all new threads to be spawned
-  ///           Right now this is through the following functions:
-  ///           - rev_pthread_create
-  std::queue<std::shared_ptr<RevThread>> NewThreadInfo;
-
-  /// RevProc: Gets the thread that is currently executing on the HartToExec
-  /// TODO: Make this safe
+  /// RevProc: Gets the thread that is currently executing on the Hart 
   const std::shared_ptr<RevThread>& GetThreadOnHart(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
-
-  // TODO: Make this safe
-  auto RegFileOnHart(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID())->GetRegFile(); }
 
   ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
   double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }
@@ -168,7 +155,7 @@ public:
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
 
-  // TODO: Document & Organize Thread stuff
+  // Find a Hart to assign ThreadID to
   void AssignThread(const uint32_t& ThreadID);
 
 private:
@@ -182,7 +169,6 @@ private:
   uint64_t ExecPC;          ///< RevProc: executing PC
   uint16_t HartToDecode;    ///< RevProc: Current executing ThreadID
   uint16_t HartToExec;      ///< RevProc: Thread to dispatch instruction
-  // TODO: Potentially make these a unique_ptr
   std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts
   uint64_t Retired;         ///< RevProc: number of retired instructions
 
@@ -192,23 +178,16 @@ private:
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
 
-  /// TODO: Update comment
-  /// ThreadIDs assigned to this RevProc (AssignedThreads[i] will give you the RevThread executing on Hart i)
+  /// ThreadIDs and their corresponding RevThread (Size will never be greater than numHarts)
   std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads;
 
-  // TODO: Add comment & potential error handling
-  std::shared_ptr<RevThread>& ActiveThread(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
-
-  // TODO: Potentially make inline?
+  // Checks to see if a given HartID has an assigned thread by checking if the threadid on that Hart still exists in the AssignedThreads map
   bool HartHasThread(uint16_t HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;
 
   // If a given assigned thread experiences a change of state, it sets the corresponding bit
-  // TODO: Update comment
-  // - if AssignedThreads.at(i) has a state change ==> ThreadsThatChangedState.set(i)
-  // - this tells RevCPU it needs to check in on this thread and handle appropriately
   std::queue<std::shared_ptr<RevThread>> ThreadsThatChangedState; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
 
   SST::Output *output;                   ///< RevProc: output handler
@@ -695,7 +674,6 @@ private:
     return isFloat ? regFile->FP_Scoreboard.any() : regFile->RV_Scoreboard.any();
   }
 
-  uint32_t NumReqs = 0;
 
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;

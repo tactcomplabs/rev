@@ -500,54 +500,6 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
 
   return EcallLoadAndParseString(inst, pathname, action);
 }
-// TODO: EcallStatus RevProc::ECALL_openat(RevInst& inst){
-//   int dfd = RegFile->RV64[10];
-//   int filenameAddr = RegFile->RV64[11];
-//   int flags = RegFile->RV64[12]; /* NOTE: Unused for now */
-//   uint64_t mode = RegFile->RV64[13];
-
-//   EcallStatus rtval = EcallStatus::SUCCESS;
-//   /*
-//    * NOTE: this is currently only opening files in the current directory
-//    *       because of some oddities in parsing the arguments & flags
-//    *       but this will be fixed in the near future
-//   */
-
-
-//   /* Read the filename from memory one character at a time until we find '\0' */
-
-//   if('\0' != ECALL.buf[0]){
-//     //We are in the middle of the string
-//     ECALL.string = ECALL.string + ECALL.buf[0];
-//     mem->ReadVal<char>(HartToExec, filenameAddr + sizeof(char)*ECALL.string.length(), &ECALL.buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-//     rtval = EcallStatus::CONTINUE;
-//     DependencySet(HartToExec, 10, false);
-//   }else if(('\0' == ECALL.buf[0]) && (ECALL.string.length() > 0)) {
-//     //found the null terminator - we're done
-//     ECALL.string = ECALL.string + ECALL.buf[0];
-
-//     /* Do the openat on the host */
-//     dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
-//     int fd = openat(dfd, ECALL.string.c_str(), O_RDWR);
-
-//     AssignedThreads.at(HartToDecode)->AddFD(fd);
-
-//     /* openat returns the file descriptor of the opened file */
-//     RegFile->RV64[10] = fd;
-
-//     ECALL.string.clear();   //reset the ECALL buffers
-//     ECALL.buf[0] = '\0';
-//     rtval = EcallStatus::SUCCESS;
-//     DependencyClear(HartToExec, 10, false);
-//   }else{
-//     //first time through the ECALL
-//     mem->ReadVal<char>(HartToExec, filenameAddr, &ECALL.buf[0], inst.hazard, REVMEM_FLAGS(0x00));
-//     DependencySet(HartToExec, 10, false);
-//     rtval = EcallStatus::CONTINUE;
-//   }
-
-//   return rtval;
-// }
 
 // 57, rev_close(unsigned int fd)
 EcallStatus RevProc::ECALL_close(RevInst& inst){
@@ -914,7 +866,6 @@ EcallStatus RevProc::ECALL_personality(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
-// TODO: Move exit here
 // 93, rev_exit(int error_code)
 EcallStatus RevProc::ECALL_exit(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit called by thread %" PRIu32 " on hart %" PRIu16 "\n", GetActiveThreadID(), HartToExec);
@@ -1399,7 +1350,6 @@ EcallStatus RevProc::ECALL_getpid(RevInst& inst){
 
 //  173, rev_getppid(void)
 EcallStatus RevProc::ECALL_getppid(RevInst& inst){
-  // TODO: Implement error handling
   output->verbose(CALL_INFO, 2, 0, "ECALL: getppid called (Rev only supports a single process)\n");
   return EcallStatus::SUCCESS;
 }
@@ -2495,8 +2445,6 @@ EcallStatus RevProc::ECALL_clone3(RevInst& inst){
  //    /* Create the child ctx */
  //    uint32_t ChildPID = CreateChildCtx();
  //    std::shared_ptr<RevThread> ChildCtx = ThreadTable.at(ChildPID);
-
- //    /* TODO: Create a copy of Parents Memory Space (need Demand Paging first) */
 
  //    /*
  //    * ===========================================================================================
