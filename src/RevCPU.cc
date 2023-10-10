@@ -2700,9 +2700,6 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
         // -- 3b.
         AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
         
-        Threads.at(Thread->GetThreadID())->GetRegFile()->SetLSQueue(nullptr);
-        Threads.at(Thread->GetThreadID())->GetRegFile()->SetMarkLoadComplete(nullptr);
-
         if( AssignedThreads.at(ProcID).empty() ){
           Enabled[ProcID] = false;
         }
@@ -2737,7 +2734,6 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       break;
     }
     // Pop the thread that changed state
-    // TODO: Getter is supposed to be const
     Procs[ProcID]->GetThreadsThatChangedState().pop();
   }
   return;
