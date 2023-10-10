@@ -25,7 +25,7 @@ namespace SST::RevCPU{
 
 // Enum for tracking the state of a RevThread.
 enum class ThreadState {
-  START,    // Initial state; RevCPU has not yet registered it in its Threads table
+  START,    // Initial state; RevCPU has not yet registered it in its Threads table (Used for NEWLY created threads)
   RUNNING,  // Thread is assigned and executing on a Proc/HART (NOTE: This does NOT change if a Thread is stalled)
   BLOCKED,  // Waiting for thread synchronization at this point (Currently only triggered by call to `rev_pthread_join`)
   READY,    // In the ready list; waiting for CPU (not implemented yet).

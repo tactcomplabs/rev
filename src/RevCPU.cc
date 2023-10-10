@@ -72,8 +72,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // We must always derive the number of cores before initializing the options
   // If the PAN tests are enabled, override the number cores and force them to '0'
   numCores = params.find<unsigned>("numCores", "1");
-  // TODO: Potentially move
+  
+  // number of harts to spawn per core
   numHarts = params.find<unsigned>("numHarts", "1");
+
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
   output.verbose(CALL_INFO, 1, 0, "Building Rev with %u cores\n", numCores);
@@ -2412,11 +2414,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         }
         UpdateCoreStatistics(i);
         Enabled[i] = false;
-        output.verbose(CALL_INFO, 5, 0, "Closing Processor %" PRIu64 " at Cycle: %" PRIu64 "\n",
+        output.verbose(CALL_INFO, 5, 0, "Closing Processor %zu at Cycle: %" PRIu64 "\n",
                        i, currentCycle);
       }
       if(EnableCoProc && !CoProcs[i]->ClockTick(currentCycle)){
-        output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %" PRIu64 " at Cycle: %" PRIu64 "\n",
+        output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %zu at Cycle: %" PRIu64 "\n",
                        i, currentCycle);
 
       }
@@ -2424,9 +2426,6 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
     // See if any of the threads on this proc changes state
     CheckForThreadStateChanges(i);
-
-    // See if this proc encountered something that created a new thread
-    CheckForNewThreads(i);
 
     if( Procs[i]->GetHartUtilization() == 0 ){
       Enabled[i] = false;
@@ -2547,6 +2546,7 @@ void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
 
 void RevCPU::AssignThread(uint32_t ThreadID, uint32_t ProcID){
   output.verbose(CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadID, ProcID);
+  // TODO: (BEFORE MERGE): Lee, do I need to make this an auto&
   auto Thread = Threads.at(ThreadID);
 
   // Point the regfile of this thread's LSQ to the Proc's LSQ
@@ -2558,9 +2558,10 @@ void RevCPU::AssignThread(uint32_t ThreadID, uint32_t ProcID){
   // Put the thread in the Proc's assigned threads list
   AssignedThreads.at(ProcID).emplace(ThreadID, Thread);
 
+  // Assign the thread a hart on the proc
   Procs[ProcID]->AssignThread(ThreadID);
-  return;
 
+  return;
 }
 
 // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
@@ -2673,7 +2674,6 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       // 1. Remove it from the AssignedThreads map (The Hart will automatically be updated)
       // 2. Move its ThreadID to the CompletedThreads list
       output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is DONE\n", Thread->GetThreadID(), ProcID);
-      std::cout << "Thread " << Thread->GetThreadID() << " on Core " << ProcID << " is DONE" << std::endl;
       AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
       CompletedThreads.emplace(Thread->GetThreadID());
       if( AssignedThreads.at(ProcID).empty() ){
@@ -2692,7 +2692,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       // -- 1.
       if( ThreadCanProceed(Thread->GetThreadID()) ){
         // -- 2.
-        output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " was waiting on thread %u which has already completed so it can proceed\n",
+        output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " was waiting on thread %" PRIu32 " which has already completed so it can proceed\n",
                         Thread->GetThreadID(), ProcID, Thread->GetWaitingToJoinTID());
         // Continue executing thread on same Core
         Thread->SetState(ThreadState::RUNNING);
@@ -2715,10 +2715,9 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
         if( AssignedThreads.at(ProcID).empty() ){
           Enabled[ProcID] = false;
         }
-
       }
       break;
-    case ThreadState::START: // Should never happen
+    case ThreadState::START: // This indicates a new thread was created (currently only through rev_pthread_create)
       output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu16, Thread->GetThreadID(), ProcID);
 
       // Mark it ready for execution
@@ -2745,24 +2744,11 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
                     Thread->GetThreadID(), ProcID);
       break;
     }
-    // Pop the thread that changed state
-    // TODO: Getter is supposed to be const
+    // Pop the thread that has been handled
+    // TODO: (BEFORE MERGE) Getter is supposed to be const... Any suggestions Lee?
     Procs[ProcID]->GetThreadsThatChangedState().pop();
   }
   return;
 }
 
-// Checks for new threads that may have been added to a given processor's NewThreadInfo
-void RevCPU::CheckForNewThreads(uint32_t i){
-  // Check for new threads
-  if( !Procs[i]->GetNewThreadInfo().empty() ){
-    output.verbose(CALL_INFO, 8, 0, "Core %" PRIu32 " has new threads\n", i);
-    // There are new thread(s) to create
-    for( size_t j=0; j<Procs[i]->GetNewThreadInfo().size(); j++ ){
-      auto NewThread = Procs[i]->NewThreadInfo.front();
-      Procs[i]->NewThreadInfo.pop();
-      InitThread(NewThread);
-    }
-  }
-}
 // EOF

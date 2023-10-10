@@ -120,44 +120,11 @@ public:
     uint64_t cyclesIdle_MemoryFetch;
   };
 
+  ///< RevProc: Returns this proc's stats
   RevProcStats GetStats() { Stats.memStats = mem->memStats; return Stats; }
 
+  ///< RevProc: Returns a pointer to the RevMem object
   RevMem& GetMem() const { return *mem; }
-
-  // Get the hart ids of the threads that changed state
-  // TODO: Maybe ThreadIDs?
-  std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() { return ThreadsThatChangedState; }
-  const std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() const { return ThreadsThatChangedState; }
-
-  /// RevProc: SpawnThread creates a new thread and returns its ThreadID
-  void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
-
-  /// RevProc: Returns the current HartToExec active pid
-  uint32_t GetActiveThreadID();
-
-  // TODO: Comment
-  bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
-
-  /// RevProc: Queue of threads to be spawned (RevProc creates the thread, RevCPU readies it for execution)
-  const std::queue<std::shared_ptr<RevThread>>& GetNewThreadInfo() { return NewThreadInfo; }
-
-  ///< RevProc: Holds the info for all new threads to be spawned
-  ///           Right now this is through the following functions:
-  ///           - rev_pthread_create
-  std::queue<std::shared_ptr<RevThread>> NewThreadInfo;
-
-  /// RevProc: Gets the thread that is currently executing on the HartToExec
-  /// TODO: Make this safe
-  const std::shared_ptr<RevThread>& GetThreadOnHart(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
-
-  // TODO: Make this safe
-  auto RegFileOnHart(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID())->GetRegFile(); }
-
-  ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
-  double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }
-
-  std::vector<bool> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-  std::vector<bool> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
   ///< RevProc: Get this Proc's feature
   RevFeature* GetRevFeature() const { return feature; }
@@ -168,8 +135,35 @@ public:
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
 
-  // TODO: Document & Organize Thread stuff
+  ///< RevProc: Finds a Hart that is available to assign the Thread (already inside this RevProc's AssignedThreads) 
   void AssignThread(const uint32_t& ThreadID);
+
+  /// RevProc: Returns the RevThread that is on the given Hart
+  /// TODO:(BEFORE MERGE): I'm not in love with the fact this isn't safe (you first must check if the Hart has a thread via HartHasThread)
+  const std::shared_ptr<RevThread>& ThreadOnHart(uint16_t HartID){ 
+    return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); 
+  }
+
+  ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
+  double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }
+
+  // Get the hart ids of the threads that changed state
+  std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() { return ThreadsThatChangedState; }
+
+  /// RevProc: SpawnThread creates a new thread and returns its ThreadID
+  void CreateThread(uint32_t NewThreadID, uint64_t fn, void* arg);
+
+  /// RevProc: Returns the current HartToExec active pid
+  uint32_t GetActiveThreadID();
+
+  // TODO: (BEFORE MERGE) - Potentially name this something else? It currently returns true is the scoreboard of a regfile is empty
+  bool ThreadCanBeRemoved(const uint32_t& ThreadID); ///< RevProC: Used to check if a thread can be removed (ie. has no outstanding loads)
+
+  // TODO: (BEFORE MERGE) - Potentially make this a bitset that is _MAX_HARTS_ long so we can use `.any` 
+  std::vector<bool> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+  std::vector<bool> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+
+  
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -182,7 +176,7 @@ private:
   uint64_t ExecPC;          ///< RevProc: executing PC
   uint16_t HartToDecode;    ///< RevProc: Current executing ThreadID
   uint16_t HartToExec;      ///< RevProc: Thread to dispatch instruction
-  // TODO: Potentially make these a unique_ptr
+  // TODO: (BEFORE MERGE) Potentially make these a unique_ptr
   std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts
   uint64_t Retired;         ///< RevProc: number of retired instructions
 
@@ -192,24 +186,22 @@ private:
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
 
-  /// TODO: Update comment
-  /// ThreadIDs assigned to this RevProc (AssignedThreads[i] will give you the RevThread executing on Hart i)
+  /// TODO: (BEFORE MERGE) Potentailly turn into std::unordered_set<std::shared_ptr<RevThread>> but I'm not sure 
   std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads;
 
-  // TODO: Add comment & potential error handling
-  std::shared_ptr<RevThread>& ActiveThread(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
-
-  // TODO: Potentially make inline?
+  // TODO: (BEFORE MERGE) Potentially make inline?
   bool HartHasThread(uint16_t HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;
 
   // If a given assigned thread experiences a change of state, it sets the corresponding bit
-  // TODO: Update comment
-  // - if AssignedThreads.at(i) has a state change ==> ThreadsThatChangedState.set(i)
-  // - this tells RevCPU it needs to check in on this thread and handle appropriately
-  std::queue<std::shared_ptr<RevThread>> ThreadsThatChangedState; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
+  // Threads only change state if one of the following events happen:
+  // - rev_pthread_join (Thread is BLOCKED)
+  // - rev_pthread_create (New thread is READY) --- (NOTE: The new thread is the one that is added not the one that encounters the create instruction)
+  // - Thread completes (Thread is DONE)
+  // RevCPU checks, handles, and empties this queue every cycle
+  std::queue<std::shared_ptr<RevThread>> ThreadsThatChangedState; ///< RevProc: used to signal to RevCPU that the thread has to be handled 
 
   SST::Output *output;                   ///< RevProc: output handler
   std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler
@@ -221,9 +213,6 @@ private:
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
-
-  /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
-  // RevRegFile* GetRegFile(uint16_t HartID);
 
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
@@ -568,7 +557,6 @@ private:
 
   std::vector<std::unique_ptr<RevExt>> Extensions;           ///< RevProc: vector of enabled extensions
 
-  //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
   std::vector<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
   std::map<std::string, unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
   std::map<uint32_t, unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
@@ -688,8 +676,6 @@ private:
 
   /// RevProc: Determine next thread to execute
   uint16_t GetHartID() const;
-
-  uint16_t GetNextHartToDecode();
 
   uint32_t NumReqs = 0;
 

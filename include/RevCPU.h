@@ -229,9 +229,7 @@ private:
   // - Only place where the presence of a RevThread on this CPU is guanranteed throughout execution
   std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
 
-  // TODO: update commmeent
-  // 2D vector to hold threads assigned to each processor and its corresponding harts.
-  // AssignedThreads[i][j] holds the RevThread executing on processor 'i' and hart 'j'.
+  // AssignedThreads[i] holds the RevThread executing on processor 'i'
   // Oversubscription is not supported in hardware
   // (ie. AssignedThreads.at(i).size() will never exceed the number of HARTS)
   std::vector<std::unordered_map<uint32_t, std::shared_ptr<RevThread>>> AssignedThreads;
@@ -280,7 +278,6 @@ private:
   uint32_t GetNewThreadID() { return RevRand(0, UINT32_MAX); }
 
   uint8_t PrivTag;                    ///< RevCPU: private tag locator
-  // TODO: LToken is used everywhere as uint32_t but was declared as uint64_t
   uint32_t LToken;                    ///< RevCPU: token identifier for PAN Test
 
   int address;                        ///< RevCPU: local network address
