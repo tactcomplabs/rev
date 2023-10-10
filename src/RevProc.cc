@@ -34,7 +34,7 @@ RevProc::RevProc( unsigned Id,
   std::string Machine;
   if( !Opts->GetMachineModel(id, Machine) )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to retrieve the machine model for core=%u\n", id);
+                  "Error: failed to retrieve the machine model for core=%" PRIu16 "\n", id);
 
   unsigned MinCost = 0;
   unsigned MaxCost = 0;
@@ -59,7 +59,7 @@ RevProc::RevProc( unsigned Id,
   feature = featureUP.get();
   if( !feature )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to create the RevFeature object for core=%u\n", id);
+                  "Error: failed to create the RevFeature object for core=%" PRIu16 "\n", id);
 
   unsigned Depth = 0;
   Opts->GetPrefetchDepth(Id, Depth);
@@ -70,24 +70,24 @@ RevProc::RevProc( unsigned Id,
   sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth, LSQueue, [=](const MemReq& req){ this->MarkLoadComplete(req); });
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to create the RevPrefetcher object for core=%u\n", id);
+                  "Error: failed to create the RevPrefetcher object for core=%" PRIu16 "\n", id);
 
   // load the instruction tables
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
-                  "Error : failed to load instruction table for core=%u\n", id );
+                  "Error : failed to load instruction table for core=%" PRIu16 "\n", id );
 
   // Initialize EcallTable
   InitEcallTable();
   if( Ecalls.size() <= 0 )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to initialize the Ecall Table for core=%u\n", id );
+                  "Error: failed to initialize the Ecall Table for core=%" PRIu16 "\n", id );
 
 
   // reset the core
   if( !Reset() )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to reset the core resources for core=%u\n", id );
+                  "Error: failed to reset the core resources for core=%" PRIu16 "\n", id );
 }
 
 bool RevProc::Halt(){
@@ -125,7 +125,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
 
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %u ; Enabling extension=%s\n",
+                  "Core %" PRIu16 " ; Enabling extension=%s\n",
                   id, Ext->GetName().data());
 
   // add the extension to our vector of enabled objects
@@ -148,7 +148,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
   // load the compressed instructions
   if( feature->IsModeEnabled(RV_C) ){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %u ; Enabling compressed extension=%s\n",
+                    "Core %" PRIu16 " ; Enabling compressed extension=%s\n",
                     id, Ext->GetName().data());
 
     std::vector<RevInstEntry> CT = Ext->GetCInstTable();
@@ -165,7 +165,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
     // load the optional compressed instructions
     if( Opt ){
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %u ; Enabling optional compressed extension=%s\n",
+                      "Core %" PRIu16 " ; Enabling optional compressed extension=%s\n",
                       id, Ext->GetName().data());
       CT = Ext->GetOInstTable();
 
@@ -187,7 +187,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
 
 bool RevProc::SeedInstTable(){
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %u ; Seeding instruction table for machine model=%s\n",
+                  "Core %" PRIu16 " ; Seeding instruction table for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
   // I-Extension
@@ -306,7 +306,7 @@ std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
 
 bool RevProc::InitTableMapping(){
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %u ; Initializing table mapping for machine model=%s\n",
+                  "Core %" PRIu16 " ; Initializing table mapping for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
   for( unsigned i=0; i<InstTable.size(); i++ ){
@@ -317,7 +317,7 @@ bool RevProc::InitTableMapping(){
       EncToEntry.insert(
         std::pair<uint32_t, unsigned>(CompressEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %u ; Table Entry %u = %s\n",
+                      "Core %" PRIu16 " ; Table Entry %" PRIu16 " = %s\n",
                       id,
                       CompressEncoding(InstTable[i]),
                       ExtractMnemonic(InstTable[i]).data() );
@@ -326,7 +326,7 @@ bool RevProc::InitTableMapping(){
       CEncToEntry.insert(
         std::pair<uint32_t, unsigned>(CompressCEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %u ; Compressed Table Entry %u = %s\n",
+                      "Core %" PRIu16 " ; Compressed Table Entry %" PRIu16 " = %s\n",
                       id,
                       CompressCEncoding(InstTable[i]),
                       ExtractMnemonic(InstTable[i]).data() );
@@ -337,7 +337,7 @@ bool RevProc::InitTableMapping(){
 
 bool RevProc::ReadOverrideTables(){
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %u ; Reading override tables for machine model=%s\n",
+                  "Core %" PRIu16 " ; Reading override tables for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
   std::string Table;
@@ -351,7 +351,7 @@ bool RevProc::ReadOverrideTables(){
   // open the file
   std::ifstream infile(Table);
   if( !infile.is_open() )
-    output->fatal(CALL_INFO, -1, "Error: failed to read instruction table for core=%u\n", id);
+    output->fatal(CALL_INFO, -1, "Error: failed to read instruction table for core=%" PRIu16 "\n", id);
 
   // read all the values
   std::string Inst;
@@ -1313,11 +1313,11 @@ RevInst RevProc::DecodeInst(){
 
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %u ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
+                    "Core %" PRIu16 " ; Thread %d; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
                     id, HartToDecode, PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
-                  "Error: Core %u failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
+                  "Error: Core %" PRIu16 " failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
                   id,
                   PC,
                   Inst );
@@ -1548,7 +1548,7 @@ void RevProc::HandleRegFault(unsigned width){
   }
 
   output->verbose(CALL_INFO, 5, 0,
-                  "FAULT:REG: Register fault of %u bits into register %s%u\n",
+                  "FAULT:REG: Register fault of %" PRIu16 " bits into register %s%" PRIu16 "\n",
                   width, RegPrefix, RegIdx);
 }
 
@@ -1662,7 +1662,7 @@ uint16_t RevProc::GetHartID()const{
       if(HART_CTS[nextID]){ break; };
     }
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %" PRIu16 "; Hart %" PRIu16 " switch from %" PRIu16 " to %" PRIu16 "\n",
+                    "Core %" PRIu16 "; Hart switch from %" PRIu16 " to %" PRIu16 "\n",
                     id, HartToDecode, nextID);
   }
   return nextID;
@@ -1919,7 +1919,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // note that this will continue to occur until the counter is drained
     // and the HART is halted
     output->verbose(CALL_INFO, 9, 0,
-                    "Core %u ; No available thread to exec PC= 0x%" PRIx64 "\n",
+                    "Core %" PRIu16 " ; No available thread to exec PC= 0x%" PRIx64 "\n",
                     id, ExecPC);
     rtn = true;
     Stats.cyclesIdle_Total++;
@@ -1969,7 +1969,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         switch( Status ){
         case PanExec::QExec:
           output->verbose(CALL_INFO, 5, 0,
-                          "Core %u ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
+                          "Core %" PRIu16 " ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
                           id, Addr);
           SetPC(Addr);
           // done = false;
@@ -1977,7 +1977,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         case PanExec::QNull:
           // no work to do; spin on the firmware jump PC
           output->verbose(CALL_INFO, 6, 0,
-                          "Core %u ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
+                          "Core %" PRIu16 " ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
                           id, ExecPC);
           // done = false;
           SetPC(_PAN_FWARE_JUMP_);
@@ -2000,7 +2000,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
     if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && ThreadCanBeRemoved(GetThreadOnHart(HartToExec)->GetThreadID()) ){
       output->verbose(CALL_INFO, 2, 0,
-                      "Thread %" PRIu32 " on hart %" PRIu16 " is done\n", GetThreadOnHart(HartToExec)->GetThreadID());
+                      "Thread %" PRIu32 " on hart %" PRIu16 " is done\n", GetThreadOnHart(HartToExec)->GetThreadID(), HartToExec);
       HART_CTE[HartToExec] = false;
       HART_CTS[HartToExec] = false;
       GetThreadOnHart(HartToExec)->SetState(ThreadState::DONE);
