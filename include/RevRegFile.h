@@ -11,6 +11,7 @@
 #ifndef _SST_REVCPU_REVREGFILE_H_
 #define _SST_REVCPU_REVREGFILE_H_
 
+#include <bitset>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -92,15 +93,8 @@ private:
     double DPF[_REV_NUM_REGS_]{};       ///< RevRegFile: RVxxD register file
   };
 
-  union{  // Anonymous union. We zero-initialize the largest member
-    bool RV32_Scoreboard[_REV_NUM_REGS_];   ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
-    bool RV64_Scoreboard[_REV_NUM_REGS_]{}; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
-  };
-
-  union{  // Anonymous union. We zero-initialize the largest member
-    bool SPF_Scoreboard[_REV_NUM_REGS_];    ///< RevRegFile: Scoreboard for SPF RF to manage pipeline hazard
-    bool DPF_Scoreboard[_REV_NUM_REGS_]{};  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
-  };
+  std::bitset<_REV_NUM_REGS_> RV_Scoreboard{}; ///< RevRegFile: Scoreboard for RV32/RV64 RF to manage pipeline hazard
+  std::bitset<_REV_NUM_REGS_> FP_Scoreboard{}; ///< RevRegFile: Scoreboard for SPF/DPF RF to manage pipeline hazard
 
   // Supervisor Mode CSRs
 #if 0 // not used

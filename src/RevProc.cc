@@ -1591,18 +1591,10 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
     if(reg < _REV_NUM_REGS_){
       switch(regClass){
       case RevRegClass::RegFLOAT:
-        if(feature->HasD()){
-          if(regFile->DPF_Scoreboard[reg]) return true;
-        }else{
-          if(regFile->SPF_Scoreboard[reg]) return true;
-        }
+        if(regFile->FP_Scoreboard[reg]) return true;
         break;
       case RevRegClass::RegGPR:
-        if(feature->IsRV32()){
-          if(regFile->RV32_Scoreboard[reg]) return true;
-        }else {
-          if(regFile->RV64_Scoreboard[reg]) return true;
-        }
+        if(regFile->RV_Scoreboard[reg]) return true;
         break;
       default:
         break;
@@ -1617,20 +1609,12 @@ void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
                             bool isFloat, bool value){
   RevRegFile* regFile = GetRegFile(HartID);
   if(isFloat){
-    if(RegNum < _REV_NUM_REGS_){
-      if(feature->HasD()){
-        regFile->DPF_Scoreboard[RegNum] = value;
-      }else{
-        regFile->SPF_Scoreboard[RegNum] = value;
-      }
+    if( RegNum < _REV_NUM_REGS_ ){
+      regFile->FP_Scoreboard[RegNum] = value;
     }
   }else{
-    if(RegNum != 0 && RegNum < _REV_NUM_REGS_){
-      if(feature->IsRV32()){
-        regFile->RV32_Scoreboard[RegNum] = value;
-      }else{
-        regFile->RV64_Scoreboard[RegNum] = value;
-      }
+    if( RegNum < _REV_NUM_REGS_ && RegNum != 0 ){
+      regFile->RV_Scoreboard[RegNum] = value;
     }
   }
 }
