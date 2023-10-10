@@ -1990,15 +1990,16 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         }
       }
     }else if( GetPC() == 0x00ull ) {
-      if( ThreadCanBeRemoved(GetThreadOnHart(HartToDecode)->GetThreadID())){
-        GetThreadOnHart(HartToDecode)->SetState(ThreadState::DONE);
+      auto& Thread = GetThreadOnHart(HartToDecode);
+      if( !ThreadHasDependencies(Thread->GetThreadID()) ){
+        Thread->SetState(ThreadState::DONE);
         HART_CTE[HartToDecode] = false;
         HART_CTS[HartToDecode] = false;
-        ThreadsThatChangedState.emplace(GetThreadOnHart(HartToDecode));
+        ThreadsThatChangedState.emplace(Thread);
       }
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && ThreadCanBeRemoved(GetThreadOnHart(HartToExec)->GetThreadID()) ){
+    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) ){
       HART_CTE[HartToExec] = false;
       HART_CTS[HartToExec] = false;
       GetThreadOnHart(HartToExec)->SetState(ThreadState::DONE);

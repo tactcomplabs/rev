@@ -674,6 +674,14 @@ private:
     return isFloat ? regFile->FP_Scoreboard.any() : regFile->RV_Scoreboard.any();
   }
 
+  bool ThreadHasDependencies(const uint32_t& ThreadID) const {
+    // Make sure this ThreadID is in AssignedThreads
+    if (AssignedThreads.find(ThreadID) == AssignedThreads.end()) {
+      output->fatal(CALL_INFO, -1, "Error: Tried to check if thread %" PRIu32 " has dependencies but that thread was not found in AssignedThreads. This is a bug\n", ThreadID);
+    }
+    const RevRegFile* regFile = AssignedThreads.at(ThreadID)->GetRegFile();
+    return regFile->FP_Scoreboard.any() || regFile->RV_Scoreboard.any();
+  }
 
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;

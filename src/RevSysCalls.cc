@@ -2541,7 +2541,7 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
   EcallStatus rtval = EcallStatus::CONTINUE;
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_join called by thread %" PRIu32 " on hart %" PRIu16 "\n", GetActiveThreadID(), HartToExec);
 
-  if( ThreadCanBeRemoved(Harts.at(inst.hart)->GetAssignedThreadID() ) ) {
+  if( !ThreadHasDependencies(Harts.at(HartToExec)->GetAssignedThreadID()) ){
     rtval = EcallStatus::SUCCESS;
 
     // Set current thread to blocked
