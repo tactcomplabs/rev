@@ -28,6 +28,8 @@
 
 #define _INVALID_TID_ (uint32_t{0})
 
+#define _MAX_HARTS_ 65536
+
 namespace SST::RevCPU{
 
 /// Zero-extend value of bits size

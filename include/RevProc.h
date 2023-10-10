@@ -156,8 +156,8 @@ public:
   ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
   double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }
 
-  std::vector<bool> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-  std::vector<bool> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+  std::bitset<_MAX_HARTS_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
+  std::bitset<_MAX_HARTS_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
   ///< RevProc: Get this Proc's feature
   RevFeature* GetRevFeature() const { return feature; }

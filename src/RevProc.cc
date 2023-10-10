@@ -50,8 +50,9 @@ RevProc::RevProc( unsigned Id,
   // Create the Hart Objects
   for( size_t i=0; i<numHarts; i++ ){
     Harts.emplace_back(std::make_unique<RevHart>(i));
-    HART_CTS.emplace_back(false);
-    HART_CTE.emplace_back(false);
+    // TODO: Remove Me
+    // HART_CTS.emplace_back(false);
+    // HART_CTE.emplace_back(false);
   }
 
   LSQueue = std::make_shared<std::unordered_map<uint64_t, MemReq>>();
@@ -394,8 +395,6 @@ bool RevProc::LoadInstructionTable(){
 bool RevProc::Reset(){
   // Reset the AssignedThreads
   for( auto& Thread : AssignedThreads ){
-    // TODO: Make sure this is the correct way to reset the thread
-    // TODO: Fix this 
     Thread.second.reset();
   }
 
@@ -1658,66 +1657,8 @@ void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
     }
   }
 }
-
-uint16_t RevProc::GetNextHartToDecode() {
-  // pop the most recent item from the HART_CTS queue
-  uint16_t NextHartID;
-  for( size_t i=HartToDecode+1; i<Harts.size(); i++ ){
-    if( HartHasThread(i) && Harts.at(i)->isReadyToDecode() ){
-      NextHartID = i;
-      break;
-    }
-    else {
-      NextHartID = HartToDecode;
-    }
-  }
-  if( NextHartID == HartToDecode ){
-    // Check the beginning harts 
-    for( size_t i=0; i<=HartToDecode; i++ ){
-      if( HartHasThread(i) && Harts.at(i)->isReadyToDecode() ){
-        NextHartID = i;
-        break;
-      }
-    }
-  }
-
-  return NextHartID;
-}
-
-// TODO: Remove HART_CTE & HART_CTS if possible
-// uint16_t RevProc::GetHartID() const {
-//   uint16_t NextHartID = Harts.size() + 1;
-//   // Look for next Hart that is CTS starting at the previous Hart
-//   for( uint16_t i=HartToDecode; i<Harts.size(); i++ ){
-//     if( Harts.at(i)->isReadyToDecode() ){
-//       NextHartID = i;
-//       break;
-//     }
-//   }
-//   // If we still haven't found anything, look from the beginning
-//   if( NextHartID > Harts.size() ){
-//     for( uint16_t i=0; i<HartToDecode; i++ ){
-//       if( Harts.at(i)->isReadyToDecode() ){
-//         NextHartID = i;
-//         break;
-//       }
-//     }
-//   }
-//   // Couldn't find anything, return the current HartToDecode
-//   if( NextHartID > Harts.size() ){
-//     NextHartID = HartToDecode;
-//   }
-//   // If we switched Hart's, let em know
-//   if( NextHartID != HartToDecode ){
-//     output->verbose(CALL_INFO, 6, 0,
-//                     "Core %" PRIu32 "; Hart switch from %" PRIu16 " to %" PRIu16 "\n",
-//                     id, HartToDecode, NextHartID);
-//   }
-//   return NextHartID;
-// }
-
 uint16_t RevProc::GetHartID()const{
-  if( std::none_of(HART_CTS.begin(), HART_CTS.end(), [](bool x){ return true; } )){
+  if( HART_CTS.none() ){
     return HartToDecode;
   }
 
@@ -1783,16 +1724,21 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if( HartHasThread(HartID) ){
       HART_CTS[HartID] = (GetThreadOnHart(HartID)->GetRegFile()->cost == 0);
     }
+    else {
+      HART_CTS[HartID] = false;
+    }
   }
 
   // TODO: Clean up
-  if( std::any_of(HART_CTS.begin(), HART_CTS.end(), [](bool x){ return true; }) && (!Halted)) {
+  if( HART_CTS.any() && (!Halted)) {
     // fetch the next instruction
 
     //Determine the active thread
     do {
       HartToDecode = GetHartID();
     } while( !HartHasThread(HartToDecode) && AssignedThreads.size() );
+
+    // if( !AssignedThreads.size() ){ return false; }
 
     // TODO: May be safe? May not be? 
     RegFile = GetThreadOnHart(HartToDecode)->GetRegFile();
@@ -1992,7 +1938,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     id, ExecPC);
     rtn = true;
     Stats.cyclesIdle_Total++;
-    if( std::any_of(HART_CTE.begin(), HART_CTE.end(), [](bool x){ return true; })) {
+    if( HART_CTE.any() ){
       Stats.cyclesIdle_MemoryFetch++;
     }
   }
