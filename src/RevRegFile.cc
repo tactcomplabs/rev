@@ -35,7 +35,7 @@ std::ostream& operator<<(std::ostream& os, const RevRegFile& regFile){
     uint64_t value = regFile.GetX<uint64_t>(i);
 
     // if scoreboard is not 0, there is a dependency
-    char depValue = regFile.RV64_Scoreboard[i] ? 'T' : 'F';
+    char depValue = regFile.RV_Scoreboard[i] ? 'T' : 'F';
     os << "| " << std::setw(4) << ("x" + std::to_string(i));
     os << " | " << std::setw(5) << aliases[i];
     os << " | " << std::setw(21) << ("0x" + std::to_string(value));

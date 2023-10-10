@@ -1574,7 +1574,7 @@ bool RevProc::ThreadCanBeRemoved(const uint32_t& ThreadID) {
   // TODO: (PRE-MERGE) Do this in a more ~Lee~ fashion
   if( feature->IsRV32() ){
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      if( regFile->RV32_Scoreboard[i] || regFile->SPF_Scoreboard[i] ){
+      if( regFile->RV_Scoreboard[i] ){
         return false;
       }
     }
@@ -1583,7 +1583,7 @@ bool RevProc::ThreadCanBeRemoved(const uint32_t& ThreadID) {
   // 64-bit
   else{
     for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      if( regFile->RV64_Scoreboard[i] || regFile->DPF_Scoreboard[i] ){
+      if( regFile->RV_Scoreboard[i] ){
         return false;
       }
     }

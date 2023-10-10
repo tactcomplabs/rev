@@ -2403,11 +2403,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         }
         UpdateCoreStatistics(i);
         Enabled[i] = false;
-        output.verbose(CALL_INFO, 5, 0, "Closing Processor %" PRIu64 " at Cycle: %" PRIu64 "\n",
+        output.verbose(CALL_INFO, 5, 0, "Closing Processor %zu at Cycle: %" PRIu64 "\n",
                        i, currentCycle);
       }
       if(EnableCoProc && !CoProcs[i]->ClockTick(currentCycle)){
-        output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %" PRIu64 " at Cycle: %" PRIu64 "\n",
+        output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %zu at Cycle: %" PRIu64 "\n",
                        i, currentCycle);
 
       }
