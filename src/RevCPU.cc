@@ -249,24 +249,26 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   AssignedThreads.resize(numCores);
   EnableCoProc = params.find<bool>("enableCoProc", 0);
   if(EnableCoProc){
+
+    // Create the processor objects
+    Procs.reserve(Procs.size() + numCores);
+    for( unsigned i=0; i<numCores; i++ ){
+      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), &output ) );
+    }
     // Create the co-processor objects
     for( unsigned i=0; i<numCores; i++){
-      RevCoProc* CoProc = loadUserSubComponent<RevCoProc>("co_proc");
+      RevCoProc* CoProc = loadUserSubComponent<RevCoProc>("co_proc", SST::ComponentInfo::SHARE_NONE, Procs[i]);
       if (!CoProc) {
         output.fatal(CALL_INFO, -1, "Error : failed to inintialize the co-processor subcomponent\n");
       }
       CoProcs.push_back(CoProc);
-    }
-    // Create the processor objects
-    Procs.reserve(Procs.size() + numCores);
-    for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), CoProcs[i], &output ) );
+      Procs[i]->SetCoProc(CoProc);
     }
   }else{
     // Create the processor objects
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), NULL, &output ) );
+      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), &output ) );
     }
   }
 

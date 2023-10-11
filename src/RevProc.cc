@@ -21,14 +21,13 @@ RevProc::RevProc( unsigned Id,
                   RevLoader *Loader,
                   std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads,
                   std::function<uint32_t()> GetNewTID,
-                  RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull), 
-    numHarts(NumHarts), opts(Opts), mem(Mem), loader(Loader), 
-    AssignedThreads(AssignedThreads), GetNewThreadID(std::move(GetNewTID)), 
-    output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+    id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
+    numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader), AssignedThreads(AssignedThreads),
+    GetNewThreadID(GetNewTID), output(Output), feature(nullptr),
+    PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -40,12 +39,6 @@ RevProc::RevProc( unsigned Id,
   unsigned MaxCost = 0;
 
   Opts->GetMemCost(Id, MinCost, MaxCost);
-
-  if(CoProc){
-    coProc = CoProc;
-  }else{
-    coProc = NULL;
-  }
 
   // Create the Hart Objects
   for( size_t i=0; i<numHarts; i++ ){
@@ -83,7 +76,6 @@ RevProc::RevProc( unsigned Id,
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the Ecall Table for core=%" PRIu32 "\n", id );
 
-
   // reset the core
   if( !Reset() )
     output->fatal(CALL_INFO, -1,
@@ -117,6 +109,16 @@ bool RevProc::SingleStepHart(){
   }else{
     // must be halted to single step
     return false;
+  }
+}
+
+void RevProc::SetCoProc(RevCoProc* coproc){
+  if(coProc == nullptr){
+    coProc = coproc;
+  }else{
+    output->fatal(CALL_INFO, -1,
+                  "CONFIG ERROR: Core %u : Attempting to assign a co-processor when one is already present\n",
+                  id);
   }
 }
 
@@ -397,6 +399,8 @@ bool RevProc::Reset(){
 
   Pipeline.clear();
 
+
+  CoProcStallReq.reset();
 
   return true;
 }
@@ -1621,10 +1625,30 @@ void RevProc::DependencySet(unsigned HartID, uint16_t RegNum,
   }
 }
 
-unsigned RevProc::GetHartID()const{
-  if( HART_CTS.none() ){
-    return HartToDecode;
+void RevProc::ExternalStallHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
+  if(HartID < Harts.size()){
+    CoProcStallReq.set(HartID);
+  }else{
+    output->fatal(CALL_INFO, -1,
+                  "Core %u ; CoProc Request: Cannot stall Hart %" PRIu32 " as the ID is invalid\n",
+                  id, HartID);
   }
+}
+
+void RevProc::ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
+  if(HartID < Harts.size()){
+    CoProcStallReq.reset(HartID);
+  }else{
+    output->fatal(CALL_INFO, -1,
+                  "Core %u ; CoProc Request: Cannot release Hart %" PRIu32 " as the ID is invalid\n",
+                  id, HartID);
+  }
+}
+
+
+
+unsigned RevProc::GetHartID()const{
+  if(HART_CTS.none()) { return HartToDecode;};
 
   unsigned nextID = HartToDecode;
   if(HART_CTS[HartToDecode]){
@@ -1715,7 +1739,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     // Now that we have decoded the instruction, check for pipeline hazards
-    if(Stalled || DependencyCheck(HartToDecode, &Inst)){
+    if(Stalled || DependencyCheck(HartToDecode, &Inst) || CoProcStallReq[HartToDecode]){
       RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
@@ -1960,7 +1984,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }else if( GetPC() == 0x00ull ) {
       auto& Thread = GetThreadOnHart(HartToDecode);
-      if( !ThreadHasDependencies(Thread->GetThreadID()) ){
+      if( !ThreadHasDependencies(Thread->GetThreadID()) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
         Thread->SetState(ThreadState::DONE);
         HART_CTE[HartToDecode] = false;
         HART_CTS[HartToDecode] = false;
@@ -1968,7 +1992,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) ){
+    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) \
+        && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
       HART_CTE[HartToExec] = false;
       HART_CTS[HartToExec] = false;
       GetThreadOnHart(HartToExec)->SetState(ThreadState::DONE);
