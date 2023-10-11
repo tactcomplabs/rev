@@ -44,26 +44,24 @@ public:
   SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::RevCoProc);
   SST_ELI_DOCUMENT_PARAMS({ "verbose", "Set the verbosity of output for the attached co-processor", "0" });
 
-  /// RevCoProc: default constructor
+  /// RevCoProc: Constructor
   RevCoProc( ComponentId_t id, Params& params);
 
   /// RevCoProc: default destructor
-  virtual ~RevCoProc();                               /// RevCoProc: Destructor
+  virtual ~RevCoProc();                               ///< RevCoProc: Destructor
   virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst) = 0;          /// RevCoProc: Instruction Interface to RevCore
-  virtual bool Reset() = 0;                           /// RevCoProc: Reset - called on startup
-  virtual bool Teardown() = 0;                        /// RevCoProc: Teardown - called when associated RevProc completes
-  virtual bool ClockTick(SST::Cycle_t cycle) = 0;     /// RevCoProc: Clock - can be called by SST or by overriding RevCPU
-//  virtual void DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true); 
-//  virtual void DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
-//    DependencySet(HartID, RegNum, isFloat, false);
-//  }
+  virtual bool Reset() = 0;                           ///< RevCoProc: Reset - called on startup
+  virtual bool Teardown() = 0;                        ///< RevCoProc: Teardown - called when associated RevProc completes
+  virtual bool ClockTick(SST::Cycle_t cycle) = 0;     ///< RevCoProc: Clock - can be called by SST or by overriding RevCPU
 
-  void SetParent(RevProc* parentPtr){parent = parentPtr;}
-  RevProcPasskey<RevCoProc> CreatePasskey(){return RevProcPasskey<RevCoProc>();}
+  void SetParent(RevProc* parentPtr){parent = parentPtr;} /// RevCoProc: Set the pointer back to the main RevProc this is attached to
 
 protected:
   SST::Output *output;                                ///< RevCoProc: sst output object
-  RevProc* parent;
+  RevProc     *parent;                                ///< RevCoProc: Pointer to RevProc this CoProc is attached to
+
+  ///< RevCoProc: Create the passkey object - this allows access to otherwise private members within RevProc 
+  RevProcPasskey<RevCoProc> CreatePasskey(){return RevProcPasskey<RevCoProc>();}
 }; // class RevCoProc
 
 // ----------------------------------------
@@ -140,6 +138,8 @@ private:
 
   /// Queue of instructions sent from attached RevProc
   std::queue<RevCoProcInst> InstQ;
+
+  SST::Cycle_t cycleCount;
 
 }; //class RevSimpleCoProc
 
