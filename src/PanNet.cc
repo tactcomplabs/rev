@@ -378,7 +378,7 @@ bool panNicEvent::buildRevoke(uint32_t Token, uint8_t Tag){
   return true;
 }
 
-bool panNicEvent::buildHalt(uint32_t Token, uint8_t Tag, uint16_t Hart){
+bool panNicEvent::buildHalt(uint32_t Token, uint8_t Tag, unsigned Hart){
   Opcode = Halt;
   if( !setToken(Token) )
     return false;
@@ -398,7 +398,7 @@ bool panNicEvent::buildResume(uint32_t Token, uint8_t Tag){
   return true;
 }
 
-bool panNicEvent::buildReadReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg){
+bool panNicEvent::buildReadReg(uint32_t Token, uint8_t Tag, unsigned Hart, uint64_t Reg){
   Opcode = ReadReg;
   if( !setToken(Token) )
     return false;
@@ -411,7 +411,7 @@ bool panNicEvent::buildReadReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint6
   return true;
 }
 
-bool panNicEvent::buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg, uint64_t *Data){
+bool panNicEvent::buildWriteReg(uint32_t Token, uint8_t Tag, unsigned Hart, uint64_t Reg, uint64_t *Data){
   Opcode = WriteReg;
   if( Data == nullptr )
     return false;
@@ -428,7 +428,7 @@ bool panNicEvent::buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint
   return true;
 }
 
-bool panNicEvent::buildSingleStep(uint32_t Token, uint8_t Tag, uint16_t Hart){
+bool panNicEvent::buildSingleStep(uint32_t Token, uint8_t Tag, unsigned Hart){
   Opcode = SingleStep;
   if( !setToken(Token) )
     return false;

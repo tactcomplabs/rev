@@ -20,7 +20,7 @@ namespace SST::RevCPU{
 
 class RevHart{
   ///< RevHart: Id for the Hart (0,1,2,3,etc)
-  uint16_t ID;
+  unsigned ID;
 
   ///< RevHart: State management object when a Hart is executing a system call
   std::unique_ptr<EcallState> Ecall;
@@ -40,13 +40,16 @@ public:
   ~RevHart(){}
 
   ///< RevHart: Get the EcallState
-  EcallState& GetEcallState(){ return *Ecall; }
+  EcallState& GetEcallState() { return *Ecall; }
+
+  ///< RevHart: Get the EcallState
+  EcallState& GetEcallState() const { return *Ecall; }
 
   ///< RevHart: Get Hart's ID 
-  uint16_t GetID(){ return ID; }
+  uint16_t GetID() const { return ID; }
 
   ///< RevHart: Returns the ThreadID of the assigned thread
-  uint32_t GetAssignedThreadID(){ return AssignedThreadID; }
+  uint32_t GetAssignedThreadID() const { return AssignedThreadID; }
 
   ///< RevHart: Assigns a RevThread to this Hart
   void AssignThread(const uint32_t& ThreadID){ AssignedThreadID = ThreadID; }

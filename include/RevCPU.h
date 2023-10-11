@@ -556,7 +556,7 @@ private:
   void PANBuildBasicSuccess(panNicEvent *event, panNicEvent *rtn);
 
   /// RevCPU: updates sst statistics on a per core basis
-  void UpdateCoreStatistics(uint16_t coreNum);
+  void UpdateCoreStatistics(unsigned coreNum);
 
 }; // class RevCPU
 

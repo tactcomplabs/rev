@@ -27,14 +27,14 @@ RevProc::RevProc( unsigned Id,
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull), 
     numHarts(NumHarts), opts(Opts), mem(Mem), loader(Loader), 
-    AssignedThreads(AssignedThreads), GetNewThreadID(GetNewTID), 
+    AssignedThreads(AssignedThreads), GetNewThreadID(std::move(GetNewTID)), 
     output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
   if( !Opts->GetMachineModel(id, Machine) )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to retrieve the machine model for core=%" PRIu16 "\n", id);
+                  "Error: failed to retrieve the machine model for core=%" PRIu32 "\n", id);
 
   unsigned MinCost = 0;
   unsigned MaxCost = 0;
@@ -59,7 +59,7 @@ RevProc::RevProc( unsigned Id,
   feature = featureUP.get();
   if( !feature )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to create the RevFeature object for core=%" PRIu16 "\n", id);
+                  "Error: failed to create the RevFeature object for core=%" PRIu32 "\n", id);
 
   unsigned Depth = 0;
   Opts->GetPrefetchDepth(Id, Depth);
@@ -70,24 +70,24 @@ RevProc::RevProc( unsigned Id,
   sfetch = std::make_unique<RevPrefetcher>(Mem, feature, Depth, LSQueue, [=](const MemReq& req){ this->MarkLoadComplete(req); });
   if( !sfetch )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to create the RevPrefetcher object for core=%" PRIu16 "\n", id);
+                  "Error: failed to create the RevPrefetcher object for core=%" PRIu32 "\n", id);
 
   // load the instruction tables
   if( !LoadInstructionTable() )
     output->fatal(CALL_INFO, -1,
-                  "Error : failed to load instruction table for core=%" PRIu16 "\n", id );
+                  "Error : failed to load instruction table for core=%" PRIu32 "\n", id );
 
   // Initialize EcallTable
   InitEcallTable();
   if( Ecalls.size() <= 0 )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to initialize the Ecall Table for core=%" PRIu16 "\n", id );
+                  "Error: failed to initialize the Ecall Table for core=%" PRIu32 "\n", id );
 
 
   // reset the core
   if( !Reset() )
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to reset the core resources for core=%" PRIu16 "\n", id );
+                  "Error: failed to reset the core resources for core=%" PRIu32 "\n", id );
 }
 
 bool RevProc::Halt(){
@@ -125,7 +125,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
 
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %" PRIu16 " ; Enabling extension=%s\n",
+                  "Core %" PRIu32 " ; Enabling extension=%s\n",
                   id, Ext->GetName().data());
 
   // add the extension to our vector of enabled objects
@@ -148,7 +148,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
   // load the compressed instructions
   if( feature->IsModeEnabled(RV_C) ){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %" PRIu16 " ; Enabling compressed extension=%s\n",
+                    "Core %" PRIu32 " ; Enabling compressed extension=%s\n",
                     id, Ext->GetName().data());
 
     std::vector<RevInstEntry> CT = Ext->GetCInstTable();
@@ -165,7 +165,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
     // load the optional compressed instructions
     if( Opt ){
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %" PRIu16 " ; Enabling optional compressed extension=%s\n",
+                      "Core %" PRIu32 " ; Enabling optional compressed extension=%s\n",
                       id, Ext->GetName().data());
       CT = Ext->GetOInstTable();
 
@@ -187,7 +187,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
 
 bool RevProc::SeedInstTable(){
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %" PRIu16 " ; Seeding instruction table for machine model=%s\n",
+                  "Core %" PRIu32 " ; Seeding instruction table for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
   // I-Extension
@@ -306,7 +306,7 @@ std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
 
 bool RevProc::InitTableMapping(){
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %" PRIu16 " ; Initializing table mapping for machine model=%s\n",
+                  "Core %" PRIu32 " ; Initializing table mapping for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
   for( unsigned i=0; i<InstTable.size(); i++ ){
@@ -317,7 +317,7 @@ bool RevProc::InitTableMapping(){
       EncToEntry.insert(
         std::pair<uint32_t, unsigned>(CompressEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %" PRIu16 " ; Table Entry %" PRIu16 " = %s\n",
+                      "Core %" PRIu32 " ; Table Entry %" PRIu32 " = %s\n",
                       id,
                       CompressEncoding(InstTable[i]),
                       ExtractMnemonic(InstTable[i]).data() );
@@ -326,7 +326,7 @@ bool RevProc::InitTableMapping(){
       CEncToEntry.insert(
         std::pair<uint32_t, unsigned>(CompressCEncoding(InstTable[i]), i) );
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %" PRIu16 " ; Compressed Table Entry %" PRIu16 " = %s\n",
+                      "Core %" PRIu32 " ; Compressed Table Entry %" PRIu32 " = %s\n",
                       id,
                       CompressCEncoding(InstTable[i]),
                       ExtractMnemonic(InstTable[i]).data() );
@@ -337,7 +337,7 @@ bool RevProc::InitTableMapping(){
 
 bool RevProc::ReadOverrideTables(){
   output->verbose(CALL_INFO, 6, 0,
-                  "Core %" PRIu16 " ; Reading override tables for machine model=%s\n",
+                  "Core %" PRIu32 " ; Reading override tables for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
   std::string Table;
@@ -351,7 +351,7 @@ bool RevProc::ReadOverrideTables(){
   // open the file
   std::ifstream infile(Table);
   if( !infile.is_open() )
-    output->fatal(CALL_INFO, -1, "Error: failed to read instruction table for core=%" PRIu16 "\n", id);
+    output->fatal(CALL_INFO, -1, "Error: failed to read instruction table for core=%" PRIu32 "\n", id);
 
   // read all the values
   std::string Inst;
@@ -1313,11 +1313,11 @@ RevInst RevProc::DecodeInst(){
 
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %" PRIu16 "; Hart %" PRIu16 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
+                    "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
                     id, HartToDecode, GetActiveThreadID(),  PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
-                  "Error: Core %" PRIu16 " failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
+                  "Error: Core %" PRIu32 " failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
                   id,
                   PC,
                   Inst );
@@ -1548,7 +1548,7 @@ void RevProc::HandleRegFault(unsigned width){
   }
 
   output->verbose(CALL_INFO, 5, 0,
-                  "FAULT:REG: Register fault of %" PRIu16 " bits into register %s%" PRIu16 "\n",
+                  "FAULT:REG: Register fault of %" PRIu32 " bits into register %s%" PRIu32 "\n",
                   width, RegPrefix, RegIdx);
 }
 
@@ -1566,32 +1566,7 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-bool RevProc::ThreadCanBeRemoved(const uint32_t& ThreadID) {
-  auto* regFile = AssignedThreads.at(ThreadID)->GetRegFile();
-
-  // Check the if regfile scoreboard is anything but clear 
-  // if not, this thread has outstanding requests and can't be removed
-  // TODO: (PRE-MERGE) Do this in a more ~Lee~ fashion
-  if( feature->IsRV32() ){
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      if( regFile->RV_Scoreboard[i] ){
-        return false;
-      }
-    }
-  }
-
-  // 64-bit
-  else{
-    for( unsigned i=0; i<_REV_NUM_REGS_; i++ ){
-      if( regFile->RV_Scoreboard[i] ){
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
+bool RevProc::DependencyCheck(unsigned HartID, const RevInst* I) const {
 
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
@@ -1632,7 +1607,7 @@ bool RevProc::DependencyCheck(uint16_t HartID, const RevInst* I) const {
 }
 
 /// Set or clear scoreboard based on register number and floating point
-void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
+void RevProc::DependencySet(unsigned HartID, uint16_t RegNum,
                             bool isFloat, bool value){
   RevRegFile* regFile = GetRegFile(HartID);
   if(isFloat){
@@ -1645,12 +1620,13 @@ void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
     }
   }
 }
-uint16_t RevProc::GetHartID()const{
+
+unsigned RevProc::GetHartID()const{
   if( HART_CTS.none() ){
     return HartToDecode;
   }
 
-  uint16_t nextID = HartToDecode;
+  unsigned nextID = HartToDecode;
   if(HART_CTS[HartToDecode]){
     nextID = HartToDecode;
   }else{
@@ -1662,7 +1638,7 @@ uint16_t RevProc::GetHartID()const{
       if(HART_CTS[nextID]){ break; };
     }
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %" PRIu16 "; Hart switch from %" PRIu16 " to %" PRIu16 "\n",
+                    "Core %" PRIu32 "; Hart switch from %" PRIu32 " to %" PRIu32 "\n",
                     id, HartToDecode, nextID);
   }
   return nextID;
@@ -1676,7 +1652,7 @@ void RevProc::MarkLoadComplete(const MemReq& req){
     LSQueue->erase(it);
   }else if(0 != req.DestReg){ //instruction pre-fetch fills target x0, we can ignore these
     output->fatal(CALL_INFO, -1,
-                  "Core %" PRIu16 "; Hart %" PRIu16 "; Cannot find outstanding load for reg %" PRIu16 " from address %" PRIx64 "\n",
+                  "Core %" PRIu32 "; Hart %" PRIu32 "; Cannot find outstanding load for reg %" PRIu32 " from address %" PRIx64 "\n",
                   id, req.Hart, req.DestReg, req.Addr);
   }
 }
@@ -1707,14 +1683,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else, wait until the counter is decremented to zero to retire the instruction
   //
   //
-
   for( size_t HartID=0; HartID<Harts.size(); HartID++ ){
-    if( HartHasThread(HartID) ){
-      HART_CTS[HartID] = (GetThreadOnHart(HartID)->GetRegFile()->cost == 0);
-    }
-    else {
-      HART_CTS[HartID] = false;
-    }
+    HART_CTS[HartID] = HartHasThread(HartID) && GetThreadOnHart(HartID)->GetRegFile()->cost == 0;
   }
 
   if( HART_CTS.any() && (!Halted)) {
@@ -1847,7 +1817,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
         // Ecall found
         output->verbose(CALL_INFO, 6, 0,
-                        "Core %" PRIu16 "; HartID %" PRIu16 "; ThreadID %" PRIu32 " - Exception Raised: ECALL with code = %" PRIu64 "\n",
+                        "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 " - Exception Raised: ECALL with code = %" PRIu64 "\n",
                         id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(RevReg::a7));
 #ifdef _REV_DEBUG_
         //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
@@ -1919,7 +1889,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // note that this will continue to occur until the counter is drained
     // and the HART is halted
     output->verbose(CALL_INFO, 9, 0,
-                    "Core %" PRIu16 " ; No available thread to exec PC= 0x%" PRIx64 "\n",
+                    "Core %" PRIu32 " ; No available thread to exec PC= 0x%" PRIx64 "\n",
                     id, ExecPC);
     rtn = true;
     Stats.cyclesIdle_Total++;
@@ -1936,7 +1906,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // Ready to retire this instruction
       uint16_t HartID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %" PRIu16 "; Hart %" PRIu16 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
+                      "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
                       id, HartID, GetThreadOnHart(HartID)->GetThreadID(), ExecPC);
       Retired++;
 
@@ -1969,7 +1939,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         switch( Status ){
         case PanExec::QExec:
           output->verbose(CALL_INFO, 5, 0,
-                          "Core %" PRIu16 " ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
+                          "Core %" PRIu32 " ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
                           id, Addr);
           SetPC(Addr);
           // done = false;
@@ -1977,7 +1947,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         case PanExec::QNull:
           // no work to do; spin on the firmware jump PC
           output->verbose(CALL_INFO, 6, 0,
-                          "Core %" PRIu16 " ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
+                          "Core %" PRIu32 " ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
                           id, ExecPC);
           // done = false;
           SetPC(_PAN_FWARE_JUMP_);
@@ -2033,10 +2003,10 @@ void RevProc::PrintStatSummary(){
   return;
 }
 
-RevRegFile* RevProc::GetRegFile(uint16_t HartID) const{
+RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
   if( !HartHasThread(HartID) ){
     output->fatal(CALL_INFO, 1,
-                  "Tried to get RegFile for HartID = %" PRIu16 " but there is no AssignedThread for that Hart\n", HartID);
+                  "Tried to get RegFile for Hart %" PRIu32 " but there is no AssignedThread for that Hart\n", HartID);
   }
   return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID())->GetRegFile();
 }
@@ -2425,7 +2395,7 @@ void RevProc::ExecEcall(RevInst& inst){
 // This function should never be called if there are no available harts
 // so if for some reason we can't find a hart without a thread assigned
 // to it then we have a bug.
-void RevProc::AssignThread(const uint32_t& ThreadID){
+void RevProc::AssignThread(unsigned ThreadID){
   bool ThreadAssigned = false;
   // Check for available Hart 
   for( const auto& Hart : Harts ){

@@ -138,7 +138,7 @@ public:
   bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
 
   /// RevProc: Gets the thread that is currently executing on the Hart 
-  const std::shared_ptr<RevThread>& GetThreadOnHart(uint16_t HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
+  const std::shared_ptr<RevThread>& GetThreadOnHart(unsigned HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
 
   ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
   double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }
@@ -156,7 +156,7 @@ public:
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
 
   // Find a Hart to assign ThreadID to
-  void AssignThread(const uint32_t& ThreadID);
+  void AssignThread(uint32_t ThreadID);
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -167,8 +167,8 @@ private:
   unsigned fault_width;     ///< RevProc: the width of the target fault
   unsigned id;              ///< RevProc: processor id
   uint64_t ExecPC;          ///< RevProc: executing PC
-  uint16_t HartToDecode;    ///< RevProc: Current executing ThreadID
-  uint16_t HartToExec;      ///< RevProc: Thread to dispatch instruction
+  unsigned HartToDecode;    ///< RevProc: Current executing ThreadID
+  unsigned HartToExec;      ///< RevProc: Thread to dispatch instruction
   std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts
   uint64_t Retired;         ///< RevProc: number of retired instructions
 
@@ -182,7 +182,7 @@ private:
   std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads;
 
   // Checks to see if a given HartID has an assigned thread by checking if the threadid on that Hart still exists in the AssignedThreads map
-  bool HartHasThread(uint16_t HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
+  bool HartHasThread(unsigned HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;
@@ -200,9 +200,6 @@ private:
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
-
-  /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
-  // RevRegFile* GetRegFile(uint16_t HartID);
 
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
@@ -541,7 +538,7 @@ private:
   void ExecEcall(RevInst &inst);
 
   /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
-  RevRegFile* GetRegFile(uint16_t HartID) const;
+  RevRegFile* GetRegFile(unsigned HartID) const;
 
   std::vector<RevInstEntry> InstTable;        ///< RevProc: target instruction table
 
@@ -666,28 +663,29 @@ private:
   }
 
   /// RevProc: Determine next thread to execute
-  uint16_t GetHartID() const;
+  unsigned GetHartID() const;
 
   /// RevProc: Whether any scoreboard bits are set
-  bool AnyDependency(uint16_t HartID, bool isFloat) const {
+  bool AnyDependency(unsigned HartID, bool isFloat) const {
     const RevRegFile* regFile = GetRegFile(HartID);
     return isFloat ? regFile->FP_Scoreboard.any() : regFile->RV_Scoreboard.any();
   }
 
+  /// RevProc: Checks if a given Thread w/ ThreadID has any dependencies
   bool ThreadHasDependencies(const uint32_t& ThreadID) const {
     // Make sure this ThreadID is in AssignedThreads
     if (AssignedThreads.find(ThreadID) == AssignedThreads.end()) {
       output->fatal(CALL_INFO, -1, "Error: Tried to check if thread %" PRIu32 " has dependencies but that thread was not found in AssignedThreads. This is a bug\n", ThreadID);
     }
     const RevRegFile* regFile = AssignedThreads.at(ThreadID)->GetRegFile();
-    return regFile->FP_Scoreboard.any() || regFile->RV_Scoreboard.any();
+    return regFile->RV_Scoreboard.any() || regFile->FP_Scoreboard.any();
   }
 
   /// RevProc: Check scoreboard for pipeline hazards
-  bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;
+  bool DependencyCheck(unsigned HartID, const RevInst* Inst) const;
 
   /// RevProc: Set or clear scoreboard based on instruction destination
-  void DependencySet(uint16_t HartID, const RevInst* Inst, bool value = true){
+  void DependencySet(unsigned HartID, const RevInst* Inst, bool value = true){
     DependencySet(HartID,
                   Inst->rd,
                   InstTable[Inst->entry].rdClass == RevRegClass::RegFLOAT,
@@ -695,15 +693,15 @@ private:
   }
 
   /// RevProc: Clear scoreboard on instruction retirement
-  void DependencyClear(uint16_t HartID, const RevInst* Inst){
+  void DependencyClear(unsigned HartID, const RevInst* Inst){
     DependencySet(HartID, Inst, false);
   }
 
   /// RevProc: Set or clear scoreboard based on register number and floating point.
-  void DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true);
+  void DependencySet(unsigned HartID, uint16_t RegNum, bool isFloat, bool value = true);
 
   /// RevProc: Clear scoreboard on instruction retirement
-  void DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
+  void DependencyClear(unsigned HartID, uint16_t RegNum, bool isFloat){
     DependencySet(HartID, RegNum, isFloat, false);
   }
 

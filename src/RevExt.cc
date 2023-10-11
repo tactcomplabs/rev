@@ -11,7 +11,7 @@
 #include "../include/RevExt.h"
 using namespace SST::RevCPU;
 
-bool RevExt::Execute(unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile){
+bool RevExt::Execute(unsigned Inst, const RevInst& payload, unsigned HartID, RevRegFile* regFile){
   bool (*func)(RevFeature *,
                RevRegFile *,
                RevMem *,

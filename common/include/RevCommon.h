@@ -21,7 +21,7 @@
 #endif
 
 #ifndef _REV_INVALID_HART_ID_
-#define _REV_INVALID_HART_ID_ (uint16_t(~0))
+#define _REV_INVALID_HART_ID_ (unsigned(~0))
 #endif
 
 #define _INVALID_ADDR_ (~uint64_t{0})
@@ -74,13 +74,13 @@ struct MemReq{
   MemReq() = default;
 
   MemReq(uint64_t addr, uint16_t dest, RevRegClass regclass,
-         uint16_t hart, MemOp req, bool outstanding, std::function<void(MemReq)> func) :
+         unsigned hart, MemOp req, bool outstanding, std::function<void(MemReq)> func) :
     Addr(addr), DestReg(dest), RegType(regclass), Hart(hart),
     ReqType(req), isOutstanding(outstanding), MarkLoadComplete(func)
   {
   }
 
-  void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, uint16_t hart, MemOp req, bool outstanding,
+  void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, unsigned hart, MemOp req, bool outstanding,
            std::function<void(MemReq)> func)
   {
     Addr = addr; DestReg = dest; RegType = regclass; Hart = hart;
@@ -91,7 +91,7 @@ struct MemReq{
   uint64_t    Addr          = _INVALID_ADDR_;
   uint16_t    DestReg       = 0;
   RevRegClass RegType       = RevRegClass::RegUNKNOWN;
-  uint16_t    Hart          = _REV_INVALID_HART_ID_;
+  unsigned    Hart          = _REV_INVALID_HART_ID_;
   MemOp       ReqType       = MemOp::MemOpCUSTOM;
   bool        isOutstanding = false;
 

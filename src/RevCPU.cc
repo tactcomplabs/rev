@@ -72,15 +72,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // We must always derive the number of cores before initializing the options
   // If the PAN tests are enabled, override the number cores and force them to '0'
   numCores = params.find<unsigned>("numCores", "1");
-  numHarts = params.find<unsigned>("numHarts", "1");
+  numHarts = params.find<uint16_t>("numHarts", "1");
   
   // Make sure someone isn't trying to have more than 65536 harts per core
   if( numHarts > _MAX_HARTS_ ){
-    output.fatal(CALL_INFO, -1, "Error: number of harts must be <= %" PRIu16 "\n", _MAX_HARTS_);
+    output.fatal(CALL_INFO, -1, "Error: number of harts must be <= %" PRIu32 "\n", _MAX_HARTS_);
   }
   if( EnablePANTest )
     numCores = 1; // force the PAN test to use a single core
-  output.verbose(CALL_INFO, 1, 0, "Building Rev with %" PRIu16 " cores and %" PRIu16 " hart(s) on each core \n", numCores, numHarts);
+  output.verbose(CALL_INFO, 1, 0, "Building Rev with %" PRIu32 " cores and %" PRIu32 " hart(s) on each core \n", numCores, numHarts);
 
   // read the binary executable name
   Exe = params.find<std::string>("program", "a.out");
@@ -2376,7 +2376,7 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
   }
 }
 
-void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
+void RevCPU::UpdateCoreStatistics(unsigned coreNum){
   RevProc::RevProcStats stats = Procs[coreNum]->GetStats();
   TotalCycles[coreNum]->addData(stats.totalCycles);
   CyclesWithIssue[coreNum]->addData(stats.cyclesBusy);
@@ -2649,12 +2649,11 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
   return;
 }
 
-
 // Checks for state changes in the threads of a given processor index 'i'
 // and handle appropriately
 void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
   // Handle any thread state changes for this core
-  // NOTE: At this point we handle EVERY thread that changed state
+  // NOTE: At this point we handle EVERY thread that changed state every cycle
   while( !Procs[ProcID]->GetThreadsThatChangedState().empty() ){
     auto& Thread = Procs[ProcID]->GetThreadsThatChangedState().front();
     // Handle the thread that changed state based on the new state
@@ -2695,8 +2694,6 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
         // -- 3a.
         BlockedThreads.emplace(Thread->GetThreadID());
 
-        std::cout << Thread->to_string();
-        
         // -- 3b.
         AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
         
@@ -2707,7 +2704,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       }
       break;
     case ThreadState::START: // Should never happen
-      output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu16, Thread->GetThreadID(), ProcID);
+      output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu32, Thread->GetThreadID(), ProcID);
 
       // Mark it ready for execution
       Thread->SetState(ThreadState::READY);
@@ -2725,7 +2722,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
 
     case ThreadState::READY:
       // If this happens we are not setting state when assigning thread somewhere
-      output.fatal(CALL_INFO, 99, "Error: Thread %" PRIu32 " on Core %" PRIu32 " is assigned but is in START state... This is a bug\n",
+      output.fatal(CALL_INFO, 99, "Error: Thread %" PRIu32 " on Core %" PRIu32 " is assigned but is in READY state... This is a bug\n",
                     Thread->GetThreadID(), ProcID);
       break;
     default: // Should DEFINITELY never happen
@@ -2739,17 +2736,4 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
   return;
 }
 
-// Checks for new threads that may have been added to a given processor's NewThreadInfo
-//void RevCPU::CheckForNewThreads(uint32_t i){
-//  // Check for new threads
-//  if( !Procs[i]->GetNewThreadInfo().empty() ){
-//    output.verbose(CALL_INFO, 8, 0, "Core %" PRIu32 " has new threads\n", i);
-//    // There are new thread(s) to create
-//    for( size_t j=0; j<Procs[i]->GetNewThreadInfo().size(); j++ ){
-//      auto NewThread = Procs[i]->NewThreadInfo.front();
-//      Procs[i]->NewThreadInfo.pop();
-//      InitThread(NewThread);
-//    }
-//  }
-//}
 // EOF
