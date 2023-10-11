@@ -31,14 +31,16 @@
 #include "RevFeature.h"
 #include "RevMem.h"
 #include "RevInstTable.h"
+#include "RevProcPasskey.h"
+#include "RevProc.h"
 
 namespace SST::RevCPU{
-
+class RevProc;
 // ----------------------------------------
 // RevCoProc
 // ----------------------------------------
-struct RevCoProc : SST::SubComponent {
-
+class RevCoProc : public SST::SubComponent {
+public:
   SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::RevCoProc);
   SST_ELI_DOCUMENT_PARAMS({ "verbose", "Set the verbosity of output for the attached co-processor", "0" });
 
@@ -51,9 +53,17 @@ struct RevCoProc : SST::SubComponent {
   virtual bool Reset() = 0;                           /// RevCoProc: Reset - called on startup
   virtual bool Teardown() = 0;                        /// RevCoProc: Teardown - called when associated RevProc completes
   virtual bool ClockTick(SST::Cycle_t cycle) = 0;     /// RevCoProc: Clock - can be called by SST or by overriding RevCPU
+//  virtual void DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true); 
+//  virtual void DependencyClear(uint16_t HartID, uint16_t RegNum, bool isFloat){
+//    DependencySet(HartID, RegNum, isFloat, false);
+//  }
+
+  void SetParent(RevProc* parentPtr){parent = parentPtr;}
+  RevProcPasskey<RevCoProc> CreatePasskey(){return RevProcPasskey<RevCoProc>();}
 
 protected:
   SST::Output *output;                                ///< RevCoProc: sst output object
+  RevProc* parent;
 }; // class RevCoProc
 
 // ----------------------------------------
@@ -110,6 +120,7 @@ public:
   ///                   also signal to SST that the co-processor is done if ClockTick is registered
   ///                   to SSTCore vs. being driven by RevCPU
   virtual bool Teardown() { return Reset(); };
+
 
 private:
   struct RevCoProcInst {

@@ -22,12 +22,16 @@ RevCoProc::RevCoProc(ComponentId_t id, Params& params)
 
   uint32_t verbosity = params.find<uint32_t>("verbose");
   output = new SST::Output("[RevCoProc @t]: ", verbosity, 0, SST::Output::STDOUT);
-
+  parent = nullptr;
 }
 
 RevCoProc::~RevCoProc(){
   delete output;
 }
+
+//void RevCoProc::DependencySet(uint16_t HartID, uint16_t RegNum, bool isFloat, bool value){
+//  parent->DependencySet(HartID, RegNum, isFloat, value);
+//}
 
 
 // ---------------------------------------------------------------
@@ -53,6 +57,8 @@ RevSimpleCoProc::~RevSimpleCoProc(){
 bool RevSimpleCoProc::IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){
   RevCoProcInst inst = RevCoProcInst(Inst, F, R, M);
   std::cout << "CoProc instruction issued: " << std::hex << Inst << std::dec << std::endl;
+  RevCoProc* base = this;
+  parent->ExternalDepSet(RevCoProc::CreatePasskey(), F->GetHartToExec(), 7, false);
   InstQ.push(inst);
   return true;
 }
@@ -69,6 +75,8 @@ bool RevSimpleCoProc::Reset(){
 bool RevSimpleCoProc::ClockTick(SST::Cycle_t cycle){
   if(!InstQ.empty()){
     uint32_t inst = InstQ.front().Inst;
+    RevCoProc* base = this;
+    parent->ExternalDepClear(RevCoProc::CreatePasskey(), InstQ.front().Feature->GetHartToExec(), 7, false);
     num_instRetired->addData(1);
     InstQ.pop();
     std::cout << "CoProcessor to execute instruction: " << std::hex << inst << std::endl;

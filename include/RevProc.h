@@ -48,12 +48,14 @@
 #include "RevCoProc.h"
 #include "RevThread.h"
 #include "RevRand.h"
+#include "RevProcPasskey.h"
 #include "../common/syscalls/SysFlags.h"
 #include "../common/include/RevCommon.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
 namespace SST::RevCPU{
+class RevCoProc;
 
 class RevProc{
 public:
@@ -155,6 +157,30 @@ public:
 
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
+
+//--------------- External Interface for use with Co-Processor -------------------------
+  ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalDepSet(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true);
+
+  ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc 
+  void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat);
+
+  ///< RevProc: Allow a co-processor to stall the pipeline of this proc and hold it in a stall condition
+  ///  unitl ExternalReleaseHart() is called. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalStallHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
+
+  ///< RevProc: Allow a co-processor to release the pipeline of this proc and allow a hart to continue
+  ///  execution (this un-does the ExternalStallHart() function ). Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
+  //------------- END External Interface -------------------------------
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
