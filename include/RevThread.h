@@ -12,8 +12,6 @@
 #ifndef _SST_REVCPU_REVTHREAD_H_
 #define _SST_REVCPU_REVTHREAD_H_
 
-#define __INVALID_TID__ 0x0
-
 // -- Standard Headers
 #include <cstdint>
 #include <set>
@@ -47,7 +45,7 @@ class RevThread {
   std::unordered_set<uint32_t> ChildrenThreadIDs = {}; // Child thread IDs
   std::unordered_set<int> fildes = {0, 1, 2};          // Default file descriptors
 
-  uint32_t WaitingToJoinTID = __INVALID_TID__;
+  uint32_t WaitingToJoinTID = _INVALID_TID_;
 
 public:
   RevThread(uint32_t ThreadID, uint32_t ParentThreadID,

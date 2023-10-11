@@ -95,6 +95,7 @@ public:
     {"program",         "Sets the binary executable",                   "a.out" },
     {"args",            "Sets the argument list",                       ""},
     {"numCores",        "Number of RISC-V cores to instantiate",        "1" },
+    {"numHarts",        "Number of harts (per core) to instantiate",    "1" },
     {"memSize",         "Main memory size in bytes",                    "1073741824"},
     {"startAddr",       "Starting PC of the target core",               "core:0x80000000"},
     {"startSymbol",     "Starting symbol name of the target core",      "core:symbol"},
@@ -210,6 +211,7 @@ public:
 
 private:
   unsigned numCores;                  ///< RevCPU: number of RISC-V cores
+  unsigned numHarts;                  ///< RevCPU: number of RISC-V cores
   unsigned msgPerCycle;               ///< RevCPU: number of messages to send per cycle
   unsigned RDMAPerCycle;              ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
   unsigned testStage;                 ///< RevCPU: controls the PAN Test harness staging
@@ -227,11 +229,9 @@ private:
   // - Only place where the presence of a RevThread on this CPU is guanranteed throughout execution
   std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
 
-  // 2D vector to hold threads assigned to each processor and its corresponding harts.
-  // AssignedThreads[i][j] holds the RevThread executing on processor 'i' and hart 'j'.
   // Oversubscription is not supported in hardware
-  // (ie. AssignedThreads.at(i).size() will never exceed the number of HARTS)
-  std::vector<std::vector<std::shared_ptr<RevThread>>> AssignedThreads;
+  // (ie. AssignedThreads.at(i).size() will never exceed the numHarts)
+  std::vector<std::unordered_map<uint32_t, std::shared_ptr<RevThread>>> AssignedThreads;
 
   // Initializes a RevThread object.
   // - Moves it to the 'Threads' map
@@ -277,7 +277,6 @@ private:
   uint32_t GetNewThreadID() { return RevRand(0, UINT32_MAX); }
 
   uint8_t PrivTag;                    ///< RevCPU: private tag locator
-  // TODO: LToken is used everywhere as uint32_t but was declared as uint64_t
   uint32_t LToken;                    ///< RevCPU: token identifier for PAN Test
 
   int address;                        ///< RevCPU: local network address
@@ -557,7 +556,7 @@ private:
   void PANBuildBasicSuccess(panNicEvent *event, panNicEvent *rtn);
 
   /// RevCPU: updates sst statistics on a per core basis
-  void UpdateCoreStatistics(uint16_t coreNum);
+  void UpdateCoreStatistics(unsigned coreNum);
 
 }; // class RevCPU
 

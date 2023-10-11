@@ -76,8 +76,6 @@ enum class RndMode : uint8_t {
   DYN = 7,   // In instruction's rm field, selects dynamic rounding mode; invalid in FCSR
 };
 
-inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
 enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format
@@ -136,6 +134,7 @@ struct RevInst {
   bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
   uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
+  uint16_t hart       = 0;  ///< RevInst: What hart is this inst being executed on
 
   explicit RevInst() = default; // prevent aggregate initialization
 

@@ -53,7 +53,7 @@ std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
   os << " ==> State: " << StateString << "\n";
   os << " ==> ParentTID: " << Thread.GetParentThreadID() << "\n";
   os << " ==> Blocked by TID: " ;
-  if (Thread.GetWaitingToJoinTID() != __INVALID_TID__) {
+  if (Thread.GetWaitingToJoinTID() != _INVALID_TID_) {
     os << Thread.GetWaitingToJoinTID();
   } else {
     os << "N/A";
