@@ -11,7 +11,8 @@
 
 #ifndef __REV_PROC_PASSKEY__
 #define __REV_PROC_PASSKEY__
-
+namespace SST::RevCPU{
+  
 template<typename T>
 class RevProcPasskey{
   private:
@@ -20,5 +21,5 @@ class RevProcPasskey{
   RevProcPasskey(const RevProcPasskey&) {};
   RevProcPasskey& operator=(const RevProcPasskey&) = delete;
 };
-
+}
 #endif
