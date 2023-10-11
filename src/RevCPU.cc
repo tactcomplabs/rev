@@ -248,7 +248,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
       Procs.push_back( new RevProc( i, Opts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), &output ) );
-    //  CoProcs[i]->SetParent(Procs.back());
     }
     // Create the co-processor objects
     for( unsigned i=0; i<numCores; i++){
