@@ -17,24 +17,22 @@ using namespace RevCPU;
 // ---------------------------------------------------------------
 // RevCoProc
 // ---------------------------------------------------------------
-RevCoProc::RevCoProc(ComponentId_t id, Params& params)
-  : SubComponent(id), output(nullptr) {
+RevCoProc::RevCoProc(ComponentId_t id, Params& params, RevProc* parent)
+  : SubComponent(id), output(nullptr), parent(parent) {
 
   uint32_t verbosity = params.find<uint32_t>("verbose");
   output = new SST::Output("[RevCoProc @t]: ", verbosity, 0, SST::Output::STDOUT);
-  parent = nullptr;
 }
 
 RevCoProc::~RevCoProc(){
   delete output;
-  parent = nullptr;
 }
 
 // ---------------------------------------------------------------
 // RevSimpleCoProc
 // ---------------------------------------------------------------
-RevSimpleCoProc::RevSimpleCoProc(ComponentId_t id, Params& params)
-  : RevCoProc(id, params), num_instRetired(0) {
+RevSimpleCoProc::RevSimpleCoProc(ComponentId_t id, Params& params, RevProc* parent)
+  : RevCoProc(id, params, parent), num_instRetired(0) {
 
   std::string ClockFreq = params.find<std::string>("clock", "1Ghz");
   cycleCount = 0;

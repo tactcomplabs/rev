@@ -20,12 +20,11 @@ RevProc::RevProc( unsigned Id,
                   RevLoader *Loader,
                   std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
                   std::function<uint32_t()> GetNewTID,
-                  RevCoProc* CoProc,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
-    opts(Opts), mem(Mem), loader(Loader), AssignedThreads(AssignedThreads),
+    opts(Opts), mem(Mem), coProc(nullptr), loader(Loader), AssignedThreads(AssignedThreads),
     GetNewThreadID(GetNewTID), output(Output), feature(nullptr),
     PExec(nullptr), sfetch(nullptr) {
 
@@ -39,12 +38,6 @@ RevProc::RevProc( unsigned Id,
   unsigned MaxCost = 0;
 
   Opts->GetMemCost(Id, MinCost, MaxCost);
-
-  if(CoProc){
-    coProc = CoProc;
-  }else{
-    coProc = NULL;
-  }
 
   LSQueue = std::make_shared<std::unordered_map<uint64_t, MemReq>>();
   LSQueue->clear();
@@ -110,6 +103,16 @@ bool RevProc::SingleStepHart(){
   }else{
     // must be halted to single step
     return false;
+  }
+}
+
+void RevProc::SetCoProc(RevCoProc* coproc){
+  if(coProc == nullptr){
+    coProc = coproc;
+  }else{
+    output->fatal(CALL_INFO, -1,
+                  "CONFIG ERROR: Core %u : Attempting to assign a co-processor when one is already present\n",
+                  id);
   }
 }
 
@@ -1639,6 +1642,8 @@ void RevProc::ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
                   id, HartID);
   }
 }
+
+
 
 uint16_t RevProc::GetHartID()const{
   if(HART_CTS.none()) { return HartToDecode;};

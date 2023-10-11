@@ -63,7 +63,7 @@ public:
   RevProc( unsigned Id, RevOpts *Opts, RevMem *Mem, RevLoader *Loader,
            std::vector<std::shared_ptr<RevThread>>& AssignedThreads,
            std::function<uint32_t()> GetNewThreadID,
-           RevCoProc* CoProc, SST::Output *Output );
+           SST::Output *Output );
 
   /// RevProc: standard desctructor
   ~RevProc() = default;
@@ -157,6 +157,9 @@ public:
 
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
+
+  ///< RevProc: Add a co-processor to the RevProc
+  void SetCoProc(RevCoProc* coproc);
 
 //--------------- External Interface for use with Co-Processor -------------------------
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
