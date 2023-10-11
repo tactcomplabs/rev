@@ -24,7 +24,6 @@
 
 namespace SST::RevCPU{
 
-
 enum class EcallStatus{
   SUCCESS = 0,
   CONTINUE = EXCEPTION_CAUSE::ECALL_USER_MODE,
@@ -48,8 +47,5 @@ struct EcallState {
     buf[0] = '\0';
   }
 };
-
-
-
 }
 #endif
