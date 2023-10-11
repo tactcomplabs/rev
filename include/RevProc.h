@@ -162,12 +162,16 @@ public:
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
   ///  RevProc
-  void ExternalDepSet(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true);
+  void ExternalDepSet(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true){
+    DependencySet(HartID, RegNum, isFloat, value);
+  }
 
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
   ///  RevProc 
-  void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat);
+  void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat){
+    DependencyClear(HartID, RegNum, isFloat);
+  }
 
   ///< RevProc: Allow a co-processor to stall the pipeline of this proc and hold it in a stall condition
   ///  unitl ExternalReleaseHart() is called. Note the RevProcPassKey may only
@@ -221,6 +225,8 @@ private:
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
+
+  std::bitset<_REV_HART_COUNT_> CoProcStallReq;
 
   /// RevProc: Get a pointer to the register file loaded into Hart w/ HartID
   // RevRegFile* GetRegFile(uint16_t HartID);

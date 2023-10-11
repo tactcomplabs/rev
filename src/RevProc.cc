@@ -77,7 +77,6 @@ RevProc::RevProc( unsigned Id,
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the Ecall Table for core=%u\n", id );
 
-
   // reset the core
   if( !Reset() )
     output->fatal(CALL_INFO, -1,
@@ -395,6 +394,8 @@ bool RevProc::Reset(){
   HART_CTS.set();
 
   ECALL.clear();
+
+  CoProcStallReq.reset();
 
   return true;
 }
@@ -1619,6 +1620,26 @@ void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
   }
 }
 
+void RevProc::ExternalStallHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
+  if(HartID < _REV_HART_COUNT_){
+    CoProcStallReq.set(HartID);
+  }else{
+    output->fatal(CALL_INFO, -1,
+                  "Core %u ; CoProc Request: Cannot stall Hart %d as the ID is invalid\n",
+                  id, HartID);
+  }
+}
+
+void RevProc::ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
+  if(HartID < _REV_HART_COUNT_){
+    CoProcStallReq.reset(HartID);
+  }else{
+    output->fatal(CALL_INFO, -1,
+                  "Core %u ; CoProc Request: Cannot release Hart %d as the ID is invalid\n",
+                  id, HartID);
+  }
+}
+
 uint16_t RevProc::GetHartID()const{
   if(HART_CTS.none()) { return HartToDecode;};
 
@@ -1708,7 +1729,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     // Now that we have decoded the instruction, check for pipeline hazards
-    if(Stalled || DependencyCheck(HartToDecode, &Inst)){
+    if(Stalled || DependencyCheck(HartToDecode, &Inst) || CoProcStallReq[HartToDecode]){
       RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
       HART_CTE[HartToDecode] = false;
