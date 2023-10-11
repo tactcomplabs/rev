@@ -84,6 +84,12 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
   }
 }
 
+void RevMemOp::setTempT(std::vector<uint8_t> T){
+  for( auto i : T ){
+    tempT.push_back(i);
+  }
+}
+
 // ---------------------------------------------------------------
 // RevMemCtrl
 // ---------------------------------------------------------------
@@ -1343,6 +1349,13 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,
 
   StandardMem::Request::flags_t flags = Tmp->getFlags();
   std::vector<uint8_t> buffer = Tmp->getBuf();
+  std::vector<uint8_t> tempT;
+
+  tempT.clear();
+  uint8_t *TmpBuf8 = static_cast<uint8_t *>(Target);
+  for( size_t i = 0; i < Tmp->getSize(); i++ ){
+    tempT.push_back(TmpBuf8[i]);
+  }
 
   if( Tmp->getSize() == 4 ){
     // 32-bit (W) AMOs
@@ -1362,7 +1375,6 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,
 
   // copy the target data over to the buffer and build the memory request
   buffer.clear();
-  uint8_t *TmpBuf8 = static_cast<uint8_t *>(Target);
   for( size_t i = 0; i < Tmp->getSize(); i++ ){
     buffer.push_back(TmpBuf8[i]);
   }
@@ -1372,6 +1384,10 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,
                               buffer,
                               MemOp::MemOpWRITE,
                               Tmp->getFlags());
+  Op->setTempT(tempT);
+  for( unsigned i = 0; i < Op->getSize(); i++ ){
+    TmpBuf8[i] = tempT[i];
+  }
 
   // Retrieve the memory request object, but DO NOT mark the load
   // as complete.  The actual write response from the read-modify-write
@@ -1452,6 +1468,8 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     // this was a write request for an AMO, clear the hazard
     const MemReq& r = op->getMemReq();
     if( isAMO ){
+      // write the target
+      std::vector<uint8_t> tempT = op->getTempT();
       r.MarkLoadComplete(r);
     }
     delete op;

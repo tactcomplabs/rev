@@ -7,4 +7,10 @@ int main() {
         assert(a == 1);
         a++;    //amoadd
         assert(a == 2);
+
+        std::atomic<unsigned long long> b;
+        b = 1;  //amoswap
+        assert(b == 1);
+        b++;    //amoadd
+        assert(b == 2);
 }

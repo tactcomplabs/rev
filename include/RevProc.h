@@ -716,6 +716,12 @@ private:
   /// RevProc: Determine next thread to execute
   uint16_t GetHartID() const;
 
+  /// RevProc: Whether any scoreboard bits are set
+  bool AnyDependency(uint16_t HartID, bool isFloat) const {
+    const RevRegFile* regFile = GetRegFile(HartID);
+    return isFloat ? regFile->FP_Scoreboard.any() : regFile->RV_Scoreboard.any();
+  }
+
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(uint16_t HartID, const RevInst* Inst) const;
 

@@ -2292,10 +2292,7 @@ void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
   // select a random processor core
   unsigned Core = 0;
   if( numCores > 1 ){
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(0, numCores-1); // define the range
-    Core = distr(gen);
+    Core = RevRand(0, numCores-1);
   }
 
   Procs[Core]->HandleCrackFault(fault_width);
@@ -2314,10 +2311,7 @@ void RevCPU::HandleRegFault(SST::Cycle_t currentCycle){
   // select a random processor core
   unsigned Core = 0;
   if( numCores > 1 ){
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(0, numCores-1); // define the range
-    Core = distr(gen);
+    Core = RevRand(0, numCores-1);
   }
 
   Procs[Core]->HandleRegFault(fault_width);
@@ -2330,10 +2324,7 @@ void RevCPU::HandleALUFault(SST::Cycle_t currentCycle){
   // select a random processor core
   unsigned Core = 0;
   if( numCores > 1 ){
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(0, numCores-1); // define the range
-    Core = distr(gen);
+    Core = RevRand(0, numCores-1);
   }
 
   Procs[Core]->HandleALUFault(fault_width);

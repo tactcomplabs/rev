@@ -551,12 +551,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
 
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
-  //check to see if we're about to walk off the page....
-  // uint32_t adjPageNum = 0;
-  // uint64_t adjPhysAddr = 0;
-  // uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
   char *BaseMem = &physMem[physAddr];
-  // char *DataMem = (char *)(Target);
 
   if( ctrl ){
     // sending to the RevMemCtrl
@@ -564,18 +559,33 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
                          static_cast<char *>(Data), Target, req, flags);
   }else{
     // process the request locally
+    char *TmpD = new char [8]{};
+    char *TmpT = new char [8]{};
+    std::memset(TmpD, 0, 8);
+    std::memcpy(TmpD, static_cast<char *>(Data), Len);
+    std::memset(TmpT, 0, 8);
+
     ReadMem(Hart, Addr, Len, Target, req, flags);
 
+    std::memcpy(TmpT, static_cast<char *>(Target), Len);
     if( Len == 4 ){
-      ApplyAMO(flags, Target, *static_cast<uint32_t*>(Data));
+      ApplyAMO(flags, Target, *(uint32_t *)(TmpD));
     }else{
-      ApplyAMO(flags, Target, *static_cast<uint64_t*>(Data));
+      ApplyAMO(flags, Target, *(uint64_t *)(TmpD));
     }
 
-    WriteMem(Hart, Addr, Len, Target);
+    WriteMem(Hart, Addr, Len, Target, flags);
+
+    if( Len == 4 ){
+      std::memcpy((uint32_t *)(Target), (uint32_t *)(TmpT), Len);
+    }else{
+      std::memcpy((uint64_t *)(Target), (uint64_t *)(TmpT), Len);
+    }
 
     // clear the hazard
     req.MarkLoadComplete(req);
+    delete[] TmpD;
+    delete[] TmpT;
   }
 
   return true;

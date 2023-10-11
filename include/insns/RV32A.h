@@ -74,8 +74,16 @@ class RV32A : public RevExt {
 
     MemReq req;
     if( R->IsRV32 ){
-      req.Set(R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete());
-      R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+      req.Set(R->RV32[Inst.rs1],
+              Inst.rd,
+              RevRegClass::RegGPR,
+              F->GetHartToExec(),
+              MemOp::MemOpAMO,
+              true,
+              R->GetMarkLoadComplete());
+      R->LSQueue->insert({make_lsq_hash(Inst.rd,
+                                        RevRegClass::RegGPR,
+                                        F->GetHartToExec()), req});
       M->AMOVal(F->GetHartToExec(),
                 R->RV32[Inst.rs1],
                 &R->RV32[Inst.rs2],
@@ -84,8 +92,16 @@ class RV32A : public RevExt {
                 flags);
     }else{
       flags |= uint32_t(RevCPU::RevFlag::F_SEXT64);
-      req.Set(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete());
-      R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExec()), req});
+      req.Set(R->RV64[Inst.rs1],
+              Inst.rd,
+              RevRegClass::RegGPR,
+              F->GetHartToExec(),
+              MemOp::MemOpAMO,
+              true,
+              R->GetMarkLoadComplete());
+      R->LSQueue->insert({make_lsq_hash(Inst.rd,
+                                        RevRegClass::RegGPR,
+                                        F->GetHartToExec()), req});
       M->AMOVal(F->GetHartToExec(),
                 R->RV64[Inst.rs1],
                 reinterpret_cast<int32_t*>(&R->RV64[Inst.rs2]),

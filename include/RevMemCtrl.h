@@ -136,6 +136,9 @@ public:
   /// RevMemOp: retrieve the memory buffer
   std::vector<uint8_t> getBuf() const { return membuf; }
 
+  /// RevMemOp: retrieve the temporary target buffer
+  std::vector<uint8_t> getTempT() const { return tempT; }
+
   /// RevMemOp: retrieve the memory operation flags
   StandardMem::Request::flags_t getFlags() const { return flags; }
 
@@ -154,8 +157,11 @@ public:
   /// RevMemOp: set the hart
   void setHart(unsigned H) { Hart = H ;}
 
-  ///RevMemOp: set the originating memory request
+  /// RevMemOp: set the originating memory request
   void setMemReq(const MemReq& req) { procReq = req;}
+
+  /// RevMemOp: set the temporary target buffer
+  void setTempT(std::vector<uint8_t> T);
 
   /// RevMemOp: retrieve the invalidate flag
   bool getInv() const { return Inv; }
@@ -185,6 +191,7 @@ private:
   unsigned CustomOpc; ///< RevMemOp: custom memory opcode
   unsigned SplitRqst; ///< RevMemOp: number of split cache line requests
   std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
+  std::vector<uint8_t> tempT;           ///< RevMemOp: temporary target buffer for R-M-W ops
   StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
   void *target;                         ///< RevMemOp: target register pointer
   MemReq procReq;                       ///< RevMemOp: original request from RevProc
@@ -633,7 +640,7 @@ private:
 
   std::vector<StandardMem::Request::id_t> requests;               ///< outstanding StandardMem requests
   std::vector<RevMemOp *> rqstQ;                                  ///< queued memory requests
-  std::map<StandardMem::Request::id_t, RevMemOp *> outstanding;    ///< map of outstanding requests
+  std::map<StandardMem::Request::id_t, RevMemOp *> outstanding;   ///< map of outstanding requests
 
 #define AMOTABLE_HART   0
 #define AMOTABLE_BUFFER 1
