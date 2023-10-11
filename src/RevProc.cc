@@ -1911,8 +1911,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Retired++;
 
       // Only clear the dependency if there is no outstanding load
-      if((Pipeline.front().second.rd != 0) && 
-        (RegFile->GetLSQueue()->count(make_lsq_hash(Pipeline.front().second.rd,
+      if((RegFile->GetLSQueue()->count(make_lsq_hash(Pipeline.front().second.rd,
                                                                  InstTable[Pipeline.front().second.entry].rdClass,
                                                                  HartID))) == 0){
         DependencyClear(HartID, &(Pipeline.front().second));
