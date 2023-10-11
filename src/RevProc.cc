@@ -1984,7 +1984,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }else if( GetPC() == 0x00ull ) {
       auto& Thread = GetThreadOnHart(HartToDecode);
-      if( !ThreadHasDependencies(Thread->GetThreadID()) ){
+      if( !ThreadHasDependencies(Thread->GetThreadID()) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
         Thread->SetState(ThreadState::DONE);
         HART_CTE[HartToDecode] = false;
         HART_CTS[HartToDecode] = false;
@@ -1992,7 +1992,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       }
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) ){
+    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) \
+        && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
       HART_CTE[HartToExec] = false;
       HART_CTS[HartToExec] = false;
       GetThreadOnHart(HartToExec)->SetState(ThreadState::DONE);

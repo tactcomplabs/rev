@@ -53,6 +53,7 @@ public:
   virtual bool Reset() = 0;                           ///< RevCoProc: Reset - called on startup
   virtual bool Teardown() = 0;                        ///< RevCoProc: Teardown - called when associated RevProc completes
   virtual bool ClockTick(SST::Cycle_t cycle) = 0;     ///< RevCoProc: Clock - can be called by SST or by overriding RevCPU
+  virtual bool IsDone() = 0;                          ///< RevCoProc: Returns true when co-processor has completed execution - used for proper exiting of associated RevProc
 
 protected:
   SST::Output*   output;                                ///< RevCoProc: sst output object
@@ -117,6 +118,8 @@ public:
   ///                   to SSTCore vs. being driven by RevCPU
   virtual bool Teardown() { return Reset(); };
 
+  /// RevSimpleCoProc: Returns true if instruction queue is empty
+  virtual bool IsDone(){ return InstQ.empty();}
 
 private:
   struct RevCoProcInst {
