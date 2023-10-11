@@ -70,7 +70,7 @@ public:
     features = RevFeatureType{features | Type};
   }
 
-  /// GetMachineModel: retreive the feature string
+  /// GetMachineModel: retrieve the feature string
   auto GetMachineModel() const { return machine; }
 
   /// GetFeatures: retrieve the feature encoding

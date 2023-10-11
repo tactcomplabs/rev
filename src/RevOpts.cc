@@ -240,12 +240,10 @@ bool RevOpts::GetStartSymbol( unsigned Core, std::string &Symbol ){
   if( Core > numCores )
     return false;
 
-  if( startSym.find(Core) == startSym.end() ){
-    Symbol = "main";
-    //Symbol = "_start";
-  }else{
-    Symbol = startSym.at(Core);
-  }
+  if( startSym.find(Core) == startSym.end() )
+    return false;
+
+  Symbol = startSym.at(Core);
   return true;
 }
 
