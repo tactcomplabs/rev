@@ -1630,7 +1630,7 @@ void RevProc::ExternalStallHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
     CoProcStallReq.set(HartID);
   }else{
     output->fatal(CALL_INFO, -1,
-                  "Core %u ; CoProc Request: Cannot stall Hart %d as the ID is invalid\n",
+                  "Core %u ; CoProc Request: Cannot stall Hart %" PRIu32 " as the ID is invalid\n",
                   id, HartID);
   }
 }
@@ -1640,7 +1640,7 @@ void RevProc::ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
     CoProcStallReq.reset(HartID);
   }else{
     output->fatal(CALL_INFO, -1,
-                  "Core %u ; CoProc Request: Cannot release Hart %d as the ID is invalid\n",
+                  "Core %u ; CoProc Request: Cannot release Hart %" PRIu32 " as the ID is invalid\n",
                   id, HartID);
   }
 }
