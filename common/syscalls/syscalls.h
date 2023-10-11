@@ -3743,9 +3743,9 @@ typedef unsigned long int rev_pthread_t;
 // pthread_t *restrict thread
 // const pthread_attr_t *restrict attr - NOT USED RIGHT NOW
 // void *(*start_routine)(void *)
-// void *restrict arg); - NOT USED RIGHT NOW
+// void *restrict arg); 
 // ==================== REV PTHREADS
-int rev_pthread_create( rev_pthread_t* thread, void* fn, void* arg ){
+int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ){
   int rc;
   asm volatile (
     "li a7, 1000 \n\t"

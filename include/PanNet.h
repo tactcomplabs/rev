@@ -188,19 +188,19 @@ public:
   bool buildRevoke(uint32_t Token, uint8_t Tag);
 
   /// panNicEvent: build a halt packet
-  bool buildHalt(uint32_t Token, uint8_t Tag, uint16_t Hart);
+  bool buildHalt(uint32_t Token, uint8_t Tag, unsigned Hart);
 
   /// panNicEvent: build a resume packet
   bool buildResume(uint32_t Token, uint8_t Tag);
 
   /// panNicEvent: build a readreg packet
-  bool buildReadReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg);
+  bool buildReadReg(uint32_t Token, uint8_t Tag, unsigned Hart, uint64_t Reg);
 
   /// panNicEvent: build a writereg packet
-  bool buildWriteReg(uint32_t Token, uint8_t Tag, uint16_t Hart, uint64_t Reg, uint64_t *Data);
+  bool buildWriteReg(uint32_t Token, uint8_t Tag, unsigned Hart, uint64_t Reg, uint64_t *Data);
 
   /// panNicEvent: build a singlestep packet
-  bool buildSingleStep(uint32_t Token, uint8_t Tag, uint16_t Hart);
+  bool buildSingleStep(uint32_t Token, uint8_t Tag, unsigned Hart);
 
   /// panNicEvent: build a set future packet
   bool buildSetFuture(uint32_t Token, uint8_t Tag, uint64_t Addr);
