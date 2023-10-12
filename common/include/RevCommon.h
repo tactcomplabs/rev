@@ -45,6 +45,24 @@ constexpr auto SignExt(T val, size_t bits){
   return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
 }
 
+/// Base-2 logarithm of integers
+template<typename T>
+constexpr int lg(T x){
+  // We select the __builtin_clz which takes integers the same size as x
+  if(x){
+    if constexpr(sizeof(T) == sizeof(int)){
+      return 8*sizeof(T)-1 - __builtin_clz(x);
+    }else if constexpr(sizeof(T) == sizeof(long)){
+      return 8*sizeof(T)-1 - __builtin_clzl(x);
+    }else if constexpr(sizeof(T) == sizeof(long long)){
+      return 8*sizeof(T)-1 - __builtin_clzll(x);
+    }else{
+      static_assert(sizeof(T) == 0, "Unhandled type in lg()");
+    }
+  }
+  return -1;
+}
+
 enum class RevRegClass : uint8_t { ///< Rev CPU Register Classes
   RegUNKNOWN  = 0,           ///< RevRegClass: Unknown register file
   RegIMM      = 1,           ///< RevRegClass: Treat the reg class like an immediate: S-Format
