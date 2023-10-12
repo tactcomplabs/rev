@@ -17,26 +17,25 @@ using namespace RevCPU;
 // ---------------------------------------------------------------
 // RevCoProc
 // ---------------------------------------------------------------
-RevCoProc::RevCoProc(ComponentId_t id, Params& params)
-  : SubComponent(id), output(nullptr) {
+RevCoProc::RevCoProc(ComponentId_t id, Params& params, RevProc* parent)
+  : SubComponent(id), output(nullptr), parent(parent) {
 
   uint32_t verbosity = params.find<uint32_t>("verbose");
   output = new SST::Output("[RevCoProc @t]: ", verbosity, 0, SST::Output::STDOUT);
-
 }
 
 RevCoProc::~RevCoProc(){
   delete output;
 }
 
-
 // ---------------------------------------------------------------
 // RevSimpleCoProc
 // ---------------------------------------------------------------
-RevSimpleCoProc::RevSimpleCoProc(ComponentId_t id, Params& params)
-  : RevCoProc(id, params), num_instRetired(0) {
+RevSimpleCoProc::RevSimpleCoProc(ComponentId_t id, Params& params, RevProc* parent)
+  : RevCoProc(id, params, parent), num_instRetired(0) {
 
   std::string ClockFreq = params.find<std::string>("clock", "1Ghz");
+  cycleCount = 0;
 
   registerStats();
 
@@ -53,6 +52,7 @@ RevSimpleCoProc::~RevSimpleCoProc(){
 bool RevSimpleCoProc::IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){
   RevCoProcInst inst = RevCoProcInst(Inst, F, R, M);
   std::cout << "CoProc instruction issued: " << std::hex << Inst << std::dec << std::endl;
+  //parent->ExternalDepSet(CreatePasskey(), F->GetHartToExec(), 7, false);
   InstQ.push(inst);
   return true;
 }
@@ -69,9 +69,15 @@ bool RevSimpleCoProc::Reset(){
 bool RevSimpleCoProc::ClockTick(SST::Cycle_t cycle){
   if(!InstQ.empty()){
     uint32_t inst = InstQ.front().Inst;
+    //parent->ExternalDepClear(CreatePasskey(), InstQ.front().Feature->GetHartToExec(), 7, false);
     num_instRetired->addData(1);
+    parent->ExternalStallHart(CreatePasskey(), 0);
     InstQ.pop();
     std::cout << "CoProcessor to execute instruction: " << std::hex << inst << std::endl;
+    cycleCount = cycle;
   }
+    if((cycle - cycleCount) > 500){
+      parent->ExternalReleaseHart(CreatePasskey(), 0);
+    }
   return true;
 }

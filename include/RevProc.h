@@ -48,6 +48,7 @@
 #include "RevCoProc.h"
 #include "RevThread.h"
 #include "RevRand.h"
+#include "RevProcPasskey.h"
 #include "RevHart.h"
 #include "../common/syscalls/SysFlags.h"
 #include "../common/include/RevCommon.h"
@@ -55,13 +56,14 @@
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
 namespace SST::RevCPU{
+class RevCoProc;
 
 class RevProc{
 public:
   /// RevProc: standard constructor
   RevProc( unsigned Id, RevOpts *Opts, unsigned NumHarts, RevMem *Mem, RevLoader *Loader,
            std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads,
-           std::function<uint32_t()> GetNewThreadID, RevCoProc* CoProc, SST::Output *Output );
+           std::function<uint32_t()> GetNewThreadID, SST::Output *Output );
 
   /// RevProc: standard desctructor
   ~RevProc() = default;
@@ -159,6 +161,36 @@ public:
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
 
+  ///< RevProc: Add a co-processor to the RevProc
+  void SetCoProc(RevCoProc* coproc);
+
+//--------------- External Interface for use with Co-Processor -------------------------
+  ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalDepSet(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true){
+    DependencySet(HartID, RegNum, isFloat, value);
+  }
+
+  ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc 
+  void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat){
+    DependencyClear(HartID, RegNum, isFloat);
+  }
+
+  ///< RevProc: Allow a co-processor to stall the pipeline of this proc and hold it in a stall condition
+  ///  unitl ExternalReleaseHart() is called. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalStallHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
+
+  ///< RevProc: Allow a co-processor to release the pipeline of this proc and allow a hart to continue
+  ///  execution (this un-does the ExternalStallHart() function ). Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
+  //------------- END External Interface -------------------------------
   // Find a Hart to assign ThreadID to
   void AssignThread(uint32_t ThreadID);
 
@@ -205,6 +237,7 @@ private:
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
+  std::bitset<_MAX_HARTS_> CoProcStallReq;
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
 
