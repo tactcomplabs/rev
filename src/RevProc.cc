@@ -25,9 +25,9 @@ RevProc::RevProc( unsigned Id,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull), 
-    numHarts(NumHarts), opts(Opts), mem(Mem), loader(Loader), 
-    AssignedThreads(AssignedThreads), GetNewThreadID(std::move(GetNewTID)), 
+    id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
+    numHarts(NumHarts), opts(Opts), mem(Mem), loader(Loader),
+    AssignedThreads(AssignedThreads), GetNewThreadID(std::move(GetNewTID)),
     output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
 
   // initialize the machine model for the target core
@@ -1684,11 +1684,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   //
   //
   for( size_t HartID=0; HartID<Harts.size(); HartID++ ){
-    HART_CTS[HartID] = HartHasThread(HartID) && GetThreadOnHart(HartID)->GetRegFile()->cost == 0;
+    auto tp = GetThreadOnHart(HartID);
+    HART_CTS[HartID] = tp != nullptr && tp->GetRegFile()->cost == 0;
   }
 
   if( HART_CTS.any() && (!Halted)) {
-    // Determine what hart is ready to decode 
+    // Determine what hart is ready to decode
     do {
       HartToDecode = GetHartID();
     } while( !HartHasThread(HartToDecode) && AssignedThreads.size() );
@@ -2003,11 +2004,14 @@ void RevProc::PrintStatSummary(){
 }
 
 RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
-  if( !HartHasThread(HartID) ){
+  auto& tp = GetThreadOnHart(HartID);
+
+  if( tp == nullptr ) {
     output->fatal(CALL_INFO, 1,
                   "Tried to get RegFile for Hart %" PRIu32 " but there is no AssignedThread for that Hart\n", HartID);
   }
-  return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID())->GetRegFile();
+
+  return tp->GetRegFile();
 }
 
 void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
@@ -2396,19 +2400,19 @@ void RevProc::ExecEcall(RevInst& inst){
 // to it then we have a bug.
 void RevProc::AssignThread(unsigned ThreadID){
   bool ThreadAssigned = false;
-  // Check for available Hart 
+  // Check for available Hart
   for( const auto& Hart : Harts ){
     // If the hart has no thread assigned to it, assign it
-    if( !(HartHasThread(Hart->GetID())) ){
+    if( !HartHasThread(Hart->GetID()) ){
       Hart->AssignThread(ThreadID);
       ThreadAssigned = true;
       break;
     }
   }
 
-  // If we weren't able 
+  // If we weren't able
   if( !ThreadAssigned ){
-    output->fatal(CALL_INFO, 1, "Attempted to schedule thread %" PRIu32 " but no available harts were found.\n" 
+    output->fatal(CALL_INFO, 1, "Attempted to schedule thread %" PRIu32 " but no available harts were found.\n"
                                 "We should never have tried to schedule a thread on this Proc if it had no Harts available (ie. HartUtil == 100%%).\n"
                                 "This is a bug\n", ThreadID);
   }
@@ -2417,14 +2421,11 @@ void RevProc::AssignThread(unsigned ThreadID){
 }
 
 uint32_t RevProc::GetActiveThreadID(){
-  uint32_t ActiveThreadID = 0;
-  if( HartHasThread(HartToDecode) ){
-    ActiveThreadID = Harts.at(HartToDecode)->GetAssignedThreadID();
-  }
-  else {
+  uint32_t tid = Harts.at(HartToDecode)->GetAssignedThreadID();
+  if( AssignedThreads.find(tid) == AssignedThreads.end() ){
     output->fatal(CALL_INFO, 1, "HartToDecode = %" PRIu32 " and this hart currently has no thread assigned to it. This may be a bug\n", HartToDecode);
   }
-  return ActiveThreadID;
+  return tid;
 }
 
 // EOF

@@ -326,7 +326,7 @@ EcallStatus RevProc::ECALL_mknodat(RevInst& inst){
 // TODO: 34, rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
 EcallStatus RevProc::ECALL_mkdirat(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: mkdirat called");
-  EcallState ECALL = Harts.at(HartToExec)->GetEcallState();
+  EcallState& ECALL = Harts.at(HartToExec)->GetEcallState();
   auto dirfd = RegFile->GetX<int>(RevReg::a0);
   auto path = RegFile->GetX<uint64_t>(RevReg::a1);
   auto mode = RegFile->GetX<unsigned short>(RevReg::a2);

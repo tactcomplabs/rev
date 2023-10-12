@@ -137,8 +137,12 @@ public:
   // Checks if this thread has any reason it cannot be removed by RevCPU (ie. Dependencies / outstanding loads)
   bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
 
-  /// RevProc: Gets the thread that is currently executing on the Hart 
-  const std::shared_ptr<RevThread>& GetThreadOnHart(unsigned HartID){ return AssignedThreads.at(Harts.at(HartID)->GetAssignedThreadID()); }
+  /// RevProc: Gets the thread that is currently executing on the Hart
+  const std::shared_ptr<RevThread>& GetThreadOnHart(unsigned HartID) const {
+    static const std::shared_ptr<RevThread> null;
+    auto it = AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID());
+    return it != AssignedThreads.end() ? it->second : null;
+  }
 
   ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
   double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }

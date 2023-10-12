@@ -23,41 +23,35 @@ class RevHart{
   unsigned ID;
 
   ///< RevHart: State management object when a Hart is executing a system call
-  std::unique_ptr<EcallState> Ecall;
+  EcallState Ecall{};
 
   ///< RevHart: Thread currently executing on this Hart
-  uint32_t AssignedThreadID;
+  uint32_t AssignedThreadID = _INVALID_TID_;
 
 public:
   ///< RevHart: Constructor
-  RevHart(uint16_t id) 
-      : ID(id), 
-        Ecall(std::make_unique<EcallState>()), 
-        AssignedThreadID(_INVALID_TID_) {
-  }
+  RevHart(uint16_t id) : ID(id) { }
 
   ///< RevHart: Destructor
-  ~RevHart(){}
+  ~RevHart() = default;
 
   ///< RevHart: Get the EcallState
-  EcallState& GetEcallState() { return *Ecall; }
+  EcallState& GetEcallState() { return Ecall; }
+  const EcallState& GetEcallState() const { return Ecall; }
 
-  ///< RevHart: Get the EcallState
-  EcallState& GetEcallState() const { return *Ecall; }
-
-  ///< RevHart: Get Hart's ID 
+  ///< RevHart: Get Hart's ID
   uint16_t GetID() const { return ID; }
 
   ///< RevHart: Returns the ThreadID of the assigned thread
   uint32_t GetAssignedThreadID() const { return AssignedThreadID; }
 
   ///< RevHart: Assigns a RevThread to this Hart
-  void AssignThread(const uint32_t& ThreadID){ AssignedThreadID = ThreadID; }
+  void AssignThread(uint32_t ThreadID){ AssignedThreadID = ThreadID; }
 
   ///< RevHart: Removed a RevThread from this Hart
   void UnassignThread(){ AssignedThreadID = _INVALID_TID_; }
 
-};
+}; // class RevHart
 
-};
+} // namespace SST::RevCPU
 #endif
