@@ -1708,7 +1708,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   //
   //
   for( size_t HartID=0; HartID<Harts.size(); HartID++ ){
-    auto tp = GetThreadOnHart(HartID);
+    auto& tp = GetThreadOnHart(HartID);
     HART_CTS[HartID] = tp != nullptr && tp->GetRegFile()->cost == 0;
   }
 
