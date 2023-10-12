@@ -48,19 +48,16 @@ constexpr auto SignExt(T val, size_t bits){
 /// Base-2 logarithm of integers
 template<typename T>
 constexpr int lg(T x){
-  // We select the __builtin_clz which takes integers the same size as x
-  if(x){
-    if constexpr(sizeof(T) == sizeof(int)){
-      return 8*sizeof(T)-1 - __builtin_clz(x);
-    }else if constexpr(sizeof(T) == sizeof(long)){
-      return 8*sizeof(T)-1 - __builtin_clzl(x);
-    }else if constexpr(sizeof(T) == sizeof(long long)){
-      return 8*sizeof(T)-1 - __builtin_clzll(x);
-    }else{
-      static_assert(sizeof(T) == 0, "Unhandled type in lg()");
-    }
+  static_assert(std::is_integral_v<T>);
+
+  // We select the __builtin_clz which takes integers no smaller than x
+  if constexpr(sizeof(x) <= sizeof(int)){
+    return x ? 8*sizeof(int)-1 - __builtin_clz(x) : -1;
+  }else if constexpr(sizeof(x) <= sizeof(long)){
+    return x ? 8*sizeof(long)-1 - __builtin_clzl(x) : -1;
+  }else{
+    return x ? 8*sizeof(long long)-1 - __builtin_clzll(x) : -1;
   }
-  return -1;
 }
 
 enum class RevRegClass : uint8_t { ///< Rev CPU Register Classes
