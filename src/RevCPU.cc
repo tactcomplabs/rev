@@ -272,6 +272,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     }
   }
 
+  // Setup timeConverter
+  for( unsigned i=0; i<Procs.size(); i++){
+    Procs[i]->SetTimeConverter(timeConverter);
+  }
+
   // Initial thread setup
   uint32_t MainThreadID = id+1; // Prevents having MainThreadID == 0 which is reserved for INVALID
 

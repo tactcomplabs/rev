@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <time.h>
 
 /* Clone Flags */
 #define CSIGNAL              0x000000ff /* Signal mask to be sent at exit */
@@ -230,6 +231,7 @@ typedef struct __user_cap_header_struct {
   int pid;
 } *cap_user_header_t;
 
+#define __kernel_timespec timespec
 
 union sigval {
         int sival_int;

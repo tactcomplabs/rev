@@ -959,6 +959,18 @@ EcallStatus RevProc::ECALL_clock_settime(RevInst& inst){
 // 113, rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
 EcallStatus RevProc::ECALL_clock_gettime(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: clock_gettime called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
+  struct timeval src, *tp = (struct timeval *) RegFile->GetX<uint64_t>(RevReg::a1);
+
+  if (timeConverter == nullptr) {
+    RegFile->SetX(RevReg::a0, EINVAL);
+    return EcallStatus::SUCCESS;
+  }
+  memset(&src, 0, sizeof(*tp));
+  SimTime_t x = timeConverter->convertToCoreTime(Stats.totalCycles);
+  src.tv_sec = x / 1000000000000ull;
+  src.tv_usec = (x/1000) % 1000000000ull;
+  mem->WriteMem(HartToExec, (size_t)tp, sizeof(*tp), &src);
+  RegFile->SetX(RevReg::a0, 0);
   return EcallStatus::SUCCESS;
 }
 
