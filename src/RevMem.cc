@@ -24,7 +24,7 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *
   : memSize(MemSize), opts(Opts), ctrl(Ctrl), output(Output) {
   // Note: this constructor assumes the use of the memHierarchy backend
   pageSize = 262144; //Page Size (in Bytes)
-  addrShift = int(log(pageSize) / log(2.0));
+  addrShift = lg(pageSize);
   nextPage = 0;
 
   // We initialize StackTop to the size of memory minus 1024 bytes
@@ -43,7 +43,7 @@ RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output )
   // allocate the backing memory, zeroing it
   physMem = new char [memSize]{};
   pageSize = 262144; //Page Size (in Bytes)
-  addrShift = int(log(pageSize) / log(2.0));
+  addrShift = lg(pageSize);
   nextPage = 0;
 
   if( !physMem )
