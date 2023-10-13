@@ -2489,8 +2489,9 @@ EcallStatus RevProc::ECALL_process_madvise(RevInst& inst){
 EcallStatus RevProc::ECALL_pthread_create(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: pthread_create called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
   uint64_t tidAddr     = RegFile->GetX<uint64_t>(RevReg::a0);
-  uint64_t NewThreadPC = RegFile->GetX<uint64_t>(RevReg::a1);
-  uint64_t ArgPtr      = RegFile->GetX<uint64_t>(RevReg::a2);
+  //uint64_t AttrPtr     = RegFile->GetX<uint64_t>(RevReg::a1);
+  uint64_t NewThreadPC = RegFile->GetX<uint64_t>(RevReg::a2);
+  uint64_t ArgPtr      = RegFile->GetX<uint64_t>(RevReg::a3);
   unsigned long int NewTID = GetNewThreadID();
   CreateThread(NewTID, NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 
