@@ -1682,6 +1682,10 @@ void RevProc::MarkLoadComplete(const MemReq& req){
 }
 
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
+  union {
+    uint32_t RV32b[_REV_NUM_REGS_];
+    uint64_t RV64b[_REV_NUM_REGS_];
+  };
   RevInst Inst;
 
   bool rtn = false;
@@ -1795,10 +1799,47 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       DependencySet(HartToExec, &(Pipeline.back().second));
       // -- END new pipelining implementation
 
+      // backup INT register state for tracing
+      if(output->getVerboseLevel() >= 9) {
+        if (feature->IsRV32()) {
+          for (int i = 0; i < _REV_NUM_REGS_; i++) {
+            RV32b[i] = RegFile->RV32[i];
+          }
+        } else if (feature->IsRV64()) {
+            for (int i = 0; i < _REV_NUM_REGS_; i++) {
+              RV64b[i] = RegFile->RV64[i];
+            }
+         }
+      }
       // execute the instruction
       if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec, RegFile) ){
         output->fatal(CALL_INFO, -1,
                       "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
+      }
+
+      // log INT register changes
+      if(output->getVerboseLevel() >= 9) {
+        if (feature->IsRV32()) {
+          for (int i = 0; i < _REV_NUM_REGS_; i++) {
+	    if (RV32b[i] != RegFile->RV32[i]) {
+              output->verbose(CALL_INFO, 9, 0 , "Core %d REG[%d] 0x%x -> 0x%x\n", id, i, RV32b[i], RegFile->RV32[i]);
+              if (output->getVerboseLevel() > 9) {
+	        continue;
+              }
+	    }
+          output->verbose(CALL_INFO, 10, 0 , "Core %d REG[%d] 0x%x\n", id, i, RegFile->RV32[i]);
+          }
+        } else if (feature->IsRV64()) {
+          for (int i = 0; i < _REV_NUM_REGS_; i++) {
+            if (RV64b[i] != RegFile->RV64[i]) {
+              output->verbose(CALL_INFO, 9, 0 , "Core %d REG[%d] 0x%lx -> 0x%lx\n", id, i, RV64b[i], RegFile->RV64[i]);
+              if (output->getVerboseLevel() > 9) {
+	        continue;
+	      }
+	    }
+            output->verbose(CALL_INFO, 10, 0 , "Core %d REG[%d] 0x%lx\n", id, i, RegFile->RV64[i]);
+          }
+        }
       }
 
 #ifdef __REV_DEEP_TRACE__
