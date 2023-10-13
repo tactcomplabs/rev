@@ -652,6 +652,7 @@ void RevCPU::PANHandleSuccess(panNicEvent *event){
     if( std::get<0>(*GetIter) == event->getTag() ){
       // found a valid entry; setup the memory write
       uint64_t *Data = new uint64_t [event->getNumBlocks(std::get<2>(*GetIter))];
+      event->getData(Data);
       Mem->WriteMem(0,
                     std::get<1>(*GetIter),
                     std::get<2>(*GetIter),
