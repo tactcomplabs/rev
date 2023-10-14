@@ -2063,6 +2063,9 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // Copy the arg to the new threads a0 register
   NewThread->GetRegFile()->SetX(RevReg::a0, reinterpret_cast<uintptr_t>(arg));
 
+  // Set the global pointer
+  NewThread->GetRegFile()->SetX(RevReg::gp, loader->GetSymbolAddr("__global_pointer$"));
+
   // Add new thread to this vector so the RevCPU will add and schedule it
   ThreadsThatChangedState.emplace(NewThread);
 
