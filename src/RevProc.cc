@@ -2384,6 +2384,8 @@ void RevProc::InitEcallTable(){
     { 440, &RevProc::ECALL_process_madvise},        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
     { 1000, &RevProc::ECALL_pthread_create},        //
     { 1001, &RevProc::ECALL_pthread_join},          //
+
+    { 3000, &RevProc::ECALL_updown_task_spawn}      // 3000, updown_task_spawn(uint64_t command);
   };
 }
 

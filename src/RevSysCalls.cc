@@ -2529,3 +2529,11 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
   }
   return rtval;
 }
+
+// 3000, updown_task_spawn(uint64_t command)
+EcallStatus RevProc::ECALL_updown_task_spawn(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: updown_task_spawn called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
+
+  uint64_t command = RegFile->GetX<uint64_t>(RevReg::a0);
+  
+}

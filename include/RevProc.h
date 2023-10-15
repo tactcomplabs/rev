@@ -561,6 +561,9 @@ private:
   EcallStatus ECALL_pthread_join(RevInst& inst);           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
 
+  // =============== UpDown Task Spawn instructions
+  EcallStatus ECALL_updown_task_spawn(RevInst& inst);     // 3000, updown_task_spawn(uint64_t command);
+
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
   std::unordered_map<uint32_t, std::function<EcallStatus(RevProc*, RevInst&)>> Ecalls;
 
