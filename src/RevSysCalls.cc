@@ -2540,4 +2540,5 @@ EcallStatus RevProc::ECALL_updown_task_spawn(RevInst& inst){
     return EcallStatus::SUCCESS;
   }
   
+    return EcallStatus::SUCCESS;
 }
