@@ -504,7 +504,7 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
 // 57, rev_close(unsigned int fd)
 EcallStatus RevProc::ECALL_close(RevInst& inst){
   auto fd = RegFile->GetX<int>(RevReg::a0);
-  auto ActiveThread = AssignedThreads.at(HartToExec);
+  auto ActiveThread = GetThreadOnHart(HartToExec);
 
   // Check if CurrCtx has fd in fildes vector
   if( !ActiveThread->FindFD(fd) ){
@@ -562,7 +562,7 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
   auto BufSize = RegFile->GetX<uint64_t>(RevReg::a2);
 
   /* Check if Current Ctx has access to the fd */
-  auto ActiveThread = AssignedThreads.at(HartToExec);
+  auto ActiveThread = GetThreadOnHart(HartToExec);
 
   if( !ActiveThread->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
@@ -597,15 +597,13 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
 
 // 64, rev_write(unsigned int fd, const char  *buf, size_t count)
 EcallStatus RevProc::ECALL_write(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: write called on Hart %" PRIu32 "by thread %" PRIu32 " on hart %" PRIu32 "\n", HartToExec, GetActiveThreadID(), HartToExec);
+  output->verbose(CALL_INFO, 2, 0, "ECALL: write called on Hart %" PRIu32 " by thread %" PRIu32 " on hart %" PRIu32 "\n", HartToExec, GetActiveThreadID(), HartToExec);
   auto fd = RegFile->GetX<int>(RevReg::a0);
   auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
   auto rtv = EcallStatus::ERROR;
 
   auto& ECALL = Harts.at(HartToExec)->GetEcallState();
-
-  // RevRegFile* RegFile = AssignedThreads.at(Harts.at(HartToExec)->GetAssignedThreadID())->GetRegFile();
 
   if(ECALL.bytesRead){
     // Not our first time through... so capture previous read data
@@ -831,7 +829,7 @@ EcallStatus RevProc::ECALL_personality(RevInst& inst){
 // 93, rev_exit(int error_code)
 EcallStatus RevProc::ECALL_exit(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
-  auto ActiveThread = AssignedThreads.at(HartToExec);
+  auto ActiveThread = GetThreadOnHart(HartToExec);
   auto status = RegFile->GetX<uint64_t>(RevReg::a0);
 
   output->verbose(CALL_INFO, 0, 0,
@@ -1345,7 +1343,7 @@ EcallStatus RevProc::ECALL_gettid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: gettid called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
 
   /* rc = Currently Executing Hart */
-  RegFile->RV64[10] = AssignedThreads.at(HartToExec)->GetThreadID();
+  RegFile->RV64[10] = GetThreadOnHart(HartToExec)->GetThreadID();
   return EcallStatus::SUCCESS;
 }
 
@@ -2520,7 +2518,7 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
     rtval = EcallStatus::SUCCESS;
 
     // Set current thread to blocked
-    auto Thread = GetThreadOnHart(HartToExec);
+    auto& Thread = GetThreadOnHart(HartToExec);
     Thread->SetState(ThreadState::BLOCKED);
 
     // Signal to RevCPU this thread is has changed state
@@ -2529,13 +2527,13 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
     // Output the ecall buf
 
     // Set the TID this thread is waiting for
-    AssignedThreads.at(Thread->GetThreadID())->SetWaitingToJoinTID(RegFile->RV64[10]);
+    Thread->SetWaitingToJoinTID(RegFile->RV64[10]);
 
     // // if retval is not null, store the return value of the thread in retval
     // void **retval = (void **)RegFile->RV64[11];
     // if( retval != NULL ){
     //   *retval = (void *)
-    //   AssignedThreads.at(HartToDecode)->GetRegFile()->RV64[10];
+    //   GetThreadOnHart(HartToDecode)->GetRegFile()->RV64[10];
     // }
     //
   }
