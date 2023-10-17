@@ -16,41 +16,45 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
   auto  rtval = EcallStatus::ERROR;
   auto& EcallState = Harts.at(HartToExec)->GetEcallState();
 
-  // we don't know how long the path string is so read a byte (char)
-  // at a time and search for the string terminator character '\0'
-  if(EcallState.bytesRead != 0){
-    EcallState.string += std::string_view(EcallState.buf.data(), EcallState.bytesRead);
-    EcallState.bytesRead = 0;
-  }
-
-  // We store the 0-terminator byte in EcallState.string to distinguish an empty
-  // C string from no data read at all. If we read an empty string in the
-  // program, EcallState.string.size() == 1 with front() == back() == '\0'. If no
-  // data has been read yet, EcallState.string.size() == 0.
-  if(EcallState.string.size() && !EcallState.string.back()){
-    //found the null terminator - we're done
-    // action is usually passed in as a lambda with local code and captures
-    // from the caller, such as performing a syscall using EcallState.string.
-    action();
-
-    EcallState.string.clear();   //reset the ECALL buffers
-    EcallState.bytesRead = 0;
-
-    DependencyClear(HartToExec, 10, false);
-    rtval = EcallStatus::SUCCESS;
-  }else{
-    //We are in the middle of the string - read one byte
-    MemReq req{straddr + EcallState.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
-    LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
-    mem->ReadVal(HartToExec,
-                 straddr + EcallState.string.size(),
-                 EcallState.buf.data(),
-                 req,
-                 REVMEM_FLAGS(0));
-    EcallState.bytesRead = 1;
-    std::cout << "Setting dependency for HartToExec == " << HartToExec << std::endl;
-    DependencySet(HartToExec, 10, false);
+  if( RegFile->GetLSQueue()->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)) > 0 ){
     rtval = EcallStatus::CONTINUE;
+  } else {
+    // we don't know how long the path string is so read a byte (char)
+    // at a time and search for the string terminator character '\0'
+    if(EcallState.bytesRead != 0){
+      EcallState.string += std::string_view(EcallState.buf.data(), EcallState.bytesRead);
+      EcallState.bytesRead = 0;
+    }
+
+    // We store the 0-terminator byte in EcallState.string to distinguish an empty
+    // C string from no data read at all. If we read an empty string in the
+    // program, EcallState.string.size() == 1 with front() == back() == '\0'. If no
+    // data has been read yet, EcallState.string.size() == 0.
+    if(EcallState.string.size() && !EcallState.string.back()){
+      //found the null terminator - we're done
+      // action is usually passed in as a lambda with local code and captures
+      // from the caller, such as performing a syscall using EcallState.string.
+      action();
+
+      EcallState.string.clear();   //reset the ECALL buffers
+      EcallState.bytesRead = 0;
+
+      DependencyClear(HartToExec, 10, false);
+      rtval = EcallStatus::SUCCESS;
+    }else{
+      //We are in the middle of the string - read one byte
+      MemReq req{straddr + EcallState.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
+      LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+      mem->ReadVal(HartToExec,
+                  straddr + EcallState.string.size(),
+                  EcallState.buf.data(),
+                  req,
+                  REVMEM_FLAGS(0));
+      EcallState.bytesRead = 1;
+      std::cout << "Setting dependency for HartToExec == " << HartToExec << std::endl;
+      DependencySet(HartToExec, 10, false);
+      rtval = EcallStatus::CONTINUE;
+    }
   }
   return rtval;
 }
