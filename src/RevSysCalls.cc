@@ -603,40 +603,40 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
   auto fd = RegFile->GetX<int>(RevReg::a0);
   auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
+  auto& EcallState = Harts.at(HartToExec)->GetEcallState();
 
-  auto& ECALL = Harts.at(HartToExec)->GetEcallState();
   auto lsq_hash = make_lsq_hash(10, RevRegClass::RegGPR, HartToExec); // Cached hash value
 
-  if(ECALL.bytesRead && LSQueue->count(lsq_hash) == 0){
-    ECALL.string += std::string_view(ECALL.buf.data(), ECALL.bytesRead);
-    ECALL.bytesRead = 0;
+  if(EcallState.bytesRead && LSQueue->count(lsq_hash) == 0){
+    EcallState.string += std::string_view(EcallState.buf.data(), EcallState.bytesRead);
+    EcallState.bytesRead = 0;
   }
 
-  auto nleft = nbytes - ECALL.string.size();
+  auto nleft = nbytes - EcallState.string.size();
   if(nleft == 0 && LSQueue->count(lsq_hash) == 0){
-    int rc = write(fd, ECALL.string.data(), ECALL.string.size());
+    int rc = write(fd, EcallState.string.data(), EcallState.string.size());
     RegFile->SetX(RevReg::a0, rc);
-    ECALL.clear();
+    EcallState.clear();
     DependencyClear(HartToExec, 10, false);
     return EcallStatus::SUCCESS;
   }
 
   if (LSQueue->count(lsq_hash) == 0) {
-    MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
+    MemReq req (addr + EcallState.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
     LSQueue->insert({lsq_hash, req});
 
     if(nleft >= 8){
-      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint64_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
-      ECALL.bytesRead = 8;
+      mem->ReadVal(HartToExec, addr+EcallState.string.size(), reinterpret_cast<uint64_t*>(EcallState.buf.data()), req, REVMEM_FLAGS(0));
+      EcallState.bytesRead = 8;
     } else if(nleft >= 4){
-      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint32_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
-      ECALL.bytesRead = 4;
+      mem->ReadVal(HartToExec, addr+EcallState.string.size(), reinterpret_cast<uint32_t*>(EcallState.buf.data()), req, REVMEM_FLAGS(0));
+      EcallState.bytesRead = 4;
     } else if(nleft >= 2){
-      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint16_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
-      ECALL.bytesRead = 2;
+      mem->ReadVal(HartToExec, addr+EcallState.string.size(), reinterpret_cast<uint16_t*>(EcallState.buf.data()), req, REVMEM_FLAGS(0));
+      EcallState.bytesRead = 2;
     } else{
-      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint8_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
-      ECALL.bytesRead = 1;
+      mem->ReadVal(HartToExec, addr+EcallState.string.size(), reinterpret_cast<uint8_t*>(EcallState.buf.data()), req, REVMEM_FLAGS(0));
+      EcallState.bytesRead = 1;
     }
 
     DependencySet(HartToExec, 10, false);
