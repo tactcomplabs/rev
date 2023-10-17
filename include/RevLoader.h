@@ -295,8 +295,11 @@ public:
   /// RevLoader: retrieve the entire argv vector
   std::vector<std::string> GetArgv() { return argv; }
 
-  /// RevLoader: retrives the elf info structure
+  /// RevLoader: retrieves the elf info structure
   ElfInfo GetInfo() { return elfinfo; }
+
+  ///  RevLoader: symbol lookup for tracer
+  std::map<uint64_t,std::string>* GetTraceSymbols(); 
 
   /// RevLoader: Gets TLS base address
   const uint64_t& GetTLSBaseAddr() { return TLSBaseAddr; }
@@ -320,7 +323,8 @@ private:
 
   ElfInfo elfinfo;          ///< RevLoader: elf info from the loaded program
 
-  std::map<std::string, uint64_t> symtable;  ///< RevLoader: loaded symbol table
+  std::map<std::string, uint64_t> symtable;       ///< RevLoader: loaded symbol table
+  std::map<uint64_t,std::string> tracer_symbols;  ///< RevLoader: address to symbol for tracer
 
   std::vector<std::string> argv;            ///< RevLoader: The actual argv table
 

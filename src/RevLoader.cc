@@ -616,6 +616,8 @@ bool RevLoader::LoadElf(){
   // print the symbol table entries
   std::map<std::string, uint64_t>::iterator it = symtable.begin();
   while( it != symtable.end() ){
+    // create inverse map to allow tracer to lookup symbols
+    tracer_symbols.emplace(it->second, it->first);
     output->verbose(CALL_INFO, 6, 0,
                     "Symbol Table Entry [%s:0x%" PRIx64 "]\n",
                     it->first.c_str(), it->second );
@@ -639,6 +641,11 @@ uint64_t RevLoader::GetSymbolAddr(std::string Symbol){
     tmp = symtable[Symbol];
   }
   return tmp;
+}
+
+std::map<uint64_t, std::string> *SST::RevCPU::RevLoader::GetTraceSymbols()
+{
+    return &tracer_symbols;
 }
 
 // EOF

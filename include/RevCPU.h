@@ -117,6 +117,9 @@ public:
     {"msgPerCycle",     "Number of messages per cycle to inject",       "1"},
     {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject",  "1"},
     {"testIters",       "Number of PAN test messages to send",          "255"},
+    {"trcOp",           "Tracer instruction trigger",                   "slli"},
+    {"trcLimit",        "Max trace lines per core (0 no limit)",        "0"},
+    {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
     )
 
