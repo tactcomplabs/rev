@@ -51,7 +51,6 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
                   req,
                   REVMEM_FLAGS(0));
       EcallState.bytesRead = 1;
-      std::cout << "Setting dependency for HartToExec == " << HartToExec << std::endl;
       DependencySet(HartToExec, 10, false);
       rtval = EcallStatus::CONTINUE;
     }
@@ -482,7 +481,7 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
 
   // commented out to remove warnings
   // auto flags = RegFile->GetX<int>(RevReg::a2);
-  // auto mode = RegFile->GetX<int>(RevReg::a3);
+  auto mode = RegFile->GetX<int>(RevReg::a3);
 
   /*
    * NOTE: this is currently only opening files in the current directory
@@ -497,8 +496,8 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
 
   auto action = [&]{
     // Do the openat on the host
-    dirfd = open(std::filesystem::current_path().c_str(), O_RDWR);
-    int fd = openat(dirfd, EcallState.string.c_str(), O_RDWR);
+    dirfd = open(std::filesystem::current_path().c_str(), mode);
+    int fd = openat(dirfd, EcallState.string.c_str(), mode);
 
     // Add the file descriptor to this thread
     Thread->AddFD(fd);
