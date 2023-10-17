@@ -80,7 +80,7 @@ private:
   std::vector<RevInstEntry> ctable; ///< RevExt: compressed instruction table
   std::vector<RevInstEntry> otable; ///< RevExt: optional compressed instruction table
 
-  auto SetFPRound(unsigned Inst, const RevInst& Payload, uint16_t threadID, RevRegFile* regFile);
+  auto SetFPEnv(unsigned Inst, const RevInst& Payload, uint16_t threadID, RevRegFile* regFile);
 }; // class RevExt
 } // namespace SST::RevCPU
 

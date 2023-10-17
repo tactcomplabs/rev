@@ -53,6 +53,7 @@ enum class RevReg {
 
 /// Floating-Point Rounding Mode
 enum class FRMode : uint8_t {
+  None = 0xff,
   RNE = 0,   // Round to Nearest, ties to Even
   RTZ = 1,   // Round towards Zero
   RDN = 2,   // Round Down (towards -Inf)
