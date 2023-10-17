@@ -3770,10 +3770,11 @@ int rev_pthread_join( rev_pthread_t thread ){
 int updown_task_spawn( uint64_t command ){
   int rc;
   asm volatile (
-    "li a7, 3000 \n\t"
+    "li a7, 1002 \n\t"
     "ecall \n\t"
     "mv %0, a0" : "=r" (rc)
     );
+  return rc;
 }
 
 

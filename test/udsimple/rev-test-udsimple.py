@@ -13,7 +13,6 @@ import sst
 
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
-sst.setProgramOption("stopAtCycle", "0s")
 
 # Tell SST what statistics handling we want
 sst.setStatisticLoadLevel(4)
@@ -36,7 +35,7 @@ comp_cpu.addParams({
 })
 comp_cpu.enableAllStatistics()
 
-udaccel = sst.Component("basim", "revcpu.SimpleUpDownCoProc")
+udaccel = comp_cpu.setSubComponent("basim", "revcpu.SimpleUpDownCoProc")
 udaccel.addParams({
   "clockFreq"  : "1.5Ghz",
   "verbose" : 10

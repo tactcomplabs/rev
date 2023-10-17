@@ -12,10 +12,11 @@
  */
 
 #include <stdlib.h>
+#include "../../common/syscalls/syscalls.h"
 
 int main(int argc, char **argv){
   int i = 9;
   i = i + argc;
-  asm volatile("ADDIW a0, a0, 0");
-  return i;
+  int r = updown_task_spawn(1);
+  return r;
 }

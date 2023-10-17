@@ -107,7 +107,7 @@ bool SimpleUpDownCoProc::IssueInst(){
   std::cout << "UpDown instruction issued: " << std::endl;
    bool rtn = false;
     bool instIssued = false;
-    if(!instIssued && udaccel->isIdle()){
+    if(!instIssued && udaccel->isIdle(0)){
         uint8_t numop = 2;
         basim::eventword_t ev0(0);
         ev0.setNumOperands(numop);
