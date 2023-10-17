@@ -32,10 +32,12 @@ auto RevExt::SetFPRound(unsigned Inst, const RevInst& payload, uint16_t HartID, 
       break;
     case FRMode::RMM:   // Round to Nearest, ties to Max Magnitude
       output->fatal(CALL_INFO, -1,
-                    "Error: Round to nearest Max Magnitude not implemented at index=%u", Inst);
+                    "Error: Round to nearest Max Magnitude not implemented at PC = 0x%" PRIx64 "\n",
+                    regFile->GetPC());
       break;
-    case FRMode::DYN:
-      output->fatal(CALL_INFO, -1, "Internal Error: DYN mode in fcsr.rm at index=%u",  Inst);
+    default:
+      output->fatal(CALL_INFO, -1, "Illegal instruction: Bad FP rounding mode at PC = 0x%" PRIx64 "\n",
+                    regFile->GetPC());
       break;
   }
 
