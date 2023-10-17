@@ -81,3 +81,38 @@ bool RevSimpleCoProc::ClockTick(SST::Cycle_t cycle){
     }
   return true;
 }
+
+// ---------------------------------------------------------------
+// SimpleUpDownCoProc
+// ---------------------------------------------------------------
+SimpleUpDownCoProc::SimpleUpDownCoProc(ComponentId_t id, Params& params, RevProc* parent)
+  : RevCoProc(id, params, parent), num_instRetired(0) {
+
+  std::string ClockFreq = params.find<std::string>("clock", "1Ghz");
+  cycleCount = 0;
+
+  registerStats();
+
+}
+
+SimpleUpDownCoProc::~SimpleUpDownCoProc(){
+
+};
+
+bool SimpleUpDownCoProc::IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){
+  std::cout << "UpDown instruction issued: " << std::hex << Inst << std::dec << std::endl;
+  //parent->ExternalDepSet(CreatePasskey(), F->GetHartToExec(), 7, false);
+  return true;
+}
+
+void SimpleUpDownCoProc::registerStats(){
+  num_instRetired = registerStatistic<uint64_t>("InstRetired");
+}
+
+bool SimpleUpDownCoProc::Reset(){
+  return true;
+}
+
+bool SimpleUpDownCoProc::ClockTick(SST::Cycle_t cycle){
+  return true;
+}

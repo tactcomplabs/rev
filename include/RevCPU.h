@@ -49,7 +49,6 @@
 #define LARGE_PRIME 2147483647
 
 namespace SST::RevCPU{
-class SimpleUpDownWrap;
 
 class RevCPU : public SST::Component{
 
@@ -318,6 +317,7 @@ private:
   RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
 
   std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
+  std::vector<RevCoProc*> UDAs;    ///< RevCPU: CoProcessor attached to Rev
 
   SST::Clock::Handler<RevCPU>* ClockHandler;  ///< RevCPU: Clock Handler
 

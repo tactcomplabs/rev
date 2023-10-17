@@ -122,7 +122,7 @@ void RevProc::SetCoProc(RevCoProc* coproc){
   }
 }
 
-void RevProc::SetUpDownAccel(SimpleUpDownWrap* udaccel){
+void RevProc::SetUpDownAccel(RevCoProc* udaccel){
   if(UDaccel == nullptr){
     UDaccel = udaccel;
   }else{

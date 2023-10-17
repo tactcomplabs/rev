@@ -273,11 +273,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     }
     // Create the co-processor objects
     for( unsigned i=0; i<numCores; i++){
-      SimpleUpDownWrap* CoProc = loadUserComponent<UpDownSimpleWrap>("basim");
+      RevCoProc* CoProc = loadUserSubComponent<RevCoProc>("basim", SST::ComponentInfo::SHARE_NONE, Procs[i]);
       if (!CoProc) {
         output.fatal(CALL_INFO, -1, "Error : failed to inintialize the co-processor subcomponent\n");
       }
-      CoProcs.push_back(CoProc);
+      UDAs.push_back(CoProc);
       Procs[i]->SetCoProc(CoProc);
     }
   

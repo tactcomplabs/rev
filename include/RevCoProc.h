@@ -144,6 +144,73 @@ private:
 
 }; //class RevSimpleCoProc
 
+// ----------------------------------------
+// SimpleUpDownCoProc
+// ----------------------------------------
+class SimpleUpDownCoProc : public RevCoProc{
+public:
+  SST_ELI_REGISTER_SUBCOMPONENT(SimpleUpDownCoProc, "revcpu",
+                                "SimpleUpDownCoProc",
+                                SST_ELI_ELEMENT_VERSION(1, 0, 0),
+                                "RISC-V Rev Simple BASim Co-processor",
+                                SST::RevCPU::RevCoProc
+    );
+
+  // Set up parameters accesible from the python configuration
+  SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the co-processor",     "0" },
+                          { "clock",          "Sets the clock frequency of the co-processor",         "1Ghz" },
+    );
+
+  // Register any subcomponents used by this element
+  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS();
+
+  // Register any ports used with this element
+  SST_ELI_DOCUMENT_PORTS();
+
+  // Add statistics
+  SST_ELI_DOCUMENT_STATISTICS(
+    {"InstRetired",        "Counts the total number of instructions retired by this coprocessor",    "count", 1}
+    );
+
+  // Enum for referencing statistics
+  enum CoProcStats{
+    InstRetired = 0,
+  };
+
+  /// SimpleUpDownCoProc: constructor
+  SimpleUpDownCoProc(ComponentId_t id, Params& params, RevProc* parent);
+
+  /// SimpleUpDownCoProc: destructor
+  virtual ~SimpleUpDownCoProc();
+
+  /// SimpleUpDownCoProc: clock tick function - currently not registeres with SST, called by RevCPU
+  virtual bool ClockTick(SST::Cycle_t cycle);
+
+  void registerStats();
+
+  /// SimpleUpDownCoProc: Enqueue Inst into the InstQ and return
+  virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst);
+
+  /// SimpleUpDownCoProc: Reset the co-processor by emmptying the InstQ
+  virtual bool Reset();
+
+  /// RevSimpleCoProv: Called when the attached RevProc completes simulation. Could be used to
+  ///                   also signal to SST that the co-processor is done if ClockTick is registered
+  ///                   to SSTCore vs. being driven by RevCPU
+  virtual bool Teardown() { return Reset(); };
+
+  /// SimpleUpDownCoProc: Returns true if instruction queue is empty
+  virtual bool IsDone(){ return true;};
+
+private:
+
+  /// SimpleUpDownCoProc: Total number of instructions retired
+  Statistic<uint64_t>* num_instRetired;
+
+  SST::Cycle_t cycleCount;
+
+}; //class SimpleUpDownCoProc
+
 } //namespace SST::RevCPU
 
 #endif
