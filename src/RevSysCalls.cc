@@ -476,6 +476,7 @@ EcallStatus RevProc::ECALL_fchown(RevInst& inst){
 
 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
 EcallStatus RevProc::ECALL_openat(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: openat called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
   auto dirfd = RegFile->GetX<int>(RevReg::a0);
   auto pathname = RegFile->GetX<uint64_t>(RevReg::a1);
 
@@ -490,16 +491,21 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
    */
 
   /* Read the filename from memory one character at a time until we find '\0' */
+  auto& Thread = GetThreadOnHart(HartToExec);
+
+  auto& EcallState = Harts.at(HartToExec)->GetEcallState();
 
   auto action = [&]{
     // Do the openat on the host
-    dirfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
-    int fd = openat(dirfd, Harts.at(HartToExec)->GetEcallState().string.c_str(), O_RDWR);
+    dirfd = open(std::filesystem::current_path().c_str(), O_RDWR);
+    int fd = openat(dirfd, EcallState.string.c_str(), O_RDWR);
 
-    GetThreadOnHart(HartToExec)->AddFD(fd);
+    // Add the file descriptor to this thread
+    Thread->AddFD(fd);
 
     // openat returns the file descriptor of the opened file
-    RegFile->SetX(RevReg::a0, fd);
+    Thread->GetRegFile()->SetX(RevReg::a0, fd);
+
   };
 
   return EcallLoadAndParseString(inst, pathname, action);
@@ -507,8 +513,9 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
 
 // 57, rev_close(unsigned int fd)
 EcallStatus RevProc::ECALL_close(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: close called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
   auto fd = RegFile->GetX<int>(RevReg::a0);
-  auto ActiveThread = GetThreadOnHart(HartToExec);
+  auto& ActiveThread = GetThreadOnHart(HartToExec);
 
   // Check if CurrCtx has fd in fildes vector
   if( !ActiveThread->FindFD(fd) ){
@@ -561,12 +568,13 @@ EcallStatus RevProc::ECALL_lseek(RevInst& inst){
 
 // 63, rev_read(unsigned int fd
 EcallStatus RevProc::ECALL_read(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: read called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
   auto fd = RegFile->GetX<int>(RevReg::a0);
   auto BufAddr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto BufSize = RegFile->GetX<uint64_t>(RevReg::a2);
 
-  /* Check if Current Ctx has access to the fd */
-  auto ActiveThread = GetThreadOnHart(HartToExec);
+  // Check if Current Ctx has access to the fd
+  auto& ActiveThread = GetThreadOnHart(HartToExec);
 
   if( !ActiveThread->FindFD(fd) ){
     output->fatal(CALL_INFO, -1,
@@ -575,19 +583,10 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
                   id, HartToExec, GetActiveThreadID(), fd);
     return EcallStatus::SUCCESS;
   }
-  /*
-   * This buffer is an intermediate buffer for storing the data read from host
-   * for later use in writing to RevMem
-   */
-  std::vector<char> TmpBuf(BufSize);
 
-  /*
-   * Read nbytes of fd from host
-   *
-   * NOTE: Because the fd is in the Ctx's fildes vector, we can reasonably
-   *       assume the file is already open on the host system because we
-   *       try to maintain parity between those
-   */
+  // This buffer is an intermediate buffer for storing the data read from host
+  // for later use in writing to RevMem
+  std::vector<char> TmpBuf(BufSize);
 
   // Do the read on the host
   int rc = read(fd, &TmpBuf[0], BufSize);
@@ -599,63 +598,56 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
-// 64, rev_write(unsigned int fd, const char  *buf, size_t count)
+
 EcallStatus RevProc::ECALL_write(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: write called on Hart %" PRIu32 " by thread %" PRIu32 " on hart %" PRIu32 "\n", HartToExec, GetActiveThreadID(), HartToExec);
+  output->verbose(CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 " on hart %" PRIu32 "\n",  GetActiveThreadID(), HartToExec);
   auto fd = RegFile->GetX<int>(RevReg::a0);
   auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
-  auto rtv = EcallStatus::ERROR;
 
   auto& ECALL = Harts.at(HartToExec)->GetEcallState();
+  auto lsq_hash = make_lsq_hash(10, RevRegClass::RegGPR, HartToExec); // Cached hash value
 
-  if(ECALL.bytesRead){
-    // Not our first time through... so capture previous read data
+  if(ECALL.bytesRead && LSQueue->count(lsq_hash) == 0){
     ECALL.string += std::string_view(ECALL.buf.data(), ECALL.bytesRead);
     ECALL.bytesRead = 0;
   }
 
   auto nleft = nbytes - ECALL.string.size();
-  if(nleft == 0){
-    // Perform the write on the host system
+  if(nleft == 0 && LSQueue->count(lsq_hash) == 0){
     int rc = write(fd, ECALL.string.data(), ECALL.string.size());
-
-    // write returns the number of bytes written
+    fsync(fd);
     RegFile->SetX(RevReg::a0, rc);
-
-    // Reset our tracking state
     ECALL.clear();
-
     DependencyClear(HartToExec, 10, false);
-    rtv = EcallStatus::SUCCESS;
-  }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  {
-    auto readfunc = [&](auto* buf){
-      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
-      LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
-      mem->ReadVal(HartToExec,
-                   addr + ECALL.string.size(),
-                   buf,
-                   req,
-                   REVMEM_FLAGS(0));
-      ECALL.bytesRead = sizeof(*buf);
-    };
-    if(nleft >= 8){
-      readfunc(reinterpret_cast<uint64_t*>(ECALL.buf.data()));
-    } else if(nleft >= 4){
-      readfunc(reinterpret_cast<uint32_t*>(ECALL.buf.data()));
-    } else if(nleft >= 2){
-      readfunc(reinterpret_cast<uint16_t*>(ECALL.buf.data()));
-    } else{
-      readfunc(reinterpret_cast<uint8_t*>(ECALL.buf.data()));
-    }
-    DependencySet(HartToExec, 10, false);
-    rtv = EcallStatus::CONTINUE;
-  }else{
-    rtv = EcallStatus::CONTINUE;
+    return EcallStatus::SUCCESS;
   }
-  return rtv;
-}
 
+  if (LSQueue->count(lsq_hash) == 0) {
+    MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
+    LSQueue->insert({lsq_hash, req});
+
+    // Reverted to original approach for type-specific reads
+    if(nleft >= 8){
+      mem->ReadVal<uint64_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint64_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      ECALL.bytesRead = 8;
+    } else if(nleft >= 4){
+      mem->ReadVal<uint32_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint32_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      ECALL.bytesRead = 4;
+    } else if(nleft >= 2){
+      mem->ReadVal<uint16_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint16_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      ECALL.bytesRead = 2;
+    } else{
+      mem->ReadVal<uint8_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint8_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      ECALL.bytesRead = 1;
+    }
+
+    DependencySet(HartToExec, 10, false);
+    return EcallStatus::CONTINUE;
+  }
+
+  return EcallStatus::CONTINUE;
+}
 // 65, rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
 EcallStatus RevProc::ECALL_readv(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: readv called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
@@ -833,7 +825,7 @@ EcallStatus RevProc::ECALL_personality(RevInst& inst){
 // 93, rev_exit(int error_code)
 EcallStatus RevProc::ECALL_exit(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: exit called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
-  auto ActiveThread = GetThreadOnHart(HartToExec);
+  auto& ActiveThread = GetThreadOnHart(HartToExec);
   auto status = RegFile->GetX<uint64_t>(RevReg::a0);
 
   output->verbose(CALL_INFO, 0, 0,
@@ -1347,7 +1339,7 @@ EcallStatus RevProc::ECALL_gettid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: gettid called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
 
   /* rc = Currently Executing Hart */
-  RegFile->RV64[10] = GetThreadOnHart(HartToExec)->GetThreadID();
+  RegFile->SetX(RevReg::a0, GetThreadOnHart(HartToExec)->GetThreadID());
   return EcallStatus::SUCCESS;
 }
 
