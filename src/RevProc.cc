@@ -998,7 +998,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
 
   // Decode any ancillary SP/DP float options
   if( IsFloat(Entry) ){
-    DInst.rm = DECODE_FUNCT3(Inst);
+    DInst.rm = DECODE_RM(Inst);
   }
 
   DInst.compressed = false;
@@ -1039,7 +1039,7 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
 
   // Decode any ancillary SP/DP float options
   if( IsFloat(Entry) ){
-    DInst.rm = DECODE_FUNCT3(Inst);
+    DInst.rm = DECODE_RM(Inst);
   }
   DInst.compressed = false;
 
@@ -1079,7 +1079,7 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
 
   // Decode any ancillary SP/DP float options
   if( IsFloat(Entry) ){
-    DInst.rm = DECODE_FUNCT3(Inst);
+    DInst.rm = DECODE_RM(Inst);
   }
 
   DInst.compressed = false;
