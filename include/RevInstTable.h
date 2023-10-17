@@ -40,12 +40,6 @@
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
 
-#define FRM_RNE   0b000                     // Rounding mode: Round to Nearest, ties to Even
-#define FRM_RTZ   0b001                     // Rounding mode: Round towards Zero
-#define FRM_RDN   0b010                     // Rounding mode: Round Down (towards -INF)
-#define FRM_RUP   0b011                     // Rounding mode: Round Up (towards +INF)
-#define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
-
 namespace SST::RevCPU{
 
 /* Ref: RISC-V Priviledged Spec (pg. 39) */
@@ -65,17 +59,6 @@ enum EXCEPTION_CAUSE : uint32_t {
   LOAD_PAGE_FAULT           = 13,
   STORE_AMO_PAGE_FAULT      = 15,
 };
-
-/// Floating-Point Rounding Mode
-enum class RndMode : uint8_t {
-  RNE = 0,   // Round to Nearest, ties to Even
-  RTZ = 1,   // Round towards Zero
-  RDN = 2,   // Round Down (towards -Inf)
-  RUP = 3,   // Round Up (towards +Inf)
-  RMM = 4,   // Round to Nearest, ties to Max Magnitude
-  DYN = 7,   // In instruction's rm field, selects dynamic rounding mode; invalid in FCSR
-};
-
 
 enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format

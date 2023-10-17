@@ -87,11 +87,13 @@ message (LDFLAGS="${LDFLAGS}")
 #------------------------------------------------------------------------
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set(WERROR_FLAG "")
+  set(FP_MODE_FLAG "-ffp-model=strict")
 else()
   set(WERROR_FLAG "-Werror")
+  set(FP_MODE_FLAG "-frounding-math")
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++17 -O2 -Wall -Wextra ${WERROR_FLAG} -Wvla -Wuninitialized -Wfloat-conversion -Wdouble-promotion -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+set(CMAKE_CXX_FLAGS "-std=c++17 ${FP_MODE_FLAG} -O2 -Wall -Wextra ${WERROR_FLAG} -Wvla -Wuninitialized -Wfloat-conversion -Wdouble-promotion -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
 

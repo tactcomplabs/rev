@@ -95,6 +95,15 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   code; \
   ASM_GEN(bne a0, a3, fail);
 
+  #define TEST_FP_OP_D_1S_INTERNAL( testnum, flags, result, val1, code... ) \
+  asm volatile("test_%0:" : :"I"(testnum)); \
+  asm volatile("li  gp, %0;" : : "I"(testnum)); \
+  asm volatile("la  a0, test_%0_data;" : : "I"(testnum)) ;\
+  ASM_GEN(fld f0, 0(a0)); \
+  ASM_GEN(ld  a3, 8(a0)); \
+  code; \
+  ASM_GEN(bne a0, a3, fail);
+
 #define TEST_FP_OP_3S_INTERNAL( testnum, flags, result, val1, val2, val3, code... ) \
   asm volatile("test_%0:" : :"I"(testnum)); \
   asm volatile("li  gp, %0;" : : "I"(testnum)); \
@@ -130,6 +139,10 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   #define TEST_FP_INT_OP_DATA1(testnum, result, val1) \
   ASM_TEST_NUM_GEN(testnum); \
   ASM_GEN_NV(.float result);
+
+  #define TEST_FP_D_INT_OP_DATA1(testnum, result, val1) \
+  ASM_TEST_NUM_GEN(testnum); \
+  ASM_GEN_NV(.double result);
 
   #define TEST_INT_FP_OP_DATA1(testnum, result, val1) \
   ASM_TEST_NUM_GEN(testnum); \
@@ -184,8 +197,22 @@ asm volatile("test_%0:" : :"I"(testnum)); \
   ASM_GEN(fmv.x.s a0, f0); \
   ASM_GEN(bne a0, a3, fail);
 
+  #define TEST_INT_FP_OP_D( testnum, inst, result, val1 ) \
+  asm volatile("test_%0:" : :"I"(testnum)); \
+  asm volatile("li  gp, %0;" : : "I"(testnum)); \
+  asm volatile("la  a0, test_%0_data;" : : "I"(testnum)) ;\
+  ASM_GEN(ld  a3, 0(a0)); \
+  ASM_GEN(li  a0, val1); \
+  ASM_GEN(inst f0, a0); \
+  ASM_GEN(fmv.x.d a0, f0); \
+  ASM_GEN(bne a0, a3, fail);
+
 #define TEST_FP_INT_OP_S( testnum, inst, flags, result, val1, rm ) \
   TEST_FP_OP_1S_INTERNAL( testnum, flags, word result, val1,  \
+                    ASM_GEN(inst a0, f0, rm));
+
+#define TEST_FP_INT_OP_D( testnum, inst, flags, result, val1, rm ) \
+  TEST_FP_OP_D_1S_INTERNAL( testnum, flags, dword result, val1,  \
                     ASM_GEN(inst a0, f0, rm));
 
 #define TEST_FCLASS_S(testnum, correct, input) \

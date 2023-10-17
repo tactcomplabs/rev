@@ -1389,8 +1389,16 @@ RevInst RevProc::DecodeInst(){
 
   uint32_t fcvtOp = 0;
   //Special encodings for FCVT instructions
-  if( (0b1010011 == Opcode) && ((0b1100000 == Funct7) || (0b1101000 == Funct7)) ){
-    fcvtOp =  DECODE_RS2(Inst);
+  if( Opcode == 0b1010011 ){
+    switch(Funct7){
+      case 0b1100000:
+      case 0b1101000:
+      case 0b0100000:
+      case 0b0100001:
+      case 0b1100001:
+      case 0b1101001:
+        fcvtOp = DECODE_RS2(Inst);
+    }
   }
 
   // Stage 5: Determine if we have an imm12 field
@@ -1408,8 +1416,7 @@ RevInst RevProc::DecodeInst(){
 
   // Stage 7: Look up the value in the table
   bool isCoProcInst = false;
-  std::map<uint32_t, unsigned>::iterator it;
-  it = EncToEntry.find(Enc);
+  auto it = EncToEntry.find(Enc);
   if( it == EncToEntry.end() && ((Funct3 == 7) || (Funct3==1)) && (inst65 == 0b10)){
     //This is kind of a hack, but we may not have found the instruction becasue
     //  Funct3 is overloaded with rounding mode, so if this is a RV32F or RV64F
