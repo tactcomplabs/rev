@@ -625,18 +625,17 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
     MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
     LSQueue->insert({lsq_hash, req});
 
-    // Reverted to original approach for type-specific reads
     if(nleft >= 8){
-      mem->ReadVal<uint64_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint64_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint64_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
       ECALL.bytesRead = 8;
     } else if(nleft >= 4){
-      mem->ReadVal<uint32_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint32_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint32_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
       ECALL.bytesRead = 4;
     } else if(nleft >= 2){
-      mem->ReadVal<uint16_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint16_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint16_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
       ECALL.bytesRead = 2;
     } else{
-      mem->ReadVal<uint8_t>(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint8_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
+      mem->ReadVal(HartToExec, addr+ECALL.string.size(), reinterpret_cast<uint8_t*>(ECALL.buf.data()), req, REVMEM_FLAGS(0));
       ECALL.bytesRead = 1;
     }
 
