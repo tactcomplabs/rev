@@ -11,13 +11,12 @@
 #include "../include/RevExt.h"
 using namespace SST::RevCPU;
 
-/// Change the FP rounding mode
-auto RevExt::SetFPRound(unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile){
+/// Change the FP environment
+auto RevExt::SetFPEnv(unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile){
   // Save a copy of the current FP environment
   RevFenv saved_fenv;
 
-  FRMode rm = static_cast<FRMode>(payload.rm);
-  switch(rm == FRMode::DYN ? regFile->GetFPRound() : rm){
+  switch(payload.rm == FRMode::DYN ? regFile->GetFPRound() : payload.rm){
     case FRMode::RNE:   // Round to Nearest, ties to Even
       RevFenv::SetRound(FE_TONEAREST);
       break;
@@ -66,12 +65,19 @@ bool RevExt::Execute(unsigned Inst, const RevInst& payload, uint16_t HartID, Rev
     return false;
   }
 
-  // saved_fenv represents a saved FP environment, which, when
-  // destroyed, restores the original FP environment
-  auto saved_fenv = SetFPRound(Inst, payload, HartID, regFile);
-
   // execute the instruction
-  bool ret = func(feature, regFile, mem, payload);
+  bool ret = false;
+
+  if(payload.rm == FRMode::None){
+    // If the instruction has no FRMode, we do not need to save and restore it
+    ret = func(feature, regFile, mem, payload);
+  }else{
+    // saved_fenv represents a saved FP environment, which, when destroyed,
+    // restores the original FP environment. We execute the function in the
+    // modified FP environment on the host, then restore the FP environment.
+    auto saved_fenv = SetFPEnv(Inst, payload, HartID, regFile);
+    ret = func(feature, regFile, mem, payload);
+  }
 
   return ret;
 }

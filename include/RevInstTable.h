@@ -35,7 +35,7 @@
 
 #define DECODE_FUNCT7(x)  (((x)>>(25))&(0b1111111))
 #define DECODE_FUNCT2(x)  (((x)>>(25))&(0b11))
-#define DECODE_FUNCT3(x)  (((x)>>(12))&(0b111))
+#define DECODE_FUNCT3(x)  static_cast<FRMode>(((x)>>(12))&(0b111))
 
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
@@ -108,7 +108,7 @@ struct RevInst {
   uint64_t rs3        =~0; ///< RevInst: rs3 value
   uint64_t imm        = 0; ///< RevInst: immediate value
   uint8_t fmt         = 0; ///< RevInst: floating point format
-  uint8_t rm          = 0; ///< RevInst: floating point rounding mode
+  FRMode rm{FRMode::None}; ///< RevInst: floating point rounding mode
   uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
   uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
   uint16_t offset     = 0; ///< RevInst: compressed offset
@@ -117,7 +117,7 @@ struct RevInst {
   bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
   uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
-  uint16_t hart       = 0;  ///< RevInst: What hart is this inst being executed on
+  uint16_t hart       = 0; ///< RevInst: What hart is this inst being executed on
 
   explicit RevInst() = default; // prevent aggregate initialization
 

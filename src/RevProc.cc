@@ -987,10 +987,6 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
     DInst.imm     = 0x0;
   }
 
-  // SP/DP Float
-  DInst.fmt     = 0;
-  DInst.rm      = 0;
-
   // Size
   DInst.instSize  = 4;
 
@@ -1038,10 +1034,6 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
   // imm
   DInst.imm     = DECODE_IMM12(Inst);
 
-  // SP/DP Float
-  DInst.fmt     = 0;
-  DInst.rm      = 0;
-
   // Size
   DInst.instSize  = 4;
 
@@ -1082,10 +1074,6 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
   // imm
   DInst.imm     = (DECODE_RD(Inst) | (DECODE_FUNCT7(Inst)<<5));
 
-  // SP/DP Float
-  DInst.fmt     = 0;
-  DInst.rm      = 0;
-
   // Size
   DInst.instSize  = 4;
 
@@ -1122,10 +1110,6 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
 
   // imm
   DInst.imm     = DECODE_IMM20(Inst);
-
-  // SP/DP Float
-  DInst.fmt     = 0;
-  DInst.rm      = 0;
 
   // Size
   DInst.instSize  = 4;
@@ -1166,10 +1150,6 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
     ( (Inst >> 20) &   0b11111100000 ) | // [10:5]
     ( (Inst >>  7) &         0b11110 ) ; // [4:1]
 
-  // SP/DP Float
-  DInst.fmt     = 0;
-  DInst.rm      = 0;
-
   // Size
   DInst.instSize  = 4;
 
@@ -1205,10 +1185,6 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
     ( (Inst)       &  0b11111111000000000000 ) | // imm[19:12]
     ( (Inst >> 9)  &          0b100000000000 ) | // imm[11]
     ( (Inst >> 20) &           0b11111111110 ) ; // imm[10:1]
-
-  // SP/DP Float
-  DInst.fmt     = 0;
-  DInst.rm      = 0;
 
   // Size
   DInst.instSize  = 4;
@@ -1250,10 +1226,6 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
 
   // imm
   DInst.imm     = 0x0;
-
-  // SP/DP Float
-  DInst.fmt     = 0;
-  DInst.rm      = 0;
 
   // Size
   DInst.instSize  = 4;
