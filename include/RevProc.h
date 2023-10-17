@@ -52,6 +52,7 @@
 #include "RevHart.h"
 #include "../common/syscalls/SysFlags.h"
 #include "../common/include/RevCommon.h"
+#include "UpDownWrap.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
 
@@ -160,6 +161,9 @@ public:
   ///< RevProc: Add a co-processor to the RevProc
   void SetCoProc(RevCoProc* coproc);
 
+  ///< RevProc: Add UpDown
+  void SetUpDownAccel(SimpleUpDownWrap* udaccel);
+
 //--------------- External Interface for use with Co-Processor -------------------------
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
@@ -209,6 +213,7 @@ private:
   RevMem *mem;              ///< RevProc: memory object
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
+  SimpleUpDownWrap          *UDaccel;
 
   /// ThreadIDs and their corresponding RevThread (Size will never be greater than numHarts)
   std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads;

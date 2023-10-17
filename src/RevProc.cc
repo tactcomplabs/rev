@@ -122,6 +122,16 @@ void RevProc::SetCoProc(RevCoProc* coproc){
   }
 }
 
+void RevProc::SetUpDownAccel(SimpleUpDownWrap* udaccel){
+  if(UDaccel == nullptr){
+    UDaccel = udaccel;
+  }else{
+    output->fatal(CALL_INFO, -1,
+                  "CONFIG ERROR: Core %u : Attempting to assign a UpDown accelerator when one is already present\n",
+                  id);
+  }
+}
+
 bool RevProc::EnableExt(RevExt* Ext, bool Opt){
   if( !Ext )
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
