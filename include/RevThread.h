@@ -15,6 +15,7 @@
 // -- Standard Headers
 #include <cstdint>
 #include <set>
+#include <unistd.h>
 #include <vector>
 
 // -- Rev Headers
@@ -63,6 +64,16 @@ public:
 
     // Set the PC
     RegFile.SetPC(FirstPC);
+  }
+
+  ~RevThread(){
+    // Check if any fildes are still open
+    // and close them if so
+    for(auto fd : fildes){
+      if(fd > 2){
+       close(fd);
+      }
+    }
   }
 
   // ThreadID operations
