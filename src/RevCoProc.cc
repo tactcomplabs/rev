@@ -104,7 +104,7 @@ SimpleUpDownCoProc::~SimpleUpDownCoProc(){
 };
 
 bool SimpleUpDownCoProc::IssueInst(){
-  std::cout << "UpDown instruction issued: " << std::hex << Inst << std::dec << std::endl;
+  std::cout << "UpDown instruction issued: " << std::endl;
    bool rtn = false;
     bool instIssued = false;
     if(!instIssued && udaccel->isIdle()){

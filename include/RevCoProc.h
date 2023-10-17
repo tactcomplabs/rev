@@ -25,7 +25,7 @@
 
 // -- SST Headers
 #include "SST.h"
-#include "../accel/include/udaccelerator.hh"
+#include "udaccelerator.hh"
 
 // -- RevCPU Headers
 #include "RevOpts.h"

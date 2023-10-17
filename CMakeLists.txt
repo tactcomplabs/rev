@@ -39,7 +39,9 @@ if(NOT (EXISTS "${SST_INSTALL_DIR}"))
   message(FATAL_ERROR " SST_INSTALL_DIR (${SST_INSTALL_DIR}) is invalid.")
 endif()
 
-include_directories(SST_SRC ${SST_INSTALL_DIR})
+set( UPDOWN "$ENV{UPDOWN}" )
+
+include_directories(SST_SRC ${SST_INSTALL_DIR} UPDOWN/udbasim/accel/include UPDOWN/udbasim/lane/include UPDOWN/common/include UPDOWN/isa/include)
 # find_package(SST REQUIRED CONFIG) # NOTE: Pipe dream for when SST has coherent CMake support
 
 #------------------------------------------------------------------------
@@ -72,14 +74,14 @@ execute_process(COMMAND sst-config --ELEMENT_CXXFLAGS
   OUTPUT_VARIABLE SST_CXXFLAGS
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-set(CXXFLAGS "${SST_CXXFLAGS}  -fno-stack-protector")
+set(CXXFLAGS "${SST_CXXFLAGS}  -fno-stack-protector") 
 message (CXXFLAGS="${CXXFLAGS}")
 
 execute_process(COMMAND sst-config --ELEMENT_LDFLAGS
   OUTPUT_VARIABLE SST_LDFLAGS
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-set(LDFLAGS "${SST_LDFLAGS}  -fno-stack-protector")
+set(LDFLAGS "${SST_LDFLAGS}  -fno-stack-protector -L/home/ddonofrio/updown/updown/install/updown/lib/ -L/home/ddonofrio/updown/updown/udbasim/build/lane -lUDAccelerator -lLaneElements")
 message (LDFLAGS="${LDFLAGS}")
 
 #------------------------------------------------------------------------
@@ -91,7 +93,7 @@ else()
   set(WERROR_FLAG "-Werror")
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++17 -O2 -Wall -Wextra ${WERROR_FLAG} -Wvla -Wuninitialized -Wfloat-conversion -Wdouble-promotion -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+set(CMAKE_CXX_FLAGS "-std=c++17 -O2 -Wall -Wextra -Wvla -Wuninitialized -Wfloat-conversion -Wdouble-promotion -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ -I${UPDOWN}/udbasim//accel/include -I${UPDOWN}/udbasim//lane/include -I${UPDOWN}/udbasim/common/include -I${UPDOWN}/udbasim/isa/include ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
 
