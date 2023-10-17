@@ -91,6 +91,10 @@ SimpleUpDownCoProc::SimpleUpDownCoProc(ComponentId_t id, Params& params, RevProc
   std::string ClockFreq = params.find<std::string>("clock", "1Ghz");
   cycleCount = 0;
 
+    udaccel = new basim::UDAccelerator(64,0,0);
+    /* Initialize Accelerator  */
+    udaccel->initSetup(0, "./addi_1.bin", 0);
+
   registerStats();
 
 }
@@ -99,9 +103,35 @@ SimpleUpDownCoProc::~SimpleUpDownCoProc(){
 
 };
 
-bool SimpleUpDownCoProc::IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){
+bool SimpleUpDownCoProc::IssueInst(){
   std::cout << "UpDown instruction issued: " << std::hex << Inst << std::dec << std::endl;
-  //parent->ExternalDepSet(CreatePasskey(), F->GetHartToExec(), 7, false);
+   bool rtn = false;
+    bool instIssued = false;
+    if(!instIssued && udaccel->isIdle()){
+        uint8_t numop = 2;
+        basim::eventword_t ev0(0);
+        ev0.setNumOperands(numop);
+        basim::operands_t op0(numop);
+        //basim::regval_t* data = new regval_t[numop];
+        long unsigned int* data = new long unsigned int[numop];
+        for(auto i = 0; i < numop; i++)
+                data[i] = i+5;
+        op0.setData(data);
+        basim::eventoperands_t eops(&ev0, &op0);
+        udaccel->pushEventOperands(eops, 0);
+        udaccel->pushEventOperands(eops, 1);
+        std::cout << "About to simulate..." << std::endl;
+        udaccel->simulate(2);
+        instIssued = true;
+    }else{
+        std::cout << "Another simulate..." << std::endl;
+        udaccel->simulate(2);
+    }
+    if((instIssued == true) && udaccel->isIdle()){
+         rtn = true;
+        std::cout << "Done." << std::endl;
+    }
+    //while(!udaccel->isIdle())
   return true;
 }
 

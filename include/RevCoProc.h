@@ -25,6 +25,7 @@
 
 // -- SST Headers
 #include "SST.h"
+#include "../accel/include/udaccelerator.hh"
 
 // -- RevCPU Headers
 #include "RevOpts.h"
@@ -189,7 +190,8 @@ public:
   void registerStats();
 
   /// SimpleUpDownCoProc: Enqueue Inst into the InstQ and return
-  virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst);
+  virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){return true;};
+  bool IssueInst();
 
   /// SimpleUpDownCoProc: Reset the co-processor by emmptying the InstQ
   virtual bool Reset();
@@ -206,6 +208,9 @@ private:
 
   /// SimpleUpDownCoProc: Total number of instructions retired
   Statistic<uint64_t>* num_instRetired;
+  
+  // UD Accelerator instantiated
+  basim::UDAccelerator* udaccel;
 
   SST::Cycle_t cycleCount;
 
