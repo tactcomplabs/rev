@@ -616,7 +616,6 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
   auto nleft = nbytes - ECALL.string.size();
   if(nleft == 0 && LSQueue->count(lsq_hash) == 0){
     int rc = write(fd, ECALL.string.data(), ECALL.string.size());
-    fsync(fd);
     RegFile->SetX(RevReg::a0, rc);
     ECALL.clear();
     DependencyClear(HartToExec, 10, false);
