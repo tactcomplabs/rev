@@ -91,9 +91,14 @@ SimpleUpDownCoProc::SimpleUpDownCoProc(ComponentId_t id, Params& params, RevProc
   std::string ClockFreq = params.find<std::string>("clock", "1Ghz");
   cycleCount = 0;
 
-    udaccel = new basim::UDAccelerator(64,0,0);
+  // Base address for scratchpad memories
+//#define BASE_SPMEM_ADDR 0x20000000000
+// Base address for memory mapped control registers
+//#define BASE_CTRL_ADDR 0x26000000000
+// Base address for UpDown Program
+//#define BASE_PROG_ADDR 0x28000000000
+
     /* Initialize Accelerator  */
-    udaccel->initSetup(0, "./addi_1.bin", 0);
 
   registerStats();
 
@@ -104,34 +109,36 @@ SimpleUpDownCoProc::~SimpleUpDownCoProc(){
 };
 
 bool SimpleUpDownCoProc::IssueInst(){
+    //udaccel->initSetup(0, prog.c_str(), 0x28000000000, 1);
+    udaccel = new basim::UDAccelerator(64,0,1);
+    udaccel->initSetup(0, "./addi_1.bin", 0x28000000000, 1);
   std::cout << "UpDown instruction issued: " << std::endl;
    bool rtn = false;
-    bool instIssued = false;
-    if(!instIssued && udaccel->isIdle(0)){
-        uint8_t numop = 2;
-        basim::eventword_t ev0(0);
-        ev0.setNumOperands(numop);
-        basim::operands_t op0(numop);
-        //basim::regval_t* data = new regval_t[numop];
-        long unsigned int* data = new long unsigned int[numop];
-        for(auto i = 0; i < numop; i++)
-                data[i] = i+5;
-        op0.setData(data);
-        basim::eventoperands_t eops(&ev0, &op0);
-        udaccel->pushEventOperands(eops, 0);
-        udaccel->pushEventOperands(eops, 1);
-        std::cout << "About to simulate..." << std::endl;
-        udaccel->simulate(2);
-        instIssued = true;
-    }else{
-        std::cout << "Another simulate..." << std::endl;
-        udaccel->simulate(2);
-    }
-    if((instIssued == true) && udaccel->isIdle()){
-         rtn = true;
-        std::cout << "Done." << std::endl;
-    }
-    //while(!udaccel->isIdle())
+   bool instIssued = false;
+   uint8_t numop = 2;
+   basim::eventword_t ev0(0);
+   ev0.setNumOperands(numop);
+   basim::operands_t op0(2);
+   //basim::regval_t* data = new regval_t[numop];
+   //uint64_t* data = new uint64_t[numop];
+   uint64_t* data = new uint64_t[12];
+   for(auto i = 0; i < 12; i++)
+           data[i] = i+5;
+   op0.setData(data);
+   basim::eventoperands_t eops(&ev0, &op0);
+   std::cout << "Operands assembled" << std::endl;
+   //uint8_t* spdata = new uint8_t[8];
+   //udaccel->readScratchPad(8, 0x280000000000, spdata);
+   //std::cout << "Scratchpad data == " << spdata[0] << std::endl;
+   udaccel->isIdle(0);
+   std::cout << "Idle check complete: " << std::endl;
+   udaccel->pushEventOperands(eops, 0);
+   udaccel->pushEventOperands(eops, 1);
+   std::cout << "About to simulate..." << std::endl;
+   while(!udaccel->isIdle())
+ 	  udaccel->simulate(2);
+  std::cout << "Done." << std::endl;
+  delete[] data; data = nullptr;
   return true;
 }
 

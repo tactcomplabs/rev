@@ -278,7 +278,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
         output.fatal(CALL_INFO, -1, "Error : failed to inintialize the co-processor subcomponent\n");
       }
       UDAs.push_back(CoProc);
-      Procs[i]->SetCoProc(CoProc);
+      Procs[i]->SetUpDownAccel(CoProc);
     }
   
   }else{

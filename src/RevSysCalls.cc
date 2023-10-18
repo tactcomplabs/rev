@@ -2537,7 +2537,7 @@ EcallStatus RevProc::ECALL_updown_task_spawn(RevInst& inst){
   uint64_t command = RegFile->GetX<uint64_t>(RevReg::a0);
 
   if(command != 0){
-    reinterpret_cast<SimpleUpDownCoProc*>(UDaccel)->IssueInst();
+    static_cast<SimpleUpDownCoProc*>(UDaccel)->IssueInst();
     return EcallStatus::SUCCESS;
   }
   

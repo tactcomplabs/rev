@@ -25,7 +25,7 @@ RevProc::RevProc( unsigned Id,
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
-    numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader), AssignedThreads(AssignedThreads),
+    numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader),UDaccel(nullptr), AssignedThreads(AssignedThreads),
     GetNewThreadID(GetNewTID), output(Output), feature(nullptr),
     PExec(nullptr), sfetch(nullptr) {
 
