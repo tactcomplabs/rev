@@ -17,7 +17,6 @@
 #include "RevTracer.h"
 
 using namespace SST::RevCPU;
-using namespace std;
 
 RevTracer::RevTracer(std::string Name, SST::Output *o)
     : name(Name), pOutput(o), outputEnabled(false), lastPC(0), insn(0), 
@@ -47,7 +46,7 @@ RevTracer::RevTracer(std::string Name, SST::Output *o)
     #endif
 }
 
-SST::RevCPU::RevTracer::~RevTracer()
+RevTracer::~RevTracer()
 {
     #ifdef REV_USE_SPIKE
     if (diasm) delete diasm;
@@ -55,7 +54,7 @@ SST::RevCPU::RevTracer::~RevTracer()
     #endif
 }
 
-int SST::RevCPU::RevTracer::SetDisassembler(std::string machine)
+int RevTracer::SetDisassembler(std::string machine)
 {
     #ifdef REV_USE_SPIKE
     try {
@@ -71,23 +70,23 @@ int SST::RevCPU::RevTracer::SetDisassembler(std::string machine)
     #endif
 }
 
-int SST::RevCPU::RevTracer::SetTraceSymbols(std::map<uint64_t, std::string> *TraceSymbols)
+int RevTracer::SetTraceSymbols(std::map<uint64_t, std::string> *TraceSymbols)
 {
     traceSymbols = TraceSymbols;
     return 0;
 }
 
-void SST::RevCPU::RevTracer::SetStartCycle(uint64_t c)
+void RevTracer::SetStartCycle(uint64_t c)
 {
     startCycle = c;
 }
 
-void SST::RevCPU::RevTracer::SetCycleLimit(uint64_t c)
+void RevTracer::SetCycleLimit(uint64_t c)
 {
     cycleLimit = c;
 }
 
-void SST::RevCPU::RevTracer::SetCmdTemplate(std::string cmd)
+void RevTracer::SetCmdTemplate(std::string cmd)
 {
     if (s2op.find(cmd) == s2op.end()) {
         std::stringstream s;
@@ -102,7 +101,7 @@ void SST::RevCPU::RevTracer::SetCmdTemplate(std::string cmd)
          nops[i]= cmd_template | (i << TRC_OP_POS);
 }
 
-void SST::RevCPU::RevTracer::CheckUserControls(uint64_t cycle)
+void RevTracer::CheckUserControls(uint64_t cycle)
 {
     // bail out early if disabled
     if (disabled) return;
@@ -150,28 +149,28 @@ void SST::RevCPU::RevTracer::CheckUserControls(uint64_t cycle)
     }
 }
 
-void SST::RevCPU::RevTracer::SetFetchedInsn(uint64_t _pc, uint32_t _insn)
+void RevTracer::SetFetchedInsn(uint64_t _pc, uint32_t _insn)
 {
     insn = _insn;
     pc = _pc;
 }
 
-bool SST::RevCPU::RevTracer::OutputOK()
+bool RevTracer::OutputOK()
 {
     return outputEnabled or events.f.trc_ctl;
 }
 
-void SST::RevCPU::RevTracer::regRead(uint8_t r, uint64_t v)
+void RevTracer::regRead(uint8_t r, uint64_t v)
 {
     traceRecs.emplace_back(TraceRec_t(RegRead,r,v));
 }
 
-void SST::RevCPU::RevTracer::regWrite(uint8_t r, uint64_t v)
+void RevTracer::regWrite(uint8_t r, uint64_t v)
 {
     traceRecs.emplace_back(TraceRec_t(RegWrite,r,v));
 }
 
-void SST::RevCPU::RevTracer::memWrite(uint64_t adr, size_t len,  const void *data)
+void RevTracer::memWrite(uint64_t adr, size_t len,  const void *data)
 {
     // Only tracing the first 64 bytes. Retaining pointer in case we change that.
     uint64_t d = *((uint64_t*) data);
@@ -184,18 +183,18 @@ void SST::RevCPU::RevTracer::memWrite(uint64_t adr, size_t len,  const void *dat
     traceRecs.emplace_back(TraceRec_t(MemStore,adr,len,d));
 }
 
-void SST::RevCPU::RevTracer::memRead(uint64_t adr, size_t len, void *data)
+void RevTracer::memRead(uint64_t adr, size_t len, void *data)
 {
     uint64_t d = *((uint64_t*) data);
     traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,d)); 
 }
 
-void SST::RevCPU::RevTracer::pcWrite(uint64_t newpc)
+void RevTracer::pcWrite(uint64_t newpc)
 {
     traceRecs.emplace_back(TraceRec_t(PcWrite,newpc,0,0));
 }
 
-void SST::RevCPU::RevTracer::InstTrace(size_t cycle, unsigned id, unsigned hart, unsigned tid, std::string& fallbackMnemonic)
+void RevTracer::InstTrace(size_t cycle, unsigned id, unsigned hart, unsigned tid, std::string& fallbackMnemonic)
 {
     CheckUserControls(cycle);
     if (OutputOK()){
@@ -206,7 +205,7 @@ void SST::RevCPU::RevTracer::InstTrace(size_t cycle, unsigned id, unsigned hart,
     Reset();
 }
 
-std::string SST::RevCPU::RevTracer::RenderOneLiner(std::string& fallbackMnemonic)
+std::string RevTracer::RenderOneLiner(std::string& fallbackMnemonic)
 {
     // Flow Control Events
     std::stringstream ss_events;
@@ -221,7 +220,7 @@ std::string SST::RevCPU::RevTracer::RenderOneLiner(std::string& fallbackMnemonic
     std::stringstream ss_disasm;
     #ifdef REV_USE_SPIKE
     if (diasm)
-        ss_disasm << hex << diasm->disassemble(insn) << "\t";
+        ss_disasm << std::hex << diasm->disassemble(insn) << "\t";
     else
     #endif
     {;
@@ -240,9 +239,9 @@ std::string SST::RevCPU::RevTracer::RenderOneLiner(std::string& fallbackMnemonic
     }
 
     // Initial rendering
-    stringstream os;
-    os << "0x" << hex << pc << ":" << setfill('0') << setw(8) << insn;
-    os << " " << setfill(' ') << setw(2) << ss_events.str() << " " << ss_disasm.str();
+    std::stringstream os;
+    os << "0x" << std::hex << pc << ":" << std::setfill('0') << std::setw(8) << insn;
+    os << " " << std::setfill(' ') << std::setw(2) << ss_events.str() << " " << ss_disasm.str();
 
     // register and memory read/write events preserving code ordering
     if (traceRecs.empty()) 
@@ -256,19 +255,19 @@ std::string SST::RevCPU::RevTracer::RenderOneLiner(std::string& fallbackMnemonic
         switch (r.key) {
             case RegRead:
                 // a:reg b:data
-                ss_rw << "0x" << hex << r.b << "<-";
+                ss_rw << "0x" << std::hex << r.b << "<-";
                 fmt_reg(r.a, ss_rw);
                 ss_rw << " ";
                 break;
             case RegWrite:
                 // a:reg b:data
                 fmt_reg(r.a, ss_rw);
-                ss_rw << "<-0x" << hex << r.b << " ";
+                ss_rw << "<-0x" << std::hex << r.b << " ";
                 break;
             case MemStore:
             {
                 // a:adr b:len c:data
-                ss_rw << "[0x" << hex << r.a << "," << dec << r.b << "]<-";
+                ss_rw << "[0x" << std::hex << r.a << "," << std::dec << r.b << "]<-";
                 fmt_data(r.b, r.c, ss_rw);
                 ss_rw << " ";
                 break;
@@ -276,7 +275,7 @@ std::string SST::RevCPU::RevTracer::RenderOneLiner(std::string& fallbackMnemonic
             case MemLoad:
                 // a:adr b:len c:data
                 fmt_data(r.b, r.c, ss_rw);
-                ss_rw << "<-[0x" << hex << r.a << "," << dec << r.b << "]";
+                ss_rw << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
                 ss_rw << " ";
                 break;
             case PcWrite:
@@ -284,7 +283,7 @@ std::string SST::RevCPU::RevTracer::RenderOneLiner(std::string& fallbackMnemonic
                 uint64_t pc = r.a;
                 if ( lastPC+4 != pc ) { 
                     // only render if non-sequential instruction
-                    ss_rw << "pc<-0x" << hex << pc;
+                    ss_rw << "pc<-0x" << std::hex << pc;
                     if (traceSymbols and (traceSymbols->find(pc) != traceSymbols->end()))
                         ss_rw << " <" << traceSymbols->at(pc) << ">";
                     ss_rw << " ";
@@ -299,7 +298,7 @@ std::string SST::RevCPU::RevTracer::RenderOneLiner(std::string& fallbackMnemonic
     return os.str();
 }
 
-void SST::RevCPU::RevTracer::Reset()
+void RevTracer::Reset()
 {
     events.v = 0;
     // save processing time and only clear the essentials.
@@ -308,7 +307,7 @@ void SST::RevCPU::RevTracer::Reset()
     traceRecs.clear();
 }
 
-void SST::RevCPU::RevTracer::fmt_reg(uint8_t r, std::stringstream& s)
+void RevTracer::fmt_reg(uint8_t r, std::stringstream& s)
 {
     #ifdef REV_USE_SPIKE
     if (r<32) {
@@ -321,17 +320,17 @@ void SST::RevCPU::RevTracer::fmt_reg(uint8_t r, std::stringstream& s)
     #endif
 }
 
-void SST::RevCPU::RevTracer::fmt_data(unsigned len, uint64_t d, std::stringstream &s)
+void RevTracer::fmt_data(unsigned len, uint64_t d, std::stringstream &s)
 {
     if (len==0) return;
-    s << "0x" << hex << setfill('0');
+    s << "0x" << std::hex << std::setfill('0');
     if (len > 8)
-        s << setw(8 * 2) << d << "..+" << dec << (8-len);
+        s << std::setw(8 * 2) << d << "..+" << std::dec << (8-len);
     else if (len == 8)
-        s << setw(8 * 2) << d;
+        s << std::setw(8 * 2) << d;
     else {
         unsigned shift = (8-len) * 8;
         uint64_t mask = (~0ULL) >> shift;
-        s << setw(len * 2) << (d & mask);
+        s << std::setw(len * 2) << (d & mask);
     }
 }

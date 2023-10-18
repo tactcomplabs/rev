@@ -11,8 +11,8 @@
  *
  */
 
-#include <stdlib.h>
-#include <cstdint>
+#include "stdlib.h"
+#include "stdint.h"
 #include "rev-macros.h"
 
 #define assert TRACE_ASSERT
