@@ -104,7 +104,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     std::vector<std::string> startSyms;
     params.find_array<std::string>("startSymbol", startSyms);
     if( !Opts->InitStartSymbols( startSyms ) )
-      output.fatal(CALL_INFO, -1, "Error: failed to initalized the starting symbols\n" );
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting symbols\n" );
 
     std::vector<std::string> machModels;
     params.find_array<std::string>("machine", machModels);
@@ -299,7 +299,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // Initial thread setup
   uint32_t MainThreadID = id+1; // Prevents having MainThreadID == 0 which is reserved for INVALID
 
-
   uint64_t StartAddr = 0x00ull;
   std::string StartSymbol;
 
@@ -323,7 +322,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       if (!ResolvedStartSymbolAddr) {
         // ... not valid, error out
         output.fatal(CALL_INFO, -1,
-                  "Error: failed to resolve address for symbol <%s> for core=%lu\n", StartSymbol.c_str(), id);
+                  "Error: failed to resolve address for symbol <%s>\n", StartSymbol.c_str());
       }
       // ... valid use the resolved symbol
       StartAddr = ResolvedStartSymbolAddr;
@@ -333,12 +332,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     if ((IsStartSymbolProvided) && (ResolvedStartSymbolAddr != StartAddr)) {
       // ... they are different, don't know the user intent so error out now
       output.fatal(CALL_INFO, -1,
-                  "Error: start address and start symbol differ for core=%lu startAddr=%lu StartSymbol=%s ResolvedStartSymbolAddr=%lu\n",
-                    id, StartAddr, StartSymbol.c_str(), ResolvedStartSymbolAddr);
+                  "Error: start address and start symbol differ startAddr=0x%" PRIx64 " StartSymbol=%s ResolvedStartSymbolAddr=0x%" PRIx64 "\n",
+                   StartAddr, StartSymbol.c_str(), ResolvedStartSymbolAddr);
     } // ... else no symbol provided, continue on with StartAddr as the target
   }
 
-  output.verbose(CALL_INFO, 11, 0, "Start address is 0x%lx\n", StartAddr);
+  output.verbose(CALL_INFO, 11, 0, "Start address is 0x%" PRIx64 "\n", StartAddr);
 
   std::shared_ptr<RevThread> MainThread = std::make_shared<RevThread>(MainThreadID,                    // ThreadID
                                                                       _INVALID_TID_,                 // Parent ThreadID
@@ -2661,7 +2660,7 @@ void RevCPU::CheckBlockedThreads(){
 void RevCPU::SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature){
   auto Argv = Opts->GetArgv();
   Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a0, Argv.size());
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a1, Mem->GetStackTop()+60);
+  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a1, Mem->GetStackTop() + 60);
 }
 
 // Checks core 'i' to see if it has any available harts to assign work to
