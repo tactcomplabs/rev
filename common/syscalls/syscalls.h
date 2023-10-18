@@ -323,8 +323,13 @@ struct iocb {
 };
 
 struct rev_cpuinfo {
-	uint32_t cores;
-	uint32_t harts_per_core;
+   uint32_t cores;
+   uint32_t harts_per_core;
+};
+
+struct rev_stats {
+   uint64_t cycles;
+   uint64_t instructions;
 };
 
 #ifndef SYSCALL_TYPES_ONLY
@@ -3760,6 +3765,16 @@ int rev_cpuinfo(struct rev_cpuinfo *info) {
   int rc;
   asm volatile (
     "li a7, 500 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
+int rev_perf_stats(struct rev_stats *stats) {
+  int rc;
+  asm volatile (
+    "li a7, 501 \n\t"
     "ecall \n\t"
     "mv %0, a0" : "=r" (rc)
     );
