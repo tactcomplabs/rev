@@ -24,6 +24,7 @@
 #include "RevInstTable.h"
 #include "RevMem.h"
 #include "RevFeature.h"
+#include "RevFenv.h"
 
 namespace SST::RevCPU{
 
@@ -58,7 +59,7 @@ struct RevExt{
   std::string_view GetName() const { return name; }
 
   /// RevExt: baseline execution function
-  bool Execute(unsigned Inst, const RevInst& Payload, unsigned HartID, RevRegFile* regFile);
+  bool Execute(unsigned Inst, const RevInst& Payload, uint16_t HartID, RevRegFile* regFile);
 
   /// RevExt: retrieves the extension's instruction table
   const std::vector<RevInstEntry>& GetInstTable(){ return table; }
@@ -79,6 +80,7 @@ private:
   std::vector<RevInstEntry> ctable; ///< RevExt: compressed instruction table
   std::vector<RevInstEntry> otable; ///< RevExt: optional compressed instruction table
 
+  auto SetFPEnv(unsigned Inst, const RevInst& Payload, uint16_t threadID, RevRegFile* regFile);
 }; // class RevExt
 } // namespace SST::RevCPU
 

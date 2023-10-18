@@ -37,14 +37,9 @@
 #define DECODE_FUNCT2(x)  (((x)>>(25))&(0b11))
 #define DECODE_FUNCT3(x)  (((x)>>(12))&(0b111))
 
+#define DECODE_RM(x)    static_cast<FRMode>(DECODE_FUNCT3(x))
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
-
-#define FRM_RNE   0b000                     // Rounding mode: Round to Nearest, ties to Even
-#define FRM_RTZ   0b001                     // Rounding mode: Round towards Zero
-#define FRM_RDN   0b010                     // Rounding mode: Round Down (towards -INF)
-#define FRM_RUP   0b011                     // Rounding mode: Round Up (towards +INF)
-#define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
 
 namespace SST::RevCPU{
 
@@ -65,17 +60,6 @@ enum EXCEPTION_CAUSE : uint32_t {
   LOAD_PAGE_FAULT           = 13,
   STORE_AMO_PAGE_FAULT      = 15,
 };
-
-/// Floating-Point Rounding Mode
-enum class RndMode : uint8_t {
-  RNE = 0,   // Round to Nearest, ties to Even
-  RTZ = 1,   // Round towards Zero
-  RDN = 2,   // Round Down (towards -Inf)
-  RUP = 3,   // Round Up (towards +Inf)
-  RMM = 4,   // Round to Nearest, ties to Max Magnitude
-  DYN = 7,   // In instruction's rm field, selects dynamic rounding mode; invalid in FCSR
-};
-
 
 enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format
@@ -125,7 +109,7 @@ struct RevInst {
   uint64_t rs3        =~0; ///< RevInst: rs3 value
   uint64_t imm        = 0; ///< RevInst: immediate value
   uint8_t fmt         = 0; ///< RevInst: floating point format
-  uint8_t rm          = 0; ///< RevInst: floating point rounding mode
+  FRMode rm{FRMode::None}; ///< RevInst: floating point rounding mode
   uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
   uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
   uint16_t offset     = 0; ///< RevInst: compressed offset
@@ -134,7 +118,7 @@ struct RevInst {
   bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
   uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
-  uint16_t hart       = 0;  ///< RevInst: What hart is this inst being executed on
+  uint16_t hart       = 0; ///< RevInst: What hart is this inst being executed on
 
   explicit RevInst() = default; // prevent aggregate initialization
 

@@ -51,6 +51,17 @@ enum class RevReg {
   fs8  = 24, fs9 = 25, fs10 = 26, fs11 = 27, ft8 = 28, ft9 = 29, ft10 = 30, ft11 = 31,
 };
 
+/// Floating-Point Rounding Mode
+enum class FRMode : uint8_t {
+  None = 0xff,
+  RNE = 0,   // Round to Nearest, ties to Even
+  RTZ = 1,   // Round towards Zero
+  RDN = 2,   // Round Down (towards -Inf)
+  RUP = 3,   // Round Up (towards +Inf)
+  RMM = 4,   // Round to Nearest, ties to Max Magnitude
+  DYN = 7,   // In instruction's rm field, selects dynamic rounding mode; invalid in FCSR
+};
+
 /// Floating-point control register
 // fcsr.NX, fcsr.UF, fcsr.OF, fcsr.DZ, fcsr.NV, fcsr.frm
 struct FCSR{
@@ -179,6 +190,11 @@ public:
   /// Invoke the MarkLoadComplete function
   void MarkLoadComplete(const MemReq& req) const {
     MarkLoadCompleteFunc(req);
+  }
+
+  /// Return the Floating-Point Rounding Mode
+  FRMode GetFPRound() const{
+    return static_cast<FRMode>(fcsr.frm);
   }
 
   /// Capture the PC of current instruction which raised exception
