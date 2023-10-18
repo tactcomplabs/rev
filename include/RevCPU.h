@@ -12,6 +12,7 @@
 #define _SST_REVCPU_H_
 
 // -- Standard Headers
+#include <memory>
 #include <vector>
 #include <queue>
 #include <tuple>
@@ -217,26 +218,27 @@ private:
   std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
   bool *Enabled;                      ///< RevCPU: Completion structure
 
+  // TODO: Remove
   // Global table of threads
   // - The actual RevThread objects live in this table
   // - Only place where the presence of a RevThread on this CPU is guanranteed throughout execution
-  std::map<uint32_t, std::shared_ptr<RevThread>> Threads;
+  // std::map<uint32_t, std::unique_ptr<RevThread>> Threads;
 
+  // TODO: Remove
   // Oversubscription is not supported in hardware
   // (ie. AssignedThreads.at(i).size() will never exceed the numHarts)
-  std::vector<std::unordered_map<uint32_t, std::shared_ptr<RevThread>>> AssignedThreads;
+  std::vector<std::unordered_map<uint32_t, std::unique_ptr<RevThread>>> AssignedThreads;
 
   // Initializes a RevThread object.
-  // - Moves it to the 'Threads' map
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
-  void InitThread(std::shared_ptr<RevThread>& ThreadToInit);
+  void InitThread(std::unique_ptr<RevThread> ThreadToInit);
 
   // Adds Thread with ThreadID to AssignedThreads vector for ProcID
   // - Handles updating LSQueue & MarkLoadComplete function pointers
-  void AssignThread(uint32_t ThreadID, uint32_t ProcID);
+  void AssignThread(std::unique_ptr<RevThread> ThreadToAssign, uint32_t ProcID);
 
   // Sets up arguments for a thread with a given ID and feature set.
-  void SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature);
+  void SetupArgs(std::unique_ptr<RevThread> ThreadToSetup, RevFeature* feature);
 
   // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();
@@ -255,16 +257,19 @@ private:
 
   // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
   // it does this by seeing if a given thread's WaitingOnTID has completed
-  bool ThreadCanProceed(uint32_t TID);
+  bool ThreadCanProceed(std::unique_ptr<RevThread> Thread);
 
-  // Queue of Thread IDs waiting to be assigned. The actual RevThread objects reside in the 'Threads' map.
-  std::vector<uint32_t> ThreadQueue = {};
+  // TODO: Update comment
+  // Queue of Threads which are ready to be scheduled
+  std::queue<std::unique_ptr<RevThread>> ReadyThreads = {};
 
-  // Set of Thread IDs that are currently blocked (waiting for their WaitingOnTID to be present in CompletedThreads).
-  std::set<uint32_t> BlockedThreads = {};
+  // TODO: Update comment
+  // Set of Threads that are currently blocked (waiting for their WaitingOnTID to be a key in CompletedThreads).
+  std::unordered_set<std::unique_ptr<RevThread>> BlockedThreads = {};
 
-  // Set of Thread IDs that have completed their execution.
-  std::set<uint32_t> CompletedThreads = {};
+  // TODO: Update comment
+  // Set of Thread IDs and their corresponding RevThread that have completed their execution on this RevCPU
+  std::unordered_map<uint32_t, std::unique_ptr<RevThread>> CompletedThreads = {};
 
   // Generates a new Thread ID using the RNG.
   uint32_t GetNewThreadID() { return RevRand(0, UINT32_MAX); }

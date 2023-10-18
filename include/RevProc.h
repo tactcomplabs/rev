@@ -139,14 +139,15 @@ public:
   bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
 
   /// RevProc: Gets the thread that is currently executing on the Hart
-  const std::shared_ptr<RevThread>& GetThreadOnHart(unsigned HartID) const {
-    static const std::shared_ptr<RevThread> null;
-    auto it = AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID());
-    return it != AssignedThreads.end() ? it->second : null;
-  }
+  // TODO: Change
+  //const std::shared_ptr<RevThread>& GetThreadOnHart(unsigned HartID) const {
+  //  static const std::shared_ptr<RevThread> null;
+  //  auto it = AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID());
+  //  return it != AssignedThreads.end() ? it->second : null;
+  //}
 
   ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
-  double GetHartUtilization() const { return (AssignedThreads.size() * 100.0) / Harts.size(); }
+  // double GetHartUtilization() const { return (BusyHarts.size() * 100.0) / AvailableHarts.size(); }
 
   std::bitset<_MAX_HARTS_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
   std::bitset<_MAX_HARTS_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
@@ -173,7 +174,7 @@ public:
 
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
-  ///  RevProc 
+  ///  RevProc
   void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat){
     DependencyClear(HartID, RegNum, isFloat);
   }
@@ -204,7 +205,10 @@ private:
   uint64_t ExecPC;          ///< RevProc: executing PC
   unsigned HartToDecode;    ///< RevProc: Current executing ThreadID
   unsigned HartToExec;      ///< RevProc: Thread to dispatch instruction
-  std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts
+
+  std::vector<std::shared_ptr<RevHart>> AvailableHarts; ///< RevProc: vector of Harts without a thread assigned to them
+  std::vector<std::shared_ptr<RevHart>> BusyHarts; ///< RevProc: vector of Harts with threads assigned to them
+
   uint64_t Retired;         ///< RevProc: number of retired instructions
 
   unsigned numHarts;        ///< RevProc: Number of Harts for this core

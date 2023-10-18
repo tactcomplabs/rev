@@ -643,13 +643,13 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   // If all Procs are disabled (ie. rtn == false at this point)
   // check to see if there are threads to assign
-  if( ThreadQueue.size() ){
+  if( ReadyThreads.size() ){
     rtn = false;
   } else if ( BlockedThreads.size() ){
     if( ThreadCanProceed(*BlockedThreads.begin()) ){
       Threads.at(*(BlockedThreads.begin()))->SetState(ThreadState::READY);
       Threads.at(*(BlockedThreads.begin()))->SetWaitingToJoinTID(_INVALID_TID_);
-      ThreadQueue.emplace_back(*BlockedThreads.begin());
+      ReadyThreads.emplace_back(*BlockedThreads.begin());
       BlockedThreads.erase(BlockedThreads.begin());
     }
     rtn = false;
@@ -676,8 +676,8 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
 // Initializes a RevThread object.
 // - Moves it to the 'Threads' map
-// - Adds it's ThreadID to the ThreadQueue to be scheduled
-void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
+// - Adds it's ThreadID to the ReadyThreads to be scheduled
+void RevCPU::InitThread(std::unique_ptr<RevThread>& ThreadToInit){
 
   auto gp = Loader->GetSymbolAddr("__global_pointer$");
   ThreadToInit->GetRegFile()->SetX(RevReg::gp, gp);
@@ -694,7 +694,7 @@ void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
   output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->to_string().c_str());
   ThreadToInit->SetState(ThreadState::READY);
   Threads.emplace(ThreadToInit->GetThreadID(), ThreadToInit);
-  ThreadQueue.emplace_back(TID);
+  ReadyThreads.emplace_back(TID);
 }
 
 void RevCPU::AssignThread(uint32_t ThreadID, uint32_t ProcID){
@@ -717,7 +717,7 @@ void RevCPU::AssignThread(uint32_t ThreadID, uint32_t ProcID){
 
 // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
 // it does this by seeing if a given thread's WaitingOnTID has completed
-bool RevCPU::ThreadCanProceed(uint32_t TID){
+bool RevCPU::ThreadCanProceed(std::unique_ptr<RevThread> Thread){
   bool rtn = false;
 
   // Get the thread's waiting to join TID
@@ -741,8 +741,9 @@ bool RevCPU::ThreadCanProceed(uint32_t TID){
   return rtn;
 }
 
+// TODO: Update implementation
 // Check if any BlockedThreads have had their counterpart complete execution
-// if so, move its TID to the ThreadQueue
+// if so, move its TID to the ReadyThreads
 void RevCPU::CheckBlockedThreads(){
   // Iterate over all block threads
   for( auto ThreadID : BlockedThreads ){
@@ -752,8 +753,8 @@ void RevCPU::CheckBlockedThreads(){
       Threads.at(ThreadID)->SetState(ThreadState::READY);
       // Remove the waiting to join TID
       Threads.at(ThreadID)->SetWaitingToJoinTID(_INVALID_TID_);
-      // Add the thread to the ThreadQueue
-      ThreadQueue.emplace_back(ThreadID);
+      // Add the thread to the ReadyThreads
+      ReadyThreads.emplace_back(ThreadID);
       // Remove the thread from the BlockedThreads list
       BlockedThreads.erase(ThreadID);
     } else {
@@ -770,40 +771,37 @@ void RevCPU::CheckBlockedThreads(){
 // of the ARGV base pointer in memory which is currently set to the
 // program header region.  When we come out of reset, this is StackTop+60 bytes
 // ----------------------------------
-void RevCPU::SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature){
+void RevCPU::SetupArgs(std::unique_ptr<RevThread> ThreadToSetup, RevFeature* feature){
   auto Argv = Opts->GetArgv();
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a0, Argv.size());
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a1, Mem->GetStackTop() + 60);
+  // setup argc
+  ThreadToSetup->GetRegFile()->SetX(RevReg::a0, Argv.size());
+  ThreadToSetup->GetRegFile()->SetX(RevReg::a1, Mem->GetStackTop() + 60);
+  ThreadToSetup->GetRegFile()->SetX(RevReg::gp, Loader->GetSymbolAddr("__global_pointer$"));
+  return;
 }
 
 // Checks core 'i' to see if it has any available harts to assign work to
-// if it does and there is work to assign (ie. ThreadQueue is not empty)
+// if it does and there is work to assign (ie. ReadyThreads is not empty)
 // assign it and enable the processor if not already enabled.
 void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
-  // print the thread queue
-  // Get utilization info
-  double Util = Procs[ProcID]->GetHartUtilization();
-  //if( Util > 0.0 ){
-    output.verbose(CALL_INFO, 11, 0, "Core %" PRIu32 " utilization: %.2f%%\n", ProcID, Util);
-  //}
-  // Check if we have room to schedule another thread
-  if( Util < 100  ){
-    output.verbose(CALL_INFO, 10, 0, "Core %" PRIu32 " utilization: %.2f%%\n", ProcID, Util);
-    // We can schedule another thread
-    // Check if we have any threads to schedule
-    if( ThreadQueue.size() ){
-      // Add to this proc's thread list
-      Threads.at(ThreadQueue.front())->SetState(ThreadState::RUNNING);
-      AssignThread(ThreadQueue.front(), ProcID);
-      // AssignedThreads.at(ProcID).emplace_back(Threads.at(ThreadQueue.front()));
-      // output.verbose(CALL_INFO, 6, 1, "Assigning Thread %u to Core %u\n", ThreadQueue.front(), ProcID);
-      // Remove from thread queue
-      ThreadQueue.erase(ThreadQueue.begin());
-      // If this Proc was previously disabled, enable it
-      // if( !Enabled[i] ){ Enabled[i] = true; }
-      Enabled[ProcID] = true;
-    }
-  } // Utilization is 100%, so change nothing
+  // Check if we have anything to assign
+  if( ReadyThreads.empty() ){}
+    return;
+  }
+
+  // There is work to assign, check if this proc has room
+  if( Procs[ProcID]->GetAvailableHarts() ){
+    // There is room, assign a thread
+    // Get the next thread to assign
+    // TODO: Verify this is the correct way to transfer a unique_ptr
+    std::unique_ptr<RevThread> Thread = std::move(ReadyThreads.front());
+    ReadyThreads.pop();
+    // Assign the thread
+    // TODO: Implement this function & make it change the thread's state to ThreadState::RUNNING
+    Procs[ProcID]->AssignThread(Thread);
+    // If this Proc was previously disabled, enable it
+    if( !Enabled[ProcID] ){ Enabled[ProcID] = true; }
+  }
   return;
 }
 
@@ -854,7 +852,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
 
         // -- 3b.
         AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
-        
+
         if( AssignedThreads.at(ProcID).empty() ){
           Enabled[ProcID] = false;
         }
@@ -871,7 +869,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       Threads.emplace(Thread->GetThreadID(), Thread);
 
       // Add it to the thread queue to be scheduled
-      ThreadQueue.emplace_back(Thread->GetThreadID());
+      ReadyThreads.emplace_back(Thread->GetThreadID());
       break;
 
     case ThreadState::RUNNING:
