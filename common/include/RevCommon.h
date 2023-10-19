@@ -81,7 +81,7 @@ enum class MemOp : uint8_t {
   MemOpAMO         = 9,
 };
 
-inline uint64_t make_lsq_hash(uint8_t destReg, RevRegClass regType, uint16_t HartID){
+inline uint64_t make_lsq_hash(uint16_t destReg, RevRegClass regType, unsigned HartID){
   return static_cast<uint64_t>(regType) << (16 + 8) | static_cast<uint64_t>(destReg) << 16 | HartID;
 };
 
