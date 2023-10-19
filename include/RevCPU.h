@@ -118,6 +118,7 @@ public:
     {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject",  "1"},
     {"testIters",       "Number of PAN test messages to send",          "255"},
     {"splash",          "Display the splash logo",                      "0"},
+    {"disable_coproc_clock",  "Disables the manual clocking of coprocessor subcomponents", "0"},
     )
 
   // -------------------------------------------------------
@@ -301,6 +302,8 @@ private:
   bool EnableMemFaults;               ///< RevCPU: Enable memory faults (bit flips)
   bool EnableRegFaults;               ///< RevCPU: Enable register faults
   bool EnableALUFaults;               ///< RevCPU: Enable ALU faults
+
+  bool DisableCoprocClock;            ///< RevCPU: Disables manual coproc clocking
 
   bool ReadyForRevoke;                ///< RevCPU: Is the CPU ready for revocation?
   bool RevokeHasArrived;              ///< RevCPU: Determines whether the REVOKE command has arrived
