@@ -28,7 +28,7 @@ class RV64A : public RevExt {
           &R->RV64[Inst.rd],
           Inst.aq, Inst.rl, req,
           REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
@@ -39,7 +39,7 @@ class RV64A : public RevExt {
           &R->RV64[Inst.rd],
           Inst.aq, Inst.rl,
           REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
@@ -73,7 +73,7 @@ class RV64A : public RevExt {
               req,
               flags);
 
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
 
     // update the cost
     R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());

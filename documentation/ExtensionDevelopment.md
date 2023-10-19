@@ -341,9 +341,8 @@ There are several helper functions to make generating instruction implementation
   void SetPC(const RevFeature* F, T val);
 ```
 ```c++
-  /// AdvancePC: Advance the program counter a certain number of bytes
-  template<typename T>
-  void AdvancePC(const RevFeature* F, T bytes);
+  /// AdvancePC: Advance the program counter to the next instruction
+  void AdvancePC(const RevInst& Inst);
 ```
 ```c++
   /// GetFP32: Get the 32-bit float value of a specific FP register
@@ -483,42 +482,42 @@ can then be used just like the names of ordinary functions.
 ```c++
 static bool zadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
-    R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) + R->GetX<uint32_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint32_t>(Inst.rs1) + R->GetX<uint32_t>(Inst.rs2));
   }else{
-    R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) + R->GetX<uint64_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint64_t>(Inst.rs1) + R->GetX<uint64_t>(Inst.rs2));
   }
-  R->AdvancePC(F, Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 ```
 ```c++
 static bool zsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
-    R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) - R->GetX<uint32_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint32_t>(Inst.rs1) - R->GetX<uint32_t>(Inst.rs2));
   }else{
-    R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) - R->GetX<uint64_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint64_t>(Inst.rs1) - R->GetX<uint64_t>(Inst.rs2));
   }
-  R->AdvancePC(F, Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
 static bool zlb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
     M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+               R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<int8_t*>(&R->RV32[Inst.rd]),
                Inst.hazard,
                RevCPU::REvFlag::F_SEXT32);
-    R->SetX(F, Inst.rd, static_cast<int8_t>(R->RV32[Inst.rd]));
+    R->SetX(Inst.rd, static_cast<int8_t>(R->RV32[Inst.rd]));
   }else{
     M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+               R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<int8_t*>(&R->RV64[Inst.rd]),
                Inst.hazard,
                RevCPU::REvFlag::F_SEXT32);
-    R->SetX(F, Inst.rd, static_cast<int8_t>(R->RV64[Inst.rd]));
+    R->SetX(Inst.rd, static_cast<int8_t>(R->RV64[Inst.rd]));
   }
-  R->AdvancePC(F, Inst.instSize);
+  R->AdvancePC(Inst);
   // update the cost
   R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
   return true;
@@ -526,9 +525,9 @@ static bool zlb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 
 static bool zsb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   M->Write(F->GetHart(),
-           R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-           R->GetX<uint8_t>(F, Inst.rs2));
-  R->AdvancePC(F, Inst.instSize);
+           R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
+           R->GetX<uint8_t>(Inst.rs2));
+  R->AdvancePC(Inst);
   return true;
 }
 ```
@@ -540,7 +539,7 @@ Or, with the helper functions:
   static constexpr auto& zsb  = store<int8_t>;
 ```
 
-As we can see from the source code above, each function must be formatted as: `static bool FUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)`.  All instructions carry the same arguments.  The first thing to note is the ability to use the `RevFeature` object to query the device architecture.  The Rev model stores register state in different logical storage for RV32 and RV64.  As a result, if your extension supports both variations of *XLEN*, then its often useful to query the loaded features to see which register file to manipulate, but the `R->GetX<T>(F, reg)` and `R->SetX(F, reg, value) functions can automate this.
+As we can see from the source code above, each function must be formatted as: `static bool FUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)`.  All instructions carry the same arguments.  The first thing to note is the ability to use the `RevFeature` object to query the device architecture.  The Rev model stores register state in different logical storage for RV32 and RV64.  As a result, if your extension supports both variations of *XLEN*, then its often useful to query the loaded features to see which register file to manipulate, but the `R->GetX<T>(reg)` and `R->SetX(reg, value) functions can automate this.
 
 The second and third arguments represent the register file object and the memory object, respectively.  These objects permit the user to access internal register state and read/write memory.  Finally, the `RevInst` structure contains all the decoded state from the instruction.  This includes all the opcode and function codes as well as each of the encoded register values.  This structure also contains the floating point rounding mode information.  For more information on the exacting contents and their respective data types, see the `RevInstTable.h` header file.  
 
