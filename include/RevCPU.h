@@ -121,6 +121,7 @@ public:
     {"trcLimit",        "Max trace lines per core (0 no limit)",        "0"},
     {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
+    {"disable_coproc_clock",  "Disables the manual clocking of coprocessor subcomponents", "0"},
     )
 
   // -------------------------------------------------------
@@ -304,6 +305,8 @@ private:
   bool EnableMemFaults;               ///< RevCPU: Enable memory faults (bit flips)
   bool EnableRegFaults;               ///< RevCPU: Enable register faults
   bool EnableALUFaults;               ///< RevCPU: Enable ALU faults
+
+  bool DisableCoprocClock;            ///< RevCPU: Disables manual coproc clocking
 
   bool ReadyForRevoke;                ///< RevCPU: Is the CPU ready for revocation?
   bool RevokeHasArrived;              ///< RevCPU: Determines whether the REVOKE command has arrived
