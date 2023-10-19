@@ -126,19 +126,19 @@ void RevTracer::CheckUserControls(uint64_t cycle)
 
     // programatic controls
     bool nextState = outputEnabled;
-    if (insn == nops[TRACE_OFF]) {
+    if ( insn == nops[static_cast<unsigned>(TRC_CMD_IDX::TRACE_OFF)] ) {
         nextState = false;
-    } else if (insn == nops[TRACE_ON]) {
+    } else if ( insn == nops[static_cast<unsigned>(TRC_CMD_IDX::TRACE_ON)] ) {
         nextState = true;
-    } else if (insn == nops[TRACE_PUSH_OFF]) {
+    } else if ( insn == nops[static_cast<unsigned>(TRC_CMD_IDX::TRACE_PUSH_OFF)] ) {
         enableQ[enableQindex] = outputEnabled;
         enableQindex = (enableQindex + 1 ) % MAX_ENABLE_Q;
         nextState = false;
-    } else if (insn == nops[TRACE_PUSH_ON]) {
+    } else if ( insn == nops[static_cast<unsigned>(TRC_CMD_IDX::TRACE_PUSH_ON)] ) {
         enableQ[enableQindex] = outputEnabled;
         enableQindex = (enableQindex + 1 ) % MAX_ENABLE_Q;
         nextState = true;
-    } else if (insn == nops[TRACE_POP]) {
+    } else if ( insn == nops[static_cast<unsigned>(TRC_CMD_IDX::TRACE_POP)] ) {
         enableQindex = (enableQindex - 1 ) % MAX_ENABLE_Q;
         nextState = enableQ[enableQindex];
     }
@@ -165,9 +165,8 @@ void RevTracer::regRead(size_t r, uint64_t v)
     traceRecs.emplace_back(TraceRec_t(RegRead,r,v));
 }
 
-void RevTracer::regWrite(size_t r, uint64_t v, bool rv32)
+void RevTracer::regWrite(size_t r, uint64_t v)
 {
-    if (rv32) v = v & 0x0ffffffffULL;
     traceRecs.emplace_back(TraceRec_t(RegWrite,r,v));
 }
 
@@ -188,6 +187,11 @@ void RevTracer::memRead(uint64_t adr, size_t len, void *data)
 {
     uint64_t d = *((uint64_t*) data);
     traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,d)); 
+}
+
+void RevTracer::pcWrite(uint32_t newpc)
+{
+    traceRecs.emplace_back(TraceRec_t(PcWrite,newpc,0,0));
 }
 
 void RevTracer::pcWrite(uint64_t newpc)

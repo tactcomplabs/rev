@@ -137,15 +137,16 @@ int main(int argc, char **argv){
 	       );
 
   // trace some threads
+#if 0  
   rev_pthread_t tid1, tid2;
   rev_pthread_create(&tid1, NULL, (void *)thread1, NULL);
   rev_pthread_create(&tid2, NULL, (void *)thread2, NULL);
   rev_pthread_join(tid1);
   rev_pthread_join(tid2);
   
-  //TODO
-  //TRACE_ASSERT(thread1_counter==10);
-  //TRACE_ASSERT(thread2_counter==20);
+  TRACE_ASSERT(thread1_counter==10);
+  TRACE_ASSERT(thread2_counter==20);
+#endif  
   
   return 0;
 }

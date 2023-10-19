@@ -221,10 +221,11 @@ public:
     T res;
     if( IsRV32 ){
       res = RevReg(rs) != RevReg::zero ? T(RV32[size_t(rs)]) : 0;
+      TRACE_REG_READ(size_t(rs), uint32_t(res));
     }else{
       res = RevReg(rs) != RevReg::zero ? T(RV64[size_t(rs)]) : 0;
+      TRACE_REG_READ(size_t(rs),uint64_t(res));
     }
-    TRACE_REG_READ(size_t(rs),res);
     return res;
   }
 
@@ -235,11 +236,12 @@ public:
     if( IsRV32 ){
       res = RevReg(rd) != RevReg::zero ? uint32_t(val) : 0;
       RV32[size_t(rd)] = res;
+      TRACE_REG_WRITE(size_t(rd), uint32_t(res));
     }else{
       res = RevReg(rd) != RevReg::zero ? uint64_t(val) : 0;
       RV64[size_t(rd)] = res;
+      TRACE_REG_WRITE(size_t(rd), uint64_t(res));
     }
-    TRACE_REG_WRITE(size_t(rd), res, IsRV32);
   }
 
   /// GetPC: Get the Program Counter

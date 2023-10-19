@@ -39,9 +39,9 @@
 
 // Tracing macros
 #ifndef NO_REV_TRACER
-#define TRACE_REG_READ(R,V)  { if (Tracer) Tracer->regRead(  (uint8_t) (R),(uint64_t) (V) ); }
-#define TRACE_REG_WRITE(R,V,RV32) { if (Tracer) Tracer->regWrite( (R), (V), (RV32) ); }
-#define TRACE_PC_WRITE(PC)   { if (Tracer) Tracer->pcWrite( (uint64_t) (PC) ); }
+#define TRACE_REG_READ(R,V)  { if (Tracer) Tracer->regRead( (R), (V) ); }
+#define TRACE_REG_WRITE(R,V) { if (Tracer) Tracer->regWrite( (R), (V) ); }
+#define TRACE_PC_WRITE(PC)   { if (Tracer) Tracer->pcWrite( (PC) ); }
 #define TRACE_MEM_WRITE(ADR, LEN, DATA) { if (Tracer) Tracer->memWrite( (ADR), (LEN), (DATA) ); }
 #define TRACE_MEM_READ(ADR, LEN, DATA)  { if (Tracer) Tracer->memRead(  (ADR), (LEN), (DATA) ); }
 #else
@@ -52,8 +52,7 @@
 #define TRACE_MEM_READ(ADR, LEN, DATA)
 #endif
 
-namespace SST{
-  namespace RevCPU{
+namespace SST::RevCPU{
 
   // Tracing controls are using custom hint SLTI rd = x0
   // See unpriv-isa-asiidoc.pdf Section 2.9 HINT Instruction
@@ -70,21 +69,21 @@ namespace SST{
     {"sltiu", 0x00003013},
     {"slli",  0x00001013},
     {"srli",  0x00005013},
-    {"srai",  0x40005013}
+    {"srai",  0x40005013},
   };
   const std::string TRC_OP_DEFAULT = "slli";
   const int TRC_OP_POS = 20;
 
   // Position of fully formed instruction in 'nops' array
-  enum TRC_CMD_IDX : unsigned {
+  enum class TRC_CMD_IDX : unsigned {
     TRACE_OFF = 0,
     TRACE_ON = 1,
     TRACE_PUSH_OFF = 2,
     TRACE_PUSH_ON = 3,
-    TRACE_POP = 4
+    TRACE_POP = 4,
   };
 
-  constexpr unsigned NOP_COUNT = TRC_CMD_IDX::TRACE_POP + 1;
+  constexpr unsigned NOP_COUNT = 5; // must match TRC_CMD_IDX size
   
   enum class EVENT_SYMBOL : unsigned {
     OK = 0x0,
@@ -154,13 +153,15 @@ namespace SST{
       void SetFetchedInsn(uint64_t _pc, uint32_t _insn);
       /// RevTracer: capture register read
       void regRead(size_t r, uint64_t v);
-      /// RevTracer: capture register write. Mask off upper bits when 32-bit
-      void regWrite(size_t r, uint64_t v, bool rv32);
+      /// RevTracer: capture register write.
+      void regWrite(size_t r, uint64_t v);
       /// RevTracer: capture memory write. 
       void memWrite(uint64_t adr, size_t len, const void *data);
       /// RevTracer: capture memory read
       void memRead(uint64_t adr, size_t len, void *data);
-      /// RevTracer: capture program counter
+      /// RevTracer: capture 32-bit program counter
+      void pcWrite(uint32_t newpc);
+      /// RevTracer: capture 64-bit program counter
       void pcWrite(uint64_t newpc);
       /// RevTracer: render trace to output stream and update tracer state
       void InstTrace(size_t cycle, unsigned id, unsigned hart, unsigned tid, std::string& fallbackMnemonic);
@@ -223,7 +224,6 @@ namespace SST{
 
     }; // class RevTracer
 
-  } //namespace RevCPU
-} //namespace SST
+} //namespace SST::RevCPU
 
 #endif //  _SST_REVCPU_REVTRACER_H_
