@@ -109,6 +109,9 @@ public:
   /// RevProc: Handle ALU faults
   void HandleALUFault(unsigned width);
 
+  /// RevProc: Handle ALU faults
+  void InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst);
+
   struct RevProcStats {
     uint64_t totalCycles;
     uint64_t cyclesBusy;
@@ -136,21 +139,8 @@ public:
   uint32_t GetActiveThreadID();
 
   // Checks if this thread has any reason it cannot be removed by RevCPU (ie. Dependencies / outstanding loads)
+  // TODO: Update
   bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
-
-  /// RevProc: Gets the thread that is currently executing on the Hart
-  // TODO: Change
-  //const std::shared_ptr<RevThread>& GetThreadOnHart(unsigned HartID) const {
-  //  static const std::shared_ptr<RevThread> null;
-  //  auto it = AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID());
-  //  return it != AssignedThreads.end() ? it->second : null;
-  //}
-
-  ///< RevProc: Used for scheduling in RevCPU (if Utilization < 1, there is at least 1 unoccupied HART )
-  // double GetHartUtilization() const { return (BusyHarts.size() * 100.0) / AvailableHarts.size(); }
-
-  std::bitset<_MAX_HARTS_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-  std::bitset<_MAX_HARTS_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
 
   ///< RevProc: Get this Proc's feature
   RevFeature* GetRevFeature() const { return feature; }
@@ -191,8 +181,11 @@ public:
   ///  RevProc
   void ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
   //------------- END External Interface -------------------------------
-  // Find a Hart to assign ThreadID to
-  void AssignThread(uint32_t ThreadID);
+
+  // TODO: Comment Assign a
+  void AssignThread(std::unique_ptr<RevThread> ThreadToAssign);
+
+  void UpdateStatusOfHarts();
 
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
@@ -206,8 +199,11 @@ private:
   unsigned HartToDecode;    ///< RevProc: Current executing ThreadID
   unsigned HartToExec;      ///< RevProc: Thread to dispatch instruction
 
-  std::vector<std::shared_ptr<RevHart>> AvailableHarts; ///< RevProc: vector of Harts without a thread assigned to them
-  std::vector<std::shared_ptr<RevHart>> BusyHarts; ///< RevProc: vector of Harts with threads assigned to them
+  std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts without a thread assigned to them
+  std::bitset<_MAX_HARTS_> IdleHarts;      ///< RevProc: bitset of Harts with no thread assigned
+  std::bitset<_MAX_HARTS_> BusyHarts;      ///< RevProc: bitset of Harts with a thread assigned
+  std::bitset<_MAX_HARTS_> HartsClearToDecode; ///< RevProc: Thread is clear to start (proceed with decode)
+  std::bitset<_MAX_HARTS_> HartsClearToExecute; ///< RevProc: Thread is clear to execute (no register dependencides)
 
   uint64_t Retired;         ///< RevProc: number of retired instructions
 
@@ -704,7 +700,7 @@ private:
   }
 
   /// RevProc: Determine next thread to execute
-  unsigned GetHartID() const;
+  unsigned GetNextHartToDecode() const;
 
   /// RevProc: Whether any scoreboard bits are set
   bool AnyDependency(unsigned HartID, bool isFloat) const {

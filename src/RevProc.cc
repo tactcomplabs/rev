@@ -1598,11 +1598,11 @@ void RevProc::ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
 
 
 
-unsigned RevProc::GetHartID()const{
-  if(HART_CTS.none()) { return HartToDecode;};
+unsigned RevProc::GetNextHartToDecode() const {
+  if(HartsClearToDecode.none()) { return HartToDecode;};
 
   unsigned nextID = HartToDecode;
-  if(HART_CTS[HartToDecode]){
+  if(HartsClearToDecode[HartToDecode]){
     nextID = HartToDecode;
   }else{
     for(size_t tID = 0; tID < Harts.size(); tID++){
@@ -1610,7 +1610,7 @@ unsigned RevProc::GetHartID()const{
       if(nextID >= Harts.size()){
         nextID = 0;
       }
-      if(HART_CTS[nextID]){ break; };
+      if(HartsClearToDecode[nextID]){ break; };
     }
     output->verbose(CALL_INFO, 6, 0,
                     "Core %" PRIu32 "; Hart switch from %" PRIu32 " to %" PRIu32 "\n",
@@ -1658,20 +1658,21 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   // else, wait until the counter is decremented to zero to retire the instruction
   //
   //
-  for( size_t HartID=0; HartID<Harts.size(); HartID++ ){
-    auto& tp = GetThreadOnHart(HartID);
-    HART_CTS[HartID] = tp != nullptr && tp->GetRegFile()->cost == 0;
-  }
+  //
+  UpdateStatusOfHarts();
+  // TODO: remove
+  //for( size_t HartID=0; HartID<Harts.size(); HartID++ ){
+  //  auto& tp = GetThreadOnHart(HartID);
+  //  HartsClearToDecode[HartID] = tp != nullptr && tp->GetRegFile()->cost == 0;
+  //}
 
-  if( HART_CTS.any() && (!Halted)) {
+  if( HartsClearToDecode.any() && (!Halted)) {
     // Determine what hart is ready to decode
-    do {
-      HartToDecode = GetHartID();
-    } while( !HartHasThread(HartToDecode) && AssignedThreads.size() );
+    //do {
+    HartToDecode = GetNextHartToDecode();
+    // } while( !HartHasThread(HartToDecode) && AssignedThreads.size() );
 
-    // if( !AssignedThreads.size() ){ return false; }
-
-    RegFile = GetThreadOnHart(HartToDecode)->GetRegFile();
+    RegFile = Harts[HartToDecode]->RegFile.get();
     feature->SetHartToExec(HartToDecode);
 
     // fetch the next instruction
@@ -1694,11 +1695,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if(Stalled || DependencyCheck(HartToDecode, &Inst) || CoProcStallReq[HartToDecode]){
       RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
-      HART_CTE[HartToDecode] = false;
+      HartsClearToExecute[HartToDecode] = false;
       HartToExec = _REV_INVALID_HART_ID_;
     }else {
       Stats.cyclesBusy++;
-      HART_CTE[HartToDecode] = true;
+      HartsClearToExecute[HartToDecode] = true;
       HartToExec = HartToDecode;
     }
     Inst.cost = RegFile->GetCost();
@@ -1707,7 +1708,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     ExecPC = GetPC();
   }
 
-  if( ( (HartToExec != _REV_INVALID_HART_ID_) && !RegFile->GetTrigger()) && !Halted && HART_CTE[HartToExec] && HartHasThread(HartToExec)){
+  if( ( (HartToExec != _REV_INVALID_HART_ID_)
+         && !RegFile->GetTrigger())
+         && !Halted
+         && HartsClearToExecute[HartToExec]) {
+         // TODO: Remove && HartHasThread(HartToExec)){
     // trigger the next instruction
     // HartToExec = HartToDecode;
     RegFile->SetTrigger(true);
@@ -1879,7 +1884,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     id, ExecPC);
     rtn = true;
     Stats.cyclesIdle_Total++;
-    if( HART_CTE.any() ){
+    if( HartsClearToExecute.any() ){
       Stats.cyclesIdle_MemoryFetch++;
     }
   }
@@ -1921,12 +1926,55 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       HART_CTE[HartToDecode] = false;
       HART_CTS[HartToDecode] = false;
       ThreadsThatChangedState.emplace(Thread);
+
+  // Check for completion states and new tasks
+  // TODO: Refactor redundancy
+  if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
+    // look for more work on the execution queue
+    // if no work is found, don't update the PC
+    // just wait and spin
+    // bool done = true;
+    if( GetPC() == _PAN_FWARE_JUMP_ ){
+      if( PExec != nullptr){
+        uint64_t Addr = 0x00ull;
+        unsigned Idx = 0;
+        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr, &Idx);
+        switch( Status ){
+        case PanExec::QExec:
+          output->verbose(CALL_INFO, 5, 0,
+                          "Core %" PRIu32 " ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
+                          id, Addr);
+          SetPC(Addr);
+          // done = false;
+          break;
+        case PanExec::QNull:
+          // no work to do; spin on the firmware jump PC
+          output->verbose(CALL_INFO, 6, 0,
+                          "Core %" PRIu32 " ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
+                          id, ExecPC);
+          // done = false;
+          SetPC(_PAN_FWARE_JUMP_);
+          break;
+        case PanExec::QValid:
+        case PanExec::QError:
+          // done = true;
+        default:
+          break;
+        }
+      }
+    }else if( GetPC() == 0x00ull ) {
+      if( !AnyDependency(HartToDecode, false) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
+        Harts.at(HartToDecode)->Thread->SetState(ThreadState::DONE);
+        HartsClearToExecute[HartToDecode] = false;
+        HartsClearToDecode[HartToDecode] = false;
+        ThreadsThatChangedState.emplace(Thread);
+      }
     }
 
     if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) \
         && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
-      HART_CTE[HartToExec] = false;
-      HART_CTS[HartToExec] = false;
+      HartsClearToExecute[HartToExec] = false;
+      HartsClearToDecode[HartToExec] = false;
       GetThreadOnHart(HartToExec)->SetState(ThreadState::DONE);
       ThreadsThatChangedState.emplace(GetThreadOnHart(HartToDecode));
     }
@@ -1958,16 +2006,17 @@ void RevProc::PrintStatSummary(){
   return;
 }
 
-RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
-  auto& tp = GetThreadOnHart(HartID);
-
-  if( tp == nullptr ) {
-    output->fatal(CALL_INFO, 1,
-                  "Tried to get RegFile for Hart %" PRIu32 " but there is no AssignedThread for that Hart\n", HartID);
-  }
-
-  return tp->GetRegFile();
-}
+//// TODO: Remove
+//RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
+//  auto& tp = GetThreadOnHart(HartID);
+//
+//  if( tp == nullptr ) {
+//    output->fatal(CALL_INFO, 1,
+//                  "Tried to get RegFile for Hart %" PRIu32 " but there is no AssignedThread for that Hart\n", HartID);
+//  }
+//
+//  return tp->GetRegFile();
+//}
 
 void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // tidAddr is the address we have to write the new thread's id to
@@ -1975,29 +2024,29 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
                   "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC);
   uint64_t ParentThreadID = GetActiveThreadID();
 
-
   // Create the new thread's memory
   std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
 
-
   // TODO: Copy TLS into new memory
 
-  // Create a new RevThread Object
-  std::shared_ptr<RevThread> NewThread =
-    std::make_shared<RevThread>(NewTID,
-                                ParentThreadID,
-                                NewThreadMem->getBaseAddr()+_STACK_SIZE_,
-                                firstPC, NewThreadMem,
-                                feature);
+  // Create new register file
+  std::unique_ptr<RevRegFile> NewThreadRegFile = std::make_unique<RevRegFile>(feature);
 
   // Copy the arg to the new threads a0 register
-  NewThread->GetRegFile()->SetX(RevReg::a0, reinterpret_cast<uintptr_t>(arg));
+  NewThreadRegFile->SetX(RevReg::a0, reinterpret_cast<uintptr_t>(arg));
 
   // Set the global pointer
-  NewThread->GetRegFile()->SetX(RevReg::gp, loader->GetSymbolAddr("__global_pointer$"));
+  NewThreadRegFile->SetX(RevReg::gp, loader->GetSymbolAddr("__global_pointer$"));
+
+  // Create a new RevThread Object
+  std::unique_ptr<RevThread> NewThread =
+    std::make_unique<RevThread>(NewTID,
+                                ParentThreadID,
+                                NewThreadMem,
+                                std::move(NewThreadRegFile));
 
   // Add new thread to this vector so the RevCPU will add and schedule it
-  ThreadsThatChangedState.emplace(NewThread);
+  ThreadsThatChangedState.emplace(std::move(NewThread));
 
   return;
 }
@@ -2387,4 +2436,45 @@ uint32_t RevProc::GetActiveThreadID(){
   return tid;
 }
 
+//
+void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
+  // inject ALU fault
+  RevExt *Ext = Extensions[EToE.first].get();
+  if( (Ext->GetName() == "RV64F") ||
+      (Ext->GetName() == "RV64D") ){
+    // write an rv64 float rd
+    uint64_t tmp;
+    static_assert(sizeof(tmp) == sizeof(RegFile->DPF[Inst.rd]));
+    memcpy(&tmp, &RegFile->DPF[Inst.rd], sizeof(tmp));
+    tmp |= RevRand(0, ~(~uint64_t{0} << fault_width));
+    memcpy(&RegFile->DPF[Inst.rd], &tmp, sizeof(tmp));
+  }else if( (Ext->GetName() == "RV32F") ||
+            (Ext->GetName() == "RV32D") ){
+    // write an rv32 float rd
+    uint32_t tmp;
+    static_assert(sizeof(tmp) == sizeof(RegFile->SPF[Inst.rd]));
+    memcpy(&tmp, &RegFile->SPF[Inst.rd], sizeof(tmp));
+    tmp |= RevRand(0, ~(uint32_t{0} << fault_width));
+    memcpy(&RegFile->SPF[Inst.rd], &tmp, sizeof(tmp));
+  }else{
+    // write an X register
+    uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
+    RegFile->SetX(Inst.rd, rval | RegFile->GetX<uint64_t>(Inst.rd));
+  }
+
+  // clear the fault
+  ALUFault = false;
+}
+
+
+void RevProc::UpdateStatusOfHarts(){
+  // IdleHarts aren't Busy
+  IdleHarts = ~BusyHarts;
+
+  for( size_t i=0; i<Harts.size(); i++ ){
+    HartsClearToDecode[i] = BusyHarts[i] && Harts[i]->RegFile->cost == 0;
+  }
+
+  return;
+}
 // EOF

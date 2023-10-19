@@ -42,7 +42,7 @@ class RevThread {
   RevFeature* Feature;                                 // Feature set for this thread
   uint64_t ThreadPtr;                                  // Thread pointer
   ThreadState State = ThreadState::START;              // Thread state (Initializes as )
-  RevRegFile RegFile;                                  // Register file
+  std::unique_ptr<RevRegFile> RegFile;                                  // Register file
   std::unordered_set<uint32_t> ChildrenThreadIDs = {}; // Child thread IDs
   std::unordered_set<int> fildes = {0, 1, 2};          // Default file descriptors
 
@@ -54,16 +54,23 @@ public:
             std::shared_ptr<RevMem::MemSegment>& ThreadMem,
             RevFeature* Feature)
     : ThreadID(ThreadID), ParentThreadID(ParentThreadID), StackPtr(StackPtr),
-      FirstPC(FirstPC), ThreadMem(ThreadMem), Feature(Feature), RegFile(Feature){
+      FirstPC(FirstPC), ThreadMem(ThreadMem), Feature(Feature) {
     // Set the stack pointer
-    RegFile.SetX(RevReg::sp, StackPtr);
+    RegFile->SetX(RevReg::sp, StackPtr);
 
     // Set the thread pointer
     ThreadPtr = ThreadMem->getTopAddr();
-    RegFile.SetX(RevReg::tp, ThreadPtr);
+    RegFile->SetX(RevReg::tp, ThreadPtr);
 
     // Set the PC
-    RegFile.SetPC(FirstPC);
+    RegFile->SetPC(FirstPC);
+  }
+
+  RevThread(uint32_t ThreadID, uint32_t ParentThreadID,
+            std::shared_ptr<RevMem::MemSegment>& ThreadMem,
+            std::unique_ptr<RevRegFile> RegFile)
+    : ThreadID(ThreadID), ParentThreadID(ParentThreadID),
+      ThreadMem(ThreadMem), RegFile(std::move(RegFile)){
   }
 
   ~RevThread(){
@@ -97,8 +104,13 @@ public:
   const std::unordered_set<int>& GetFildes(){ return fildes; }
 
   // Register file operations
-  const RevRegFile* GetRegFile() const { return &RegFile; }
-  RevRegFile* GetRegFile(){ return &RegFile; }
+  //const RevRegFile* GetRegFile() const { return &RegFile; }
+  // RevRegFile* GetRegFile(){ return &RegFile; }
+
+  // Set the register file
+  void SetRegFile(std::unique_ptr<RevRegFile> regFile){ RegFile = std::move(regFile); }
+
+  std::unique_ptr<RevRegFile> TransferRegFile(){ return std::move(RegFile); }
 
   // RevFeature operations
   RevFeature* GetFeature() const { return Feature; }

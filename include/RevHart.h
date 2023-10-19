@@ -26,7 +26,11 @@ class RevHart{
   EcallState Ecall{};
 
   ///< RevHart: Thread currently executing on this Hart
-  uint32_t AssignedThreadID = _INVALID_TID_;
+  std::unique_ptr<RevThread> Thread = nullptr;
+  std::unique_ptr<RevRegFile> RegFile = nullptr;
+
+  ///< RevHart: Make this a friend of RevThread
+  friend class RevProc;
 
 public:
   ///< RevHart: Constructor
@@ -43,14 +47,26 @@ public:
   uint16_t GetID() const { return ID; }
 
   ///< RevHart: Returns the ThreadID of the assigned thread
-  uint32_t GetAssignedThreadID() const { return AssignedThreadID; }
+  uint32_t GetAssignedThreadID() const { return (Thread != nullptr) ? Thread->GetThreadID() : _INVALID_TID_; }
+
+  ///< RevHart: Load the register file from the RevThread
+  void LoadRegFile(std::unique_ptr<RevRegFile> regFile){
+    RegFile = std::move(regFile);
+  }
 
   ///< RevHart: Assigns a RevThread to this Hart
-  void AssignThread(uint32_t ThreadID){ AssignedThreadID = ThreadID; }
+  void AssignThread(std::unique_ptr<RevThread> ThreadToAssign){
+    Thread = std::move(ThreadToAssign);
+    LoadRegFile(Thread->TransferRegFile());
+  }
 
   ///< RevHart: Removed a RevThread from this Hart
-  void UnassignThread(){ AssignedThreadID = _INVALID_TID_; }
-
+  std::unique_ptr<RevThread> PopThread(){
+    // return the register file to the thread
+    Thread->SetRegFile(std::move(RegFile));
+    // return the thread
+    return std::move(Thread);
+  }
 }; // class RevHart
 
 } // namespace SST::RevCPU
