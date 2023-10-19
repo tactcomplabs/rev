@@ -46,6 +46,7 @@
 #include "PanExec.h"
 #include "RevPrefetcher.h"
 #include "RevCoProc.h"
+#include "RevTracer.h"
 #include "RevThread.h"
 #include "RevRand.h"
 #include "RevProcPasskey.h"
@@ -66,7 +67,7 @@ public:
            std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads,
            std::function<uint32_t()> GetNewThreadID, SST::Output *Output );
 
-  /// RevProc: standard desctructor
+  /// RevProc: standard destructor
   ~RevProc() = default;
 
   /// RevProc: per-processor clock function
@@ -98,6 +99,9 @@ public:
 
   /// RevProc: Set the PAN execution context
   void SetExecCtx(PanExec *P) { PExec = P; }
+
+  /// RevProc: Set an optional tracer
+  void SetTracer(RevTracer *T) { Tracer = T; }
 
   /// RevProc: Retrieve a random memory cost value
   unsigned RandCost() { return mem->RandCost(feature->GetMinCost(), feature->GetMaxCost()); }
@@ -238,6 +242,8 @@ private:
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
+  RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
+  
   std::bitset<_MAX_HARTS_> CoProcStallReq;
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);

@@ -83,6 +83,27 @@ set(LDFLAGS "${SST_LDFLAGS}  -fno-stack-protector")
 message (LDFLAGS="${LDFLAGS}")
 
 #------------------------------------------------------------------------
+#-- DISASM
+#------------------------------------------------------------------------
+option(REV_TRACER "Enable tracer compilation" ON)
+message (REV_TRACER="${REV_TRACER}")
+if(REV_TRACER)
+  option(REV_USE_SPIKE "Link to spike disasm static library" OFF)
+  if(REV_USE_SPIKE)
+    find_program(SPIKE spike)
+    cmake_path(GET SPIKE PARENT_PATH spike_dir)
+    find_library(DISASM_LIB disasm HINT "${spike_dir}/../lib")
+    include_directories("${spike_dir}/../include")
+    link_directories("${spike_dir}/../lib")
+    link_libraries("disasm")
+    add_compile_definitions("REV_USE_SPIKE")
+  endif()
+else()
+   # requires cmake 3.12
+  add_compile_definitions(NO_REV_TRACER)
+endif()
+
+#------------------------------------------------------------------------
 #-- COMPILER OPTIONS
 #------------------------------------------------------------------------
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

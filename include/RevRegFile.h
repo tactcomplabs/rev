@@ -83,6 +83,7 @@ private:
   bool trigger{};                     ///< RevRegFile: Has the instruction been triggered?
   unsigned Entry{};                   ///< RevRegFile: Instruction entry
   uint32_t cost{};                    ///< RevRegFile: Cost of the instruction
+  RevTracer *Tracer = nullptr;                  ///< RegRegFile: Tracer object
 
   union{  // Anonymous union. We zero-initialize the largest member
     uint32_t RV32_PC;                   ///< RevRegFile: RV32 PC
@@ -172,6 +173,9 @@ public:
     LSQueue = std::move(lsq);
   }
 
+  /// Set the current tracer
+  void SetTracer(RevTracer *t) { Tracer = t; }
+
   /// Insert an item in the Load/Store Queue
   void LSQueueInsert(std::pair<uint64_t, MemReq> item){
     LSQueue->insert(std::move(item));
@@ -230,20 +234,29 @@ public:
   /// GetX: Get the specifed X register cast to a specific integral type
   template<typename T, typename U>
   T GetX(U rs) const {
+    T res;
     if( IsRV32 ){
-      return RevReg(rs) != RevReg::zero ? T(RV32[size_t(rs)]) : 0;
+      res = RevReg(rs) != RevReg::zero ? T(RV32[size_t(rs)]) : 0;
+      TRACE_REG_READ(size_t(rs), uint32_t(res));
     }else{
-      return RevReg(rs) != RevReg::zero ? T(RV64[size_t(rs)]) : 0;
+      res = RevReg(rs) != RevReg::zero ? T(RV64[size_t(rs)]) : 0;
+      TRACE_REG_READ(size_t(rs),uint64_t(res));
     }
+    return res;
   }
 
   /// SetX: Set the specifed X register to a specific value
   template<typename T, typename U>
   void SetX(U rd, T val) {
+    T res;
     if( IsRV32 ){
-      RV32[size_t(rd)] = RevReg(rd) != RevReg::zero ? uint32_t(val) : 0;
+      res = RevReg(rd) != RevReg::zero ? uint32_t(val) : 0;
+      RV32[size_t(rd)] = res;
+      TRACE_REG_WRITE(size_t(rd), uint32_t(res));
     }else{
-      RV64[size_t(rd)] = RevReg(rd) != RevReg::zero ? uint64_t(val) : 0;
+      res = RevReg(rd) != RevReg::zero ? uint64_t(val) : 0;
+      RV64[size_t(rd)] = res;
+      TRACE_REG_WRITE(size_t(rd), uint64_t(res));
     }
   }
 
@@ -261,8 +274,10 @@ public:
   void SetPC(T val) {
     if( IsRV32 ){
       RV32_PC = static_cast<uint32_t>(val);
+      TRACE_PC_WRITE(RV32_PC);
     }else{
       RV64_PC = static_cast<uint64_t>(val);
+      TRACE_PC_WRITE(RV64_PC);
     }
   }
 
@@ -271,8 +286,10 @@ public:
   void AdvancePC(T bytes) {
     if ( IsRV32 ) {
       RV32_PC += bytes;
+      TRACE_PC_WRITE(RV32_PC);
     }else{
       RV64_PC += bytes;
+      TRACE_PC_WRITE(RV64_PC);
     }
   }
 

@@ -37,6 +37,7 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 #include "RevMemCtrl.h"
+#include "RevTracer.h"
 #include "RevRand.h"
 #include "../common/include/RevCommon.h"
 
@@ -123,6 +124,9 @@ public:
   /// RevMem: set the stack_top address
   void SetStackTop(uint64_t Addr) { stacktop = Addr; }
 
+  /// RevMem: tracer pointer
+  RevTracer *Tracer = nullptr;
+
   /// RevMem: retrieve the address of the top of memory (not stack)
   uint64_t GetMemTop() { return (_REVMEM_BASE_ + memSize); }
 
@@ -134,6 +138,9 @@ public:
 
   /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
   unsigned getLineSize(){ return ctrl ? ctrl->getLineSize() : 64;}
+
+  /// RevMem: Enable tracing of load and store instructions.
+  void SetTracer(RevTracer* tracer) { Tracer = tracer; }
 
   // ----------------------------------------------------
   // ---- Base Memory Interfaces

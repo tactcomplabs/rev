@@ -27,7 +27,7 @@ RevProc::RevProc( unsigned Id,
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
     numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader),
     AssignedThreads(AssignedThreads), GetNewThreadID(std::move(GetNewTID)),
-    output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr) {
+    output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr), Tracer(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -1296,6 +1296,9 @@ RevInst RevProc::DecodeInst(){
                   Inst );
   }
 
+  // Trace capture fetched instruction 
+  if (Tracer) Tracer->SetFetchedInsn(PC, Inst);
+
   // Stage 1a: handle the crack fault injection
   if( CrackFault ){
     uint64_t rval = RevRand(0, (uint32_t{1} << fault_width) - 1);
@@ -1710,10 +1713,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // HartToExec = HartToDecode;
     RegFile->SetTrigger(true);
 
+    #ifdef NO_REV_TRACER
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
                     "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; Executing PC= 0x%" PRIx64 "\n",
                     id, HartToExec, GetActiveThreadID(), ExecPC);
+    #endif
 
     // attempt to execute the instruction as long as it is NOT
     // the firmware jump PC
@@ -1745,11 +1750,25 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       DependencySet(HartToExec, &(Pipeline.back().second));
       // -- END new pipelining implementation
 
+      #ifndef NO_REV_TRACER
+      // Tracer context
+      mem->SetTracer(Tracer);
+      RegFile->SetTracer(Tracer);
+      #endif
+    
       // execute the instruction
       if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec, RegFile) ){
         output->fatal(CALL_INFO, -1,
                       "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
+
+      #ifndef NO_REV_TRACER
+      // Clear memory tracer so we don't pick up instruction fetches and other access.
+      // TODO: method to determine origin of memory access (core, cache, pan, host debugger, ... )
+      mem->SetTracer(nullptr);
+      // Conditionally trace after execution
+      if (Tracer) Tracer->InstTrace(currentCycle, id, HartToExec, GetActiveThreadID(), InstTable[Inst.entry].mnemonic);
+      #endif
 
 #ifdef __REV_DEEP_TRACE__
       if(feature->IsRV32()){
@@ -1879,9 +1898,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if(Pipeline.front().second.cost == 0){ // &&
       // Ready to retire this instruction
       uint16_t HartID = Pipeline.front().first;
+      #ifdef NO_REV_TRACER
       output->verbose(CALL_INFO, 6, 0,
                       "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
                       id, HartID, GetThreadOnHart(HartID)->GetThreadID(), ExecPC);
+      #endif
       Retired++;
 
       // Only clear the dependency if there is no outstanding load

@@ -4,6 +4,7 @@
 *.csv
 .cache/clangd/index
 .vscode
+*.dylib
 .#*
 *~
 .gdb_history

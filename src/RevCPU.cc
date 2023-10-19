@@ -275,6 +275,30 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     }
   }
 
+  #ifndef NO_REV_TRACER
+  // Configure tracer and assign to each core
+  if (output.getVerboseLevel()>=5) {
+    for( unsigned i=0; i<numCores; i++ ){
+      // Each core gets its very own tracer
+      RevTracer* trc = new RevTracer(getName(), &output);
+      std::string diasmType;
+      Opts->GetMachineModel(0,diasmType); // TODO first param is core
+      if (trc->SetDisassembler(diasmType))
+        output.verbose(CALL_INFO, 1, 0, "Warning: tracer could not find disassembler. Using REV default\n");
+      
+      trc->SetTraceSymbols(Loader->GetTraceSymbols());
+
+      // tracer user controls - cycle on and off. Ignored unless > 0
+      trc->SetStartCycle(params.find<uint64_t>("trcStartCycle",0));
+      trc->SetCycleLimit(params.find<uint64_t>("trcLimit",0));
+      trc->SetCmdTemplate(params.find<std::string>("trcOp", TRC_OP_DEFAULT).c_str());
+
+      trc->Reset();
+      Procs[i]->SetTracer(trc);
+    }
+  }
+  #endif
+
   // Initial thread setup
   uint32_t MainThreadID = id+1; // Prevents having MainThreadID == 0 which is reserved for INVALID
 

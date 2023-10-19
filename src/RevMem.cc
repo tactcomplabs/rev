@@ -669,6 +669,8 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
 
+  TRACE_MEM_WRITE(Addr, Len, Data);
+
   if(Addr == 0xDEADBEEF){
     std::cout << "Found special write. Val = " << std::hex << *(int*)(Data) << std::dec << std::endl;
   }
@@ -848,6 +850,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       if(MemOp::MemOpAMO != req.ReqType){
         req.MarkLoadComplete(req);
       }
+      TRACE_MEM_READ(Addr, Len, DataMem);
     }
   }
 
