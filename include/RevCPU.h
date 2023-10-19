@@ -118,7 +118,7 @@ public:
     {"RDMAPerCycle",    "Number of RDMA messages per cycle to inject",  "1"},
     {"testIters",       "Number of PAN test messages to send",          "255"},
     {"splash",          "Display the splash logo",                      "0"},
-    {"disable_coproc_clock",  "Disables the manual clocking of coprocessor subcomponents", "0"},
+    {"disableCoprocClock",  "Disables the manual clocking of coprocessor subcomponents", "0"},
     )
 
   // -------------------------------------------------------
