@@ -628,9 +628,6 @@ private:
   /// RevProc: reset the core and its associated features
   bool Reset();
 
-  /// RevProc: setup the argc/argc arrays
-  void SetupArgs();
-
   /// RevProc: set the PC
   void SetPC(uint64_t PC) { RegFile->SetPC(PC); }
 
