@@ -281,15 +281,14 @@ public:
     }
   }
 
-  /// AdvancePC: Advance the program counter a certain number of bytes
-  template<typename T>
-  void AdvancePC(T bytes) {
+  /// AdvancePC: Advance the program counter to the next instruction
+  // Note: This does not create tracer events like SetPC() does
+  template<typename T> // Used to allow RevInst to be incomplete type right now
+  void AdvancePC(const T& Inst) {
     if ( IsRV32 ) {
-      RV32_PC += bytes;
-      TRACE_PC_WRITE(RV32_PC);
+      RV32_PC += Inst.instSize;
     }else{
-      RV64_PC += bytes;
-      TRACE_PC_WRITE(RV64_PC);
+      RV64_PC += Inst.instSize;
     }
   }
 

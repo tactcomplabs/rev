@@ -1296,7 +1296,7 @@ RevInst RevProc::DecodeInst(){
                   Inst );
   }
 
-  // Trace capture fetched instruction 
+  // Trace capture fetched instruction
   if (Tracer) Tracer->SetFetchedInsn(PC, Inst);
 
   // Stage 1a: handle the crack fault injection
@@ -1755,7 +1755,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       mem->SetTracer(Tracer);
       RegFile->SetTracer(Tracer);
       #endif
-    
+
       // execute the instruction
       if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec, RegFile) ){
         output->fatal(CALL_INFO, -1,
@@ -2386,7 +2386,7 @@ void RevProc::ExecEcall(RevInst& inst){
     // For now, rewind the PC and keep executing the ECALL until we
     // have completed
     if(EcallStatus::SUCCESS != status){
-      RegFile->AdvancePC( -int32_t(inst.instSize) );
+      RegFile->SetPC( RegFile->GetPC() - inst.instSize );
     }
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu64 " not found", EcallCode);

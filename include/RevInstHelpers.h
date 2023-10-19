@@ -41,7 +41,7 @@ bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   // Make final result signed so sign extension occurs when sizeof(INT) < XLEN
   R->SetX(Inst.rd, static_cast<std::make_signed_t<INT>>(res));
 
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -112,7 +112,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 
   // update the cost
   R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -122,7 +122,7 @@ bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   M->Write(F->GetHartToExec(),
            R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<T>(Inst.rs2));
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -171,7 +171,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   }
   // update the cost
   R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -185,7 +185,7 @@ bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     val = R->GetFP32(Inst.rs2);
   }
   M->Write(F->GetHartToExec(), R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12), val);
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -197,7 +197,7 @@ bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   }else{
     R->SetFP32(Inst.rd, OP()(R->GetFP32(Inst.rs1), R->GetFP32(Inst.rs2)));
   }
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -225,7 +225,7 @@ bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     res = OP()(R->GetFP32(Inst.rs1), R->GetFP32(Inst.rs2));
   }
   R->SetX(Inst.rd, res);
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -254,7 +254,7 @@ template<template<class> class OP, OpKind KIND,
     // In W_MODE, cast the result to int32_t so that it's sign-extended
     R->SetX(Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
   }
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -294,7 +294,7 @@ bool uppermul(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     if (rs2_is_signed && (rs2 & (uint64_t{1}<<63)) != 0) mul -= rs1;
     R->SetX(Inst.rd, mul);
   }
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -334,7 +334,7 @@ template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
     // In W_MODE, cast the result to int32_t so that it's sign-extended
     R->SetX(Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
   }
-  R->AdvancePC(Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
@@ -349,7 +349,11 @@ bool bcond(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   }else{
     cond = OP()(R->GetX<SIGN<int64_t>>(Inst.rs1), R->GetX<SIGN<int64_t>>(Inst.rs2));
   }
-  R->AdvancePC(cond ? Inst.ImmSignExt(13) : Inst.instSize);
+  if(cond){
+    R->SetPC(R->GetPC() + Inst.ImmSignExt(13));
+  }else{
+    R->AdvancePC(Inst);
+  }
   return true;
 }
 
