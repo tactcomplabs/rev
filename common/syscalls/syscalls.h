@@ -16,7 +16,36 @@
 #include <limits.h>
 #include <stdarg.h>
 
-/* Clone Flags */
+// The following is required to build on MacOS
+// because sigval & siginfo_t are already defined
+// in the two headers that get pulled in when building
+// rev. If you encounter any future issues where rev
+// does not build because of conflicting definitions
+// try adding another type from this file to the
+// ifdef
+#ifdef __APPLE__
+    #include <sys/signal.h>
+    #include <sys/unistd.h>
+#else
+    union sigval {
+        int sival_int;
+        void *sival_ptr;
+    };
+
+    typedef struct{
+        int si_signo;
+        int si_code;
+        union sigval si_value;
+        int si_errno;
+        pid_t si_pid;
+        uid_t si_uid;
+        void *si_addr;
+        int si_status;
+        int si_band;
+    }siginfo_t;
+#endif
+
+// Clone Flags
 #define CSIGNAL              0x000000ff /* Signal mask to be sent at exit */
 #define CLONE_VM             0x00000100 /* Set if VM shared between processes */
 #define CLONE_FS             0x00000200 /* Set if fs info shared between processes */
@@ -230,31 +259,11 @@ typedef struct __user_cap_header_struct {
   int pid;
 } *cap_user_header_t;
 
-
-union sigval {
-        int sival_int;
-        void *sival_ptr;
-};
-
-typedef struct{
-        int si_signo;
-        int si_code;
-        union sigval si_value;
-        int si_errno;
-        pid_t si_pid;
-        uid_t si_uid;
-        void *si_addr;
-        int si_status;
-        int si_band;
-}siginfo_t;
-
 typedef struct __user_cap_data_struct {
   uint32_t effective;
   uint32_t permitted;
   uint32_t inheritable;
 } *cap_user_data_t;
-
-
 
 /* To optimize the implementation one can use the following struct.  */
 struct aioinit
@@ -3759,7 +3768,7 @@ typedef unsigned long int rev_pthread_t;
 // pthread_t *restrict thread
 // const pthread_attr_t *restrict attr - NOT USED RIGHT NOW
 // void *(*start_routine)(void *)
-// void *restrict arg); 
+// void *restrict arg);
 // ==================== REV PTHREADS
 int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ){
   int rc;
