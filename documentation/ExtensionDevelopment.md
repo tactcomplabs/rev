@@ -345,12 +345,14 @@ There are several helper functions to make generating instruction implementation
   void AdvancePC(const RevInst& Inst);
 ```
 ```c++
-  /// GetFP32: Get the 32-bit float value of a specific FP register
-  float GetFP32(const RevFeature* F, size_t rs) const;
+  /// GetFP: Get the specified FP register cast to a specific FP type
+  template<typename T>
+  float GetFP<T>(const RevFeature* F, size_t rs) const;
 ```
 ```c++
-  /// SetFP32: Set a specific FP register to a 32-bit float value
-  void SetFP32(const RevFeature* F, size_t rd, float value);
+  /// SetFP: Set the specified FP register to a specific value
+  template<typename T>
+  void SetFP(const RevFeature* F, size_t rd, T value);
 ```
 ```c++
   /// RevInst: Sign-extended immediate value

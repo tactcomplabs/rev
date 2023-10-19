@@ -292,10 +292,12 @@ public:
     }
   }
 
-  /// GetFP32: Get the 32-bit float value of a specific FP register
-  template<typename U>
-  float GetFP32(U rs) const {
-    if( HasD ){
+  /// GetFP: Get the specified FP register cast to a specific FP type
+  template<typename T, typename U>
+  T GetFP(U rs) const {
+    if constexpr(std::is_same_v<T, double>){
+      return DPF[size_t(rs)];                // The FP64 register's value
+    }else if( HasD ){
       uint64_t i64;
       memcpy(&i64, &DPF[size_t(rs)], sizeof(i64));   // The FP64 register's value
       if (~i64 >> 32)                        // Check for boxed NaN
@@ -304,21 +306,23 @@ public:
       float fp32;
       memcpy(&fp32, &i32, sizeof(fp32));     // The bottom half of FP64
       return fp32;                           // Reinterpreted as FP32
-    } else {
+    }else{
       return SPF[size_t(rs)];                // The FP32 register's value
     }
   }
 
-  /// SetFP32: Set a specific FP register to a 32-bit float value
-  template<typename U>
-  void SetFP32(U rd, float value)
-    {
-      if( HasD ){
-        BoxNaN(&DPF[size_t(rd)], &value);    // Store NaN-boxed in FP64 register
-      } else {
-        SPF[size_t(rd)] = value;             // Store in FP32 register
-      }
+  /// SetFP: Set a specific FP register to a floating-point value
+  template<typename T, typename U>
+  void SetFP(U rd, T value)
+  {
+    if constexpr(std::is_same_v<T, double>){
+      DPF[size_t(rd)] = value;               // Store in FP64 register
+    }else if( HasD ){
+      BoxNaN(&DPF[size_t(rd)], &value);      // Store NaN-boxed float in FP64 register
+    }else {
+      SPF[size_t(rd)] = value;               // Store in FP32 register
     }
+  }
 
   // Friend functions and classes to access internal register state
   template<typename FP, typename INT>
@@ -347,9 +351,6 @@ public:
   friend class RevProc;
   friend class RV32A;
   friend class RV64A;
-  friend class RV32D;
-  friend class RV64D;
-
 }; // class RevRegFile
 
 } // namespace SST::RevCPU
