@@ -50,7 +50,8 @@
 #include "RevRand.h"
 #include "RevProcPasskey.h"
 #include "RevHart.h"
-#include "../common/syscalls/SysFlags.h"
+#define SYSCALL_TYPES_ONLY
+#include "../common/syscalls/syscalls.h"
 #include "../common/include/RevCommon.h"
 
 #define _PAN_FWARE_JUMP_            0x0000000000010000
@@ -559,6 +560,9 @@ private:
   EcallStatus ECALL_pidfd_getfd(RevInst& inst);            // 438, rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
   EcallStatus ECALL_faccessat2(RevInst& inst);             // 439, rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
   EcallStatus ECALL_process_madvise(RevInst& inst);        // 440, rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
+
+  // =============== REV specific functions
+  EcallStatus ECALL_cpuinfo(RevInst& inst);                // 500, rev_cpuinfo(struct rev_cpuinfo *info);
 
   // =============== REV pthread functions
   EcallStatus ECALL_pthread_create(RevInst& inst);         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)

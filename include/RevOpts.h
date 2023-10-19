@@ -26,13 +26,16 @@ namespace SST::RevCPU{
 class RevOpts{
 public:
   /// RevOpts: options constructor
-  RevOpts( unsigned NumCores, const int Verbosity);
+  RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity);
 
   /// RevOpts: options destructor
   ~RevOpts();
 
   /// RevOpts: retrieve the number of configured cores
   unsigned GetNumCores() { return numCores; }
+
+  /// RevOpts: retrieve the number of configured harts per core
+  unsigned GetNumHarts() { return numHarts; }
 
   /// RevOpts: retrieve the verbosity level
   int GetVerbosity() { return verbosity; }
@@ -81,6 +84,7 @@ public:
 
 private:
   unsigned numCores;                            ///< RevOpts: number of initialized cores
+  unsigned numHarts;                            ///< RevOpts: number of harts per core
   int verbosity;                                ///< RevOpts: verbosity level
 
   std::map<unsigned, uint64_t> startAddr;        ///< RevOpts: map of core id to starting address

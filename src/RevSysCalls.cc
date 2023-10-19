@@ -2482,6 +2482,18 @@ EcallStatus RevProc::ECALL_process_madvise(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
+// 500, rev_cpuinfo(struct rev_cpuinfo *info)
+EcallStatus RevProc::ECALL_cpuinfo(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0, "ECALL: cpuinfoc called by thread %" PRIu32 "\n", GetActiveThreadID());
+  struct rev_cpuinfo info;
+  auto addr = RegFile->GetX<int>(RevReg::a0);
+  info.cores = opts->GetNumCores();
+  info.harts_per_core = opts->GetNumHarts();
+  mem->WriteMem(HartToExec, addr, sizeof(info), &info);
+  RegFile->SetX(RevReg::a0, 0);
+  return EcallStatus::SUCCESS;
+}
+
 // 1000, int pthread_create(pthread_t *restrict thread,
 //                          const pthread_attr_t *restrict attr,
 //                          void *(*start_routine)(void *),
