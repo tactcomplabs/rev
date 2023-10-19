@@ -18,10 +18,7 @@
 
 using namespace SST::RevCPU;
 
-RevTracer::RevTracer(std::string Name, SST::Output *o)
-    : name(Name), pOutput(o), outputEnabled(false), lastPC(0), insn(0), 
-    traceSymbols(nullptr), startCycle(0), cycleLimit(0), traceCycles(0), 
-    disabled(0) {
+RevTracer::RevTracer(std::string Name, SST::Output *o): name(Name), pOutput(o) {
     
     enableQ.resize(MAX_ENABLE_Q);
     enableQ.assign(MAX_ENABLE_Q,0);
@@ -70,10 +67,9 @@ int RevTracer::SetDisassembler(std::string machine)
     #endif
 }
 
-int RevTracer::SetTraceSymbols(std::map<uint64_t, std::string> *TraceSymbols)
+void RevTracer::SetTraceSymbols(std::map<uint64_t, std::string> *TraceSymbols)
 {
     traceSymbols = TraceSymbols;
-    return 0;
 }
 
 void RevTracer::SetStartCycle(uint64_t c)
@@ -105,7 +101,7 @@ void RevTracer::CheckUserControls(uint64_t cycle)
 {
     // bail out early if disabled
     if (disabled) return;
-    if (cycleLimit and traceCycles>cycleLimit) {
+    if (cycleLimit && traceCycles>cycleLimit) {
         disabled = true;
         if (outputEnabled) {
             outputEnabled = false;
@@ -116,7 +112,7 @@ void RevTracer::CheckUserControls(uint64_t cycle)
     
     // Using a startCycle will override programmatic controls.
     if (startCycle>0) {
-        bool enable = startCycle and cycle > startCycle;
+        bool enable = startCycle && cycle > startCycle;
         if (enable != outputEnabled) {
             outputEnabled = enable;
             events.f.trc_ctl = 1;
@@ -157,7 +153,7 @@ void RevTracer::SetFetchedInsn(uint64_t _pc, uint32_t _insn)
 
 bool RevTracer::OutputOK()
 {
-    return outputEnabled or events.f.trc_ctl;
+    return outputEnabled || events.f.trc_ctl;
 }
 
 void RevTracer::regRead(size_t r, uint64_t v)
@@ -176,9 +172,7 @@ void RevTracer::memWrite(uint64_t adr, size_t len,  const void *data)
     uint64_t d = *((uint64_t*) data);
     if (len<8) {
         // zero out garbage bytes
-        unsigned shift = (8-len)*8;
-        uint64_t mask = (~0ULL) >> shift;
-        d = d & mask;
+        d &= ~(~0llu << 8*len);
     }
     traceRecs.emplace_back(TraceRec_t(MemStore,adr,len,d));
 }
@@ -210,10 +204,10 @@ void RevTracer::InstTrace(size_t cycle, unsigned id, unsigned hart, unsigned tid
     Reset();
 }
 
-std::string RevTracer::RenderOneLiner(std::string& fallbackMnemonic)
+std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
 {
     // Flow Control Events
-    std::stringstream ss_events;
+    std::stringstream ss_events; 
     if (events.v) {
         if (events.f.trc_ctl) {
             EVENT_SYMBOL e = outputEnabled ? EVENT_SYMBOL::TRACE_ON : EVENT_SYMBOL::TRACE_OFF;

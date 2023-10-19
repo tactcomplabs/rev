@@ -142,7 +142,7 @@ namespace SST::RevCPU{
       /// RevTracer: assign disassembler. Returns 0 if successful
       int SetDisassembler(std::string machine);
       /// RevTracer: assign trace symbol lookup map
-      int SetTraceSymbols(std::map<uint64_t,std::string>* TraceSymbols);
+      void SetTraceSymbols(std::map<uint64_t,std::string>* TraceSymbols);
       /// RevTracer: assign cycle where trace will start (user param)
       void SetStartCycle(uint64_t c);
       /// RevTracer: assign maximum output lines (user param)
@@ -182,19 +182,19 @@ namespace SST::RevCPU{
       /// RevTracer: pointer to output stream
       SST::Output *pOutput;
       /// RevTracer: control whether output is printed or not ( sampling continues )
-      bool outputEnabled;
+      bool outputEnabled = false;
       /// RevTracer: Special affecting trace output
       TraceEvents_t events;
       /// RevTracer: buffer for captured states
       std::vector<TraceRec_t> traceRecs;
       /// RevTracer: saved program counter
-      uint64_t pc;
+      uint64_t pc = 0;
       /// RevTracer: previous program counter for branch determination
-      uint64_t lastPC; 
+      uint64_t lastPC = 0; 
       /// RevTracer: saved instruction
-      uint32_t insn;
+      uint32_t insn = 0;
       /// RevTracer: map of instruction addresses to symbols
-      std::map<uint64_t,std::string>* traceSymbols;
+      std::map<uint64_t,std::string>* traceSymbols = nullptr;
       /// RevTracer: Array of supported "NOP" instructions avaible for trace controls
       uint32_t nops[NOP_COUNT];
       /// RevTracer: Check current state against user settings and update state
@@ -206,11 +206,11 @@ namespace SST::RevCPU{
       /// RevTracer: Format data associated with memory access
       void fmt_data(unsigned len, uint64_t data, std::stringstream& s);
       /// RevTracer: Generate string from captured state
-      std::string RenderOneLiner(std::string& fallbackMnemonic);
+      std::string RenderOneLiner(const std::string& fallbackMnemonic);
       /// RevTracer: User setting: starting cycle of trace (overrides programmtic control)
-      uint64_t startCycle;
+      uint64_t startCycle = 0;
       /// RevTracer: User setting: maximum number of lines to print
-      uint64_t cycleLimit;
+      uint64_t cycleLimit = 0;
       /// RevTracer: support for trace control push/pop 
       std::vector<bool> enableQ;
       /// RevTracer: current pointer into trace controls queue
@@ -218,9 +218,9 @@ namespace SST::RevCPU{
       /// RevTracer: wraparound limit for trace controls queue
       const unsigned MAX_ENABLE_Q = 100;
       /// RevTracer: count of lines rendered
-      uint64_t traceCycles;
+      uint64_t traceCycles = 0;
       /// RevTracer: Hard disable for output
-      bool disabled;
+      bool disabled = 0;
 
     }; // class RevTracer
 
