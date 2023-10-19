@@ -13,7 +13,15 @@ import sst
 
 # Environment settings
 sim_nodes = int(os.getenv('SIM_NODES', 1))
+rev_exe = os.getenv("REV_EXE", "")
+arch = os.getenv("ARCH","RV32I").upper()
+if ( rev_exe == "" ):
+  print("ERROR: REV_EXE is not set",file=sys.stderr);
+  exit(1);
+
 print(f"SIM_NODES={sim_nodes}")
+print(f"ARCH={arch}")
+print(f"REV_EXE={rev_exe}")
 
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
@@ -31,10 +39,10 @@ for i in range(0, sim_nodes):
         "numCores" : 1,                               # Number of cores
 	"clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
-        "machine" : "[CORES:RV32I]",                  # Core:Config; RV32I for all
+        "machine" : f"[CORES:{arch}]",                  # Core:Config; RV32I for all
         "startAddr" : "[CORES:0x00000000]",           # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "tracer.exe"),  # Target executable
+        "program" : rev_exe,                          # Target executable
         "splash" : 1,                                 # Display the splash message
         # "trcOp": "slli",                            # base command for tracing [default: slli]
         # "trcLimit": 0,                              # Maximum number of trace lines [default: 0]

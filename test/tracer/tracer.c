@@ -14,6 +14,7 @@
 #include "stdlib.h"
 #include "stdint.h"
 #include "rev-macros.h"
+#include "syscalls.h"
 
 #define assert TRACE_ASSERT
 
@@ -41,6 +42,23 @@ volatile int check_push_off(int r, int s) {
   int rc = long_sub(r,s);
   TRACE_POP;
   return rc;
+}
+
+volatile unsigned thread1_counter = 0;
+volatile unsigned thread2_counter = 0;
+
+void *thread1() {
+  TRACE_PUSH_ON
+  for (int i=0;i<10;i++) thread1_counter++;
+  TRACE_PUSH_OFF
+  return 0;
+}
+
+void *thread2() {
+  TRACE_PUSH_ON
+  for (int i=0;i<10;i++) thread2_counter+=2;
+  TRACE_PUSH_OFF
+  return 0;
 }
 
 int main(int argc, char **argv){
@@ -81,21 +99,53 @@ int main(int argc, char **argv){
     }
   }
 
+  TRACE_ON;
+
+   // Differentiate rv32i and rv64g operations
+ check_mem_access_sizes:
+   volatile size_t dst = 0;
+   asm volatile("addi t3, zero, -1   \n\t"
+ 	        "sb   t3, 0(%0)      \n\t"
+		"lb   t4, 0(%0)      \n\t"
+ 	        "sh   t3, 0(%0)      \n\t"
+ 	        "lh   t4, 0(%0)      \n\t"
+ 	        "sw   t3, 0(%0)      \n\t"
+ 	        "lw   t4, 0(%0)      \n\t"
+ 	        : : "r"(&dst) : "t3", "t4"
+ 	        );
+
+#ifdef RV64G
+   asm volatile("sd   t3, 0(%0)      \n\t"
+	        "lwu  t4, 0(%0)      \n\t"
+	        "ld   t4, 0(%0)      \n\t"
+	        : : "r"(&dst) : "t3", "t4"
+	        );
+#endif
+   
   // trace some memory operations with register dependencies
   // in a tight loop
-  TRACE_ON;
+ check_tight_loop:
   volatile uint32_t load_data = 0x1ace4fee;
-  asm volatile("addi t3, zero, 5    \n\t"  // counter = 5
-	       "mem_loop:       \n\t"
-	       "lw   t4, 0(%0)  \n\t"
-	       "addi t3, t3, -1 \n\t"       // counter--
-	       "addi t4, t4, 1  \n\t"       // stall?
-	       "sw   t4, 0(%0)  \n\t"       // more traffic
+  asm volatile("addi t3, zero, 3 \n\t"  // counter = 3
+	       "mem_loop:        \n\t"
+	       "lw   t4, 0(%0)   \n\t"
+	       "addi t3, t3, -1  \n\t"  // counter--
+	       "addi t4, t4, 1   \n\t"  // stall?
+	       "sw   t4, 0(%0)   \n\t"  // more traffic
 	       "bnez t3, mem_loop"          
 	       :  : "r"(&load_data) : "t3", "t4"
 	       );
-  TRACE_OFF;
+
+  // trace some threads
+  rev_pthread_t tid1, tid2;
+  rev_pthread_create(&tid1, NULL, (void *)thread1, NULL);
+  rev_pthread_create(&tid2, NULL, (void *)thread2, NULL);
+  rev_pthread_join(tid1);
+  rev_pthread_join(tid2);
+  
+  //TODO
+  //TRACE_ASSERT(thread1_counter==10);
+  //TRACE_ASSERT(thread2_counter==20);
   
   return 0;
 }
-
