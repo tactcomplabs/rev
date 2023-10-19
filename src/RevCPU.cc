@@ -359,7 +359,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   }
 
   // determine whether we need to enable/disable manual coproc clocking
-  DisableCoprocClock = params.find<bool>("disableCoprocClock", 0);
+  DisableCoprocClock = params.find<bool>("independentCoprocClock", 0);
 
   // setup the PAN execution contexts
   if( EnablePAN ){
