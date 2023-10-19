@@ -224,7 +224,7 @@ public:
     }else{
       res = RevReg(rs) != RevReg::zero ? T(RV64[size_t(rs)]) : 0;
     }
-    TRACE_REG_READ(rs,res);
+    TRACE_REG_READ(size_t(rs),res);
     return res;
   }
 
@@ -239,7 +239,7 @@ public:
       res = RevReg(rd) != RevReg::zero ? uint64_t(val) : 0;
       RV64[size_t(rd)] = res;
     }
-    TRACE_REG_WRITE(rd, res);
+    TRACE_REG_WRITE(size_t(rd), res, IsRV32);
   }
 
   /// GetPC: Get the Program Counter

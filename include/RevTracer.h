@@ -40,7 +40,7 @@
 // Tracing macros
 #ifndef NO_REV_TRACER
 #define TRACE_REG_READ(R,V)  { if (Tracer) Tracer->regRead(  (uint8_t) (R),(uint64_t) (V) ); }
-#define TRACE_REG_WRITE(R,V) { if (Tracer) Tracer->regWrite( (uint8_t) (R),(uint64_t) (V) ); }
+#define TRACE_REG_WRITE(R,V,RV32) { if (Tracer) Tracer->regWrite( (R), (V), (RV32) ); }
 #define TRACE_PC_WRITE(PC)   { if (Tracer) Tracer->pcWrite( (uint64_t) (PC) ); }
 #define TRACE_MEM_WRITE(ADR, LEN, DATA) { if (Tracer) Tracer->memWrite( (ADR), (LEN), (DATA) ); }
 #define TRACE_MEM_READ(ADR, LEN, DATA)  { if (Tracer) Tracer->memRead(  (ADR), (LEN), (DATA) ); }
@@ -153,10 +153,10 @@ namespace SST{
       /// RevTracer: capture instruction to be traced
       void SetFetchedInsn(uint64_t _pc, uint32_t _insn);
       /// RevTracer: capture register read
-      void regRead(uint8_t r, uint64_t v);
-      /// RevTracer: capture register write
-      void regWrite(uint8_t r, uint64_t v);
-      /// RevTracer: capture memory write
+      void regRead(size_t r, uint64_t v);
+      /// RevTracer: capture register write. Mask off upper bits when 32-bit
+      void regWrite(size_t r, uint64_t v, bool rv32);
+      /// RevTracer: capture memory write. 
       void memWrite(uint64_t adr, size_t len, const void *data);
       /// RevTracer: capture memory read
       void memRead(uint64_t adr, size_t len, void *data);

@@ -160,13 +160,14 @@ bool RevTracer::OutputOK()
     return outputEnabled or events.f.trc_ctl;
 }
 
-void RevTracer::regRead(uint8_t r, uint64_t v)
+void RevTracer::regRead(size_t r, uint64_t v)
 {
     traceRecs.emplace_back(TraceRec_t(RegRead,r,v));
 }
 
-void RevTracer::regWrite(uint8_t r, uint64_t v)
+void RevTracer::regWrite(size_t r, uint64_t v, bool rv32)
 {
+    if (rv32) v = v & 0x0ffffffffULL;
     traceRecs.emplace_back(TraceRec_t(RegWrite,r,v));
 }
 
