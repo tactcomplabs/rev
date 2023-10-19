@@ -475,7 +475,10 @@ EcallStatus RevProc::ECALL_fchown(RevInst& inst){
 
 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
 EcallStatus RevProc::ECALL_openat(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: openat called by thread %" PRIu32 " on hart %" PRIu32 "\n", GetActiveThreadID(), HartToExec);
+  auto& EcallState = Harts.at(HartToExec)->GetEcallState();
+  if( EcallState.bytesRead == 0 ){
+    output->verbose(CALL_INFO, 2, 0, "ECALL: openat called by thread %" PRIu32 " on hart %" PRIu32 "\n",  GetActiveThreadID(), HartToExec);
+  }
   auto dirfd = RegFile->GetX<int>(RevReg::a0);
   auto pathname = RegFile->GetX<uint64_t>(RevReg::a1);
 
@@ -492,7 +495,6 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
   /* Read the filename from memory one character at a time until we find '\0' */
   auto& Thread = GetThreadOnHart(HartToExec);
 
-  auto& EcallState = Harts.at(HartToExec)->GetEcallState();
 
   auto action = [&]{
     // Do the openat on the host
@@ -599,11 +601,13 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
 
 
 EcallStatus RevProc::ECALL_write(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 " on hart %" PRIu32 "\n",  GetActiveThreadID(), HartToExec);
+  auto& EcallState = Harts.at(HartToExec)->GetEcallState();
+  if( EcallState.bytesRead == 0 ){
+    output->verbose(CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 " on hart %" PRIu32 "\n",  GetActiveThreadID(), HartToExec);
+  }
   auto fd = RegFile->GetX<int>(RevReg::a0);
   auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
-  auto& EcallState = Harts.at(HartToExec)->GetEcallState();
 
   auto lsq_hash = make_lsq_hash(10, RevRegClass::RegGPR, HartToExec); // Cached hash value
 
