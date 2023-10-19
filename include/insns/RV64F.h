@@ -25,13 +25,13 @@ class RV64F : public RevExt {
 
   static bool fcvtsl(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->SetFP32(Inst.rd, static_cast<float>(R->GetX<int64_t>(Inst.rs1)));
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool fcvtslu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->SetFP32(Inst.rd, static_cast<float>(R->GetX<uint64_t>(Inst.rs1)));
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 

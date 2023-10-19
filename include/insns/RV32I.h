@@ -31,7 +31,7 @@ class RV32I : public RevExt {
     // if Inst.imm == 0; this is a HINT instruction
     // this is effectively a NOP
     if( Inst.imm == 0x00 ){
-      R->AdvancePC(Inst.instSize);
+      R->AdvancePC(Inst);
       return true;
     }
     //Inst.imm = (Inst.imm & 0b011111111)*4;
@@ -254,20 +254,20 @@ class RV32I : public RevExt {
   // Standard instructions
   static bool lui(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->SetX(Inst.rd, static_cast<int32_t>(Inst.imm << 12));
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool auipc(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     auto ui = static_cast<int32_t>(Inst.imm << 12);
     R->SetX(Inst.rd, ui + R->GetPC());
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool jal(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->SetX(Inst.rd, R->GetPC() + Inst.instSize);
-    R->AdvancePC(Inst.ImmSignExt(21));
+    R->SetPC(R->GetPC() + Inst.ImmSignExt(21));
     return true;
   }
 
@@ -325,13 +325,13 @@ class RV32I : public RevExt {
 
   static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->FenceMem(F->GetHartToExec());
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;  // temporarily disabled
   }
 
   static bool fencei(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     M->FenceMem(F->GetHartToExec());
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;  // temporarily disabled
   }
 
@@ -354,42 +354,42 @@ class RV32I : public RevExt {
      * So we don't have to worry about setting `mtvec` reg
      */
 
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool ebreak(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool csrrw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool csrrs(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool csrrc(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool csrrwi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool csrrsi(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool csrrci(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->AdvancePC(Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
