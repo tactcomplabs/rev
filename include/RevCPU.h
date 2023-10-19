@@ -121,7 +121,7 @@ public:
     {"trcLimit",        "Max trace lines per core (0 no limit)",        "0"},
     {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
-    {"disable_coproc_clock",  "Disables the manual clocking of coprocessor subcomponents", "0"},
+    {"disableCoprocClock",  "Disables the manual clocking of coprocessor subcomponents", "0"},
     )
 
   // -------------------------------------------------------
