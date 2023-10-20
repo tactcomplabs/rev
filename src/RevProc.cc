@@ -10,6 +10,7 @@
 
 #include "../include/RevProc.h"
 #include "RevSysCalls.cc"
+#include "sst/core/output.h"
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -19,15 +20,14 @@ RevProc::RevProc( unsigned Id,
                   unsigned NumHarts,
                   RevMem *Mem,
                   RevLoader *Loader,
-                  std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads,
                   std::function<uint32_t()> GetNewTID,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
     numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader),
-    AssignedThreads(AssignedThreads), GetNewThreadID(std::move(GetNewTID)),
-    output(Output), feature(nullptr), sfetch(nullptr), Tracer(nullptr) {
+    GetNewThreadID(std::move(GetNewTID)), output(Output), feature(nullptr),
+    sfetch(nullptr), Tracer(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -392,14 +392,15 @@ bool RevProc::LoadInstructionTable(){
 }
 
 bool RevProc::Reset(){
-  // Reset the AssignedThreads
-  for( auto& Thread : AssignedThreads ){
-    Thread.second.reset();
-  }
+
+  // All harts are idle to start
+  IdleHarts.set();
+  // Other state bitsets are the unset
+  BusyHarts = ~IdleHarts;
+  HartsClearToDecode = BusyHarts;
+  HartsClearToExecute = BusyHarts;
 
   Pipeline.clear();
-
-
   CoProcStallReq.reset();
 
   return true;
@@ -1646,11 +1647,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 #endif
 
 
-  // Check for oversubsciprtion
-  if( AssignedThreads.size() > Harts.size() ){
-    output->fatal(CALL_INFO, 99, "Proc has become oversubscribed which is not currently supported\n");
-  }
-
   // -- MAIN PROGRAM LOOP --
   //
   // If the clock is down to zero, then fetch the next instruction
@@ -1910,7 +1906,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         DependencyClear(HartID, &(Pipeline.front().second));
       }
       Pipeline.erase(Pipeline.begin());
-      GetRegFile(HartID)->SetCost(0);
+      RegFile->SetCost(0);
     }else{
       // could not retire the instruction, bump the cost
       Pipeline.front().second.cost++;
@@ -1963,26 +1959,37 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         }
       }
     }else if( GetPC() == 0x00ull ) {
-      if( !AnyDependency(HartToDecode, false) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
+      if( HartHasNoDependencies(HartToDecode) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
         Harts.at(HartToDecode)->Thread->SetState(ThreadState::DONE);
         HartsClearToExecute[HartToDecode] = false;
         HartsClearToDecode[HartToDecode] = false;
-        ThreadsThatChangedState.emplace(Thread);
+        ThreadsThatChangedState.emplace(PopThreadFromHart(HartToDecode));
       }
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) \
-        && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
+    if( HartToExec != _REV_INVALID_HART_ID_ && BusyHarts[HartToExec]
+        && !HartHasNoDependencies(HartToExec)
+        && ( (nullptr == coProc) || (coProc && coProc->IsDone() ) // TODO: See if first check is redundant
+        ) ){
       HartsClearToExecute[HartToExec] = false;
       HartsClearToDecode[HartToExec] = false;
-      GetThreadOnHart(HartToExec)->SetState(ThreadState::DONE);
-      ThreadsThatChangedState.emplace(GetThreadOnHart(HartToDecode));
+      IdleHarts.set(HartToExec);
+      ThreadsThatChangedState.emplace(PopThreadFromHart(HartToExec));
     }
   }
 
   return rtn;
 }
 
+std::unique_ptr<RevThread> RevProc::PopThreadFromHart(unsigned HartID){
+  if( HartID >= numHarts ){
+    output->fatal(CALL_INFO, -1,
+                  "Error: tried to pop thread from hart %" PRIu32 " but there are only %" PRIu32 " hart(s)\n",
+                  HartID, numHarts);
+  }
+  BusyHarts[HartID] = false;
+  return Harts.at(HartID)->PopThread();
+}
 
 void RevProc::PrintStatSummary(){
   output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
@@ -2007,7 +2014,14 @@ void RevProc::PrintStatSummary(){
 }
 
 //// TODO: Remove
-//RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
+RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
+  if( HartID >= Harts.size() ){
+    output->fatal(CALL_INFO, -1,
+                  "Error: tried to get RegFile for Hart %" PRIu32 " but there are only %" PRIu32 " hart(s)\n",
+                  HartID, numHarts);
+  }
+  return Harts.at(HartID)->RegFile.get();
+}
 //  auto& tp = GetThreadOnHart(HartID);
 //
 //  if( tp == nullptr ) {
@@ -2022,7 +2036,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // tidAddr is the address we have to write the new thread's id to
   output->verbose(CALL_INFO, 2, 0,
                   "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC);
-  uint64_t ParentThreadID = GetActiveThreadID();
+  uint32_t ParentThreadID = Harts.at(HartToExec)->GetAssignedThreadID();
 
   // Create the new thread's memory
   std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
@@ -2385,6 +2399,7 @@ void RevProc::ExecEcall(RevInst& inst){
   auto EcallCode = RegFile->GetX<uint64_t>(RevReg::a7);
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
+    // TODO: Eventually set EcallState once in here (and Hart)
     // call the function
     EcallStatus status = it->second(this, inst);
 
@@ -2406,37 +2421,49 @@ void RevProc::ExecEcall(RevInst& inst){
 // This function should never be called if there are no available harts
 // so if for some reason we can't find a hart without a thread assigned
 // to it then we have a bug.
-void RevProc::AssignThread(unsigned ThreadID){
-  bool ThreadAssigned = false;
-  // Check for available Hart
-  for( const auto& Hart : Harts ){
-    // If the hart has no thread assigned to it, assign it
-    if( !HartHasThread(Hart->GetID()) ){
-      Hart->AssignThread(ThreadID);
-      ThreadAssigned = true;
-      break;
-    }
+void RevProc::AssignThread(std::unique_ptr<RevThread> Thread){
+  Thread->SetLSQueue( LSQueue );
+  // Point the regfile of this thread's LSQ to the Proc's LSQ
+  // TODO: This should be done in the RevProc
+
+  // Point thread's regfile to this proc's MarkLoadComplete
+  Thread->SetMarkLoadComplete([proc = this](const MemReq& req){ proc->MarkLoadComplete(req); });
+
+  unsigned HartToAssign = FindIdleHartID();
+
+  if( HartToAssign == _REV_INVALID_HART_ID_ ){
+    output->fatal(CALL_INFO, 1, "Attempted to assign a thread to a hart but no available harts were found.\n"
+                                "We should never have tried to assign a thread to this Proc if it had no "
+                                "harts available (ie. Proc->NumIdleHarts() == 0 ).\n"
+                                "This is a bug\n");
   }
 
-  // If we weren't able
-  if( !ThreadAssigned ){
-    output->fatal(CALL_INFO, 1, "Attempted to schedule thread %" PRIu32 " but no available harts were found.\n"
-                                "We should never have tried to schedule a thread on this Proc if it had no Harts available (ie. HartUtil == 100%%).\n"
-                                "This is a bug\n", ThreadID);
-  }
+  // Assign the thread to the hart
+  Harts.at(HartToAssign)->AssignThread( std::move(Thread) );
 
   return;
 }
 
-uint32_t RevProc::GetActiveThreadID(){
-  uint32_t tid = Harts.at(HartToDecode)->GetAssignedThreadID();
-  if( AssignedThreads.find(tid) == AssignedThreads.end() ){
-    output->fatal(CALL_INFO, 1, "HartToDecode = %" PRIu32 " and this hart currently has no thread assigned to it. This may be a bug\n", HartToDecode);
+unsigned RevProc::FindIdleHartID() const {
+  unsigned IdleHartID = _REV_INVALID_HART_ID_;
+  if( IdleHarts.none() ){
+    output->fatal(CALL_INFO, -1, "Attempted to find an idle hart but none were found. This is a bug\n");
   }
-  return tid;
+  else {
+    // Iterate over IdleHarts to find the first idle hart
+    for( size_t i=0; i<IdleHarts.size(); i++ ){
+      if( IdleHarts[i] ){
+        IdleHartID = i;
+        break;
+      }
+    }
+  }
+  return IdleHartID;
 }
 
-//
+
+/// TODO: Ask Dave to comment
+/// Used to clutter ClockTick
 void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
   // inject ALU fault
   RevExt *Ext = Extensions[EToE.first].get();

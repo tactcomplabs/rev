@@ -61,7 +61,6 @@ class RevProc{
 public:
   /// RevProc: standard constructor
   RevProc( unsigned Id, RevOpts *Opts, unsigned NumHarts, RevMem *Mem, RevLoader *Loader,
-           std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads,
            std::function<uint32_t()> GetNewThreadID, SST::Output *Output );
 
   /// RevProc: standard destructor
@@ -129,19 +128,23 @@ public:
   RevMem& GetMem() const { return *mem; }
 
   // Called by RevCPU to handle the state changes threads may have happened during this Proc's ClockTick
-  std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() { return ThreadsThatChangedState; }
-  const std::queue<std::shared_ptr<RevThread>>& GetThreadsThatChangedState() const { return ThreadsThatChangedState; }
+  //std::queue<std::unique_ptr<RevThread>> TransferThreadsThatChangedState() { return std::move(ThreadsThatChangedState); }
+  std::queue<std::unique_ptr<RevThread>> TransferThreadsThatChangedState() {
+    auto temp = std::move(ThreadsThatChangedState);
+    ThreadsThatChangedState = std::queue<std::unique_ptr<RevThread>>(); // reset to an empty queue
+    return temp;
+}
+
+  //std::queue<std::unique_ptr<RevThread>> TransferThreadsThatChangedState() { return std::move(ThreadsThatChangedState); }
+  //const std::queue<std::unique_ptr<RevThread>>& GetThreadsThatChangedState() const { return ThreadsThatChangedState; }
 
   /// RevProc: SpawnThread creates a new thread and returns its ThreadID
   void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
 
   /// RevProc: Returns the current HartToExec active pid
-  uint32_t GetActiveThreadID();
+  uint32_t GetActiveThreadID(){ return Harts.at(HartToExec)->GetAssignedThreadID(); }
 
   // Checks if this thread has any reason it cannot be removed by RevCPU (ie. Dependencies / outstanding loads)
-  // TODO: Update
-  bool ThreadCanBeRemoved(const uint32_t& ThreadID) ;
-
   ///< RevProc: Get this Proc's feature
   RevFeature* GetRevFeature() const { return feature; }
 
@@ -187,6 +190,12 @@ public:
 
   void UpdateStatusOfHarts();
 
+  ///< RevProc: Returns the id of an idle hart (or _INVALID_HART_ID_ if none are idle)
+  unsigned FindIdleHartID() const ;
+
+  size_t GetNumBusyHarts() const { return BusyHarts.count(); }
+  size_t GetNumIdleHarts() const { return IdleHarts.count(); }
+
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
   bool Stalled;             ///< RevProc: determines if the core is stalled on instruction fetch
@@ -213,17 +222,14 @@ private:
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
 
-  /// ThreadIDs and their corresponding RevThread (Size will never be greater than numHarts)
-  std::unordered_map<uint32_t, std::shared_ptr<RevThread>>& AssignedThreads;
-
   // Checks to see if a given HartID has an assigned thread by checking if the threadid on that Hart still exists in the AssignedThreads map
-  bool HartHasThread(unsigned HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
+  // TODO: REMOVE ME: bool HartHasThread(unsigned HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;
 
   // If a given assigned thread experiences a change of state, it sets the corresponding bit
-  std::queue<std::shared_ptr<RevThread>> ThreadsThatChangedState; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
+  std::queue<std::unique_ptr<RevThread>> ThreadsThatChangedState; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
 
   SST::Output *output;                   ///< RevProc: output handler
   std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler
@@ -236,7 +242,7 @@ private:
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
   RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
-  
+
   std::bitset<_MAX_HARTS_> CoProcStallReq;
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
@@ -708,15 +714,18 @@ private:
     return isFloat ? regFile->FP_Scoreboard.any() : regFile->RV_Scoreboard.any();
   }
 
-  /// RevProc: Checks if a given Thread w/ ThreadID has any dependencies
-  bool ThreadHasDependencies(const uint32_t& ThreadID) const {
-    // Make sure this ThreadID is in AssignedThreads
-    if (AssignedThreads.find(ThreadID) == AssignedThreads.end()) {
-      output->fatal(CALL_INFO, -1, "Error: Tried to check if thread %" PRIu32 " has dependencies but that thread was not found in AssignedThreads. This is a bug\n", ThreadID);
-    }
-    const RevRegFile* regFile = AssignedThreads.at(ThreadID)->GetRegFile();
-    return regFile->RV_Scoreboard.any() || regFile->FP_Scoreboard.any();
+  /// RevProc: Whether any scoreboard bits are set
+  bool AnyDependency(unsigned HartID) const {
+    const auto& RegFile = Harts.at(HartID)->RegFile;
+    return RegFile->FP_Scoreboard.any() || RegFile->RV_Scoreboard.any();
   }
+
+  bool HartHasNoDependencies(unsigned HartID) const {
+    return !AnyDependency(HartID);
+  }
+
+  ///< Removes thread from Hart and returns it
+  std::unique_ptr<RevThread> PopThreadFromHart(unsigned HartID);
 
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(unsigned HartID, const RevInst* Inst) const;

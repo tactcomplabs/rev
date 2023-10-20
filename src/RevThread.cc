@@ -60,7 +60,7 @@ std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
   }
   os << "\n";
 
-  os << Thread.RegFile;
+  os << Thread.RegFile.get();
 
   return os;
 }

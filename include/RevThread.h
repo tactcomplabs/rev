@@ -55,6 +55,8 @@ public:
             RevFeature* Feature)
     : ThreadID(ThreadID), ParentThreadID(ParentThreadID), StackPtr(StackPtr),
       FirstPC(FirstPC), ThreadMem(ThreadMem), Feature(Feature) {
+    // Create the register file
+    RegFile = std::make_unique<RevRegFile>(Feature);
     // Set the stack pointer
     RegFile->SetX(RevReg::sp, StackPtr);
 
@@ -99,6 +101,19 @@ public:
 
   // See if file descriptor exists/is owned by this thread
   bool FindFD(int fd){ return fildes.count(fd); }
+
+
+  // TODO: Potentially move these to RevHart and have them set it when it's assigned?
+  // Arguments could be made to keep it here or put it there
+  void SetLSQueue(std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq){
+    // TODO: Ask dave if this is right
+    RegFile->SetLSQueue(lsq);
+  }
+
+  void SetMarkLoadComplete(std::function<void(const MemReq&)> func){
+    // TODO: Ask dave if this is right
+    RegFile->SetMarkLoadComplete(func);
+  }
 
   // Get the threads
   const std::unordered_set<int>& GetFildes(){ return fildes; }
