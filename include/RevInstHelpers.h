@@ -28,12 +28,7 @@ namespace SST::RevCPU{
 /// at the integer type's numerical limits, whether signed or unsigned.
 template<typename FP, typename INT>
 bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  FP fp;
-  if constexpr(std::is_same_v<FP, double>){
-      fp = R->DPF[Inst.rs1];         // Read the double FP register directly
-    }else{
-    fp = R->GetFP32(Inst.rs1);  // Read the F or D register, unboxing if D
-  }
+  FP fp = R->GetFP<FP>(Inst.rs1); // Read the FP register
   constexpr INT max = std::numeric_limits<INT>::max();
   constexpr INT min = std::numeric_limits<INT>::min();
   INT res = std::isnan(fp) || fp > FP(max) ? max : fp < FP(min) ? min : static_cast<INT>(fp);
@@ -151,7 +146,9 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 
     // Box float value into 64-bit FP register
     if(std::is_same_v<T, float>){
-      BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
+      double fp = R->GetFP<double>(Inst.rd);
+      BoxNaN(&fp, &fp);
+      R->SetFP(Inst.rd, fp);
     }
   }else{
     uint64_t rs1 = R->GetX<uint64_t>(Inst.rs1);
@@ -178,12 +175,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 /// Floating-point store template
 template<typename T>
 bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  T val;
-  if constexpr(std::is_same_v<T, double>){
-    val = R->DPF[Inst.rs2];
-  }else{
-    val = R->GetFP32(Inst.rs2);
-  }
+  T val = R->GetFP<T>(Inst.rs2);
   M->Write(F->GetHartToExec(), R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12), val);
   R->AdvancePC(Inst);
   return true;
@@ -192,11 +184,7 @@ bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 /// Floating-point operation template
 template<typename T, template<class> class OP>
 bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  if constexpr(std::is_same_v<T, double>){
-    R->DPF[Inst.rd] = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-  }else{
-    R->SetFP32(Inst.rd, OP()(R->GetFP32(Inst.rs1), R->GetFP32(Inst.rs2)));
-  }
+  R->SetFP(Inst.rd, OP()(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2)));
   R->AdvancePC(Inst);
   return true;
 }
@@ -218,12 +206,7 @@ struct FMax{
 /// Floating-point conditional operation template
 template<typename T, template<class> class OP>
 bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  bool res;
-  if constexpr(std::is_same_v<T, double>){
-    res = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-  }else{
-    res = OP()(R->GetFP32(Inst.rs1), R->GetFP32(Inst.rs2));
-  }
+  bool res = OP()(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2));
   R->SetX(Inst.rd, res);
   R->AdvancePC(Inst);
   return true;
