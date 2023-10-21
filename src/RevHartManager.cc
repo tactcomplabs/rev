@@ -14,7 +14,7 @@ using namespace SST::RevCPU;
 #include "SST.h"
 
   // Get next hart to decode
-std::shared_ptr<RevHart>& RevHartManager::NextHartToDecode(){
+std::shared_ptr<RevHart>& RevHartManager::NextHartToDecodeID(){
   // TODO:
   return Harts[0];
 }

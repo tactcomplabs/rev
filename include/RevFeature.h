@@ -100,11 +100,11 @@ public:
   /// GetProcID: Retrieve the ProcID of the target object
   auto GetProcID() const { return ProcID; }
 
-  /// GetHartToExec: Retrieve the current executing Hart
-  uint16_t GetHartToExec() const { return HartToExec; }
+  /// GetHartToExecID: Retrieve the current executing Hart
+  uint16_t GetHartToExecID() const { return HartToExecID; }
 
-  /// SetHartToExec: Set the current executing Hart
-  void SetHartToExec(unsigned hart) { HartToExec = hart; }
+  /// SetHartToExecID: Set the current executing Hart
+  void SetHartToExecID(unsigned hart) { HartToExecID = hart; }
 
 private:
   std::string machine;      ///< RevFeature: feature string
@@ -112,7 +112,7 @@ private:
   unsigned MinCost;         ///< RevFeature: min memory cost
   unsigned MaxCost;         ///< RevFeature: max memory cost
   unsigned ProcID;          ///< RevFeature: RISC-V Proc ID
-  unsigned HartToExec;      ///< RevFeature: The current executing Hart on RevProc
+  unsigned HartToExecID;      ///< RevFeature: The current executing Hart on RevProc
   RevFeatureType features;  ///< RevFeature: feature elements
   unsigned xlen;            ///< RevFeature: RISC-V Xlen
 

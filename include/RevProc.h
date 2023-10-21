@@ -141,8 +141,8 @@ public:
   /// RevProc: SpawnThread creates a new thread and returns its ThreadID
   void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
 
-  /// RevProc: Returns the current HartToExec active pid
-  uint32_t GetActiveThreadID(){ return Harts.at(HartToExec)->GetAssignedThreadID(); }
+  /// RevProc: Returns the current HartToExecID active pid
+  uint32_t GetActiveThreadID(){ return Harts.at(HartToDecodeID)->GetAssignedThreadID(); }
 
   // Checks if this thread has any reason it cannot be removed by RevCPU (ie. Dependencies / outstanding loads)
   ///< RevProc: Get this Proc's feature
@@ -205,8 +205,8 @@ private:
   unsigned fault_width;     ///< RevProc: the width of the target fault
   unsigned id;              ///< RevProc: processor id
   uint64_t ExecPC;          ///< RevProc: executing PC
-  unsigned HartToDecode;    ///< RevProc: Current executing ThreadID
-  unsigned HartToExec;      ///< RevProc: Thread to dispatch instruction
+  unsigned HartToDecodeID;    ///< RevProc: Current executing ThreadID
+  unsigned HartToExecID;      ///< RevProc: Thread to dispatch instruction
 
   std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts without a thread assigned to them
   std::bitset<_MAX_HARTS_> IdleHarts;      ///< RevProc: bitset of Harts with no thread assigned
@@ -239,7 +239,7 @@ private:
 
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
 
-  RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
+  RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecodeID RegFile
 
   RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
 
@@ -706,7 +706,7 @@ private:
   }
 
   /// RevProc: Determine next thread to execute
-  unsigned GetNextHartToDecode() const;
+  unsigned GetNextHartToDecodeID() const;
 
   /// RevProc: Whether any scoreboard bits are set
   bool AnyDependency(unsigned HartID, bool isFloat) const {

@@ -36,6 +36,8 @@ public:
   ///< RevHart: Constructor
   RevHart(uint16_t id) : ID(id) { }
 
+  typedef std::unique_ptr<RevHart> ptr;
+
   ///< RevHart: Destructor
   ~RevHart() = default;
 
@@ -57,13 +59,13 @@ public:
   ///< RevHart: Assigns a RevThread to this Hart
   void AssignThread(std::unique_ptr<RevThread> ThreadToAssign){
     Thread = std::move(ThreadToAssign);
-    LoadRegFile(Thread->TransferRegFile());
+    LoadRegFile(Thread->TransferRegState());
   }
 
   ///< RevHart: Removed a RevThread from this Hart
   std::unique_ptr<RevThread> PopThread(){
     // return the register file to the thread
-    Thread->SetRegFile(std::move(RegFile));
+    Thread->UpdateRegState(std::move(RegFile));
     // return the thread
     return std::move(Thread);
   }

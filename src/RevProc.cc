@@ -24,7 +24,7 @@ RevProc::RevProc( unsigned Id,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
+    id(Id), HartToDecodeID(0), HartToExecID(0), Retired(0x00ull),
     numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader),
     GetNewThreadID(std::move(GetNewTID)), output(Output), feature(nullptr),
     sfetch(nullptr), Tracer(nullptr) {
@@ -410,7 +410,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -432,7 +432,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -525,7 +525,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -568,7 +568,7 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -602,7 +602,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -665,7 +665,7 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -704,7 +704,7 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -726,7 +726,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost);
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost);
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -785,7 +785,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -827,7 +827,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
   uint8_t funct6  = 0;
   uint8_t l3      = 0;
   uint32_t Enc    = 0x00ul;
-  uint64_t PC     = GetPC();
+  uint64_t PC     =Harts[HartToDecodeID]->RegFile->GetPC();
 
   if( !feature->HasCompressed() ){
     output->fatal(CALL_INFO, -1,
@@ -912,8 +912,8 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
                   PC, opc, funct2, funct3, funct4, funct6, Enc );
   }
 
-  RegFile->SetEntry(Entry);
-  RegFile->SetTrigger(false);
+ Harts[HartToDecodeID]->RegFile->SetEntry(Entry);
+ Harts[HartToDecodeID]->RegFile->SetTrigger(false);
 
   RevInst ret{};
 
@@ -957,7 +957,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1011,7 +1011,7 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1051,7 +1051,7 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1091,7 +1091,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1123,7 +1123,7 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1162,7 +1162,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1198,7 +1198,7 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-  RegFile->SetCost( InstTable[Entry].cost );
+ Harts[HartToDecodeID]->RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
   DInst.opcode  = InstTable[Entry].opcode;
@@ -1241,13 +1241,13 @@ bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value) const {
   if( Idx >= _REV_NUM_REGS_ ){
     return false;
   }
-  RevRegFile* regFile = GetRegFile(HartToExec);
+  RevRegFile* regFile = GetRegFile(HartToExecID);
   *Value = regFile->GetX<uint64_t>(Idx);
   return true;
 }
 
 bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value) const {
-  RevRegFile* regFile = GetRegFile(HartToExec);
+  RevRegFile* regFile = GetRegFile(HartToExecID);
   if( !Halted )
     return false;
   if( Idx >= _REV_NUM_REGS_ ){
@@ -1258,7 +1258,7 @@ bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value) const {
 }
 
 bool RevProc::PrefetchInst(){
-  uint64_t PC = RegFile->GetPC();
+  uint64_t PC =Harts[HartToDecodeID]->RegFile->GetPC();
 
   // These are addresses that we can't decode
   // Return false back to the main program loop
@@ -1276,7 +1276,7 @@ RevInst RevProc::DecodeInst(){
   bool Fetched  = false;
 
   // Stage 1: Retrieve the instruction
-  PC = RegFile->GetPC();
+  PC =Harts[HartToDecodeID]->RegFile->GetPC();
 
   if( !sfetch->InstFetch(PC, Fetched, Inst) ){
     output->fatal(CALL_INFO, -1,
@@ -1287,7 +1287,7 @@ RevInst RevProc::DecodeInst(){
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
                     "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
-                    id, HartToDecode, GetActiveThreadID(),  PC, Inst);
+                    id, HartToDecodeID, GetActiveThreadID(),  PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
                   "Error: Core %" PRIu32 " failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
@@ -1437,8 +1437,8 @@ RevInst RevProc::DecodeInst(){
                   PC, Opcode, Funct3, Funct7, Imm12, Enc );
   }
 
-  RegFile->SetEntry(Entry);
-  RegFile->SetTrigger(false);
+ Harts[HartToDecodeID]->RegFile->SetEntry(Entry);
+ Harts[HartToDecodeID]->RegFile->SetTrigger(false);
 
   // Stage 8: Do a full deocode using the target format
   RevInst ret{};
@@ -1474,7 +1474,7 @@ RevInst RevProc::DecodeInst(){
 
 void RevProc::HandleRegFault(unsigned width){
   const char* RegPrefix;
-  RevRegFile* regFile = GetRegFile(HartToExec);
+  RevRegFile* regFile = GetRegFile(HartToExecID);
 
   // select a register
   unsigned RegIdx = RevRand(0, _REV_NUM_REGS_ - 1);
@@ -1599,12 +1599,12 @@ void RevProc::ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
 
 
 
-unsigned RevProc::GetNextHartToDecode() const {
-  if(HartsClearToDecode.none()) { return HartToDecode;};
+unsigned RevProc::GetNextHartToDecodeID() const {
+  if(HartsClearToDecode.none()) { return HartToDecodeID;};
 
-  unsigned nextID = HartToDecode;
-  if(HartsClearToDecode[HartToDecode]){
-    nextID = HartToDecode;
+  unsigned nextID = HartToDecodeID;
+  if(HartsClearToDecode[HartToDecodeID]){
+    nextID = HartToDecodeID;
   }else{
     for(size_t tID = 0; tID < Harts.size(); tID++){
       nextID++;
@@ -1615,7 +1615,7 @@ unsigned RevProc::GetNextHartToDecode() const {
     }
     output->verbose(CALL_INFO, 6, 0,
                     "Core %" PRIu32 "; Hart switch from %" PRIu32 " to %" PRIu32 "\n",
-                    id, HartToDecode, nextID);
+                    id, HartToDecodeID, nextID);
   }
   return nextID;
 }
@@ -1665,11 +1665,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   if( HartsClearToDecode.any() && (!Halted)) {
     // Determine what hart is ready to decode
     //do {
-    HartToDecode = GetNextHartToDecode();
-    // } while( !HartHasThread(HartToDecode) && AssignedThreads.size() );
+    HartToDecodeID = GetNextHartToDecodeID();
+    // } while( !HartHasThread(HartToDecodeID) && AssignedThreads.size() );
 
-    RegFile = Harts[HartToDecode]->RegFile.get();
-    feature->SetHartToExec(HartToDecode);
+    RegFile = Harts[HartToDecodeID]->RegFile.get();
+    feature->SetHartToExecID(HartToDecodeID);
 
     // fetch the next instruction
     if( !PrefetchInst() ){
@@ -1688,36 +1688,37 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     // Now that we have decoded the instruction, check for pipeline hazards
-    if(Stalled || DependencyCheck(HartToDecode, &Inst) || CoProcStallReq[HartToDecode]){
+    if(Stalled || DependencyCheck(HartToDecodeID, &Inst) || CoProcStallReq[HartToDecodeID]){
       RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
-      HartsClearToExecute[HartToDecode] = false;
-      HartToExec = _REV_INVALID_HART_ID_;
+      HartsClearToExecute[HartToDecodeID] = false;
+      HartToExecID = _REV_INVALID_HART_ID_;
     }else {
       Stats.cyclesBusy++;
-      HartsClearToExecute[HartToDecode] = true;
-      HartToExec = HartToDecode;
+      HartsClearToExecute[HartToDecodeID] = true;
+      // TODO: potentially remove
+      HartToExecID = HartToDecodeID;
     }
     Inst.cost = RegFile->GetCost();
     Inst.entry = RegFile->GetEntry();
     rtn = true;
-    ExecPC = GetPC();
+    ExecPC = RegFile->GetPC();
   }
 
-  if( ( (HartToExec != _REV_INVALID_HART_ID_)
+  if( ( (HartToExecID != _REV_INVALID_HART_ID_)
          && !RegFile->GetTrigger())
          && !Halted
-         && HartsClearToExecute[HartToExec]) {
-         // TODO: Remove && HartHasThread(HartToExec)){
+         && HartsClearToExecute[HartToExecID]) {
+         // TODO: Remove && HartHasThread(HartToExecID)){
     // trigger the next instruction
-    // HartToExec = HartToDecode;
+    // HartToExecID = HartToDecodeID;
     RegFile->SetTrigger(true);
 
     #ifdef NO_REV_TRACER
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
                     "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; Executing PC= 0x%" PRIx64 "\n",
-                    id, HartToExec, GetActiveThreadID(), ExecPC);
+                    id, HartToExecID, GetActiveThreadID(), ExecPC);
     #endif
 
     // Find the instruction extension
@@ -1726,7 +1727,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // failed to find the extension
       output->fatal(CALL_INFO, -1,
                     "Error: failed to find the instruction extension at PC=%" PRIx64 ".", ExecPC );
-    }
 
     // found the instruction extension
     std::pair<unsigned, unsigned> EToE = it->second;
@@ -1925,12 +1925,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   // Check for completion states and new tasks
   // TODO: Refactor redundancy
-  if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
+  if( (RegFile->GetPC() == _PAN_FWARE_JUMP_) || (RegFile->GetPC() == 0x00ull) ){
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
     // bool done = true;
-    if( GetPC() == _PAN_FWARE_JUMP_ ){
+    if(RegFile->GetPC() == _PAN_FWARE_JUMP_ ){
       if( PExec != nullptr){
         uint64_t Addr = 0x00ull;
         unsigned Idx = 0;
@@ -1940,7 +1940,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           output->verbose(CALL_INFO, 5, 0,
                           "Core %" PRIu32 " ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
                           id, Addr);
-          SetPC(Addr);
+          RegFile->SetPC(Addr);
           // done = false;
           break;
         case PanExec::QNull:
@@ -1958,23 +1958,23 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
           break;
         }
       }
-    }else if( GetPC() == 0x00ull ) {
-      if( HartHasNoDependencies(HartToDecode) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
-        Harts.at(HartToDecode)->Thread->SetState(ThreadState::DONE);
-        HartsClearToExecute[HartToDecode] = false;
-        HartsClearToDecode[HartToDecode] = false;
-        ThreadsThatChangedState.emplace(PopThreadFromHart(HartToDecode));
+    }else if(RegFile->GetPC() == 0x00ull ) {
+      if( HartHasNoDependencies(HartToDecodeID) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
+        Harts.at(HartToDecodeID)->Thread->SetState(ThreadState::DONE);
+        HartsClearToExecute[HartToDecodeID] = false;
+        HartsClearToDecode[HartToDecodeID] = false;
+        ThreadsThatChangedState.emplace(PopThreadFromHart(HartToDecodeID));
       }
     }
 
-    if( HartToExec != _REV_INVALID_HART_ID_ && BusyHarts[HartToExec]
-        && !HartHasNoDependencies(HartToExec)
+    if( HartToExecID != _REV_INVALID_HART_ID_ && BusyHarts[HartToExecID]
+        && !HartHasNoDependencies(HartToExecID)
         && ( (nullptr == coProc) || (coProc && coProc->IsDone() ) // TODO: See if first check is redundant
         ) ){
-      HartsClearToExecute[HartToExec] = false;
-      HartsClearToDecode[HartToExec] = false;
-      IdleHarts.set(HartToExec);
-      ThreadsThatChangedState.emplace(PopThreadFromHart(HartToExec));
+      HartsClearToExecute[HartToExecID] = false;
+      HartsClearToDecode[HartToExecID] = false;
+      IdleHarts.set(HartToExecID);
+      ThreadsThatChangedState.emplace(PopThreadFromHart(HartToExecID));
     }
   }
 
@@ -2036,7 +2036,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // tidAddr is the address we have to write the new thread's id to
   output->verbose(CALL_INFO, 2, 0,
                   "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC);
-  uint32_t ParentThreadID = Harts.at(HartToExec)->GetAssignedThreadID();
+  uint32_t ParentThreadID = Harts.at(HartToExecID)->GetAssignedThreadID();
 
   // Create the new thread's memory
   std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
@@ -2396,7 +2396,7 @@ void RevProc::InitEcallTable(){
  * supported exceptions at this point there is no need just yet.
  */
 void RevProc::ExecEcall(RevInst& inst){
-  auto EcallCode = RegFile->GetX<uint64_t>(RevReg::a7);
+  auto EcallCode =Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(RevReg::a7);
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
     // TODO: Eventually set EcallState once in here (and Hart)
@@ -2404,8 +2404,8 @@ void RevProc::ExecEcall(RevInst& inst){
     EcallStatus status = it->second(this, inst);
 
     // Trap handled... 0 cause registers
-    RegFile->RV64_SCAUSE = uint64_t(status);
-    RegFile->RV32_SCAUSE = uint32_t(status);
+   Harts[HartToDecodeID]->RegFile->RV64_SCAUSE = uint64_t(status);
+   Harts[HartToDecodeID]->RegFile->RV32_SCAUSE = uint32_t(status);
 
     // For now, rewind the PC and keep executing the ECALL until we
     // have completed
@@ -2440,6 +2440,8 @@ void RevProc::AssignThread(std::unique_ptr<RevThread> Thread){
 
   // Assign the thread to the hart
   Harts.at(HartToAssign)->AssignThread( std::move(Thread) );
+
+  BusyHarts[HartToAssign] = true;
 
   return;
 }
@@ -2486,7 +2488,7 @@ void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
   }else{
     // write an X register
     uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
-    RegFile->SetX(Inst.rd, rval | RegFile->GetX<uint64_t>(Inst.rd));
+   Harts[HartToDecodeID]->RegFile->SetX(Inst.rd, rval |Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(Inst.rd));
   }
 
   // clear the fault

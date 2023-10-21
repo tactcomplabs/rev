@@ -21,7 +21,7 @@ RevFeature::RevFeature( std::string Machine,
                         unsigned Max,
                         unsigned Id )
   : machine(std::move(Machine)), output(Output), MinCost(Min), MaxCost(Max),
-    ProcID(Id), HartToExec(0), features(RV_UNKNOWN), xlen(0) {
+    ProcID(Id), HartToExecID(0), features(RV_UNKNOWN), xlen(0) {
   output->verbose(CALL_INFO, 6, 0,
                   "Core %u ; Initializing feature set from machine string=%s\n",
                   ProcID,

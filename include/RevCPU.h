@@ -241,7 +241,7 @@ private:
   void AssignThread(std::unique_ptr<RevThread> ThreadToAssign, uint32_t ProcID);
 
   // Sets up arguments for a thread with a given ID and feature set.
-  std::unique_ptr<RevRegFile> SetupArgs();
+  void SetupArgs(const std::shared_ptr<RevRegFile>& RegFile);
 
   // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();

@@ -34,6 +34,7 @@ enum class ThreadState {
 };
 
 class RevThread {
+  using RevRegState = RevRegFile;
   uint32_t ThreadID;                                   // Thread ID
   uint32_t ParentThreadID;                             // Parent ThreadID
   uint64_t StackPtr;                                   // Initial stack pointer
@@ -42,7 +43,7 @@ class RevThread {
   RevFeature* Feature;                                 // Feature set for this thread
   uint64_t ThreadPtr;                                  // Thread pointer
   ThreadState State = ThreadState::START;              // Thread state (Initializes as )
-  std::unique_ptr<RevRegFile> RegFile;                                  // Register file
+  std::unique_ptr<RevRegState> RegState;                                  // Register file
   std::unordered_set<uint32_t> ChildrenThreadIDs = {}; // Child thread IDs
   std::unordered_set<int> fildes = {0, 1, 2};          // Default file descriptors
 
@@ -56,23 +57,23 @@ public:
     : ThreadID(ThreadID), ParentThreadID(ParentThreadID), StackPtr(StackPtr),
       FirstPC(FirstPC), ThreadMem(ThreadMem), Feature(Feature) {
     // Create the register file
-    RegFile = std::make_unique<RevRegFile>(Feature);
+    RegState = std::make_unique<RevRegState>(Feature);
     // Set the stack pointer
-    RegFile->SetX(RevReg::sp, StackPtr);
+    RegState->SetX(RevReg::sp, StackPtr);
 
     // Set the thread pointer
     ThreadPtr = ThreadMem->getTopAddr();
-    RegFile->SetX(RevReg::tp, ThreadPtr);
+    RegState->SetX(RevReg::tp, ThreadPtr);
 
     // Set the PC
-    RegFile->SetPC(FirstPC);
+    RegState->SetPC(FirstPC);
   }
 
   RevThread(uint32_t ThreadID, uint32_t ParentThreadID,
             std::shared_ptr<RevMem::MemSegment>& ThreadMem,
-            std::unique_ptr<RevRegFile> RegFile)
+            std::unique_ptr<RevRegState> RegState)
     : ThreadID(ThreadID), ParentThreadID(ParentThreadID),
-      ThreadMem(ThreadMem), RegFile(std::move(RegFile)){
+      ThreadMem(ThreadMem), RegState(std::move(RegState)){
   }
 
   ~RevThread(){
@@ -107,25 +108,25 @@ public:
   // Arguments could be made to keep it here or put it there
   void SetLSQueue(std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq){
     // TODO: Ask dave if this is right
-    RegFile->SetLSQueue(lsq);
+    RegState->SetLSQueue(lsq);
   }
 
   void SetMarkLoadComplete(std::function<void(const MemReq&)> func){
     // TODO: Ask dave if this is right
-    RegFile->SetMarkLoadComplete(func);
+    RegState->SetMarkLoadComplete(func);
   }
 
   // Get the threads
   const std::unordered_set<int>& GetFildes(){ return fildes; }
 
   // Register file operations
-  //const RevRegFile* GetRegFile() const { return &RegFile; }
-  // RevRegFile* GetRegFile(){ return &RegFile; }
+  //const RevRegState* GetRegState() const { return &RegState; }
+  // RevRegState* GetRegState(){ return &RegState; }
 
   // Set the register file
-  void SetRegFile(std::unique_ptr<RevRegFile> regFile){ RegFile = std::move(regFile); }
+  void UpdateRegState(std::unique_ptr<RevRegState> regState){ RegState = std::move(regState); }
 
-  std::unique_ptr<RevRegFile> TransferRegFile(){ return std::move(RegFile); }
+  std::unique_ptr<RevRegState> TransferRegState(){ return std::move(RegState); }
 
   // RevFeature operations
   RevFeature* GetFeature() const { return Feature; }
