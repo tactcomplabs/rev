@@ -22,7 +22,7 @@ TARGS = $(EXES) $(DIASMS) $(LOGS)
 
 CC=${RVCC}
 OBJDUMP=${RISCV}/bin/riscv64-unknown-elf-objdump -D --source 
-INCLUDE = -I../../common/syscalls
+INCLUDE = -I../../common/syscalls -I../include
 
 all: $(TARGS)
 	@echo Done: See $(LOGS)

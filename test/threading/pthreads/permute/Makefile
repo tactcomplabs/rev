@@ -16,7 +16,7 @@ TEST_NAME = simple_pthreads
 REV_ROOT=../../../..
 CC=${RVCC}
 OBJDUMP=${RISCV}/bin/riscv64-unknown-elf-objdump -D --source 
-INCLUDE = -I$(REV_ROOT)/common/syscalls
+INCLUDE = -I$(REV_ROOT)/common/syscalls -I$(REV_ROOT)/test/include
 
 # permute architectures
 ARCHS = rv32i rv64g
