@@ -28,7 +28,7 @@
 
 #define _INVALID_TID_ (uint32_t{0})
 
-#define _MAX_HARTS_ 65536
+#define _MAX_HARTS_ 4096
 
 namespace SST::RevCPU{
 

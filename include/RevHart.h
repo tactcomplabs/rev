@@ -59,6 +59,7 @@ public:
   ///< RevHart: Assigns a RevThread to this Hart
   void AssignThread(std::unique_ptr<RevThread> ThreadToAssign){
     Thread = std::move(ThreadToAssign);
+    Thread->SetState(ThreadState::RUNNING);
     LoadRegFile(Thread->TransferRegState());
   }
 

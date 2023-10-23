@@ -605,7 +605,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     // See if any of the threads on this proc changes state
     CheckForThreadStateChanges(i);
 
-    if( Procs[i]->GetNumBusyHarts() == 0 ){
+    if( Procs[i]->HasNoBusyHarts() ){
       Enabled[i] = false;
     }
   }
@@ -743,12 +743,11 @@ void RevCPU::CheckBlockedThreads(){
 // of the ARGV base pointer in memory which is currently set to the
 // program header region.  When we come out of reset, this is StackTop+60 bytes
 // ----------------------------------
-void RevCPU::SetupArgs(const std::shared_ptr<RevRegFile>& RegFile){
+void RevCPU::SetupArgs(std::unique_ptr<RevRegFile>& RegFile){
   auto Argv = Opts->GetArgv();
   // setup argc
   RegFile->SetX(RevReg::a0, Argv.size());
   RegFile->SetX(RevReg::a1, Mem->GetStackTop() + 60);
-  RegFile->SetX(RevReg::gp, Loader->GetSymbolAddr("__global_pointer$"));
   return;
 }
 
@@ -762,7 +761,7 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
   }
 
   // There is work to assign, check if this proc has room
-  if( Procs[ProcID]->GetNumIdleHarts() ){
+  if( Procs[ProcID]->HasIdleHart() ){
     // There is room, assign a thread
     // Get the next thread to assign
     // TODO: Verify this is the correct way to transfer a unique_ptr
@@ -851,7 +850,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
                     ThreadID, ProcID);
       break;
     }
-    if( !Procs[ProcID]->GetNumBusyHarts() ){
+    if( Procs[ProcID]->HasNoBusyHarts() ){
       Enabled[ProcID] = false;
     }
     ThreadsThatChangedState.pop();
@@ -865,6 +864,9 @@ void RevCPU::InitMainThread(uint32_t MainThreadID, const uint64_t StartAddr){
   MainThreadRegFile->SetPC(StartAddr);
   MainThreadRegFile->SetX(RevReg::tp,Mem->GetThreadMemSegs().front()->getTopAddr());
   MainThreadRegFile->SetX(RevReg::sp,Mem->GetThreadMemSegs().front()->getTopAddr()-Mem->GetTLSSize());
+  MainThreadRegFile->SetX(RevReg::gp, Loader->GetSymbolAddr("__global_pointer$"));
+  MainThreadRegFile->SetX(8, Loader->GetSymbolAddr("__global_pointer$"));
+  SetupArgs(MainThreadRegFile);
   std::unique_ptr<RevThread> MainThread = std::make_unique<RevThread>(MainThreadID,
                                                                       _INVALID_TID_, // No Parent Thread ID
                                                                       Mem->GetThreadMemSegs().front(),
