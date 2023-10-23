@@ -1686,7 +1686,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // If the next instruction is our special bounce address
     // DO NOT decode it.  It will decode to a bogus instruction.
     // We do not want to retire this instruction until we're ready
-    if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) ){
+    if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) && !CoProcStallReq[HartToDecode]){
       Inst = DecodeInst();
       Inst.entry = RegFile->GetEntry();
     }
