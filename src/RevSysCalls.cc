@@ -3150,13 +3150,13 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
                   "ECALL: pthread_join called by thread %" PRIu32
                   " on hart %" PRIu32 "\n", Harts.at(HartToExecID)->Thread->GetThreadID(), HartToExecID);
 
-  if( !(HartHasNoDependencies(HartToExecID)) ){
+  if( HartHasNoDependencies(HartToExecID) ){
     rtval = EcallStatus::SUCCESS;
 
     // Set current thread to blocked
     std::unique_ptr<RevThread> BlockedThread = PopThreadFromHart(HartToExecID);
     BlockedThread->SetState(ThreadState::BLOCKED);
-    BlockedThread->SetWaitingToJoinTID(Harts[HartToExecID]->RegFile->GetX<uint64_t>(RevReg::a0));
+    BlockedThread->SetWaitingToJoinTID(RegFile->GetX<uint64_t>(RevReg::a0));
 
     // Signal to RevCPU this thread is has changed state
     ThreadsThatChangedState.emplace(std::move(BlockedThread));

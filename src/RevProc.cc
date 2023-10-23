@@ -2055,7 +2055,12 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   NewThreadRegFile->SetX(RevReg::a0, reinterpret_cast<uintptr_t>(arg));
 
   // Set the global pointer
+  // TODO: Cleanup
+  NewThreadRegFile->SetX(RevReg::tp, NewThreadMem->getTopAddr());
+  NewThreadRegFile->SetX(RevReg::sp, NewThreadMem->getTopAddr()-mem->GetTLSSize());
   NewThreadRegFile->SetX(RevReg::gp, loader->GetSymbolAddr("__global_pointer$"));
+  NewThreadRegFile->SetX(8, loader->GetSymbolAddr("__global_pointer$"));
+  NewThreadRegFile->SetPC(firstPC);
 
   // Create a new RevThread Object
   std::unique_ptr<RevThread> NewThread =
