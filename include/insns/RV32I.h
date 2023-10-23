@@ -324,13 +324,13 @@ class RV32I : public RevExt {
   static constexpr auto& sra  = oper<ShiftRight,    OpKind::Reg>;
 
   static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    M->FenceMem(F->GetHartToExec());
+    M->FenceMem(F->GetHartToExecID());
     R->AdvancePC(Inst);
     return true;  // temporarily disabled
   }
 
   static bool fencei(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    M->FenceMem(F->GetHartToExec());
+    M->FenceMem(F->GetHartToExecID());
     R->AdvancePC(Inst);
     return true;  // temporarily disabled
   }

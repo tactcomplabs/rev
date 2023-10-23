@@ -176,7 +176,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 template<typename T>
 bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   T val = R->GetFP<T>(Inst.rs2);
-  M->Write(F->GetHartToExec(), R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12), val);
+  M->Write(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12), val);
   R->AdvancePC(Inst);
   return true;
 }
