@@ -11,6 +11,12 @@
 #include "../include/RevPrefetcher.h"
 using namespace SST::RevCPU;
 
+/*RevPrefetcher::~RevPrefetcher(){
+// delete all the existing streams
+for(auto* s : iStack)
+delete[] s;
+}*/
+
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 
   // note: this logic now considers compressed instructions
@@ -158,22 +164,21 @@ void RevPrefetcher::Fill(uint64_t Addr){
   // allocate a new stream buffer
   baseAddr.push_back(Addr);
   iStack.push_back( std::vector<uint32_t>(depth) );
-  iHazard.push_back( std::vector<std::shared_ptr<bool>>(depth) );
 
   // initialize it
   size_t x = baseAddr.size() - 1;
   for( size_t y = 0; y < depth; y++ ){
     iStack[x][y] = REVPREF_INIT_ADDR;
-    iHazard[x][y] = std::make_shared<bool>(true);
   }
 
   // now fill it
-  for( size_t y = 0; y < depth; y++ ){
-    mem->ReadVal( feature->GetHart(), Addr+(y*4),
+  for( size_t y=0; y<depth; y++ ){
+    MemReq req (Addr+(y*4), 0, RevRegClass::RegGPR, feature->GetHartToExec(), MemOp::MemOpREAD, true, MarkLoadAsComplete);
+    LSQueue->insert({make_lsq_hash(0, RevRegClass::RegGPR, feature->GetHartToExec()), req});
+    mem->ReadVal( feature->GetHartToExec(), Addr+(y*4),
                   &iStack[x][y],
-                  iHazard[x][y],
+                  req,
                   REVMEM_FLAGS(0x00) );
-
   }
 }
 
@@ -181,7 +186,6 @@ void RevPrefetcher::DeleteStream(size_t i){
   // delete the target stream as we no longer need it
   if( i < baseAddr.size() ){
     iStack.erase(iStack.begin() + i);
-    iHazard.erase(iHazard.begin() + i);
     baseAddr.erase(baseAddr.begin() + i);
   }
 }

@@ -21,12 +21,12 @@ int main(int argc, char **argv){
                   li a1, 6; \
                   addi zero, a0, 0; \
                   add a0, zero, a0;");
-  
+
   asm volatile(" bne a0, a1, fail;");
-  asm volatile("pass:" ); 
+  asm volatile("pass:" );
      asm volatile("j continue");
 
-  asm volatile("fail:" ); 
+  asm volatile("fail:" );
      assert(0);
 
   asm volatile("continue:");

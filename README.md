@@ -33,9 +33,12 @@ current installation of the SST Core. The Rev building infrastructure assumes
 that the `sst-config` tool is installed and can be found in the current PATH
 environment.
 
+Rev relies on CMake for building the component from source. The minimum required
+version for this is `3.19`.
+
 ## Building
 
-Building the Rev SST component from source using CMake can be performed as follows:
+Building the Rev SST component from source using CMake (>= 3.19) can be performed as follows:
 
     git clone
     cd rev/build

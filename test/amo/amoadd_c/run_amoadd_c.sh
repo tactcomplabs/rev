@@ -9,4 +9,4 @@ if [ -f amoadd_c.exe ]; then
 else
   echo "Test AMOADD_C: amoadd_c.exe not Found - likely build failed"
   exit 1
-fi 
+fi

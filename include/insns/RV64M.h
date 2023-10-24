@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV64M_H_
 #define _SST_REVCPU_RV64M_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 #include "../RevExt.h"
 
 #include <vector>
@@ -43,6 +43,7 @@ class RV64M : public RevExt{
     static constexpr uint8_t opcode = 0b0111011;
     static constexpr uint8_t funct7 = 0b0000001;
   };
+
   std::vector<RevInstEntry > RV64MTable = {
     {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("mulw %rd, %rs1, %rs2" ).SetFunct3(0b000).SetImplFunc(&mulw ).InstEntry},
     {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("divw %rd, %rs1, %rs2" ).SetFunct3(0b100).SetImplFunc(&divw ).InstEntry},
@@ -54,16 +55,11 @@ class RV64M : public RevExt{
 public:
   /// RV64M: standard constructor
   RV64M( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV64M", Feature, RegFile, RevMem, Output) {
-    this->SetTable(RV64MTable);
+    : RevExt( "RV64M", Feature, RevMem, Output) {
+    SetTable(std::move(RV64MTable));
   }
-
-  /// RV64M: standard destructor
-  ~RV64M() = default;
-
 }; // end class RV32I
 
 } // namespace SST::RevCPU

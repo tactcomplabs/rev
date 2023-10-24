@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_RV32A_H_
 #define _SST_REVCPU_RV32A_H_
 
-#include "../RevInstTable.h"
+#include "../RevInstHelpers.h"
 #include "../RevExt.h"
 
 #include <vector>
@@ -21,37 +21,42 @@ namespace SST::RevCPU{
 class RV32A : public RevExt {
 
   static bool lrw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    if( F->IsRV32() ){
-      M->LR(F->GetHart(), uint64_t(R->RV32[Inst.rs1]),
+    MemReq req;
+    if( R->IsRV32 ){
+      req.Set(uint64_t(R->RV32[Inst.rs1]), Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete());
+      R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+      M->LR(F->GetHartToExec(), uint64_t(R->RV32[Inst.rs1]),
             &R->RV32[Inst.rd],
-            Inst.aq, Inst.rl, Inst.hazard,
+            Inst.aq, Inst.rl, req,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
     }else{
-      M->LR(F->GetHart(), R->RV64[Inst.rs1],
+      req.Set(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExec(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete());
+      R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+      M->LR(F->GetHartToExec(), R->RV64[Inst.rs1],
             reinterpret_cast<uint32_t*>(&R->RV64[Inst.rd]),
-            Inst.aq, Inst.rl, Inst.hazard,
+            Inst.aq, Inst.rl, req,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
     }
     R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
   static bool scw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    if( F->IsRV32() ){
-      M->SC(F->GetHart(), R->RV32[Inst.rs1],
+    if( R->IsRV32 ){
+      M->SC(F->GetHartToExec(), R->RV32[Inst.rs1],
             &R->RV32[Inst.rs2],
             &R->RV32[Inst.rd],
             Inst.aq, Inst.rl,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT32));
     }else{
-      M->SC(F->GetHart(), R->RV64[Inst.rs1],
+      M->SC(F->GetHartToExec(), R->RV64[Inst.rs1],
             reinterpret_cast<uint32_t*>(&R->RV64[Inst.rs2]),
             reinterpret_cast<uint32_t*>(&R->RV64[Inst.rd]),
             Inst.aq, Inst.rl,
             REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
     }
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
@@ -67,25 +72,46 @@ class RV32A : public RevExt {
       flags |= uint32_t(RevCPU::RevFlag::F_RL);
     }
 
-    if( F->IsRV32() ){
-      M->AMOVal(F->GetHart(),
+    MemReq req;
+    if( R->IsRV32 ){
+      req.Set(R->RV32[Inst.rs1],
+              Inst.rd,
+              RevRegClass::RegGPR,
+              F->GetHartToExec(),
+              MemOp::MemOpAMO,
+              true,
+              R->GetMarkLoadComplete());
+      R->LSQueue->insert({make_lsq_hash(Inst.rd,
+                                        RevRegClass::RegGPR,
+                                        F->GetHartToExec()), req});
+      M->AMOVal(F->GetHartToExec(),
                 R->RV32[Inst.rs1],
                 &R->RV32[Inst.rs2],
                 &R->RV32[Inst.rd],
-                Inst.hazard,
+                req,
                 flags);
     }else{
       flags |= uint32_t(RevCPU::RevFlag::F_SEXT64);
-      M->AMOVal(F->GetHart(),
+      req.Set(R->RV64[Inst.rs1],
+              Inst.rd,
+              RevRegClass::RegGPR,
+              F->GetHartToExec(),
+              MemOp::MemOpAMO,
+              true,
+              R->GetMarkLoadComplete());
+      R->LSQueue->insert({make_lsq_hash(Inst.rd,
+                                        RevRegClass::RegGPR,
+                                        F->GetHartToExec()), req});
+      M->AMOVal(F->GetHartToExec(),
                 R->RV64[Inst.rs1],
                 reinterpret_cast<int32_t*>(&R->RV64[Inst.rs2]),
                 reinterpret_cast<int32_t*>(&R->RV64[Inst.rd]),
-                Inst.hazard,
+                req,
                 flags);
     }
     // update the cost
     R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-    R->AdvancePC(F, Inst.instSize);
+    R->AdvancePC(Inst);
     return true;
   }
 
@@ -108,7 +134,7 @@ class RV32A : public RevExt {
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   std::vector<RevInstEntry> RV32ATable = {
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("lr.w %rd, (%rs1)").SetCost(          1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00010).SetImplFunc( &lrw).Setrs2Class(RegUNKNOWN).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("lr.w %rd, (%rs1)").SetCost(          1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00010).SetImplFunc( &lrw).Setrs2Class(RevRegClass::RegUNKNOWN).InstEntry},
     {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("sc.w %rd, %rs1, %rs2").SetCost(      1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00011).SetImplFunc( &scw ).InstEntry},
     {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoswap.w %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00001).SetImplFunc( &amoswapw ).InstEntry},
     {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoadd.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b00000).SetImplFunc( &amoaddw ).InstEntry},
@@ -121,19 +147,14 @@ class RV32A : public RevExt {
     {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b010).SetFunct7( 0b11100).SetImplFunc( &amomaxuw ).InstEntry},
   };
 
-
 public:
   /// RV32A: standard constructor
   RV32A( RevFeature *Feature,
-         RevRegFile *RegFile,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV32A", Feature, RegFile, RevMem, Output) {
-    this->SetTable(RV32ATable);
+    : RevExt( "RV32A", Feature, RevMem, Output) {
+    SetTable(std::move(RV32ATable));
   }
-
-  /// RV32A: standard destructor
-  ~RV32A() = default;
 
 }; // end class RV32I
 

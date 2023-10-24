@@ -1,8 +1,10 @@
-src/librevcpu.so
+*.so
+*.dylib
 *.exe
 *.csv
 .cache/clangd/index
 .vscode
+*.dylib
 .#*
 *~
 .gdb_history

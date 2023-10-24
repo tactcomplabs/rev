@@ -9,4 +9,4 @@ if [ -f ex4.exe ]; then
 else
   echo "Test EX4: ex4.exe not Found - likely build failed"
   exit 1
-fi 
+fi

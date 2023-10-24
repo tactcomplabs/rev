@@ -9,4 +9,4 @@ if [ -f ex6.exe ]; then
 else
   echo "Test EX6: ex6.exe not Found - likely build failed"
   exit 1
-fi 
+fi

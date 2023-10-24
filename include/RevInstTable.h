@@ -21,28 +21,7 @@
 #include <string>
 #include <type_traits>
 
-#include "RevMem.h"
-#include "RevFeature.h"
-
-#ifndef _REV_NUM_REGS_
-#define _REV_NUM_REGS_ 32
-#endif
-
-#ifndef _REV_MAX_FORMAT_
-#define _REV_MAX_FORMAT_ 7
-#endif
-
-#ifndef _REV_MAX_REGCLASS_
-#define _REV_MAX_REGCLASS_ 3
-#endif
-
-#ifndef _REV_HART_COUNT_
-#define _REV_HART_COUNT_ 1
-#endif
-
-#ifndef _REV_INVALID_HART_ID_
-#define _REV_INVALID_HART_ID_ (uint16_t)~(uint16_t(0))
-#endif
+#include "RevRegFile.h"
 
 // Register Decoding Macros
 #define DECODE_RD(x)    (((x)>>(7))&(0b11111))
@@ -58,43 +37,9 @@
 #define DECODE_FUNCT2(x)  (((x)>>(25))&(0b11))
 #define DECODE_FUNCT3(x)  (((x)>>(12))&(0b111))
 
+#define DECODE_RM(x)    static_cast<FRMode>(DECODE_FUNCT3(x))
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
-
-// RV{32,64}{F,D} macros
-#define FCSR_NX(x)  ((x)&(0b1))             // FCSR: NX field
-#define FCSR_UF(x)  (((x)&(0b10))>>1)       // FCSR: UF field
-#define FCSR_OF(x)  (((x)&(0b100))>>2)      // FCSR: OF field
-#define FCSR_DZ(x)  (((x)&(0b1000))>>3)     // FCSR: DZ field
-#define FCSR_NV(x)  (((x)&(0b10000))>>4)    // FCSR: NV field
-#define FCSR_FRM(x) (((x)&(0b11100000))>>5) // FCSR: FRM field
-
-#define FRM_RNE   0b000                     // Rounding mode: Round to Nearest, ties to Even
-#define FRM_RTZ   0b001                     // Rounding mode: Round towards Zero
-#define FRM_RDN   0b010                     // Rounding mode: Round Down (towards -INF)
-#define FRM_RUP   0b011                     // Rounding mode: Round Up (towards +INF)
-#define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
-
-//< Zero-extend value of bits size
-template<typename T>
-constexpr auto ZeroExt(T val, size_t bits){
-  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << bits);
-}
-
-//< Sign-extend value of bits size
-template<typename T>
-constexpr auto SignExt(T val, size_t bits){
-  auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
-  return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
-}
-
-/// BoxNaN: Store a boxed float inside a double
-inline void BoxNaN(double* dest, const void* value){
-  uint32_t i32;
-  memcpy(&i32, value, sizeof(float));                // The FP32 value
-  uint64_t i64 = uint64_t{i32} | ~uint64_t{0} << 32; // Boxed NaN value
-  memcpy(dest, &i64, sizeof(double));                // Store in FP64 register
-}
 
 namespace SST::RevCPU{
 
@@ -116,122 +61,6 @@ enum EXCEPTION_CAUSE : uint32_t {
   STORE_AMO_PAGE_FAULT      = 15,
 };
 
-struct RevRegFile {
-  uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
-  uint64_t RV64[_REV_NUM_REGS_];    ///< RevRegFile: RV64I register file
-  float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
-  double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
-
-  /* Supervisor Mode CSRs */
-  uint64_t RV64_SSTATUS; // During ecall, previous priviledge mode is saved in this register (Incomplete)
-  uint64_t RV64_SEPC;    // Holds address of instruction that caused the exception (ie. ECALL)
-  uint64_t RV64_SCAUSE;  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
-  uint64_t RV64_STVAL;   // Used to store additional info about exception (ECALL does not use this and sets value to 0)
-  uint64_t RV64_STVEC;   // Holds the base address of the exception handling routine (trap handler) that the processor jumps to when and exception occurs
-
-  uint32_t RV32_SSTATUS;
-  uint32_t RV32_SEPC;
-  uint32_t RV32_SCAUSE;
-  uint32_t RV32_STVAL;
-  uint32_t RV32_STVEC;
-
-  bool RV32_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
-  bool RV64_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
-  bool SPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for SPF RF to manage pipeline hazard
-  bool DPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
-
-  uint32_t RV32_PC;                 ///< RevRegFile: RV32 PC
-  uint64_t RV64_PC;                 ///< RevRegFile: RV64 PC
-  uint64_t FCSR;                    ///< RevRegFile: FCSR
-
-  uint32_t cost;                    ///< RevRegFile: Cost of the instruction
-  bool trigger;                     ///< RevRegFile: Has the instruction been triggered?
-  unsigned Entry;                   ///< RevRegFile: Instruction entry
-
-  explicit RevRegFile() = default;  // prevent aggregate initialization
-
-  /// GetX: Get the specifed X register cast to a specific integral type
-  template<typename T>
-  T GetX(const RevFeature* F, size_t rs) const {
-    if( F->IsRV32() ){
-      return rs ? T(RV32[rs]) : T(0);
-    }else{
-      return rs ? T(RV64[rs]) : T(0);
-    }
-  }
-
-  /// SetX: Set the specifed X register to a specific value
-  template<typename T>
-  void SetX(const RevFeature* F, size_t rd, T val) {
-    if( F->IsRV32() ){
-      RV32[rd] = rd ? uint32_t(val) : uint32_t{0};
-    }else{
-      RV64[rd] = rd ? uint64_t(val) : uint64_t{0};
-    }
-  }
-
-  /// GetPC: Get the Program Counter
-  uint64_t GetPC(const RevFeature* F) const {
-    if( F->IsRV32() ){
-      return RV32_PC;
-    }else{
-      return RV64_PC;
-    }
-  }
-
-  /// SetPC: Set the Program Counter to a specific value
-  template<typename T>
-  void SetPC(const RevFeature* F, T val) {
-    if( F->IsRV32() ){
-      RV32_PC = static_cast<uint32_t>(val);
-    }else{
-      RV64_PC = static_cast<uint64_t>(val);
-    }
-  }
-
-  /// AdvancePC: Advance the program counter a certain number of bytes
-  template<typename T>
-  void AdvancePC(const RevFeature* F, T bytes) {
-    if ( F->IsRV32() ) {
-      RV32_PC += bytes;
-    }else{
-      RV64_PC += bytes;
-    }
-  }
-
-  /// GetFP32: Get the 32-bit float value of a specific FP register
-  float GetFP32(const RevFeature* F, size_t rs) const {
-    if( F->HasD() ){
-      uint64_t i64;
-      memcpy(&i64, &DPF[rs], sizeof(i64));   // The FP64 register's value
-      if (~i64 >> 32)                        // Check for boxed NaN
-        return NAN;                          // Return NaN if it's not boxed
-      auto i32 = static_cast<uint32_t>(i64); // For endian independence
-      float fp32;
-      memcpy(&fp32, &i32, sizeof(fp32));     // The bottom half of FP64
-      return fp32;                           // Reinterpreted as FP32
-    } else {
-      return SPF[rs];                        // The FP32 register's value
-    }
-  }
-
-  /// SetFP32: Set a specific FP register to a 32-bit float value
-  void SetFP32(const RevFeature* F, size_t rd, float value)
-  {
-    if( F->HasD() ){
-      BoxNaN(&DPF[rd], &value);  // Store NaN-boxed in FP64 register
-    } else {
-      SPF[rd] = value;           // Store in FP32 register
-    }
-  }
-}; // RevRegFile
-
-static_assert(std::is_trivially_copyable_v<RevRegFile>,
-              "RevRegFile must be trivially copyable to be able to use memcpy() and memset()");
-
-inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
-
 enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format
   RVTypeR       = 1,     ///< RevInstF: R-Type
@@ -251,14 +80,6 @@ enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVCTypeCA     = 16,    ///< RevInstF: Compressed CA-Type
   RVCTypeCB     = 17,    ///< RevInstF: Compressed CB-Type
   RVCTypeCJ     = 18,    ///< RevInstF: Compressed CJ-Type
-};
-
-enum RevRegClass : int { ///< Rev CPU Register Classes
-  RegUNKNOWN    = 0,     ///< RevRegClass: Unknown register file
-  RegIMM        = 1,     ///< RevRegClass: Treat the reg class like an immediate: S-Format
-  RegGPR        = 2,     ///< RevRegClass: GPR reg file
-  RegCSR        = 3,     ///< RevRegClass: CSR reg file
-  RegFLOAT      = 4,     ///< RevRegClass: Float register file
 };
 
 enum RevImmFunc : int {  ///< Rev Immediate Values
@@ -288,7 +109,7 @@ struct RevInst {
   uint64_t rs3        =~0; ///< RevInst: rs3 value
   uint64_t imm        = 0; ///< RevInst: immediate value
   uint8_t fmt         = 0; ///< RevInst: floating point format
-  uint8_t rm          = 0; ///< RevInst: floating point rounding mode
+  FRMode rm{FRMode::None}; ///< RevInst: floating point rounding mode
   uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
   uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
   uint16_t offset     = 0; ///< RevInst: compressed offset
@@ -297,7 +118,7 @@ struct RevInst {
   bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
   uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
-  std::shared_ptr<bool> hazard = nullptr; ///< RevInst: signals a load hazard
+  uint16_t hart       = 0; ///< RevInst: What hart is this inst being executed on
 
   explicit RevInst() = default; // prevent aggregate initialization
 
@@ -343,10 +164,10 @@ struct RevInstDefaults {
   static constexpr uint8_t     funct7      = 0b0000000;
   static constexpr uint16_t    offset      = 0b0000000;  // compressed only
   static constexpr uint16_t    jumpTarget  = 0b0000000;  // compressed only
-  static constexpr RevRegClass rdClass     = RegGPR;
-  static constexpr RevRegClass rs1Class    = RegGPR;
-  static constexpr RevRegClass rs2Class    = RegGPR;
-  static constexpr RevRegClass rs3Class    = RegUNKNOWN;
+  static constexpr RevRegClass rdClass     = RevRegClass::RegGPR;
+  static constexpr RevRegClass rs1Class    = RevRegClass::RegGPR;
+  static constexpr RevRegClass rs2Class    = RevRegClass::RegGPR;
+  static constexpr RevRegClass rs3Class    = RevRegClass::RegUNKNOWN;
   static constexpr uint16_t    imm12       = 0b000000000000;
   static constexpr RevImmFunc  imm         = FUnk;
   static constexpr RevInstF    format      = RVTypeR;
@@ -452,264 +273,6 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   }
 
 }; // class RevInstEntryBuilder;
-
-/// General template for converting between Floating Point and Integer.
-/// FP values outside the range of the target integer type are clipped
-/// at the integer type's numerical limits, whether signed or unsigned.
-template<typename FP, typename INT>
-bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  FP fp;
-  if constexpr(std::is_same_v<FP, double>){
-    fp = R->DPF[Inst.rs1];         // Read the double FP register directly
-  }else{
-    fp = R->GetFP32(F, Inst.rs1);  // Read the F or D register, unboxing if D
-  }
-  constexpr INT max = std::numeric_limits<INT>::max();
-  constexpr INT min = std::numeric_limits<INT>::min();
-  INT res = std::isnan(fp) || fp > FP(max) ? max : fp < FP(min) ? min : static_cast<INT>(fp);
-
-  // Make final result signed so sign extension occurs when sizeof(INT) < XLEN
-  R->SetX(F, Inst.rd, static_cast<std::make_signed_t<INT>>(res));
-
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// fclass: Return FP classification like the RISC-V fclass instruction
-// See: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
-// Because quiet and signaling NaNs are not distinguished by the C++ standard,
-// an additional argument has been added to disambiguate between quiet and
-// signaling NaNs.
-template<typename T>
-unsigned fclass(T val, bool quietNaN = true) {
-  switch(std::fpclassify(val)){
-  case FP_INFINITE:
-    return std::signbit(val) ? 1 : 1 << 7;
-  case FP_NAN:
-    return quietNaN ? 1 << 9 : 1 << 8;
-  case FP_NORMAL:
-    return std::signbit(val) ? 1 << 1 : 1 << 6;
-  case FP_SUBNORMAL:
-    return std::signbit(val) ? 1 << 2 : 1 << 5;
-  case FP_ZERO:
-    return std::signbit(val) ? 1 << 3 : 1 << 4;
-  default:
-    return 0;
-  }
-}
-
-/// Load template
-template<typename T>
-bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  if( sizeof(T) < sizeof(int64_t) && F->IsRV32() ){
-    static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
-      REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 :
-                   RevCPU::RevFlag::F_ZEXT32) : REVMEM_FLAGS(0);
-    M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-               reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
-               Inst.hazard,
-               flags);
-    R->SetX(F, Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
-  }else{
-    static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
-      REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 :
-                   RevCPU::RevFlag::F_ZEXT64) : REVMEM_FLAGS(0);
-    M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-               reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
-               Inst.hazard,
-               flags);
-    R->SetX(F, Inst.rd, static_cast<T>(R->RV64[Inst.rd]));
-  }
-  // update the cost
-  R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// Store template
-template<typename T>
-bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  M->Write(F->GetHart(),
-           R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-           R->GetX<T>(F, Inst.rs2));
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// Floating-point load template
-template<typename T>
-bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  if(std::is_same_v<T, double> || F->HasD()){
-    static constexpr auto flags = sizeof(T) < sizeof(double) ?
-      REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
-
-    M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-               reinterpret_cast<T*>(&R->DPF[Inst.rd]),
-               Inst.hazard,
-               flags);
-
-    // Box float value into 64-bit FP register
-    if(std::is_same_v<T, float>){
-      BoxNaN(&R->DPF[Inst.rd], &R->DPF[Inst.rd]);
-    }
-  }else{
-    M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-               &R->SPF[Inst.rd],
-               Inst.hazard,
-               REVMEM_FLAGS(0));
-  }
-  // update the cost
-  R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
-
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// Floating-point store template
-template<typename T>
-bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  T val;
-  if constexpr(std::is_same_v<T, double>){
-    val = R->DPF[Inst.rs2];
-  }else{
-    val = R->GetFP32(F, Inst.rs2);
-  }
-  M->Write(F->GetHart(), R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12), val);
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// Floating-point operation template
-template<typename T, template<class> class OP>
-bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  if constexpr(std::is_same_v<T, double>){
-    R->DPF[Inst.rd] = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-  }else{
-    R->SetFP32(F, Inst.rd, OP()(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2)));
-  }
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// Floating-point minimum functor
-template<typename = void>
-struct FMin{
-  template<typename T>
-  auto operator()(T x, T y) const { return std::fmin(x, y); }
-};
-
-/// Floating-point maximum functor
-template<typename = void>
-struct FMax{
-  template<typename T>
-  auto operator()(T x, T y) const { return std::fmax(x, y); }
-};
-
-/// Floating-point conditional operation template
-template<typename T, template<class> class OP>
-bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  bool res;
-  if constexpr(std::is_same_v<T, double>){
-    res = OP()(R->DPF[Inst.rs1], R->DPF[Inst.rs2]);
-  }else{
-    res = OP()(R->GetFP32(F, Inst.rs1), R->GetFP32(F, Inst.rs2));
-  }
-  R->SetX(F, Inst.rd, res);
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// Operand Kind (immediate or register)
-enum class OpKind { Imm, Reg };
-
-/// Arithmetic operator template
-// The First parameter is the operator functor (such as std::plus)
-// The second parameter is the operand kind (OpKind::Imm or OpKind::Reg)
-// The third parameter is std::make_unsigned_t or std::make_signed_t (default)
-// The optional fourth parameter indicates W mode (32-bit on XLEN == 64)
-template<template<class> class OP, OpKind KIND,
-         template<class> class SIGN = std::make_signed_t, bool W_MODE = false>
-bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  if( !W_MODE && F->IsRV32() ){
-    using T = SIGN<int32_t>;
-    T rs1 = R->GetX<T>(F, Inst.rs1);
-    T rs2 = KIND == OpKind::Imm ? T(Inst.ImmSignExt(12)) : R->GetX<T>(F, Inst.rs2);
-    T res = OP()(rs1, rs2);
-    R->SetX(F, Inst.rd, res);
-  }else{
-    using T = SIGN<std::conditional_t<W_MODE, int32_t, int64_t>>;
-    T rs1 = R->GetX<T>(F, Inst.rs1);
-    T rs2 = KIND == OpKind::Imm ? T(Inst.ImmSignExt(12)) : R->GetX<T>(F, Inst.rs2);
-    T res = OP()(rs1, rs2);
-    // In W_MODE, cast the result to int32_t so that it's sign-extended
-    R->SetX(F, Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
-  }
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
-
-/// Left shift functor
-template<typename = void>
-struct ShiftLeft{
-  template<typename T>
-  constexpr T operator()(T val, unsigned shift) const {
-    return val << (sizeof(T) == 4 ? shift & 0x1f : shift & 0x3f);
-  }
-};
-
-/// Right shift functor
-template<typename = void>
-struct ShiftRight{
-  template<typename T>
-  constexpr T operator()(T val, unsigned shift) const {
-    return val >> (sizeof(T) == 4 ? shift & 0x1f : shift & 0x3f);
-  }
-};
-
-enum class DivRem { Div, Rem };
-
-/// Division/Remainder template
-// The first parameter is DivRem::Div or DivRem::Rem
-// The second parameter is std::make_signed_t or std::make_unsigned_t
-// The optional third parameter indicates W mode (32-bit on XLEN == 64)
-template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
-bool divrem(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-  if( !W_MODE && F->IsRV32() ){
-    using T = SIGN<int32_t>;
-    T rs1 = R->GetX<T>(F, Inst.rs1);
-    T rs2 = R->GetX<T>(F, Inst.rs2);
-    T res;
-    if constexpr(DIVREM == DivRem::Div){
-      res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
-        rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
-    }else{
-      res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
-        rs2 == -T{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
-    }
-    R->SetX(F, Inst.rd, res);
-  } else {
-    using T = SIGN<std::conditional_t<W_MODE, int32_t, int64_t>>;
-    T rs1 = R->GetX<T>(F, Inst.rs1);
-    T rs2 = R->GetX<T>(F, Inst.rs2);
-    T res;
-    if constexpr(DIVREM == DivRem::Div){
-      res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
-        rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
-    }else{
-      res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
-        rs2 == -T{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
-    }
-    // In W_MODE, cast the result to int32_t so that it's sign-extended
-    R->SetX(F, Inst.rd, std::conditional_t<W_MODE, int32_t, T>(res));
-  }
-  R->AdvancePC(F, Inst.instSize);
-  return true;
-}
 
 } // namespace SST::RevCPU
 

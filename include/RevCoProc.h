@@ -31,29 +31,36 @@
 #include "RevFeature.h"
 #include "RevMem.h"
 #include "RevInstTable.h"
+#include "RevProcPasskey.h"
+#include "RevProc.h"
 
 namespace SST::RevCPU{
-
+class RevProc;
 // ----------------------------------------
 // RevCoProc
 // ----------------------------------------
-struct RevCoProc : SST::SubComponent {
-
-  SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::RevCoProc);
+class RevCoProc : public SST::SubComponent {
+public:
+  SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::RevCoProc, RevProc*);
   SST_ELI_DOCUMENT_PARAMS({ "verbose", "Set the verbosity of output for the attached co-processor", "0" });
 
-  /// RevCoProc: default constructor
-  RevCoProc( ComponentId_t id, Params& params);
+  /// RevCoProc: Constructor
+  RevCoProc( ComponentId_t id, Params& params, RevProc* parent);
 
   /// RevCoProc: default destructor
-  virtual ~RevCoProc();                               /// RevCoProc: Destructor
+  virtual ~RevCoProc();                               ///< RevCoProc: Destructor
   virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst) = 0;          /// RevCoProc: Instruction Interface to RevCore
-  virtual bool Reset() = 0;                           /// RevCoProc: Reset - called on startup
-  virtual bool Teardown() = 0;                        /// RevCoProc: Teardown - called when associated RevProc completes
-  virtual bool ClockTick(SST::Cycle_t cycle) = 0;     /// RevCoProc: Clock - can be called by SST or by overriding RevCPU
+  virtual bool Reset() = 0;                           ///< RevCoProc: Reset - called on startup
+  virtual bool Teardown() = 0;                        ///< RevCoProc: Teardown - called when associated RevProc completes
+  virtual bool ClockTick(SST::Cycle_t cycle) = 0;     ///< RevCoProc: Clock - can be called by SST or by overriding RevCPU
+  virtual bool IsDone() = 0;                          ///< RevCoProc: Returns true when co-processor has completed execution - used for proper exiting of associated RevProc
 
 protected:
-  SST::Output *output;                                ///< RevCoProc: sst output object
+  SST::Output*   output;                                ///< RevCoProc: sst output object
+  RevProc* const parent;                                  ///< RevCoProc: Pointer to RevProc this CoProc is attached to
+
+  ///< RevCoProc: Create the passkey object - this allows access to otherwise private members within RevProc 
+  RevProcPasskey<RevCoProc> CreatePasskey(){return RevProcPasskey<RevCoProc>();}
 }; // class RevCoProc
 
 // ----------------------------------------
@@ -66,12 +73,12 @@ public:
                                 SST_ELI_ELEMENT_VERSION(1, 0, 0),
                                 "RISC-V Rev Simple Co-Processor",
                                 SST::RevCPU::RevCoProc
-                                );
+    );
 
   // Set up parameters accesible from the python configuration
   SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the co-processor",     "0" },
                           { "clock",          "Sets the clock frequency of the co-processor",         "1Ghz" },
-                          );
+    );
 
   // Register any subcomponents used by this element
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS();
@@ -81,8 +88,8 @@ public:
 
   // Add statistics
   SST_ELI_DOCUMENT_STATISTICS(
-                              {"InstRetired",        "Counts the total number of instructions retired by this coprocessor",    "count", 1}
-                              );
+    {"InstRetired",        "Counts the total number of instructions retired by this coprocessor",    "count", 1}
+    );
 
   // Enum for referencing statistics
   enum CoProcStats{
@@ -90,7 +97,7 @@ public:
   };
 
   /// RevSimpleCoProc: constructor
-  RevSimpleCoProc(ComponentId_t id, Params& params);
+  RevSimpleCoProc(ComponentId_t id, Params& params, RevProc* parent);
 
   /// RevSimpleCoProc: destructor
   virtual ~RevSimpleCoProc();
@@ -111,6 +118,9 @@ public:
   ///                   to SSTCore vs. being driven by RevCPU
   virtual bool Teardown() { return Reset(); };
 
+  /// RevSimpleCoProc: Returns true if instruction queue is empty
+  virtual bool IsDone(){ return InstQ.empty();}
+
 private:
   struct RevCoProcInst {
     RevCoProcInst() = default;
@@ -129,6 +139,8 @@ private:
 
   /// Queue of instructions sent from attached RevProc
   std::queue<RevCoProcInst> InstQ;
+
+  SST::Cycle_t cycleCount;
 
 }; //class RevSimpleCoProc
 

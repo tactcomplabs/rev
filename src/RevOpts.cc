@@ -11,8 +11,8 @@
 #include "../include/RevOpts.h"
 using namespace SST::RevCPU;
 
-RevOpts::RevOpts( unsigned NumCores, const int Verbosity )
-  : numCores(NumCores), verbosity(Verbosity) {
+RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )
+  : numCores(NumCores), numHarts(NumHarts), verbosity(Verbosity) {
 
   std::pair<unsigned, unsigned> InitialPair;
   InitialPair.first = 0;
@@ -240,12 +240,10 @@ bool RevOpts::GetStartSymbol( unsigned Core, std::string &Symbol ){
   if( Core > numCores )
     return false;
 
-  if( startSym.find(Core) == startSym.end() ){
-    Symbol = "main";
-    //Symbol = "_start";
-  }else{
-    Symbol = startSym.at(Core);
-  }
+  if( startSym.find(Core) == startSym.end() )
+    return false;
+
+  Symbol = startSym.at(Core);
   return true;
 }
 

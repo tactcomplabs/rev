@@ -9,4 +9,4 @@ if [ -f dot_single.exe ]; then
 else
   echo "Test DOT_SINGLE: dot_single.exe not Found - likely build failed"
   exit 1
-fi 
+fi

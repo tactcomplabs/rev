@@ -13,7 +13,6 @@ import sst
 
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
-sst.setProgramOption("stopAtCycle", "0s")
 
 # Tell SST what statistics handling we want
 sst.setStatisticLoadLevel(4)
@@ -23,9 +22,9 @@ max_addr_gb = 1
 # Define the simulation components
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
-	"verbose" : 6,                                # Verbosity
+        "verbose" : 6,                                # Verbosity
         "numCores" : 1,                               # Number of cores
-	"clock" : "1.0GHz",                           # Clock
+        "clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV32I]",                      # Core:Config; RV32I for core 0
         "enableCoProc" : 1,

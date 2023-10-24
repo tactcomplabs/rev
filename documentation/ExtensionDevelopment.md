@@ -182,14 +182,14 @@ For this, we need to modify the `RevProc.cc` implementation file.  Specifically,
 bool RevProc::SeedInstTable(){
   // Z-Extension
   if( feature->IsModeEnabled(RV_Z) ){
-    EnableExt(static_cast<RevExt *>(new RV32Z(feature,&RegFile,mem,output)));
+    EnableExt(static_cast<RevExt *>(new RV32Z(feature, &RegFile, mem, output)));
   }
 
   // I-Extension
   if( feature->IsModeEnabled(RV_I) ){
-    EnableExt(static_cast<RevExt *>(new RV32I(feature,&RegFile,mem,output)));
+    EnableExt(static_cast<RevExt *>(new RV32I(feature, &RegFile, mem, output)));
     if( feature->GetXlen() == 64 ){
-      EnableExt(static_cast<RevExt *>(new RV64I(feature,&RegFile,mem,output)));
+      EnableExt(static_cast<RevExt *>(new RV64I(feature, &RegFile, mem, output)));
     }
   }
 ...
@@ -274,13 +274,13 @@ struct Rev32ZInstDefaults : RevInstDefaults {
 }
 std::vector<RevInstEntry> RV32ZTable = {
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zadd %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0000000).
-   SetrdClass(RegGPR).Setrs1Class(RegGPR)Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zadd).InstEntry },
+   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR)Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zadd).InstEntry },
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsub %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0100000).
-   SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zsub).InstEntry },
+   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zsub).InstEntry },
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zlb %rd, $imm(%rs1)").SetCost(1).SetOpcode(0b0000011).SetFunct3(0b000).SetFunct7(0b0).
-   SetrdClass(RegGPR).Setrs1Class(RegGPR).Setrs2Class(RegUNKNOWN).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&zlb).InstEntry },
+   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&zlb).InstEntry },
 {RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsb %rs2, $imm(%rs1)").SetCost(1).SetOpcode(0b0100011).SetFunct3(0b000).SetFunct7(0b0).
-   SetrdClass(RegIMM).Setrs1Class(RegGPR).Setrs2Class(RegGPR).Setrs3Class(RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeS).SetImplFunc(&zsub).InstEntry },
+   SetrdClass(RegIMM).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeS).SetImplFunc(&zsub).InstEntry },
 };
 ```
 
@@ -293,10 +293,10 @@ For this, we've created four instructions: `zadd`, `zsub`, `zlb` and `zsb` to re
 | 3 | opcode | This is the seven bit opcode of the instruction. |
 | 4 | funct3 | This is the funct3 encoding field.  If the respective instruction does not utilize the field, set this value to `0b000` |
 | 5 | funct7 | This is the funct7 encoding field.  If the respective instruction does not utilize the field, set this value to `0b0000000` |
-| 6 | rdClass | If the instruction has an `rd` register slot, this denotes the register class utilized.  Values for this can be one of `RegGPR` for the general purpose register file, `RegCSR` for the CSR register file, `RegFloat` for the floating point register file, `RegIMM` (treat the reg class like an immediate, only utilized in the S-format) or `RegUNKNOWN` if the field is not utilized. |
-| 7 | rs1Class | Defines the register class for the `rs1` slot.  Use `RegUNKNOWN` if this slot is not utilized | 
-| 8 | rs2Class | Defines the register class for the `rs2` slot.  Use `RegUNKNOWN` if this slot is not utilized | 
-| 9 | rs3Class | Defines the register class for the `rs3` slot.  Use `RegUNKNOWN` if this slot is not utilized | 
+| 6 | rdClass | If the instruction has an `rd` register slot, this denotes the register class utilized.  Values for this can be one of `RevRegClass::RegGPR` for the general purpose register file, `RegCSR` for the CSR register file, `RegFloat` for the floating point register file, `RegIMM` (treat the reg class like an immediate, only utilized in the S-format) or `RevRegClass::RegUNKNOWN` if the field is not utilized. |
+| 7 | rs1Class | Defines the register class for the `rs1` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 8 | rs2Class | Defines the register class for the `rs2` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 9 | rs3Class | Defines the register class for the `rs3` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
 | 10 | imm12 | Defines the value of the `imm12` slot if the immediate is hardwired to a single value. |
 | 11 | imm | Defines the functionality of th `imm12` field.  If the field is not used, set this to `Funk`.  `FImm` indicates that the field is present and utilized, `FEnc` indicates that this field is an encoding value and `FVal` is an incoming register value.  When using `FEnc`, the `imm12` entry (10) must also be set. |
 | 12 | format | Defines the instruction format.  This is one of: `RVTypeUNKNOWN`, `RVTypeR`, `RVTypeI`, `RVTypeS`, `RVTypeU`, `RVTypeB`, `RVTypeJ` or `RVTypeR4` |
@@ -341,17 +341,18 @@ There are several helper functions to make generating instruction implementation
   void SetPC(const RevFeature* F, T val);
 ```
 ```c++
-  /// AdvancePC: Advance the program counter a certain number of bytes
+  /// AdvancePC: Advance the program counter to the next instruction
+  void AdvancePC(const RevInst& Inst);
+```
+```c++
+  /// GetFP: Get the specified FP register cast to a specific FP type
   template<typename T>
-  void AdvancePC(const RevFeature* F, T bytes);
+  float GetFP<T>(const RevFeature* F, size_t rs) const;
 ```
 ```c++
-  /// GetFP32: Get the 32-bit float value of a specific FP register
-  float GetFP32(const RevFeature* F, size_t rs) const;
-```
-```c++
-  /// SetFP32: Set a specific FP register to a 32-bit float value
-  void SetFP32(const RevFeature* F, size_t rd, float value);
+  /// SetFP: Set the specified FP register to a specific value
+  template<typename T>
+  void SetFP(const RevFeature* F, size_t rd, T value);
 ```
 ```c++
   /// RevInst: Sign-extended immediate value
@@ -483,52 +484,52 @@ can then be used just like the names of ordinary functions.
 ```c++
 static bool zadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
-    R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) + R->GetX<uint32_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint32_t>(Inst.rs1) + R->GetX<uint32_t>(Inst.rs2));
   }else{
-    R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) + R->GetX<uint64_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint64_t>(Inst.rs1) + R->GetX<uint64_t>(Inst.rs2));
   }
-  R->AdvancePC(F, Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 ```
 ```c++
-static bool zsub(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+static bool zsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
-    R->SetX(F, Inst.rd, R->GetX<uint32_t>(F, Inst.rs1) - R->GetX<uint32_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint32_t>(Inst.rs1) - R->GetX<uint32_t>(Inst.rs2));
   }else{
-    R->SetX(F, Inst.rd, R->GetX<uint64_t>(F, Inst.rs1) - R->GetX<uint64_t>(F, Inst.rs2));
+    R->SetX(Inst.rd, R->GetX<uint64_t>(Inst.rs1) - R->GetX<uint64_t>(Inst.rs2));
   }
-  R->AdvancePC(F, Inst.instSize);
+  R->AdvancePC(Inst);
   return true;
 }
 
-static bool zlb(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+static bool zlb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   if( F->IsRV32() ){
     M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+               R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<int8_t*>(&R->RV32[Inst.rd]),
                Inst.hazard,
                RevCPU::REvFlag::F_SEXT32);
-    R->SetX(F, Inst.rd, static_cast<int8_t>(R->RV32[Inst.rd]));
+    R->SetX(Inst.rd, static_cast<int8_t>(R->RV32[Inst.rd]));
   }else{
     M->ReadVal(F->GetHart(),
-               R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
+               R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
                reinterpret_cast<int8_t*>(&R->RV64[Inst.rd]),
                Inst.hazard,
                RevCPU::REvFlag::F_SEXT32);
-    R->SetX(F, Inst.rd, static_cast<int8_t>(R->RV64[Inst.rd]));
+    R->SetX(Inst.rd, static_cast<int8_t>(R->RV64[Inst.rd]));
   }
-  R->AdvancePC(F, Inst.instSize);
+  R->AdvancePC(Inst);
   // update the cost
-  R->cost += M->RandCost(F->GetMinCost(),F->GetMaxCost());
+  R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
   return true;
 }
 
-static bool zsb(RevFeature *F, RevRegFile *R,RevMem *M,RevInst Inst) {
+static bool zsb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   M->Write(F->GetHart(),
-           R->GetX<uint64_t>(F, Inst.rs1) + Inst.ImmSignExt(12),
-           R->GetX<uint8_t>(F, Inst.rs2));
-  R->AdvancePC(F, Inst.instSize);
+           R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
+           R->GetX<uint8_t>(Inst.rs2));
+  R->AdvancePC(Inst);
   return true;
 }
 ```
@@ -540,7 +541,7 @@ Or, with the helper functions:
   static constexpr auto& zsb  = store<int8_t>;
 ```
 
-As we can see from the source code above, each function must be formatted as: `static bool FUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)`.  All instructions carry the same arguments.  The first thing to note is the ability to use the `RevFeature` object to query the device architecture.  The Rev model stores register state in different logical storage for RV32 and RV64.  As a result, if your extension supports both variations of *XLEN*, then its often useful to query the loaded features to see which register file to manipulate, but the `R->GetX<T>(F, reg)` and `R->SetX(F, reg, value) functions can automate this.
+As we can see from the source code above, each function must be formatted as: `static bool FUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)`.  All instructions carry the same arguments.  The first thing to note is the ability to use the `RevFeature` object to query the device architecture.  The Rev model stores register state in different logical storage for RV32 and RV64.  As a result, if your extension supports both variations of *XLEN*, then its often useful to query the loaded features to see which register file to manipulate, but the `R->GetX<T>(reg)` and `R->SetX(reg, value) functions can automate this.
 
 The second and third arguments represent the register file object and the memory object, respectively.  These objects permit the user to access internal register state and read/write memory.  Finally, the `RevInst` structure contains all the decoded state from the instruction.  This includes all the opcode and function codes as well as each of the encoded register values.  This structure also contains the floating point rounding mode information.  For more information on the exacting contents and their respective data types, see the `RevInstTable.h` header file.  
 

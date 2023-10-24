@@ -108,30 +108,30 @@ public:
 
   // Register with the SST Core
   SST_ELI_REGISTER_SUBCOMPONENT(
-                                RevNIC,
-                                "revcpu",
-                                "RevNIC",
-                                SST_ELI_ELEMENT_VERSION(1, 0, 0),
-                                "RISC-V SST NIC",
-                                SST::RevCPU::nicAPI
-                                )
+    RevNIC,
+    "revcpu",
+    "RevNIC",
+    SST_ELI_ELEMENT_VERSION(1, 0, 0),
+    "RISC-V SST NIC",
+    SST::RevCPU::nicAPI
+    )
 
   // Register the parameters
   SST_ELI_DOCUMENT_PARAMS(
-                          {"clock", "Clock frequency of the NIC", "1Ghz"},
-                          {"port", "Port to use, if loaded as an anonymous subcomponent", "network"},
-                          {"verbose", "Verbosity for output (0 = nothing)", "0"},
-                          )
+    {"clock", "Clock frequency of the NIC", "1Ghz"},
+    {"port", "Port to use, if loaded as an anonymous subcomponent", "network"},
+    {"verbose", "Verbosity for output (0 = nothing)", "0"},
+    )
 
   // Register the ports
   SST_ELI_DOCUMENT_PORTS(
-                         {"network", "Port to network", {"simpleNetworkExample.nicEvent"} }
-                         )
+    {"network", "Port to network", {"simpleNetworkExample.nicEvent"} }
+    )
 
   // Register the subcomponent slots
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-                                      {"iface", "SimpleNetwork interface to a network", "SST::Interfaces::SimpleNetwork"}
-                                      )
+    {"iface", "SimpleNetwork interface to a network", "SST::Interfaces::SimpleNetwork"}
+    )
 
   /// RevNIC: constructor
   RevNIC(ComponentId_t id, Params& params);

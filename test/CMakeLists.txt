@@ -93,7 +93,7 @@ add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY "${CMAKE_C
 set_tests_properties(TEST_BIG_LOOP
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 90
+    TIMEOUT 180
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )
@@ -271,6 +271,15 @@ set_tests_properties(X0
     LABELS "all;rv64"
 )
 
+add_test(NAME AMOSWAP_C COMMAND run_amoswap_c.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoswap_c" )
+set_tests_properties(AMOSWAP_C
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
 add_test(NAME AMOADD_C COMMAND run_amoadd_c.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_c" )
 set_tests_properties(AMOADD_C
   PROPERTIES
@@ -282,6 +291,15 @@ set_tests_properties(AMOADD_C
 
 add_test(NAME AMOADD_CXX COMMAND run_amoadd_cxx.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoadd_cxx" )
 set_tests_properties(AMOADD_CXX
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME AMOSWAP_C_MEMH COMMAND run_amoswap_c_memh.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/amo/amoswap_c_memh" )
+set_tests_properties(AMOSWAP_C_MEMH
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30
@@ -336,6 +354,15 @@ set_tests_properties(ARGC_SHORT_REVMEM
 
 add_test(NAME ARGC_SHORT_MEMH COMMAND run_argc.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/argc_short_memh")
 set_tests_properties(ARGC_MEMH
+  PROPERTIES
+    ENVIRONMENT "RVCC=${RVCC}"
+    TIMEOUT 30
+    PASS_REGULAR_EXPRESSION "${passRegex}"
+    LABELS "all;rv64"
+)
+
+add_test(NAME COPROC_EX COMMAND run_coproc_ex.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/coproc_ex")
+set_tests_properties(COPROC_EX
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
     TIMEOUT 30

@@ -21,10 +21,10 @@ RevFeature::RevFeature( std::string Machine,
                         unsigned Max,
                         unsigned Id )
   : machine(std::move(Machine)), output(Output), MinCost(Min), MaxCost(Max),
-    Hart(Id), features(RV_UNKNOWN), xlen(0) {
+    ProcID(Id), HartToExec(0), features(RV_UNKNOWN), xlen(0) {
   output->verbose(CALL_INFO, 6, 0,
                   "Core %u ; Initializing feature set from machine string=%s\n",
-                  Hart,
+                  ProcID,
                   machine.c_str());
   if( !ParseMachineModel() )
     output->fatal(CALL_INFO, -1,
@@ -44,8 +44,8 @@ bool RevFeature::ParseMachineModel(){
     return false;
   mac += 4;
 
-  output->verbose(CALL_INFO, 6, 0, "Core %u ; Setting XLEN to %u\n", Hart, xlen);
-  output->verbose(CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", Hart, mac);
+  output->verbose(CALL_INFO, 6, 0, "Core %u ; Setting XLEN to %u\n", ProcID, xlen);
+  output->verbose(CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", ProcID, mac);
 
   ///< List of architecture extensions. These must listed in canonical order
   ///< as shown in Table 27.11, Chapter 27, of the RiSC-V Unpriviledged Spec.

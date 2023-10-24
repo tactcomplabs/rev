@@ -12,6 +12,7 @@
 #include "RevMem.h"
 
 using namespace SST::RevCPU;
+using MemSegment = RevMem::MemSegment;
 
 RevLoader::RevLoader( std::string Exe, std::string Args,
                       RevMem *Mem, SST::Output *Output )
@@ -75,7 +76,8 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   // begin writing the data, if we have a small write
   // then dispatch the write as normal.  Otherwise,
   // block the writes as cache lines
-  if( Len < lineSize ){
+  // #131 added case for when Len==lineSize
+  if( Len <= lineSize ){
     // one cache line to write, dispatch it
     return mem->WriteMem(0, Addr, Len, Data);
   }
@@ -104,7 +106,7 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   TmpData += TmpSize;
   Total += TmpSize;
 
-  // no perform the remainder of the writes
+  // now perform the remainder of the writes
   do{
     if( (Len-Total) > lineSize ){
       // setup another full cache line write
@@ -142,6 +144,27 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
 
   // Store the entry point of the program
   RV32Entry = eh->e_entry;
+
+  // Add memory segments for each program header
+  for (unsigned i = 0; i < eh->e_phnum; i++) {
+    if( sz < ph[i].p_offset + ph[i].p_filesz ){
+      output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
+    }
+    // Check if the program header is PT_TLS
+    // - If so, save the addr & size of the TLS segment
+    if( ph[i].p_type == PT_TLS ){
+      TLSBaseAddr = ph[i].p_paddr;
+      TLSSize = ph[i].p_memsz;
+      mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
+    }
+
+    // Add a memory segment for the program header
+    if( ph[i].p_memsz ){
+      mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
+    }
+  }
+
+  mem->AddThreadMem();
 
   // Add memory segments for each program header
   for (unsigned i = 0; i < eh->e_phnum; i++) {
@@ -208,8 +231,8 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
           output->fatal(CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
         }
         WriteCacheLine(ph[i].p_paddr,
-                      ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
+                       ph[i].p_filesz,
+                       (uint8_t*)(membuf+ph[i].p_offset));
       }
       std::vector<uint8_t> zeros(ph[i].p_memsz - ph[i].p_filesz);
       WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,
@@ -290,19 +313,27 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     if( sz < ph[i].p_offset + ph[i].p_filesz ){
       output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
     }
+    // Check if the program header is PT_TLS
+    // - If so, save the addr & size of the TLS segment
+    if( ph[i].p_type == PT_TLS ){
+      TLSBaseAddr = ph[i].p_paddr;
+      TLSSize = ph[i].p_memsz;
+      mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
+    }
+
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
       mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
     }
   }
 
+  // Add the first thread's memory
+  mem->AddThreadMem();
+
   uint64_t StaticDataEnd = 0;
   uint64_t BSSEnd = 0;
   uint64_t DataEnd = 0;
   uint64_t TextEnd = 0;
-  // Add memory segments for each section header
-  // - This should automatically handle overlap and not add segments
-  //   that are already there from program headers
   for (unsigned i = 0; i < eh->e_shnum; i++) {
     // check if the section header name is bss
     if( strcmp(shstrtab + sh[i].sh_name, ".bss") == 0 ){
@@ -353,8 +384,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
           output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
         }
         WriteCacheLine(ph[i].p_paddr,
-                      ph[i].p_filesz,
-                      (uint8_t*)(membuf+ph[i].p_offset));
+                       ph[i].p_filesz,
+                       (uint8_t*)(membuf+ph[i].p_offset));
       }
       std::vector<uint8_t> zeros(ph[i].p_memsz - ph[i].p_filesz);
       WriteCacheLine(ph[i].p_paddr + ph[i].p_filesz,
@@ -512,12 +543,13 @@ bool RevLoader::LoadProgramArgs(){
   ArgArray += 8;
 
   // -- these are the addresses of each argv entry
-  for( unsigned i=0; i<argv.size(); i++ ){
+  for( size_t i=0; i<argv.size(); i++ ){
     WriteCacheLine(ArgArray, 8, &OldStackTop);
     OldStackTop += (argv[i].size()+1);
     ArgArray += 8;
   }
 
+  mem->SetNextThreadMemAddr(OldStackTop - _STACK_SIZE_ - mem->GetTLSSize() - __PAGE_SIZE__);
   return true;
 }
 
@@ -584,6 +616,8 @@ bool RevLoader::LoadElf(){
   // print the symbol table entries
   std::map<std::string, uint64_t>::iterator it = symtable.begin();
   while( it != symtable.end() ){
+    // create inverse map to allow tracer to lookup symbols
+    tracer_symbols.emplace(it->second, it->first);
     output->verbose(CALL_INFO, 6, 0,
                     "Symbol Table Entry [%s:0x%" PRIx64 "]\n",
                     it->first.c_str(), it->second );
@@ -607,6 +641,11 @@ uint64_t RevLoader::GetSymbolAddr(std::string Symbol){
     tmp = symtable[Symbol];
   }
   return tmp;
+}
+
+std::map<uint64_t, std::string> *SST::RevCPU::RevLoader::GetTraceSymbols()
+{
+    return &tracer_symbols;
 }
 
 // EOF

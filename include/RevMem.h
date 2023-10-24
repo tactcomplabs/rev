@@ -37,15 +37,15 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 #include "RevMemCtrl.h"
+#include "RevTracer.h"
 #include "RevRand.h"
+#include "../common/include/RevCommon.h"
 
 #ifndef _REVMEM_BASE_
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
 #define REVMEM_FLAGS(x) (static_cast<StandardMem::Request::flags_t>(x))
-
-#define _INVALID_ADDR_ 0xFFFFFFFFFFFFFFFF
 
 #define _STACK_SIZE_ (size_t{1024*1024})
 
@@ -99,11 +99,8 @@ public:
 
 
     // Override for easy std::cout << *Seg << std::endl;
-    friend std::ostream& operator<<(std::ostream& os, MemSegment& obj) {
-      std::cout << "---------------------------------------------------------------" << std::endl;
-      return os << " | 0x" << std::hex << obj.getBaseAddr()
-                << " | 0x" << std::hex << obj.getTopAddr()
-                << " | Size = " << std::dec << obj.getSize();
+    friend std::ostream& operator<<(std::ostream& os, const MemSegment& Seg) {
+      return os << " | BaseAddr:  0x" << std::hex << Seg.getBaseAddr() << " | TopAddr: 0x" << std::hex << Seg.getTopAddr() << " | Size: " << std::dec << Seg.getSize() << " Bytes";
     }
 
   private:
@@ -127,6 +124,9 @@ public:
   /// RevMem: set the stack_top address
   void SetStackTop(uint64_t Addr) { stacktop = Addr; }
 
+  /// RevMem: tracer pointer
+  RevTracer *Tracer = nullptr;
+
   /// RevMem: retrieve the address of the top of memory (not stack)
   uint64_t GetMemTop() { return (_REVMEM_BASE_ + memSize); }
 
@@ -138,6 +138,9 @@ public:
 
   /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
   unsigned getLineSize(){ return ctrl ? ctrl->getLineSize() : 64;}
+
+  /// RevMem: Enable tracing of load and store instructions.
+  void SetTracer(RevTracer* tracer) { Tracer = tracer; }
 
   // ----------------------------------------------------
   // ---- Base Memory Interfaces
@@ -151,7 +154,7 @@ public:
 
   /// RevMem: read data from the target memory location
   bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
-                const std::shared_ptr<bool>& Hazard,
+                const MemReq& req,
                 StandardMem::Request::flags_t flags);
 
   /// RevMem: DEPRECATED: read data from the target memory location
@@ -172,18 +175,17 @@ public:
   /// RevMem: template read memory interface
   template <typename T>
   bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
-                const std::shared_ptr<bool>& Hazard,
+                const MemReq& req,
                 StandardMem::Request::flags_t flags){
-    return ReadMem(Hart, Addr, sizeof(T), Target, Hazard, flags);
+    return ReadMem(Hart, Addr, sizeof(T), Target, req, flags);
   }
 
   ///  RevMem: template LOAD RESERVE memory interface
   template <typename T>
   bool LR( unsigned Hart, uint64_t Addr, T *Target,
-           uint8_t aq, uint8_t rl,
-           const std::shared_ptr<bool>& Hazard,
+           uint8_t aq, uint8_t rl, const MemReq& req,
            StandardMem::Request::flags_t flags){
-    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, Hazard, flags);
+    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, req, flags);
   }
 
   ///  RevMem: template STORE CONDITIONAL memory interface
@@ -197,9 +199,9 @@ public:
   /// RevMem: template AMO memory interface
   template <typename T>
   bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
-               const std::shared_ptr<bool>& Hazard,
+               const MemReq& req,
                StandardMem::Request::flags_t flags){
-    return AMOMem(Hart, Addr, sizeof(T), Data, Target, Hazard, flags);
+    return AMOMem(Hart, Addr, sizeof(T), Data, Target, req, flags);
   }
 
   // ----------------------------------------------------
@@ -227,8 +229,7 @@ public:
   // ----------------------------------------------------
   /// RevMem: Add a memory reservation for the target address
   bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, uint8_t aq, uint8_t rl,
-              const std::shared_ptr<bool>& Hazard,
+              void *Data, uint8_t aq, uint8_t rl, const MemReq& req,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Clear a memory reservation for the target address
@@ -238,8 +239,7 @@ public:
 
   /// RevMem: Initiated an AMO request
   bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
-              void *Data, void *Target,
-              const std::shared_ptr<bool>& Hazard,
+              void *Data, void *Target, const MemReq& req,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Initiates a future operation [RV64P only]
@@ -266,14 +266,23 @@ public:
   /// RevMem: Get memSize value set in .py file
   uint64_t GetMemSize() const { return memSize; }
 
+  /// RevMem: Sets the next stack top address
+  void SetNextThreadMemAddr(const uint64_t& NextAddr){ NextThreadMemAddr = NextAddr; }
+
   ///< RevMem: Get MemSegs vector
   std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; }
+
+  ///< RevMem: Get ThreadMemSegs vector
+  std::vector<std::shared_ptr<MemSegment>>& GetThreadMemSegs(){ return ThreadMemSegs; }
 
   ///< RevMem: Get FreeMemSegs vector
   std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; }
 
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
   uint64_t AddMemSeg(const uint64_t& SegSize);
+
+  /// RevMem: Add new thread mem (starting at TopAddr [growing down])
+  std::shared_ptr<MemSegment> AddThreadMem();
 
   /// RevMem: Add new MemSegment (starting at BaseAddr)
   uint64_t AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize);
@@ -299,6 +308,12 @@ public:
 
   uint64_t ExpandHeap(uint64_t Size);
 
+  void SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size);
+
+  // RevMem: Used to get the TLS BaseAddr & Size
+  const uint64_t& GetTLSBaseAddr(){ return TLSBaseAddr; }
+  const uint64_t& GetTLSSize(){ return TLSSize; }
+
   class RevMemStats {
   public:
     uint64_t TLBHits;
@@ -317,25 +332,30 @@ protected:
   char *physMem = nullptr;                 ///< RevMem: memory container
 
 private:
+  unsigned long memSize;        ///< RevMem: size of the target memory
+  unsigned tlbSize;             ///< RevMem: number of entries in the TLB
+  unsigned maxHeapSize;         ///< RevMem: maximum size of the heap
   std::unordered_map<uint64_t, std::pair<uint64_t, std::list<uint64_t>::iterator>> TLB;
   std::list<uint64_t> LRUQueue; ///< RevMem: List ordered by last access for implementing LRU policy when TLB fills up
-  std::vector<std::shared_ptr<MemSegment>> MemSegs;     // Currently Allocated MemSegs
-  std::vector<std::shared_ptr<MemSegment>> FreeMemSegs; // MemSegs that have been unallocated
-  unsigned long memSize;        ///< RevMem: size of the target memory
-  unsigned tlbSize;             ///< RevMem: size of the target memory
-  unsigned maxHeapSize;             ///< RevMem: size of the target memory
-
   RevOpts *opts;                ///< RevMem: options object
   RevMemCtrl *ctrl;             ///< RevMem: memory controller object
   SST::Output *output;          ///< RevMem: output handler
+
+
+  std::vector<std::shared_ptr<MemSegment>> MemSegs;       // Currently Allocated MemSegs
+  std::vector<std::shared_ptr<MemSegment>> FreeMemSegs;   // MemSegs that have been unallocated
+  std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
+
+  uint64_t TLSBaseAddr;                                   ///< RevMem: TLS Base Address
+  uint64_t TLSSize = sizeof(uint32_t);                    ///< RevMem: TLS Size (minimum size is enough to write the TID)
+  uint64_t ThreadMemSize = _STACK_SIZE_;                  ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
+  uint64_t NextThreadMemAddr = memSize-1024;                  ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
 
   uint64_t SearchTLB(uint64_t vAddr);                       ///< RevMem: Used to check the TLB for an entry
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
   void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
   uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
-  bool isValidVirtAddr(const uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
-
-  uint32_t PIDCount = 1023;   ///< RevMem: Monotonically increasing PID counter for assigning new PIDs without conflicts
+  bool isValidVirtAddr(uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
 
   std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
   uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
