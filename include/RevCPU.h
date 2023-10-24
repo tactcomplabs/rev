@@ -292,8 +292,6 @@ private:
 
   bool DisableCoprocClock;            ///< RevCPU: Disables manual coproc clocking
 
-  bool ReadyForRevoke;                ///< RevCPU: Is the CPU ready for revocation? TODO?
-
   TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
   SST::Output output;                 ///< RevCPU: SST output handler
 
