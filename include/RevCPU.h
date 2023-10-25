@@ -218,17 +218,6 @@ private:
   std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
   bool *Enabled;                      ///< RevCPU: Completion structure
 
-  // TODO: Remove
-  // Global table of threads
-  // - The actual RevThread objects live in this table
-  // - Only place where the presence of a RevThread on this CPU is guanranteed throughout execution
-  // std::map<uint32_t, std::unique_ptr<RevThread>> Threads;
-
-  // TODO: Remove
-  // Oversubscription is not supported in hardware
-  // (ie. AssignedThreads.at(i).size() will never exceed the numHarts)
-  // std::vector<std::unordered_map<uint32_t, std::unique_ptr<RevThread>>> AssignedThreads;
-
   // Initializes a RevThread object.
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
   void InitThread(std::unique_ptr<RevThread> ThreadToInit);

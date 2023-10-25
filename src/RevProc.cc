@@ -1662,9 +1662,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Stalled = false;
     }
 
-    // If the next instruction is our special bounce address
-    // DO NOT decode it.  It will decode to a bogus instruction.
-    // We do not want to retire this instruction until we're ready
     if( !Stalled && !CoProcStallReq[HartToDecodeID]){
       Inst = DecodeInst();
       Inst.entry = RegFile->GetEntry();
@@ -1708,13 +1705,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // failed to find the extension
       output->fatal(CALL_INFO, -1,
                     "Error: failed to find the instruction extension at PC=%" PRIx64 ".", ExecPC );
+    }
 
     // found the instruction extension
     std::pair<unsigned, unsigned> EToE = it->second;
     RevExt *Ext = Extensions[EToE.first].get();
 
     // -- BEGIN new pipelining implementation
-    Pipeline.push_back(std::make_pair(HartToExec, Inst));
+    Pipeline.push_back(std::make_pair(HartToExecID, Inst));
 
     if( (Ext->GetName() == "RV32F") ||
         (Ext->GetName() == "RV32D") ||
@@ -1724,7 +1722,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     // set the hazarding
-    DependencySet(HartToExec, &(Pipeline.back().second));
+    DependencySet(HartToExecID, &(Pipeline.back().second));
     // -- END new pipelining implementation
 
     #ifndef NO_REV_TRACER
@@ -1734,7 +1732,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     #endif
 
     // execute the instruction
-    if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec, RegFile) ){
+    if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExecID, RegFile) ){
       output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
     }
@@ -1744,7 +1742,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // TODO: method to determine origin of memory access (core, cache, pan, host debugger, ... )
     mem->SetTracer(nullptr);
     // Conditionally trace after execution
-    if (Tracer) Tracer->InstTrace(currentCycle, id, HartToExec, GetActiveThreadID(), InstTable[Inst.entry].mnemonic);
+    if (Tracer) Tracer->InstTrace(currentCycle, id, HartToExecID, ActiveThreadID, InstTable[Inst.entry].mnemonic);
     #endif
 
 #ifdef __REV_DEEP_TRACE__
@@ -1788,7 +1786,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       // Ecall found
       output->verbose(CALL_INFO, 6, 0,
                       "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 " - Exception Raised: ECALL with code = %" PRIu64 "\n",
-                      id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(RevReg::a7));
+                      id, HartToExecID, ActiveThreadID, RegFile->GetX<uint64_t>(RevReg::a7));
 #ifdef _REV_DEBUG_
       //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
       //                  << cRegFile->RV64[17] << std::endl;
@@ -1893,41 +1891,34 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Pipeline.front().second.cost++;
     }
   }
-  if( GetPC() == 0x00ull ){
-    // look for more work on the execution queue
-    // if no work is found, don't update the PC
-    // just wait and spin
-    auto& Thread = GetThreadOnHart(HartToDecode);
-    if( !ThreadHasDependencies(Thread->GetThreadID()) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
-      Thread->SetState(ThreadState::DONE);
-      HART_CTE[HartToDecode] = false;
-      HART_CTS[HartToDecode] = false;
-      ThreadsThatChangedState.emplace(Thread);
-
   // Check for completion states and new tasks
-  // TODO: Refactor redundancy
+  // @DAVE: I feel like the below two blocks of code have some redundancy but its working and
+  //        if I comment out the first block (HartToDecode based checks) the AMO tests fail
+  //        so there must be something I'm not understanding about the two. If there isn't redundancy
+  //        great, I'll uncomment this little letter I left you
   if( RegFile->GetPC() == 0x00ull ){
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
-    // bool done = true;
     if( HartHasNoDependencies(HartToDecodeID) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
-      Harts.at(HartToDecodeID)->Thread->SetState(ThreadState::DONE);
+      std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart(HartToDecodeID);
+      ActiveThread->SetState(ThreadState::DONE);
       HartsClearToExecute[HartToDecodeID] = false;
       HartsClearToDecode[HartToDecodeID] = false;
       IdleHarts.set(HartToDecodeID);
-      ThreadsThatChangedState.emplace(PopThreadFromHart(HartToDecodeID));
+      ThreadsThatChangedState.emplace(std::move(ActiveThread));
     }
 
     if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID]
         && HartHasNoDependencies(HartToExecID)
-        && ( (nullptr == coProc) || (coProc && coProc->IsDone() ) // TODO: See if first check is redundant
+        && ( (nullptr == coProc) || (coProc && coProc->IsDone() )
         ) ){
-      Harts.at(HartToDecodeID)->Thread->SetState(ThreadState::DONE);
+      std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart(HartToDecodeID);
+      ActiveThread->SetState(ThreadState::DONE);
       HartsClearToExecute[HartToExecID] = false;
       HartsClearToDecode[HartToExecID] = false;
       IdleHarts[HartToExecID] = true;
-      ThreadsThatChangedState.emplace(PopThreadFromHart(HartToExecID));
+      ThreadsThatChangedState.emplace(std::move(ActiveThread));
     }
   }
 
@@ -1966,7 +1957,6 @@ void RevProc::PrintStatSummary(){
   return;
 }
 
-//// TODO: Remove
 RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
   if( HartID >= Harts.size() ){
     output->fatal(CALL_INFO, -1,
@@ -1975,15 +1965,6 @@ RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
   }
   return Harts.at(HartID)->RegFile.get();
 }
-//  auto& tp = GetThreadOnHart(HartID);
-//
-//  if( tp == nullptr ) {
-//    output->fatal(CALL_INFO, 1,
-//                  "Tried to get RegFile for Hart %" PRIu32 " but there is no AssignedThread for that Hart\n", HartID);
-//  }
-//
-//  return tp->GetRegFile();
-//}
 
 void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // tidAddr is the address we have to write the new thread's id to
@@ -2346,13 +2327,13 @@ void RevProc::InitEcallTable(){
   };
 }
 
-/*
- * This is the function that is called when an ECALL exception is detected inside ClockTick
- * - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
- *
- * Eventually this will be integrated into a TrapHandler however since ECALLs are the only
- * supported exceptions at this point there is no need just yet.
- */
+//
+// This is the function that is called when an ECALL exception is detected inside ClockTick
+// - Currently the only way to set this exception is by Ext->Execute(....) an ECALL instruction
+//
+// Eventually this will be integrated into a TrapHandler however since ECALLs are the only
+// supported exceptions at this point there is no need just yet.
+//
 void RevProc::ExecEcall(RevInst& inst){
   auto EcallCode =Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(RevReg::a7);
   auto it = Ecalls.find(EcallCode);
@@ -2404,17 +2385,12 @@ void RevProc::AssignThread(std::unique_ptr<RevThread> Thread){
 
 unsigned RevProc::FindIdleHartID() const {
   unsigned IdleHartID = _REV_INVALID_HART_ID_;
-  //if( IdleHarts.none() ){
-  //  output->fatal(CALL_INFO, -1, "Attempted to find an idle hart but none were found. This is a bug\n");
-  //}
-  //else {
-    // Iterate over IdleHarts to find the first idle hart
-    for( size_t i=0; i<Harts.size(); i++ ){
-      if( IdleHarts[i] ){
-        IdleHartID = i;
-        break;
-      }
-    // }
+  // Iterate over IdleHarts to find the first idle hart
+  for( size_t i=0; i<Harts.size(); i++ ){
+    if( IdleHarts[i] ){
+      IdleHartID = i;
+      break;
+    }
   }
   if( IdleHartID == _REV_INVALID_HART_ID_ ){
     output->fatal(CALL_INFO, -1, "Attempted to find an idle hart but none were found. This is a bug\n");
@@ -2424,8 +2400,7 @@ unsigned RevProc::FindIdleHartID() const {
 }
 
 
-/// TODO: Ask Dave to comment
-/// This used to clutter ClockTick
+/// @DAVE: I moved this logic out of ClockTick ( If this is an issue let me know in the PR Comments )
 void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
   // inject ALU fault
   RevExt *Ext = Extensions[EToE.first].get();
@@ -2448,7 +2423,7 @@ void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
   }else{
     // write an X register
     uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
-   Harts[HartToDecodeID]->RegFile->SetX(Inst.rd, rval |Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(Inst.rd));
+   RegFile->SetX(Inst.rd, rval | RegFile->GetX<uint64_t>(Inst.rd));
   }
 
   // clear the fault
@@ -2459,10 +2434,11 @@ void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
 void RevProc::UpdateStatusOfHarts(){
   // A Hart is ClearToDecode if:
   //   1. It has a thread assigned to it (ie. NOT Idle)
-  //   2. It's last instruction's cost is set to 0
+  //   2. It's last instruction is done executing (ie. cost is set to 0)
   for( size_t i=0; i<Harts.size(); i++ ){
     HartsClearToDecode[i] = !IdleHarts[i] && Harts[i]->RegFile->cost == 0;
   }
   return;
 }
+
 // EOF
