@@ -48,8 +48,8 @@ public:
   ///< RevHart: Get Hart's ID
   uint16_t GetID() const { return ID; }
 
-  ///< RevHart: Returns the ThreadID of the assigned thread
-  uint32_t GetAssignedThreadID() const { return (Thread != nullptr) ? Thread->GetThreadID() : _INVALID_TID_; }
+  ///< RevHart: Returns the ID of the assigned thread
+  uint32_t GetAssignedThreadID() const { return (Thread != nullptr) ? Thread->GetID() : _INVALID_TID_; }
 
   ///< RevHart: Load the register file from the RevThread
   void LoadRegFile(std::unique_ptr<RevRegFile> regFile){
@@ -60,13 +60,13 @@ public:
   void AssignThread(std::unique_ptr<RevThread> ThreadToAssign){
     Thread = std::move(ThreadToAssign);
     Thread->SetState(ThreadState::RUNNING);
-    LoadRegFile(Thread->TransferRegState());
+    LoadRegFile(Thread->TransferVirtRegState());
   }
 
   ///< RevHart: Removed a RevThread from this Hart
   std::unique_ptr<RevThread> PopThread(){
     // return the register file to the thread
-    Thread->UpdateRegState(std::move(RegFile));
+    Thread->UpdateVirtRegState(std::move(RegFile));
     // return the thread
     return std::move(Thread);
   }
