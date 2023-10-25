@@ -170,6 +170,14 @@ public:
   void SetCoProc(RevCoProc* coproc);
 
 //--------------- External Interface for use with Co-Processor -------------------------
+  ///< RevProc: Allow a co-processor to query the bits in scoreboard. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  bool ExternalDepCheck(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool IsFloat){
+    const RevRegClass regClass = IsFloat ? RevRegClass::RegFLOAT : RevRegClass::RegGPR;
+    return DependencyCheck(HartID, RegNum, regClass);
+  }
+
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
   ///  RevProc
@@ -724,6 +732,9 @@ private:
     const RevRegFile* regFile = AssignedThreads.at(ThreadID)->GetRegFile();
     return regFile->RV_Scoreboard.any() || regFile->FP_Scoreboard.any();
   }
+
+  /// RevProc: Check scoreboard for pipeline hazards, on register basis
+  bool DependencyCheck(unsigned HartID, uint16_t RegNum, RevRegClass RegClass) const;
 
   /// RevProc: Check scoreboard for pipeline hazards
   bool DependencyCheck(unsigned HartID, const RevInst* Inst) const;

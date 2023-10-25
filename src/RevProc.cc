@@ -1522,43 +1522,44 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-bool RevProc::DependencyCheck(unsigned HartID, const RevInst* I) const {
+bool RevProc::DependencyCheck(unsigned HartID, uint16_t RegNum, RevRegClass RegClass) const {
 
-  const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
 
   // check LS queue for outstanding load - ignore r0
+  if((RegNum != 0) &&
+     regFile->GetLSQueue()->count(make_lsq_hash(RegNum, RegClass, HartID)) > 0){
+    return true;
+  }
+
+  if (RegNum < _REV_NUM_REGS_){
+    switch(RegClass){
+    case RevRegClass::RegFLOAT:
+      if(regFile->FP_Scoreboard[RegNum]) return true;
+      break;
+    case RevRegClass::RegGPR:
+      if(regFile->RV_Scoreboard[RegNum]) return true;
+      break;
+    default:
+      break;
+    }
+  }
+
+  return false;
+}
+
+bool RevProc::DependencyCheck(unsigned HartID, const RevInst* I) const {
+
+  const auto* E = &InstTable[I->entry];
+
   for(const auto& [reg, regClass] : {
       std::tie(I->rs1, E->rs1Class),
       std::tie(I->rs2, E->rs2Class),
       std::tie(I->rs3, E->rs3Class),
       std::tie(I->rd,  E->rdClass) }){
-    if((reg != 0) && (regFile->GetLSQueue()->count(make_lsq_hash(reg,
-                                                                 regClass,
-                                                                 HartID))) > 0){
-      return true;
-    }
+    if (DependencyCheck(HartID, reg, regClass)) return true;
   }
 
-  // Iterate through the source registers rs1, rs2, rs3 and find any dependency
-  // based on the class of the source register and the associated scoreboard
-  for(const auto& [reg, regClass] : {
-      std::tie(I->rs1, E->rs1Class),
-      std::tie(I->rs2, E->rs2Class),
-      std::tie(I->rs3, E->rs3Class) }){
-    if(reg < _REV_NUM_REGS_){
-      switch(regClass){
-      case RevRegClass::RegFLOAT:
-        if(regFile->FP_Scoreboard[reg]) return true;
-        break;
-      case RevRegClass::RegGPR:
-        if(regFile->RV_Scoreboard[reg]) return true;
-        break;
-      default:
-        break;
-      }
-    }
-  }
   return false;
 }
 
