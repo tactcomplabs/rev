@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <time.h>
 
 // The following is required to build on MacOS
 // because sigval & siginfo_t are already defined
@@ -258,6 +259,8 @@ typedef struct __user_cap_header_struct {
   uint32_t version;
   int pid;
 } *cap_user_header_t;
+
+#define __kernel_timespec timespec
 
 typedef struct __user_cap_data_struct {
   uint32_t effective;
