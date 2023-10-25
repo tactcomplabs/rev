@@ -44,16 +44,51 @@ public:
   SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::RevCoProc, RevProc*);
   SST_ELI_DOCUMENT_PARAMS({ "verbose", "Set the verbosity of output for the attached co-processor", "0" });
 
+  // --------------------
+  // Virtual methods
+  // --------------------
+
   /// RevCoProc: Constructor
   RevCoProc( ComponentId_t id, Params& params, RevProc* parent);
 
   /// RevCoProc: default destructor
-  virtual ~RevCoProc();                               ///< RevCoProc: Destructor
-  virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst) = 0;          /// RevCoProc: Instruction Interface to RevCore
-  virtual bool Reset() = 0;                           ///< RevCoProc: Reset - called on startup
-  virtual bool Teardown() = 0;                        ///< RevCoProc: Teardown - called when associated RevProc completes
-  virtual bool ClockTick(SST::Cycle_t cycle) = 0;     ///< RevCoProc: Clock - can be called by SST or by overriding RevCPU
-  virtual bool IsDone() = 0;                          ///< RevCoProc: Returns true when co-processor has completed execution - used for proper exiting of associated RevProc
+  virtual ~RevCoProc();
+
+  /// RevCoProc: send raw data to the coprocessor
+  virtual bool sendRawData(std::vector<uint8_t> Data){
+    return true;
+  }
+
+  /// RevCoProc: retrieve raw data from the coprocessor
+  virtual const std::vector<uint8_t> getRawData(){
+    output->fatal(CALL_INFO, -1,
+                  "Error : no override method defined for getRawData()\n");
+
+    // inserting code to quiesce warnings
+    std::vector<uint8_t> D;
+    return D;
+  }
+
+  // --------------------
+  // Pure virtual methods
+  // --------------------
+
+  /// RevCoProc: Instruction interface to RevCore
+  virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst) = 0;
+
+  /// ReCoProc: Reset - called on startup
+  virtual bool Reset() = 0;
+
+  /// RevCoProc: Teardown - called when associated RevProc completes
+  virtual bool Teardown() = 0;
+
+  /// RevCoProc: Clock - can be called by SST or by overriding RevCPU
+  virtual bool ClockTick(SST::Cycle_t cycle) = 0;
+
+  /// RevCoProc: Returns true when co-processor has completed execution
+  ///            - used for proper exiting of associated RevProc
+  virtual bool IsDone() = 0;
+
 
 protected:
   SST::Output*   output;                                ///< RevCoProc: sst output object
