@@ -245,11 +245,6 @@ bool RevProc::SeedInstTable(){
     }
   }
 
-  // PAN Extension
-  if( feature->IsModeEnabled(RV_P) ){
-    EnableExt(new RV64P(feature, mem, output), false);
-  }
-
   return true;
 }
 
@@ -1670,7 +1665,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // If the next instruction is our special bounce address
     // DO NOT decode it.  It will decode to a bogus instruction.
     // We do not want to retire this instruction until we're ready
-    if((!Stalled) && !CoProcStallReq[HartToDecode]){
+    if( !Stalled && !CoProcStallReq[HartToDecodeID]){
       Inst = DecodeInst();
       Inst.entry = RegFile->GetEntry();
     }
@@ -1911,47 +1906,17 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   // Check for completion states and new tasks
   // TODO: Refactor redundancy
-  if( (RegFile->GetPC() == _PAN_FWARE_JUMP_) || (RegFile->GetPC() == 0x00ull) ){
+  if( RegFile->GetPC() == 0x00ull ){
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
     // bool done = true;
-    if(RegFile->GetPC() == _PAN_FWARE_JUMP_ ){
-      if( PExec != nullptr){
-        uint64_t Addr = 0x00ull;
-        unsigned Idx = 0;
-        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr, &Idx);
-        switch( Status ){
-        case PanExec::QExec:
-          output->verbose(CALL_INFO, 5, 0,
-                          "Core %" PRIu32 " ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
-                          id, Addr);
-          RegFile->SetPC(Addr);
-          // done = false;
-          break;
-        case PanExec::QNull:
-          // no work to do; spin on the firmware jump PC
-          output->verbose(CALL_INFO, 6, 0,
-                          "Core %" PRIu32 " ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
-                          id, ExecPC);
-          // done = false;
-          SetPC(_PAN_FWARE_JUMP_);
-          break;
-        case PanExec::QValid:
-        case PanExec::QError:
-          // done = true;
-        default:
-          break;
-        }
-      }
-    }else if(RegFile->GetPC() == 0x00ull ) {
-      if( HartHasNoDependencies(HartToDecodeID) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
-        Harts.at(HartToDecodeID)->Thread->SetState(ThreadState::DONE);
-        HartsClearToExecute[HartToDecodeID] = false;
-        HartsClearToDecode[HartToDecodeID] = false;
-        IdleHarts.set(HartToDecodeID);
-        ThreadsThatChangedState.emplace(PopThreadFromHart(HartToDecodeID));
-      }
+    if( HartHasNoDependencies(HartToDecodeID) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
+      Harts.at(HartToDecodeID)->Thread->SetState(ThreadState::DONE);
+      HartsClearToExecute[HartToDecodeID] = false;
+      HartsClearToDecode[HartToDecodeID] = false;
+      IdleHarts.set(HartToDecodeID);
+      ThreadsThatChangedState.emplace(PopThreadFromHart(HartToDecodeID));
     }
 
     if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID]
