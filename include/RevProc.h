@@ -171,7 +171,7 @@ public:
 
 //--------------- External Interface for use with Co-Processor -------------------------
   ///< RevProc: Allow a co-processor to query the bits in scoreboard. Note the RevProcPassKey may only
-  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
   ///  RevProc
   bool ExternalDepCheck(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool IsFloat){
     const RevRegClass regClass = IsFloat ? RevRegClass::RegFLOAT : RevRegClass::RegGPR;
@@ -179,14 +179,14 @@ public:
   }
 
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
-  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
   ///  RevProc
   void ExternalDepSet(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true){
     DependencySet(HartID, RegNum, isFloat, value);
   }
 
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
-  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
   ///  RevProc 
   void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat){
     DependencyClear(HartID, RegNum, isFloat);
@@ -194,13 +194,13 @@ public:
 
   ///< RevProc: Allow a co-processor to stall the pipeline of this proc and hold it in a stall condition
   ///  unitl ExternalReleaseHart() is called. Note the RevProcPassKey may only
-  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
   ///  RevProc
   void ExternalStallHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
 
   ///< RevProc: Allow a co-processor to release the pipeline of this proc and allow a hart to continue
   ///  execution (this un-does the ExternalStallHart() function ). Note the RevProcPassKey may only
-  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
   ///  RevProc
   void ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
   //------------- END External Interface -------------------------------
