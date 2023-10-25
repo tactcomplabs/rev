@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevFeature.h"
+#include "RevFeature.h"
 #include <utility>
 #include <cstring>
 #include <string_view>

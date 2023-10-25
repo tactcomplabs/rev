@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevOpts.h"
+#include "RevOpts.h"
 using namespace SST::RevCPU;
 
 RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )

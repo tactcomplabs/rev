@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevProc.h"
+#include "RevProc.h"
 #include "RevSysCalls.cc"
 
 using namespace SST::RevCPU;
