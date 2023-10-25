@@ -603,7 +603,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     }
 
     // See if any of the threads on this proc changes state
-    CheckForThreadStateChanges(i);
+    HandleThreadStateChangesForProc(i);
 
     if( Procs[i]->HasNoBusyHarts() ){
       Enabled[i] = false;
@@ -662,20 +662,21 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 // - Moves it to the 'Threads' map
 // - Adds it's ThreadID to the ReadyThreads to be scheduled
 void RevCPU::InitThread(std::unique_ptr<RevThread> ThreadToInit){
-
-  std::unique_ptr<RevRegFile> RegState = ThreadToInit->TransferRegState();
+  // @Lee, can this be a reference? I'm not looking to transfer ownership of the regfile pointer
+  std::unique_ptr<RevRegFile> RegState = ThreadToInit->TransferVirtRegState();
   auto gp = Loader->GetSymbolAddr("__global_pointer$");
   RegState->SetX(RevReg::gp, gp);
-  RegState->SetX(RevReg::s0, gp);
-
-  output.verbose(CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", ThreadToInit->GetThreadID());
+  RegState->SetX(RevReg::s0, gp); // This can be used as the fp reg per ABI
+  output.verbose(CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", ThreadToInit->GetID());
   output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->to_string().c_str());
   ThreadToInit->SetState(ThreadState::READY);
   ReadyThreads.emplace_back(std::move(ThreadToInit));
 }
 
+// Assigns a RevThred to a specific Proc which then loads it into a RevHart
+// This should not be called without first checking if the Proc has an IdleHart
 void RevCPU::AssignThread(std::unique_ptr<RevThread> ThreadToAssign, unsigned ProcID){
-  output.verbose(CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetThreadID(), ProcID);
+  output.verbose(CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetID(), ProcID);
   Procs[ProcID]->AssignThread(std::move(ThreadToAssign));
   return;
 }
@@ -691,10 +692,9 @@ bool RevCPU::ThreadCanProceed(std::unique_ptr<RevThread>& Thread){
   // If the thread is waiting on another thread, check if that thread has completed
   if( WaitingOnTID != _INVALID_TID_ ){
     // Check if WaitingOnTID has completed... if so, return = true, else return false
-    output.verbose(CALL_INFO, 4, 0, "Thread %" PRIu32 " is waiting on Thread %u\n", Thread->GetThreadID(), WaitingOnTID);
+    output.verbose(CALL_INFO, 4, 0, "Thread %" PRIu32 " is waiting on Thread %u\n", Thread->GetID(), WaitingOnTID);
 
     // Check if the WaitingOnTID has completed, if not, thread cannot proceed
-    // TODO: I think this search method works for map
     rtn = ( CompletedThreads.find(WaitingOnTID) != CompletedThreads.end() ) ? true : false;
   }
   // If the thread is not waiting on another thread, it can proceed
@@ -707,6 +707,8 @@ bool RevCPU::ThreadCanProceed(std::unique_ptr<RevThread>& Thread){
   return rtn;
 }
 
+// Checks if any of the blocked threads can proceed based on if the thread
+// they were waiting on has completed
 void RevCPU::CheckBlockedThreads(){
   // Iterate over all block threads
   for( auto it = BlockedThreads.begin(); it != BlockedThreads.end(); ) {
@@ -719,22 +721,6 @@ void RevCPU::CheckBlockedThreads(){
   }
   return;
 }
-
-//// TODO: Update implementation
-//// Check if any BlockedThreads have had their counterpart complete execution
-//// if so, move its TID to the ReadyThreads
-//void RevCPU::CheckBlockedThreads(){
-//  // Iterate over all block threads
-//  for (auto it = BlockedThreads.begin(); it != BlockedThreads.end(); /* no increment here */) {
-//    if (CompletedThreads.find((*it)->GetWaitingToJoinTID()) != CompletedThreads.end()) {
-//      ReadyThreads.emplace(std::move(*it));
-//      it = BlockedThreads.erase(it);  // erase and get new iterator
-//    } else {
-//      ++it;  // only increment here
-//    }
-//  }
-//  return;
-//}
 
 // ----------------------------------
 // We need to initialize the x10 register to include the value of ARGC
@@ -779,13 +765,13 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
 
 // Checks for state changes in the threads of a given processor index 'i'
 // and handle appropriately
-void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
+void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
   // Handle any thread state changes for this core
   // NOTE: At this point we handle EVERY thread that changed state every cycle
   std::queue<std::unique_ptr<RevThread>> ThreadsThatChangedState = Procs[ProcID]->TransferThreadsThatChangedState();
   while( !ThreadsThatChangedState.empty() ){
     std::unique_ptr<RevThread> Thread = std::move(ThreadsThatChangedState.front());
-    uint32_t ThreadID = Thread->GetThreadID();
+    uint32_t ThreadID = Thread->GetID();
     // Handle the thread that changed state based on the new state
     switch ( Thread->GetState() ) {
     case ThreadState::DONE:
@@ -808,10 +794,10 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       //    3b. Remove it from the AssignedThreads lis
       output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 "on Core %" PRIu32 " is BLOCKED\n", ThreadID, ProcID);
       // -- 1.
-      //if( ThreadCanProceed(Thread->GetThreadID()) ){
+      //if( ThreadCanProceed(Thread->GetID()) ){
       //  // -- 2.
       //  output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " was waiting on thread %u which has already completed so it can proceed\n",
-      //                  Thread->GetThreadID(), ProcID, Thread->GetWaitingToJoinTID());
+      //                  Thread->GetID(), ProcID, Thread->GetWaitingToJoinTID());
       //  // Continue executing thread on same Core
       //  Thread->SetState(ThreadState::RUNNING);
       //}
@@ -825,7 +811,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
       //}
       break;
     case ThreadState::START:
-      output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu32, Thread->GetThreadID(), ProcID);
+      output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu32, Thread->GetID(), ProcID);
 
       // Mark it ready for execution
       Thread->SetState(ThreadState::READY);
