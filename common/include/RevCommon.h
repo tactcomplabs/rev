@@ -117,6 +117,32 @@ struct MemReq{
   // add lambda that clears the dependency bit directly so we don't need to search the hash
 };//struct MemReq
 
+// Enum for tracking the state of a RevThread.
+// Ex. Possible flow of thread state:
+//    1)  New RevThread is created via rev_pthread_create (ThreadState::START)
+//    2)  The Proc that created the new thread puts it in its `ThreadsThatChangedState` queue
+//    3)  RevCPU sees there is a new thread in Procs[i]->ThreadsThatChangedState with status START
+//    4)  RevCPU changes thread's state to READY and moves it to ReadyThreads as it can be scheduled
+//    5)  Thread is scheduled on a Hart (ThreadState::RUNNING)
+//    6)  Thread encounters a call to `rev_pthread_join` (ThreadState::BLOCKED)
+//    7)  The Proc that owns the RevHart the thread was executing on puts the blocked thread
+//        in its `ThreadsThatChangedState` queue
+//    8)  RevCPU sees there is a blocked thread and moves it to BlockedThreads
+//    9)  Once the thread that the blocked thread is waiting on completes, it is
+//        moved back to ReadyThreads (ThreadState::READY)
+//    10) Thread is done (ie. PC = 0x0) so ensure there are no dependencies
+//    11) The Proc that owns the RevHart the thread was executing on puts the finished thread
+//        in its ThreadsThatChangedState queue (ThreadState::DONE)
+//    12) RevCPU sees there is a completed thread and moves it to its CompletedThreads map
+enum class ThreadState {
+  START,    // Indicates this thread is new
+  RUNNING,  // Thread is assigned and executing on a Proc/HART (NOTE: This does NOT change if a Thread is stalled)
+  BLOCKED,  // Waiting for thread synchronization at this point (Currently only triggered by call to `rev_pthread_join`)
+  READY,    // Indicates this thread is ready to be scheduled
+  DONE,     // Thread has finished; deallocate resources.
+};
+
+
 }//namespace SST::RevCPU
 
 #endif
