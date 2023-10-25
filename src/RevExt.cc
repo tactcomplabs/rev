@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevExt.h"
+#include "RevExt.h"
 using namespace SST::RevCPU;
 
 /// Change the FP environment

@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevCPU.h"
+#include "RevCPU.h"
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
@@ -212,7 +212,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       Opts->GetMachineModel(0,diasmType); // TODO first param is core
       if (trc->SetDisassembler(diasmType))
         output.verbose(CALL_INFO, 1, 0, "Warning: tracer could not find disassembler. Using REV default\n");
-      
+
       trc->SetTraceSymbols(Loader->GetTraceSymbols());
 
       // tracer user controls - cycle on and off. Ignored unless > 0
@@ -858,7 +858,7 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
 
         // -- 3b.
         AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
-        
+
         if( AssignedThreads.at(ProcID).empty() ){
           Enabled[ProcID] = false;
         }
