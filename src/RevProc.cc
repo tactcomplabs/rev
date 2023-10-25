@@ -1290,7 +1290,7 @@ RevInst RevProc::DecodeInst(){
   if(0 != Inst){
     output->verbose(CALL_INFO, 6, 0,
                     "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
-                    id, HartToDecodeID, GetActiveThreadID(),  PC, Inst);
+                    id, HartToDecodeID, ActiveThreadID,  PC, Inst);
   }else{
     output->fatal(CALL_INFO, -1,
                   "Error: Core %" PRIu32 " failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
@@ -1638,40 +1638,25 @@ void RevProc::MarkLoadComplete(const MemReq& req){
 
 bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   RevInst Inst;
-
   bool rtn = false;
   Stats.totalCycles++;
-
-#ifdef _REV_DEBUG_
-  if((currentCycle % 100000000) == 0){
-    std::cout << "Current Cycle: " << currentCycle <<  " PC: "
-              << std::hex << ExecPC << std::dec << std::endl;
-  }
-#endif
-
 
   // -- MAIN PROGRAM LOOP --
   //
   // If the clock is down to zero, then fetch the next instruction
   // else if the the instruction has not yet been triggered, execute it
   // else, wait until the counter is decremented to zero to retire the instruction
-  //
-  //
-  //
+
+  // This function updates the bitset of Harts that are
+  // ready to decode
   UpdateStatusOfHarts();
-  // TODO: remove
-  //for( size_t HartID=0; HartID<Harts.size(); HartID++ ){
-  //  auto& tp = GetThreadOnHart(HartID);
-  //  HartsClearToDecode[HartID] = tp != nullptr && tp->GetRegFile()->cost == 0;
-  //}
 
   if( HartsClearToDecode.any() && (!Halted)) {
     // Determine what hart is ready to decode
-    //do {
     HartToDecodeID = GetNextHartToDecodeID();
-    // } while( !HartHasThread(HartToDecodeID) && AssignedThreads.size() );
-
+    ActiveThreadID = Harts.at(HartToDecodeID)->GetAssignedThreadID();
     RegFile = Harts[HartToDecodeID]->RegFile.get();
+
     feature->SetHartToExecID(HartToDecodeID);
 
     // fetch the next instruction
@@ -1699,7 +1684,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }else {
       Stats.cyclesBusy++;
       HartsClearToExecute[HartToDecodeID] = true;
-      // TODO: potentially remove
       HartToExecID = HartToDecodeID;
     }
     Inst.cost = RegFile->GetCost();
@@ -1712,7 +1696,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
          && !RegFile->GetTrigger())
          && !Halted
          && HartsClearToExecute[HartToExecID]) {
-         // TODO: Remove && HartHasThread(HartToExecID)){
     // trigger the next instruction
     // HartToExecID = HartToDecodeID;
     RegFile->SetTrigger(true);
@@ -1721,7 +1704,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // pull the PC
     output->verbose(CALL_INFO, 6, 0,
                     "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; Executing PC= 0x%" PRIx64 "\n",
-                    id, HartToExecID, GetActiveThreadID(), ExecPC);
+                    id, HartToExecID, ActiveThreadID, ExecPC);
     #endif
 
     // Find the instruction extension
@@ -2509,10 +2492,12 @@ void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
 
 
 void RevProc::UpdateStatusOfHarts(){
+  // A Hart is ClearToDecode if:
+  //   1. It has a thread assigned to it (ie. NOT Idle)
+  //   2. It's last instruction's cost is set to 0
   for( size_t i=0; i<Harts.size(); i++ ){
     HartsClearToDecode[i] = !IdleHarts[i] && Harts[i]->RegFile->cost == 0;
   }
-
   return;
 }
 // EOF

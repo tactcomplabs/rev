@@ -185,15 +185,21 @@ public:
   void ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID);
   //------------- END External Interface -------------------------------
 
-  // TODO: Comment Assign a
+  ///< RevProc: Used for loading a software thread into a RevHart
   void AssignThread(std::unique_ptr<RevThread> ThreadToAssign);
 
+  ///< RevProc:
   void UpdateStatusOfHarts();
 
   ///< RevProc: Returns the id of an idle hart (or _INVALID_HART_ID_ if none are idle)
   unsigned FindIdleHartID() const ;
 
+  ///< RevProc: Returns true if all harts are available (ie. There is nothing executing on this Proc)
+  /// @DAVE: Can you confirm that using this function to determine if a Proc can be disabled (called in RevCPU)
+  ///        will work with the CoProc?
   size_t HasNoBusyHarts() const { return IdleHarts == ValidHarts; }
+
+  ///< RevProc: Returns true if there are any IdleHarts
   bool HasIdleHart() const { return IdleHarts.any(); }
 
 private:
@@ -222,9 +228,6 @@ private:
   RevCoProc* coProc;        ///< RevProc: attached co-processor
   RevLoader *loader;        ///< RevProc: loader object
 
-  // Checks to see if a given HartID has an assigned thread by checking if the threadid on that Hart still exists in the AssignedThreads map
-  // TODO: REMOVE ME: bool HartHasThread(unsigned HartID) const { return ( AssignedThreads.find(Harts.at(HartID)->GetAssignedThreadID()) != AssignedThreads.end() );}
-
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> GetNewThreadID;
 
@@ -240,6 +243,7 @@ private:
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecodeID RegFile
+  uint32_t ActiveThreadID = _INVALID_TID_; ///< Software ThreadID (Not the Hart) that belongs to the Hart currently decoding
 
   RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
 
