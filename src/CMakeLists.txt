@@ -7,8 +7,6 @@
 #
 
 set(RevCPUSrcs
-  PanExec.cc
-  PanNet.cc
   RevCPU.cc
   RevExt.cc
   RevFeature.cc

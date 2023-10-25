@@ -43,7 +43,6 @@
 #include "RevLoader.h"
 #include "RevInstTable.h"
 #include "AllRevInstTables.h"
-#include "PanExec.h"
 #include "RevPrefetcher.h"
 #include "RevCoProc.h"
 #include "RevTracer.h"
@@ -54,8 +53,6 @@
 #define SYSCALL_TYPES_ONLY
 #include "../common/syscalls/syscalls.h"
 #include "../common/include/RevCommon.h"
-
-#define _PAN_FWARE_JUMP_            0x0000000000010000
 
 namespace SST::RevCPU{
 class RevCoProc;
@@ -96,9 +93,6 @@ public:
 
   /// RevProc: Is this an RV32 machine?
   bool DebugIsRV32() { return feature->IsRV32(); }
-
-  /// RevProc: Set the PAN execution context
-  void SetExecCtx(PanExec *P) { PExec = P; }
 
   /// RevProc: Set an optional tracer
   void SetTracer(RevTracer *T) { Tracer = T; }
@@ -234,7 +228,6 @@ private:
   SST::Output *output;                   ///< RevProc: output handler
   std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler
   RevFeature* feature;
-  PanExec *PExec;                        ///< RevProc: PAN exeuction context
   RevProcStats Stats{};                  ///< RevProc: collection of performance stats
   std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher
 

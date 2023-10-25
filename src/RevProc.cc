@@ -27,7 +27,7 @@ RevProc::RevProc( unsigned Id,
     id(Id), HartToDecode(0), HartToExec(0), Retired(0x00ull),
     numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader),
     AssignedThreads(AssignedThreads), GetNewThreadID(std::move(GetNewTID)),
-    output(Output), feature(nullptr), PExec(nullptr), sfetch(nullptr), Tracer(nullptr) {
+    output(Output), feature(nullptr), sfetch(nullptr), Tracer(nullptr) {
 
   // initialize the machine model for the target core
   std::string Machine;
@@ -1261,8 +1261,7 @@ bool RevProc::PrefetchInst(){
 
   // These are addresses that we can't decode
   // Return false back to the main program loop
-  if( (PC == 0x00ull) ||
-      (PC == _PAN_FWARE_JUMP_) ){
+  if( PC == 0x00ull ){
     return false;
   }
 
@@ -1686,7 +1685,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     // If the next instruction is our special bounce address
     // DO NOT decode it.  It will decode to a bogus instruction.
     // We do not want to retire this instruction until we're ready
-    if( (GetPC() != _PAN_FWARE_JUMP_) && (!Stalled) && !CoProcStallReq[HartToDecode]){
+    if((!Stalled) && !CoProcStallReq[HartToDecode]){
       Inst = DecodeInst();
       Inst.entry = RegFile->GetEntry();
     }
@@ -1720,156 +1719,150 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                     id, HartToExec, GetActiveThreadID(), ExecPC);
     #endif
 
-    // attempt to execute the instruction as long as it is NOT
-    // the firmware jump PC
-    if( ExecPC != _PAN_FWARE_JUMP_ ){
-
-      // Find the instruction extension
-      auto it = EntryToExt.find(RegFile->GetEntry());
-      if( it == EntryToExt.end() ){
-        // failed to find the extension
-        output->fatal(CALL_INFO, -1,
-                      "Error: failed to find the instruction extension at PC=%" PRIx64 ".", ExecPC );
-      }
-
-      // found the instruction extension
-      std::pair<unsigned, unsigned> EToE = it->second;
-      RevExt *Ext = Extensions[EToE.first].get();
-
-      // -- BEGIN new pipelining implementation
-      Pipeline.push_back(std::make_pair(HartToExec, Inst));
-
-      if( (Ext->GetName() == "RV32F") ||
-          (Ext->GetName() == "RV32D") ||
-          (Ext->GetName() == "RV64F") ||
-          (Ext->GetName() == "RV64D") ){
-        Stats.floatsExec++;
-      }
-
-      // set the hazarding
-      DependencySet(HartToExec, &(Pipeline.back().second));
-      // -- END new pipelining implementation
-
-      #ifndef NO_REV_TRACER
-      // Tracer context
-      mem->SetTracer(Tracer);
-      RegFile->SetTracer(Tracer);
-      #endif
-
-      // execute the instruction
-      if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec, RegFile) ){
-        output->fatal(CALL_INFO, -1,
-                      "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
-      }
-
-      #ifndef NO_REV_TRACER
-      // Clear memory tracer so we don't pick up instruction fetches and other access.
-      // TODO: method to determine origin of memory access (core, cache, pan, host debugger, ... )
-      mem->SetTracer(nullptr);
-      // Conditionally trace after execution
-      if (Tracer) Tracer->InstTrace(currentCycle, id, HartToExec, GetActiveThreadID(), InstTable[Inst.entry].mnemonic);
-      #endif
-
-#ifdef __REV_DEEP_TRACE__
-      if(feature->IsRV32()){
-        std::cout << "RDT: Executed PC = " << std::hex << ExecPC
-                  << " Inst: " << std::setw(23)
-                  << InstTable[Inst.entry].mnemonic
-                  << " r" << std::dec << (uint32_t)Inst.rd  << "= "
-                  << std::hex << RegFile->RV32[Inst.rd]
-                  << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
-                  << std::hex << RegFile->RV32[Inst.rs1]
-                  << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
-                  << std::hex << RegFile->RV32[Inst.rs2]
-                  << " imm = " << std::hex << Inst.imm
-                  << std::endl;
-
-      }else{
-        std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
-                  << " Inst: " << std::setw(23)
-                  << InstTable[Inst.entry].mnemonic
-                  << " r" << std::dec << (uint32_t)Inst.rd  << "= "
-                  << std::hex << RegFile->RV64[Inst.rd]
-                  << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
-                  << std::hex << RegFile->RV64[Inst.rs1]
-                  << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
-                  << std::hex << RegFile->RV64[Inst.rs2]
-                  << " imm = " << std::hex << Inst.imm
-                  << std::endl;
-        std::cout << "RDT: Address of RD = 0x" << std::hex
-                  << (uint64_t *)(&RegFile->RV64[Inst.rd])
-                  << std::dec << std::endl;
-      }
-#endif
-
-      /*
-       * Exception Handling
-       * - Currently this is only for ecall
-       */
-      if( (RegFile->RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ||
-          (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
-        // Ecall found
-        output->verbose(CALL_INFO, 6, 0,
-                        "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 " - Exception Raised: ECALL with code = %" PRIu64 "\n",
-                        id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(RevReg::a7));
-#ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-        //                  << cRegFile->RV64[17] << std::endl;
-#endif
-
-        /* Execute system call on this RevProc */
-        ExecEcall(Pipeline.back().second); //ExecEcall will also set the exception cause registers
-
-#ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-        //        << rc << std::endl;
-#endif
-
-        // } else {
-        //   ExecEcall();
-#ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
-        //                  << code << std::endl;
-#endif
-
-#ifdef _REV_DEBUG_
-        //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
-        //                  << rc << std::endl;
-#endif
-        // }
-      }
-
-      // inject the ALU fault
-      if( ALUFault ){
-        // inject ALU fault
-        RevExt *Ext = Extensions[EToE.first].get();
-        if( (Ext->GetName() == "RV64F") ||
-            (Ext->GetName() == "RV64D") ){
-          // write an rv64 float rd
-          uint64_t tmp;
-          static_assert(sizeof(tmp) == sizeof(RegFile->DPF[Inst.rd]));
-          memcpy(&tmp, &RegFile->DPF[Inst.rd], sizeof(tmp));
-          tmp |= RevRand(0, ~(~uint64_t{0} << fault_width));
-          memcpy(&RegFile->DPF[Inst.rd], &tmp, sizeof(tmp));
-        }else if( (Ext->GetName() == "RV32F") ||
-                  (Ext->GetName() == "RV32D") ){
-          // write an rv32 float rd
-          uint32_t tmp;
-          static_assert(sizeof(tmp) == sizeof(RegFile->SPF[Inst.rd]));
-          memcpy(&tmp, &RegFile->SPF[Inst.rd], sizeof(tmp));
-          tmp |= RevRand(0, ~(uint32_t{0} << fault_width));
-          memcpy(&RegFile->SPF[Inst.rd], &tmp, sizeof(tmp));
-        }else{
-          // write an X register
-          uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
-          RegFile->SetX(Inst.rd, rval | RegFile->GetX<uint64_t>(Inst.rd));
-        }
-
-        // clear the fault
-        ALUFault = false;
-      }
+    // Find the instruction extension
+    auto it = EntryToExt.find(RegFile->GetEntry());
+    if( it == EntryToExt.end() ){
+      // failed to find the extension
+      output->fatal(CALL_INFO, -1,
+                    "Error: failed to find the instruction extension at PC=%" PRIx64 ".", ExecPC );
     }
 
+    // found the instruction extension
+    std::pair<unsigned, unsigned> EToE = it->second;
+    RevExt *Ext = Extensions[EToE.first].get();
+
+    // -- BEGIN new pipelining implementation
+    Pipeline.push_back(std::make_pair(HartToExec, Inst));
+
+    if( (Ext->GetName() == "RV32F") ||
+        (Ext->GetName() == "RV32D") ||
+        (Ext->GetName() == "RV64F") ||
+        (Ext->GetName() == "RV64D") ){
+      Stats.floatsExec++;
+    }
+
+    // set the hazarding
+    DependencySet(HartToExec, &(Pipeline.back().second));
+    // -- END new pipelining implementation
+
+    #ifndef NO_REV_TRACER
+    // Tracer context
+    mem->SetTracer(Tracer);
+    RegFile->SetTracer(Tracer);
+    #endif
+
+    // execute the instruction
+    if( !Ext->Execute(EToE.second, Pipeline.back().second, HartToExec, RegFile) ){
+      output->fatal(CALL_INFO, -1,
+                    "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
+    }
+
+    #ifndef NO_REV_TRACER
+    // Clear memory tracer so we don't pick up instruction fetches and other access.
+    // TODO: method to determine origin of memory access (core, cache, pan, host debugger, ... )
+    mem->SetTracer(nullptr);
+    // Conditionally trace after execution
+    if (Tracer) Tracer->InstTrace(currentCycle, id, HartToExec, GetActiveThreadID(), InstTable[Inst.entry].mnemonic);
+    #endif
+
+#ifdef __REV_DEEP_TRACE__
+    if(feature->IsRV32()){
+      std::cout << "RDT: Executed PC = " << std::hex << ExecPC
+                << " Inst: " << std::setw(23)
+                << InstTable[Inst.entry].mnemonic
+                << " r" << std::dec << (uint32_t)Inst.rd  << "= "
+                << std::hex << RegFile->RV32[Inst.rd]
+                << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
+                << std::hex << RegFile->RV32[Inst.rs1]
+                << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
+                << std::hex << RegFile->RV32[Inst.rs2]
+                << " imm = " << std::hex << Inst.imm
+                << std::endl;
+
+    }else{
+      std::cout << "RDT: Executed PC = " << std::hex << ExecPC \
+                << " Inst: " << std::setw(23)
+                << InstTable[Inst.entry].mnemonic
+                << " r" << std::dec << (uint32_t)Inst.rd  << "= "
+                << std::hex << RegFile->RV64[Inst.rd]
+                << " r" << std::dec << (uint32_t)Inst.rs1 << "= "
+                << std::hex << RegFile->RV64[Inst.rs1]
+                << " r" << std::dec << (uint32_t)Inst.rs2 << "= "
+                << std::hex << RegFile->RV64[Inst.rs2]
+                << " imm = " << std::hex << Inst.imm
+                << std::endl;
+      std::cout << "RDT: Address of RD = 0x" << std::hex
+                << (uint64_t *)(&RegFile->RV64[Inst.rd])
+                << std::dec << std::endl;
+    }
+#endif
+
+    /*
+      * Exception Handling
+      * - Currently this is only for ecall
+      */
+    if( (RegFile->RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ||
+        (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
+      // Ecall found
+      output->verbose(CALL_INFO, 6, 0,
+                      "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 " - Exception Raised: ECALL with code = %" PRIu64 "\n",
+                      id, HartToExec, GetActiveThreadID(), RegFile->GetX<uint64_t>(RevReg::a7));
+#ifdef _REV_DEBUG_
+      //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+      //                  << cRegFile->RV64[17] << std::endl;
+#endif
+
+      /* Execute system call on this RevProc */
+      ExecEcall(Pipeline.back().second); //ExecEcall will also set the exception cause registers
+
+#ifdef _REV_DEBUG_
+      //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+      //        << rc << std::endl;
+#endif
+
+      // } else {
+      //   ExecEcall();
+#ifdef _REV_DEBUG_
+      //        std::cout << "Hart "<< HartToExec << " found ecall with code: "
+      //                  << code << std::endl;
+#endif
+
+#ifdef _REV_DEBUG_
+      //        std::cout << "Hart "<< HartToExec << " returned from ecall with code: "
+      //                  << rc << std::endl;
+#endif
+      // }
+    }
+
+    // inject the ALU fault
+    if( ALUFault ){
+      // inject ALU fault
+      RevExt *Ext = Extensions[EToE.first].get();
+      if( (Ext->GetName() == "RV64F") ||
+          (Ext->GetName() == "RV64D") ){
+        // write an rv64 float rd
+        uint64_t tmp;
+        static_assert(sizeof(tmp) == sizeof(RegFile->DPF[Inst.rd]));
+        memcpy(&tmp, &RegFile->DPF[Inst.rd], sizeof(tmp));
+        tmp |= RevRand(0, ~(~uint64_t{0} << fault_width));
+        memcpy(&RegFile->DPF[Inst.rd], &tmp, sizeof(tmp));
+      }else if( (Ext->GetName() == "RV32F") ||
+                (Ext->GetName() == "RV32D") ){
+        // write an rv32 float rd
+        uint32_t tmp;
+        static_assert(sizeof(tmp) == sizeof(RegFile->SPF[Inst.rd]));
+        memcpy(&tmp, &RegFile->SPF[Inst.rd], sizeof(tmp));
+        tmp |= RevRand(0, ~(uint32_t{0} << fault_width));
+        memcpy(&RegFile->SPF[Inst.rd], &tmp, sizeof(tmp));
+      }else{
+        // write an X register
+        uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
+        RegFile->SetX(Inst.rd, rval | RegFile->GetX<uint64_t>(Inst.rd));
+      }
+
+      // clear the fault
+      ALUFault = false;
+    }
     // if this is a singlestep, clear the singlestep and halt
     if( SingleStep ){
       SingleStep = false;
@@ -1918,49 +1911,16 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Pipeline.front().second.cost++;
     }
   }
-
-  // Check for completion states and new tasks
-  if( (GetPC() == _PAN_FWARE_JUMP_) || (GetPC() == 0x00ull) ){
+  if( GetPC() == 0x00ull ){
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
-    // bool done = true;
-    if( GetPC() == _PAN_FWARE_JUMP_ ){
-      if( PExec != nullptr){
-        uint64_t Addr = 0x00ull;
-        unsigned Idx = 0;
-        PanExec::PanStatus Status = PExec->GetNextEntry(&Addr, &Idx);
-        switch( Status ){
-        case PanExec::QExec:
-          output->verbose(CALL_INFO, 5, 0,
-                          "Core %" PRIu32 " ; PAN Exec Jumping to PC= 0x%" PRIx64 "\n",
-                          id, Addr);
-          SetPC(Addr);
-          // done = false;
-          break;
-        case PanExec::QNull:
-          // no work to do; spin on the firmware jump PC
-          output->verbose(CALL_INFO, 6, 0,
-                          "Core %" PRIu32 " ; No PAN work to do; Jumping to PC= 0x%" PRIx64 "\n",
-                          id, ExecPC);
-          // done = false;
-          SetPC(_PAN_FWARE_JUMP_);
-          break;
-        case PanExec::QValid:
-        case PanExec::QError:
-          // done = true;
-        default:
-          break;
-        }
-      }
-    }else if( GetPC() == 0x00ull ) {
-      auto& Thread = GetThreadOnHart(HartToDecode);
-      if( !ThreadHasDependencies(Thread->GetThreadID()) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
-        Thread->SetState(ThreadState::DONE);
-        HART_CTE[HartToDecode] = false;
-        HART_CTS[HartToDecode] = false;
-        ThreadsThatChangedState.emplace(Thread);
-      }
+    auto& Thread = GetThreadOnHart(HartToDecode);
+    if( !ThreadHasDependencies(Thread->GetThreadID()) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
+      Thread->SetState(ThreadState::DONE);
+      HART_CTE[HartToDecode] = false;
+      HART_CTS[HartToDecode] = false;
+      ThreadsThatChangedState.emplace(Thread);
     }
 
     if( HartToExec != _REV_INVALID_HART_ID_ && HartHasThread(HartToExec) && !ThreadHasDependencies(GetActiveThreadID()) \
