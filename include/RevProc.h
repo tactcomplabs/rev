@@ -127,24 +127,19 @@ public:
 
   RevMem& GetMem() const { return *mem; }
 
-  // Called by RevCPU to handle the state changes threads may have happened during this Proc's ClockTick
-  //std::queue<std::unique_ptr<RevThread>> TransferThreadsThatChangedState() { return std::move(ThreadsThatChangedState); }
+  ///< RevProc: Called by RevCPU to handle the state changes threads may have happened during this Proc's ClockTick
   std::queue<std::unique_ptr<RevThread>> TransferThreadsThatChangedState() {
     auto temp = std::move(ThreadsThatChangedState);
-    ThreadsThatChangedState = std::queue<std::unique_ptr<RevThread>>(); // reset to an empty queue
+    ThreadsThatChangedState = {}; // reset to an empty queue
     return temp;
 }
 
-  //std::queue<std::unique_ptr<RevThread>> TransferThreadsThatChangedState() { return std::move(ThreadsThatChangedState); }
-  //const std::queue<std::unique_ptr<RevThread>>& GetThreadsThatChangedState() const { return ThreadsThatChangedState; }
-
-  /// RevProc: SpawnThread creates a new thread and returns its ThreadID
+  ///< RevProc: SpawnThread creates a new thread and returns its ThreadID
   void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
 
-  /// RevProc: Returns the current HartToExecID active pid
+  ///< RevProc: Returns the current HartToExecID active pid
   uint32_t GetActiveThreadID(){ return Harts.at(HartToDecodeID)->GetAssignedThreadID(); }
 
-  // Checks if this thread has any reason it cannot be removed by RevCPU (ie. Dependencies / outstanding loads)
   ///< RevProc: Get this Proc's feature
   RevFeature* GetRevFeature() const { return feature; }
 
@@ -157,7 +152,7 @@ public:
   ///< RevProc: Add a co-processor to the RevProc
   void SetCoProc(RevCoProc* coproc);
 
-//--------------- External Interface for use with Co-Processor -------------------------
+  //--------------- External Interface for use with Co-Processor -------------------------
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
   ///  RevProc

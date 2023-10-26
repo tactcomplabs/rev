@@ -29,7 +29,7 @@ class RevHart{
   std::unique_ptr<RevThread> Thread = nullptr;
   std::unique_ptr<RevRegFile> RegFile = nullptr;
 
-  ///< RevHart: Make this a friend of RevThread
+  ///< RevHart: Make RevProc a friend of this
   friend class RevProc;
 
 public:
