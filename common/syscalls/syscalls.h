@@ -8,6 +8,9 @@
 // See LICENSE in the top level directory for licensing details
 //
 //
+#ifndef _SYSCALLS_H_
+#define _SYSCALLS_H_
+
 
 #include <stdint.h>
 #include <stddef.h>
@@ -3808,3 +3811,5 @@ int rev_pthread_join( rev_pthread_t thread ){
   return rc;
 }
 #endif //SYSCALL_TYPES_ONLY
+
+#endif
