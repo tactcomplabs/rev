@@ -661,15 +661,17 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 // Initializes a RevThread object.
 // - Moves it to the 'Threads' map
 // - Adds it's ThreadID to the ReadyThreads to be scheduled
-void RevCPU::InitThread(std::unique_ptr<RevThread> ThreadToInit){
-  // @Lee, can this be a reference? I'm not looking to transfer ownership of the regfile pointer
+void RevCPU::InitThread(std::unique_ptr<RevThread>&& ThreadToInit){
+  // Get a pointer to the register state for this thread
   std::unique_ptr<RevRegFile> RegState = ThreadToInit->TransferVirtRegState();
+  // Set the global pointer register and the frame pointer register
   auto gp = Loader->GetSymbolAddr("__global_pointer$");
   RegState->SetX(RevReg::gp, gp);
-  RegState->SetX(RevReg::s0, gp); // This can be used as the fp reg per ABI
+  RegState->SetX(RevReg::s0, gp); // s0 = x8 = frame pointer register
+  // Set state to Ready
+  ThreadToInit->SetState(ThreadState::READY);
   output.verbose(CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", ThreadToInit->GetID());
   output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->to_string().c_str());
-  ThreadToInit->SetState(ThreadState::READY);
   ReadyThreads.emplace_back(std::move(ThreadToInit));
 }
 
@@ -683,7 +685,7 @@ void RevCPU::AssignThread(std::unique_ptr<RevThread> ThreadToAssign, unsigned Pr
 
 // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
 // it does this by seeing if a given thread's WaitingOnTID has completed
-bool RevCPU::ThreadCanProceed(std::unique_ptr<RevThread>& Thread){
+bool RevCPU::ThreadCanProceed(const std::unique_ptr<RevThread>& Thread){
   bool rtn = false;
 
   // Get the thread's waiting to join TID
@@ -729,7 +731,7 @@ void RevCPU::CheckBlockedThreads(){
 // of the ARGV base pointer in memory which is currently set to the
 // program header region.  When we come out of reset, this is StackTop+60 bytes
 // ----------------------------------
-void RevCPU::SetupArgs(std::unique_ptr<RevRegFile>& RegFile){
+void RevCPU::SetupArgs(const std::unique_ptr<RevRegFile>& RegFile){
   auto Argv = Opts->GetArgv();
   // setup argc
   RegFile->SetX(RevReg::a0, Argv.size());
@@ -750,15 +752,13 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
   if( Procs[ProcID]->HasIdleHart() ){
     // There is room, assign a thread
     // Get the next thread to assign
-    // TODO: Verify this is the correct way to transfer a unique_ptr
-    // Assign the thread
     Procs[ProcID]->AssignThread(std::move(ReadyThreads.front()));
 
     // Remove thread from ready threads vector
     ReadyThreads.erase(ReadyThreads.begin());
 
-    // If this Proc was previously disabled, enable it
-    if( !Enabled[ProcID] ){ Enabled[ProcID] = true; }
+    // Proc has a thread assigned to it, enable it
+     Enabled[ProcID] = true;
   }
   return;
 }
@@ -817,7 +817,7 @@ void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
       break;
     }
     // If the Proc does not have any threads assigned to it, there is no work to do, it is disabled
-    if( Procs[ProcID]->HasNoBusyHarts() ){
+    if( Procs[ProcID]->HasNoWork() ){
       Enabled[ProcID] = false;
     }
     // Remove the pointer to the thread as it was handled

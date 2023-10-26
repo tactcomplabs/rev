@@ -75,14 +75,14 @@ public:
 
   // @DAVE: Potentially move these to RevHart and have them set it when it's assigned?
   // Arguments could be made to keep it here or put it there
-  void SetLSQueue(std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq){
+  void SetLSQueue(const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& lsq){
     VirtRegState->SetLSQueue(lsq);
   }
 
   // @DAVE: Potentially move these to RevHart and have them set it when it's assigned?
   // Arguments could be made to keep it here or put it there
   void SetMarkLoadComplete(std::function<void(const MemReq&)> func){
-    VirtRegState->SetMarkLoadComplete(func);
+    VirtRegState->SetMarkLoadComplete(std::move(func));
   }
 
   ///< RevThread: Get the fildes valid for this thread

@@ -190,9 +190,12 @@ public:
   unsigned FindIdleHartID() const ;
 
   ///< RevProc: Returns true if all harts are available (ie. There is nothing executing on this Proc)
-  /// @DAVE: Can you confirm that using this function to determine if a Proc can be disabled (called in RevCPU)
-  ///        will work with the CoProc?
-  size_t HasNoBusyHarts() const { return IdleHarts == ValidHarts; }
+  bool HasNoBusyHarts() const { return IdleHarts == ValidHarts; }
+
+  ///< RevProc: Used by RevCPU to determine if it can disable this proc
+  ///           based on the criteria there are no threads assigned to it and the
+  ///           CoProc is done
+  bool HasNoWork() const { return HasNoBusyHarts() && (!coProc || coProc->IsDone()); }
 
   ///< RevProc: Returns true if there are any IdleHarts
   bool HasIdleHart() const { return IdleHarts.any(); }

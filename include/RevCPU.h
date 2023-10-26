@@ -220,7 +220,7 @@ private:
 
   // Initializes a RevThread object.
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
-  void InitThread(std::unique_ptr<RevThread> ThreadToInit);
+  void InitThread(std::unique_ptr<RevThread>&& ThreadToInit);
 
   // Initializes the main thread
   void InitMainThread(uint32_t MainThreadID, uint64_t StartAddr);
@@ -230,7 +230,7 @@ private:
   void AssignThread(std::unique_ptr<RevThread> ThreadToAssign, uint32_t ProcID);
 
   // Sets up arguments for a thread with a given ID and feature set.
-  void SetupArgs(std::unique_ptr<RevRegFile>& RegFile);
+  void SetupArgs(const std::unique_ptr<RevRegFile>& RegFile);
 
   // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();
@@ -246,7 +246,7 @@ private:
 
   // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
   // it does this by seeing if a given thread's WaitingOnTID has completed
-  bool ThreadCanProceed(std::unique_ptr<RevThread>& Thread);
+  bool ThreadCanProceed(const std::unique_ptr<RevThread>& Thread);
 
   // vector of Threads which are ready to be scheduled
   std::vector<std::unique_ptr<RevThread>> ReadyThreads = {};
