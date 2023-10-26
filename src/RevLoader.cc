@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevLoader.h"
+#include "RevLoader.h"
 #include "RevMem.h"
 
 using namespace SST::RevCPU;

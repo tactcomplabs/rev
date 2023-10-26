@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevMemCtrl.h"
-#include "../include/RevInstTable.h"
+#include "RevMemCtrl.h"
+#include "RevInstTable.h"
 
 using namespace SST;
 using namespace SST::RevCPU;
