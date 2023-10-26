@@ -14,7 +14,6 @@
 #include <string>
 
 #include "RevTracer.h"
-#include "RevTracer.h"
 
 using namespace SST::RevCPU;
 
