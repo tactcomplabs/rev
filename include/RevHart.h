@@ -25,6 +25,12 @@ class RevHart{
   ///< RevHart: State management object when a Hart is executing a system call
   EcallState Ecall{};
 
+  ///< RevHart: Pointer to the Proc's LSQueue
+  const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& LSQueue;
+
+  ///< RevHart: Pointer to the Proc's MarkLoadCompleteFunc
+  std::function<void(const MemReq&)> MarkLoadCompleteFunc;
+
   ///< RevHart: Thread currently executing on this Hart
   std::unique_ptr<RevThread> Thread = nullptr;
   std::unique_ptr<RevRegFile> RegFile = nullptr;
@@ -34,9 +40,10 @@ class RevHart{
 
 public:
   ///< RevHart: Constructor
-  RevHart(uint16_t id) : ID(id) { }
+  RevHart(unsigned ID, const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& LSQueue,
+          std::function<void(const MemReq&)> MarkLoadCompleteFunc)
+    : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(MarkLoadCompleteFunc) {}
 
-  typedef std::unique_ptr<RevHart> ptr;
 
   ///< RevHart: Destructor
   ~RevHart() = default;
@@ -54,6 +61,8 @@ public:
   ///< RevHart: Load the register file from the RevThread
   void LoadRegFile(std::unique_ptr<RevRegFile> regFile){
     RegFile = std::move(regFile);
+    RegFile->SetMarkLoadComplete(MarkLoadCompleteFunc);
+    RegFile->SetLSQueue(LSQueue);
   }
 
   ///< RevHart: Assigns a RevThread to this Hart

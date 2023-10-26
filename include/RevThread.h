@@ -73,18 +73,6 @@ public:
   ///< See if file descriptor exists/is owned by this thread
   bool FindFD(int fd){ return fildes.count(fd); }
 
-  // @DAVE: Potentially move these to RevHart and have them set it when it's assigned?
-  // Arguments could be made to keep it here or put it there
-  void SetLSQueue(const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& lsq){
-    VirtRegState->SetLSQueue(lsq);
-  }
-
-  // @DAVE: Potentially move these to RevHart and have them set it when it's assigned?
-  // Arguments could be made to keep it here or put it there
-  void SetMarkLoadComplete(std::function<void(const MemReq&)> func){
-    VirtRegState->SetMarkLoadComplete(std::move(func));
-  }
-
   ///< RevThread: Get the fildes valid for this thread
   const std::unordered_set<int>& GetFildes(){ return fildes; }
 

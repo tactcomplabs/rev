@@ -698,7 +698,7 @@ bool RevCPU::ThreadCanProceed(const std::unique_ptr<RevThread>& Thread){
   // If the thread is waiting on another thread, check if that thread has completed
   if( WaitingOnTID != _INVALID_TID_ ){
     // Check if WaitingOnTID has completed... if so, return = true, else return false
-    output.verbose(CALL_INFO, 4, 0, "Thread %" PRIu32 " is waiting on Thread %u\n", Thread->GetID(), WaitingOnTID);
+    output.verbose(CALL_INFO, 6, 0, "Thread %" PRIu32 " is waiting on Thread %u\n", Thread->GetID(), WaitingOnTID);
 
     // Check if the WaitingOnTID has completed, if not, thread cannot proceed
     rtn = ( CompletedThreads.find(WaitingOnTID) != CompletedThreads.end() ) ? true : false;
@@ -772,7 +772,7 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
 void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
   // Handle any thread state changes for this core
   // NOTE: At this point we handle EVERY thread that changed state every cycle
-  std::queue<std::unique_ptr<RevThread>> ThreadsThatChangedState = Procs[ProcID]->TransferThreadsThatChangedState();
+  auto ThreadsThatChangedState = Procs[ProcID]->TransferThreadsThatChangedState();
   while( !ThreadsThatChangedState.empty() ){
     std::unique_ptr<RevThread> Thread = std::move(ThreadsThatChangedState.front());
     uint32_t ThreadID = Thread->GetID();

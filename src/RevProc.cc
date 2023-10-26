@@ -40,14 +40,15 @@ RevProc::RevProc( unsigned Id,
 
   Opts->GetMemCost(Id, MinCost, MaxCost);
 
-  // Create the Hart Objects
-  for( size_t i=0; i<numHarts; i++ ){
-    Harts.emplace_back(std::make_unique<RevHart>(i));
-    ValidHarts.set(i, true);
-  }
 
   LSQueue = std::make_shared<std::unordered_map<uint64_t, MemReq>>();
   LSQueue->clear();
+
+  // Create the Hart Objects
+  for( size_t i=0; i<numHarts; i++ ){
+    Harts.emplace_back(std::make_unique<RevHart>(i, LSQueue, [=](const MemReq& req){ this->MarkLoadComplete(req); }));
+    ValidHarts.set(i, true);
+  }
 
   featureUP = std::make_unique<RevFeature>(Machine, output, MinCost, MaxCost, Id);
   feature = featureUP.get();
@@ -2361,11 +2362,6 @@ void RevProc::ExecEcall(RevInst& inst){
 // so if for some reason we can't find a hart without a thread assigned
 // to it then we have a bug.
 void RevProc::AssignThread(std::unique_ptr<RevThread> Thread){
-  // Point the regfile of this thread's LSQ to this Proc's LSQ
-  Thread->SetLSQueue( LSQueue );
-  // Point thread's regfile to this proc's MarkLoadComplete
-  Thread->SetMarkLoadComplete([proc = this](const MemReq& req){ proc->MarkLoadComplete(req); });
-
   unsigned HartToAssign = FindIdleHartID();
 
   if( HartToAssign == _REV_INVALID_HART_ID_ ){
