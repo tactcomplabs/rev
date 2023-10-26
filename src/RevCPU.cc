@@ -681,7 +681,7 @@ void RevCPU::InitThread(std::unique_ptr<RevThread>&& ThreadToInit){
 
 // Assigns a RevThred to a specific Proc which then loads it into a RevHart
 // This should not be called without first checking if the Proc has an IdleHart
-void RevCPU::AssignThread(std::unique_ptr<RevThread> ThreadToAssign, unsigned ProcID){
+void RevCPU::AssignThread(std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID){
   output.verbose(CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetID(), ProcID);
   Procs[ProcID]->AssignThread(std::move(ThreadToAssign));
   return;

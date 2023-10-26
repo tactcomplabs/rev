@@ -227,7 +227,7 @@ private:
 
   // Adds Thread with ThreadID to AssignedThreads vector for ProcID
   // - Handles updating LSQueue & MarkLoadComplete function pointers
-  void AssignThread(std::unique_ptr<RevThread> ThreadToAssign, uint32_t ProcID);
+  void AssignThread(std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID);
 
   // Sets up arguments for a thread with a given ID and feature set.
   void SetupArgs(const std::unique_ptr<RevRegFile>& RegFile);
