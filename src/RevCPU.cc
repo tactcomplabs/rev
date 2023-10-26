@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevCPU.h"
+#include "RevCPU.h"
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
@@ -225,6 +225,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     }
   }
   #endif
+  // Setup timeConverter
+  for( size_t i=0; i<Procs.size(); i++){
+    Procs[i]->SetTimeConverter(timeConverter);
+  }
 
   // Initial thread setup
   uint32_t MainThreadID = id+1; // Prevents having MainThreadID == 0 which is reserved for INVALID

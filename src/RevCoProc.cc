@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevCoProc.h"
+#include "RevCoProc.h"
 
 using namespace SST;
 using namespace RevCPU;

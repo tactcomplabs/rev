@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevPrefetcher.h"
+#include "RevPrefetcher.h"
 using namespace SST::RevCPU;
 
 /*RevPrefetcher::~RevPrefetcher(){

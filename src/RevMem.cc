@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevMem.h"
-#include "../include/RevRand.h"
+#include "RevMem.h"
+#include "RevRand.h"
 #include <cstring>
 #include <cmath>
 #include <utility>

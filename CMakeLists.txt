@@ -1,90 +1,58 @@
 # RevCPU Top-Level CMake
-#
-# Copyright (C) 2017-2022 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
-#
 # See LICENSE in the top level directory for licensing details
-#
 
+# Prevent in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "DO NOT BUILD in-tree.")
 endif()
 
+# Minimum required version of CMake and project information
 cmake_minimum_required(VERSION 3.19)
 project(revcpu CXX)
 
-
-#---------------------------------------------------------------------------
-#-- CMAKE ARGS
-#---------------------------------------------------------------------------
-# Tests requiring blas headers - Default: OFF
+# Options for enabling tests
 option(CTEST_BLAS_REQUIRED_TESTS "Enable tests which require BLAS headers" OFF)
-# Tests requiring 32-bit enabled compiler - Default: ON
 option(CTEST_MULTILIB_TESTS "Enable 32-bit tests" ON)
 
-
-
-#---------------------------------------------------------------------------
-#-- SETUP PATHS - This will be relevant as soon as SST supports sane CMake
-#---------------------------------------------------------------------------
-# Setup the path to the SST installation directory
-#set(SST_INSTALL_DIR "" CACHE PATH "SST installation directory")
+# SST Setup
+# TODO: Update when SST supports coherent CMake support
 execute_process(COMMAND sst-config --prefix
                 OUTPUT_VARIABLE SST_INSTALL_DIR
                 OUTPUT_STRIP_TRAILING_WHITESPACE
-                )
+)
 set(SST_INCLUDE_DIR "${SST_INSTALL_DIR}/include")
 if(NOT (EXISTS "${SST_INSTALL_DIR}"))
   message(FATAL_ERROR " SST_INSTALL_DIR (${SST_INSTALL_DIR}) is invalid.")
 endif()
-
 include_directories(SST_SRC ${SST_INSTALL_DIR})
-# find_package(SST REQUIRED CONFIG) # NOTE: Pipe dream for when SST has coherent CMake support
 
-#------------------------------------------------------------------------
-#-- LOAD THE CONFIGURATION
-#------------------------------------------------------------------------
-# Sanity check the path
+# SST Configuration Sanity Check
 find_program(SST sst)
-if(NOT SST)
-  message(FATAL_ERROR "No sst binary found in path")
-endif()
-
 find_program(SST_CONFIG sst-config)
-if(NOT SST_CONFIG)
-  message(FATAL_ERROR "No sst-config binary found in path")
+if(NOT SST OR NOT SST_CONFIG)
+  message(FATAL_ERROR "No SST binary or sst-config binary found in path")
 endif()
 
-set(REV_BASE "${CMAKE_CURRENT_SOURCE_DIR}")
-set(ENV{REV_BASE} "${REV_BASE}")
-message(STATUS "REV_BASE set to ${REV_BASE}")
-
-#------------------------------------------------------------------------
-#-- DERIVE SST ENV
-#------------------------------------------------------------------------
+# SST Environment Derivation
 execute_process(COMMAND sst-config --CXX
                 OUTPUT_VARIABLE CXX
                 OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-message (CXX="${CXX}")
 execute_process(COMMAND sst-config --ELEMENT_CXXFLAGS
-  OUTPUT_VARIABLE SST_CXXFLAGS
-  OUTPUT_STRIP_TRAILING_WHITESPACE
+                OUTPUT_VARIABLE SST_CXXFLAGS
+                OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 set(CXXFLAGS "${SST_CXXFLAGS}  -fno-stack-protector")
-message (CXXFLAGS="${CXXFLAGS}")
-
 execute_process(COMMAND sst-config --ELEMENT_LDFLAGS
-  OUTPUT_VARIABLE SST_LDFLAGS
-  OUTPUT_STRIP_TRAILING_WHITESPACE
+                OUTPUT_VARIABLE SST_LDFLAGS
+                OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 set(LDFLAGS "${SST_LDFLAGS}  -fno-stack-protector")
-message (LDFLAGS="${LDFLAGS}")
 
-#------------------------------------------------------------------------
-#-- DISASM
-#------------------------------------------------------------------------
+# Tracer Configuration
 option(REV_TRACER "Enable tracer compilation" ON)
 message (REV_TRACER="${REV_TRACER}")
 if(REV_TRACER)
@@ -99,13 +67,11 @@ if(REV_TRACER)
     add_compile_definitions("REV_USE_SPIKE")
   endif()
 else()
-   # requires cmake 3.12
+  # requires cmake 3.12
   add_compile_definitions(NO_REV_TRACER)
 endif()
 
-#------------------------------------------------------------------------
-#-- COMPILER OPTIONS
-#------------------------------------------------------------------------
+# Compiler Options
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set(WERROR_FLAG "")
   set(FP_MODE_FLAG "-ffp-model=strict")
@@ -118,13 +84,9 @@ set(CMAKE_CXX_FLAGS "-std=c++17 ${FP_MODE_FLAG} -O2 -Wall -Wextra ${WERROR_FLAG}
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
 
-#------------------------------------------------------------------------
-#-- FIND PACKAGES
-#------------------------------------------------------------------------
 # Find SST packages
 find_package(SST REQUIRED CONFIG)
 message(STATUS "Found SST execute_process(COMMAND sst --version)")
-# message(STATUS "Using SSTConfig.cmake in: ${SST_DIR}")
 include_directories(${SST_INCLUDE_DIRS})
 add_definitions(${SST_DEFINITIONS})
 
@@ -147,46 +109,32 @@ if(BUILD_DOCUMENTATION)
     VERBATIM)
 
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/html DESTINATION share/doc)
-  # install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/man DESTINATION share/man) # NOTE: No
-
-
-
 
 endif()
-  # find_package(DOXYGEN Doxygen)
-# option(BUILD_DOCUMENTATION "Create and install the doxygen-ized API documentation (requires Doxygen)" ${DOXYGEN_FOUND})
 
-
-#------------------------------------------------------------------------
-#-- REVCPU PATHS
-#------------------------------------------------------------------------
-# RevCPU include path
-if(NOT REVCPU_INCLUDE_PATH)
-  set(REVCPU_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
-  message(STATUS "REVCPU_INCLUDE_PATH set to ${REVCPU_INCLUDE_PATH}")
+# Testing
+option(REV_ENABLE_TESTING "Enable Testing" ON)
+if(REV_ENABLE_TESTING)
+  enable_testing()
 endif()
 
-# RevCPU instructions path
-if(NOT INSTRUCTIONS_PATH)
-  set(INSTRUCTIONS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include/insns")
-  message(STATUS "INSTRUCTIONS_PATH set to ${INSTRUCTIONS_PATH}")
-endif()
+# RevCPU Paths
+set(REVCPU_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include" CACHE PATH "RevCPU include path")
+set(INSTRUCTIONS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include/insns" CACHE PATH "Instructions path")
 
-#------------------------------------------------------------------------
-#-- TESTING
-#------------------------------------------------------------------------
-# Enable Testing
-option(REV_ENABLE_TESTING "Enable Testing")
-enable_testing()
+# Include Directories
+include_directories(
+    ${REVCPU_INCLUDE_PATH}
+    ${CMAKE_SOURCE_DIR}/common/include
+    ${SST_INCLUDE_DIRS}
+)
 
-
+# Subdirectories
 add_subdirectory(src)
-add_subdirectory(include)
+add_subdirectory(common)
 add_subdirectory(test)
 
-#------------------------------------------------------------------------
-#-- CUSTOM COMMANDS
-#------------------------------------------------------------------------
+# Custom Commands
 add_custom_target(uninstall COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/uninstall.sh")
 
 # EOF
