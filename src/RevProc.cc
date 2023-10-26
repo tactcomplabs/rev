@@ -2323,8 +2323,8 @@ void RevProc::InitEcallTable(){
     { 439, &RevProc::ECALL_faccessat2},             //  rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
     { 440, &RevProc::ECALL_process_madvise},        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
     { 500, &RevProc::ECALL_cpuinfo},                //  rev_cpuinfo(struct cpuinfo *info)
-    { 1000, &RevProc::ECALL_pthread_create},        //
-    { 1001, &RevProc::ECALL_pthread_join},          //
+    { 1000, &RevProc::ECALL_pthread_create},        //  rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ){
+    { 1001, &RevProc::ECALL_pthread_join},          //  rev_pthread_join( rev_pthread_t thread )
   };
 }
 
@@ -2339,8 +2339,6 @@ void RevProc::ExecEcall(RevInst& inst){
   auto EcallCode =Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(RevReg::a7);
   auto it = Ecalls.find(EcallCode);
   if( it != Ecalls.end() ){
-    // TODO: Eventually set EcallState once in here (and Hart)
-    // call the function
     EcallStatus status = it->second(this, inst);
 
     // Trap handled... 0 cause registers
