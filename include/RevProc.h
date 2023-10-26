@@ -198,7 +198,7 @@ public:
   ///< RevProc: Used by RevCPU to determine if it can disable this proc
   ///           based on the criteria there are no threads assigned to it and the
   ///           CoProc is done
-  bool HasNoWork() const { return HasNoBusyHarts() && (!coProc || coProc->IsDone()); }
+  bool HasNoWork() const;
 
   ///< RevProc: Returns true if there are any IdleHarts
   bool HasIdleHart() const { return IdleHarts.any(); }

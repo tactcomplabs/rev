@@ -2430,6 +2430,11 @@ void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
   ALUFault = false;
 }
 
+///< RevProc: Used by RevCPU to determine if it can disable this proc
+///           based on the criteria there are no threads assigned to it and the
+///           CoProc is done
+bool RevProc::HasNoWork() const { return HasNoBusyHarts() && (!coProc || coProc->IsDone()); }
+
 
 void RevProc::UpdateStatusOfHarts(){
   // A Hart is ClearToDecode if:
