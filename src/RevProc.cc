@@ -1907,7 +1907,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       HartsClearToExecute[HartToDecodeID] = false;
       HartsClearToDecode[HartToDecodeID] = false;
       IdleHarts.set(HartToDecodeID);
-      ThreadsThatChangedState.emplace(std::move(ActiveThread));
+      AddThreadsThatChangedState(std::move(ActiveThread));
     }
 
     if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID]
@@ -1919,7 +1919,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       HartsClearToExecute[HartToExecID] = false;
       HartsClearToDecode[HartToExecID] = false;
       IdleHarts[HartToExecID] = true;
-      ThreadsThatChangedState.emplace(std::move(ActiveThread));
+      AddThreadsThatChangedState(std::move(ActiveThread));
     }
   }
 
@@ -2000,7 +2000,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
                                 std::move(NewThreadRegFile));
 
   // Add new thread to this vector so the RevCPU will add and schedule it
-  ThreadsThatChangedState.emplace(std::move(NewThread));
+  AddThreadsThatChangedState(std::move(NewThread));
 
   return;
 }

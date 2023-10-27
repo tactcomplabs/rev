@@ -3170,7 +3170,7 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
     BlockedThread->SetWaitingToJoinTID(RegFile->GetX<uint64_t>(RevReg::a0));
 
     // Signal to RevCPU this thread is has changed state
-    ThreadsThatChangedState.emplace(std::move(BlockedThread));
+    AddThreadsThatChangedState(std::move(BlockedThread));
 
     // Output the ecall buf
 
