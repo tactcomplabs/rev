@@ -1521,7 +1521,7 @@ void RevProc::HandleALUFault(unsigned width){
                   "FAULT:ALU: ALU fault injected into next retire cycle\n");
 }
 
-inline bool RevProc::DependencyCheck(const unsigned HartID, const RevInst* I) const {
+bool RevProc::DependencyCheck(unsigned HartID, const RevInst* I) const {
 
   const auto* E = &InstTable[I->entry];
   const auto* regFile = GetRegFile(HartID);
@@ -1562,8 +1562,8 @@ inline bool RevProc::DependencyCheck(const unsigned HartID, const RevInst* I) co
 }
 
 /// Set or clear scoreboard based on register number and floating point
-inline void RevProc::DependencySet(const unsigned HartID, uint16_t RegNum,
-                                   bool isFloat, bool value){
+void RevProc::DependencySet(unsigned HartID, uint16_t RegNum,
+                            bool isFloat, bool value){
   RevRegFile* regFile = GetRegFile(HartID);
   if(isFloat){
     if( RegNum < _REV_NUM_REGS_ ){
@@ -1619,7 +1619,7 @@ unsigned RevProc::GetNextHartToDecodeID() const {
   return nextID;
 }
 
-inline void RevProc::MarkLoadComplete(const MemReq& req){
+void RevProc::MarkLoadComplete(const MemReq& req){
 
   auto it = LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
   if( it != LSQueue->end()){
@@ -1845,7 +1845,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     Pipeline.front().second.cost--;
     if(Pipeline.front().second.cost == 0){ // &&
       // Ready to retire this instruction
-      const uint16_t HartID = Pipeline.front().first;
+      uint16_t HartID = Pipeline.front().first;
       #ifdef NO_REV_TRACER
       output->verbose(CALL_INFO, 6, 0,
                       "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
@@ -2398,7 +2398,7 @@ void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
 bool RevProc::HasNoWork() const { return HasNoBusyHarts() && (!coProc || coProc->IsDone()); }
 
 
-inline void RevProc::UpdateStatusOfHarts(){
+void RevProc::UpdateStatusOfHarts(){
   // A Hart is ClearToDecode if:
   //   1. It has a thread assigned to it (ie. NOT Idle)
   //   2. It's last instruction is done executing (ie. cost is set to 0)

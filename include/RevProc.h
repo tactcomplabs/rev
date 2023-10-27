@@ -724,12 +724,12 @@ private:
   }
 
   /// RevProc: Whether any scoreboard bits are set
-  bool AnyDependency(const unsigned HartID) const {
+  bool AnyDependency(unsigned HartID) const {
     const auto& RegFile = Harts.at(HartID)->RegFile;
     return RegFile->FP_Scoreboard.any() || RegFile->RV_Scoreboard.any();
   }
 
-  bool HartHasNoDependencies(const unsigned HartID) const {
+  bool HartHasNoDependencies(unsigned HartID) const {
     return !AnyDependency(HartID);
   }
 
@@ -737,7 +737,7 @@ private:
   std::unique_ptr<RevThread> PopThreadFromHart(unsigned HartID);
 
   /// RevProc: Check scoreboard for pipeline hazards
-  bool DependencyCheck(const unsigned HartID, const RevInst* Inst) const;
+  bool DependencyCheck(unsigned HartID, const RevInst* Inst) const;
 
   /// RevProc: Set or clear scoreboard based on instruction destination
   void DependencySet(unsigned HartID, const RevInst* Inst, bool value = true){
@@ -748,12 +748,12 @@ private:
   }
 
   /// RevProc: Clear scoreboard on instruction retirement
-  inline void DependencyClear(const unsigned HartID, const RevInst* Inst){
+  void DependencyClear(unsigned HartID, const RevInst* Inst){
     DependencySet(HartID, Inst, false);
   }
 
   /// RevProc: Set or clear scoreboard based on register number and floating point.
-  inline void DependencySet(unsigned HartID, uint16_t RegNum, bool isFloat, bool value = true);
+  void DependencySet(unsigned HartID, uint16_t RegNum, bool isFloat, bool value = true);
 
   /// RevProc: Clear scoreboard on instruction retirement
   void DependencyClear(unsigned HartID, uint16_t RegNum, bool isFloat){
