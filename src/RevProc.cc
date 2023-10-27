@@ -1904,7 +1904,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                                                                  HartID))) == 0){
         DependencyClear(HartID, &(Pipeline.front().second));
       }
-      Pipeline.erase(Pipeline.begin());
+      Pipeline.pop_front();
       GetRegFile(HartID)->SetCost(0);
     }else{
       // could not retire the instruction, bump the cost

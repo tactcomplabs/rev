@@ -176,7 +176,7 @@ public:
 
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
-  ///  RevProc 
+  ///  RevProc
   void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat){
     DependencyClear(HartID, RegNum, isFloat);
   }
@@ -240,7 +240,7 @@ private:
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecode RegFile
 
   RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
-  
+
   std::bitset<_MAX_HARTS_> CoProcStallReq;
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
@@ -589,8 +589,7 @@ private:
 
   std::vector<std::unique_ptr<RevExt>> Extensions;           ///< RevProc: vector of enabled extensions
 
-  //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
-  std::vector<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
+  std::deque<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
   std::map<std::string, unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
   std::map<uint32_t, unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
   std::map<uint32_t, unsigned> CEncToEntry;    ///< RevProc: compressed instruction encoding to table entry mapping
