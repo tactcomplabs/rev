@@ -158,6 +158,7 @@ public:
   ///< RevProc: Add a co-processor to the RevProc
   void SetCoProc(RevCoProc* coproc);
 
+
   //--------------- External Interface for use with Co-Processor -------------------------
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
@@ -753,7 +754,19 @@ private:
   }
 
   /// RevProc: Set or clear scoreboard based on register number and floating point.
-  void DependencySet(unsigned HartID, uint16_t RegNum, bool isFloat, bool value = true);
+  void DependencySet(unsigned HartID, uint16_t RegNum,
+                              bool isFloat, bool value = true){
+    if( RegNum < _REV_NUM_REGS_ || RegNum != 0 ){ return; }
+    RevRegFile* regFile = GetRegFile(HartID);
+    if(isFloat){
+        regFile->FP_Scoreboard[RegNum] = value;
+    }
+    else{
+      regFile->RV_Scoreboard[RegNum] = value;
+    }
+    return;
+  }
+
 
   /// RevProc: Clear scoreboard on instruction retirement
   void DependencyClear(unsigned HartID, uint16_t RegNum, bool isFloat){

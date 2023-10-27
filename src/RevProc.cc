@@ -1561,21 +1561,6 @@ bool RevProc::DependencyCheck(unsigned HartID, const RevInst* I) const {
   return false;
 }
 
-/// Set or clear scoreboard based on register number and floating point
-void RevProc::DependencySet(unsigned HartID, uint16_t RegNum,
-                            bool isFloat, bool value){
-  RevRegFile* regFile = GetRegFile(HartID);
-  if(isFloat){
-    if( RegNum < _REV_NUM_REGS_ ){
-      regFile->FP_Scoreboard[RegNum] = value;
-    }
-  }else{
-    if( RegNum < _REV_NUM_REGS_ && RegNum != 0 ){
-      regFile->RV_Scoreboard[RegNum] = value;
-    }
-  }
-}
-
 void RevProc::ExternalStallHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
   if(HartID < Harts.size()){
     CoProcStallReq.set(HartID);
