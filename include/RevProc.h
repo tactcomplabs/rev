@@ -131,11 +131,14 @@ public:
   RevMem& GetMem() const { return *mem; }
 
   ///< RevProc: Called by RevCPU to handle the state changes threads may have happened during this Proc's ClockTick
-  std::queue<std::unique_ptr<RevThread>> TransferThreadsThatChangedState() {
-    auto temp = std::move(ThreadsThatChangedState);
-    ThreadsThatChangedState = {}; // reset to an empty queue
-    return temp;
-}
+  auto TransferThreadsThatChangedState() {
+    return std::move(ThreadsThatChangedState);
+  }
+
+  ///< RevProc: Add
+  void AddThreadsThatChangedState(std::unique_ptr<RevThread>&& thread){
+    ThreadsThatChangedState.push_back(std::move(thread));
+  }
 
   ///< RevProc: SpawnThread creates a new thread and returns its ThreadID
   void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
@@ -233,7 +236,7 @@ private:
   std::function<uint32_t()> GetNewThreadID;
 
   // If a given assigned thread experiences a change of state, it sets the corresponding bit
-  std::queue<std::unique_ptr<RevThread>> ThreadsThatChangedState; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
+  std::vector<std::unique_ptr<RevThread>> ThreadsThatChangedState; ///< RevProc: used to signal to RevCPU that the thread assigned to HART has changed state
 
   SST::Output *output;                   ///< RevProc: output handler
   std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler

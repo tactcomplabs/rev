@@ -772,9 +772,7 @@ void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
 void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
   // Handle any thread state changes for this core
   // NOTE: At this point we handle EVERY thread that changed state every cycle
-  auto ThreadsThatChangedState = Procs[ProcID]->TransferThreadsThatChangedState();
-  while( !ThreadsThatChangedState.empty() ){
-    std::unique_ptr<RevThread> Thread = std::move(ThreadsThatChangedState.front());
+  for( auto& Thread : Procs[ProcID]->TransferThreadsThatChangedState()){
     uint32_t ThreadID = Thread->GetID();
     // Handle the thread that changed state based on the new state
     switch ( Thread->GetState() ) {
@@ -824,10 +822,7 @@ void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
     if( Procs[ProcID]->HasNoWork() ){
       Enabled[ProcID] = false;
     }
-    // Remove the pointer to the thread as it was handled
-    ThreadsThatChangedState.pop();
   }
-  return;
 }
 
 void RevCPU::InitMainThread(uint32_t MainThreadID, const uint64_t StartAddr){
