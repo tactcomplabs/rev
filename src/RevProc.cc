@@ -1713,7 +1713,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     RevExt *Ext = Extensions[EToE.first].get();
 
     // -- BEGIN new pipelining implementation
-    Pipeline.push_back(std::make_pair(HartToExecID, Inst));
+    Pipeline.emplace_back(std::make_pair(HartToExecID, Inst));
 
     if( (Ext->GetName() == "RV32F") ||
         (Ext->GetName() == "RV32D") ||
@@ -1885,7 +1885,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                                                                  HartID))) == 0){
         DependencyClear(HartID, &(Pipeline.front().second));
       }
-      Pipeline.erase(Pipeline.begin());
+      Pipeline.pop_front();
       RegFile->SetCost(0);
     }else{
       // could not retire the instruction, bump the cost

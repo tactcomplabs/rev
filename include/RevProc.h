@@ -600,7 +600,7 @@ private:
   std::vector<std::unique_ptr<RevExt>> Extensions;           ///< RevProc: vector of enabled extensions
 
   //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevProc: pipeline of instructions
-  std::vector<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
+  std::deque<std::pair<uint16_t, RevInst>> Pipeline;  ///< RevProc: pipeline of instructions
   std::map<std::string, unsigned> NameToEntry; ///< RevProc: instruction mnemonic to table entry mapping
   std::map<uint32_t, unsigned> EncToEntry;     ///< RevProc: instruction encoding to table entry mapping
   std::map<uint32_t, unsigned> CEncToEntry;    ///< RevProc: compressed instruction encoding to table entry mapping
