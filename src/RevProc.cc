@@ -1816,34 +1816,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     // inject the ALU fault
-    if( ALUFault ){
-      // inject ALU fault
-      RevExt *Ext = Extensions[EToE.first].get();
-      if( (Ext->GetName() == "RV64F") ||
-          (Ext->GetName() == "RV64D") ){
-        // write an rv64 float rd
-        uint64_t tmp;
-        static_assert(sizeof(tmp) == sizeof(RegFile->DPF[Inst.rd]));
-        memcpy(&tmp, &RegFile->DPF[Inst.rd], sizeof(tmp));
-        tmp |= RevRand(0, ~(~uint64_t{0} << fault_width));
-        memcpy(&RegFile->DPF[Inst.rd], &tmp, sizeof(tmp));
-      }else if( (Ext->GetName() == "RV32F") ||
-                (Ext->GetName() == "RV32D") ){
-        // write an rv32 float rd
-        uint32_t tmp;
-        static_assert(sizeof(tmp) == sizeof(RegFile->SPF[Inst.rd]));
-        memcpy(&tmp, &RegFile->SPF[Inst.rd], sizeof(tmp));
-        tmp |= RevRand(0, ~(uint32_t{0} << fault_width));
-        memcpy(&RegFile->SPF[Inst.rd], &tmp, sizeof(tmp));
-      }else{
-        // write an X register
-        uint64_t rval = RevRand(0, ~(~uint64_t{0} << fault_width));
-        RegFile->SetX(Inst.rd, rval | RegFile->GetX<uint64_t>(Inst.rd));
-      }
+    if( ALUFault ){ InjectALUFault(EToE, Inst); }
 
-      // clear the fault
-      ALUFault = false;
-    }
     // if this is a singlestep, clear the singlestep and halt
     if( SingleStep ){
       SingleStep = false;
@@ -1893,15 +1867,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
   // Check for completion states and new tasks
-  // @DAVE: I feel like the below two blocks of code have some redundancy but its working and
-  //        if I comment out the first block (HartToDecode based checks) the AMO tests fail
-  //        so there must be something I'm not understanding about the two. If there isn't redundancy
-  //        great, I'll uncomment this little letter I left you
   if( RegFile->GetPC() == 0x00ull ){
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
-    if( HartHasNoDependencies(HartToDecodeID) && ((nullptr == coProc) || (coProc && coProc->IsDone())) ){
+    if( HartHasNoDependencies(HartToDecodeID) ){
       std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart(HartToDecodeID);
       ActiveThread->SetState(ThreadState::DONE);
       HartsClearToExecute[HartToDecodeID] = false;
@@ -1910,10 +1880,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       AddThreadsThatChangedState(std::move(ActiveThread));
     }
 
-    if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID]
-        && HartHasNoDependencies(HartToExecID)
-        && ( (nullptr == coProc) || (coProc && coProc->IsDone() )
-        ) ){
+    if( HartToExecID != _REV_INVALID_HART_ID_
+        && !IdleHarts[HartToExecID]
+        && HartHasNoDependencies(HartToExecID) ){
       std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart(HartToDecodeID);
       ActiveThread->SetState(ThreadState::DONE);
       HartsClearToExecute[HartToExecID] = false;
@@ -2394,7 +2363,6 @@ unsigned RevProc::FindIdleHartID() const {
 }
 
 
-/// @DAVE: I moved this logic out of ClockTick ( If this is an issue let me know in the PR Comments )
 void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
   // inject ALU fault
   RevExt *Ext = Extensions[EToE.first].get();
