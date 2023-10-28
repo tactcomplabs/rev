@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <ostream>
 #include <type_traits>
 
 #ifndef _REV_NUM_REGS_
@@ -80,6 +81,8 @@ enum class MemOp : uint8_t {
   MemOpFENCE       = 8,
   MemOpAMO         = 9,
 };
+
+std::ostream& operator<<(std::ostream& os, MemOp op);
 
 inline uint64_t make_lsq_hash(uint16_t destReg, RevRegClass regType, unsigned HartID){
   return static_cast<uint64_t>(regType) << (16 + 8) | static_cast<uint64_t>(destReg) << 16 | HartID;
