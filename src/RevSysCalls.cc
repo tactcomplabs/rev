@@ -3142,7 +3142,7 @@ EcallStatus RevProc::ECALL_perf_stats(RevInst& inst){
 
   rs.cycles = Stats.totalCycles;
   rs.instructions = Retired;
-  mem->WriteMem(HartToExec, (uint64_t)dest, sizeof(struct rev_stats), &rs);
+  mem->WriteMem(HartToExecID, (uint64_t)dest, sizeof(struct rev_stats), &rs);
   RegFile->SetX(RevReg::a0 ,0);
   return EcallStatus::SUCCESS;
 }
