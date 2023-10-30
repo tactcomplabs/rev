@@ -10,7 +10,7 @@ MEM_SIZE = 1024*1024*1024-1
 # Define the simulation components
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
-        "verbose" : 6,                                # Verbosity
+        "verbose" : 4,                                # Verbosity
     "numCores" : 2,                               # Number of cores
     "numHarts" : 2,                               # Number of cores
         "clock" : "2.0GHz",                           # Clock

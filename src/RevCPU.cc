@@ -12,6 +12,7 @@
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
+#include <memory>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -176,14 +177,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   Opts->SetArgs(Loader->GetArgv());
 
-  AssignedThreads.resize(numCores);
   EnableCoProc = params.find<bool>("enableCoProc", 0);
   if(EnableCoProc){
 
     // Create the processor objects
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), &output ) );
+      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
     }
     // Create the co-processor objects
     for( unsigned i=0; i<numCores; i++){
@@ -198,7 +198,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     // Create the processor objects
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), &output ) );
+      Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
     }
   }
 
@@ -273,18 +273,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   output.verbose(CALL_INFO, 11, 0, "Start address is 0x%" PRIx64 "\n", StartAddr);
 
-  std::shared_ptr<RevThread> MainThread = std::make_shared<RevThread>(MainThreadID,                    // ThreadID
-                                                                      _INVALID_TID_,                 // Parent ThreadID
-                                                                      Mem->GetStackTop(),              // Stack Pointer
-                                                                      StartAddr,                       // PC
-                                                                      Mem->GetThreadMemSegs().front(), // ThreadMemSeg pointer
-                                                                      Procs[0]->GetRevFeature());      // RevFeature
-
-
-  InitThread(MainThread);
-
-  output.verbose(CALL_INFO, 11, 0, "Main thread initialized %s\n", MainThread->to_string().c_str());
-  SetupArgs(MainThreadID, Procs[0]->GetRevFeature());
+  InitMainThread(MainThreadID, StartAddr);
 
   // setup the per-proc statistics
   TotalCycles.reserve(TotalCycles.size() + numCores);
@@ -618,9 +607,9 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     }
 
     // See if any of the threads on this proc changes state
-    CheckForThreadStateChanges(i);
+    HandleThreadStateChangesForProc(i);
 
-    if( Procs[i]->GetHartUtilization() == 0 ){
+    if( Procs[i]->HasNoBusyHarts() ){
       Enabled[i] = false;
     }
   }
@@ -647,15 +636,10 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   // If all Procs are disabled (ie. rtn == false at this point)
   // check to see if there are threads to assign
-  if( ThreadQueue.size() ){
+  if( ReadyThreads.size() ){
     rtn = false;
   } else if ( BlockedThreads.size() ){
-    if( ThreadCanProceed(*BlockedThreads.begin()) ){
-      Threads.at(*(BlockedThreads.begin()))->SetState(ThreadState::READY);
-      Threads.at(*(BlockedThreads.begin()))->SetWaitingToJoinTID(_INVALID_TID_);
-      ThreadQueue.emplace_back(*BlockedThreads.begin());
-      BlockedThreads.erase(BlockedThreads.begin());
-    }
+    CheckBlockedThreads();
     rtn = false;
   }
 
@@ -680,57 +664,41 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
 // Initializes a RevThread object.
 // - Moves it to the 'Threads' map
-// - Adds it's ThreadID to the ThreadQueue to be scheduled
-void RevCPU::InitThread(std::shared_ptr<RevThread>& ThreadToInit){
-
+// - Adds it's ThreadID to the ReadyThreads to be scheduled
+void RevCPU::InitThread(std::unique_ptr<RevThread>&& ThreadToInit){
+  // Get a pointer to the register state for this thread
+  std::unique_ptr<RevRegFile> RegState = ThreadToInit->TransferVirtRegState();
+  // Set the global pointer register and the frame pointer register
   auto gp = Loader->GetSymbolAddr("__global_pointer$");
-  ThreadToInit->GetRegFile()->SetX(RevReg::gp, gp);
-  ThreadToInit->GetRegFile()->SetX(RevReg::s0, gp);
-
-  uint32_t TID = ThreadToInit->GetThreadID();
-  // Check if this ThreadID has already been assigned... if so... something has gone horribly wrong
-  // print out all threads
-  auto it = Threads.find(TID);
-  if( it != Threads.end() && it->second->GetState() != ThreadState::START ){
-    output.fatal(CALL_INFO, 99, "Error: ThreadID %" PRIu32 " has already been assigned... this is a bug.\n", TID);
-  }
-  output.verbose(CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", TID);
-  output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->to_string().c_str());
+  RegState->SetX(RevReg::gp, gp);
+  RegState->SetX(RevReg::s0, gp); // s0 = x8 = frame pointer register
+  // Set state to Ready
   ThreadToInit->SetState(ThreadState::READY);
-  Threads.emplace(ThreadToInit->GetThreadID(), ThreadToInit);
-  ThreadQueue.emplace_back(TID);
+  output.verbose(CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", ThreadToInit->GetID());
+  output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->to_string().c_str());
+  ReadyThreads.emplace_back(std::move(ThreadToInit));
 }
 
-void RevCPU::AssignThread(uint32_t ThreadID, uint32_t ProcID){
-  output.verbose(CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadID, ProcID);
-  auto Thread = Threads.at(ThreadID);
-
-  // Point the regfile of this thread's LSQ to the Proc's LSQ
-  Thread->GetRegFile()->SetLSQueue( Procs[ProcID]->GetLSQueue() );
-
-  // Point thread's regfile to this proc's MarkLoadComplete
-  Thread->GetRegFile()->SetMarkLoadComplete([proc = Procs[ProcID]](const MemReq& req){ proc->MarkLoadComplete(req); });
-
-  // Put the thread in the Proc's assigned threads list
-  AssignedThreads.at(ProcID).emplace(ThreadID, Thread);
-
-  Procs[ProcID]->AssignThread(ThreadID);
+// Assigns a RevThred to a specific Proc which then loads it into a RevHart
+// This should not be called without first checking if the Proc has an IdleHart
+void RevCPU::AssignThread(std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID){
+  output.verbose(CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetID(), ProcID);
+  Procs[ProcID]->AssignThread(std::move(ThreadToAssign));
   return;
-
 }
 
 // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
 // it does this by seeing if a given thread's WaitingOnTID has completed
-bool RevCPU::ThreadCanProceed(uint32_t TID){
+bool RevCPU::ThreadCanProceed(const std::unique_ptr<RevThread>& Thread){
   bool rtn = false;
 
   // Get the thread's waiting to join TID
-  uint32_t WaitingOnTID = (Threads.at(TID))->GetWaitingToJoinTID();
+  uint32_t WaitingOnTID = Thread->GetWaitingToJoinTID();
 
   // If the thread is waiting on another thread, check if that thread has completed
   if( WaitingOnTID != _INVALID_TID_ ){
     // Check if WaitingOnTID has completed... if so, return = true, else return false
-    output.verbose(CALL_INFO, 4, 0, "Thread %" PRIu32 " is waiting on Thread %u\n", TID, WaitingOnTID);
+    output.verbose(CALL_INFO, 6, 0, "Thread %" PRIu32 " is waiting on Thread %u\n", Thread->GetID(), WaitingOnTID);
 
     // Check if the WaitingOnTID has completed, if not, thread cannot proceed
     rtn = ( CompletedThreads.find(WaitingOnTID) != CompletedThreads.end() ) ? true : false;
@@ -745,23 +713,16 @@ bool RevCPU::ThreadCanProceed(uint32_t TID){
   return rtn;
 }
 
-// Check if any BlockedThreads have had their counterpart complete execution
-// if so, move its TID to the ThreadQueue
+// Checks if any of the blocked threads can proceed based on if the thread
+// they were waiting on has completed
 void RevCPU::CheckBlockedThreads(){
   // Iterate over all block threads
-  for( auto ThreadID : BlockedThreads ){
-    // Check if the thread can proceed (ie. its WaitingOnTID has completed)
-    if( ThreadCanProceed(ThreadID) ){
-      // Mark thread as ready (no longer blocked)
-      Threads.at(ThreadID)->SetState(ThreadState::READY);
-      // Remove the waiting to join TID
-      Threads.at(ThreadID)->SetWaitingToJoinTID(_INVALID_TID_);
-      // Add the thread to the ThreadQueue
-      ThreadQueue.emplace_back(ThreadID);
-      // Remove the thread from the BlockedThreads list
-      BlockedThreads.erase(ThreadID);
-    } else {
-      continue;
+  for( auto it = BlockedThreads.begin(); it != BlockedThreads.end(); ) {
+    if( ThreadCanProceed(*it) ){
+      ReadyThreads.emplace_back(std::move(*it));
+      it = BlockedThreads.erase(it);
+    }else{
+      ++it;
     }
   }
   return;
@@ -774,128 +735,115 @@ void RevCPU::CheckBlockedThreads(){
 // of the ARGV base pointer in memory which is currently set to the
 // program header region.  When we come out of reset, this is StackTop+60 bytes
 // ----------------------------------
-void RevCPU::SetupArgs(uint32_t ThreadIDToSetup, RevFeature* feature){
+void RevCPU::SetupArgs(const std::unique_ptr<RevRegFile>& RegFile){
   auto Argv = Opts->GetArgv();
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a0, Argv.size());
-  Threads.at(ThreadIDToSetup)->GetRegFile()->SetX(RevReg::a1, Mem->GetStackTop() + 60);
+  // setup argc
+  RegFile->SetX(RevReg::a0, Argv.size());
+  RegFile->SetX(RevReg::a1, Mem->GetStackTop() + 60);
+  return;
 }
 
 // Checks core 'i' to see if it has any available harts to assign work to
-// if it does and there is work to assign (ie. ThreadQueue is not empty)
+// if it does and there is work to assign (ie. ReadyThreads is not empty)
 // assign it and enable the processor if not already enabled.
 void RevCPU::UpdateThreadAssignments(uint32_t ProcID){
-  // print the thread queue
-  // Get utilization info
-  double Util = Procs[ProcID]->GetHartUtilization();
-  //if( Util > 0.0 ){
-    output.verbose(CALL_INFO, 11, 0, "Core %" PRIu32 " utilization: %.2f%%\n", ProcID, Util);
-  //}
-  // Check if we have room to schedule another thread
-  if( Util < 100  ){
-    output.verbose(CALL_INFO, 10, 0, "Core %" PRIu32 " utilization: %.2f%%\n", ProcID, Util);
-    // We can schedule another thread
-    // Check if we have any threads to schedule
-    if( ThreadQueue.size() ){
-      // Add to this proc's thread list
-      Threads.at(ThreadQueue.front())->SetState(ThreadState::RUNNING);
-      AssignThread(ThreadQueue.front(), ProcID);
-      // AssignedThreads.at(ProcID).emplace_back(Threads.at(ThreadQueue.front()));
-      // output.verbose(CALL_INFO, 6, 1, "Assigning Thread %u to Core %u\n", ThreadQueue.front(), ProcID);
-      // Remove from thread queue
-      ThreadQueue.erase(ThreadQueue.begin());
-      // If this Proc was previously disabled, enable it
-      // if( !Enabled[i] ){ Enabled[i] = true; }
-      Enabled[ProcID] = true;
-    }
-  } // Utilization is 100%, so change nothing
+  // Check if we have anything to assign
+  if( ReadyThreads.empty() ){
+    return;
+  }
+
+  // There is work to assign, check if this proc has room
+  if( Procs[ProcID]->HasIdleHart() ){
+    // There is room, assign a thread
+    // Get the next thread to assign
+    Procs[ProcID]->AssignThread(std::move(ReadyThreads.front()));
+
+    // Remove thread from ready threads vector
+    ReadyThreads.erase(ReadyThreads.begin());
+
+    // Proc has a thread assigned to it, enable it
+     Enabled[ProcID] = true;
+  }
   return;
 }
 
 // Checks for state changes in the threads of a given processor index 'i'
 // and handle appropriately
-void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
+void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
   // Handle any thread state changes for this core
   // NOTE: At this point we handle EVERY thread that changed state every cycle
-  while( !Procs[ProcID]->GetThreadsThatChangedState().empty() ){
-    auto& Thread = Procs[ProcID]->GetThreadsThatChangedState().front();
+  for( auto& Thread : Procs[ProcID]->TransferThreadsThatChangedState()){
+    uint32_t ThreadID = Thread->GetID();
     // Handle the thread that changed state based on the new state
     switch ( Thread->GetState() ) {
     case ThreadState::DONE:
       // This thread has completed execution
-      // We need to:
-      // 1. Remove it from the AssignedThreads map (The Hart will automatically be updated)
-      // 2. Move its ThreadID to the CompletedThreads list
-      output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is DONE\n", Thread->GetThreadID(), ProcID);
-      AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
-      CompletedThreads.emplace(Thread->GetThreadID());
-      if( AssignedThreads.at(ProcID).empty() ){
-        Enabled[ProcID] = false;
-      }
+      output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is DONE\n", ThreadID, ProcID);
+      CompletedThreads.emplace(ThreadID, std::move(Thread));
       break;
+
     case ThreadState::BLOCKED:
       // This thread is blocked (currently only caused by a rev_pthread_join)
-      // We need to:
-      // 1. Check if the thread it is waiting on has already completed
-      // 2. If it has... Thread can resume execution
-      // 3. If not, thread remains blocked
-      //    3a. Move its ThreadID to the BlockedThreads list
-      //    3b. Remove it from the AssignedThreads lis
-      output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 "on Core %" PRIu32 " is BLOCKED\n", Thread->GetThreadID(), ProcID);
-      // -- 1.
-      if( ThreadCanProceed(Thread->GetThreadID()) ){
-        // -- 2.
-        output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " was waiting on thread %u which has already completed so it can proceed\n",
-                        Thread->GetThreadID(), ProcID, Thread->GetWaitingToJoinTID());
-        // Continue executing thread on same Core
-        Thread->SetState(ThreadState::RUNNING);
-      }
-      else { // -- 3.
-        output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " was waiting on thread %u which has not yet completed so it remains blocked\n",
-                        Thread->GetThreadID(), ProcID, Thread->GetWaitingToJoinTID());
-        Thread->SetState(ThreadState::BLOCKED);
-        // -- 3a.
-        BlockedThreads.emplace(Thread->GetThreadID());
+      output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 "on Core %" PRIu32 " is BLOCKED\n", ThreadID, ProcID);
 
-        // -- 3b.
-        AssignedThreads.at(ProcID).erase(Thread->GetThreadID());
+      // Set its state to BLOCKED
+      Thread->SetState(ThreadState::BLOCKED);
 
-        if( AssignedThreads.at(ProcID).empty() ){
-          Enabled[ProcID] = false;
-        }
-
-      }
+      // Add it to BlockedThreads
+      BlockedThreads.emplace_back(std::move(Thread));
       break;
-    case ThreadState::START: // Should never happen
-      output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu32, Thread->GetThreadID(), ProcID);
+    case ThreadState::START:
+      // A new thread was created
+      output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu32, Thread->GetID(), ProcID);
 
       // Mark it ready for execution
       Thread->SetState(ThreadState::READY);
 
-      // Add it to the Thread map
-      Threads.emplace(Thread->GetThreadID(), Thread);
+      // Add it to the ReadyThreads so it is scheduled
+      ReadyThreads.emplace_back(std::move(Thread));
 
-      // Add it to the thread queue to be scheduled
-      ThreadQueue.emplace_back(Thread->GetThreadID());
       break;
 
     case ThreadState::RUNNING:
-      output.verbose(CALL_INFO, 11, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is RUNNING\n", Thread->GetThreadID(), ProcID);
+      output.verbose(CALL_INFO, 11, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is RUNNING\n", ThreadID, ProcID);
       break;
 
     case ThreadState::READY:
       // If this happens we are not setting state when assigning thread somewhere
       output.fatal(CALL_INFO, 99, "Error: Thread %" PRIu32 " on Core %" PRIu32 " is assigned but is in READY state... This is a bug\n",
-                    Thread->GetThreadID(), ProcID);
+                    ThreadID, ProcID);
       break;
     default: // Should DEFINITELY never happen
-      output.fatal(CALL_INFO, 99, "Error: Thread %" PRIu32 " on Core %" PRIu32 " is in an unknown state... This is a bug\n",
-                    Thread->GetThreadID(), ProcID);
+      output.fatal(CALL_INFO, 99, "Error: Thread %" PRIu32 " on Core %" PRIu32 " is in an unknown state... This is a bug.\n%s\n",
+                    ThreadID, ProcID, Thread->to_string().c_str());
       break;
     }
-    // Pop the thread that changed state
-    Procs[ProcID]->GetThreadsThatChangedState().pop();
+    // If the Proc does not have any threads assigned to it, there is no work to do, it is disabled
+    if( Procs[ProcID]->HasNoWork() ){
+      Enabled[ProcID] = false;
+    }
   }
-  return;
+}
+
+void RevCPU::InitMainThread(uint32_t MainThreadID, const uint64_t StartAddr){
+  // @Lee: Is there a better way to get the feature info?
+  std::unique_ptr<RevRegFile> MainThreadRegState = std::make_unique<RevRegFile>(Procs[0]->GetRevFeature());
+  MainThreadRegState->SetPC(StartAddr);
+  MainThreadRegState->SetX(RevReg::tp,Mem->GetThreadMemSegs().front()->getTopAddr());
+  MainThreadRegState->SetX(RevReg::sp,Mem->GetThreadMemSegs().front()->getTopAddr()-Mem->GetTLSSize());
+  MainThreadRegState->SetX(RevReg::gp, Loader->GetSymbolAddr("__global_pointer$"));
+  MainThreadRegState->SetX(8, Loader->GetSymbolAddr("__global_pointer$"));
+  SetupArgs(MainThreadRegState);
+  std::unique_ptr<RevThread> MainThread = std::make_unique<RevThread>(MainThreadID,
+                                                                      _INVALID_TID_, // No Parent Thread ID
+                                                                      Mem->GetThreadMemSegs().front(),
+                                                                      std::move(MainThreadRegState));
+  MainThread->SetState(ThreadState::READY);
+
+  output.verbose(CALL_INFO, 11, 0, "Main thread initialized %s\n", MainThread->to_string().c_str());
+
+  // Add to ReadyThreads so it gets scheduled
+  ReadyThreads.emplace_back(std::move(MainThread));
 }
 
 // EOF
