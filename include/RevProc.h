@@ -578,6 +578,7 @@ private:
 
   // =============== REV specific functions
   EcallStatus ECALL_cpuinfo(RevInst& inst);                // 500, rev_cpuinfo(struct rev_cpuinfo *info);
+  EcallStatus ECALL_perf_stats(RevInst& inst);             // 501, rev_perf_stats(struct rev_stats *stats);
 
   // =============== REV pthread functions
   EcallStatus ECALL_pthread_create(RevInst& inst);         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)

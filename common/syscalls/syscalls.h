@@ -8,6 +8,9 @@
 // See LICENSE in the top level directory for licensing details
 //
 //
+#ifndef _SYSCALLS_H_
+#define _SYSCALLS_H_
+
 
 #include <stdint.h>
 #include <stddef.h>
@@ -323,8 +326,13 @@ struct iocb {
 };
 
 struct rev_cpuinfo {
-	uint32_t cores;
-	uint32_t harts_per_core;
+   uint32_t cores;
+   uint32_t harts_per_core;
+};
+
+struct rev_stats {
+   uint64_t cycles;
+   uint64_t instructions;
 };
 
 #ifndef SYSCALL_TYPES_ONLY
@@ -3766,6 +3774,16 @@ int rev_cpuinfo(struct rev_cpuinfo *info) {
   return rc;
 }
 
+int rev_perf_stats(struct rev_stats *stats) {
+  int rc;
+  asm volatile (
+    "li a7, 501 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
 typedef unsigned long int rev_pthread_t;
 
 // pthread_t *restrict thread
@@ -3793,3 +3811,5 @@ int rev_pthread_join( rev_pthread_t thread ){
   return rc;
 }
 #endif //SYSCALL_TYPES_ONLY
+
+#endif

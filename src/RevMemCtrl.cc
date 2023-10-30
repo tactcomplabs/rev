@@ -11,11 +11,25 @@
 #include "RevMemCtrl.h"
 #include "RevInstTable.h"
 
-using namespace SST;
-using namespace SST::RevCPU;
-using namespace SST::Interfaces;
+namespace SST::RevCPU{
 
 #define IS_ATOMIC 0x3FE00000
+
+std::ostream& operator<<(std::ostream& os, MemOp op){
+  switch(op){
+    case MemOp::MemOpREAD:        return os << "MemOpREAD";
+    case MemOp::MemOpWRITE:       return os << "MemOpWRITE";
+    case MemOp::MemOpFLUSH:       return os << "MemOpFLUSH";
+    case MemOp::MemOpREADLOCK:    return os << "MemOpREADLOCK";
+    case MemOp::MemOpWRITEUNLOCK: return os << "MemOpWRITEUNLOCK";
+    case MemOp::MemOpLOADLINK:    return os << "MemOpLOADLINK";
+    case MemOp::MemOpSTORECOND:   return os << "MemOpSTORECOND";
+    case MemOp::MemOpCUSTOM:      return os << "MemOpCUSTOM";
+    case MemOp::MemOpFENCE:       return os << "MemOpFENCE";
+    case MemOp::MemOpAMO:         return os << "MemOpAMO";
+  }
+  return os;
+}
 
 // ---------------------------------------------------------------
 // RevMemOp
@@ -1652,4 +1666,5 @@ void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::InvNotify* ev){
   Ctrl->handleInvResp(ev);
 }
 
+} // namespace SST::RevCPU
 // EOF
