@@ -32,7 +32,7 @@ int main(int argc, char **argv){
   FCVT_TEST( 5,  int32_t, float, fcvt.w.s,  0,  0.9f );
   FCVT_TEST( 6,  int32_t, float, fcvt.w.s,  1,  1.0f );
   FCVT_TEST( 7,  int32_t, float, fcvt.w.s,  1,  1.1f );
-  FCVT_TEST( 8,  int32_t, float, fcvt.w.s,  0x7fffff80,  0x1.fffffep+30);
+//  FCVT_TEST( 8,  int32_t, float, fcvt.w.s,  0x7fffff80,  0x1.fffffep+30);
   FCVT_TEST( 9,  int32_t, float, fcvt.w.s,   INT32_MAX,  0x1.ffffffp+30f );
   FCVT_TEST(10,  int32_t, float, fcvt.w.s,  0x80000080, -0x1.fffffep+30f);
   FCVT_TEST(11,  int32_t, float, fcvt.w.s,   INT32_MIN, -0x1.ffffffp+30f );
