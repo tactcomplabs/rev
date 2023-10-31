@@ -268,7 +268,7 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   /* If not in TLB, physAddr will equal _INVALID_ADDR_ */
   if( physAddr == _INVALID_ADDR_ ){
     /* Check if vAddr is a valid address before translating to physAddr */
-    if( isValidVirtAddr(vAddr) ){
+    if( GetMemType(vAddr) != MemType::INVALID ){
       if(pageMap.count(pageNum) == 0){
         // First touch of this page, mark it as in use
         pageMap[pageNum] = std::pair<uint32_t, bool>(nextPage, true);
@@ -309,20 +309,26 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
   return physAddr;
 }
 
-// This function will change a decent amount in an upcoming PR
-bool RevMem::isValidVirtAddr(const uint64_t vAddr){
+MemType RevMem::GetMemType(const uint64_t vAddr){
   for(const auto& Seg : MemSegs ){
     if( Seg->contains(vAddr) ){
-      return true;
+      return MemType::VALID;
     }
   }
 
   for( const auto& Seg : ThreadMemSegs ){
     if( Seg->contains(vAddr) ){
-      return true;
+      return MemType::THREAD;
     }
   }
-  return false;
+
+  for( const auto& Seg : CustomMemSegs ){
+    if( Seg->contains(vAddr) ){
+      return MemType::CUSTOM;
+    }
+  }
+
+  return MemType::INVALID;
 }
 
 

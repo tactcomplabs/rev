@@ -49,6 +49,14 @@
 
 namespace SST::RevCPU{
 
+// Enum Class of different memory types (ie. VALID, INVALID, SPECIAL)
+enum class MemType : uint8_t {
+  INVALID = 0, // Address is unknown to Rev
+  VALID = 1,   // Address is in RevMem
+  THREAD = 2, // Address is a part of a thread's TLS or Stack
+  CUSTOM = 3, // Address is to be handled in a specific way (ie. specified in python config)
+};
+
 class RevMem{
 public:
   /// RevMem: standard constructor
@@ -339,10 +347,10 @@ private:
   RevMemCtrl *ctrl;             ///< RevMem: memory controller object
   SST::Output *output;          ///< RevMem: output handler
 
-
   std::vector<std::shared_ptr<MemSegment>> MemSegs;       // Currently Allocated MemSegs
   std::vector<std::shared_ptr<MemSegment>> FreeMemSegs;   // MemSegs that have been unallocated
   std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
+  std::vector<std::shared_ptr<MemSegment>> CustomMemSegs; // Memory Segments added via the python config file
 
   uint64_t TLSBaseAddr;                                   ///< RevMem: TLS Base Address
   uint64_t TLSSize = sizeof(uint32_t);                    ///< RevMem: TLS Size (minimum size is enough to write the TID)
@@ -353,7 +361,7 @@ private:
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
   void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
   uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
-  bool isValidVirtAddr(uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
+  MemType GetMemType(const uint64_t vAddr);                 ///< RevMem: Used to check if a virtual address exists in MemSegs
 
   std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
   uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
