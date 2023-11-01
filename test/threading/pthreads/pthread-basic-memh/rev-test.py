@@ -19,6 +19,8 @@ comp_cpu.addParams({
     "startAddr" : "[0:0x00000000]",               # Starting address for core 0
     "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
     "program" : "pthread-basic.exe",              # Target executable
+    "threadMemBlock" : [0x20000000, 0x30000000],
+    "stackSize": 1024*1024,
     "enable_memH" : 1,                            # Enable memHierarchy support
     "splash" : 1                                  # Display the splash message
 })

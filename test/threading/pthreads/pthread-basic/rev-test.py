@@ -32,6 +32,7 @@ comp_cpu.addParams({
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : "pthread-basic.exe",  # Target executable
         "threadMemBlock" : [0x20000000, 0x30000000],
+        "stackSize": 1024*1024*2,
         "splash" : 1                                  # Display the splash message
 })
 

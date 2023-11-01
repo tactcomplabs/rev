@@ -176,6 +176,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     Mem->SetThreadMemBoundary(BaseAddr);
   }
 
+  // Look for default stack size
+  const size_t stackSize = params.find<size_t>("stackSize", 1024*1024);
+  Mem->SetDefaultStackSize(stackSize);
+
   // Set TLB Size
   const uint64_t tlbSize = params.find<unsigned long>("tlbSize", 512);
   Mem->SetTLBSize(tlbSize);
