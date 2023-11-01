@@ -396,6 +396,10 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
 std::shared_ptr<MemSegment> RevMem::AddThreadMem(){
   // Calculate the BaseAddr of the segment
   uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
+  // Make sure we haven't run out of allowable thream memory
+  if( BaseAddr < ThreadMemBoundary ){
+    output->fatal(CALL_INFO, -1, "Error: Out of thread memory\n");
+  }
   ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
   // Page boundary between
   NextThreadMemAddr = BaseAddr - pageSize - 1;

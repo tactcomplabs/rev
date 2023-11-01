@@ -371,7 +371,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf64_Phdr);
 
   // set the first stack pointer
-  uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
+  // uint64_t sp = mem->GetStackTop() - elfinfo.phdr_size;
+  uint64_t sp = mem->GetThreadMemSegs().front()->getTopAddr() - TLSSize - elfinfo.phdr_size;
   WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 

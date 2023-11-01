@@ -112,6 +112,8 @@ public:
     {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
     {"independentCoprocClock",  "Enables each coprocessor to register its own clock handler", "0"},
+    {"stackSize",  "Default stack size for software threads in bytes (does not include TLS segment)", "1048576"},
+    {"threadMemBlock", "Range of addresses this instance of Rev is allowed to allocate new thread's stack and TLS segments to", "[0x80000000:0x90000000]"},
     )
 
   // -------------------------------------------------------

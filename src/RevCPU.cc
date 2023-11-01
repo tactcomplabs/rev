@@ -160,6 +160,22 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       output.verbose(CALL_INFO, 1, 0, "Warning: memory faults cannot be enabled with memHierarchy support\n");
   }
 
+  // Look for thread mem block
+  std::vector<uint32_t> threadMemBlock;
+  params.find_array<uint32_t>("threadMemBlock", threadMemBlock);
+  if (threadMemBlock.size() == 2 ){
+    // threadMemBlock now contains the values
+    uint32_t BaseAddr = threadMemBlock[0];
+    uint32_t TopAddr = threadMemBlock[1];
+
+    if( BaseAddr > TopAddr ){
+      output.fatal(CALL_INFO, -1, "Error: threadMemBlock base address must be less than top address [BaseAddr, TopAddr]\n");
+    }
+    // All stack allocations should start at the TopAddr
+    Mem->SetNextThreadMemAddr(TopAddr);
+    Mem->SetThreadMemBoundary(BaseAddr);
+  }
+
   // Set TLB Size
   const uint64_t tlbSize = params.find<unsigned long>("tlbSize", 512);
   Mem->SetTLBSize(tlbSize);
@@ -826,7 +842,6 @@ void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
 }
 
 void RevCPU::InitMainThread(uint32_t MainThreadID, const uint64_t StartAddr){
-  // @Lee: Is there a better way to get the feature info?
   std::unique_ptr<RevRegFile> MainThreadRegState = std::make_unique<RevRegFile>(Procs[0]->GetRevFeature());
   MainThreadRegState->SetPC(StartAddr);
   MainThreadRegState->SetX(RevReg::tp,Mem->GetThreadMemSegs().front()->getTopAddr());
