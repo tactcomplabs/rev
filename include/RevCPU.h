@@ -112,6 +112,8 @@ public:
     {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
     {"independentCoprocClock",  "Enables each coprocessor to register its own clock handler", "0"},
+    // TODO: Cleanup
+  {"customMemorySegment", "Custom memory segment names which allow for custom handling of accesses within a range\n\t Requires {segment name}.size\n\t Requires {segment name}.baseAddr", "scratchpad\nscratchpad.size\nscratchpad.baseAddr"}
     )
 
   // -------------------------------------------------------

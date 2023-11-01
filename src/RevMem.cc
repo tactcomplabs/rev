@@ -262,12 +262,13 @@ void RevMem::AddToTLB(uint64_t vAddr, uint64_t physAddr){
 }
 
 uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
-  /* Check if vAddr is in the TLB */
+  // Check if vAddr is in the TLB
   uint64_t physAddr = SearchTLB(vAddr);
 
-  /* If not in TLB, physAddr will equal _INVALID_ADDR_ */
+  // If not in TLB, physAddr will equal _INVALID_ADDR_
   if( physAddr == _INVALID_ADDR_ ){
-    /* Check if vAddr is a valid address before translating to physAddr */
+    // Check if vAddr is a valid address before translating to physAddr
+    // TODO: decide whether you want to go back to isValidVirtAddr
     if( GetMemType(vAddr) != MemType::INVALID ){
       if(pageMap.count(pageNum) == 0){
         // First touch of this page, mark it as in use
@@ -807,6 +808,16 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+  // Check if address is in CustomMemSegs
+  for( const auto& CustomSeg : CustomMemSegs ){
+    if( CustomSeg->contains(Addr) ){
+      // Trigger the custom handler
+      // TODO: Add error handling
+      CustomMemHandlers.find(CustomSeg->GetName())->second(Addr);
+      return true;
+    }
+  }
+
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
   //check to see if we're about to walk off the page....
@@ -1008,6 +1019,31 @@ uint64_t RevMem::ExpandHeap(uint64_t Size){
   heapend = NewHeapEnd;
 
   return heapend;
+}
+
+// TODO: Comment
+void RevMem::AddCustomMemSeg(const uint64_t BaseAddr, const size_t SegSize, const std::string& Name){
+  // Make sure there exists a handler for this inside the CustomMemHandlers map
+  if( CustomMemHandlers.find(Name) == CustomMemHandlers.end() ){
+    output->fatal(CALL_INFO, 7, "Error: Attempting to add a custom memory segment with name %s"
+                  " that doesn't exist in the CustomMemHandlers map. Please add "
+                  "the function definition of how you would like accesses to this address range to be handled in RevMem. \n", Name.c_str());
+  }
+  CustomMemSegs.emplace_back(std::make_shared<CustomMemSegment>(BaseAddr, SegSize, Name));
+}
+
+/// Check if address is in CustomMemSegs
+bool RevMem::CheckCustomMemSegs(const uint64_t Addr){
+  for( const auto& CustomSeg : CustomMemSegs ){
+    if( CustomSeg->contains(Addr) ){
+      // Trigger the custom handler
+      // TODO: Add error handling
+      // TODO: Potentially return a value from the custom handler
+      CustomMemHandlers.find(CustomSeg->GetName())->second(Addr);
+      return true;
+    }
+  }
+  return false;
 }
 
 // EOF

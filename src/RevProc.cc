@@ -2269,6 +2269,7 @@ void RevProc::InitEcallTable(){
     { 501, &RevProc::ECALL_perf_stats},             //  rev_cpuinfo(struct rev_perf_stats *stats)
     { 1000, &RevProc::ECALL_pthread_create},        //
     { 1001, &RevProc::ECALL_pthread_join},          //
+    { 9999, &RevProc::ECALL_basic_scratchpad_access},
   };
 }
 

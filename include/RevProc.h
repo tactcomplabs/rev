@@ -593,6 +593,9 @@ private:
   EcallStatus ECALL_pthread_join(RevInst& inst);           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
 
+  // CUSTOM MEM SEG FUNCTION
+  EcallStatus ECALL_basic_scratchpad_access(RevInst& inst); // 9999, rev_basic_scratchpad_access(uint64_t addr);
+
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
   std::unordered_map<uint32_t, std::function<EcallStatus(RevProc*, RevInst&)>> Ecalls;
 

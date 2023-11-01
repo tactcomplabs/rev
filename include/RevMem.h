@@ -47,8 +47,6 @@
 
 #define _STACK_SIZE_ (size_t{1024*1024})
 
-namespace SST::RevCPU{
-
 // Enum Class of different memory types (ie. VALID, INVALID, SPECIAL)
 enum class MemType : uint8_t {
   INVALID = 0, // Address is unknown to Rev
@@ -56,7 +54,11 @@ enum class MemType : uint8_t {
   THREAD = 2, // Address is a part of a thread's TLS or Stack
   CUSTOM = 3, // Address is to be handled in a specific way (ie. specified in python config)
 };
+namespace SST::RevCPU{
 
+inline void ScratchpadHandler(uint64_t Addr){
+  std::cout << "Scratchpad Handler Called for Address = 0x" << std::hex << Addr << std::endl;
+}
 class RevMem{
 public:
   /// RevMem: standard constructor
@@ -70,13 +72,13 @@ public:
     delete[] physMem;
   }
 
-  /* Virtual Memory Blocks  */
+  // Virtual Memory Blocks
   class MemSegment {
   public:
     MemSegment(uint64_t baseAddr, uint64_t size)
       : BaseAddr(baseAddr), Size(size) {
       TopAddr = baseAddr + size;
-    } // Permissions(permissions) {}
+    }
 
     uint64_t getTopAddr() const { return BaseAddr + Size; }
     uint64_t getBaseAddr() const { return BaseAddr; }
@@ -103,7 +105,6 @@ public:
       return (this->contains(vBaseAddr) && this->contains(vTopAddr));
     };
 
-
     // Override for easy std::cout << *Seg << std::endl;
     friend std::ostream& operator<<(std::ostream& os, const MemSegment& Seg) {
       return os << " | BaseAddr:  0x" << std::hex << Seg.getBaseAddr() << " | TopAddr: 0x" << std::hex << Seg.getTopAddr() << " | Size: " << std::dec << Seg.getSize() << " Bytes";
@@ -114,6 +115,26 @@ public:
     uint64_t Size;
     uint64_t TopAddr;
   };
+
+  class CustomMemSegment : public MemSegment {
+  public:
+      CustomMemSegment(uint64_t baseAddr, size_t size, std::string name)
+          : MemSegment(baseAddr, size), Name(name) {}
+
+      std::string GetName() const { return Name; }
+
+      void SetName(const std::string& name) { Name = name; }
+
+      friend std::ostream& operator<<(std::ostream& os, const CustomMemSegment& Seg) {
+          return os << static_cast<const MemSegment&>(Seg) // cast to parent class to reuse its operator<<
+                    << " | Name: " << Seg.GetName();
+      }
+
+  private:
+
+    std::string Name;
+  };
+
 
   /// RevMem: determine if there are any outstanding requests
   bool outstandingRqsts();
@@ -284,6 +305,9 @@ public:
   ///< RevMem: Get FreeMemSegs vector
   std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; }
 
+  ///< RevMem: Get FreeMemSegs vector
+  std::vector<std::shared_ptr<CustomMemSegment>>& GetCustomMemSegs(){ return CustomMemSegs; }
+
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
   uint64_t AddMemSeg(const uint64_t& SegSize);
 
@@ -320,6 +344,8 @@ public:
   const uint64_t& GetTLSBaseAddr(){ return TLSBaseAddr; }
   const uint64_t& GetTLSSize(){ return TLSSize; }
 
+  void AddCustomMemSeg(const uint64_t BaseAddr, const size_t Size, const std::string& Name);
+
   class RevMemStats {
   public:
     uint64_t TLBHits;
@@ -350,18 +376,23 @@ private:
   std::vector<std::shared_ptr<MemSegment>> MemSegs;       // Currently Allocated MemSegs
   std::vector<std::shared_ptr<MemSegment>> FreeMemSegs;   // MemSegs that have been unallocated
   std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
-  std::vector<std::shared_ptr<MemSegment>> CustomMemSegs; // Memory Segments added via the python config file
+  std::vector<std::shared_ptr<CustomMemSegment>> CustomMemSegs; // Memory Segments added via the python config file
+
+  std::unordered_map<std::string, std::function<void(uint64_t)>> CustomMemHandlers = {
+    {"scratchpad", &ScratchpadHandler},
+  };
 
   uint64_t TLSBaseAddr;                                   ///< RevMem: TLS Base Address
   uint64_t TLSSize = sizeof(uint32_t);                    ///< RevMem: TLS Size (minimum size is enough to write the TID)
   uint64_t ThreadMemSize = _STACK_SIZE_;                  ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
-  uint64_t NextThreadMemAddr = memSize-1024;                  ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
+  uint64_t NextThreadMemAddr = memSize-1024;               ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
 
   uint64_t SearchTLB(uint64_t vAddr);                       ///< RevMem: Used to check the TLB for an entry
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
   void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
   uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
   MemType GetMemType(const uint64_t vAddr);                 ///< RevMem: Used to check if a virtual address exists in MemSegs
+  bool CheckCustomMemSegs(const uint64_t Addr); // TODO: Comment
 
   std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
   uint32_t                                      pageSize;  ///< RevMem: size of allocated pages

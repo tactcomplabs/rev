@@ -168,6 +168,26 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   const uint64_t maxHeapSize = params.find<unsigned long>("maxHeapSize", memSize/4);
   Mem->SetMaxHeapSize(maxHeapSize);
 
+  // See if there are any memory segments to create
+  std::string mem_seg_name = params.find<std::string>("customMemorySegment", "");
+
+  // Only proceed with custom memory segments if the name is not empty
+  if( !mem_seg_name.empty() ){
+
+    // Build the scoped parameter names
+    std::string size_param_name = mem_seg_name + ".size";
+    std::string base_addr_param_name = mem_seg_name + ".baseAddr";
+
+    // Retrieve the scoped parameters
+    uint64_t mem_seg_size = params.find<uint64_t>(size_param_name, 0);
+    size_t mem_seg_base_addr = params.find<size_t>(base_addr_param_name, 0);
+
+    Mem->AddCustomMemSeg(mem_seg_base_addr, mem_seg_size, mem_seg_name);
+  }
+  for( auto Seg : Mem->GetCustomMemSegs() ){
+    std::cout << "==> Segment: " << *Seg << std::endl;
+  }
+
   // Load the binary into memory
   // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
   Loader = new RevLoader( Exe, Args, Mem, &output );

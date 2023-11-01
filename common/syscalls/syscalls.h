@@ -3810,6 +3810,16 @@ int rev_pthread_join( rev_pthread_t thread ){
     );
   return rc;
 }
+
+int rev_basic_scratchpad_access( uint64_t addr ){
+  int rc;
+  asm volatile (
+    "li a7, 9999\n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
 #endif //SYSCALL_TYPES_ONLY
 
 #endif
