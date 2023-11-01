@@ -10,6 +10,7 @@
 
 #include "RevLoader.h"
 #include "RevMem.h"
+#include <_types/_uint32_t.h>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -218,7 +219,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
   elfinfo.phdr_size = eh->e_phnum * sizeof(Elf32_Phdr);
 
   // set the first stack pointer
-  uint32_t sp = mem->GetStackTop() - (uint32_t)(elfinfo.phdr_size);
+  uint32_t sp = mem->GetThreadMemSegs().front()->getTopAddr() - (uint32_t)TLSSize - (uint32_t)elfinfo.phdr_size;
   WriteCacheLine(sp, elfinfo.phdr_size, ph);
   mem->SetStackTop(sp);
 
