@@ -340,6 +340,39 @@ bool bcond(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   return true;
 }
 
+/// Fused Multiply-Add
+template<typename T>
+bool fmadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  R->SetFP(Inst.rd, std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
+  return true;
+}
+
+/// Fused Multiply-Subtract
+template<typename T>
+bool fmsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  R->SetFP(Inst.rd, std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), -R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
+  return true;
+}
+
+/// Fused Negated (Multiply-Subtract)
+template<typename T>
+bool fnmsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)
+{
+  R->SetFP(Inst.rd, std::fma(-R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
+  return true;
+}
+
+/// Fused Negated (Multiply-Add)
+template<typename T>
+bool fnmadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  R->SetFP(Inst.rd, -std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
+  return true;
+}
+
 } // namespace SST:RevCPU
 
 #endif
