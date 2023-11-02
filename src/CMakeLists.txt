@@ -12,6 +12,7 @@ set(RevCPUSrcs
   RevFeature.cc
   RevLoader.cc
   RevMem.cc
+  RevCustomMemHandlers.cc
   RevMemCtrl.cc
   RevNIC.cc
   RevOpts.cc

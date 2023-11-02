@@ -302,6 +302,10 @@ uint64_t RevMem::CalcPhysAddr(uint64_t pageNum, uint64_t vAddr){
         std::cout << *Seg << std::endl;
       }
 
+      for( auto Seg : CustomMemSegs ){
+        std::cout << *Seg << std::endl;
+      }
+
       output->fatal(CALL_INFO, 11,
                     "Segmentation Fault: Virtual address 0x%" PRIx64 " (PhysAddr = 0x%" PRIx64 ") was not found in any mem segments\n",
                     vAddr, physAddr);
@@ -1053,11 +1057,14 @@ uint64_t RevMem::ExpandHeap(uint64_t Size){
 void RevMem::AddCustomMemSeg(const uint64_t BaseAddr, const size_t SegSize, const std::string& Name){
   // Make sure there exists a handler for this inside the CustomMemHandlers map
   if( CustomMemHandlers.find(Name) == CustomMemHandlers.end() ){
-    output->fatal(CALL_INFO, 7, "Error: Attempting to add a custom memory segment with name %s"
-                  " that doesn't exist in the CustomMemHandlers map. Please add "
-                  "the function definition of how you would like accesses to this address range to be handled in RevMem. \n", Name.c_str());
+    output->fatal(CALL_INFO, -1, "Error: Attempting to add a custom memory segment %s "
+                                 "however there is no handler defined for accesses to this segment.\n"
+                                 "please add a function handler for %s inside of RevCustomMemHandlers.cc",
+                                 Name.c_str(), Name.c_str());
   }
+
   CustomMemSegs.emplace_back(std::make_shared<CustomMemSegment>(BaseAddr, SegSize, Name));
+  std::cout << "Custom Seg: " << *CustomMemSegs.front() << std::endl;
 }
 
 /// Check if address is in CustomMemSegs

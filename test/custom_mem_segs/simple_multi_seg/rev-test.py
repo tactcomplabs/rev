@@ -27,9 +27,13 @@ comp_cpu.addParams({
         "clock" : "1.0GHz",                           # Clock
         "memSize" : 1024*1024*1024,                   # Memory size in bytes
         "machine" : "[0:RV64G]",                      # Core:Config; RV64I for core 0
-        "customMemSegs": "scratchpad", # Custom memory segments
+        "customMemSegs": "[scratchpad, mem1, mem2]", # Custom memory segments
         "scratchpad.size" : 1024*1024*1024,                    # Size of the scratchpad
         "scratchpad.baseAddr" : "0x80000000",            # Starting address of the scratchpad
+        "mem1.size" : 1024*1024*1024,                    # Size of the scratchpad
+        "mem1.baseAddr" : "0x80000000",            # Starting address of the scratchpad
+        "mem2.size" : 1024*1024*1024,                    # Size of the scratchpad
+        "mem2.baseAddr" : "0x80000000",            # Starting address of the scratchpad
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "basic-scratchpad.exe"),  # Target executable

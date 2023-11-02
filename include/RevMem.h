@@ -39,7 +39,6 @@
 #include "RevMemCtrl.h"
 #include "RevTracer.h"
 #include "RevRand.h"
-#include "RevCustomMemHandlers.h"
 #include "../common/include/RevCommon.h"
 
 #ifndef _REVMEM_BASE_
@@ -378,18 +377,15 @@ private:
   std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
   std::vector<std::shared_ptr<CustomMemSegment>> CustomMemSegs; // Memory Segments added via the python config file
 
-  // TODO: Add MemReq to this
-  std::unordered_map<std::string, std::function<void(unsigned,
-                                                     uint64_t,
-                                                     size_t,
-                                                     void*)>> CustomMemHandlers = {
-    {"scratchpad", &ScratchpadHandler},
-  };
-
   uint64_t TLSBaseAddr;                                   ///< RevMem: TLS Base Address
   uint64_t TLSSize = sizeof(uint32_t);                    ///< RevMem: TLS Size (minimum size is enough to write the TID)
   uint64_t ThreadMemSize = _STACK_SIZE_;                  ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
   uint64_t NextThreadMemAddr = memSize-1024;               ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
+
+  static std::unordered_map<std::string, std::function<void(unsigned,
+                                                     uint64_t,
+                                                     size_t,
+                                                     void*)>> CustomMemHandlers;
 
   uint64_t SearchTLB(uint64_t vAddr);                       ///< RevMem: Used to check the TLB for an entry
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue

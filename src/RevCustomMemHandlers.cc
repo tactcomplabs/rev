@@ -8,9 +8,6 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#ifndef _SST_REVCPU_REVCUSTOMMEMHANDLERS_H_
-#define _SST_REVCPU_REVCUSTOMMEMHANDLERS_H_
-
 // -- C++ Headers
 #include <algorithm>
 #include <cstdio>
@@ -25,10 +22,19 @@
 #include "RevTracer.h"
 #include "RevRand.h"
 #include "RevCommon.h"
+#include "RevMem.h"
+
+using namespace SST::RevCPU;
 
 // TODO: Add MemReq / flags
 inline void ScratchpadHandler(uint64_t Addr, uint64_t Data, size_t Size, void*){ // , const SST::RevCPU::MemReq& req) {
   std::cout << "Scratchpad Handler Called for Address = 0x" << std::hex << Addr << std::endl;
 }
 
-#endif
+// TODO: Add MemReq to this
+std::unordered_map<std::string, std::function<void(unsigned,
+                                                   uint64_t,
+                                                   size_t,
+                                                   void*)>> RevMem::CustomMemHandlers = {
+  {"scratchpad", &ScratchpadHandler},
+};

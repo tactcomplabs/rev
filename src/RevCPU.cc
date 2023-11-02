@@ -13,6 +13,7 @@
 #include "RevThread.h"
 #include <cmath>
 #include <memory>
+#include <string_view>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -169,20 +170,41 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   Mem->SetMaxHeapSize(maxHeapSize);
 
   // See if there are any memory segments to create
-  std::string mem_seg_name = params.find<std::string>("customMemorySegment", "");
+  std::vector<std::string> customMemSegs;
+  params.find_array("customMemSegs", customMemSegs);
 
   // Only proceed with custom memory segments if the name is not empty
-  if( !mem_seg_name.empty() ){
+  if( !customMemSegs.empty() ){
+    for( const auto& segName: customMemSegs ){
+      // Build the scoped parameter names
+      std::string segSizeParamName = segName + ".size";
+      std::string segBaseAddrParamName = segName + ".baseAddr";
+      // Retrieve the scoped parameters
+      size_t segSize = params.find<uint64_t>(segSizeParamName, 0);
+      uint64_t segBaseAddr = params.find<size_t>(segBaseAddrParamName, 0);
 
-    // Build the scoped parameter names
-    std::string size_param_name = mem_seg_name + ".size";
-    std::string base_addr_param_name = mem_seg_name + ".baseAddr";
-
-    // Retrieve the scoped parameters
-    uint64_t mem_seg_size = params.find<uint64_t>(size_param_name, 0);
-    size_t mem_seg_base_addr = params.find<size_t>(base_addr_param_name, 0);
-
-    Mem->AddCustomMemSeg(mem_seg_base_addr, mem_seg_size, mem_seg_name);
+      // Make sure we found them
+      if( !segSize ){
+        // We couldn't find the size/baseAddr for segments, throw error
+        output.fatal(CALL_INFO, -1,
+                     "Custom memory segment '%s' was found with an invalid size "
+                     "or none at all: [%zu Bytes]. \n\nPlease specify the segment size "
+                     "as a scoped parameter prefixed by the name of the custom segment "
+                     "you previously specified (ex. \"%s.size\")\n\n",
+                     segName.c_str(), segSize, segName.c_str());
+      }
+      // Make sure we found them
+      if( !segBaseAddr ){
+        // We couldn't find the size/baseAddr for segments, throw error
+        output.fatal(CALL_INFO, -1,
+                    "Custom memory segment '%s' was found starting at an invalid "
+                    "base address or none at all: [0x%" PRIx64 "]. \n\nPlease specify "
+                    "the base address of the segment as a scoped parameter "
+                    "prefixed by the name of the corresponding segment (ex. \"%s.baseAddr\")\n\n",
+                    segName.c_str(), segBaseAddr, segName.c_str());
+      }
+      Mem->AddCustomMemSeg(segBaseAddr, segSize, segName);
+    }
   }
   for( auto Seg : Mem->GetCustomMemSegs() ){
     std::cout << "==> Segment: " << *Seg << std::endl;
