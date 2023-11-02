@@ -603,6 +603,15 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
 
+  //// Check if address is in CustomMemSegs
+  //for( const auto& CustomSeg : CustomMemSegs ){
+  //  if( CustomSeg->contains(Addr) ){
+  //    // Trigger the custom handler
+  //    // TODO: Add error handling
+  //    CustomMemHandlers.find(CustomSeg->GetName())->second(Hart, Addr, Len, Data);
+  //    return true;
+  //  }
+  //}
   if(Addr == 0xDEADBEEF){
     std::cout << "Found special write. Val = " << std::hex << *(int*)(Data) << std::dec << std::endl;
   }
@@ -678,6 +687,15 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
 
   TRACE_MEM_WRITE(Addr, Len, Data);
 
+  // Check if address is in CustomMemSegs
+  for( const auto& CustomSeg : CustomMemSegs ){
+    if( CustomSeg->contains(Addr) ){
+      // Trigger the custom handler
+      // TODO: Add error handling
+      CustomMemHandlers.find(CustomSeg->GetName())->second(Hart, Addr, Len, &Data);
+      return true;
+    }
+  }
   if(Addr == 0xDEADBEEF){
     std::cout << "Found special write. Val = " << std::hex << *(int*)(Data) << std::dec << std::endl;
   }
@@ -769,6 +787,16 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "OLD READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+
+//  // Check if address is in CustomMemSegs
+//  for( const auto& CustomSeg : CustomMemSegs ){
+//    if( CustomSeg->contains(Addr) ){
+//      // Trigger the custom handler
+//      // TODO: Add error handling
+//      CustomMemHandlers.find(CustomSeg->GetName())->second(Addr);
+//      return true;
+//    }
+//  }
   uint64_t pageNum = Addr >> addrShift;
   uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
 
@@ -813,7 +841,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
     if( CustomSeg->contains(Addr) ){
       // Trigger the custom handler
       // TODO: Add error handling
-      CustomMemHandlers.find(CustomSeg->GetName())->second(Addr);
+      CustomMemHandlers.find(CustomSeg->GetName())->second(Hart, Addr, Len, Target);
       return true;
     }
   }
@@ -1033,17 +1061,17 @@ void RevMem::AddCustomMemSeg(const uint64_t BaseAddr, const size_t SegSize, cons
 }
 
 /// Check if address is in CustomMemSegs
-bool RevMem::CheckCustomMemSegs(const uint64_t Addr){
-  for( const auto& CustomSeg : CustomMemSegs ){
-    if( CustomSeg->contains(Addr) ){
-      // Trigger the custom handler
-      // TODO: Add error handling
-      // TODO: Potentially return a value from the custom handler
-      CustomMemHandlers.find(CustomSeg->GetName())->second(Addr);
-      return true;
-    }
-  }
-  return false;
-}
+//bool RevMem::CheckCustomMemSegs(const uint64_t Addr){
+//  for( const auto& CustomSeg : CustomMemSegs ){
+//    if( CustomSeg->contains(Addr) ){
+//      // Trigger the custom handler
+//      // TODO: Add error handling
+//      // TODO: Potentially return a value from the custom handler
+//      CustomMemHandlers.find(CustomSeg->GetName())->second(Addr);
+//      return true;
+//    }
+//  }
+//  return false;
+//}
 
 // EOF

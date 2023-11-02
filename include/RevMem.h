@@ -39,6 +39,7 @@
 #include "RevMemCtrl.h"
 #include "RevTracer.h"
 #include "RevRand.h"
+#include "RevCustomMemHandlers.h"
 #include "../common/include/RevCommon.h"
 
 #ifndef _REVMEM_BASE_
@@ -56,9 +57,8 @@ enum class MemType : uint8_t {
 };
 namespace SST::RevCPU{
 
-inline void ScratchpadHandler(uint64_t Addr){
-  std::cout << "Scratchpad Handler Called for Address = 0x" << std::hex << Addr << std::endl;
-}
+
+
 class RevMem{
 public:
   /// RevMem: standard constructor
@@ -378,7 +378,11 @@ private:
   std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
   std::vector<std::shared_ptr<CustomMemSegment>> CustomMemSegs; // Memory Segments added via the python config file
 
-  std::unordered_map<std::string, std::function<void(uint64_t)>> CustomMemHandlers = {
+  // TODO: Add MemReq to this
+  std::unordered_map<std::string, std::function<void(unsigned,
+                                                     uint64_t,
+                                                     size_t,
+                                                     void*)>> CustomMemHandlers = {
     {"scratchpad", &ScratchpadHandler},
   };
 
