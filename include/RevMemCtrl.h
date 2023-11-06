@@ -41,6 +41,7 @@ using namespace SST::Interfaces;
 // Extended StandardMem::Request::Flag enums
 // ----------------------------------------
 enum class RevFlag : uint32_t {
+  F_NONE   = 0,           /// no special operation
   F_NONCACHEABLE = 1u<<1, /// non cacheable
   F_BOXNAN = 1u << 16,    /// NaN-box the 32-bit float
   F_SEXT32 = 1u << 17,    /// sign extend the 32bit result
@@ -58,7 +59,19 @@ enum class RevFlag : uint32_t {
   F_AMOSWAP= 1u << 29,    /// AMO Swap
   F_AQ     = 1u << 30,    /// AMO AQ Flag
   F_RL     = 1u << 31,    /// AMO RL Flag
+  F_ATOMIC = F_AMOADD | F_AMOXOR  | F_AMOAND  | F_AMOOR   | F_AMOMIN |
+             F_AMOMAX | F_AMOMINU | F_AMOMAXU | F_AMOSWAP
 };
+
+// Ensure RevFlag is same underlying type as StandardMem::Request::flags_t
+static_assert( std::is_same_v<StandardMem::Request::flags_t,
+               std::underlying_type_t<RevFlag> > );
+
+/// RevFlag: determine if the request is an AMO
+constexpr bool RevFlagHas(RevFlag flag, RevFlag has){
+  return (static_cast<uint32_t>(flag) &
+          static_cast<uint32_t>(has)) != 0;
+}
 
 // ----------------------------------------
 // RevMemOp
@@ -68,55 +81,40 @@ public:
 
   /// RevMemOp constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
-            MemOp Op, StandardMem::Request::flags_t flags );
+            MemOp Op, RevFlag flags );
 
   /// RevMemOp constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
             void *target, MemOp Op,
-            StandardMem::Request::flags_t flags );
+            RevFlag flags );
 
   /// RevMemOp overloaded constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
             char *buffer, MemOp Op,
-            StandardMem::Request::flags_t flags );
+            RevFlag flags );
 
   /// RevMemOp overloaded constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
             char *buffer, void *target,
-            MemOp Op, StandardMem::Request::flags_t flags );
+            MemOp Op, RevFlag flags );
 
   /// RevMemOp overloaded constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
             std::vector<uint8_t> buffer,
-            MemOp Op, StandardMem::Request::flags_t flags );
+            MemOp Op, RevFlag flags );
 
   /// RevMemOp overloaded constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
             void *target, unsigned CustomOpc, MemOp Op,
-            StandardMem::Request::flags_t flags );
+            RevFlag flags );
 
   /// RevMemOp overloaded constructor
   RevMemOp( unsigned Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size,
             char *buffer, unsigned CustomOpc, MemOp Op,
-            StandardMem::Request::flags_t flags );
+            RevFlag flags );
 
   /// RevMemOp default destructor
   ~RevMemOp() = default;
-
-  /// RevMemOp: determine if the request is an AMO
-  static constexpr bool isAMOOp(uint32_t flags){
-    constexpr uint32_t t_flags =
-      uint32_t(RevCPU::RevFlag::F_AMOADD)  |
-      uint32_t(RevCPU::RevFlag::F_AMOXOR)  |
-      uint32_t(RevCPU::RevFlag::F_AMOAND)  |
-      uint32_t(RevCPU::RevFlag::F_AMOOR)   |
-      uint32_t(RevCPU::RevFlag::F_AMOMIN)  |
-      uint32_t(RevCPU::RevFlag::F_AMOMAX)  |
-      uint32_t(RevCPU::RevFlag::F_AMOMINU) |
-      uint32_t(RevCPU::RevFlag::F_AMOMAXU) |
-      uint32_t(RevCPU::RevFlag::F_AMOSWAP);
-    return (flags & t_flags) != 0;
-  }
 
   /// RevMemOp: retrieve the memory operation type
   MemOp getOp() const { return Op; }
@@ -140,13 +138,13 @@ public:
   std::vector<uint8_t> getTempT() const { return tempT; }
 
   /// RevMemOp: retrieve the memory operation flags
-  StandardMem::Request::flags_t getFlags() const { return flags; }
+  RevFlag getFlags() const { return flags; }
 
   /// RevMemOp: retrieve the standard set of memory flags for MemEventBase
-  StandardMem::Request::flags_t getStdFlags() const { return flags & 0xFFFF; }
+  RevFlag getStdFlags() const { return RevFlag{static_cast<uint32_t>(flags) & 0xFFFF}; }
 
   /// RevMemOp: retrieve the flags for MemEventBase without caching enable
-  StandardMem::Request::flags_t getNonCacheFlags() const { return flags & 0xFFFD; }
+  RevFlag getNonCacheFlags() const { return RevFlag{static_cast<uint32_t>(flags) & 0xFFFD}; }
 
   /// RevMemOp: sets the number of split cache line requests
   void setSplitRqst(unsigned S) { SplitRqst = S; }
@@ -179,7 +177,7 @@ public:
   const MemReq& getMemReq() const { return procReq; }
 
   // RevMemOp: determine if the request is cache-able
-  bool isCacheable() const { return (flags & 0b10) == 0; }
+  bool isCacheable() const { return (static_cast<uint32_t>(flags) & 0b10) == 0; }
 
 private:
   unsigned Hart;      ///< RevMemOp: RISC-V Hart
@@ -192,7 +190,7 @@ private:
   unsigned SplitRqst; ///< RevMemOp: number of split cache line requests
   std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
   std::vector<uint8_t> tempT;           ///< RevMemOp: temporary target buffer for R-M-W ops
-  StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
+  RevFlag flags;      ///< RevMemOp: request flags
   void *target;                         ///< RevMemOp: target register pointer
   MemReq procReq;                       ///< RevMemOp: original request from RevProc
 };
@@ -228,55 +226,55 @@ public:
   /// RevMemCtrl: send flush request
   virtual bool sendFLUSHRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                 uint32_t Size, bool Inv,
-                                StandardMem::Request::flags_t flags) = 0;
+                                RevFlag flags) = 0;
 
   /// RevMemCtrl: send a read request
   virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                uint32_t Size, void *target, const MemReq& req,
-                               StandardMem::Request::flags_t flags) = 0;
+                               RevFlag flags) = 0;
 
   /// RevMemCtrl: send a write request
   virtual bool sendWRITERequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                 uint32_t Size, char *buffer,
-                                StandardMem::Request::flags_t flags) = 0;
+                                RevFlag flags) = 0;
 
   /// RevMemCtrl: send an AMO request
   virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                               uint32_t Size, char *buffer, void *target,
                               const MemReq& req,
-                              StandardMem::Request::flags_t flags) = 0;
+                              RevFlag flags) = 0;
 
   /// RevMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                    uint32_t Size, void *target, const MemReq& req,
-                                   StandardMem::Request::flags_t flags) = 0;
+                                   RevFlag flags) = 0;
 
   /// RevMemCtrl: send a writelock request
   virtual bool sendWRITELOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                     uint32_t Size, char *buffer,
-                                    StandardMem::Request::flags_t flags) = 0;
+                                    RevFlag flags) = 0;
 
   /// RevMemCtrl: send a loadlink request
   virtual bool sendLOADLINKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                    uint32_t Size,
-                                   StandardMem::Request::flags_t flags) = 0;
+                                   RevFlag flags) = 0;
 
   /// RevMemCtrl: send a storecond request
   virtual bool sendSTORECONDRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                     uint32_t Size, char *buffer,
-                                    StandardMem::Request::flags_t flags) = 0;
+                                    RevFlag flags) = 0;
 
   /// RevMemCtrl: send an void custom read memory request
   virtual bool sendCUSTOMREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                      uint32_t Size, void *target,
                                      unsigned Opc,
-                                     StandardMem::Request::flags_t flags) = 0;
+                                     RevFlag flags) = 0;
 
   /// RevMemCtrl: send a custom write request
   virtual bool sendCUSTOMWRITERequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                       uint32_t Size, char *buffer,
                                       unsigned Opc,
-                                      StandardMem::Request::flags_t flags) = 0;
+                                      RevFlag flags) = 0;
 
   /// RevMemCtrl: send a FENCE request
   virtual bool sendFENCE(unsigned Hart) = 0;
@@ -453,55 +451,55 @@ public:
   /// RevBasicMemCtrl: send a flush request
   virtual bool sendFLUSHRequest(unsigned Hart, uint64_t Addr, uint64_t PAdr, uint32_t Size,
                                 bool Inv,
-                                StandardMem::Request::flags_t flags) override;
+                                RevFlag flags) override;
 
   /// RevBasicMemCtrl: send a read request
   virtual bool sendREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                uint32_t Size, void *target, const MemReq& req,
-                               StandardMem::Request::flags_t flags) override;
+                               RevFlag flags) override;
 
   /// RevBasicMemCtrl: send a write request
   virtual bool sendWRITERequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                 uint32_t Size, char *buffer,
-                                StandardMem::Request::flags_t flags = 0) override;
+                                RevFlag flags = RevFlag::F_NONE) override;
 
   /// RevBasicMemCtrl: send an AMO request
   virtual bool sendAMORequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                               uint32_t Size, char *buffer, void *target,
                               const MemReq& req,
-                              StandardMem::Request::flags_t flags) override;
+                              RevFlag flags) override;
 
   // RevBasicMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                    uint32_t Size, void *target, const MemReq& req,
-                                   StandardMem::Request::flags_t flags) override;
+                                   RevFlag flags) override;
 
   // RevBasicMemCtrl: send a writelock request
   virtual bool sendWRITELOCKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                     uint32_t Size, char *buffer,
-                                    StandardMem::Request::flags_t flags) override;
+                                    RevFlag flags) override;
 
   // RevBasicMemCtrl: send a loadlink request
   virtual bool sendLOADLINKRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                    uint32_t Size,
-                                   StandardMem::Request::flags_t flags) override;
+                                   RevFlag flags) override;
 
   // RevBasicMemCtrl: send a storecond request
   virtual bool sendSTORECONDRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                     uint32_t Size, char *buffer,
-                                    StandardMem::Request::flags_t flags) override;
+                                    RevFlag flags) override;
 
   // RevBasicMemCtrl: send an void custom read memory request
   virtual bool sendCUSTOMREADRequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                      uint32_t Size, void *target,
                                      unsigned Opc,
-                                     StandardMem::Request::flags_t flags) override;
+                                     RevFlag flags) override;
 
   // RevBasicMemCtrl: send a custom write request
   virtual bool sendCUSTOMWRITERequest(unsigned Hart, uint64_t Addr, uint64_t PAddr,
                                       uint32_t Size, char *buffer,
                                       unsigned Opc,
-                                      StandardMem::Request::flags_t flags) override;
+                                      RevFlag flags) override;
 
   // RevBasicMemCtrl: send a FENCE request
   virtual bool sendFENCE(unsigned Hart) override;
@@ -578,7 +576,7 @@ private:
   bool buildStandardMemRqst(RevMemOp *op, bool &Success);
 
   /// RevBasicMemCtrl: build raw memory requests with a 1-to-1 mapping to RevMemOps'
-  bool buildRawMemRqst(RevMemOp *op, StandardMem::Request::flags_t TmpFlags);
+  bool buildRawMemRqst(RevMemOp *op, RevFlag TmpFlags);
 
   /// RevBasicMemCtrl: build cache-aligned requests
   bool buildCacheMemRqst(RevMemOp *op, bool &Success);
@@ -612,7 +610,7 @@ private:
 
   /// RevBasicMemCtrl: perform the MODIFY portion of the AMO (READ+MODIFY+WRITE)
   void performAMO(std::tuple<unsigned, char *, void *,
-                  StandardMem::Request::flags_t,
+                  RevFlag,
                   RevMemOp *, bool> Entry);
 
   // -- private data members
@@ -652,7 +650,7 @@ private:
                 std::tuple<unsigned,
                            char *,
                            void *,
-                           StandardMem::Request::flags_t,
+                           RevFlag,
                            RevMemOp *,
                            bool>> AMOTable;  ///< map of amo operations to memory addresses
 
@@ -664,7 +662,7 @@ private:
 ///< Apply Atomic Memory Operation
 /// The operation described by "flags" is applied to memory "Target" with value "value"
 template<typename T>
-void ApplyAMO(uint32_t flags, void* Target, T value){
+void ApplyAMO(RevFlag flags, void* Target, T value){
   // Target and value cast to signed and unsigned versions
   auto* TmpTarget  = static_cast<std::make_signed_t   <T>*>(Target);
   auto* TmpTargetU = static_cast<std::make_unsigned_t <T>*>(Target);
@@ -673,20 +671,20 @@ void ApplyAMO(uint32_t flags, void* Target, T value){
 
   // Table mapping atomic operations to executable code
   static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
-    { RevCPU::RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
-    { RevCPU::RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
-    { RevCPU::RevFlag::F_AMOAND,  [&]{ *TmpTarget &= TmpBuf; } },
-    { RevCPU::RevFlag::F_AMOOR,   [&]{ *TmpTarget |= TmpBuf; } },
-    { RevCPU::RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = TmpBuf; } },
-    { RevCPU::RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  TmpBuf);  } },
-    { RevCPU::RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  TmpBuf);  } },
-    { RevCPU::RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
-    { RevCPU::RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
+    { RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
+    { RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
+    { RevFlag::F_AMOAND,  [&]{ *TmpTarget &= TmpBuf; } },
+    { RevFlag::F_AMOOR,   [&]{ *TmpTarget |= TmpBuf; } },
+    { RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = TmpBuf; } },
+    { RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  TmpBuf);  } },
+    { RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  TmpBuf);  } },
+    { RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
+    { RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
   };
 
-  for (auto& flag : table){
-    if( flags & uint32_t(flag.first) ){
-      flag.second();
+  for (auto& [ flag, op ] : table){
+    if( RevFlagHas(flags, flag) ){
+      op();
       break;
     }
   }

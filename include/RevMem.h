@@ -45,8 +45,6 @@
 #define _REVMEM_BASE_ 0x00000000
 #endif
 
-#define REVMEM_FLAGS(x) (static_cast<StandardMem::Request::flags_t>(x))
-
 #define _STACK_SIZE_ (size_t{1024*1024})
 
 namespace SST::RevCPU{
@@ -150,12 +148,12 @@ public:
 
   /// RevMem: write to the target memory location with the target flags
   bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data,
-                 StandardMem::Request::flags_t flags );
+                 RevFlag flags );
 
   /// RevMem: read data from the target memory location
   bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
                 const MemReq& req,
-                StandardMem::Request::flags_t flags);
+                RevFlag flags);
 
   /// RevMem: DEPRECATED: read data from the target memory location
   [[deprecated("Simple RevMem interfaces have been deprecated")]]
@@ -176,7 +174,7 @@ public:
   template <typename T>
   bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
                 const MemReq& req,
-                StandardMem::Request::flags_t flags){
+                RevFlag flags){
     return ReadMem(Hart, Addr, sizeof(T), Target, req, flags);
   }
 
@@ -184,7 +182,7 @@ public:
   template <typename T>
   bool LR( unsigned Hart, uint64_t Addr, T *Target,
            uint8_t aq, uint8_t rl, const MemReq& req,
-           StandardMem::Request::flags_t flags){
+           RevFlag flags){
     return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, req, flags);
   }
 
@@ -192,7 +190,7 @@ public:
   template <typename T>
   bool SC( unsigned Hart, uint64_t Addr, T *Data, T *Target,
            uint8_t aq, uint8_t rl,
-           StandardMem::Request::flags_t flags){
+           RevFlag flags){
     return SCBase(Hart, Addr, sizeof(T), Data, Target, aq, rl, flags);
   }
 
@@ -200,7 +198,7 @@ public:
   template <typename T>
   bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
                const MemReq& req,
-               StandardMem::Request::flags_t flags){
+               RevFlag flags){
     return AMOMem(Hart, Addr, sizeof(T), Data, Target, req, flags);
   }
 
@@ -230,17 +228,17 @@ public:
   /// RevMem: Add a memory reservation for the target address
   bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
               void *Data, uint8_t aq, uint8_t rl, const MemReq& req,
-              StandardMem::Request::flags_t flags);
+              RevFlag flags);
 
   /// RevMem: Clear a memory reservation for the target address
   bool SCBase(unsigned Hart, uint64_t Addr, size_t Len,
               void *Data, void *Target, uint8_t aq, uint8_t rl,
-              StandardMem::Request::flags_t flags);
+              RevFlag flags);
 
   /// RevMem: Initiated an AMO request
   bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
               void *Data, void *Target, const MemReq& req,
-              StandardMem::Request::flags_t flags);
+              RevFlag flags);
 
   /// RevMem: Initiates a future operation [RV64P only]
   bool SetFuture( uint64_t Addr );
