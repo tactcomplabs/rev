@@ -266,7 +266,7 @@ uint32_t RevProc::CompressEncoding(RevInstEntry Entry){
 
   Value |= Entry.opcode;
   Value |= uint32_t(Entry.funct3)  << 8;
-  Value |= uint32_t(Entry.funct7)  << 11;
+  Value |= uint32_t(Entry.funct2or7)<< 11;
   Value |= uint32_t(Entry.imm12)   << 18;
   Value |= uint32_t(Entry.fpcvtOp) << 30;  //this is a 5 bit field, but only the lower two bits are used, so it *just* fits
                                            //without going to a uint64
@@ -959,10 +959,9 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
-  DInst.opcode  = InstTable[Entry].opcode;
-  DInst.funct3  = InstTable[Entry].funct3;
-  DInst.funct2  = 0x0;
-  DInst.funct7  = InstTable[Entry].funct7;
+  DInst.opcode    = InstTable[Entry].opcode;
+  DInst.funct3    = InstTable[Entry].funct3;
+  DInst.funct2or7 = InstTable[Entry].funct2or7;
 
   // registers
   DInst.rd      = 0x0;
@@ -1013,10 +1012,9 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
-  DInst.opcode  = InstTable[Entry].opcode;
-  DInst.funct3  = InstTable[Entry].funct3;
-  DInst.funct2  = 0x0;
-  DInst.funct7  = 0x0;
+  DInst.opcode    = InstTable[Entry].opcode;
+  DInst.funct3    = InstTable[Entry].funct3;
+  DInst.funct2or7 = 0x0;
 
   // registers
   DInst.rd      = 0x0;
@@ -1053,10 +1051,9 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
-  DInst.opcode  = InstTable[Entry].opcode;
-  DInst.funct3  = InstTable[Entry].funct3;
-  DInst.funct2  = 0x0;
-  DInst.funct7  = 0x0;
+  DInst.opcode    = InstTable[Entry].opcode;
+  DInst.funct3    = InstTable[Entry].funct3;
+  DInst.funct2or7 = 0x0;
 
   // registers
   DInst.rd      = 0x0;
@@ -1093,10 +1090,9 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
-  DInst.opcode  = InstTable[Entry].opcode;
-  DInst.funct3  = 0x0;
-  DInst.funct2  = 0x0;
-  DInst.funct7  = 0x0;
+  DInst.opcode    = InstTable[Entry].opcode;
+  DInst.funct3    = 0x0;
+  DInst.funct2or7 = 0x0;
 
   // registers
   DInst.rd      = 0x0;
@@ -1125,10 +1121,9 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
 RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
-  DInst.opcode  = InstTable[Entry].opcode;
-  DInst.funct3  = InstTable[Entry].funct3;
-  DInst.funct2  = 0x0;
-  DInst.funct7  = 0x0;
+  DInst.opcode    = InstTable[Entry].opcode;
+  DInst.funct3    = InstTable[Entry].funct3;
+  DInst.funct2or7 = 0x0;
 
   // registers
   DInst.rd      = 0x0;
@@ -1164,10 +1159,9 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
 RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
-  DInst.opcode  = InstTable[Entry].opcode;
-  DInst.funct3  = InstTable[Entry].funct3;
-  DInst.funct2  = 0x0;
-  DInst.funct7  = 0x0;
+  DInst.opcode    = InstTable[Entry].opcode;
+  DInst.funct3    = InstTable[Entry].funct3;
+  DInst.funct2or7 = 0x0;
 
   // registers
   DInst.rd      = 0x0;
@@ -1200,10 +1194,9 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
  RegFile->SetCost( InstTable[Entry].cost );
 
   // encodings
-  DInst.opcode  = InstTable[Entry].opcode;
-  DInst.funct3  = InstTable[Entry].funct3;
-  DInst.funct2  = DECODE_FUNCT2(Inst);
-  DInst.funct7  = InstTable[Entry].funct7;
+  DInst.opcode     = InstTable[Entry].opcode;
+  DInst.funct3     = InstTable[Entry].funct3;
+  DInst.funct2or7  = DECODE_FUNCT2(Inst);
 
   // registers
   DInst.rd      = 0x0;
@@ -1337,31 +1330,34 @@ RevInst RevProc::DecodeInst(){
   }
 
   // Stage 4: Determine if we have a funct7 field (R-Type and some specific I-Type)
-  uint32_t Funct7 = 0x00ul;
+  uint32_t Funct2or7 = 0x00ul;
   if( inst65 == 0b01 ) {
     if( (inst42 == 0b011) || (inst42 == 0b100) || (inst42 == 0b110) ){
       // R-Type encodings
-      Funct7 = ((Inst >> 25) & 0b1111111);
+      Funct2or7 = ((Inst >> 25) & 0b1111111);
       //Atomics have a smaller funct7 field - trim out the aq and rl fields
       if(Opcode == 0b0101111){
-        Funct7 = (Funct7 &0b01111100) >> 2;
+        Funct2or7 = (Funct2or7 &0b01111100) >> 2;
       }
     }
+  }else if((inst65== 0b10) && (inst42 < 0b100)){
+    // R4-Type encodings -- we store the Funct2 precision field in Funct2or7
+    Funct2or7 = DECODE_FUNCT2(Inst);
   }else if((inst65== 0b10) && (inst42 == 0b100)){
     // R-Type encodings
-    Funct7 = ((Inst >> 25) & 0b1111111);
+    Funct2or7 = ((Inst >> 25) & 0b1111111);
   }else if((inst65 == 0b00) && (inst42 == 0b110) && (Funct3 != 0)){
     // R-Type encodings
-    Funct7 = ((Inst >> 25) & 0b1111111);
+    Funct2or7 = ((Inst >> 25) & 0b1111111);
   }else if((inst65 == 0b00) && (inst42 == 0b100) && (Funct3 == 0b101)){
     // Special I-Type encoding for SRAI - also, Funct7 is only 6 bits in this case
-    Funct7 = ((Inst >> 26) & 0b1111111);
+    Funct2or7 = ((Inst >> 26) & 0b1111111);
   }
 
   uint32_t fcvtOp = 0;
   //Special encodings for FCVT instructions
   if( Opcode == 0b1010011 ){
-    switch(Funct7){
+    switch(Funct2or7){
       case 0b1100000:
       case 0b1101000:
       case 0b0100000:
@@ -1381,7 +1377,7 @@ RevInst RevProc::DecodeInst(){
   // Stage 6: Compress the encoding
   Enc |= Opcode;
   Enc |= Funct3<<8;
-  Enc |= Funct7<<11;
+  Enc |= Funct2or7<<11;
   Enc |= Imm12<<18;
   Enc |= fcvtOp<<30;
 
@@ -1432,8 +1428,8 @@ RevInst RevProc::DecodeInst(){
   if ( Entry >= InstTable.size() ){
     output->fatal(CALL_INFO, -1,
                   "Error: no entry in table for instruction at PC=0x%" PRIx64
-                  " Opcode = %x Funct3 = %x Funct7 = %x Imm12 = %x Enc = %x \n",
-                  PC, Opcode, Funct3, Funct7, Imm12, Enc );
+                  " Opcode = %x Funct3 = %x Funct2or7 = %x Imm12 = %x Enc = %x \n",
+                  PC, Opcode, Funct3, Funct2or7, Imm12, Enc );
   }
 
  RegFile->SetEntry(Entry);
