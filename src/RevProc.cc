@@ -409,7 +409,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -431,7 +431,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -524,7 +524,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -567,7 +567,7 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -601,7 +601,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -664,7 +664,7 @@ RevInst RevProc::DecodeCSInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -703,7 +703,7 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -725,7 +725,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost);
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -784,7 +784,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry) const {
   RevInst CompInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  CompInst.cost = InstTable[Entry].cost;
 
   // encodings
   CompInst.opcode  = InstTable[Entry].opcode;
@@ -826,13 +826,11 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
   uint8_t funct6  = 0;
   uint8_t l3      = 0;
   uint32_t Enc    = 0x00ul;
-  uint64_t PC     =Harts[HartToDecodeID]->RegFile->GetPC();
 
   if( !feature->HasCompressed() ){
     output->fatal(CALL_INFO, -1,
                   "Error: failed to decode instruction at PC=0x%" PRIx64 "; Compressed instructions not enabled!\n",
-                  PC);
-
+                  GetPC());
   }
 
   // decode the opcode
@@ -883,11 +881,13 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
   Enc |= (uint32_t)(funct4 << 8);
   Enc |= (uint32_t)(funct6 << 12);
 
+  bool isCoProcInst = false;
+
   auto it = CEncToEntry.find(Enc);
   if( it == CEncToEntry.end() ){
-    bool isCoProcInst = coProc && coProc->IssueInst(feature, RegFile, mem, Inst);
-    if(isCoProcInst){
-      //Create NOP - ADDI x0, x0 0
+    if( coProc && coProc->IssueInst(feature, RegFile, mem, Inst) ){
+      isCoProcInst = true;
+      //Create NOP - ADDI x0, x0, 0
       uint8_t caddi_op= 0b01;
       Inst = 0;
       Enc = 0;
@@ -899,8 +899,7 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
   if( it == CEncToEntry.end() ){
     output->fatal(CALL_INFO, -1,
                   "Error: failed to decode instruction at PC=0x%" PRIx64 "; Enc=%" PRIu32 "\n opc=%x; funct2=%x, funct3=%x, funct4=%x, funct6=%x\n",
-                  PC,
-                  Enc, opc, funct2, funct3, funct4, funct6 );
+                  GetPC(), Enc, opc, funct2, funct3, funct4, funct6 );
   }
 
   auto Entry = it->second;
@@ -908,11 +907,8 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
     output->fatal(CALL_INFO, -1,
                   "Error: no entry in table for instruction at PC=0x%" PRIx64
                   " Opcode = %x Funct2 = %x Funct3 = %x Funct4 = %x Funct6 = %x Enc = %x \n",
-                  PC, opc, funct2, funct3, funct4, funct6, Enc );
+                  GetPC(), opc, funct2, funct3, funct4, funct6, Enc );
   }
-
- RegFile->SetEntry(Entry);
- RegFile->SetTrigger(false);
 
   RevInst ret{};
 
@@ -946,17 +942,18 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
     break;
   default:
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to decode instruction format at PC=%" PRIx64 ".", PC );
+                  "Error: failed to decode instruction format at PC=%" PRIx64 ".", GetPC() );
   }
 
+  ret.entry = Entry;
+  ret.isCoProcInst = isCoProcInst;
   return ret;
 }
 
 RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
-  // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  DInst.cost    = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode    = InstTable[Entry].opcode;
@@ -1009,7 +1006,7 @@ RevInst RevProc::DecodeIInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  DInst.cost    = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode    = InstTable[Entry].opcode;
@@ -1048,7 +1045,7 @@ RevInst RevProc::DecodeSInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  DInst.cost    = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode    = InstTable[Entry].opcode;
@@ -1087,7 +1084,7 @@ RevInst RevProc::DecodeUInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  DInst.cost    = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode    = InstTable[Entry].opcode;
@@ -1118,7 +1115,7 @@ RevInst RevProc::DecodeBInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-RegFile->SetCost( InstTable[Entry].cost );
+  DInst.cost    = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode    = InstTable[Entry].opcode;
@@ -1156,7 +1153,7 @@ RevInst RevProc::DecodeJInst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
-RegFile->SetCost( InstTable[Entry].cost );
+  DInst.cost    = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode    = InstTable[Entry].opcode;
@@ -1191,7 +1188,7 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   RevInst DInst;
 
   // cost
- RegFile->SetCost( InstTable[Entry].cost );
+  DInst.cost    = InstTable[Entry].cost;
 
   // encodings
   DInst.opcode     = InstTable[Entry].opcode;
@@ -1262,14 +1259,11 @@ bool RevProc::PrefetchInst(){
 }
 
 RevInst RevProc::DecodeInst(){
-  uint32_t Enc  = 0x00ul;
   uint32_t Inst = 0x00ul;
-  uint64_t PC   = 0x00ull;
+  uint64_t PC   = GetPC();
   bool Fetched  = false;
 
   // Stage 1: Retrieve the instruction
-  PC = RegFile->GetPC();
-
   if( !sfetch->InstFetch(PC, Fetched, Inst) ){
     output->fatal(CALL_INFO, -1,
                   "Error: failed to retrieve prefetched instruction at PC=0x%" PRIx64 "\n",
@@ -1300,15 +1294,31 @@ RevInst RevProc::DecodeInst(){
     CrackFault = false;
   }
 
-  // Stage 2: Retrieve the opcode
-  const uint32_t Opcode = Inst & 0b1111111;
+  // Decode the instruction
+  RevInst DInst = DecodeInst(Inst);
 
-  // If we find a compressed instruction, then take
-  // the compressed decode path
-  if( (Opcode&0b11) != 0b11 ){
+  // Set RegFile Entry and cost, and clear trigger
+  RegFile->SetEntry(DInst.entry);
+  RegFile->SetCost(DInst.cost);
+  RegFile->SetTrigger(false);
+
+  // Return decoded instruction
+  return DInst;
+}
+
+// Decode the instruction
+// This function is pure, with no side effects or dependencies
+// on non-constant outside variables. This make it memoizable,
+// but right now, there isn't enough benefit for memoization.
+RevInst RevProc::DecodeInst(uint32_t Inst) const {
+  if( ~Inst & 0b11 ){
     // this is a compressed instruction
     return DecodeCompressed(Inst);
   }
+
+  // Stage 2: Retrieve the opcode
+  const uint32_t Opcode = Inst & 0b1111111;
+  uint32_t Enc = 0;
 
   // Stage 3: Determine if we have a funct3 field
   uint32_t Funct3 = 0x00ul;
@@ -1384,38 +1394,40 @@ RevInst RevProc::DecodeInst(){
   // Stage 7: Look up the value in the table
   auto it = EncToEntry.find(Enc);
 
-  if( inst65 == 0b10 && it == EncToEntry.end() ){
-    // This is kind of a hack, but we may not have found the instruction
-    // because Funct3 is overloaded with rounding mode, so if this is a RV32F
-    // or RV64F set Funct3 to zero and check again
+  // This is kind of a hack, but we may not have found the instruction because
+  // Funct3 is overloaded with rounding mode, so if this is a RV32F or RV64F
+  // set Funct3 to zero and check again. We exclude if Funct3 == 0b101 ||
+  // Funct3 == 0b110 because those are invalid FP rounding mode (rm) values.
+  if( inst65 == 0b10 && Funct3 != 0b101 && Funct3 != 0b110 && it == EncToEntry.end() ){
     Enc &= 0xfffff8ff;
     it = EncToEntry.find(Enc);
   }
 
-  if( it == EncToEntry.end() ){
-    bool isCoProcInst = coProc && coProc->IssueInst(feature, RegFile, mem, Inst);
-    if(isCoProcInst){
-      //Create NOP - ADDI x0, x0 0
-      uint32_t addi_op = 0b0010011;
-      Inst = 0;
-      Enc = 0;
-      Enc |= addi_op;
-      it = EncToEntry.find(Enc);
-    }
+  bool isCoProcInst = false;
+
+  // If we did not find a valid instruction, look for a coprocessor instruction
+  if( it == EncToEntry.end() && coProc && coProc->IssueInst(feature, RegFile, mem, Inst) ){
+    isCoProcInst = true;
+    //Create NOP - ADDI x0, x0, 0
+    uint32_t addi_op = 0b0010011;
+    Inst = 0;
+    Enc = 0;
+    Enc |= addi_op;
+    it = EncToEntry.find(Enc);
   }
 
   if( it == EncToEntry.end() ){
       // failed to decode the instruction
       output->fatal(CALL_INFO, -1,
                     "Error: failed to decode instruction at PC=0x%" PRIx64
-                    "; Enc=%" PRIu32 "\n", PC, Enc );
+                    "; Enc=%" PRIu32 "\n", GetPC(), Enc );
   }
 
   unsigned Entry = it->second;
   if( Entry >= InstTable.size() ){
-    bool isCoProcInst = coProc && coProc->IssueInst(feature, RegFile, mem, Inst);
-    if(isCoProcInst){
-      //Create NOP - ADDI x0, x0 0
+    if(coProc && coProc->IssueInst(feature, RegFile, mem, Inst)){
+      isCoProcInst = true;
+      //Create NOP - ADDI x0, x0, 0
       uint32_t addi_op = 0b0010011;
       Inst = 0;
       Enc = 0;
@@ -1429,11 +1441,8 @@ RevInst RevProc::DecodeInst(){
     output->fatal(CALL_INFO, -1,
                   "Error: no entry in table for instruction at PC=0x%" PRIx64
                   " Opcode = %x Funct3 = %x Funct2or7 = %x Imm12 = %x Enc = %x \n",
-                  PC, Opcode, Funct3, Funct2or7, Imm12, Enc );
+                  GetPC(), Opcode, Funct3, Funct2or7, Imm12, Enc );
   }
-
- RegFile->SetEntry(Entry);
- RegFile->SetTrigger(false);
 
   // Stage 8: Do a full deocode using the target format
   RevInst ret{};
@@ -1461,9 +1470,12 @@ RevInst RevProc::DecodeInst(){
     break;
   default:
     output->fatal(CALL_INFO, -1,
-                  "Error: failed to decode instruction format at PC=%" PRIx64 ".", PC );
+                  "Error: failed to decode instruction format at PC=%" PRIx64 ".",
+                  GetPC() );
   }
 
+  ret.entry = Entry;
+  ret.isCoProcInst = isCoProcInst;
   return ret;
 }
 

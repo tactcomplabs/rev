@@ -653,6 +653,9 @@ private:
   /// RevProc: decode the instruction at the current PC
   RevInst DecodeInst();
 
+  /// RevProc: decode a particular instruction opcode
+  RevInst DecodeInst(uint32_t Inst) const;
+
   /// RevProc: decode a compressed instruction
   RevInst DecodeCompressed(uint32_t Inst) const;
 
