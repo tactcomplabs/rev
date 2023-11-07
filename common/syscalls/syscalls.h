@@ -2876,7 +2876,7 @@ int rev_execve(const char  *filename, const char  *const  *argv, const char  *co
   return rc;
 }
 
-int rev_mmap(uint64_t addr, size_t length, int prot, int flags, int fd, off_t offset){
+uint64_t rev_mmap(uint64_t addr, size_t length, int prot, int flags, int fd, off_t offset){
   int rc;
   asm volatile (
     "li a7, 222 \n\t"
