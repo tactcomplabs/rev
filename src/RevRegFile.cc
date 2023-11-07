@@ -38,7 +38,7 @@ std::ostream& operator<<(std::ostream& os, const RevRegFile& regFile){
     char depValue = regFile.RV_Scoreboard[i] ? 'T' : 'F';
     os << "| " << std::setw(4) << ("x" + std::to_string(i));
     os << " | " << std::setw(5) << aliases[i];
-    os << " | " << std::setw(21) << ("0x" + std::to_string(value));
+    os << " | " << std::setw(21) << "0x" << std::hex << value;
     os << " | " << std::setw(4) << depValue;  // New "Dep" column
     os << " | " << std::setw(21) << info[i] << " |\n";
   }
