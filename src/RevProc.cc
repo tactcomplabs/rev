@@ -1258,7 +1258,7 @@ bool RevProc::PrefetchInst(){
   return sfetch->IsAvail(PC);
 }
 
-RevInst RevProc::DecodeInst(){
+RevInst RevProc::FetchAndDecodeInst(){
   uint32_t Inst = 0x00ul;
   uint64_t PC   = GetPC();
   bool Fetched  = false;
@@ -1657,7 +1657,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     if( !Stalled && !CoProcStallReq[HartToDecodeID]){
-      Inst = DecodeInst();
+      Inst = FetchAndDecodeInst();
       Inst.entry = RegFile->GetEntry();
     }
 

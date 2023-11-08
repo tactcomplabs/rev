@@ -651,7 +651,7 @@ private:
   bool PrefetchInst();
 
   /// RevProc: decode the instruction at the current PC
-  RevInst DecodeInst();
+  RevInst FetchAndDecodeInst();
 
   /// RevProc: decode a particular instruction opcode
   RevInst DecodeInst(uint32_t Inst) const;
