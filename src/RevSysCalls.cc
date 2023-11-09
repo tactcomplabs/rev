@@ -51,7 +51,7 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
                   straddr + EcallState.string.size(),
                   EcallState.buf.data(),
                   req,
-                  REVMEM_FLAGS(0));
+                   RevFlag::F_NONE);
       EcallState.bytesRead = 1;
       DependencySet(HartToExecID, 10, false);
       rtval = EcallStatus::CONTINUE;
@@ -763,22 +763,22 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
     if(nleft >= 8){
       mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
                    reinterpret_cast<uint64_t*>(EcallState.buf.data()),
-                   req, REVMEM_FLAGS(0));
+                   req, RevFlag::F_NONE);
       EcallState.bytesRead = 8;
     } else if(nleft >= 4){
       mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
                    reinterpret_cast<uint32_t*>(EcallState.buf.data()),
-                   req, REVMEM_FLAGS(0));
+                   req, RevFlag::F_NONE);
       EcallState.bytesRead = 4;
     } else if(nleft >= 2){
       mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
                    reinterpret_cast<uint16_t*>(EcallState.buf.data()),
-                   req, REVMEM_FLAGS(0));
+                   req, RevFlag::F_NONE);
       EcallState.bytesRead = 2;
     } else{
       mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
                    reinterpret_cast<uint8_t*>(EcallState.buf.data()),
-                   req, REVMEM_FLAGS(0));
+                   req, RevFlag::F_NONE);
       EcallState.bytesRead = 1;
     }
 
@@ -2085,7 +2085,7 @@ EcallStatus RevProc::ECALL_clone(RevInst& inst){
  //    // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
  //                                // using the 1st uint64, so that's all we're going to fetch
  //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
- //   mem->ReadVal<uint64_t>(HartToExecID, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
+ //   mem->ReadVal<uint64_t>(HartToExecID, CloneArgsAddr, args, inst.hazard, RevFlag::F_NONE);
  //   ECALL.bytesRead = sizeof(*args);
  //   rtval = EcallStatus::CONTINUE;
  // }else{
@@ -2941,7 +2941,7 @@ EcallStatus RevProc::ECALL_clone3(RevInst& inst){
  //    // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
  //                                // using the 1st uint64, so that's all we're going to fetch
  //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
- //   mem->ReadVal<uint64_t>(HartToExecID, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
+ //   mem->ReadVal<uint64_t>(HartToExecID, CloneArgsAddr, args, inst.hazard, RevFlag::F_NONE);
  //   ECALL.bytesRead = sizeof(*args);
  //   rtval = EcallStatus::CONTINUE;
  // }else{
@@ -3163,7 +3163,7 @@ EcallStatus RevProc::ECALL_pthread_create(RevInst& inst){
   CreateThread(NewTID,
                NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 
-  mem->WriteMem(HartToExecID, tidAddr, sizeof(NewTID), &NewTID, REVMEM_FLAGS(0x00));
+  mem->WriteMem(HartToExecID, tidAddr, sizeof(NewTID), &NewTID, RevFlag::F_NONE);
   return EcallStatus::SUCCESS;
 }
 

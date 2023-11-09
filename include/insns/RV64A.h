@@ -27,7 +27,7 @@ class RV64A : public RevExt {
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rd],
           Inst.aq, Inst.rl, req,
-          REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+          RevFlag::F_SEXT64);
     R->AdvancePC(Inst);
     return true;
   }
@@ -38,22 +38,22 @@ class RV64A : public RevExt {
           &R->RV64[Inst.rs2],
           &R->RV64[Inst.rd],
           Inst.aq, Inst.rl,
-          REVMEM_FLAGS(RevCPU::RevFlag::F_SEXT64));
+          RevFlag::F_SEXT64);
     R->AdvancePC(Inst);
     return true;
   }
 
   /// Atomic Memory Operations
-  template<RevCPU::RevFlag F_AMO>
+  template<RevFlag F_AMO>
   static bool amooperd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     uint32_t flags = static_cast<uint32_t>(F_AMO);
 
     if( Inst.aq && Inst.rl ){
-      flags |= uint32_t(RevCPU::RevFlag::F_AQ) | uint32_t(RevCPU::RevFlag::F_RL);
+      flags |= uint32_t(RevFlag::F_AQ) | uint32_t(RevFlag::F_RL);
     }else if( Inst.aq ){
-      flags |= uint32_t(RevCPU::RevFlag::F_AQ);
+      flags |= uint32_t(RevFlag::F_AQ);
     }else if( Inst.rl ){
-      flags |= uint32_t(RevCPU::RevFlag::F_RL);
+      flags |= uint32_t(RevFlag::F_RL);
     }
 
     MemReq req(R->RV64[Inst.rs1],
@@ -71,7 +71,7 @@ class RV64A : public RevExt {
               &R->RV64[Inst.rs2],
               &R->RV64[Inst.rd],
               req,
-              flags);
+              RevFlag{flags});
 
     R->AdvancePC(Inst);
 
@@ -80,15 +80,15 @@ class RV64A : public RevExt {
     return true;
   }
 
-  static constexpr auto& amoaddd  = amooperd<RevCPU::RevFlag::F_AMOADD>;
-  static constexpr auto& amoswapd = amooperd<RevCPU::RevFlag::F_AMOSWAP>;
-  static constexpr auto& amoxord  = amooperd<RevCPU::RevFlag::F_AMOXOR>;
-  static constexpr auto& amoandd  = amooperd<RevCPU::RevFlag::F_AMOAND>;
-  static constexpr auto& amoord   = amooperd<RevCPU::RevFlag::F_AMOOR>;
-  static constexpr auto& amomind  = amooperd<RevCPU::RevFlag::F_AMOMIN>;
-  static constexpr auto& amomaxd  = amooperd<RevCPU::RevFlag::F_AMOMAX>;
-  static constexpr auto& amominud = amooperd<RevCPU::RevFlag::F_AMOMINU>;
-  static constexpr auto& amomaxud = amooperd<RevCPU::RevFlag::F_AMOMAXU>;
+  static constexpr auto& amoaddd  = amooperd<RevFlag::F_AMOADD>;
+  static constexpr auto& amoswapd = amooperd<RevFlag::F_AMOSWAP>;
+  static constexpr auto& amoxord  = amooperd<RevFlag::F_AMOXOR>;
+  static constexpr auto& amoandd  = amooperd<RevFlag::F_AMOAND>;
+  static constexpr auto& amoord   = amooperd<RevFlag::F_AMOOR>;
+  static constexpr auto& amomind  = amooperd<RevFlag::F_AMOMIN>;
+  static constexpr auto& amomaxd  = amooperd<RevFlag::F_AMOMAX>;
+  static constexpr auto& amominud = amooperd<RevFlag::F_AMOMINU>;
+  static constexpr auto& amomaxud = amooperd<RevFlag::F_AMOMAXU>;
 
   // ----------------------------------------------------------------------
   //
