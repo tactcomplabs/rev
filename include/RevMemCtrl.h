@@ -331,9 +331,11 @@ public:
                           { "max_writeunlock", "Sets the maximum number of outstanding writeunlock events", "64"},
                           { "max_custom",     "Sets the maximum number of outstanding custom events",     "64"},
                           { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" },
+                          { "iface_ports",    "Sets the number of memIface ports", "1" },
+                          { "harts_per_port", "Sets the number of Harts per port", "0"},
     )
 
-  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({ "memIface", "Set the interface to memory", "SST::Interfaces::StandardMem" })
+  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({ "memIface%(memIface_ports)d", "Set the interface to memory", "SST::Interfaces::StandardMem" })
 
   SST_ELI_DOCUMENT_PORTS()
 
@@ -601,6 +603,9 @@ private:
   /// RevBasicMemCtrl: returns the total number of outstanding requests
   uint64_t getTotalRqsts();
 
+  /// RevBasicMemCtrl: returns the total number of outstanding requests per port
+  uint64_t getTotalRqstsPerPort(unsigned Port);
+
   /// RevBasicMemCtrl: Determine the number of cache lines are required
   unsigned getNumCacheLines(uint64_t Addr, uint32_t Size);
 
@@ -615,8 +620,11 @@ private:
                   StandardMem::Request::flags_t,
                   RevMemOp *, bool> Entry);
 
+  /// RevBasicMemCtrl: retrieve the appropriate port number for the target HART
+  unsigned hartToPort(unsigned Hart);
+
   // -- private data members
-  StandardMem* memIface;                  ///< StandardMem memory interface
+  std::vector<StandardMem*> memIface;     ///< StandardMem memory interface
   RevStdMemHandlers* stdMemHandlers;      ///< StandardMem interface response handlers
   bool hasCache;                          ///< detects whether cache layers are present
   unsigned lineSize;                      ///< cache line size
@@ -629,14 +637,17 @@ private:
   unsigned max_custom;                    ///< maximum number of oustanding custom events
   unsigned max_ops;                       ///< maximum number of ops to issue per cycle
 
-  uint64_t num_read;                      ///< number of outstanding read requests
-  uint64_t num_write;                     ///< number of outstanding write requests
-  uint64_t num_flush;                     ///< number of outstanding flush requests
-  uint64_t num_llsc;                      ///< number of outstanding LL/SC requests
-  uint64_t num_readlock;                  ///< number of oustanding readlock requests
-  uint64_t num_writeunlock;               ///< number of oustanding writelock requests
-  uint64_t num_custom;                    ///< number of outstanding custom requests
+  uint64_t *num_read;                     ///< number of outstanding read requests
+  uint64_t *num_write;                    ///< number of outstanding write requests
+  uint64_t *num_flush;                    ///< number of outstanding flush requests
+  uint64_t *num_llsc;                     ///< number of outstanding LL/SC requests
+  uint64_t *num_readlock;                 ///< number of oustanding readlock requests
+  uint64_t *num_writeunlock;              ///< number of oustanding writelock requests
+  uint64_t *num_custom;                   ///< number of outstanding custom requests
   uint64_t num_fence;                     ///< number of oustanding fence requests
+
+  unsigned num_ports;                     ///< number of memory interface ports
+  unsigned harts_per_port;                ///< number of HARTs per port
 
   std::vector<StandardMem::Request::id_t> requests;               ///< outstanding StandardMem requests
   std::vector<RevMemOp *> rqstQ;                                  ///< queued memory requests

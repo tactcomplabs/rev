@@ -123,13 +123,13 @@ RevMemCtrl::~RevMemCtrl(){
 // RevBasicMemCtrl
 // ---------------------------------------------------------------
 RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
-  : RevMemCtrl(id, params), memIface(nullptr), stdMemHandlers(nullptr),
+  : RevMemCtrl(id, params), stdMemHandlers(nullptr),
     hasCache(false), lineSize(0),
     max_loads(64), max_stores(64), max_flush(64), max_llsc(64),
     max_readlock(64), max_writeunlock(64), max_custom(64), max_ops(2),
-    num_read(0x00ull), num_write(0x00ull), num_flush(0x00ull), num_llsc(0x00ull),
-    num_readlock(0x00ull), num_writeunlock(0x00ull), num_custom(0x00ull),
-    num_fence(0x00ull) {
+    num_read(nullptr), num_write(nullptr), num_flush(nullptr), num_llsc(nullptr),
+    num_readlock(nullptr), num_writeunlock(nullptr), num_custom(nullptr),
+    num_fence(0), num_ports(1), harts_per_port(0) {
 
   stdMemHandlers = new RevBasicMemCtrl::RevStdMemHandlers(this, output);
 
@@ -144,15 +144,36 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
   max_custom = params.find<unsigned>("max_custom", 64);
   max_ops = params.find<unsigned>("ops_per_cycle", 2);
 
+  num_ports = params.find<unsigned>("iface_ports", "1");
+  harts_per_port = params.find<unsigned>("harts_per_port", "0");
+
   rqstQ.reserve(max_ops);
 
-  memIface = loadUserSubComponent<Interfaces::StandardMem>(
-    "memIface", ComponentInfo::SHARE_NONE, //*/ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
+  for( unsigned i=0; i<num_ports; i++ ){
+    StandardMem* IF = loadUserSubComponent<Interfaces::StandardMem>(
+    "memIface"+std::to_string(i), ComponentInfo::SHARE_NONE, //*/ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
     getTimeConverter(ClockFreq), new StandardMem::Handler<SST::RevCPU::RevBasicMemCtrl>(
       this, &RevBasicMemCtrl::processMemEvent));
+    if( !IF )
+      output->fatal(CALL_INFO, -1, "Error : memory interface %d is null\n", i);
+    memIface.push_back(IF);
+  }
 
-  if( !memIface ){
-    output->fatal(CALL_INFO, -1, "Error : memory interface is null\n");
+  num_read = new uint64_t [num_ports];
+  num_write = new uint64_t [num_ports];
+  num_flush = new uint64_t [num_ports];
+  num_llsc = new uint64_t [num_ports];
+  num_readlock = new uint64_t [num_ports];
+  num_writeunlock = new uint64_t [num_ports];
+  num_custom = new uint64_t [num_ports];
+  for( unsigned i=0; i<num_ports; i++ ){
+    num_read[i] = 0;
+    num_write[i] = 0;
+    num_flush[i] = 0;
+    num_llsc[i] = 0;
+    num_readlock[i] = 0;
+    num_writeunlock[i] = 0;
+    num_custom[i] = 0;
   }
 
   registerStats();
@@ -162,6 +183,14 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
 }
 
 RevBasicMemCtrl::~RevBasicMemCtrl(){
+  delete[] num_read;
+  delete[] num_write;
+  delete[] num_flush;
+  delete[] num_llsc;
+  delete[] num_readlock;
+  delete[] num_writeunlock;
+  delete[] num_custom;
+
   for( auto* p : rqstQ )
     delete p;
   rqstQ.clear();
@@ -222,6 +251,11 @@ void RevBasicMemCtrl::recordStat(RevBasicMemCtrl::MemCtrlStats Stat,
     return;
   }
   stats[Stat]->addData(Data);
+}
+
+unsigned RevBasicMemCtrl::hartToPort(unsigned Hart){
+  // Note: this is a linear relationship of Harts to ports
+  return Hart/harts_per_port;
 }
 
 bool RevBasicMemCtrl::sendFLUSHRequest(unsigned Hart,
@@ -442,11 +476,24 @@ void RevBasicMemCtrl::processMemEvent(StandardMem::Request* ev){
 }
 
 void RevBasicMemCtrl::init(unsigned int phase){
-  memIface->init(phase);
+
+  for( unsigned i=0; i<memIface.size(); i++ ){
+    memIface[i]->init(phase);
+  }
 
   // query the caching infrastructure
   if( phase == 1 ){
-    lineSize = memIface->getLineSize();
+    // NOTE: we query memIface[0] for the line size
+    //       this implies that all caches must utilize the same line size
+    lineSize = memIface[0]->getLineSize();
+
+    // ensure that all the caches utilize the same line size
+    for( unsigned i=1; i<memIface.size(); i++ ){
+      if( memIface[i]->getLineSize() != lineSize ){
+        output->fatal(CALL_INFO, -1, "Error : detected multiple cache lines sizes\n");
+      }
+    }
+
     if( lineSize > 0 ){
       output->verbose(CALL_INFO, 5, 0, "Detected cache layers; default line size=%u\n", lineSize);
       hasCache = true;
@@ -458,7 +505,9 @@ void RevBasicMemCtrl::init(unsigned int phase){
 }
 
 void RevBasicMemCtrl::setup(){
-  memIface->setup();
+  for( unsigned i=0; i<memIface.size(); i++ ){
+    memIface[i]->setup();
+  }
 }
 
 void RevBasicMemCtrl::finish(){
@@ -618,49 +667,49 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
   // if we don't have enough request slots, then requeue the entire RevMemOp
   switch(op->getOp()){
   case MemOp::MemOpREAD:
-    if( (max_loads-num_read) < NumLines ){
+    if( (max_loads-num_read[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
     break;
   case MemOp::MemOpWRITE:
-    if( (max_stores-num_write) < NumLines ){
+    if( (max_stores-num_write[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
     break;
   case MemOp::MemOpFLUSH:
-    if( (max_flush-num_flush) < NumLines ){
+    if( (max_flush-num_flush[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
     break;
   case MemOp::MemOpREADLOCK:
-    if( (max_readlock-num_readlock) < NumLines ){
+    if( (max_readlock-num_readlock[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
     break;
   case MemOp::MemOpWRITEUNLOCK:
-    if( (max_writeunlock-num_writeunlock) < NumLines ){
+    if( (max_writeunlock-num_writeunlock[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
     break;
   case MemOp::MemOpLOADLINK:
-    if( (max_llsc-num_llsc) < NumLines ){
+    if( (max_llsc-num_llsc[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
     break;
   case MemOp::MemOpSTORECOND:
-    if( (max_llsc-num_llsc) < NumLines ){
+    if( (max_llsc-num_llsc[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
     break;
   case MemOp::MemOpCUSTOM:
-    if( (max_custom-num_custom) < NumLines ){
+    if( (max_custom-num_custom[hartToPort(op->getHart())]) < NumLines ){
       Success = false;
       return true;
     }
@@ -707,9 +756,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                              TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(ReadInFlight, 1);
-    num_read++;
+    num_read[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpWRITE:
 #ifdef _REV_DEBUG_
@@ -725,9 +774,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                               TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(WriteInFlight, 1);
-    num_write++;
+    num_write[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpFLUSH:
     rqst = new Interfaces::StandardMem::FlushAddr(op->getAddr(),
@@ -737,9 +786,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                   TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(FlushInFlight, 1);
-    num_flush++;
+    num_flush[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpREADLOCK:
     rqst = new Interfaces::StandardMem::ReadLock(op->getAddr(),
@@ -747,9 +796,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                  TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(ReadLockInFlight, 1);
-    num_readlock++;
+    num_readlock[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpWRITEUNLOCK:
     for( unsigned i=0; i<BaseCacheLineSize; i++ ){
@@ -763,9 +812,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                     TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(WriteUnlockInFlight, 1);
-    num_writeunlock++;
+    num_writeunlock[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpLOADLINK:
     rqst = new Interfaces::StandardMem::LoadLink(op->getAddr(),
@@ -773,9 +822,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                  TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(LoadLinkInFlight, 1);
-    num_llsc++;
+    num_llsc[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpSTORECOND:
     for( unsigned i=0; i<BaseCacheLineSize; i++ ){
@@ -788,18 +837,18 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                          TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(StoreCondInFlight, 1);
-    num_llsc++;
+    num_llsc[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpCUSTOM:
     // TODO: need more support for custom memory ops
     rqst = new Interfaces::StandardMem::CustomReq(nullptr, TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(CustomInFlight, 1);
-    num_custom++;
+    num_custom[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpFENCE:
     // we should never get here with a FENCE operation
@@ -833,9 +882,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(ReadInFlight, 1);
-      num_read++;
+      num_read[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpWRITE:
       for( unsigned j=curByte; j<(curByte+newSize); j++ ){
@@ -848,9 +897,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                 TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(WriteInFlight, 1);
-      num_write++;
+      num_write[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpFLUSH:
       rqst = new Interfaces::StandardMem::FlushAddr(newBase,
@@ -860,9 +909,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                     TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(FlushInFlight, 1);
-      num_flush++;
+      num_flush[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpREADLOCK:
       rqst = new Interfaces::StandardMem::ReadLock(newBase,
@@ -870,9 +919,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                    TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(ReadLockInFlight, 1);
-      num_readlock++;
+      num_readlock[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpWRITEUNLOCK:
       for( unsigned j=curByte; j<(curByte+newSize); j++ ){
@@ -886,9 +935,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                       TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(WriteUnlockInFlight, 1);
-      num_writeunlock++;
+      num_writeunlock[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpLOADLINK:
       rqst = new Interfaces::StandardMem::LoadLink(newBase,
@@ -896,9 +945,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                    TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(LoadLinkInFlight, 1);
-      num_llsc++;
+      num_llsc[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpSTORECOND:
       for( unsigned j=curByte; j<(curByte+newSize); j++ ){
@@ -911,18 +960,18 @@ bool RevBasicMemCtrl::buildCacheMemRqst(RevMemOp *op,
                                                            TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(StoreCondInFlight, 1);
-      num_llsc++;
+      num_llsc[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpCUSTOM:
       // TODO: need more support for custom memory ops
       rqst = new Interfaces::StandardMem::CustomReq(nullptr, TmpFlags);
       requests.push_back(rqst->getID());
       outstanding[rqst->getID()] = op;
-      memIface->send(rqst);
+      memIface[hartToPort(op->getHart())]->send(rqst);
       recordStat(CustomInFlight, 1);
-      num_custom++;
+      num_custom[hartToPort(op->getHart())]++;
       break;
     case MemOp::MemOpFENCE:
       // we should never get here with a FENCE operation
@@ -954,9 +1003,9 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
                                              TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(ReadInFlight, 1);
-    num_read++;
+    num_read[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpWRITE:
     rqst = new Interfaces::StandardMem::Write(op->getAddr(),
@@ -965,9 +1014,9 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
                                               TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(WriteInFlight, 1);
-    num_write++;
+    num_write[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpFLUSH:
     rqst = new Interfaces::StandardMem::FlushAddr(op->getAddr(),
@@ -977,9 +1026,9 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
                                                   TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(FlushInFlight, 1);
-    num_flush++;
+    num_flush[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpREADLOCK:
     rqst = new Interfaces::StandardMem::ReadLock(op->getAddr(),
@@ -987,9 +1036,9 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
                                                  TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(ReadLockInFlight, 1);
-    num_readlock++;
+    num_readlock[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpWRITEUNLOCK:
     rqst = new Interfaces::StandardMem::WriteUnlock(op->getAddr(),
@@ -999,9 +1048,9 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
                                                     TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(WriteUnlockInFlight, 1);
-    num_writeunlock++;
+    num_writeunlock[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpLOADLINK:
     rqst = new Interfaces::StandardMem::LoadLink(op->getAddr(),
@@ -1009,9 +1058,9 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
                                                  TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(LoadLinkInFlight, 1);
-    num_llsc++;
+    num_llsc[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpSTORECOND:
     rqst = new Interfaces::StandardMem::StoreConditional(op->getAddr(),
@@ -1020,18 +1069,18 @@ bool RevBasicMemCtrl::buildRawMemRqst(RevMemOp *op,
                                                          TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(StoreCondInFlight, 1);
-    num_llsc++;
+    num_llsc[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpCUSTOM:
     // TODO: need more support for custom memory ops
     rqst = new Interfaces::StandardMem::CustomReq(nullptr, TmpFlags);
     requests.push_back(rqst->getID());
     outstanding[rqst->getID()] = op;
-    memIface->send(rqst);
+    memIface[hartToPort(op->getHart())]->send(rqst);
     recordStat(CustomInFlight, 1);
-    num_custom++;
+    num_custom[hartToPort(op->getHart())]++;
     break;
   case MemOp::MemOpFENCE:
     // we should never get here with a FENCE operation
@@ -1267,6 +1316,7 @@ unsigned RevBasicMemCtrl::getNumSplitRqsts(RevMemOp *op){
 }
 
 void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
+  unsigned hart = 0;
   if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
@@ -1282,6 +1332,8 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
     std::cout << "Address of the target register = 0x" << std::hex
               << (uint64_t *)(op->getTarget()) << std::dec << std::endl;
 #endif
+
+    hart = op->getHart();
 
     auto range = AMOTable.equal_range(op->getAddr());
     bool isAMO = false;
@@ -1320,7 +1372,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
       }
       outstanding.erase(ev->getID());
       delete ev;
-      num_read--;
+      num_read[hartToPort(hart)]--;
       return ;
     }
 
@@ -1346,7 +1398,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
   }else{
     output->fatal(CALL_INFO, -1, "Error : found unknown ReadResp\n");
   }
-  num_read--;
+  num_read[hartToPort(hart)]--;
 }
 
 void RevBasicMemCtrl::performAMO(std::tuple<unsigned,
@@ -1435,6 +1487,7 @@ void RevBasicMemCtrl::handleAMO(RevMemOp *op){
 }
 
 void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
+  unsigned hart = 0;
   if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
@@ -1444,6 +1497,8 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     std::cout << "handleWriteResp : id=" << ev->getID() << " @Addr= 0x"
               << std::hex << op->getAddr() << std::dec << std::endl;
 #endif
+
+    hart = op->getHart();
 
     // walk the AMOTable and clear any matching AMO ops
     // note that we must match on both the target address and the RevMemOp pointer
@@ -1474,7 +1529,7 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
       }
       outstanding.erase(ev->getID());
       delete ev;
-      num_write--;
+      num_write[hartToPort(hart)]--;
       return ;
     }
 
@@ -1492,15 +1547,18 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
   }else{
     output->fatal(CALL_INFO, -1, "Error : found unknown WriteResp\n");
   }
-  num_write--;
+  num_write[hartToPort(hart)]--;
 }
 
 void RevBasicMemCtrl::handleFlushResp(StandardMem::FlushResp* ev){
+  unsigned hart = 0;
   if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
     if( !op )
       output->fatal(CALL_INFO, -1, "RevMemOp is null in handleFlushResp\n" );
+
+    hart = op->getHart();
 
     // determine if we have a split request
     if( op->getSplitRqst() > 1 ){
@@ -1511,7 +1569,7 @@ void RevBasicMemCtrl::handleFlushResp(StandardMem::FlushResp* ev){
       }
       outstanding.erase(ev->getID());
       delete ev;
-      num_flush--;
+      num_flush[hartToPort(hart)]--;
       return ;
     }
 
@@ -1522,15 +1580,18 @@ void RevBasicMemCtrl::handleFlushResp(StandardMem::FlushResp* ev){
   }else{
     output->fatal(CALL_INFO, -1, "Error : found unknown FlushResp\n");
   }
-  num_flush--;
+  num_flush[hartToPort(hart)]--;
 }
 
 void RevBasicMemCtrl::handleCustomResp(StandardMem::CustomResp* ev){
+  unsigned hart = 0;
   if( std::find(requests.begin(), requests.end(), ev->getID()) != requests.end() ){
     requests.erase(std::find(requests.begin(), requests.end(), ev->getID()));
     RevMemOp *op = outstanding[ev->getID()];
     if( !op )
       output->fatal(CALL_INFO, -1, "RevMemOp is null in handleCustomResp\n" );
+
+    hart = op->getHart();
 
     // determine if we have a split request
     if( op->getSplitRqst() > 1 ){
@@ -1541,7 +1602,7 @@ void RevBasicMemCtrl::handleCustomResp(StandardMem::CustomResp* ev){
       }
       outstanding.erase(ev->getID());
       delete ev;
-      num_custom--;
+      num_custom[hartToPort(hart)]--;
       return ;
     }
 
@@ -1552,7 +1613,7 @@ void RevBasicMemCtrl::handleCustomResp(StandardMem::CustomResp* ev){
   }else{
     output->fatal(CALL_INFO, -1, "Error : found unknown CustomResp\n");
   }
-  num_custom--;
+  num_custom[hartToPort(hart)]--;
 }
 
 void RevBasicMemCtrl::handleInvResp(StandardMem::InvNotify* ev){
@@ -1584,8 +1645,27 @@ void RevBasicMemCtrl::handleInvResp(StandardMem::InvNotify* ev){
 }
 
 uint64_t RevBasicMemCtrl::getTotalRqsts(){
-  return num_read + num_write + num_llsc +
-    num_readlock + num_writeunlock + num_custom;
+  uint64_t total = 0x00ull;
+  for( unsigned i=0; i<num_ports; i++ ){
+    total += (uint64_t)(num_read[i]);
+    total += (uint64_t)(num_write[i]);
+    total += (uint64_t)(num_llsc[i]);
+    total += (uint64_t)(num_readlock[i]);
+    total += (uint64_t)(num_writeunlock[i]);
+    total += (uint64_t)(num_custom[i]);
+  }
+  return total;
+}
+
+uint64_t RevBasicMemCtrl::getTotalRqstsPerPort(unsigned Port){
+  uint64_t total = 0x00ull;
+  total += (uint64_t)(num_read[Port]);
+  total += (uint64_t)(num_write[Port]);
+  total += (uint64_t)(num_llsc[Port]);
+  total += (uint64_t)(num_readlock[Port]);
+  total += (uint64_t)(num_writeunlock[Port]);
+  total += (uint64_t)(num_custom[Port]);
+  return total;
 }
 
 bool RevBasicMemCtrl::outstandingRqsts(){
@@ -1593,12 +1673,13 @@ bool RevBasicMemCtrl::outstandingRqsts(){
 }
 
 bool RevBasicMemCtrl::clockTick(Cycle_t cycle){
-
   // check to see if the top request is a FENCE
+  // This is unique for multi-ported memories
+  // We have a BIG fence whereby all Harts recognize
+  // the fence to memory.  This could potentially be
+  // changed to recognize fences "per port"
   if( num_fence > 0 ){
-    if( (num_read + num_write + num_llsc +
-         num_readlock + num_writeunlock +
-         num_custom) != 0 ){
+    if( getTotalRqsts() != 0 ){
       // waiting for the outstanding ops to clear
       recordStat(RevBasicMemCtrl::MemCtrlStats::FencePending, 1);
       return false;
