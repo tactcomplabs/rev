@@ -2244,7 +2244,7 @@ EcallStatus RevProc::ECALL_mmap(RevInst& inst){
 
   if( !addr ){
     // If address is NULL... We add it to MemSegs.end()->getTopAddr()+1
-    addr = mem->AllocMem(size+1);
+    addr = mem->AllocMem(size);
     // addr = mem->AddMemSeg(Size);
   } else {
     // We were passed an address... try to put a segment there.
