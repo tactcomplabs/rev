@@ -174,7 +174,7 @@ void RevPrefetcher::Fill(uint64_t Addr){
     mem->ReadVal<uint32_t>( feature->GetHartToExecID(), Addr+(y*4),
                   &iStack[x][y],
                   req,
-                  REVMEM_FLAGS(0x00) );
+                  RevFlag::F_NONE );
   }
 }
 

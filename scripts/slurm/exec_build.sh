@@ -10,15 +10,17 @@
 # information, see the LICENSE file in the top level directory of
 # this distribution.
 #
+USER=$(id -un)
 
 #-- execute the job
 SCRIPT=$1
 SLURM_ID=`sbatch -N1 --export=ALL $SCRIPT | awk '{print $4}'`
 
 #-- wait for completion
-COMPLETE=`squeue -u builduser | grep ${SLURM_ID}`
+COMPLETE=`squeue -u $USER | grep ${SLURM_ID}`
 while [ -n "$COMPLETE" ]; do
-  COMPLETE=`squeue -u builduser | grep ${SLURM_ID}`
+  sleep 1
+  COMPLETE=`squeue -u $USER | grep ${SLURM_ID}`
 done
 
 #-- echo the result to the log
