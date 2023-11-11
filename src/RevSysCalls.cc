@@ -605,8 +605,6 @@ EcallStatus RevProc::ECALL_openat(RevInst& inst){
    */
 
   /* Read the filename from memory one character at a time until we find '\0' */
-  auto& Thread = GetThreadOnHart(HartToExec);
-
 
 
   auto action = [&]{

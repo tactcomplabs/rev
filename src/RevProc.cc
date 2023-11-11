@@ -912,8 +912,6 @@ RevInst RevProc::DecodeCompressed(uint32_t Inst) const {
 
   RevInst ret{};
 
-  RevInst ret{};
-
   switch( InstTable[Entry].format ){
   case RVCTypeCR:
     ret = DecodeCRInst(TmpInst, Entry);
