@@ -85,6 +85,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
                req,
                flags);
     R->SetX(Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
+
   }else{
     static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
       REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 : RevCPU::RevFlag::F_ZEXT64) :
@@ -103,6 +104,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
                req,
                flags);
     R->SetX(Inst.rd, static_cast<T>(R->RV64[Inst.rd]));
+
   }
 
   // update the cost

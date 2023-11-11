@@ -20,11 +20,11 @@ MEM_SIZE = 1024*1024*1024-1
 # Define the simulation components
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
-        "verbose" : 6,                                # Verbosity
+        "verbose" : 10,                                # Verbosity
         "numCores" : 1,                               # Number of cores
         "clock" : "2.0GHz",                           # Clock
         "memSize" : MEM_SIZE,                         # Memory size in bytes
-        "machine" : "[0:RV64G]",                      # Core:Config; RV64G for core 0
+        "machine" : "[0:RV64GC]",                      # Core:Config; RV64G for core 0
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "cache_test2.exe"),  # Target executable
