@@ -68,9 +68,8 @@ template<typename T>
 bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   MemReq req{};
   if( sizeof(T) < sizeof(int64_t) && R->IsRV32 ){
-    static constexpr auto flags = sizeof(T) < sizeof(int32_t) ?
-      REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT32 : RevCPU::RevFlag::F_ZEXT32) :
-      REVMEM_FLAGS(0);
+    static constexpr RevFlag flags = sizeof(T) < sizeof(int32_t) ?
+      std::is_signed_v<T> ? RevFlag::F_SEXT32 : RevFlag::F_ZEXT32 : RevFlag::F_NONE;
     uint64_t rs1 = R->GetX<uint64_t>(Inst.rs1); // read once for tracer
     req.Set(rs1 + Inst.ImmSignExt(12),
             Inst.rd, RevRegClass::RegGPR,
@@ -87,9 +86,8 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     R->SetX(Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
 
   }else{
-    static constexpr auto flags = sizeof(T) < sizeof(int64_t) ?
-      REVMEM_FLAGS(std::is_signed_v<T> ? RevCPU::RevFlag::F_SEXT64 : RevCPU::RevFlag::F_ZEXT64) :
-      REVMEM_FLAGS(0);
+    static constexpr RevFlag flags = sizeof(T) < sizeof(int64_t) ?
+      std::is_signed_v<T> ? RevFlag::F_SEXT64 : RevFlag::F_ZEXT64 : RevFlag::F_NONE;
     uint64_t rs1 = R->GetX<uint64_t>(Inst.rs1);
     req.Set(rs1 + Inst.ImmSignExt(12),
             Inst.rd, RevRegClass::RegGPR,
@@ -128,8 +126,8 @@ template<typename T>
 bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   MemReq req{};
   if(std::is_same_v<T, double> || F->HasD()){
-    static constexpr auto flags = sizeof(T) < sizeof(double) ?
-      REVMEM_FLAGS(RevCPU::RevFlag::F_BOXNAN) : REVMEM_FLAGS(0);
+    static constexpr RevFlag flags = sizeof(T) < sizeof(double) ?
+      RevFlag::F_BOXNAN : RevFlag::F_NONE;
 
     uint64_t rs1 = R->GetX<uint64_t>(Inst.rs1);
     req.Set(rs1 + Inst.ImmSignExt(12),
@@ -166,7 +164,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
                rs1 + Inst.ImmSignExt(12),
                &R->SPF[Inst.rd],
                req,
-               REVMEM_FLAGS(0));
+               RevFlag::F_NONE);
   }
   // update the cost
   R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
@@ -339,6 +337,39 @@ bool bcond(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   }else{
     R->AdvancePC(Inst);
   }
+  return true;
+}
+
+/// Fused Multiply-Add
+template<typename T>
+bool fmadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  R->SetFP(Inst.rd, std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
+  return true;
+}
+
+/// Fused Multiply-Subtract
+template<typename T>
+bool fmsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  R->SetFP(Inst.rd, std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), -R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
+  return true;
+}
+
+/// Fused Negated (Multiply-Subtract)
+template<typename T>
+bool fnmsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)
+{
+  R->SetFP(Inst.rd, std::fma(-R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
+  return true;
+}
+
+/// Fused Negated (Multiply-Add)
+template<typename T>
+bool fnmadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  R->SetFP(Inst.rd, -std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->AdvancePC(Inst);
   return true;
 }
 

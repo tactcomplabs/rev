@@ -40,8 +40,8 @@ class RV64M : public RevExt{
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64MInstDefaults : RevInstDefaults {
-    static constexpr uint8_t opcode = 0b0111011;
-    static constexpr uint8_t funct7 = 0b0000001;
+    static constexpr uint8_t opcode    = 0b0111011;
+    static constexpr uint8_t funct2or7 = 0b0000001;
   };
 
   std::vector<RevInstEntry > RV64MTable = {

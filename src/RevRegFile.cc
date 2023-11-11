@@ -25,7 +25,7 @@ std::ostream& operator<<(std::ostream& os, const RevRegFile& regFile){
 
 
   os << '|' << std::string(tableWidth-3, '-') << '|' << '\n';
-  
+
   // Table header
   os << "| " << std::setw(4) << "Reg" << " | " << std::setw(5) << "Alias" << " | " << std::setw(21) << "Value" << " | " << std::setw(4) << "Dep" << " | " << std::setw(21) << "Info" << " |\n";
   os << "|------|-------|-----------------------|------|-----------------------|\n";
@@ -36,10 +36,12 @@ std::ostream& operator<<(std::ostream& os, const RevRegFile& regFile){
 
     // if scoreboard is not 0, there is a dependency
     char depValue = regFile.RV_Scoreboard[i] ? 'T' : 'F';
-    os << "| " << std::setw(4) << ("x" + std::to_string(i));
-    os << " | " << std::setw(5) << aliases[i];
-    os << " | " << std::setw(21) << ("0x" + std::to_string(value));
-    os << " | " << std::setw(4) << depValue;  // New "Dep" column
+    os <<  "| " << std::setw(4)  << ("x" + std::to_string(i));
+    os << " | " << std::setw(5)  << aliases[i];
+    std::ostringstream hs;
+    hs << "0x" << std::hex << value;
+    os << " | " << std::setw(21) << hs.str();
+    os << " | " << std::setw(4)  << depValue;  // New "Dep" column
     os << " | " << std::setw(21) << info[i] << " |\n";
   }
   os << "|" << std::string(tableWidth-3, '-') << "|" << '\n';
