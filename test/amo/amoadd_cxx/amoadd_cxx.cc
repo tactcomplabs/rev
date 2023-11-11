@@ -5,10 +5,10 @@
 int main() {
         TRACE_ON;
         std::atomic<int> a;
-//        a = 1;  //amoswap
-//        assert(a == 1);
-//        a++;    //amoadd
-//        assert(a == 2);
+        a = 1;  //amoswap
+        assert(a == 1);
+        a++;    //amoadd
+        assert(a == 2);
 
         std::atomic<unsigned long long> b;
         b = 0xDEADBEEF;  //amoswap
