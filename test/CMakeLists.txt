@@ -17,7 +17,7 @@ endif()
 # Check for RISCV Compiler
 if(NOT RVCC)
   set(RVCC "$ENV{RVCC}")
-endif()  
+endif()
 if(RVCC)
   message(STATUS "RVCC set to ${RVCC}")
 else()
@@ -93,7 +93,7 @@ add_test(NAME TEST_BIG_LOOP COMMAND run_big_loop.sh WORKING_DIRECTORY "${CMAKE_C
 set_tests_properties(TEST_BIG_LOOP
   PROPERTIES
     ENVIRONMENT "RVCC=${RVCC}"
-    TIMEOUT 180
+    TIMEOUT 100
     PASS_REGULAR_EXPRESSION "${passRegex}"
     LABELS "all;rv64"
 )

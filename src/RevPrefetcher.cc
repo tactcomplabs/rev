@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevPrefetcher.h"
+#include "RevPrefetcher.h"
 using namespace SST::RevCPU;
 
 /*RevPrefetcher::~RevPrefetcher(){
@@ -173,12 +173,12 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // now fill it
   for( size_t y=0; y<depth; y++ ){
-    MemReq req (Addr+(y*4), 0, RevRegClass::RegGPR, feature->GetHartToExec(), MemOp::MemOpREAD, true, MarkLoadAsComplete);
-    LSQueue->insert({make_lsq_hash(0, RevRegClass::RegGPR, feature->GetHartToExec()), req});
-    mem->ReadVal( feature->GetHartToExec(), Addr+(y*4),
+    MemReq req (Addr+(y*4), 0, RevRegClass::RegGPR, feature->GetHartToExecID(), MemOp::MemOpREAD, true, MarkLoadAsComplete);
+    LSQueue->insert({make_lsq_hash(0, RevRegClass::RegGPR, feature->GetHartToExecID()), req});
+    mem->ReadVal( feature->GetHartToExecID(), Addr+(y*4),
                   &iStack[x][y],
                   req,
-                  REVMEM_FLAGS(0x00) );
+                  RevFlag::F_NONE );
   }
 }
 

@@ -8,7 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevCoProc.h"
+#include "RevCoProc.h"
 
 using namespace SST;
 using namespace RevCPU;
@@ -52,7 +52,7 @@ RevSimpleCoProc::~RevSimpleCoProc(){
 bool RevSimpleCoProc::IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst){
   RevCoProcInst inst = RevCoProcInst(Inst, F, R, M);
   std::cout << "CoProc instruction issued: " << std::hex << Inst << std::dec << std::endl;
-  //parent->ExternalDepSet(CreatePasskey(), F->GetHartToExec(), 7, false);
+  //parent->ExternalDepSet(CreatePasskey(), F->GetHartToExecID(), 7, false);
   InstQ.push(inst);
   return true;
 }
@@ -69,7 +69,7 @@ bool RevSimpleCoProc::Reset(){
 bool RevSimpleCoProc::ClockTick(SST::Cycle_t cycle){
   if(!InstQ.empty()){
     uint32_t inst = InstQ.front().Inst;
-    //parent->ExternalDepClear(CreatePasskey(), InstQ.front().Feature->GetHartToExec(), 7, false);
+    //parent->ExternalDepClear(CreatePasskey(), InstQ.front().Feature->GetHartToExecID(), 7, false);
     num_instRetired->addData(1);
     parent->ExternalStallHart(CreatePasskey(), 0);
     InstQ.pop();

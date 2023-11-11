@@ -13,13 +13,12 @@
 #include <iomanip>
 #include <string>
 
-#include "../include/RevTracer.h"
 #include "RevTracer.h"
 
 using namespace SST::RevCPU;
 
 RevTracer::RevTracer(std::string Name, SST::Output *o): name(Name), pOutput(o) {
-    
+
     enableQ.resize(MAX_ENABLE_Q);
     enableQ.assign(MAX_ENABLE_Q,0);
     enableQindex = 0;
@@ -109,7 +108,7 @@ void RevTracer::CheckUserControls(uint64_t cycle)
         }
         return;
     }
-    
+
     // Using a startCycle will override programmatic controls.
     if (startCycle>0) {
         bool enable = startCycle && cycle > startCycle;
@@ -180,7 +179,7 @@ void RevTracer::memWrite(uint64_t adr, size_t len,  const void *data)
 void RevTracer::memRead(uint64_t adr, size_t len, void *data)
 {
     uint64_t d = *((uint64_t*) data);
-    traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,d)); 
+    traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,d));
 }
 
 void RevTracer::pcWrite(uint32_t newpc)
@@ -207,14 +206,14 @@ void RevTracer::InstTrace(size_t cycle, unsigned id, unsigned hart, unsigned tid
 std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
 {
     // Flow Control Events
-    std::stringstream ss_events; 
+    std::stringstream ss_events;
     if (events.v) {
         if (events.f.trc_ctl) {
             EVENT_SYMBOL e = outputEnabled ? EVENT_SYMBOL::TRACE_ON : EVENT_SYMBOL::TRACE_OFF;
             ss_events << event2char.at(e);
         }
     }
-    
+
     // Disassembly
     std::stringstream ss_disasm;
     #ifdef REV_USE_SPIKE
@@ -243,7 +242,7 @@ std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
     os << " " << std::setfill(' ') << std::setw(2) << ss_events.str() << " " << ss_disasm.str();
 
     // register and memory read/write events preserving code ordering
-    if (traceRecs.empty()) 
+    if (traceRecs.empty())
         return os.str();
 
     // We got something, count it and render it
@@ -280,7 +279,7 @@ std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
             case PcWrite:
                 // a:pc
                 uint64_t pc = r.a;
-                if ( lastPC+4 != pc ) { 
+                if ( lastPC+4 != pc ) {
                     // only render if non-sequential instruction
                     ss_rw << "pc<-0x" << std::hex << pc;
                     if (traceSymbols and (traceSymbols->find(pc) != traceSymbols->end()))
@@ -310,7 +309,7 @@ void RevTracer::fmt_reg(uint8_t r, std::stringstream& s)
 {
     #ifdef REV_USE_SPIKE
     if (r<32) {
-        s<<xpr_name[r]; // defined in disasm.h 
+        s<<xpr_name[r]; // defined in disasm.h
         return;
     }
     s << "?" << (unsigned)r;

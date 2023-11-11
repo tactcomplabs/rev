@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
   os << "|" << std::string(tableWidth-1, '=') << "|" << '\n';
 
   // Print Thread ID
-  os << "| Thread " << Thread.GetThreadID() << std::setw(6) <<  std::string(tableWidth-10, ' ') << "|\n";
+  os << "| Thread " << Thread.GetID() << std::setw(6) <<  std::string(tableWidth-10, ' ') << "|\n";
 
   // Print the middle border
   os << "|" << std::string(tableWidth-1, '-') << "|" << '\n';
@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
   }
   // Print a nice header
   os << " ==> State: " << StateString << "\n";
-  os << " ==> ParentTID: " << Thread.GetParentThreadID() << "\n";
+  os << " ==> ParentTID: " << Thread.GetParentID() << "\n";
   os << " ==> Blocked by TID: " ;
   if (Thread.GetWaitingToJoinTID() != _INVALID_TID_) {
     os << Thread.GetWaitingToJoinTID();
@@ -60,7 +60,7 @@ std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
   }
   os << "\n";
 
-  os << Thread.RegFile;
+  os << *Thread.VirtRegState.get();
 
   return os;
 }
