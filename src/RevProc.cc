@@ -651,7 +651,6 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
     // c.fld
     CompInst.imm =  ((Inst & 0b1100000) << 1);        // [7:6]
     CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
-    CompInst.rs1 = 2;
   }else if( CompInst.funct3 == 0b010 ){
     // c.lw
     CompInst.imm =  ((Inst & 0b100000) << 1);         // [6]
