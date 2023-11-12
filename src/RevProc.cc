@@ -651,6 +651,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
     // c.fld
     CompInst.imm =  ((Inst & 0b1100000) << 1);        // [7:6]
     CompInst.imm |= ((Inst & 0b1110000000000) >> 7);  // [5:3]
+    CompInst.rs1 = 2;
   }else if( CompInst.funct3 == 0b010 ){
     // c.lw
     CompInst.imm =  ((Inst & 0b100000) << 1);         // [6]
@@ -1793,6 +1794,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if (Tracer) Tracer->InstTrace(currentCycle, id, HartToExecID, ActiveThreadID, InstTable[Inst.entry].mnemonic);
     #endif
 
+#define __REV_DEEP_TRACE__ 1
 #ifdef __REV_DEEP_TRACE__
     if(feature->IsRV32()){
       std::cout << "RDT: Executed PC = " << std::hex << ExecPC
