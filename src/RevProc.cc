@@ -1793,7 +1793,6 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     if (Tracer) Tracer->InstTrace(currentCycle, id, HartToExecID, ActiveThreadID, InstTable[Inst.entry].mnemonic);
     #endif
 
-#define __REV_DEEP_TRACE__ 1
 #ifdef __REV_DEEP_TRACE__
     if(feature->IsRV32()){
       std::cout << "RDT: Executed PC = " << std::hex << ExecPC
