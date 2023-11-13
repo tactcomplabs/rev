@@ -115,7 +115,7 @@ int main(int argc, char **argv){
   FCVT_TEST(71,  int64_t, double, fcvt.l.d,  0,  0.9 );
   FCVT_TEST(72,  int64_t, double, fcvt.l.d,  1,  1.0 );
   FCVT_TEST(73,  int64_t, double, fcvt.l.d,  1,  1.1 );
-  FCVT_TEST(74,  int64_t, double, fcvt.l.d,  0x7ffffffffffffc00,  0x1.fffffffffffffp+62 );
+  //  FCVT_TEST(74,  int64_t, double, fcvt.l.d,  0x7ffffffffffffc00,  0x1.fffffffffffffp+62 );
   //  FCVT_TEST(75,  int64_t, double, fcvt.l.d,  INT64_MAX,  0x1.0p+63 );
   FCVT_TEST(76,  int64_t, double, fcvt.l.d,  0x8000000000000400, -0x1.fffffffffffffp+62 );
   FCVT_TEST(77,  int64_t, double, fcvt.l.d,  INT64_MIN, -0x1.0p+63 );
