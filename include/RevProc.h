@@ -760,13 +760,14 @@ private:
   /// RevProc: Set or clear scoreboard based on register number and floating point.
   void DependencySet(unsigned HartID, uint16_t RegNum,
                               bool isFloat, bool value = true){
-    if( RegNum < _REV_NUM_REGS_ || RegNum != 0 ){ return; }
-    RevRegFile* regFile = GetRegFile(HartID);
-    if(isFloat){
-        regFile->FP_Scoreboard[RegNum] = value;
-    }
-    else{
-      regFile->RV_Scoreboard[RegNum] = value;
+    if( RegNum < _REV_NUM_REGS_ && RegNum != 0 ){
+      RevRegFile* regFile = GetRegFile(HartID);
+      if(isFloat){
+          regFile->FP_Scoreboard[RegNum] = value;
+      }
+      else{
+        regFile->RV_Scoreboard[RegNum] = value;
+      }
     }
     return;
   }
