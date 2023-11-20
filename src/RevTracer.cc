@@ -382,7 +382,7 @@ std::string RevTracer::fmt_reg(uint8_t r)
     #ifdef REV_USE_SPIKE
     if (r<32) {
         s<<xpr_name[r]; // defined in disasm.h
-        return;
+        return s.str();
     }
     s << "?" << (unsigned)r;
     #else

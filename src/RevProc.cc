@@ -1842,7 +1842,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       #ifdef NO_REV_TRACER
       output->verbose(CALL_INFO, 6, 0,
                       "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
-                      id, HartID, GetThreadOnHart(HartID)->GetThreadID(), ExecPC);
+                      id, HartID, ActiveThreadID, ExecPC);
       #endif
       Retired++;
 
