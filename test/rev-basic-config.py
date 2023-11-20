@@ -45,6 +45,7 @@ comp_cpu.addParams({
     "machine" : args.machine,
     "memCost" : "[0:1:10]",
     "program" : args.program,
+    "startAddr" : "[0:0x00000000]",
     "enable_memH" : args.enableMemH,
     "splash" : 1
 })
