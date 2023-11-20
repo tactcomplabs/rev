@@ -18,51 +18,43 @@ DEBUG_LEVEL = 10
 VERBOSE = 2
 MEM_SIZE = 1024*1024*1024-1
 
-
 # Setup argument parser
 parser = argparse.ArgumentParser(description="Run Rev SST Simulation")
-parser.add_argument("--numCores", type=int, help="Number of Rev Cores per RevCPU",
-                    default=1)
+parser.add_argument("--numCores", type=int, help="Number of Rev Cores per RevCPU", default=1)
+parser.add_argument("--numHarts", type=int, help="Number of HARTs per Rev Core", default=1)
+parser.add_argument("--program", help="The program executable to run in the simulation", default="a.out")
+parser.add_argument("--enableMemH", type=int, choices=[0, 1], help="Enable (1) or disable (0) memHierarchy backend", default=0)
+parser.add_argument("--verbose", type=int, help="Verbosity level", default=2)
+parser.add_argument("--machine", help="Machine type/configuration", default="[0:RV64GC]")
 
-parser.add_argument("--numHarts", type=int, help="Number of HARTs per Rev Core",
-                    default=1)
-
-parser.add_argument("--program", help="The program executable to run in the simulation",
-                    default="default_program.exe")
-
-parser.add_argument("--enableMemH", type=int, choices=[0, 1],
-                    help="Enable (1) or disable (0) memHierarchy backend",
-                    default=0)
-
-print("Arguments: ", parser.parse_args())
 # Parse arguments
 args = parser.parse_args()
 
 # SST core options and parameters
-verbose = 6
 mem_size = 1024*1024*1024-1
 clock = "2.0GHz"
 
 # Define the simulation components
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
-    "verbose" : verbose,
+    "verbose" : args.verbose,
     "numCores" : args.numCores,
     "numHarts" : args.numHarts,
     "clock" : clock,
     "memSize" : mem_size,
-    "machine" : "[0:RV64G]",
+    "machine" : args.machine,
     "memCost" : "[0:1:10]",
     "program" : args.program,
     "enable_memH" : args.enableMemH,
     "splash" : 1
 })
+
 comp_cpu.enableAllStatistics()
 
 # Conditional setup for memory hierarchy
 if args.enableMemH:
     # Create the RevMemCtrl subcomponent
-    comp_lsq = comp_cpu.setSubComponent("memory", "revcpu.RevBasicMemCtrl");
+    comp_lsq = comp_cpu.setSubComponent("memory", "revcpu.RevBasicMemCtrl")
     comp_lsq.addParams({
         "verbose"         : "5",
         "clock"           : "2.0Ghz",
@@ -107,5 +99,3 @@ if args.enableMemH:
     # ... (Include your memHierarchy setup here)
     # TODO:
 # else:
-
-# Rest of your script...
