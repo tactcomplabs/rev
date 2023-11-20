@@ -33,8 +33,74 @@ set (passRegex "Simulation is complete")
 message(STATUS "CTest Setup")
 
 # Macro for adding tests
-macro(add_sst_test test_name test_dir timeout labels)
+macro(add_old_sst_test test_name test_dir timeout labels)
   add_test(NAME ${test_name} COMMAND RUN_${test_name}.sh WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}" )
+  set_tests_properties(${test_name}
+    PROPERTIES
+      ENVIRONMENT "RVCC=${RVCC}"
+      TIMEOUT ${timeout}
+      PASS_REGULAR_EXPRESSION "${passRegex}"
+      LABELS "${labels}"
+  )
+endmacro()
+
+
+# Macro to build and configure a test with customizable timeout
+# macro(add_sst_test test_name test_dir timeout labels)
+#   # Custom target for building the test
+#   add_custom_target(build_${test_name}
+#     COMMAND ${CMAKE_MAKE_PROGRAM} clean
+#     COMMAND ${CMAKE_MAKE_PROGRAM}
+#     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
+#     COMMENT "Building ${test_name} test"
+#   )
+#
+#   # Custom target for running the test
+#   add_custom_target(run_${test_name}
+#     COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
+#             $<IF:$<BOOL:$<TARGET_EXISTS:${test_name}.exe>>,
+#                ${CMAKE_COMMAND} -E echo "Running ${test_name} test" && sst --add-lib-path=../../build/src/ ./${test_name}.py,
+#                ${CMAKE_COMMAND} -E echo "Test ${test_name}: ${test_name}.exe not Found - likely build failed" && false>
+#     DEPENDS build_${test_name}
+#     COMMENT "Running ${test_name} test"
+#   )
+#
+#   # Add the custom target as a test
+#   add_test(NAME ${test_name} COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name})
+#
+#   # Set test properties
+#   set_tests_properties(${test_name}
+#     PROPERTIES
+#       ENVIRONMENT "RVCC=${RVCC}"
+#       TIMEOUT ${timeout}
+#       PASS_REGULAR_EXPRESSION "${passRegex}"
+#       LABELS "${labels}"
+#   )
+# endmacro()
+# Example usage of the macro
+# add_sst_test(TEST_EX5 ex5 30)
+# add_sst_test(TEST_EX6 ex6 45)
+# Macro to build and configure a test with customizable timeout
+macro(add_sst_test test_name test_dir timeout labels)
+  # Custom target for building the test
+  add_custom_target(build_${test_name}
+    COMMAND ${CMAKE_MAKE_PROGRAM} clean
+    COMMAND ${CMAKE_MAKE_PROGRAM}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
+    COMMENT "Building ${test_name} test"
+  )
+
+  add_custom_target(run_${test_name}
+  # COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir} && sst --add-lib-path=../../build/src/ ../rev-basic-config.py --model-options="--program=${test_name}.exe"
+  DEPENDS build_${test_name}
+  COMMENT "Running ${test_name} test"
+)
+
+  # Add the custom target as a test
+  add_test(NAME ${test_name} COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name})
+
+  # Set test properties
   set_tests_properties(${test_name}
     PROPERTIES
       ENVIRONMENT "RVCC=${RVCC}"
