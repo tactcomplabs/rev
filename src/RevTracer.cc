@@ -225,14 +225,10 @@ void RevTracer::Render(size_t cycle)
     if (completionRecs.size()>0) {
         if (OutputOK()) {
             for (auto r : completionRecs) {
-
+                std::string data_str = fmt_data(r.len, r.data);
                 std::stringstream s;
-                fmt_data(r.len, r.data, s);
-                s << "<-[0x" << std::hex << r.addr << "," << std::dec << r.len << "] ";
-                fmt_reg(r.destReg, s);
-                s << "<-";
-                fmt_data(r.len, r.data, s );
-                s << " ";
+                s << data_str << "<-[0x" << std::hex << r.addr << "," << std::dec << r.len << "] ";
+                s << fmt_reg(r.destReg) << "<-" << data_str << " "; 
                 pOutput->verbose(CALL_INFO, 5, 0,
                                 "Hart %" PRIu32 "; *A %s\n",
                                 r.hart, s.str().c_str());
@@ -324,36 +320,31 @@ std::string RevTracer::RenderExec(const std::string& fallbackMnemonic)
             case RegRead:
                 // a:reg b:data
                 ss_rw << "0x" << std::hex << r.b << "<-";
-                fmt_reg(r.a, ss_rw);
-                ss_rw << " ";
+                ss_rw << fmt_reg(r.a) << " ";
                 break;
             case RegWrite:
                 // a:reg b:data
                 if (squashNextSetX) {
                     squashNextSetX=false;
                 } else {
-                    fmt_reg(r.a, ss_rw);
-                    ss_rw << "<-0x" << std::hex << r.b << " ";
+                    ss_rw << fmt_reg(r.a) << "<-0x" << std::hex << r.b << " ";
                 }
                 break;
             case MemStore:
             {
                 // a:adr b:len c:data
-                ss_rw << "[0x" << std::hex << r.a << "," << std::dec << r.b << "]<-";
-                fmt_data(r.b, r.c, ss_rw);
-                ss_rw << " ";
+                ss_rw << "[0x" << std::hex << r.a << "," << std::dec << r.b << "]<-" 
+                        << fmt_data(r.b, r.c) << " ";
                 break;
             }
             case MemLoad:
                 // a:adr b:len c:data
-                fmt_data(r.b, r.c, ss_rw);
-                ss_rw << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
+                ss_rw << fmt_data(r.b, r.c) << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
                 ss_rw << " ";
                 break;
             case MemhSendLoad:
                 // a:adr b:len c:reg
-                fmt_reg(r.c, ss_rw);
-                ss_rw << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
+                ss_rw << fmt_reg(r.c) << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
                 ss_rw << " ";
                 squashNextSetX = true; // register corrupted after ReadVal in RevInstHelpers.h::load
                 break;
@@ -385,8 +376,9 @@ void RevTracer::InstTraceReset()
     instHeader.clear();
 }
 
-void RevTracer::fmt_reg(uint8_t r, std::stringstream& s)
+std::string RevTracer::fmt_reg(uint8_t r)
 {
+    std::stringstream s;
     #ifdef REV_USE_SPIKE
     if (r<32) {
         s<<xpr_name[r]; // defined in disasm.h
@@ -396,11 +388,13 @@ void RevTracer::fmt_reg(uint8_t r, std::stringstream& s)
     #else
     s << "x" << std::dec << (uint16_t) r; // Use SST::RevCPU::RevReg?
     #endif
+    return s.str();
 }
 
-void RevTracer::fmt_data(unsigned len, uint64_t d, std::stringstream &s)
+std::string RevTracer::fmt_data(unsigned len, uint64_t d)
 {
-    if (len==0) return;
+    std::stringstream s;
+    if (len==0) return "";
     s << "0x" << std::hex << std::setfill('0');
     if (len > 8)
         s << std::setw(8 * 2) << d << "..+" << std::dec << (8-len);
@@ -411,4 +405,5 @@ void RevTracer::fmt_data(unsigned len, uint64_t d, std::stringstream &s)
         uint64_t mask = (~0ULL) >> shift;
         s << std::setw(len * 2) << (d & mask);
     }
+    return s.str();
 }

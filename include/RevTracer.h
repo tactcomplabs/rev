@@ -258,9 +258,9 @@ namespace SST::RevCPU{
       /// RevTracer: determine if this buffer should be rendered
       bool OutputOK();
       /// RevTracer: format register address for rendering
-      void fmt_reg(uint8_t r, std::stringstream& s);
+      std::string fmt_reg(uint8_t r);
       /// RevTracer: Format data associated with memory access
-      void fmt_data(unsigned len, uint64_t data, std::stringstream& s);
+      std::string fmt_data(unsigned len, uint64_t data);
       /// RevTracer: Generate string from captured state
       std::string RenderExec(const std::string& fallbackMnemonic);
       /// RevTracer: User setting: starting cycle of trace (overrides programmtic control)
