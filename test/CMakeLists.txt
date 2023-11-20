@@ -92,7 +92,7 @@ macro(add_sst_test test_name test_dir timeout labels)
 
   add_custom_target(run_${test_name}
   # COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}
-  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir} && sst --add-lib-path=../../build/src/ ../rev-basic-config.py --model-options="--program=${test_name}.exe"
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-basic-config.py -- --program="${test_name}.exe" --numHarts=10 --numCores=1 --enableMemH=1
   DEPENDS build_${test_name}
   COMMENT "Running ${test_name} test"
 )
