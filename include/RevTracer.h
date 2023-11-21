@@ -139,7 +139,6 @@ namespace SST::RevCPU{
     uint64_t a;  // reg             adr                     adr
     uint64_t b;  // value           len                     len
     uint64_t c;  // origin(TODO)    data (limited 8 bytes)  reg
-    TraceRec_t() {};
     TraceRec_t(TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C=0)
       : key(Key), a(A), b(B), c(C) {};
   };
@@ -152,7 +151,7 @@ namespace SST::RevCPU{
     std::string defaultMnem = "?";
     std::string& fallbackMnemonic = defaultMnem;
     bool valid = false;
-    void set(size_t _cycle, unsigned _id, unsigned _hart, unsigned _tid, std::string& _fallback) {
+    void set(size_t _cycle, unsigned _id, unsigned _hart, unsigned _tid, const std::string& _fallback) {
       cycle = _cycle;
       id = _id;
       hart = _hart;
@@ -172,6 +171,13 @@ namespace SST::RevCPU{
     uint64_t data; // first 8 bytes max
     bool isFloat = false;
     bool wait4Completion = false;
+    CompletionRec_t(unsigned int hart, uint16_t destReg, size_t len, uint64_t addr, 
+      void *data, RevRegClass regClass) 
+      : hart(hart), destReg(destReg), len(len), addr(addr),
+        isFloat(regClass == RevRegClass::RegFLOAT), wait4Completion(true) 
+    {
+      memcpy(&this->data, data, len > sizeof(this->data) ? sizeof(this->data) : len);
+    }
   };
 
   class RevTracer{
@@ -210,7 +216,7 @@ namespace SST::RevCPU{
       /// RevTracer: capture 64-bit program counter
       void pcWrite(uint64_t newpc);
       /// RevTracer: render instruction execution trace to output stream and update tracer state
-      void Exec(size_t cycle, unsigned id, unsigned hart, unsigned tid, std::string& fallbackMnemonic);
+      void Exec(size_t cycle, unsigned id, unsigned hart, unsigned tid, const std::string& fallbackMnemonic);
       /// RevTracer: Render captured states
       void Render(size_t cycle);
       /// RevTracer: control whether to render captured states

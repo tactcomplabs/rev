@@ -28,7 +28,7 @@ RevTracer::RevTracer(std::string Name, SST::Output *o): name(Name), pOutput(o) {
     for (unsigned i=0;i<NOP_COUNT;i++)
         nops[i]= cmd_template | (i << TRC_OP_POS);
 
-    #if 0
+    #if 1
     if (std::getenv("REV_SPINNER")){
         uint64_t spinner = 1;
         std::cout << "spinner active" << std::endl;
@@ -167,18 +167,16 @@ void RevTracer::regWrite(size_t r, uint64_t v)
 
 void RevTracer::memWrite(uint64_t adr, size_t len,  const void *data)
 {
-    // Only tracing the first 64 bytes. Retaining pointer in case we change that.
-    uint64_t d = *((uint64_t*) data);
-    if (len<8) {
-        // zero out garbage bytes
-        d &= ~(~0llu << 8*len);
-    }
+    // Only tracing the first 8 bytes. Retaining pointer in case we change that.
+    uint64_t d = 0;
+    memcpy(&d, data, len > sizeof(d) ? sizeof(d) : len);
     traceRecs.emplace_back(TraceRec_t(MemStore,adr,len,d));
 }
 
 void RevTracer::memRead(uint64_t adr, size_t len, void *data)
 {
-    uint64_t d = *((uint64_t*) data);
+    uint64_t d = 0;
+    memcpy(&d, data, len > sizeof(d) ? sizeof(d) : len);
     traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,d));
 }
 
@@ -190,14 +188,7 @@ void SST::RevCPU::RevTracer::memhSendRead(uint64_t adr, size_t len, uint16_t reg
 void RevTracer::memReadResponse(size_t len, void *data, const MemReq* req)
 {
     if (req->DestReg==0) return;
-    CompletionRec_t c;
-    c.hart = req->Hart;
-    c.destReg = req->DestReg;
-    c.len = len;
-    c.addr = req->Addr;
-    c.data = *((uint64_t*) data); // First 8 bytes only
-    c.isFloat = ( req->RegType == RevRegClass::RegFLOAT );
-    c.wait4Completion = true;
+    CompletionRec_t c(req->Hart, req->DestReg, len, req->Addr, data, req->RegType);
     completionRecs.emplace_back(c);
 }
 
@@ -211,7 +202,7 @@ void RevTracer::pcWrite(uint64_t newpc)
     traceRecs.emplace_back(TraceRec_t(PcWrite,newpc,0,0));
 }
 
-void RevTracer::Exec(size_t cycle, unsigned id, unsigned hart, unsigned tid, std::string& fallbackMnemonic)
+void RevTracer::Exec(size_t cycle, unsigned id, unsigned hart, unsigned tid, const std::string& fallbackMnemonic)
 {
     instHeader.set(cycle, id, hart, tid, fallbackMnemonic);
 }
@@ -300,9 +291,6 @@ std::string RevTracer::RenderExec(const std::string& fallbackMnemonic)
 
     // We got something, count it and render it
     traceCycles++;
-
-    // MemH support
-    CompletionRec_t response_rec;
     
     // For Memh, the target register is corrupted after ReadVal (See RevInstHelpers.h::load) 
     // This is a transitory value that would only be observed if the register file is accessible
