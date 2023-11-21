@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: cache_test2
+# makefile: large_bss
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,14 +12,14 @@
 
 .PHONY: src
 
-EXAMPLE=cache_test2
+EXAMPLE=cache_1
 CC=${RVCC}
-ARCH=rv64gc
-#ARCH=rv64imafd
+ARCH=rv32i
+ABI=ilp32
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -mabi=$(ABI) -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

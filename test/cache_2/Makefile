@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: ex2
+# makefile: cache_test2
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,13 +12,14 @@
 
 .PHONY: src
 
-EXAMPLE=argc
+EXAMPLE=cache_2
 CC=${RVCC}
 ARCH=rv64gc
+#ARCH=rv64imafd
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c -static
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

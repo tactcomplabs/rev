@@ -26,9 +26,15 @@ parser.add_argument("--program", help="The program executable to run in the simu
 parser.add_argument("--enableMemH", type=int, choices=[0, 1], help="Enable (1) or disable (0) memHierarchy backend", default=0)
 parser.add_argument("--verbose", type=int, help="Verbosity level", default=2)
 parser.add_argument("--machine", help="Machine type/configuration", default="[0:RV64GC]")
+parser.add_argument("--args", help="Command line arguments to pass to the target executable", default="")
 
 # Parse arguments
 args = parser.parse_args()
+
+# Print arguments nicely
+print("Rev SST Simulation Configuration:")
+for arg in vars(args):
+    print("\t", arg, " = ", getattr(args, arg))
 
 # SST core options and parameters
 mem_size = 1024*1024*1024-1
@@ -47,6 +53,7 @@ comp_cpu.addParams({
     "program" : args.program,
     "startAddr" : "[0:0x00000000]",
     "enable_memH" : args.enableMemH,
+    "args": args.args,
     "splash" : 1
 })
 

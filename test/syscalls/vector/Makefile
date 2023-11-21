@@ -14,7 +14,7 @@
 
 EXAMPLE=vector
 #CC=riscv64-unknown-linux-gnu-gcc
-CC="${RVCC}"
+CC="${RVCXX}"
 #ARCH=rv64g
 ARCH=rv64imafdc
 
