@@ -153,7 +153,7 @@ public:
   void MarkLoadComplete(const MemReq& req);
 
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
-  auto GetLSQueue() const { return LSQueue; }
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue() const { return LSQueue; }
 
   ///< RevProc: Add a co-processor to the RevProc
   void SetCoProc(RevCoProc* coproc);
