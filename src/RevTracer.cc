@@ -28,7 +28,7 @@ RevTracer::RevTracer(std::string Name, SST::Output *o): name(Name), pOutput(o) {
     for (unsigned i=0;i<NOP_COUNT;i++)
         nops[i]= cmd_template | (i << TRC_OP_POS);
 
-    #if 0
+    #if 1
     if (std::getenv("REV_SPINNER")){
         uint64_t spinner = 1;
         std::cout << "spinner active" << std::endl;
@@ -167,19 +167,29 @@ void RevTracer::regWrite(size_t r, uint64_t v)
 
 void RevTracer::memWrite(uint64_t adr, size_t len,  const void *data)
 {
-    // Only tracing the first 64 bytes. Retaining pointer in case we change that.
-    uint64_t d = *((uint64_t*) data);
-    if (len<8) {
-        // zero out garbage bytes
-        d &= ~(~0llu << 8*len);
-    }
+    // Only tracing the first 8 bytes. Retaining pointer in case we change that.
+    uint64_t d = 0;
+    memcpy(&d, data, len > sizeof(d) ? sizeof(d) : len);
     traceRecs.emplace_back(TraceRec_t(MemStore,adr,len,d));
 }
 
 void RevTracer::memRead(uint64_t adr, size_t len, void *data)
 {
-    uint64_t d = *((uint64_t*) data);
+    uint64_t d = 0;
+    memcpy(&d, data, len > sizeof(d) ? sizeof(d) : len);
     traceRecs.emplace_back(TraceRec_t(MemLoad,adr,len,d));
+}
+
+void SST::RevCPU::RevTracer::memhSendRead(uint64_t adr, size_t len, uint16_t reg)
+{
+    traceRecs.emplace_back(TraceRec_t(MemhSendLoad, adr, len, reg));
+}
+
+void RevTracer::memReadResponse(size_t len, void *data, const MemReq* req)
+{
+    if (req->DestReg==0) return;
+    CompletionRec_t c(req->Hart, req->DestReg, len, req->Addr, data, req->RegType);
+    completionRecs.emplace_back(c);
 }
 
 void RevTracer::pcWrite(uint32_t newpc)
@@ -192,18 +202,52 @@ void RevTracer::pcWrite(uint64_t newpc)
     traceRecs.emplace_back(TraceRec_t(PcWrite,newpc,0,0));
 }
 
-void RevTracer::InstTrace(size_t cycle, unsigned id, unsigned hart, unsigned tid, std::string& fallbackMnemonic)
+void RevTracer::Exec(size_t cycle, unsigned id, unsigned hart, unsigned tid, const std::string& fallbackMnemonic)
 {
-    CheckUserControls(cycle);
-    if (OutputOK()){
-        pOutput->verbose(CALL_INFO, 5, 0,
-                         "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "]; *I %s\n",
-                         id, hart, tid, RenderOneLiner(fallbackMnemonic).c_str());
-    }
-    Reset();
+    instHeader.set(cycle, id, hart, tid, fallbackMnemonic);
 }
 
-std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
+void RevTracer::Render(size_t cycle)
+{
+    // Trace on/off controls
+    CheckUserControls(cycle);
+
+    // memory completions
+    if (completionRecs.size()>0) {
+        if (OutputOK()) {
+            for (auto r : completionRecs) {
+                std::string data_str = fmt_data(r.len, r.data);
+                std::stringstream s;
+                s << data_str << "<-[0x" << std::hex << r.addr << "," << std::dec << r.len << "] ";
+                s << fmt_reg(r.destReg) << "<-" << data_str << " "; 
+                pOutput->verbose(CALL_INFO, 5, 0,
+                                "Hart %" PRIu32 "; *A %s\n",
+                                r.hart, s.str().c_str());
+            }
+        }
+        // reset completion reqs
+        completionRecs.clear();
+    }
+
+    // Instruction Trace
+    if (instHeader.valid) {
+        if (OutputOK()){
+            pOutput->verbose(CALL_INFO, 5, 0,
+                            "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; *I %s\n",
+                            instHeader.id, instHeader.hart, instHeader.tid, RenderExec(instHeader.fallbackMnemonic).c_str());
+        }
+        InstTraceReset();
+    }
+
+}
+
+void SST::RevCPU::RevTracer::Reset()
+{
+    InstTraceReset();
+    completionRecs.clear();
+}
+
+std::string RevTracer::RenderExec(const std::string& fallbackMnemonic)
 {
     // Flow Control Events
     std::stringstream ss_events;
@@ -247,6 +291,16 @@ std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
 
     // We got something, count it and render it
     traceCycles++;
+    
+    // For Memh, the target register is corrupted after ReadVal (See RevInstHelpers.h::load) 
+    // This is a transitory value that would only be observed if the register file is accessible
+    // by an external agent (e.g. IO or JTAG scan). A functional issue would occur
+    // if an error response is received from the network in which case the scoreboard
+    // should be cleared and the register would be expected to retain its previous value.
+    // Until this is resolved, the trace supresses the extra register write when
+    // we encounter a memhSendRead event.
+    // TODO remove this if/when extra register write is removed.
+    bool squashNextSetX = false;
 
     std::stringstream ss_rw;
     for (TraceRec_t r : traceRecs) {
@@ -254,27 +308,33 @@ std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
             case RegRead:
                 // a:reg b:data
                 ss_rw << "0x" << std::hex << r.b << "<-";
-                fmt_reg(r.a, ss_rw);
-                ss_rw << " ";
+                ss_rw << fmt_reg(r.a) << " ";
                 break;
             case RegWrite:
                 // a:reg b:data
-                fmt_reg(r.a, ss_rw);
-                ss_rw << "<-0x" << std::hex << r.b << " ";
+                if (squashNextSetX) {
+                    squashNextSetX=false;
+                } else {
+                    ss_rw << fmt_reg(r.a) << "<-0x" << std::hex << r.b << " ";
+                }
                 break;
             case MemStore:
             {
                 // a:adr b:len c:data
-                ss_rw << "[0x" << std::hex << r.a << "," << std::dec << r.b << "]<-";
-                fmt_data(r.b, r.c, ss_rw);
-                ss_rw << " ";
+                ss_rw << "[0x" << std::hex << r.a << "," << std::dec << r.b << "]<-" 
+                        << fmt_data(r.b, r.c) << " ";
                 break;
             }
             case MemLoad:
                 // a:adr b:len c:data
-                fmt_data(r.b, r.c, ss_rw);
-                ss_rw << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
+                ss_rw << fmt_data(r.b, r.c) << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
                 ss_rw << " ";
+                break;
+            case MemhSendLoad:
+                // a:adr b:len c:reg
+                ss_rw << fmt_reg(r.c) << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
+                ss_rw << " ";
+                squashNextSetX = true; // register corrupted after ReadVal in RevInstHelpers.h::load
                 break;
             case PcWrite:
                 // a:pc
@@ -296,31 +356,33 @@ std::string RevTracer::RenderOneLiner(const std::string& fallbackMnemonic)
     return os.str();
 }
 
-void RevTracer::Reset()
+void RevTracer::InstTraceReset()
 {
     events.v = 0;
-    // save processing time and only clear the essentials.
-    // pc = 0;
-    // insn = 0;
+    insn = 0;
     traceRecs.clear();
+    instHeader.clear();
 }
 
-void RevTracer::fmt_reg(uint8_t r, std::stringstream& s)
+std::string RevTracer::fmt_reg(uint8_t r)
 {
+    std::stringstream s;
     #ifdef REV_USE_SPIKE
     if (r<32) {
         s<<xpr_name[r]; // defined in disasm.h
-        return;
+        return s.str();
     }
     s << "?" << (unsigned)r;
     #else
     s << "x" << std::dec << (uint16_t) r; // Use SST::RevCPU::RevReg?
     #endif
+    return s.str();
 }
 
-void RevTracer::fmt_data(unsigned len, uint64_t d, std::stringstream &s)
+std::string RevTracer::fmt_data(unsigned len, uint64_t d)
 {
-    if (len==0) return;
+    std::stringstream s;
+    if (len==0) return "";
     s << "0x" << std::hex << std::setfill('0');
     if (len > 8)
         s << std::setw(8 * 2) << d << "..+" << std::dec << (8-len);
@@ -331,4 +393,5 @@ void RevTracer::fmt_data(unsigned len, uint64_t d, std::stringstream &s)
         uint64_t mask = (~0ULL) >> shift;
         s << std::setw(len * 2) << (d & mask);
     }
+    return s.str();
 }

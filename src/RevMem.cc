@@ -841,6 +841,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
 #endif
   }else{
     if( ctrl ){
+      TRACE_MEMH_SENDREAD(req.Addr, Len, req.DestReg);
       ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, req, flags);
     }else{
       for( unsigned i=0; i<Len; i++ ){
@@ -848,9 +849,9 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       }
       // clear the hazard- if this was an AMO operation then we will clear outside of this function in AMOMem()
       if(MemOp::MemOpAMO != req.ReqType){
+        TRACE_MEM_READ(Addr, Len, DataMem);
         req.MarkLoadComplete(req);
       }
-      TRACE_MEM_READ(Addr, Len, DataMem);
     }
   }
 
