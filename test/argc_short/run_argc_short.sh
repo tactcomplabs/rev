@@ -4,7 +4,7 @@
 make clean && make
 
 # Check that the exec was built...
-if [ -f argc-short.exe ]; then
+if [ -f argc.exe ]; then
 	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one" --enableMemH=0
 	echo "Test ARGC_SHORT_REVMEM: Completed"
 	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one" --enableMemH=1
