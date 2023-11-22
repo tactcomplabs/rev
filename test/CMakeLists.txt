@@ -98,7 +98,7 @@ macro(add_rev_test test_name test_dir timeout labels)
     set(optional_script ${ARG_SCRIPT})
   endif()
 
-  # Custom target for building the test
+  # Build the test (ie. run make)
   add_custom_target(build_${test_name}
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND ${CMAKE_MAKE_PROGRAM}
@@ -106,19 +106,18 @@ macro(add_rev_test test_name test_dir timeout labels)
     COMMENT "Building ${test_name} test"
   )
 
+  # If no optional script is specified, run with basic config and add revmem/memH tests
   if(NOT optional_script)
-    # Original custom targets
-
-    # Custom target to run the test with --enableMemH=1
+    # Add memH test
     add_custom_target(run_${test_name}_memh
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-basic-config.py -- --program="${test_name}.exe" --numHarts=1 --numCores=1 --enableMemH=1
+      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name}.exe" --numHarts=1 --numCores=1 --enableMemH=1
       DEPENDS build_${test_name}
       COMMENT "Running ${test_name} test with memHierarchy enabled"
     )
 
-    # Custom target to run the test without --enableMemH
+    # Add revmem test
     add_custom_target(run_${test_name}_revmem
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-basic-config.py -- --program="${test_name}.exe" --numHarts=1 --numCores=1
+      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name}.exe" --numHarts=1 --numCores=1
       DEPENDS build_${test_name}
       COMMENT "Running ${test_name} test with revmem"
     )
@@ -158,7 +157,6 @@ macro(add_rev_test test_name test_dir timeout labels)
   endif()
 endmacro()
 
-# Use the macro to add tests with specific timeouts
 add_rev_test(EX1 ex1 30 "all;rv32")
 add_rev_test(EX2 ex2 30 "all;rv64")
 add_rev_test(EX3 ex3 30 "all;rv32")
@@ -167,70 +165,32 @@ add_rev_test(EX5 ex5 30 "all;rv64")
 add_rev_test(EX6 ex6 45 "all;rv64")
 add_rev_test(BIG_LOOP big_loop 100 "all;rv64;benchmark")
 add_rev_test(LARGE_BSS large_bss 30 "all;rv64")
-
-# AMO Instructions
-# DONE: Add MemH versions of these tests
-# TODO: Add dcmp test
-# TODO: Add bge_ble test
-# TODO: Add tracer
-# TODO: Add pan tests
-# TODO: Add syscalls
-# DONE: Pass exe as model option as well as verbosity
-# TODO: Make the pass regex based on the last PC of the main function
-# blas-required
-# add_rev_test(DOT_SINGLE dot_single 30 "all;rv64;blas-required")
-# add_rev_test(DOT_DOUBLE dot_double 30 "all;rv64;blas-required")
-
-# dependency check
 add_rev_test(DEP_CHECK dep_check 30 "all;rv32;")
-
-# cache tests
 add_rev_test(CACHE_1 cache_1 30 "all;rv32;")
 add_rev_test(CACHE_2 cache_2 30 "all;rv64;")
-
 add_rev_test(STRLEN_C strlen_c 30 "all;rv64")
 add_rev_test(STRLEN_CXX strlen_cxx 30 "all;rv64;cxx")
 add_rev_test(STRSTR strstr 30 "all;rv64")
 add_rev_test(MEMSET memset 30 "all;rv64")
 add_rev_test(MEMSET_2 memset_2 30 "all;rv64")
 add_rev_test(MANY_CORE many_core 30 "all;rv64")
-
 add_rev_test(DIVW divw 30 "all;rv64")
 add_rev_test(DIVW2 divw2 30 "all;rv64")
-
 add_rev_test(X0 x0 30 "all;rv64")
 add_rev_test(ARGC argc 30 "all;rv64;loader;" SCRIPT "run_argc.sh")
 add_rev_test(ARGC_SHORT argc 30 "all;rv64;loader;" SCRIPT "run_argc_short.sh")
 add_rev_test(COPROC_EX coproc_ex 30 "all;rv64;coproc" SCRIPT "run_coproc_ex.sh")
-
+# add_rev_test(TRACER tracer 30 "all;rv64;tracer")
+# add_rev_test(PAN_TEST1 pan_test1 30 "all;rv64;pan")
+# add_rev_test(PAN_TEST2 pan_test2 30 "all;rv64;pan")
+# add_rev_test(DOT_SINGLE dot_single 30 "all;rv64;blas-required")
+# add_rev_test(DOT_DOUBLE dot_double 30 "all;rv64;blas-required")
 # add_rev_test(BGE_BLE bge_ble 30 "all;rv64")
-
-
-
-# -- PROCESS CTest Config Variables
-# if(NOT CTEST_BLAS_REQUIRED_TESTS)
-#   set_tests_properties (DOT_SINGLE PROPERTIES DISABLED True)
-#   set_tests_properties (DOT_DOUBLE PROPERTIES DISABLED True)
-#   message(NOTICE "   * Tests requiring BLAS headers are disabled (ie. -DCTEST_BLAS_REQUIRED_TESTS=OFF)
-#     - If you'd like to still run these tests run: `ctest -L blas_required`")
-#   message(VERBOSE "   TEST_DOT_SINGLE - Disabled")
-#   message(VERBOSE "   TEST_DOT_DOUBLE - Disabled")
-# endif()
-
-# if(NOT CTEST_MULTILIB_TESTS)
-#   set_tests_properties (TEST_EX1 PROPERTIES DISABLED True)
-#   set_tests_properties (TEST_EX3 PROPERTIES DISABLED True)
-#   set_tests_properties (TEST_EX4 PROPERTIES DISABLED True)
-#   message(NOTICE "   * RV32 tests disabled (ie. -DCTEST_MULTILIB_TESTS=OFF)
-#     - If you'd like to still run these tests run: `ctest -L rv32`")
-#   message(VERBOSE "TEST_EX1  - Disabled")
-#   message(VERBOSE "TEST_EX3  - Disabled")
-#   message(VERBOSE "TEST_EX4  - Disabled")
-# endif()
 
 add_subdirectory(isa)
 add_subdirectory(amo)
 add_subdirectory(benchmarks)
 add_subdirectory(syscalls)
+add_subdirectory(threading)
 
 # EOF
