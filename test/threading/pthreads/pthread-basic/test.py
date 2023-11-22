@@ -23,14 +23,14 @@ comp_cpu.addParams({
         "debug" : 1,
         "debug_level" : DEBUG_LEVEL,
         "verbose" : VERBOSE,
-        "numCores" : 1,                               # Number of cores
+        "numCores" : 2,                               # Number of cores
         "numHarts" : 2,
         "clock" : "2.0GHz",                           # Clock
         "memSize" : MEM_SIZE,                         # Memory size in bytes
 	"machine": "[CORES:RV64IMAFD]",
         "startAddr" : "[0:0x000100b0]",               # Starting address for core 0
-        "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "cache_test2.exe"),  # Target executable
+        "memCost" : "[0:1:10,1:1:10]",                       # Memory loads required 1-10 cycles
+        "program" : os.getenv("REV_EXE", "pthread-basic.exe"),  # Target executable
         "enable_memH" : 1,                            # Enable memHierarchy support
         "splash" : 1                                  # Display the splash message
 })

@@ -25,6 +25,10 @@
 #define _REV_INVALID_HART_ID_ (unsigned(~0))
 #endif
 
+#ifndef _REV_INVALID_PROC_ID_
+#define _REV_INVALID_PROC_ID_ (unsigned(~0))
+#endif
+
 #define _INVALID_ADDR_ (~uint64_t{0})
 
 #define _INVALID_TID_ (uint32_t{0})
@@ -92,16 +96,16 @@ struct MemReq{
   MemReq() = default;
 
   MemReq(uint64_t addr, uint16_t dest, RevRegClass regclass,
-         unsigned hart, MemOp req, bool outstanding, std::function<void(MemReq)> func) :
-    Addr(addr), DestReg(dest), RegType(regclass), Hart(hart),
+         unsigned hart, unsigned proc, MemOp req, bool outstanding, std::function<void(MemReq)> func) :
+    Addr(addr), DestReg(dest), RegType(regclass), Hart(hart), Proc(proc),
     ReqType(req), isOutstanding(outstanding), MarkLoadComplete(func)
   {
   }
 
-  void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, unsigned hart, MemOp req, bool outstanding,
+  void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, unsigned hart, unsigned proc, MemOp req, bool outstanding,
            std::function<void(MemReq)> func)
   {
-    Addr = addr; DestReg = dest; RegType = regclass; Hart = hart;
+    Addr = addr; DestReg = dest; RegType = regclass; Hart = hart; Proc=proc;
     ReqType = req; isOutstanding = outstanding;
     MarkLoadComplete = func;
   }
@@ -110,6 +114,7 @@ struct MemReq{
   uint16_t    DestReg       = 0;
   RevRegClass RegType       = RevRegClass::RegUNKNOWN;
   unsigned    Hart          = _REV_INVALID_HART_ID_;
+  unsigned    Proc          = _REV_INVALID_PROC_ID_;
   MemOp       ReqType       = MemOp::MemOpCUSTOM;
   bool        isOutstanding = false;
 

@@ -134,7 +134,7 @@ public:
   uint64_t GetStackBottom() { return stacktop - _STACK_SIZE_; }
 
   /// RevMem: initiate a memory fence
-  bool FenceMem(unsigned Hart);
+  bool FenceMem(unsigned Hart, unsigned Proc);
 
   /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
   unsigned getLineSize(){ return ctrl ? ctrl->getLineSize() : 64;}
@@ -146,14 +146,14 @@ public:
   // ---- Base Memory Interfaces
   // ----------------------------------------------------
   /// RevMem: write to the target memory location
-  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data );
+  bool WriteMem( unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len, const void *Data );
 
   /// RevMem: write to the target memory location with the target flags
-  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data,
+  bool WriteMem( unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len, const void *Data,
                  StandardMem::Request::flags_t flags );
 
   /// RevMem: read data from the target memory location
-  bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void *Target,
+  bool ReadMem( unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len, void *Target,
                 const MemReq& req,
                 StandardMem::Request::flags_t flags);
 
@@ -174,34 +174,34 @@ public:
   // ----------------------------------------------------
   /// RevMem: template read memory interface
   template <typename T>
-  bool ReadVal( unsigned Hart, uint64_t Addr, T *Target,
+  bool ReadVal( unsigned Hart, unsigned Proc, uint64_t Addr, T *Target,
                 const MemReq& req,
                 StandardMem::Request::flags_t flags){
-    return ReadMem(Hart, Addr, sizeof(T), Target, req, flags);
+    return ReadMem(Hart, Proc, Addr, sizeof(T), Target, req, flags);
   }
 
   ///  RevMem: template LOAD RESERVE memory interface
   template <typename T>
-  bool LR( unsigned Hart, uint64_t Addr, T *Target,
+  bool LR( unsigned Hart, unsigned Proc, uint64_t Addr, T *Target,
            uint8_t aq, uint8_t rl, const MemReq& req,
            StandardMem::Request::flags_t flags){
-    return LRBase(Hart, Addr, sizeof(T), Target, aq, rl, req, flags);
+    return LRBase(Hart, Proc, Addr, sizeof(T), Target, aq, rl, req, flags);
   }
 
   ///  RevMem: template STORE CONDITIONAL memory interface
   template <typename T>
-  bool SC( unsigned Hart, uint64_t Addr, T *Data, T *Target,
+  bool SC( unsigned Hart, unsigned Proc, uint64_t Addr, T *Data, T *Target,
            uint8_t aq, uint8_t rl,
            StandardMem::Request::flags_t flags){
-    return SCBase(Hart, Addr, sizeof(T), Data, Target, aq, rl, flags);
+    return SCBase(Hart, Proc, Addr, sizeof(T), Data, Target, aq, rl, flags);
   }
 
   /// RevMem: template AMO memory interface
   template <typename T>
-  bool AMOVal( unsigned Hart, uint64_t Addr, T *Data, T *Target,
+  bool AMOVal( unsigned Hart, unsigned Proc, uint64_t Addr, T *Data, T *Target,
                const MemReq& req,
                StandardMem::Request::flags_t flags){
-    return AMOMem(Hart, Addr, sizeof(T), Data, Target, req, flags);
+    return AMOMem(Hart, Proc, Addr, sizeof(T), Data, Target, req, flags);
   }
 
   // ----------------------------------------------------
@@ -209,14 +209,14 @@ public:
   // ----------------------------------------------------
 
   template<typename T>
-  void Write( unsigned Hart, uint64_t Addr, T Value ){
+  void Write( unsigned Hart, unsigned Proc, uint64_t Addr, T Value ){
     if( std::is_same_v<T, float>){
       memStats.floatsWritten++;
     }else if(std::is_same_v<T, double>){
       memStats.doublesWritten++;
     }
 
-    if( !WriteMem(Hart, Addr, sizeof(T), &Value) ){
+    if( !WriteMem(Hart, Proc, Addr, sizeof(T), &Value) ){
       output->fatal(CALL_INFO, -1, std::is_floating_point_v<T> ?
                     "Error: could not write memory (FP%zu)\n" :
                     "Error: could not write memory (U%zu)\n",
@@ -228,17 +228,17 @@ public:
   // ---- Atomic/Future/LRSC Interfaces
   // ----------------------------------------------------
   /// RevMem: Add a memory reservation for the target address
-  bool LRBase(unsigned Hart, uint64_t Addr, size_t Len,
+  bool LRBase(unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len,
               void *Data, uint8_t aq, uint8_t rl, const MemReq& req,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Clear a memory reservation for the target address
-  bool SCBase(unsigned Hart, uint64_t Addr, size_t Len,
+  bool SCBase(unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len,
               void *Data, void *Target, uint8_t aq, uint8_t rl,
               StandardMem::Request::flags_t flags);
 
   /// RevMem: Initiated an AMO request
-  bool AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
+  bool AMOMem(unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len,
               void *Data, void *Target, const MemReq& req,
               StandardMem::Request::flags_t flags);
 

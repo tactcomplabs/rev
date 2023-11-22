@@ -75,11 +75,13 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     req.Set(rs1 + Inst.ImmSignExt(12),
             Inst.rd, RevRegClass::RegGPR,
             F->GetHartToExecID(),
+            F->GetProcID(),
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
     R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
+               F->GetProcID(),
                rs1 + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
                req,
@@ -93,11 +95,13 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     req.Set(rs1 + Inst.ImmSignExt(12),
             Inst.rd, RevRegClass::RegGPR,
             F->GetHartToExecID(),
+            F->GetProcID(),
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
     R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
+               F->GetProcID(),
                rs1 + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
                req,
@@ -115,6 +119,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 template<typename T>
 bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   M->Write(F->GetHartToExecID(),
+           F->GetProcID(),
            R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<T>(Inst.rs2));
   R->AdvancePC(Inst);
@@ -134,11 +139,13 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
             Inst.rd,
             RevRegClass::RegFLOAT,
             F->GetHartToExecID(),
+            F->GetProcID(),
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
+               F->GetProcID(),
                rs1 + Inst.ImmSignExt(12),
                reinterpret_cast<T*>(&R->DPF[Inst.rd]),
                req,
@@ -156,11 +163,13 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
             Inst.rd,
             RevRegClass::RegFLOAT,
             F->GetHartToExecID(),
+            F->GetProcID(),
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
     R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegFLOAT, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
+               F->GetProcID(),
                rs1 + Inst.ImmSignExt(12),
                &R->SPF[Inst.rd],
                req,
@@ -176,7 +185,7 @@ bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 template<typename T>
 bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   T val = R->GetFP<T>(Inst.rs2);
-  M->Write(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12), val);
+  M->Write(F->GetHartToExecID(), F->GetProcID(),R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12), val);
   R->AdvancePC(Inst);
   return true;
 }

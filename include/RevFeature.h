@@ -97,8 +97,11 @@ public:
   /// HasCompressed: Returns whether RV32 or RV64 "C" is enabled
   bool HasCompressed() const { return IsModeEnabled(RV_C); }
 
-  /// GetProcID: Retrieve the ProcID of the target object
+  /// GetProcID: Set ProcID of the target object
   auto GetProcID() const { return ProcID; }
+
+  /// SetProcID: Retrieve the ProcID of the target object
+  void SetProcID(unsigned procid) { ProcID = procid; }
 
   /// GetHartToExecID: Retrieve the current executing Hart
   uint16_t GetHartToExecID() const { return HartToExecID; }

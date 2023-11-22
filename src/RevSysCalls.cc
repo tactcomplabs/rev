@@ -44,10 +44,10 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
     }else{
       //We are in the middle of the string - read one byte
       MemReq req{straddr + EcallState.string.size(), 10,
-                 RevRegClass::RegGPR, HartToExecID, MemOp::MemOpREAD,
+                 RevRegClass::RegGPR, HartToExecID, id, MemOp::MemOpREAD,
                  true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
-      mem->ReadVal(HartToExecID,
+      mem->ReadVal(HartToExecID, id,
                   straddr + EcallState.string.size(),
                   EcallState.buf.data(),
                   req,
@@ -255,7 +255,7 @@ EcallStatus RevProc::ECALL_getcwd(RevInst& inst){
   auto BufAddr = RegFile->GetX<uint64_t>(RevReg::a0);
   auto size = RegFile->GetX<uint64_t>(RevReg::a1);
   auto CWD = std::filesystem::current_path();
-  mem->WriteMem(HartToExecID, BufAddr, size, CWD.c_str());
+  mem->WriteMem(HartToExecID, id, BufAddr, size, CWD.c_str());
 
   // Returns null-terminated string in buf
   // (no need to set x10 since it's already got BufAddr)
@@ -721,7 +721,7 @@ EcallStatus RevProc::ECALL_read(RevInst& inst){
   int rc = read(fd, &TmpBuf[0], BufSize);
 
   // Write that data to the buffer inside of Rev
-  mem->WriteMem(HartToExecID, BufAddr, BufSize, &TmpBuf[0]);
+  mem->WriteMem(HartToExecID, id, BufAddr, BufSize, &TmpBuf[0]);
 
   RegFile->SetX(RevReg::a0, rc);
   return EcallStatus::SUCCESS;
@@ -757,26 +757,26 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
 
   if (LSQueue->count(lsq_hash) == 0) {
     MemReq req (addr + EcallState.string.size(), 10, RevRegClass::RegGPR,
-                HartToExecID, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
+                HartToExecID, id, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
     LSQueue->insert({lsq_hash, req});
 
     if(nleft >= 8){
-      mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
+      mem->ReadVal(HartToExecID, id, addr+EcallState.string.size(),
                    reinterpret_cast<uint64_t*>(EcallState.buf.data()),
                    req, REVMEM_FLAGS(0));
       EcallState.bytesRead = 8;
     } else if(nleft >= 4){
-      mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
+      mem->ReadVal(HartToExecID, id, addr+EcallState.string.size(),
                    reinterpret_cast<uint32_t*>(EcallState.buf.data()),
                    req, REVMEM_FLAGS(0));
       EcallState.bytesRead = 4;
     } else if(nleft >= 2){
-      mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
+      mem->ReadVal(HartToExecID, id, addr+EcallState.string.size(),
                    reinterpret_cast<uint16_t*>(EcallState.buf.data()),
                    req, REVMEM_FLAGS(0));
       EcallState.bytesRead = 2;
     } else{
-      mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
+      mem->ReadVal(HartToExecID, id, addr+EcallState.string.size(),
                    reinterpret_cast<uint8_t*>(EcallState.buf.data()),
                    req, REVMEM_FLAGS(0));
       EcallState.bytesRead = 1;
@@ -1203,7 +1203,7 @@ EcallStatus RevProc::ECALL_clock_gettime(RevInst& inst){
   SimTime_t x = timeConverter->convertToCoreTime(Stats.totalCycles);
   src.tv_sec = x / 1000000000000ull;
   src.tv_nsec = (x / 1000) % 1000000000ull;
-  mem->WriteMem(HartToExecID, (size_t)tp, sizeof(*tp), &src);
+  mem->WriteMem(HartToExecID, id, (size_t)tp, sizeof(*tp), &src);
   RegFile->SetX(RevReg::a0, 0);
   return EcallStatus::SUCCESS;
 }
@@ -3129,7 +3129,7 @@ EcallStatus RevProc::ECALL_cpuinfo(RevInst& inst){
   auto addr = RegFile->GetX<int>(RevReg::a0);
   info.cores = opts->GetNumCores();
   info.harts_per_core = opts->GetNumHarts();
-  mem->WriteMem(HartToExecID, addr, sizeof(info), &info);
+  mem->WriteMem(HartToExecID, id, addr, sizeof(info), &info);
   RegFile->SetX(RevReg::a0, 0);
   return EcallStatus::SUCCESS;
 }
@@ -3142,7 +3142,7 @@ EcallStatus RevProc::ECALL_perf_stats(RevInst& inst){
 
   rs.cycles = Stats.totalCycles;
   rs.instructions = Retired;
-  mem->WriteMem(HartToExecID, (uint64_t)dest, sizeof(struct rev_stats), &rs);
+  mem->WriteMem(HartToExecID, id, (uint64_t)dest, sizeof(struct rev_stats), &rs);
   RegFile->SetX(RevReg::a0 ,0);
   return EcallStatus::SUCCESS;
 }
@@ -3163,7 +3163,7 @@ EcallStatus RevProc::ECALL_pthread_create(RevInst& inst){
   CreateThread(NewTID,
                NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 
-  mem->WriteMem(HartToExecID, tidAddr, sizeof(NewTID), &NewTID, REVMEM_FLAGS(0x00));
+  mem->WriteMem(HartToExecID, id, tidAddr, sizeof(NewTID), &NewTID, REVMEM_FLAGS(0x00));
   return EcallStatus::SUCCESS;
 }
 

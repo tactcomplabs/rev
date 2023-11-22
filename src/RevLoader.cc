@@ -79,7 +79,7 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   // #131 added case for when Len==lineSize
   if( Len <= lineSize ){
     // one cache line to write, dispatch it
-    return mem->WriteMem(0, Addr, Len, Data);
+    return mem->WriteMem(0, 0, Addr, Len, Data);
   }
 
   // calculate the base address of the first cache line
@@ -98,7 +98,7 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
   size_t TmpSize = BaseCacheAddr + lineSize - Addr;
   uint64_t TmpData = uint64_t(Data);
   uint64_t TmpAddr = Addr;
-  if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
+  if( !mem->WriteMem(0, 0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
     output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
   }
 
@@ -116,7 +116,7 @@ bool RevLoader::WriteCacheLine(uint64_t Addr, size_t Len, void *Data){
       TmpSize = (Len-Total);
     }
 
-    if( !mem->WriteMem(0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
+    if( !mem->WriteMem(0, 0, TmpAddr, TmpSize, reinterpret_cast<void*>(TmpData)) ){
       output->fatal(CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
     }
 
@@ -630,7 +630,7 @@ bool RevLoader::LoadElf(){
 
   // Initiate a memory fence in order to ensure that the entire ELF
   // infrastructure is loaded
-  mem->FenceMem(0);
+  mem->FenceMem(0,0);
 
   return true;
 }

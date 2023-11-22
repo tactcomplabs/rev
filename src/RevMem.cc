@@ -106,7 +106,7 @@ bool RevMem::StatusFuture(uint64_t Addr){
   return false;
 }
 
-bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
+bool RevMem::LRBase(unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len,
                     void *Target, uint8_t aq, uint8_t rl,
                     const MemReq& req,
                     StandardMem::Request::flags_t flags){
@@ -142,7 +142,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
   char *DataMem = (char *)(Target);
 
   if( ctrl ){
-    ctrl->sendREADLOCKRequest(Hart, Addr, (uint64_t)(BaseMem),
+    ctrl->sendREADLOCKRequest(Hart, Proc, Addr, (uint64_t)(BaseMem),
                               Len, Target, req, flags);
   }else{
     memcpy(DataMem, BaseMem, Len);
@@ -153,7 +153,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
   return true;
 }
 
-bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
+bool RevMem::SCBase(unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len,
                     void *Data, void *Target, uint8_t aq, uint8_t rl,
                     StandardMem::Request::flags_t flags){
   std::vector<std::tuple<unsigned, uint64_t, unsigned, uint64_t*>>::iterator it;
@@ -191,7 +191,7 @@ bool RevMem::SCBase(unsigned Hart, uint64_t Addr, size_t Len,
 
       // everything has passed so far,
       // write the value back to memory
-      WriteMem(Hart, Addr, Len, Data, flags);
+      WriteMem(Hart, Proc, Addr, Len, Data, flags);
 
       // write zeros to target
       for( unsigned i=0; i<Len; i++ ){
@@ -533,14 +533,14 @@ uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
 }
 
 
-bool RevMem::FenceMem(unsigned Hart){
+bool RevMem::FenceMem(unsigned Hart, unsigned Proc){
   if( ctrl ){
-    return ctrl->sendFENCE(Hart);
+    return ctrl->sendFENCE(Hart, Proc);
   }
   return true;  // base RevMem support does nothing here
 }
 
-bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
+bool RevMem::AMOMem(unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len,
                     void *Data, void *Target,
                     const MemReq& req,
                     StandardMem::Request::flags_t flags){
@@ -554,7 +554,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
 
   if( ctrl ){
     // sending to the RevMemCtrl
-    ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem), Len,
+    ctrl->sendAMORequest(Hart, Proc, Addr, (uint64_t)(BaseMem), Len,
                          static_cast<char *>(Data), Target, req, flags);
   }else{
     // process the request locally
@@ -564,7 +564,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
     std::memcpy(TmpD, static_cast<char *>(Data), Len);
     std::memset(TmpT, 0, 8);
 
-    ReadMem(Hart, Addr, Len, Target, req, flags);
+    ReadMem(Hart, Proc, Addr, Len, Target, req, flags);
 
     std::memcpy(TmpT, static_cast<char *>(Target), Len);
     if( Len == 4 ){
@@ -573,7 +573,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
       ApplyAMO(flags, Target, *(uint64_t *)(TmpD));
     }
 
-    WriteMem(Hart, Addr, Len, Target, flags);
+    WriteMem(Hart, Proc, Addr, Len, Target, flags);
 
     if( Len == 4 ){
       std::memcpy((uint32_t *)(Target), (uint32_t *)(TmpT), Len);
@@ -590,7 +590,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
   return true;
 }
 
-bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data,
+bool RevMem::WriteMem( unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len, const void *Data,
                        StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -617,7 +617,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
     std::cout << "Warning: Writing off end of page... " << std::endl;
 #endif
     if( ctrl ){
-      ctrl->sendWRITERequest(Hart, Addr,
+      ctrl->sendWRITERequest(Hart, Proc, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -631,7 +631,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
     if( ctrl ){
       // write the memory using RevMemCtrl
       unsigned Cur = (Len-span);
-      ctrl->sendWRITERequest(Hart, Addr,
+      ctrl->sendWRITERequest(Hart, Proc, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              &(DataMem[Cur]),
@@ -647,7 +647,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
   }else{
     if( ctrl ){
       // write the memory using RevMemCtrl
-      ctrl->sendWRITERequest(Hart, Addr,
+      ctrl->sendWRITERequest(Hart, Proc, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -664,7 +664,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
 }
 
 
-bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Data ){
+bool RevMem::WriteMem( unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len, const void *Data ){
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -706,7 +706,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
     std::cout << "Warning: Writing off end of page... " << std::endl;
 #endif
     if( ctrl ){
-      ctrl->sendWRITERequest(Hart, Addr,
+      ctrl->sendWRITERequest(Hart, Proc, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -720,7 +720,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
     if( ctrl ){
       // write the memory using RevMemCtrl
       unsigned Cur = (Len-span);
-      ctrl->sendWRITERequest(Hart, Addr,
+      ctrl->sendWRITERequest(Hart, Proc, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              &(DataMem[Cur]),
@@ -742,7 +742,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
   }else{
     if( ctrl ){
       // write the memory using RevMemCtrl
-      ctrl->sendWRITERequest(Hart, Addr,
+      ctrl->sendWRITERequest(Hart, Proc, Addr,
                              (uint64_t)(BaseMem),
                              Len,
                              DataMem,
@@ -796,7 +796,7 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ){
   return true;
 }
 
-bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
+bool RevMem::ReadMem(unsigned Hart, unsigned Proc, uint64_t Addr, size_t Len, void *Target,
                      const MemReq& req, StandardMem::Request::flags_t flags){
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -815,7 +815,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
     adjPageNum = ((Addr+Len)-span) >> addrShift;
     adjPhysAddr = CalcPhysAddr(adjPageNum, ((Addr+Len)-span));
     if( ctrl ){
-      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, req, flags);
+      ctrl->sendREADRequest(Hart, Proc, Addr, (uint64_t)(BaseMem), Len, Target, req, flags);
     }else{
       for( unsigned i=0; i< (Len-span); i++ ){
         DataMem[i] = BaseMem[i];
@@ -824,7 +824,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
     BaseMem = &physMem[adjPhysAddr];
     if( ctrl ){
       unsigned Cur = (Len-span);
-      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, req, flags);
+      ctrl->sendREADRequest(Hart, Proc, Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, req, flags);
     }else{
       unsigned Cur = (Len-span);
       for( unsigned i=0; i< span; i++ ){
@@ -841,7 +841,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
 #endif
   }else{
     if( ctrl ){
-      ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, Target, req, flags);
+      ctrl->sendREADRequest(Hart, Proc, Addr, (uint64_t)(BaseMem), Len, Target, req, flags);
     }else{
       for( unsigned i=0; i<Len; i++ ){
         DataMem[i] = BaseMem[i];
