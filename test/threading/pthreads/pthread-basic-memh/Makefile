@@ -11,7 +11,7 @@
 #
 
 .PHONY: src
-EXAMPLE=pthread-basic
+EXAMPLE=pthread_basic
 
 #CC=riscv64-unknown-elf-gcc
 CC="${RVCC}"

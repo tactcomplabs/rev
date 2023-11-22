@@ -6,10 +6,10 @@ make clean && make
 # Check that the exec was built...
 if [ -f argc-short.exe ]; then
 	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one" --enableMemH=0
-	echo "Test ARGC_REVMEM: Completed"
+	echo "Test ARGC_SHORT_REVMEM: Completed"
 	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one" --enableMemH=1
-	echo "Test ARGC_MEMH: Completed"
+	echo "Test ARGC_SHORT_MEMH: Completed"
 else
-	echo "Test ARGC_REVMEM: argc.exe not Found - likely build failed"
+	echo "Test ARGC_SHORT: argc.exe not Found - likely build failed"
 	exit 1
 fi

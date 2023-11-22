@@ -10,6 +10,6 @@ if [ -f argc.exe ]; then
 	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one two three" --enableMemH=1
 	echo "Test ARGC_MEMH: Completed"
 else
-	echo "Test ARGC_REVMEM: argc.exe not Found - likely build failed"
+	echo "Test ARGC: argc.exe not Found - likely build failed"
 	exit 1
 fi
