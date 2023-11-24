@@ -647,10 +647,6 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
   CompInst.rd     = CRegIdx(CompInst.rd);
   CompInst.rs1    = CRegIdx(CompInst.rs1);
 
-  //Apply compressed offset
-  CompInst.rd     = CRegIdx(CompInst.rd);
-  CompInst.rs1    = CRegIdx(CompInst.rs1);
-
   if( CompInst.funct3 == 0b001 ){
     // c.fld
     CompInst.imm =  ((Inst & 0b1100000) << 1);        // [7:6]
