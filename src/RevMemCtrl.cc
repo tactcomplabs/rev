@@ -130,7 +130,7 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
     max_readlock(64), max_writeunlock(64), max_custom(64), max_ops(2),
     num_read(nullptr), num_write(nullptr), num_flush(nullptr), num_llsc(nullptr),
     num_readlock(nullptr), num_writeunlock(nullptr), num_custom(nullptr),
-    num_fence(0), num_ports(1), harts_per_port(0) {
+    num_fence(nullptr), num_ports(1), harts_per_port(0) {
 
   stdMemHandlers = new RevBasicMemCtrl::RevStdMemHandlers(this, output);
 
@@ -154,7 +154,8 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
   num_ports = params.find<unsigned>("iface_ports", "1");
   harts_per_port = params.find<unsigned>("harts_per_port", "0");
 
-  rqstQ.reserve(max_ops);
+  //rqstQ.reserve(max_ops);
+  rqstQ.resize(num_ports);
 
   for( unsigned i=0; i<num_ports; i++ ){
     StandardMem* IF = loadUserSubComponent<Interfaces::StandardMem>(
@@ -174,6 +175,7 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
   num_readlock = new uint64_t [num_ports];
   num_writeunlock = new uint64_t [num_ports];
   num_custom = new uint64_t [num_ports];
+  num_fence = new uint64_t [num_ports];
   for( unsigned i=0; i<num_ports; i++ ){
     num_read[i] = 0;
     num_write[i] = 0;
@@ -182,6 +184,7 @@ RevBasicMemCtrl::RevBasicMemCtrl(ComponentId_t id, const Params& params)
     num_readlock[i] = 0;
     num_writeunlock[i] = 0;
     num_custom[i] = 0;
+    num_fence[i] = 0;
   }
 
   registerStats();
@@ -198,9 +201,13 @@ RevBasicMemCtrl::~RevBasicMemCtrl(){
   delete[] num_readlock;
   delete[] num_writeunlock;
   delete[] num_custom;
+  delete[] num_fence;
 
-  for( auto* p : rqstQ )
-    delete p;
+  for( auto p : rqstQ ){
+    for( auto *q : p ){
+      delete q;
+    }
+  }
   rqstQ.clear();
   delete stdMemHandlers;
 }
@@ -278,7 +285,7 @@ bool RevBasicMemCtrl::sendFLUSHRequest(unsigned Hart,
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size,
                               MemOp::MemOpFLUSH, flags);
   Op->setInv(Inv);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::FlushPending, 1);
   return true;
 }
@@ -296,7 +303,7 @@ bool RevBasicMemCtrl::sendREADRequest(unsigned Hart,
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size, target,
                               MemOp::MemOpREAD, flags);
   Op->setMemReq(req);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadPending, 1);
   return true;
 }
@@ -312,7 +319,7 @@ bool RevBasicMemCtrl::sendWRITERequest(unsigned Hart,
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size, buffer,
                               MemOp::MemOpWRITE, flags);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WritePending, 1);
   return true;
 }
@@ -354,7 +361,7 @@ bool RevBasicMemCtrl::sendAMORequest(unsigned Hart,
 
   // We have the request created and recorded in the AMOTable
   // Push it onto the request queue
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
 
   // now we record the stat for the particular AMO
   static constexpr std::pair<RevCPU::RevFlag, RevBasicMemCtrl::MemCtrlStats> table[] = {
@@ -391,7 +398,7 @@ bool RevBasicMemCtrl::sendREADLOCKRequest(unsigned Hart,
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size, target,
                               MemOp::MemOpREADLOCK, flags);
   Op->setMemReq(req);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::ReadLockPending, 1);
   return true;
 }
@@ -407,7 +414,7 @@ bool RevBasicMemCtrl::sendWRITELOCKRequest(unsigned Hart,
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size, buffer,
                               MemOp::MemOpWRITEUNLOCK, flags);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::WriteUnlockPending, 1);
   return true;
 }
@@ -422,7 +429,7 @@ bool RevBasicMemCtrl::sendLOADLINKRequest(unsigned Hart,
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size,
                               MemOp::MemOpLOADLINK, flags);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::LoadLinkPending, 1);
   return true;
 }
@@ -438,7 +445,7 @@ bool RevBasicMemCtrl::sendSTORECONDRequest(unsigned Hart,
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size, buffer,
                               MemOp::MemOpSTORECOND, flags);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::StoreCondPending, 1);
   return true;
 }
@@ -455,7 +462,7 @@ bool RevBasicMemCtrl::sendCUSTOMREADRequest(unsigned Hart,
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size, target, Opc,
                               MemOp::MemOpCUSTOM, flags);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::CustomPending, 1);
   return true;
 }
@@ -472,7 +479,7 @@ bool RevBasicMemCtrl::sendCUSTOMWRITERequest(unsigned Hart,
     return true;
   RevMemOp *Op = new RevMemOp(Hart, Proc, Addr, PAddr, Size, buffer, Opc,
                               MemOp::MemOpCUSTOM, flags);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::CustomPending, 1);
   return true;
 }
@@ -480,7 +487,7 @@ bool RevBasicMemCtrl::sendCUSTOMWRITERequest(unsigned Hart,
 bool RevBasicMemCtrl::sendFENCE(unsigned Hart, unsigned Proc){
   RevMemOp *Op = new RevMemOp(Hart, Proc, 0x00ull, 0x00ull, 0x00,
                               MemOp::MemOpFENCE, 0x00);
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Hart, Proc)).push_back(Op);
   recordStat(RevBasicMemCtrl::MemCtrlStats::FencePending, 1);
   return true;
 }
@@ -1171,9 +1178,11 @@ bool RevBasicMemCtrl::isAQ(unsigned Slot, unsigned Hart, unsigned Proc){
 
   // search all preceding slots for an AMO from the same Hart
   for( unsigned i = 0; i < Slot; i++ ){
-    if( (rqstQ[i]->getFlags() & IS_ATOMIC) != 0 &&
-        rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
-      if( (rqstQ[i]->getFlags() & uint32_t(RevCPU::RevFlag::F_AQ)) != 0 ){
+    if( (rqstQ.at(hartToPort(Hart, Proc)).at(i)->getFlags() & IS_ATOMIC) != 0 &&
+        rqstQ.at(hartToPort(Hart, Proc)).at(i)->getHart() ==
+        rqstQ.at(hartToPort(Hart, Proc)).at(Slot)->getHart() ){
+      if( (rqstQ.at(hartToPort(Hart, Proc)).at(i)->getFlags() &
+           uint32_t(RevCPU::RevFlag::F_AQ)) != 0 ){
         // this implies that we found a preceding request in the request queue
         // that was 1) an AMO and 2) came from the same HART as 'slot'
         // and 3) had the AQ flag set;
@@ -1193,12 +1202,14 @@ bool RevBasicMemCtrl::isRL(unsigned Slot, unsigned Hart, unsigned Proc){
     return false;
   }
 
-  if( (rqstQ[Slot]->getFlags() & IS_ATOMIC) != 0 &&
-      (rqstQ[Slot]->getFlags() & uint32_t(RevCPU::RevFlag::F_RL)) != 0 ){
+  if( (rqstQ.at(hartToPort(Hart, Proc)).at(Slot)->getFlags() & IS_ATOMIC) != 0 &&
+      (rqstQ.at(hartToPort(Hart, Proc)).at(Slot)->getFlags() &
+       uint32_t(RevCPU::RevFlag::F_RL)) != 0 ){
     // this is an AMO, check to see if there are other ops from the same
     // HART in flight
     for( unsigned i = 0; i < Slot; i++ ){
-      if( rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ){
+      if( rqstQ.at(hartToPort(Hart, Proc)).at(i)->getHart() ==
+          rqstQ.at(hartToPort(Hart, Proc)).at(Slot)->getHart() ){
         // this implies that the same Hart has preceding memory ops
         // in which case, we can't dispatch this AMO until they clear
         return true;
@@ -1208,12 +1219,15 @@ bool RevBasicMemCtrl::isRL(unsigned Slot, unsigned Hart, unsigned Proc){
   return false;
 }
 
-bool RevBasicMemCtrl::isPendingAMO(unsigned Slot){
-  return (isAQ(Slot, rqstQ[Slot]->getHart(), rqstQ[Slot]->getProc() ) ||
-          isRL(Slot, rqstQ[Slot]->getHart(), rqstQ[Slot]->getProc()));
+bool RevBasicMemCtrl::isPendingAMO(unsigned Port, unsigned Slot){
+  return (isAQ(Slot, rqstQ.at(Port).at(Slot)->getHart(),
+               rqstQ.at(Port).at(Slot)->getProc() ) ||
+          isRL(Slot, rqstQ.at(Port).at(Slot)->getHart(),
+               rqstQ.at(Port).at(Slot)->getProc()));
 }
 
-bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
+bool RevBasicMemCtrl::processNextRqst(unsigned Port,
+                                      unsigned &t_max_loads,
                                       unsigned &t_max_stores,
                                       unsigned &t_max_flush,
                                       unsigned &t_max_llsc,
@@ -1221,7 +1235,7 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
                                       unsigned &t_max_writeunlock,
                                       unsigned &t_max_custom,
                                       unsigned &t_max_ops){
-  if( rqstQ.size() == 0 ){
+  if( rqstQ[Port].size() == 0 ){
     // nothing to do, saturate and exit this cycle
     t_max_ops = max_ops;
     return true;
@@ -1230,8 +1244,8 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
   bool success = false;
 
   // retrieve the next candidate memory operation
-  for( unsigned i=0; i<rqstQ.size(); i++ ){
-    RevMemOp *op = rqstQ[i];
+  for( unsigned i=0; i<rqstQ[Port].size(); i++ ){
+    RevMemOp *op = rqstQ.at(Port).at(i);
     if( isMemOpAvail(op,
                      t_max_loads,
                      t_max_stores,
@@ -1249,8 +1263,8 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
         // saturate and exit this cycle
         // no need to build a StandardMem request
         t_max_ops = max_ops;
-        rqstQ.erase(rqstQ.begin()+i);
-        num_fence+=1;
+        rqstQ.at(Port).erase(rqstQ.at(Port).begin()+i);
+        num_fence[Port]+=1;
         delete op;
         return true;
       }
@@ -1259,7 +1273,7 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
       // from dispatching this request.  if this returns 'true'
       // then we can't dispatch the request.  note that
       // we do this after processing FENCE requests
-      if( isPendingAMO(i) ){
+      if( isPendingAMO(Port, i) ){
         t_max_ops = max_ops;
         return true;
       }
@@ -1272,7 +1286,7 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
 
       // sent the request, remove it
       if( success ){
-        rqstQ.erase(rqstQ.begin()+i);
+        rqstQ.at(Port).erase(rqstQ.at(Port).begin()+i);
       }else{
         // go ahead and max out our current request window
         // otherwise, this request for induce an infinite loop
@@ -1290,10 +1304,11 @@ bool RevBasicMemCtrl::processNextRqst(unsigned &t_max_loads,
   t_max_ops = max_ops;
 
 #ifdef _REV_DEBUG_
-  for( unsigned i=0; i<rqstQ.size(); i++ ){
-    std::cout << "rqstQ[" << i << "] = " << rqstQ[i]->getOp() << " @ 0x"
-              << std::hex << rqstQ[i]->getAddr() << std::dec
-              << "; physAddr = 0x" << std::hex << rqstQ[i]->getPhysAddr()
+  for( unsigned i=0; i<rqstQ.at(Port).size(); i++ ){
+    std::cout << "rqstQ[" << Port << "][" << i << "] = "
+              << rqstQ.at(Port).at(i)->getOp() << " @ 0x"
+              << std::hex << rqstQ.at(Port).at(i)->getAddr() << std::dec
+              << "; physAddr = 0x" << std::hex << rqstQ.at(Port).at(i)->getPhysAddr()
               << std::dec << std::endl;
   }
 #endif
@@ -1490,7 +1505,7 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,unsigned,
                                   Op,
                                   true);
   AMOTable.insert({Op->getAddr(), NewEntry});
-  rqstQ.push_back(Op);
+  rqstQ.at(hartToPort(Op->getHart(), Op->getProc())).push_back(Op);
 }
 
 void RevBasicMemCtrl::handleAMO(RevMemOp *op){
@@ -1699,6 +1714,51 @@ bool RevBasicMemCtrl::outstandingRqsts(){
 }
 
 bool RevBasicMemCtrl::clockTick(Cycle_t cycle){
+  // for each outgoing port, check to see if we can dispatch requests
+  for( unsigned Port=0; Port < num_ports; Port++ ){
+    // Check to see if we have any outstanding fences
+    if( num_fence[Port] > 0 ){
+      if( getTotalRqstsPerPort(Port) != 0 ){
+        // waiting for the oustanding ops to clear
+        recordStat(RevBasicMemCtrl::MemCtrlStats::FencePending, 1);
+        return false;
+      }else{
+        // clear the fence and continue processing
+        num_fence[Port]--;
+      }
+    }
+
+    // process the memory queue
+    bool done = false;
+    unsigned t_max_ops = 0;
+    unsigned t_max_loads = 0;
+    unsigned t_max_stores = 0;
+    unsigned t_max_flush = 0;
+    unsigned t_max_llsc = 0;
+    unsigned t_max_readlock = 0;
+    unsigned t_max_writeunlock = 0;
+    unsigned t_max_custom = 0;
+
+    while( !done ){
+      if( !processNextRqst(Port,
+                           t_max_loads, t_max_stores, t_max_flush,
+                           t_max_llsc, t_max_readlock, t_max_writeunlock,
+                           t_max_custom, t_max_ops) ){
+        // error occurred
+        output->fatal(CALL_INFO, -1,
+                      "Error : failed to process next memory request on Port=%d\n",
+                      Port);
+      }
+
+      if( t_max_ops == max_ops ){
+        done = true;
+      }
+    } // end `while( !done )`
+  } // end `for(unsigned Port...)`
+
+  return false;
+
+#if 0
   // check to see if the top request is a FENCE
   // This is unique for multi-ported memories
   // We have a BIG fence whereby all Harts recognize
@@ -1740,6 +1800,7 @@ bool RevBasicMemCtrl::clockTick(Cycle_t cycle){
   }
 
   return false;
+#endif
 }
 
 // ---------------------------------------------------------------

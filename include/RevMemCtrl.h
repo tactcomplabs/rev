@@ -577,7 +577,8 @@ protected:
 private:
 
   /// RevBasicMemCtrl: process the next memory request
-  bool processNextRqst(unsigned &t_max_loads, unsigned &t_max_stores,
+  bool processNextRqst(unsigned Port,
+                       unsigned &t_max_loads, unsigned &t_max_stores,
                        unsigned &t_max_flush, unsigned &t_max_llsc,
                        unsigned &t_max_readlock, unsigned &t_max_writeunlock,
                        unsigned &t_max_custom, unsigned &t_max_ops);
@@ -598,7 +599,7 @@ private:
   bool buildCacheMemRqst(RevMemOp *op, bool &Success);
 
   /// RevBasicMemCtrl: determine if there are any pending AMOs that would prevent a request from dispatching
-  bool isPendingAMO(unsigned Slot);
+  bool isPendingAMO(unsigned Port, unsigned Slot);
 
   /// RevBasicMemCtrl: determine if we need to utilize AQ ordering semantics
   bool isAQ(unsigned Slot, unsigned Hart, unsigned Proc);
@@ -656,7 +657,7 @@ private:
   uint64_t *num_readlock;                 ///< number of oustanding readlock requests
   uint64_t *num_writeunlock;              ///< number of oustanding writelock requests
   uint64_t *num_custom;                   ///< number of outstanding custom requests
-  uint64_t num_fence;                     ///< number of oustanding fence requests
+  uint64_t *num_fence;                    ///< number of oustanding fence requests
 
   unsigned num_ports;                     ///< number of memory interface ports
   unsigned harts_per_port;                ///< number of HARTs per port
@@ -664,7 +665,7 @@ private:
   unsigned harts_per_proc;                ///< number of HARTs per proc
 
   std::vector<StandardMem::Request::id_t> requests;               ///< outstanding StandardMem requests
-  std::vector<RevMemOp *> rqstQ;                                  ///< queued memory requests
+  std::vector<std::vector<RevMemOp *>> rqstQ;                     ///< queued memory requests
   std::map<StandardMem::Request::id_t, RevMemOp *> outstanding;   ///< map of outstanding requests
 
 #define AMOTABLE_HART   0
