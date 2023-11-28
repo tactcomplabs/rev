@@ -150,6 +150,7 @@ class RV32D : public RevExt{
     static constexpr RevRegClass rdClass  = RevRegClass::RegFLOAT;
     static constexpr RevRegClass rs1Class = RevRegClass::RegFLOAT;
     static constexpr RevRegClass rs2Class = RevRegClass::RegFLOAT;
+    static constexpr RevInstType instType = RevInstType::RVALU;
   };
   std::vector<RevInstEntry> RV32DTable = {
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fld %rd, $imm(%rs1)"           ).SetOpcode( 0b0000111).SetFunct3(0b011 ).SetFunct2or7(0b0000000        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegGPR  ).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(    RevRegClass::RegUNKNOWN).SetFormat(RVTypeI).SetImplFunc(&fld ).InstEntry},

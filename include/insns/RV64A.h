@@ -102,6 +102,7 @@ class RV64A : public RevExt {
     static constexpr uint8_t     opcode   = 0b0101111;
     static constexpr uint8_t     funct3   = 0b011;
     static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
+    static constexpr RevInstType instType = RVALU;
   };
   std::vector<RevInstEntry> RV64ATable = {
     {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("lr.d %rd, (%rs1)"          ).SetFunct2or7(0b00010).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&lrd ).InstEntry},

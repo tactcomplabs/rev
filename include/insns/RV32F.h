@@ -152,6 +152,7 @@ class RV32F : public RevExt{
     static constexpr RevRegClass rdClass  = RevRegClass::RegFLOAT;
     static constexpr RevRegClass rs1Class = RevRegClass::RegFLOAT;
     static constexpr RevRegClass rs2Class = RevRegClass::RegFLOAT;
+    static constexpr RevInstType instType = RevInstType::RVALU;
   };
 
   std::vector<RevInstEntry>RV32FTable = {

@@ -89,6 +89,13 @@ enum RevImmFunc : int {  ///< Rev Immediate Values
   FVal          = 3,     ///< RevRegClass: Imm12 is an incoming register value
 };
 
+enum RevInstType : int {    ///< Specify instruction type - used in pipeline exec logic for superscalar mode
+  RVALU     = 0,            ///< Instruciton is normal ALU (FP instructions qualify)
+  RVBranch  = 1,            ///< Instruction is a branch
+  RVAtomic  = 2,            ///< Instruction is an atomic
+  RVOther   = 255,          ///< Instruction is "Other"
+};
+
 /*! \struct RevInst
  *  \brief Rev decoded instruction
  *
@@ -173,6 +180,7 @@ struct RevInstDefaults {
   static constexpr RevInstF    format      = RVTypeR;
   static constexpr bool        compressed  = false;
   static constexpr uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
+  static constexpr RevInstType instType    = RevInstType::RVOther;
 }; // RevInstDefaults
 
 /*! \struct RevInstEntry
@@ -216,6 +224,8 @@ struct RevInstEntry{
   bool compressed;      ///< RevInstEntry: compressed instruction
 
   uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
+
+  RevInstType instType; ///< RevInstEntry: Is the instruction a ALU, branch, atomic, etc.
 }; // RevInstEntry
 
 template <typename RevInstDefaultsPolicy>
@@ -242,8 +252,9 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
     InstEntry.imm12     = RevInstDefaultsPolicy::imm12;
     InstEntry.imm       = RevInstDefaultsPolicy::imm;
     InstEntry.format    = RevInstDefaultsPolicy::format;
-    InstEntry.compressed= false;
+    InstEntry.compressed= RevInstDefaultsPolicy::compressed;
     InstEntry.fpcvtOp   = RevInstDefaultsPolicy::fpcvtOp;
+    InstEntry.instType  = RevInstDefaultsPolicy::instType;
   }
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
@@ -266,6 +277,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   auto& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
   auto& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
   auto& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
+  auto& SetInstType(RevInstType t)   { InstEntry.instType = t;   return *this;}
 
   auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, RevInst)){
     InstEntry.func = func;
