@@ -1638,7 +1638,7 @@ unsigned RevProc::GetNextHartToDecodeID() const {
 
 void RevProc::MarkLoadComplete(const MemReq& req){
 
-  auto it = LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
+  auto it = LSQueue->find(req.LSQHash());
   if( it != LSQueue->end()){
     DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
     LSQueue->erase(it);
@@ -1871,9 +1871,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Retired++;
 
       // Only clear the dependency if there is no outstanding load
-      if((RegFile->GetLSQueue()->count(make_lsq_hash(Pipeline.front().second.rd,
-                                                                 InstTable[Pipeline.front().second.entry].rdClass,
-                                                                 HartID))) == 0){
+      if((RegFile->GetLSQueue()->count(LSQHash(Pipeline.front().second.rd,
+                                               InstTable[Pipeline.front().second.entry].rdClass,
+                                               HartID))) == 0){
         DependencyClear(HartID, &(Pipeline.front().second));
       }
       Pipeline.pop_front();
@@ -1908,10 +1908,13 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       AddThreadsThatChangedState(std::move(ActiveThread));
     }
   }
-  #ifndef REV_TRACER
+
+  #ifndef NO_REV_TRACER
   // Dump trace state
   if (Tracer)  Tracer->Render(currentCycle);
   #endif
+
+  return rtn;
 }
 
 std::unique_ptr<RevThread> RevProc::PopThreadFromHart(unsigned HartID){

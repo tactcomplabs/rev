@@ -170,7 +170,7 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // now fill it
   for( size_t y=0; y<depth; y++ ){
-    MemReq req( Addr+(y*4), RevReg::zero, RevRegClass::RegGPR,
+    MemReq req( Addr+(y*4), 0, RevRegClass::RegGPR,
                 feature->GetHartToExecID(), MemOp::MemOpREAD, true,
                 MarkLoadAsComplete );
     LSQueue->insert( req.LSQHashPair() );
