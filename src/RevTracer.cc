@@ -15,7 +15,7 @@
 
 #include "RevTracer.h"
 
-using namespace SST::RevCPU;
+namespace SST::RevCPU{
 
 RevTracer::RevTracer(std::string Name, SST::Output *o): name(Name), pOutput(o) {
 
@@ -332,3 +332,5 @@ void RevTracer::fmt_data(unsigned len, uint64_t d, std::stringstream &s)
         s << std::setw(len * 2) << (d & mask);
     }
 }
+
+} // namespace SST::RevCPU

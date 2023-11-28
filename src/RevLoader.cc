@@ -11,7 +11,8 @@
 #include "RevLoader.h"
 #include "RevMem.h"
 
-using namespace SST::RevCPU;
+namespace SST::RevCPU{
+
 using MemSegment = RevMem::MemSegment;
 
 RevLoader::RevLoader( std::string Exe, std::string Args,
@@ -648,4 +649,5 @@ std::map<uint64_t, std::string> *SST::RevCPU::RevLoader::GetTraceSymbols()
     return &tracer_symbols;
 }
 
+} // namespace SST::RevCPU
 // EOF

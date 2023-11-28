@@ -758,22 +758,20 @@ private:
   }
 
   /// RevProc: Set or clear scoreboard based on register number and floating point.
-  void DependencySet(unsigned HartID, uint16_t RegNum,
-                              bool isFloat, bool value = true){
-    if( RegNum < _REV_NUM_REGS_ || RegNum != 0 ){ return; }
+  void DependencySet(unsigned HartID, RevReg RegNum, bool isFloat, bool value = true){
+    if( size_t(RegNum) < _REV_NUM_REGS_ || RegNum != RevReg::zero ){ return; }
     RevRegFile* regFile = GetRegFile(HartID);
     if(isFloat){
-        regFile->FP_Scoreboard[RegNum] = value;
+      regFile->FP_Scoreboard[size_t(RegNum)] = value;
     }
     else{
-      regFile->RV_Scoreboard[RegNum] = value;
+      regFile->RV_Scoreboard[size_t(RegNum)] = value;
     }
     return;
   }
 
-
   /// RevProc: Clear scoreboard on instruction retirement
-  void DependencyClear(unsigned HartID, uint16_t RegNum, bool isFloat){
+  void DependencyClear(unsigned HartID, RevReg RegNum, bool isFloat){
     DependencySet(HartID, RegNum, isFloat, false);
   }
 

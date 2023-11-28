@@ -1315,7 +1315,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
         }
         const MemReq& r = op->getMemReq();
         if( !isAMO ){
-          r.MarkLoadComplete(r);
+          r.MarkLoadComplete();
         }
         delete op;
       }
@@ -1339,7 +1339,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
 
     const MemReq& r = op->getMemReq();
     if( !isAMO ){
-      r.MarkLoadComplete(r);
+      r.MarkLoadComplete();
     }
     delete op;
     outstanding.erase(ev->getID());
@@ -1469,7 +1469,7 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
         // this was the last request to service, delete the op
         const MemReq& r = op->getMemReq();
         if( isAMO ){
-          r.MarkLoadComplete(r);
+          r.MarkLoadComplete();
         }
         delete op;
       }
@@ -1485,7 +1485,7 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     if( isAMO ){
       // write the target
       std::vector<uint8_t> tempT = op->getTempT();
-      r.MarkLoadComplete(r);
+      r.MarkLoadComplete();
     }
     delete op;
     outstanding.erase(ev->getID());

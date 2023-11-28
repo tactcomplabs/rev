@@ -9,7 +9,8 @@
 //
 
 #include "RevPrefetcher.h"
-using namespace SST::RevCPU;
+
+namespace SST::RevCPU{
 
 /*RevPrefetcher::~RevPrefetcher(){
 // delete all the existing streams
@@ -169,12 +170,14 @@ void RevPrefetcher::Fill(uint64_t Addr){
 
   // now fill it
   for( size_t y=0; y<depth; y++ ){
-    MemReq req (Addr+(y*4), 0, RevRegClass::RegGPR, feature->GetHartToExecID(), MemOp::MemOpREAD, true, MarkLoadAsComplete);
-    LSQueue->insert({make_lsq_hash(0, RevRegClass::RegGPR, feature->GetHartToExecID()), req});
+    MemReq req( Addr+(y*4), RevReg::zero, RevRegClass::RegGPR,
+                feature->GetHartToExecID(), MemOp::MemOpREAD, true,
+                MarkLoadAsComplete );
+    LSQueue->insert( req.LSQHashPair() );
     mem->ReadVal<uint32_t>( feature->GetHartToExecID(), Addr+(y*4),
-                  &iStack[x][y],
-                  req,
-                  RevFlag::F_NONE );
+                            &iStack[x][y],
+                            req,
+                            RevFlag::F_NONE );
   }
 }
 
@@ -186,4 +189,5 @@ void RevPrefetcher::DeleteStream(size_t i){
   }
 }
 
+} // namespace SST::RevCPU
 // EOF

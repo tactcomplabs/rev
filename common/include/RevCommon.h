@@ -85,42 +85,50 @@ enum class MemOp : uint8_t {
 
 std::ostream& operator<<(std::ostream& os, MemOp op);
 
-inline uint64_t make_lsq_hash(uint16_t destReg, RevRegClass regType, unsigned HartID){
-  return static_cast<uint64_t>(regType) << (16 + 8) | static_cast<uint64_t>(destReg) << 16 | HartID;
-};
+constexpr uint64_t LSQHash(RevReg DestReg, RevRegClass RegType, unsigned Hart){
+  return static_cast<uint64_t>(RegType) << (16 + 8) | static_cast<uint64_t>(DestReg) << 16 | Hart;
+}
 
 struct MemReq{
   MemReq() = default;
   MemReq(const MemReq&) = default;
+  MemReq(MemReq&&) = default;
   MemReq& operator=(const MemReq&) = default;
+  MemReq& operator=(MemReq&&) = default;
   ~MemReq() = default;
 
-  MemReq(uint64_t addr, uint16_t dest, RevRegClass regclass,
-         unsigned hart, MemOp req, bool outstanding, std::function<void(MemReq)> func) :
-    Addr(addr), DestReg(dest), RegType(regclass), Hart(hart),
-    ReqType(req), isOutstanding(outstanding), MarkLoadComplete(std::move(func))
-  {
+  MemReq(uint64_t Addr,
+         RevReg DestReg,
+         RevRegClass RegType,
+         unsigned Hart,
+         MemOp ReqType,
+         bool isOutstanding,
+         std::function<void(const MemReq&)> MarkLoadCompleteFunc) :
+    Addr(Addr),
+    DestReg(DestReg),
+    RegType(RegType),
+    Hart(Hart),
+    ReqType(ReqType),
+    isOutstanding(isOutstanding),
+    MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)){}
+
+  void MarkLoadComplete() const {
+    MarkLoadCompleteFunc(*this);
   }
 
-  void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, unsigned hart,
-           MemOp req, bool outstanding, std::function<void(MemReq)> func)
-  {
-    Addr = addr; DestReg = dest; RegType = regclass; Hart = hart;
-    ReqType = req; isOutstanding = outstanding; MarkLoadComplete = std::move(func);
+  auto LSQHashPair() const {
+    return std::make_pair( LSQHash(DestReg, RegType, Hart), *this );
   }
 
+private:
   uint64_t    Addr          = _INVALID_ADDR_;
-  uint16_t    DestReg       = 0;
+  RevReg      DestReg       = RevReg::zero;
   RevRegClass RegType       = RevRegClass::RegUNKNOWN;
   unsigned    Hart          = _REV_INVALID_HART_ID_;
   MemOp       ReqType       = MemOp::MemOpCUSTOM;
   bool        isOutstanding = false;
 
-  std::function<void(MemReq)> MarkLoadComplete = nullptr;
-
-  //std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
-  //  std::function<void((MemOp req)>) SetComplete;
-  // add lambda that clears the dependency bit directly so we don't need to search the hash
+  std::function<void(const MemReq&)> MarkLoadCompleteFunc = nullptr;
 };//struct MemReq
 
 // Enum for tracking the state of a RevThread.
