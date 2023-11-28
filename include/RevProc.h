@@ -153,13 +153,21 @@ public:
   void MarkLoadComplete(const MemReq& req);
 
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
-  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue(){ return LSQueue; }
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue() const { return LSQueue; }
 
   ///< RevProc: Add a co-processor to the RevProc
   void SetCoProc(RevCoProc* coproc);
 
-
   //--------------- External Interface for use with Co-Processor -------------------------
+  ///< RevProc: Allow a co-processor to query the bits in scoreboard. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
+  ///  RevProc
+  bool ExternalDepCheck(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t reg, bool IsFloat){
+    RevRegClass regClass = IsFloat ? RevRegClass::RegFLOAT : RevRegClass::RegGPR;
+    const RevRegFile* regFile = GetRegFile(HartID);
+    return LSQCheck(HartID, regFile, reg, regClass) || ScoreboardCheck(regFile, reg, regClass);
+  }
+
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
   ///  RevProc
@@ -734,6 +742,20 @@ private:
     return RegFile->FP_Scoreboard.any() || RegFile->RV_Scoreboard.any();
   }
 
+  /// RevProc: Check LS queue for outstanding load - ignore r0
+  bool LSQCheck(unsigned HartID, const RevRegFile* regFile,
+                uint16_t reg, RevRegClass regClass) const {
+    return (reg != 0 || regClass != RevRegClass::RegGPR) &&
+      regFile->GetLSQueue()->count(make_lsq_hash(reg, regClass, HartID)) > 0;
+  }
+
+  /// RevProc: Check scoreboard for a source register dependency
+  bool ScoreboardCheck(const RevRegFile* regFile, uint16_t reg, RevRegClass regClass) const {
+    return reg < _REV_NUM_REGS_ &&
+      ( (regClass == RevRegClass::RegFLOAT && regFile->FP_Scoreboard[reg]) ||
+        (regClass == RevRegClass::RegGPR && reg != 0 && regFile->RV_Scoreboard[reg]) );
+  }
+
   bool HartHasNoDependencies(unsigned HartID) const {
     return !AnyDependency(HartID);
   }
@@ -758,16 +780,16 @@ private:
   }
 
   /// RevProc: Set or clear scoreboard based on register number and floating point.
-  void DependencySet(unsigned HartID, RevReg RegNum, bool isFloat, bool value = true){
-    if( size_t(RegNum) < _REV_NUM_REGS_ || RegNum != RevReg::zero ){ return; }
-    RevRegFile* regFile = GetRegFile(HartID);
-    if(isFloat){
-      regFile->FP_Scoreboard[size_t(RegNum)] = value;
+  void DependencySet(unsigned HartID, uint16_t RegNum,
+                     bool isFloat, bool value = true){
+    if( RegNum < _REV_NUM_REGS_ ){
+      RevRegFile* regFile = GetRegFile(HartID);
+      if(isFloat){
+        regFile->FP_Scoreboard[RegNum] = value;
+      }else if( RegNum != 0 ){
+        regFile->RV_Scoreboard[RegNum] = value;
+      }
     }
-    else{
-      regFile->RV_Scoreboard[size_t(RegNum)] = value;
-    }
-    return;
   }
 
   /// RevProc: Clear scoreboard on instruction retirement

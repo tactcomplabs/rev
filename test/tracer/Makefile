@@ -12,8 +12,9 @@
 
 .PHONY: src
 
-EXAMPLE = tracer
-TLIST  = $(addprefix $(EXAMPLE),.rv32i .rv64g)
+EXAMPLE ?= tracer
+TLIST   ?= $(addprefix $(EXAMPLE),.mem.rv32i .mem.rv64g .memh.rv32i .memh.rv64g)
+
 EXES   = $(addsuffix .exe,$(TLIST))
 DIASMS = $(addsuffix .dis,$(TLIST))
 LOGS   = $(addsuffix .log,$(TLIST))
@@ -38,6 +39,12 @@ compile: $(EXES) $(DIASMS)
 %.rv64g.exe: ARCH=rv64g
 %.rv64g.exe: OPTS=-DRV64G
 
+%.mem.rv32i.log:  REVCFG=./rev-test-tracer.py
+%.memh.rv32i.log: REVCFG=./rev-test-tracer-memh.py
+
+%.mem.rv64g.log:  REVCFG=./rev-test-tracer.py
+%.memh.rv64g.log: REVCFG=./rev-test-tracer-memh.py
+
 %.exe: tracer.c
 	$(CC) -g -O0 -march=$(ARCH) $(OPTS) $(INCLUDE) -o  $@ $<
 
@@ -45,7 +52,7 @@ compile: $(EXES) $(DIASMS)
 %.rv32i.log: ARCH=rv32i
 %.log: %.exe
 	@$(eval tmp := $(basename $@).tmplog)
-	ARCH=$(ARCH) REV_EXE=$< sst --add-lib-path=../../build/src ./rev-test-tracer.py > $(tmp)
+	ARCH=$(ARCH) REV_EXE=$< sst --add-lib-path=../../build/src $(REVCFG) > $(tmp)
 	mv $(tmp) $@
 
 .PHONY: clean
