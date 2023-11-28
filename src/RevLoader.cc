@@ -154,6 +154,7 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     // - If so, save the addr & size of the TLS segment
     if( ph[i].p_type == PT_TLS ){
       TLSBaseAddr = ph[i].p_paddr;
+      // TODO: Move to RevMem maybe?
       TLSSize = ph[i].p_memsz;
       mem->SetTLSInfo(ph[i].p_paddr, ph[i].p_memsz);
     }

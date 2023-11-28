@@ -345,7 +345,7 @@ private:
   std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
 
   uint64_t TLSBaseAddr;                                   ///< RevMem: TLS Base Address
-  uint64_t TLSSize = sizeof(uint32_t);                    ///< RevMem: TLS Size (minimum size is enough to write the TID)
+  uint64_t TLSSize = 0;                    ///< RevMem: TLS segment size
   uint64_t ThreadMemSize = _STACK_SIZE_;                  ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
   uint64_t NextThreadMemAddr = memSize-1024;                  ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
 

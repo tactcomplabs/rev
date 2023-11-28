@@ -76,6 +76,9 @@ public:
   ///< RevThread: Get the fildes valid for this thread
   const std::unordered_set<int>& GetFildes(){ return fildes; }
 
+  ///< RevThread: Get ThreadMem
+  const std::shared_ptr<RevMem::MemSegment>& GetThreadMem() const { return ThreadMem; }
+
   ///< RevThread: Update this thread's virtual register state
   void UpdateVirtRegState(std::unique_ptr<RevVirtRegState> vRegState){
     VirtRegState = std::move(vRegState);

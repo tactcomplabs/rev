@@ -11,6 +11,7 @@
 #include "RevProc.h"
 #include "RevSysCalls.cc"
 #include "sst/core/output.h"
+#include <memory>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -1909,7 +1910,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
   #ifndef REV_TRACER
-  // Dump trace state 
+  // Dump trace state
   if (Tracer)  Tracer->Render(currentCycle);
   #endif
   return rtn;
@@ -1956,16 +1957,13 @@ RevRegFile* RevProc::GetRegFile(unsigned HartID) const {
   return Harts.at(HartID)->RegFile.get();
 }
 
-void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
-  // tidAddr is the address we have to write the new thread's id to
+std::unique_ptr<RevThread> RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   output->verbose(CALL_INFO, 2, 0,
                   "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC);
   uint32_t ParentThreadID = Harts.at(HartToExecID)->GetAssignedThreadID();
 
   // Create the new thread's memory
   std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
-
-  // TODO: Copy TLS into new memory
 
   // Create new register file
   std::unique_ptr<RevRegFile> NewThreadRegFile = std::make_unique<RevRegFile>(feature);
@@ -1975,8 +1973,8 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
 
   // Set the global pointer
   // TODO: Cleanup
-  NewThreadRegFile->SetX(RevReg::tp, NewThreadMem->getTopAddr());
-  NewThreadRegFile->SetX(RevReg::sp, NewThreadMem->getTopAddr()-mem->GetTLSSize());
+  NewThreadRegFile->SetX(RevReg::tp, NewThreadMem->getTopAddr()-mem->GetTLSSize());
+  NewThreadRegFile->SetX(RevReg::sp, NewThreadMem->getTopAddr()-mem->GetTLSSize()-1);
   NewThreadRegFile->SetX(RevReg::gp, loader->GetSymbolAddr("__global_pointer$"));
   NewThreadRegFile->SetX(8, loader->GetSymbolAddr("__global_pointer$"));
   NewThreadRegFile->SetPC(firstPC);
@@ -1988,10 +1986,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
                                 NewThreadMem,
                                 std::move(NewThreadRegFile));
 
-  // Add new thread to this vector so the RevCPU will add and schedule it
-  AddThreadsThatChangedState(std::move(NewThread));
-
-  return;
+  return NewThread;
 }
 
 /* ========================================= */
@@ -2326,8 +2321,9 @@ void RevProc::InitEcallTable(){
 // supported exceptions at this point there is no need just yet.
 //
 void RevProc::ExecEcall(RevInst& inst){
-  auto EcallCode =Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(RevReg::a7);
+  auto EcallCode = Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(RevReg::a7);
   auto it = Ecalls.find(EcallCode);
+  auto& EcallState = Harts[HartToDecodeID]->Ecall;
   if( it != Ecalls.end() ){
     EcallStatus status = it->second(this, inst);
 
@@ -2338,6 +2334,7 @@ void RevProc::ExecEcall(RevInst& inst){
     // For now, rewind the PC and keep executing the ECALL until we
     // have completed
     if(EcallStatus::SUCCESS != status){
+      EcallState.cyclesElapsed+=1;
       RegFile->SetPC( RegFile->GetPC() - inst.instSize );
     }
   } else {

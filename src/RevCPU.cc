@@ -225,7 +225,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
       // Assign to components
       Procs[i]->SetTracer(trc);
-      if (Ctrl) 
+      if (Ctrl)
         Ctrl->setTracer(trc);
     }
   }
@@ -668,7 +668,6 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
 
 // Initializes a RevThread object.
-// - Moves it to the 'Threads' map
 // - Adds it's ThreadID to the ReadyThreads to be scheduled
 void RevCPU::InitThread(std::unique_ptr<RevThread>&& ThreadToInit){
   // Get a pointer to the register state for this thread

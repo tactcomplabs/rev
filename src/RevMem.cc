@@ -409,6 +409,26 @@ void RevMem::SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size){
   return;
 }
 
+// TODO: FIX THIS
+//bool CopyMem(unsigned Hart, uint64_t srcAddr, uint64_t targetAddr, uint64_t size) {
+//  uint8_t buffer; // To hold the byte read from memory
+//
+//  for(uint64_t i = 0; i < size; i++) {
+//    // Create a read request
+//    MemReq readReq(sourceAddr + i, /* other necessary parameters */);
+//    LSQueue->insert({/* appropriate key */, readReq});
+//    mem->ReadVal(Hart, sourceAddr + i, &buffer, readReq, RevFlag::F_NONE);
+//
+//    // Create a write request
+//    MemReq writeReq(targetAddr + i, /* other necessary parameters */);
+//    LSQueue->insert({/* appropriate key */, writeReq});
+//    mem->WriteMem(Hart, targetAddr + i, 1, &buffer, RevFlag::F_NONE);
+//  }
+//
+//  return true;
+//}
+//
+
 
 // AllocMem differs from AddMemSeg because it first searches the FreeMemSegs
 // vector to see if there is a free segment that will fit the new data

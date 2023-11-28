@@ -8,6 +8,57 @@
 
 using namespace SST::RevCPU;
 
+/***
+ States this copy function can be in:
+
+ ***/
+
+EcallStatus RevProc::CopyTLS(RevInst& inst, uint64_t TLSBaseAddr, uint64_t NewThreadTLSBaseAddr, size_t TLSSize) {
+    auto rtval = EcallStatus::ERROR;
+    auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
+
+    // Print out each variable
+    std::cout << "TLS Size = " << TLSSize << std::endl;
+    // Print bytes read & written
+    std::cout << "Bytes Read = " << EcallState.bytesRead << std::endl;
+    std::cout << "Bytes Written = " << EcallState.bytesWritten << std::endl;
+
+    // 1. Check for dependency on a0 register
+    if (RegFile->GetLSQueue()->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExecID)) > 0) {
+      std::cout << "CopyTLS: Dependency on a0 register (Read in Flight)" << std::endl;
+      rtval = EcallStatus::CONTINUE;
+    }
+    // 3. No dependency set
+    else {
+        // 3a. bytesRead > bytesWritten
+        if (EcallState.bytesRead > EcallState.bytesWritten) {
+          std::cout << "CopyTLS: NoDep && bytesRead > bytesWritten" << std::endl;
+          mem->WriteMem(HartToExecID, NewThreadTLSBaseAddr + EcallState.bytesWritten, EcallState.bytesRead - EcallState.bytesWritten, EcallState.buf.data() + EcallState.bytesWritten, RevFlag::F_NONE);
+          EcallState.bytesWritten = EcallState.bytesRead;
+          DependencyClear(HartToExecID, 10, false);
+          rtval = EcallStatus::CONTINUE;
+        }
+        // 3b. bytesRead == bytesWritten
+        else if (EcallState.bytesRead == EcallState.bytesWritten) {
+          std::cout << "CopyTLS: NoDep && bytesRead == bytesWritten" << std::endl;
+          if (EcallState.bytesWritten == TLSSize) {
+            std::cout << "CopyTLS: bytesWritten == TLSSize" << std::endl;
+            rtval = EcallStatus::SUCCESS;
+            } else {
+              MemReq req{TLSBaseAddr+EcallState.bytesRead, 10,
+                        RevRegClass::RegGPR, HartToExecID, MemOp::MemOpREAD,
+                        true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
+              LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+              mem->ReadVal(HartToExecID, TLSBaseAddr, EcallState.buf.data(), req, RevFlag::F_NONE);
+              EcallState.bytesRead += 1; // Assuming 1 byte read request
+              DependencySet(HartToExecID, 10, false);
+              rtval = EcallStatus::CONTINUE;
+            }
+        }
+    }
+    return rtval;
+}
+
 /// Parse a string for an ECALL starting at address straddr, updating the state
 /// as characters are read, and call action() when the end of string is reached.
 EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
@@ -3152,19 +3203,33 @@ EcallStatus RevProc::ECALL_perf_stats(RevInst& inst){
 //                          void *(*start_routine)(void *),
 //                          void *restrict arg);
 EcallStatus RevProc::ECALL_pthread_create(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0,
-                  "ECALL: pthread_create called by thread %" PRIu32
-                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
-  uint64_t tidAddr     = RegFile->GetX<uint64_t>(RevReg::a0);
-  //uint64_t AttrPtr     = RegFile->GetX<uint64_t>(RevReg::a1);
-  uint64_t NewThreadPC = RegFile->GetX<uint64_t>(RevReg::a2);
-  uint64_t ArgPtr      = RegFile->GetX<uint64_t>(RevReg::a3);
-  unsigned long int NewTID = GetNewThreadID();
-  CreateThread(NewTID,
-               NewThreadPC, reinterpret_cast<void*>(ArgPtr));
+  auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
+  if( EcallState.cyclesElapsed == 0 ){
+    // First time through the function
+    output->verbose(CALL_INFO, 2, 0,
+                    "ECALL: pthread_create called by thread %" PRIu32
+                    " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+    uint64_t tidAddr     = RegFile->GetX<uint64_t>(RevReg::a0);
+    //uint64_t AttrPtr     = RegFile->GetX<uint64_t>(RevReg::a1);
+    uint64_t NewThreadPC = RegFile->GetX<uint64_t>(RevReg::a2);
+    uint64_t ArgPtr      = RegFile->GetX<uint64_t>(RevReg::a3);
+    unsigned long int NewTID = GetNewThreadID();
+    EcallState.newThreadInfo = CreateThread(NewTID,
+                NewThreadPC, reinterpret_cast<void*>(ArgPtr));
 
-  mem->WriteMem(HartToExecID, tidAddr, sizeof(NewTID), &NewTID, RevFlag::F_NONE);
-  return EcallStatus::SUCCESS;
+  }
+  // Copy TLS segment data to this threads ThreadMem
+  // TODO: This isn't safe if another Hart creates a thread
+  const size_t TLSSize = mem->GetTLSSize();
+  const uint64_t TLSBaseAddr = mem->GetTLSBaseAddr();
+  const uint64_t NewThreadTLSBaseAddr = EcallState.newThreadInfo->GetThreadMem()->getTopAddr()- TLSSize;
+
+  if( EcallState.bytesWritten < TLSSize ){
+    return CopyTLS(inst, TLSBaseAddr, NewThreadTLSBaseAddr, TLSSize);
+  } else {
+    ThreadsThatChangedState.emplace_back(std::move(EcallState.newThreadInfo));
+    return EcallStatus::SUCCESS;
+  }
 }
 
 // 1001, int rev_pthread_join(pthread_t thread, void **retval);

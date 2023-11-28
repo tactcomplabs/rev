@@ -141,7 +141,7 @@ public:
   }
 
   ///< RevProc: SpawnThread creates a new thread and returns its ThreadID
-  void CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
+  std::unique_ptr<RevThread> CreateThread(uint32_t NewTid, uint64_t fn, void* arg);
 
   ///< RevProc: Returns the current HartToExecID active pid
   uint32_t GetActiveThreadID(){ return Harts.at(HartToDecodeID)->GetAssignedThreadID(); }
@@ -262,8 +262,13 @@ private:
   RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
 
   std::bitset<_MAX_HARTS_> CoProcStallReq;
+
+  ///< RevProc: Utility function for copying a byte of memory from one location in memory to another (non-host)
+  EcallStatus CopyTLS(RevInst& inst, uint64_t TLSBaseAddr, uint64_t NewThreadTLSBaseAddr, size_t TLSSize);
+
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
+
 
   // - Many of these are not implemented
   // - Their existence in the ECalls table is solely to not throw errors

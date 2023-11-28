@@ -17,10 +17,12 @@
 
 // -- Standard Headers
 #include <array>
+#include <memory>
 #include <string>
 
 // -- RevCPU Headers
 #include "../common/include/RevCommon.h"
+#include "RevThread.h"
 
 namespace SST::RevCPU{
 
@@ -32,10 +34,15 @@ enum class EcallStatus{
 
 // State information for ECALLs
 struct EcallState {
+  // TODO: I hate this
+  std::unique_ptr<RevThread> newThreadInfo = nullptr;
+
+  uint64_t cyclesElapsed = 0;
   std::array<char, 64> buf;
   std::string string;
   std::string path_string;
   size_t bytesRead = 0;
+  size_t bytesWritten = 0;
 
   void clear(){
     string.clear();
