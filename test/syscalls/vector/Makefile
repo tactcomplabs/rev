@@ -16,10 +16,10 @@ EXAMPLE=vector
 #CC=riscv64-unknown-linux-gnu-gcc
 CC="${RVCXX}"
 #ARCH=rv64g
-ARCH=rv64g
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).c
+$(EXAMPLE).exe: $(EXAMPLE).cpp
 	$(CC) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
