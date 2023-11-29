@@ -422,7 +422,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   CompInst.imm     = 0x00;
 
   //if c.mv force rs1 to x0
-  if((0b10 == CompInst.opcode) && (0b1000 == CompInst.funct4)){
+  if((0b10 == CompInst.opcode) && (0b1000 == CompInst.funct4) && (0 != CompInst.rs2)){
     CompInst.rs1 = 0;
   }
 
@@ -792,9 +792,9 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
     CompInst.rs2 = 0;
   }
 
-  //If c.srli, c.srai or c.andi set rs1 to rd
+  //If c.srli, c.srai or c.andi set rd to rs1
   if((0b01 == CompInst.opcode) && (0b100 == CompInst.funct3)){
-    CompInst.rs1 = CompInst.rd;
+    CompInst.rd = CompInst.rs1;
   }
 
   //swizzle: offset[8|4:3]  offset[7:6|2:1|5]
