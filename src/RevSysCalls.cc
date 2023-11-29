@@ -2006,6 +2006,7 @@ EcallStatus RevProc::ECALL_readahead(RevInst& inst){
 // 214, rev_brk(unsigned long brk)
 EcallStatus RevProc::ECALL_brk(RevInst& inst){
   auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
+  std::cout << *RegFile << std::endl;
 
   const uint64_t heapend = mem->GetHeapEnd();
   if( Addr > 0 && Addr > heapend ){

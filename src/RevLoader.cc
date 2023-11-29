@@ -360,6 +360,8 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
     output->fatal(CALL_INFO, -1, "Error: No text, data, or bss sections --- RV64 Elf is unrecognizable\n" );
   }
 
+  // TODO: Remove me
+  output->verbose(CALL_INFO, 2, 0, "Static Data End: 0x%" PRIx64 "\n", StaticDataEnd);
   // Check that the ELF file is valid
   if( sz < eh->e_phoff + eh->e_phnum * sizeof(*ph) )
     output->fatal(CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
@@ -443,6 +445,13 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   }
 
   // Initialize the heap
+  // Check if there is a heap_end.0 symbol
+  // TODO: Add to LoadElf32
+  if( GetSymbolAddr("heap_end.0") ) {
+    StaticDataEnd = GetSymbolAddr("heap_end.0");
+    std::cout << "Found heap_end.0 symbol at 0x" <<std::hex << StaticDataEnd << std::endl;
+  }
+
   mem->InitHeap(StaticDataEnd);
 
   return true;
