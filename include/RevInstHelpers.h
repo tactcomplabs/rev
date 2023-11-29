@@ -77,7 +77,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
-    R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
                rs1 + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
@@ -95,14 +95,14 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
-    R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
                rs1 + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),
                req,
                flags);
     R->SetX(Inst.rd, static_cast<T>(R->RV64[Inst.rd]));
-  //std::cout << "RMT: Load Issued for address: " << std::hex << req.Addr << " Data: " << static_cast<T>(R->RV64[Inst.rd]) << std::dec << " Dest Reg: " << req.DestReg << std::endl; 
+  //std::cout << "RMT: Load Issued for address: " << std::hex << req.Addr << " Data: " << static_cast<T>(R->RV64[Inst.rd]) << std::dec << " Dest Reg: " << req.DestReg << std::endl;
   }
 
   // update the cost
@@ -118,7 +118,7 @@ bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
            R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<T>(Inst.rs2));
   R->AdvancePC(Inst);
- // std::cout << "RMT: Store Issued for address: " << std::hex << R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12) << " Data: " << R->GetX<T>(Inst.rs2) << std::dec << std::endl; 
+ // std::cout << "RMT: Store Issued for address: " << std::hex << R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12) << " Data: " << R->GetX<T>(Inst.rs2) << std::dec << std::endl;
   return true;
 }
 

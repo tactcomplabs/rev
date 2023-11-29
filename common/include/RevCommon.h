@@ -16,6 +16,7 @@
 #include <functional>
 #include <ostream>
 #include <type_traits>
+#include <utility>
 
 #ifndef _REV_NUM_REGS_
 #define _REV_NUM_REGS_ 32
@@ -90,20 +91,22 @@ inline uint64_t make_lsq_hash(uint16_t destReg, RevRegClass regType, unsigned Ha
 
 struct MemReq{
   MemReq() = default;
+  MemReq(const MemReq&) = default;
+  MemReq& operator=(const MemReq&) = default;
+  ~MemReq() = default;
 
   MemReq(uint64_t addr, uint16_t dest, RevRegClass regclass,
          unsigned hart, MemOp req, bool outstanding, std::function<void(MemReq)> func) :
     Addr(addr), DestReg(dest), RegType(regclass), Hart(hart),
-    ReqType(req), isOutstanding(outstanding), MarkLoadComplete(func)
+    ReqType(req), isOutstanding(outstanding), MarkLoadComplete(std::move(func))
   {
   }
 
-  void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, unsigned hart, MemOp req, bool outstanding,
-           std::function<void(MemReq)> func)
+  void Set(uint64_t addr, uint16_t dest, RevRegClass regclass, unsigned hart,
+           MemOp req, bool outstanding, std::function<void(MemReq)> func)
   {
     Addr = addr; DestReg = dest; RegType = regclass; Hart = hart;
-    ReqType = req; isOutstanding = outstanding;
-    MarkLoadComplete = func;
+    ReqType = req; isOutstanding = outstanding; MarkLoadComplete = std::move(func);
   }
 
   uint64_t    Addr          = _INVALID_ADDR_;
