@@ -178,7 +178,7 @@ class RV32I : public RevExt {
       return addi(F, R, M, Inst);
     }else{
       // c.lui %rd, $imm = addi %rd, x0, $imm
-      Inst.imm = Inst.ImmSignExt(6);
+      Inst.imm = Inst.ImmSignExt(17);
       return lui(F, R, M, Inst);
     }
   }
