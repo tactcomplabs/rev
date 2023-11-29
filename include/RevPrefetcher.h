@@ -19,6 +19,7 @@
 
 #include "RevMem.h"
 #include "RevFeature.h"
+#include "RevRegFile.h"
 
 namespace SST::RevCPU{
 

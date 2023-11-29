@@ -796,7 +796,7 @@ private:
   /// RevProc: Clear scoreboard on instruction retirement
   template<typename T>
   void DependencyClear(unsigned HartID, T RegNum, bool isFloat){
-    DependencySet(HartID, uint16_t(RegNum), isFloat, false);
+    DependencySet(HartID, RegNum, isFloat, false);
   }
 
 }; // class RevProc
