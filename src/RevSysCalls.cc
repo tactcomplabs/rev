@@ -2003,20 +2003,18 @@ EcallStatus RevProc::ECALL_readahead(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
-// 214, rev_brk(unsigned long brk)
-EcallStatus RevProc::ECALL_brk(RevInst& inst){
-  auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
+// 214, rev_sbrk(int bytes)
+EcallStatus RevProc::ECALL_sbrk(RevInst& inst){
+  int NumBytes = RegFile->GetX<uint64_t>(RevReg::a0);
   std::cout << *RegFile << std::endl;
 
-  const uint64_t heapend = mem->GetHeapEnd();
-  if( Addr > 0 && Addr > heapend ){
-    uint64_t Size = Addr - heapend;
-    mem->ExpandHeap(Size);
-  } else {
-    output->fatal(CALL_INFO, 11,
-                  "Out of memory / Unable to expand system break (brk) to "
-                  "Addr = 0x%" PRIx64 "\n", Addr);
-  }
+  // TODO: Probably add some error checking
+  mem->SetHeapEnd(mem->GetHeapEnd() + NumBytes);
+   // output->fatal(CALL_INFO, 11,
+   //               "Out of memory / Unable to expand system break (brk) to "
+   //               "Addr = 0x%" PRIx64 "\n", Addr);
+   //
+  RegFile->SetX(RevReg::a0, mem->GetHeapEnd());
   return EcallStatus::SUCCESS;
 }
 

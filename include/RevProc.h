@@ -485,7 +485,7 @@ private:
   EcallStatus ECALL_sendmsg(RevInst& inst);                // 211, rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags)
   EcallStatus ECALL_recvmsg(RevInst& inst);                // 212, rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags)
   EcallStatus ECALL_readahead(RevInst& inst);              // 213, rev_readahead(int fd, loff_t offset, size_t count)
-  EcallStatus ECALL_brk(RevInst& inst);                    // 214, rev_brk(unsigned long brk)
+  EcallStatus ECALL_sbrk(RevInst& inst);                    // 214, rev_brk(unsigned long brk)
   EcallStatus ECALL_munmap(RevInst& inst);                 // 215, rev_munmap(unsigned long addr, size_t len)
   EcallStatus ECALL_mremap(RevInst& inst);                 // 216, rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr)
   EcallStatus ECALL_add_key(RevInst& inst);                // 217, rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid)
