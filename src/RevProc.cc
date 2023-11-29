@@ -421,7 +421,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   CompInst.imm     = 0x00;
 
   //if c.mv force rs1 to x0
-  if((0b10 == CompInst.opcode) && (0b1000 == CompInst.funct4)){
+  if((0b10 == CompInst.opcode) && (0b1000 == CompInst.funct4) && (0 != CompInst.rs2)){
     CompInst.rs1 = 0;
   }
 
