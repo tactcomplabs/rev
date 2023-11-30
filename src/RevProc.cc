@@ -754,8 +754,11 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
 
   //Adjust registers for compressed offset
   CompInst.rs2 = CRegIdx(CompInst.rs2);
+  CompInst.rs1 = CRegIdx(CompInst.rs1);
+  CompInst.rd = CRegIdx(CompInst.rd);
+
   //All instructions of this format expand to <opcode> rd rd rs2, so set rs1 to rd
-  CompInst.rs1 = CompInst.rd = CRegIdx(CompInst.rd);
+  CompInst.rs1 = CompInst.rd;
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -786,9 +789,9 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
     CompInst.rs2 = 0;
   }
 
-  //If c.srli, c.srai or c.andi set rs1 to rd
+  //If c.srli, c.srai or c.andi set rd to rs1
   if((0b01 == CompInst.opcode) && (0b100 == CompInst.funct3)){
-    CompInst.rs1 = CompInst.rd;
+    CompInst.rd = CompInst.rs1;
   }
 
   //swizzle: offset[8|4:3]  offset[7:6|2:1|5]
