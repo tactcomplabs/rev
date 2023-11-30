@@ -52,6 +52,7 @@ comp_cpu.addParams({
     "memCost" : "[0:1:10]",
     "program" : args.program,
     "startAddr" : "[0:0x00000000]",
+    # "startSymbol" : "[0:_start]",
     "enable_memH" : args.enableMemH,
     "args": args.args,
     "splash" : 1
