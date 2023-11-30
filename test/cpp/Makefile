@@ -12,7 +12,7 @@
 
 .PHONY: src
 
-EXAMPLE=vector
+EXAMPLE=basic-cpp
 #CC=riscv64-unknown-linux-gnu-gcc
 CC="${RVCXX}"
 #ARCH=rv64g

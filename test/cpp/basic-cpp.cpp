@@ -1,4 +1,5 @@
-#include <vector>
+#include "../../common/syscalls/syscalls.h"
+#include <iostream>
 
 #define assert(x)                                                              \
   if (!(x)) {                                                                  \
@@ -9,8 +10,19 @@
   }
 
 int main() {
-  std::vector<int> v;
-  v.push_back(10);
-  //assert(v[1] == 10);
-  return 0;
+    // Using 'new' to allocate memory for an integer
+    uint64_t* ptr = new uint64_t(5); // 'ptr' now points to an int with value 5
+
+    // Accessing the value stored in the allocated memory
+    assert(*ptr == 5);
+
+    if( *ptr == 5 ) {
+      rev_exit(5);
+    }
+
+
+    // Using 'delete' to deallocate the memory
+    delete ptr;
+
+    return 0;
 }
