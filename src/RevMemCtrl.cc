@@ -1339,6 +1339,7 @@ void RevBasicMemCtrl::handleReadResp(StandardMem::ReadResp* ev){
 
     const MemReq& r = op->getMemReq();
     if( !isAMO ){
+      TRACE_MEM_READ_RESPONSE(op->getSize(), op->getTarget(), &r);
       r.MarkLoadComplete(r);
     }
     delete op;
@@ -1665,6 +1666,10 @@ void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::CustomResp* ev){
 
 void RevBasicMemCtrl::RevStdMemHandlers::handle(StandardMem::InvNotify* ev){
   Ctrl->handleInvResp(ev);
+}
+
+void RevBasicMemCtrl::setTracer(RevTracer *tracer){
+  Tracer = tracer;
 }
 
 } // namespace SST::RevCPU

@@ -32,6 +32,7 @@
 // -- RevCPU Headers
 #include "RevOpts.h"
 #include "../common/include/RevCommon.h"
+#include "RevTracer.h"
 
 namespace SST::RevCPU{
 
@@ -303,8 +304,12 @@ public:
   /// RevMemCtrl: returns the cache line size
   virtual unsigned getLineSize() = 0;
 
+  /// Assign processor tracer
+  virtual void setTracer(RevTracer *tracer) = 0;
+
 protected:
-  SST::Output *output;        ///< RevMemCtrl: sst output object
+  SST::Output *output;          ///< RevMemCtrl: sst output object
+  RevTracer *Tracer = nullptr;  ///< RevMemCtrl: tracer pointer
 }; // class RevMemCtrl
 
 // ----------------------------------------
@@ -524,6 +529,9 @@ public:
 
   /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
   virtual void handleAMO(RevMemOp *op) override;
+
+  /// RevBasicMemCtrl: assign tracer pointer
+  virtual void setTracer(RevTracer *tracer) override;
 
 protected:
   // ----------------------------------------
