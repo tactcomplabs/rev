@@ -384,8 +384,8 @@ private:
 
   static std::unordered_map<std::string, std::function<void(unsigned,
                                                      uint64_t,
-                                                     size_t,
-                                                     void*)>> CustomMemHandlers;
+                                                     uint64_t,
+                                                     size_t)>> CustomMemHandlers;
 
   uint64_t SearchTLB(uint64_t vAddr);                       ///< RevMem: Used to check the TLB for an entry
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue

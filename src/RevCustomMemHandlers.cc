@@ -27,14 +27,14 @@
 using namespace SST::RevCPU;
 
 // TODO: Add MemReq / flags
-inline void ScratchpadHandler(uint64_t Addr, uint64_t Data, size_t Size, void*){ // , const SST::RevCPU::MemReq& req) {
-  std::cout << "Scratchpad Handler Called for Address = 0x" << std::hex << Addr << std::endl;
+inline void ScratchpadHandler(unsigned HartID, uint64_t Addr, uint64_t Data, size_t Size){//, void*){ // , const SST::RevCPU::MemReq& req) {
+  std::cout << "Scratchpad Handler Called By Hart " << HartID << " for Address = 1x" << std::hex << Addr << std::endl;
 }
 
 // TODO: Add MemReq to this
 std::unordered_map<std::string, std::function<void(unsigned,
                                                    uint64_t,
-                                                   size_t,
-                                                   void*)>> RevMem::CustomMemHandlers = {
+                                                   uint64_t,
+                                                   size_t)>> RevMem::CustomMemHandlers = {
   {"scratchpad", &ScratchpadHandler},
 };

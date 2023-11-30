@@ -845,7 +845,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
     if( CustomSeg->contains(Addr) ){
       // Trigger the custom handler
       // TODO: Add error handling
-      CustomMemHandlers.find(CustomSeg->GetName())->second(Hart, Addr, Len, Target);
+      CustomMemHandlers.find(CustomSeg->GetName())->second(Hart, Addr, 0, Len, Target);
       return true;
     }
   }
