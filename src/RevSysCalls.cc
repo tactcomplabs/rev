@@ -2005,6 +2005,9 @@ EcallStatus RevProc::ECALL_readahead(RevInst& inst){
 
 // 214, rev_sbrk(int bytes)
 EcallStatus RevProc::ECALL_sbrk(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0,
+                  "ECALL: sbrk called by thread %" PRIu32
+                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
   int NumBytes = RegFile->GetX<uint64_t>(RevReg::a0);
   std::cout << *RegFile << std::endl;
 
