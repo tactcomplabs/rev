@@ -24,7 +24,8 @@ class RV64I : public RevExt{
     // c.ldsp rd, $imm = lw rd, x2, $imm
     // Inst.rs1  = 2;  //Removed - set in decode
     //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
-    Inst.imm = ((Inst.imm & 0b111111)*8);
+    //Inst.imm = ((Inst.imm & 0b111111)*8);
+    Inst.imm = ((Inst.imm & 0b111111111));  //Bits placed correctly in decode, no need to scale
     return ld(F, R, M, Inst);
   }
 
@@ -32,7 +33,8 @@ class RV64I : public RevExt{
     // c.swsp rs2, $imm = sw rs2, x2, $imm
     // Inst.rs1  = 2; //Removed - set in decode
     //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
-    Inst.imm = ((Inst.imm & 0b111111)*8);
+    //Inst.imm = ((Inst.imm & 0b111111)*8);
+    Inst.imm = ((Inst.imm & 0b1111111111)); // bits placed correctly in decode, no need to scale
     return sd(F, R, M, Inst);
   }
 
