@@ -1322,6 +1322,7 @@ RevInst RevProc::FetchAndDecodeInst(){
                     "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
                     id, HartToDecodeID, ActiveThreadID,  PC, Inst);
   }else{
+    output->verbose(CALL_INFO, 6, 0, "Thread Info: %s", Harts.at(HartToDecodeID)->PopThread()->to_string().c_str());
     output->fatal(CALL_INFO, -1,
                   "Error: Core %" PRIu32 " failed to decode instruction at PC=0x%" PRIx64 "; Inst=%" PRIu32 "\n",
                   id,
@@ -2336,6 +2337,8 @@ void RevProc::ExecEcall(RevInst& inst){
     if(EcallStatus::SUCCESS != status){
       EcallState.cyclesElapsed+=1;
       RegFile->SetPC( RegFile->GetPC() - inst.instSize );
+    } else {
+      EcallState.cyclesElapsed = 0;
     }
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu64 " not found", EcallCode);

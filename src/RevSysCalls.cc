@@ -8,11 +8,6 @@
 
 using namespace SST::RevCPU;
 
-/***
- States this copy function can be in:
-
- ***/
-
 EcallStatus RevProc::CopyTLS(RevInst& inst, uint64_t TLSBaseAddr, uint64_t NewThreadTLSBaseAddr, size_t TLSSize) {
     auto rtval = EcallStatus::ERROR;
     auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
@@ -22,6 +17,8 @@ EcallStatus RevProc::CopyTLS(RevInst& inst, uint64_t TLSBaseAddr, uint64_t NewTh
     // Print bytes read & written
     std::cout << "Bytes Read = " << EcallState.bytesRead << std::endl;
     std::cout << "Bytes Written = " << EcallState.bytesWritten << std::endl;
+
+    std::cout << "NewThreadTLSBaseAddr = " << std::hex << NewThreadTLSBaseAddr << std::endl;
 
     // 1. Check for dependency on a0 register
     if (RegFile->GetLSQueue()->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExecID)) > 0) {
@@ -33,6 +30,7 @@ EcallStatus RevProc::CopyTLS(RevInst& inst, uint64_t TLSBaseAddr, uint64_t NewTh
         // 3a. bytesRead > bytesWritten
         if (EcallState.bytesRead > EcallState.bytesWritten) {
           std::cout << "CopyTLS: NoDep && bytesRead > bytesWritten" << std::endl;
+          // Print out the byte being written and the address i am writing to
           mem->WriteMem(HartToExecID, NewThreadTLSBaseAddr + EcallState.bytesWritten, EcallState.bytesRead - EcallState.bytesWritten, EcallState.buf.data() + EcallState.bytesWritten, RevFlag::F_NONE);
           EcallState.bytesWritten = EcallState.bytesRead;
           DependencyClear(HartToExecID, 10, false);
@@ -3219,10 +3217,9 @@ EcallStatus RevProc::ECALL_pthread_create(RevInst& inst){
 
   }
   // Copy TLS segment data to this threads ThreadMem
-  // TODO: This isn't safe if another Hart creates a thread
   const size_t TLSSize = mem->GetTLSSize();
   const uint64_t TLSBaseAddr = mem->GetTLSBaseAddr();
-  const uint64_t NewThreadTLSBaseAddr = EcallState.newThreadInfo->GetThreadMem()->getTopAddr()- TLSSize;
+  const uint64_t NewThreadTLSBaseAddr = EcallState.newThreadInfo->GetThreadMem()->getTopAddr() - TLSSize;
 
   if( EcallState.bytesWritten < TLSSize ){
     return CopyTLS(inst, TLSBaseAddr, NewThreadTLSBaseAddr, TLSSize);

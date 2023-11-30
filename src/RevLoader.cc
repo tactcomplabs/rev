@@ -10,6 +10,7 @@
 
 #include "RevLoader.h"
 #include "RevMem.h"
+#include <memory>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -329,7 +330,32 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
   }
 
   // Add the first thread's memory
-  mem->AddThreadMem();
+  const auto& ThreadMem = mem->AddThreadMem();
+
+  // TODO: Do this a different way that doesn't require going back through all the program headers
+  if( TLSBaseAddr != 0 && TLSSize != 0 ){
+    for (unsigned i = 0; i < eh->e_phnum; i++) {
+      if (ph[i].p_type == PT_TLS) {
+        // Allocate buffer for TLS data
+        char* tlsData = new char[mem->GetTLSSize()];
+        // Copy TLS data into buffer
+        std::memcpy(tlsData, membuf + ph[i].p_offset, mem->GetTLSSize());
+
+        // print out the TLS data
+        for (size_t i = 0; i < mem->GetTLSSize(); i++) {
+          printf("%02x", tlsData[i]);
+        }
+
+        // Calculate destination address
+        uint64_t destAddr = ThreadMem->getBaseAddr() + _STACK_SIZE_;
+        // Write the TLS data to the destination address
+        WriteCacheLine(destAddr, mem->GetTLSSize(), &tlsData);
+        // Free the buffer after use
+        delete[] tlsData;
+      }
+    }
+  }
+
 
   uint64_t StaticDataEnd = 0;
   uint64_t BSSEnd = 0;
