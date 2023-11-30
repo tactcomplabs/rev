@@ -416,8 +416,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   CompInst.funct4  = InstTable[Entry].funct4;
 
   // registers
-  CompInst.rd      = DECODE_RD(Inst);
-  CompInst.rs1     = DECODE_RD(Inst);
+  CompInst.rd      = CompInst.rs1 = DECODE_RD(Inst);
   CompInst.rs2     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm     = 0x00;
 
@@ -443,8 +442,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
   CompInst.funct3  = InstTable[Entry].funct3;
 
   // registers
-  CompInst.rd      = DECODE_RD(Inst);
-  CompInst.rs1     = DECODE_RD(Inst);
+  CompInst.rd      = CompInst.rs1 = DECODE_RD(Inst);
   CompInst.imm     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm    |= ((Inst & 0b1000000000000)>>7);
 
@@ -752,8 +750,7 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
 
   // registers
   CompInst.rs2     = ((Inst & 0b11100) >> 2);
-  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
-  CompInst.rd      = ((Inst & 0b1110000000) >> 7);
+  CompInst.rd      = CompInst.rs1 = ((Inst & 0b1110000000) >> 7);
 
   //Adjust registers for compressed offset
   CompInst.rs2 = CRegIdx(CompInst.rs2);
@@ -777,7 +774,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
   CompInst.funct3  = InstTable[Entry].funct3;
 
   // registers
-  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
+  CompInst.rd = CompInst.rs1 = ((Inst & 0b1110000000) >> 7);
   CompInst.offset  = ((Inst & 0b1111100) >> 2);
   CompInst.offset |= ((Inst & 0b1110000000000) >> 5);
 
