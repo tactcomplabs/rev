@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: ex1
+# makefile: memset_2
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,7 +12,7 @@
 
 .PHONY: src
 
-EXAMPLE=mem
+EXAMPLE=memset_2
 CC="${RVCC}"
 ARCH=rv64gc
 
