@@ -331,6 +331,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
   // Add the first thread's memory
   const auto& ThreadMem = mem->AddThreadMem();
+  std::cout << "ThreadMem: " << *ThreadMem << std::endl;
 
   // TODO: Do this a different way that doesn't require going back through all the program headers
   if( TLSBaseAddr != 0 && TLSSize != 0 ){
@@ -347,7 +348,7 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
         }
 
         // Calculate destination address
-        uint64_t destAddr = ThreadMem->getBaseAddr() + _STACK_SIZE_;
+        uint64_t destAddr = ThreadMem->getTopAddr() - mem->GetTLSSize();
         // Write the TLS data to the destination address
         WriteCacheLine(destAddr, mem->GetTLSSize(), &tlsData);
         // Free the buffer after use
@@ -576,7 +577,8 @@ bool RevLoader::LoadProgramArgs(){
     ArgArray += 8;
   }
 
-  mem->SetNextThreadMemAddr(OldStackTop - _STACK_SIZE_ - mem->GetTLSSize() - __PAGE_SIZE__);
+  // TODO: Very this is wrong
+  // mem->SetNextThreadMemAddr(OldStackTop - _STACK_SIZE_ - mem->GetTLSSize() - __PAGE_SIZE__);
   return true;
 }
 

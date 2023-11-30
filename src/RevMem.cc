@@ -393,13 +393,24 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
   return BaseAddr;
 }
 
+//std::shared_ptr<MemSegment> RevMem::AddThreadMem(){
+//  // Calculate the BaseAddr of the segment
+//  uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
+//  ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
+//  // Page boundary between
+//  NextThreadMemAddr = BaseAddr - pageSize - 1;
+//  return ThreadMemSegs.back();
+//}
 std::shared_ptr<MemSegment> RevMem::AddThreadMem(){
-  // Calculate the BaseAddr of the segment
-  uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
-  ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
-  // Page boundary between
-  NextThreadMemAddr = BaseAddr - pageSize - 1;
-  return ThreadMemSegs.back();
+    // Calculate the BaseAddr of the segment
+    uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize & ~0xF;
+    ThreadMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, ThreadMemSize));
+
+    // Calculate new NextThreadMemAddr with 16-byte alignment
+    // Subtract pageSize, then align to the nearest lower multiple of 16
+    NextThreadMemAddr = (BaseAddr - pageSize) & ~0xF;
+
+    return ThreadMemSegs.back();
 }
 
 void RevMem::SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size){
@@ -999,10 +1010,10 @@ void RevMem::InitHeap(const uint64_t& EndOfStaticData){
                   EndOfStaticData);
   } else {
     // Mark heap as free
-    FreeMemSegs.emplace_back(std::make_shared<MemSegment>(EndOfStaticData+1, maxHeapSize));
+    FreeMemSegs.emplace_back(std::make_shared<MemSegment>(EndOfStaticData, maxHeapSize));
 
-    heapend = EndOfStaticData + 1;
-    heapstart = EndOfStaticData + 1;
+    //heapend = EndOfStaticData + 1;
+    //heapstart = EndOfStaticData + 1;
   }
   return;
 }
