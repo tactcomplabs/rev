@@ -10,3 +10,4 @@
 .gdb_history
 *.out
 build/test/*
+*.asm
