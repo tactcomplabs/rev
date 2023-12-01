@@ -14,6 +14,20 @@ else()
   message(FATAL_ERROR "RISCV environment variable is not set.")
 endif()
 
+set(RISCV_BIN_PATH "$ENV{RISCV}/bin")
+
+file(GLOB RVOBJDUMP_FILES "${RISCV_BIN_PATH}/*objdump")
+list(GET RVOBJDUMP_FILES 0 RVOBJDUMP)
+file(GLOB RVCC_FILES "${RISCV_BIN_PATH}/*cc")
+list(GET RVCC_FILES 0 RVCC)
+file(GLOB RVCXX_FILES "${RISCV_BIN_PATH}/*++")
+list(GET RVCXX_FILES 0 RVCXX)
+
+message(STATUS "Found RVOBJDUMP: ${RVOBJDUMP}")
+message(STATUS "Found RVCC: ${RVCC}")
+message(STATUS "Found RVCXX: ${RVCXX}")
+
+
 # Check for RISCV Compiler
 if(NOT RVCC)
   set(RVCC "$ENV{RVCC}")
@@ -56,6 +70,10 @@ macro(add_rev_test test_name test_dir timeout labels)
     COMMAND ${CMAKE_MAKE_PROGRAM}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
     COMMENT "Building ${test_name} test"
+    # Disassemble the test executable
+    COMMAND ${RVOBJDUMP} -dC -Mno-aliases -C --source *.exe > ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}.asm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
+    COMMENT "Building and disassembling ${test_name} test"
   )
 
   # If no optional script is specified, run with basic config and add revmem/memH tests
