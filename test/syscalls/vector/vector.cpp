@@ -10,7 +10,9 @@
 
 int main() {
   std::vector<int> v;
-  v.push_back(10);
-  //assert(v[1] == 10);
+  for(int i = 0; i < 1000; i++)
+    v.push_back(i);
+  for(int i = 0; i < 1000; i++)
+    assert(v[i] == i);
   return 0;
 }
