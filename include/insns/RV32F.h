@@ -24,27 +24,27 @@ class RV32F : public RevExt{
   // Compressed instructions
   static bool cflwsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.flwsp rd, $imm = lw rd, x2, $imm
-    Inst.rs1  = 2;
+   // Inst.rs1  = 2;  //Removed - set in decode
     return flw(F, R, M, Inst);
   }
 
   static bool cfswsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.swsp rs2, $imm = sw rs2, x2, $imm
-    Inst.rs1  = 2;
+   // Inst.rs1  = 2;  //Removed - set in decode
     return fsw(F, R, M, Inst);
   }
 
   static bool cflw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.flw %rd, %rs1, $imm = flw %rd, %rs1, $imm
-    Inst.rd  = CRegIdx(Inst.rd);
-    Inst.rs1 = CRegIdx(Inst.rs1);
+   // Inst.rd  = CRegIdx(Inst.rd);  //Removed - set in decode
+   // Inst.rs1 = CRegIdx(Inst.rs1); // Removed - set in decode
     return flw(F, R, M, Inst);
   }
 
   static bool cfsw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     // c.fsw rs2, rs1, $imm = fsw rs2, $imm(rs1)
-    Inst.rs2 = CRegIdx(Inst.rd);
-    Inst.rs1 = CRegIdx(Inst.rs1);
+    //Inst.rs2 = CRegIdx(Inst.rd);  //Removed - set in decode
+    //Inst.rs1 = CRegIdx(Inst.rs1); //Removed - set in decode
     return fsw(F, R, M, Inst);
   }
 
