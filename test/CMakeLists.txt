@@ -41,7 +41,7 @@ endif()
 if(NOT RVCXX)
   set(RVCXX "$ENV{RVCXX}")
 endif()
-if(RVCC)
+if(RVCXX)
   message(STATUS "RVCXX set to ${RVCXX}")
 else()
   message(FATAL_ERROR "RVCXX environment varible is not set.")
@@ -71,7 +71,7 @@ macro(add_rev_test test_name test_dir timeout labels)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
     COMMENT "Building ${test_name} test"
     # Disassemble the test executable
-    COMMAND ${RVOBJDUMP} -dC -Mno-aliases -C --source *.exe > ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}.asm
+    COMMAND ${RVOBJDUMP} -dC -Mno-aliases --source *.exe > ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}.asm
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
     COMMENT "Building and disassembling ${test_name} test"
   )
