@@ -4,5 +4,4 @@ add_rev_test(FILE_IO file_io 30 "all;rv64;syscalls")
 add_rev_test(GETCWD getcwd 30 "all;rv64;syscalls")
 add_rev_test(MUNMAP munmap 30 "all;rv64;syscalls")
 add_rev_test(PERF_STATS perf_stats 30 "all;rv64;syscalls")
-# TODO: Merge this PR then merge the sbrk fix then re-enable this test
-# add_rev_test(VECTOR vector 30 "all;rv64;syscalls")
+add_rev_test(VECTOR vector 30 "all;rv64;syscalls" SCRIPT "run_vector.sh")
