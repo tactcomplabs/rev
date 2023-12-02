@@ -27,7 +27,7 @@ parser.add_argument("--enableMemH", type=int, choices=[0, 1], help="Enable (1) o
 parser.add_argument("--verbose", type=int, help="Verbosity level", default=2)
 parser.add_argument("--machine", help="Machine type/configuration", default="[0:RV64GC]")
 parser.add_argument("--args", help="Command line arguments to pass to the target executable", default="")
-parser.add_argument("--startSymbol", help="Symbol to begin execution at", default="[0:_start]")
+parser.add_argument("--startSymbol", help="Symbol to begin execution at", default="[0:main]")
 
 # Parse arguments
 args = parser.parse_args()
