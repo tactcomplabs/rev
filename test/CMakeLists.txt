@@ -55,6 +55,8 @@ message(STATUS "CTest Setup")
 
 # Macro to build and configure a test with customizable timeout
 macro(add_rev_test test_name test_dir timeout labels)
+  string(TOLOWER ${test_dir} test_dir_lower)
+  string(TOLOWER ${test_name} test_name_lower)
   # Default script name is empty
   set(optional_script "")
 
@@ -65,39 +67,39 @@ macro(add_rev_test test_name test_dir timeout labels)
   endif()
 
   # Build the test (ie. run make)
-  add_custom_target(build_${test_name}
+  add_custom_target(build_${test_name_lower}
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND ${CMAKE_MAKE_PROGRAM}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
-    COMMENT "Building ${test_name} test"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir_lower}
+    COMMENT "Building ${test_name_lower} test"
     # Disassemble the test executable
-    COMMAND ${RVOBJDUMP} -dC -Mno-aliases --source *.exe > ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}.asm
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
-    COMMENT "Building and disassembling ${test_name} test"
+    COMMAND ${RVOBJDUMP} -dC -Mno-aliases --source *.exe > ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir_lower}/${test_name_lower}.asm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir_lower}
+    COMMENT "Building and disassembling ${test_name_lower} test"
   )
 
   # If no optional script is specified, run with basic config and add revmem/memH tests
   if(NOT optional_script)
     # Add memH test
-    add_custom_target(run_${test_name}_memh
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name}.exe" --numHarts=1 --numCores=1 --enableMemH=1
-      DEPENDS build_${test_name}
-      COMMENT "Running ${test_name} test with memHierarchy enabled"
+    add_custom_target(run_${test_name_lower}_memh
+      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=1 --numCores=1 --enableMemH=1
+      DEPENDS build_${test_name_lower}
+      COMMENT "Running ${test_name_lower} test with memHierarchy enabled"
     )
 
     # Add revmem test
-    add_custom_target(run_${test_name}_revmem
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name}.exe" --numHarts=1 --numCores=1
-      DEPENDS build_${test_name}
-      COMMENT "Running ${test_name} test with revmem"
+    add_custom_target(run_${test_name_lower}_revmem
+      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=1 --numCores=1
+      DEPENDS build_${test_name_lower}
+      COMMENT "Running ${test_name_lower} test with revmem"
     )
 
     # Add the custom targets as tests
-    add_test(NAME ${test_name}_memh COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name}_memh)
-    add_test(NAME ${test_name}_revmem COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name}_revmem)
+    add_test(NAME ${test_name_lower}_memh COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_memh)
+    add_test(NAME ${test_name_lower}_revmem COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_revmem)
 
     # Set test properties for both tests
-    set_tests_properties(${test_name}_memh ${test_name}_revmem
+    set_tests_properties(${test_name_lower}_memh ${test_name_lower}_revmem
       PROPERTIES
         ENVIRONMENT "RVCC=${RVCC}"
         TIMEOUT ${timeout}
@@ -106,18 +108,18 @@ macro(add_rev_test test_name test_dir timeout labels)
     )
   else()
     # Custom target for running the specified script
-    add_custom_target(run_${test_name}_script
+    add_custom_target(run_${test_name_lower}_script
       COMMAND ${CMAKE_COMMAND} -E echo "Executing script ${optional_script}"
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name} && bash ${optional_script}
-      DEPENDS build_${test_name}
-      COMMENT "Running script for ${test_name} test"
+      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && bash ${optional_script}
+      DEPENDS build_${test_name_lower}
+      COMMENT "Running script for ${test_name_lower} test"
     )
 
     # Add the custom target as a test
-    add_test(NAME ${test_name}_script COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name}_script)
+    add_test(NAME ${test_name_lower}_script COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_script)
 
     # Set test properties for the script test
-    set_tests_properties(${test_name}_script
+    set_tests_properties(${test_name_lower}_script
       PROPERTIES
         ENVIRONMENT "RVCC=${RVCC}"
         TIMEOUT ${timeout}
