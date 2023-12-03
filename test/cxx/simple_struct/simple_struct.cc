@@ -5,17 +5,20 @@
     }                                                                          \
   while (0)
 
-int main() {
-  // test for infinite loops
-  for (int i = 0; i < 2; i++) {
-    int zz = (i + 1) / i;
+struct rec {
+  unsigned c;
+  rec(unsigned a, unsigned b) {
+    c = a + b;
   }
+};
 
-  // test the corner cases
-  int _zero = 0x00l;
-  int divisor = 7;
-  int zzx = divisor / _zero;
-  assert(zzx == 0xFFFFFFFFFFFFFFFF);
+int main() {
+  rec testrec(1,2);
+  assert(testrec.c==3);
 
-  return 0;
+  #if 1
+  rec* pRec = new rec(2,3);
+  assert(pRec->c==5);
+  delete pRec;
+  #endif
 }

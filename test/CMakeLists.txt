@@ -14,6 +14,20 @@ else()
   message(FATAL_ERROR "RISCV environment variable is not set.")
 endif()
 
+set(RISCV_BIN_PATH "$ENV{RISCV}/bin")
+
+file(GLOB RVOBJDUMP_FILES "${RISCV_BIN_PATH}/*objdump")
+list(GET RVOBJDUMP_FILES 0 RVOBJDUMP)
+file(GLOB RVCC_FILES "${RISCV_BIN_PATH}/*cc")
+list(GET RVCC_FILES 0 RVCC)
+file(GLOB RVCXX_FILES "${RISCV_BIN_PATH}/*++")
+list(GET RVCXX_FILES 0 RVCXX)
+
+message(STATUS "Found RVOBJDUMP: ${RVOBJDUMP}")
+message(STATUS "Found RVCC: ${RVCC}")
+message(STATUS "Found RVCXX: ${RVCXX}")
+
+
 # Check for RISCV Compiler
 if(NOT RVCC)
   set(RVCC "$ENV{RVCC}")
@@ -27,7 +41,7 @@ endif()
 if(NOT RVCXX)
   set(RVCXX "$ENV{RVCXX}")
 endif()
-if(RVCC)
+if(RVCXX)
   message(STATUS "RVCXX set to ${RVCXX}")
 else()
   message(FATAL_ERROR "RVCXX environment varible is not set.")
@@ -56,6 +70,10 @@ macro(add_rev_test test_name test_dir timeout labels)
     COMMAND ${CMAKE_MAKE_PROGRAM}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
     COMMENT "Building ${test_name} test"
+    # Disassemble the test executable
+    COMMAND ${RVOBJDUMP} -dC -Mno-aliases --source *.exe > ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}.asm
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}
+    COMMENT "Building and disassembling ${test_name} test"
   )
 
   # If no optional script is specified, run with basic config and add revmem/memH tests
@@ -115,7 +133,8 @@ add_rev_test(EX3 ex3 30 "all;rv32")
 add_rev_test(EX4 ex4 30 "all;rv32")
 add_rev_test(EX5 ex5 30 "all;rv64")
 add_rev_test(EX6 ex6 45 "all;rv64")
-add_rev_test(BIG_LOOP big_loop 100 "all;rv64;benchmark")
+# BigLoop uses a script solely to not run with memH
+add_rev_test(BIG_LOOP big_loop 100 "all;rv64;benchmark" SCRIPT "run_big_loop.sh")
 add_rev_test(LARGE_BSS large_bss 30 "all;rv64")
 add_rev_test(DEP_CHECK dep_check 30 "all;rv32")
 add_rev_test(CACHE_1 cache_1 30 "all;rv32" SCRIPT "run_cache_1.sh")

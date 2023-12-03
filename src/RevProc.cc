@@ -456,7 +456,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm =  ((Inst & 0b1100000) >> 2);        // [4:3]
     CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
     CompInst.imm |= ((Inst & 0b11100) << 4);          // [8:6]
-    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
+    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
   }else if( (CompInst.opcode == 0b10) &&
             (CompInst.funct3 == 0b010) ){
     // c.lwsp
@@ -464,7 +464,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm =  ((Inst & 0b1110000) >> 2);        // [4:2]
     CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
     CompInst.imm |= ((Inst & 1100) << 4);             // [7:6]
-    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
+    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
   }else if( (CompInst.opcode == 0b10) &&
             (CompInst.funct3 == 0b011) ){
     CompInst.imm = 0;
@@ -473,13 +473,13 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
       CompInst.imm =  ((Inst & 0b1100000) >> 2);        // [4:3]
       CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
       CompInst.imm |= ((Inst & 0b11100) << 4);          // [8:6]
-      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
+      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
     }else{
       // c.flwsp
       CompInst.imm =  ((Inst & 0b1110000) >> 2);        // [4:2]
       CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
       CompInst.imm |= ((Inst & 1100) << 4);             // [7:6]
-      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
+      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
     }
   }else if( (CompInst.opcode == 0b01) &&
             (CompInst.funct3 == 0b011) &&
@@ -492,7 +492,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm |= ((Inst & 0b100000) << 1); // bit 6
     CompInst.imm |= ((Inst & 0b11000) << 4);  // bit 8:7
     CompInst.imm |= ((Inst & 0b1000000000000) >> 3);  // bit 9
-    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
+    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
     if( (CompInst.imm & 0b1000000000) > 0 ){
       // sign extend
       CompInst.imm |= 0b11111111111111111111111000000000;
@@ -558,7 +558,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry) const {
     // c.fsdsp
     CompInst.imm = 0;
     CompInst.imm =  ((Inst & 0b1110000000000) >> 7);    // [5:3]
-    CompInst.imm |= ((Inst & 0b1110000000) >> 1);       // [8:6]
+    CompInst.imm |= ((Inst & 0b1110000000) >> 1);       // [8:6] 
     CompInst.rs1 = 2;                                   // Force rs1 to x2 (stack pointer)
   }else if( CompInst.funct3 == 0b110 ){
     // c.swsp
@@ -643,7 +643,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
   // registers
   CompInst.rd      = ((Inst & 0b11100) >> 2);
   CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
-
+  
   //Apply compressed offset
   CompInst.rd     = CRegIdx(CompInst.rd);
   CompInst.rs1    = CRegIdx(CompInst.rs1);
@@ -758,8 +758,11 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
 
   //Adjust registers for compressed offset
   CompInst.rs2 = CRegIdx(CompInst.rs2);
+  CompInst.rs1 = CRegIdx(CompInst.rs1);
+  CompInst.rd = CRegIdx(CompInst.rd);
+
   //All instructions of this format expand to <opcode> rd rd rs2, so set rs1 to rd
-  CompInst.rs1 = CompInst.rd = CRegIdx(CompInst.rd);
+  CompInst.rs1 = CompInst.rd;
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -790,9 +793,9 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
     CompInst.rs2 = 0;
   }
 
-  //If c.srli, c.srai or c.andi set rs1 to rd
+  //If c.srli, c.srai or c.andi set rd to rs1
   if((0b01 == CompInst.opcode) && (0b100 == CompInst.funct3)){
-    CompInst.rs1 = CompInst.rd;
+    CompInst.rd = CompInst.rs1;
   }
 
   //swizzle: offset[8|4:3]  offset[7:6|2:1|5]
@@ -810,7 +813,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
     tmp[7] = o[7];
   } else if( (CompInst.opcode == 0b01) && (CompInst.funct3 == 0b100)) {
     //We have a shift or a andi
-    CompInst.rd = CompInst.rs1; //Already has compressed offset applied
+    CompInst.rd = CompInst.rs1; //Already has compressed offset applied 
   }
 
   CompInst.offset = ((uint16_t)tmp.to_ulong()) << 1; // scale to corrrect position to be consistent with other compressed ops

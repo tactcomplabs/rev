@@ -1,11 +1,12 @@
 #include "../../../../common/syscalls/syscalls.h"
+
 #define assert(x)                                                              \
-  if (!(x)) {                                                                  \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-  }
+  do                                                                           \
+    if (!(x)) {                                                                \
+      asm(".dword 0x00000000");                                                \
+    }                                                                          \
+  while (0)
+
 // create the function to be executed as a thread
 void *thread1() {
   const char msg[29] = "Hello from thread1 function\n";

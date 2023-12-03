@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: memset_2
+# makefile: simple_struct
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,13 +12,14 @@
 
 .PHONY: src
 
-EXAMPLE=memset_2
-CC="${RVCC}"
-ARCH=rv64gc
+EXAMPLE=simple_struct
+CC=${RVCC}
+#ARCH=rv64g
+ARCH=rv64imafd
 
 all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -static -o $(EXAMPLE).exe $(EXAMPLE).c
+$(EXAMPLE).exe: $(EXAMPLE).cc
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 
