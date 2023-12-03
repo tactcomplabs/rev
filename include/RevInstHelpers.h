@@ -117,7 +117,6 @@ bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
            R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<T>(Inst.rs2));
   R->AdvancePC(Inst);
- // std::cout << "RMT: Store Issued for address: " << std::hex << R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12) << " Data: " << R->GetX<T>(Inst.rs2) << std::dec << std::endl; 
   return true;
 }
 
