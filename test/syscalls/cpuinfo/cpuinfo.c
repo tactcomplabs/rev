@@ -1,5 +1,11 @@
 #include "../../../common/syscalls/syscalls.h"
-#define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
+
+#define assert(x)                                                              \
+  do                                                                           \
+    if (!(x)) {                                                                \
+      asm(".dword 0x00000000");                                                \
+    }                                                                          \
+  while (0)
 
 int main() {
   struct rev_cpuinfo info;
@@ -9,4 +15,3 @@ int main() {
   assert(info.harts_per_core == 1);
   return 0;
 }
-
