@@ -3219,7 +3219,7 @@ EcallStatus RevProc::ECALL_pthread_create(RevInst& inst){
   // Copy TLS segment data to this threads ThreadMem
   const size_t TLSSize = mem->GetTLSSize();
   const uint64_t TLSBaseAddr = mem->GetTLSBaseAddr();
-  const uint64_t NewThreadTLSBaseAddr = EcallState.newThreadInfo->GetThreadMem()->getTopAddr() - TLSSize;
+  const uint64_t NewThreadTLSBaseAddr = EcallState.newThreadInfo->GetThreadMem()->getTopAddr()-mem->GetTLSSize()-1;
 
   if( EcallState.bytesWritten < TLSSize ){
     return CopyTLS(inst, TLSBaseAddr, NewThreadTLSBaseAddr, TLSSize);

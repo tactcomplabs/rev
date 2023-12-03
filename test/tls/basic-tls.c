@@ -11,15 +11,15 @@
 __thread uint64_t tls_var = 42;
 
 void *thread1() {
-  // const char msg[29] = "Hello from thread1 function\n";
-  // rev_write(STDOUT_FILENO, msg, sizeof(msg));
+  const char msg[29] = "Hello from thread1 function\n";
+  rev_write(STDOUT_FILENO, msg, sizeof(msg));
   assert(tls_var == 42);
   tls_var = 69;
   return 0;
 }
 void *thread2() {
-  // const char msg[29] = "Hello from thread1 function\n";
-  // rev_write(STDOUT_FILENO, msg, sizeof(msg));
+  const char msg[29] = "Hello from thread1 function\n";
+  rev_write(STDOUT_FILENO, msg, sizeof(msg));
   assert(tls_var == 42);
   return 0;
 }

@@ -833,7 +833,7 @@ void RevCPU::InitMainThread(uint32_t MainThreadID, const uint64_t StartAddr){
   // @Lee: Is there a better way to get the feature info?
   std::unique_ptr<RevRegFile> MainThreadRegState = std::make_unique<RevRegFile>(Procs[0]->GetRevFeature());
   MainThreadRegState->SetPC(StartAddr);
-  MainThreadRegState->SetX(RevReg::tp,Mem->GetThreadMemSegs().front()->getTopAddr()-Mem->GetTLSSize());
+  MainThreadRegState->SetX(RevReg::tp,Mem->GetThreadMemSegs().front()->getTopAddr()-Mem->GetTLSSize()-1);
   MainThreadRegState->SetX(RevReg::sp,Mem->GetThreadMemSegs().front()->getBaseAddr()+_STACK_SIZE_);
   MainThreadRegState->SetX(RevReg::gp, Loader->GetSymbolAddr("__global_pointer$"));
   MainThreadRegState->SetX(8, Loader->GetSymbolAddr("__global_pointer$"));

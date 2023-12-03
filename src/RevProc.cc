@@ -1977,7 +1977,7 @@ std::unique_ptr<RevThread> RevProc::CreateThread(uint32_t NewTID, uint64_t first
 
   // Set the global pointer
   // TODO: Cleanup
-  NewThreadRegFile->SetX(RevReg::tp, NewThreadMem->getTopAddr()-mem->GetTLSSize());
+  NewThreadRegFile->SetX(RevReg::tp, NewThreadMem->getTopAddr()-mem->GetTLSSize()-1);
   NewThreadRegFile->SetX(RevReg::sp,NewThreadMem->getBaseAddr()+_STACK_SIZE_-sizeof(arg));
   NewThreadRegFile->SetX(RevReg::gp, loader->GetSymbolAddr("__global_pointer$"));
   NewThreadRegFile->SetX(8, loader->GetSymbolAddr("__global_pointer$"));
