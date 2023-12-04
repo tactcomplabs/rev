@@ -1,22 +1,21 @@
+#include "syscalls.h"
+#include <memory>
 #define assert(x)                                                              \
   do                                                                           \
     if (!(x)) {                                                                \
       asm(".dword 0x00000000");                                                \
     }                                                                          \
   while (0)
-#include "syscalls.h"
-#include <memory>
 
-#define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
 
 //Fine to overload new at global scope, could also be done per class
 void* operator new(std::size_t t){
-     void* p = reinterpret_cast<void*>(rev_mmap(0,                
+     void* p = reinterpret_cast<void*>(rev_mmap(0,
               t,
-              PROT_READ | PROT_WRITE | PROT_EXEC, 
-              MAP_PRIVATE | MAP_ANONYMOUS, 
-              -1,                   
-              0));          
+              PROT_READ | PROT_WRITE | PROT_EXEC,
+              MAP_PRIVATE | MAP_ANONYMOUS,
+              -1,
+              0));
     return p;
 }
 
@@ -24,7 +23,7 @@ void* operator new(std::size_t t){
   template<typename T>
   void revDel(void* p){
         std::size_t addr = reinterpret_cast<std::size_t>(p);
-        rev_munmap(addr, sizeof(T)); 
+        rev_munmap(addr, sizeof(T));
   }
 
 
