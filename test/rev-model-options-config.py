@@ -25,8 +25,9 @@ parser.add_argument("--numHarts", type=int, help="Number of HARTs per Rev Core",
 parser.add_argument("--program", help="The program executable to run in the simulation", default="a.out")
 parser.add_argument("--enableMemH", type=int, choices=[0, 1], help="Enable (1) or disable (0) memHierarchy backend", default=0)
 parser.add_argument("--verbose", type=int, help="Verbosity level", default=2)
-parser.add_argument("--machine", help="Machine type/configuration", default="[0:RV64GC]")
+parser.add_argument("--machine", help="Machine type/configuration", default="[CORES:RV64GC]")
 parser.add_argument("--args", help="Command line arguments to pass to the target executable", default="")
+parser.add_argument("--startSymbol", help="ELF Symbol Rev should begin execution at", default="[0:main]")
 
 # Parse arguments
 args = parser.parse_args()
@@ -52,6 +53,7 @@ comp_cpu.addParams({
     "memCost" : "[0:1:10]",
     "program" : args.program,
     "startAddr" : "[0:0x00000000]",
+    "startSymbol" : args.startSymbol,
     "enable_memH" : args.enableMemH,
     "args": args.args,
     "splash" : 1
