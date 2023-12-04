@@ -9,5 +9,5 @@
 *~
 .gdb_history
 *.out
-build/test/*
+build/*
 *.asm
