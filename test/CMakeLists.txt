@@ -7,7 +7,7 @@
 # See LICENSE in the top level directory for licensing details
 #
 
-set( RISCV_ENV "$ENV{RISCV}")
+set(RISCV_ENV "$ENV{RISCV}")
 if(RISCV_ENV)
   message(STATUS "RISCV environment set to ${RISCV_ENV}")
 else()
@@ -16,21 +16,11 @@ endif()
 
 set(RISCV_BIN_PATH "$ENV{RISCV}/bin")
 
-file(GLOB RVOBJDUMP_FILES "${RISCV_BIN_PATH}/*objdump")
-list(GET RVOBJDUMP_FILES 0 RVOBJDUMP)
-file(GLOB RVCC_FILES "${RISCV_BIN_PATH}/*cc")
-list(GET RVCC_FILES 0 RVCC)
-file(GLOB RVCXX_FILES "${RISCV_BIN_PATH}/*++")
-list(GET RVCXX_FILES 0 RVCXX)
-
-message(STATUS "Found RVOBJDUMP: ${RVOBJDUMP}")
-message(STATUS "Found RVCC: ${RVCC}")
-message(STATUS "Found RVCXX: ${RVCXX}")
-
-
-# Check for RISCV Compiler
+# Check for RISCV C Compiler
+set(RVCC "$ENV{RVCC}")
 if(NOT RVCC)
-  set(RVCC "$ENV{RVCC}")
+  file(GLOB RVCC_FILES "${RISCV_BIN_PATH}/*gcc" "${RISCV_BIN_PATH}/*clang")
+  list(GET RVCC_FILES 0 RVCC)
 endif()
 if(RVCC)
   message(STATUS "RVCC set to ${RVCC}")
@@ -38,13 +28,25 @@ else()
   message(FATAL_ERROR "RVCC environment varible is not set.")
 endif()
 
+set(RVCXX "$ENV{RVCXX}")
 if(NOT RVCXX)
-  set(RVCXX "$ENV{RVCXX}")
+  file(GLOB RVCXX_FILES "${RISCV_BIN_PATH}/*++")
+  list(GET RVCXX_FILES 0 RVCXX)
 endif()
 if(RVCXX)
   message(STATUS "RVCXX set to ${RVCXX}")
 else()
   message(FATAL_ERROR "RVCXX environment varible is not set.")
+endif()
+
+if(NOT RVOBJDUMP)
+  file(GLOB RVOBJDUMP_FILES "${RISCV_BIN_PATH}/*objdump")
+  list(GET RVOBJDUMP_FILES 0 RVOBJDUMP)
+endif()
+if(RVOBJDUMP)
+  message(STATUS "RVOBJDUMP set to ${RVOBJDUMP}")
+else()
+  message(FATAL_ERROR "RVOBJDUMP environment varible is not set.")
 endif()
 
 set (passRegex "Simulation is complete")
