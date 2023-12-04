@@ -77,13 +77,14 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
-    R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
                rs1 + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV32[Inst.rd]),
                req,
                flags);
     R->SetX(Inst.rd, static_cast<T>(R->RV32[Inst.rd]));
+
   }else{
     static constexpr RevFlag flags = sizeof(T) < sizeof(int64_t) ?
       std::is_signed_v<T> ? RevFlag::F_SEXT64 : RevFlag::F_ZEXT64 : RevFlag::F_NONE;
@@ -94,7 +95,7 @@ bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
             MemOp::MemOpREAD,
             true,
             R->GetMarkLoadComplete());
-    R->LSQueueInsert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
+    R->LSQueue->insert({make_lsq_hash(Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID()), req});
     M->ReadVal(F->GetHartToExecID(),
                rs1 + Inst.ImmSignExt(12),
                reinterpret_cast<std::make_unsigned_t<T>*>(&R->RV64[Inst.rd]),

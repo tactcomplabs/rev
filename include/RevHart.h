@@ -42,8 +42,7 @@ public:
   ///< RevHart: Constructor
   RevHart(unsigned ID, const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& LSQueue,
           std::function<void(const MemReq&)> MarkLoadCompleteFunc)
-    : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(MarkLoadCompleteFunc) {}
-
+    : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)) {}
 
   ///< RevHart: Destructor
   ~RevHart() = default;
