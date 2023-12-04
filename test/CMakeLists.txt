@@ -80,19 +80,38 @@ macro(add_rev_test test_name test_dir timeout labels)
 
   # If no optional script is specified, run with basic config and add revmem/memH tests
   if(NOT optional_script)
-    # Add memH test
-    add_custom_target(run_${test_name_lower}_memh
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=1 --numCores=1 --enableMemH=1
-      DEPENDS build_${test_name_lower}
-      COMMENT "Running ${test_name_lower} test with memHierarchy enabled"
-    )
 
-    # Add revmem test
-    add_custom_target(run_${test_name_lower}_revmem
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=1 --numCores=1
-      DEPENDS build_${test_name_lower}
-      COMMENT "Running ${test_name_lower} test with revmem"
-    )
+    # Check if 'rv32' label is present
+    string(FIND "${labels}" "rv32" label_index)
+    set(machine_arg "")
+    if(NOT ${label_index} EQUAL -1)
+      set(machine_arg "--machine \"[0:RV32GC]\"")
+    endif()
+
+    # Check if 'multithread' label is present
+    string(FIND "${labels}" "multithreading" label_index)
+    set(machine_arg "")
+    if(NOT ${label_index} EQUAL -1)
+      set(machine_arg "--numHarts=\"4\"")
+    endif()
+
+    # If no optional script is specified, run with basic config and add revmem/memH tests
+    if(NOT optional_script)
+      # Add memH test
+      add_custom_target(run_${test_name_lower}_memh
+    COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" ${machine_arg} --numCores=1 --enableMemH=1
+    DEPENDS build_${test_name_lower}
+    COMMENT "Running ${test_name_lower} test with memHierarchy enabled"
+  )
+
+      # Add revmem test
+      add_custom_target(run_${test_name_lower}_revmem
+    COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=../../build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" ${machine_arg} --numCores=1
+    DEPENDS build_${test_name_lower}
+    COMMENT "Running ${test_name_lower} test with revmem"
+  )
+
+    endif()
 
     # Add the custom targets as tests
     add_test(NAME ${test_name_lower}_memh COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_memh)
