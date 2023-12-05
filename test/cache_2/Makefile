@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: vector
+# makefile: cache_test2
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,15 +12,14 @@
 
 .PHONY: src
 
-EXAMPLE=vector
-#CC=riscv64-unknown-linux-gnu-gcc
-CC="${RVCXX}"
-#ARCH=rv64g
-ARCH=rv64imafdc
+EXAMPLE=cache_2
+CC=${RVCC}
+ARCH=rv64gc
+#ARCH=rv64imafd
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
+	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 

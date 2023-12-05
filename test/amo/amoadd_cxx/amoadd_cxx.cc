@@ -1,5 +1,10 @@
 #include <atomic>
-#define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
+#define assert(x)                                                              \
+  do                                                                           \
+    if (!(x)) {                                                                \
+      asm(".dword 0x00000000");                                                \
+    }                                                                          \
+  while (0)
 
 int main() {
         std::atomic<int> a;

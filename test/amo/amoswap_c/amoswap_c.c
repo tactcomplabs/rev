@@ -3,12 +3,11 @@
 #include <stdio.h>
 
 #define assert(x)                                                              \
-  if (!(x)) {                                                                  \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-  }
+  do                                                                           \
+    if (!(x)) {                                                                \
+      asm(".dword 0x00000000");                                                \
+    }                                                                          \
+  while (0)
 
 uint64_t swap_dest = 0xfee1dead;
 uint64_t swap_src = (((uint64_t)0xdeadbeef) << 32);

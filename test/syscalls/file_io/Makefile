@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: vector
+# makefile: ex2
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,9 +12,9 @@
 
 .PHONY: src
 
-EXAMPLE=vector
-#CC=riscv64-unknown-linux-gnu-gcc
-CC="${RVCXX}"
+EXAMPLE=file_io
+#CC=riscv64-unknown-elf-gcc
+CC="${RVCC}"
 #ARCH=rv64g
 ARCH=rv64imafdc
 
