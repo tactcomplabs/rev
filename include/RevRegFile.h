@@ -176,11 +176,6 @@ public:
   /// Set the current tracer
   void SetTracer(RevTracer *t) { Tracer = t; }
 
-  /// Insert an item in the Load/Store Queue
-  void LSQueueInsert(std::pair<uint64_t, MemReq> item){
-    LSQueue->insert(std::move(item));
-  }
-
   /// Get the MarkLoadComplete function
   const std::function<void(const MemReq&)>& GetMarkLoadComplete() const {
     return MarkLoadCompleteFunc;

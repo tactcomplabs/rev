@@ -14,8 +14,7 @@
 
 EXAMPLE=strlen_cxx
 CC="${RVCC}"
-#ARCH=rv64g
-ARCH=rv64imafd
+ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc

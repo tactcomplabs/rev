@@ -39,7 +39,7 @@ startPCFound = False
 for line in asmLines:
   splitLine = line.strip().split(":")
   PC = splitLine[0]
-  if "<_start>:" in line:
+  if "<main>:" in line:
     startPCFound = True
     continue
   if "<" in PC:
@@ -77,7 +77,7 @@ match = '-'
 o = '{:<9} {:<70} {:<3} {:<70} {:<3} {:<60}'.format("PC Match", "ASM Instruction" ,":::", "Rev Instruction", ":::", "Spike Instruction")
 print(o)
 for line in sstLines:
-  if "RDT:" in line:
+  if "RDT: Executed" in line:
     PC = line.split("PC = ")[1].split(' ')[0]
     so = line.split("Inst:")[1].strip()
     if "page_fault" in spikeList[0]:

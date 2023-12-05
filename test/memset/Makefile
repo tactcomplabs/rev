@@ -14,7 +14,7 @@
 
 EXAMPLE=memset
 CC="${RVCC}"
-ARCH=rv64imfd
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

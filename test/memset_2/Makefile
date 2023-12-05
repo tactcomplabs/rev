@@ -14,7 +14,7 @@
 
 EXAMPLE=mem
 CC="${RVCC}"
-ARCH=rv64imafd
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
