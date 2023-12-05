@@ -1668,6 +1668,7 @@ EcallStatus RevProc::ECALL_adjtimex(RevInst& inst){
 EcallStatus RevProc::ECALL_getpid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
                   "ECALL: getpid called (Rev only supports a single process)\n");
+  RegFile->SetX(RevReg::a0, 0);
   return EcallStatus::SUCCESS;
 }
 
@@ -1676,6 +1677,8 @@ EcallStatus RevProc::ECALL_getppid(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
 
                   "ECALL: getppid called (Rev only supports a single process)\n");
+
+  RegFile->SetX(RevReg::a0, 0);
   return EcallStatus::SUCCESS;
 }
 
