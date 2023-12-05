@@ -119,7 +119,6 @@ macro(add_rev_test test_name test_dir timeout labels)
     foreach(numHarts IN LISTS numHartsList)
       foreach(numCores IN LISTS numCoresList)
 
-        # Define revmem target with the new naming convention
         add_custom_target(run_${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
         COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --startSymbol "${startSymbol}"
         DEPENDS build_${test_name_lower}
@@ -137,21 +136,44 @@ macro(add_rev_test test_name test_dir timeout labels)
           add_test(NAME ${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores)
         endif()
 
-        set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
+        # If this is a cpp test, we won't get "Simulation is Complete" printed because it will call exit
+        if(NOT ${cpp_label_index} EQUAL -1)
+          set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
+        PROPERTIES
+          ENVIRONMENT "RVCC=${RVCC}"
+          TIMEOUT ${timeout}
+          LABELS "${labels}"
+      )
+        else()
+          set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
         PROPERTIES
           ENVIRONMENT "RVCC=${RVCC}"
           TIMEOUT ${timeout}
           PASS_REGULAR_EXPRESSION "${passRegex}"
           LABELS "${labels}"
       )
+        endif()
+
+
         if(add_memh_test)
-          set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
+          # if this is a cpp test, we won't get "Simulation is Complete" printed because it will call exit
+          if(NOT ${cpp_label_index} EQUAL -1)
+            set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
+          PROPERTIES
+            ENVIRONMENT "RVCC=${RVCC}"
+            TIMEOUT ${timeout}
+            LABELS "${labels}"
+          )
+          else()
+
+            set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
           PROPERTIES
             ENVIRONMENT "RVCC=${RVCC}"
             TIMEOUT ${timeout}
             PASS_REGULAR_EXPRESSION "${passRegex}"
             LABELS "${labels}"
         )
+          endif()
         endif()
       endforeach()
     endforeach()
@@ -210,6 +232,7 @@ add_rev_test(COPROC_EX coproc_ex 30 "all;memh;rv64;coproc" SCRIPT "run_coproc_ex
 # add_rev_test(BGE_BLE bge_ble 30 "all;rv64")
 
 add_subdirectory(isa)
+add_subdirectory(cpp)
 add_subdirectory(amo)
 add_subdirectory(benchmarks)
 add_subdirectory(syscalls)
