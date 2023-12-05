@@ -1,4 +1,4 @@
-#include "../../../common/syscalls/syscalls.h"
+#include "syscalls.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -10,10 +10,10 @@ void print(const char *prefix, unsigned long x) {
 
 int main(int argc, char *argv[]) {
   int ret = 0;
-  struct rev_stats rs1,rs2;
+  struct rev_stats rs1, rs2;
   rev_perf_stats(&rs1);
-  for(int i = 0; i < 10 * argc; i++)
-	  ret++;
+  for (int i = 0; i < 10 * argc; i++)
+    ret++;
   rev_perf_stats(&rs2);
 
   print("instructions: ", rs2.instructions - rs1.instructions);

@@ -1,4 +1,4 @@
-#include "../../../common/syscalls/syscalls.h"
+#include "syscalls.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>

@@ -1,4 +1,4 @@
-#include "../../../../common/syscalls/syscalls.h"
+#include "syscalls.h"
 
 #define assert(x)                                                              \
   do                                                                           \

@@ -1,4 +1,4 @@
-#include "../../../common/syscalls/syscalls.h"
+#include "syscalls.h"
 #include "unistd.h"
 // #include "sys/mman.h"
 #define assert(x)                                                              \

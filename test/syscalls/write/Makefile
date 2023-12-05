@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: ex2
+# makefile: write
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -13,14 +13,18 @@
 .PHONY: src
 
 EXAMPLE=write
-#CC=riscv64-unknown-elf-gcc
-CC="${RVCC}"
-#ARCH=rv64g
-ARCH=rv64imafdc
+
+CC=$(RVCC)
+CXX=$(RVCXX)
+ARCH=rv64gc
+
+# Use the git rev-parse command to get the root of the git repository
+REV_ROOT=$(shell git rev-parse --show-toplevel)
+REV_INCLUDES=$(REV_ROOT)/common/rev_includes
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
+	$(CC) -march=$(ARCH) -I$(REV_INCLUDES) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

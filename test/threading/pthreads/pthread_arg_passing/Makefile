@@ -13,12 +13,17 @@
 .PHONY: src
 EXAMPLE=pthread_arg_passing
 
-CC="${RVCC}"
+CC=$(RVCC)
+CXX=$(RVCXX)
 ARCH=rv64gc
+
+# Use the git rev-parse command to get the root of the git repository
+REV_ROOT=$(shell git rev-parse --show-toplevel)
+REV_INCLUDES=$(REV_ROOT)/common/rev_includes
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c  -static
+	$(CC) -march=$(ARCH) -I$(REV_INCLUDES) -O0 -o $(EXAMPLE).exe $(EXAMPLE).c -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 
