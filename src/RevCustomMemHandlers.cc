@@ -26,15 +26,33 @@
 
 using namespace SST::RevCPU;
 
-// TODO: Add MemReq / flags
-inline void ScratchpadHandler(unsigned HartID, uint64_t Addr, uint64_t Data, size_t Size){//, void*){ // , const SST::RevCPU::MemReq& req) {
-  std::cout << "Scratchpad Handler Called By Hart " << HartID << " for Address = 1x" << std::hex << Addr << std::endl;
+inline void ScratchpadHandler( struct RevMem::CustomMemArgs Args){
+  if( Args.IsWrite ){
+    std::cout << "Scratchpad WRITE Handler Called By Hart " << Args.HartID << " for Address = 0x" << std::hex << Args.Addr << " with Data = 0x" << Args.Data << std::endl;
+  }else{
+    std::cout << "Scratchpad READ Handler Called By Hart " << Args.HartID << " for Address = 0x" << std::hex << Args.Addr << std::endl;
+  }
 }
 
-// TODO: Add MemReq to this
-std::unordered_map<std::string, std::function<void(unsigned,
-                                                   uint64_t,
-                                                   uint64_t,
-                                                   size_t)>> RevMem::CustomMemHandlers = {
+inline void Mem1Handler( struct RevMem::CustomMemArgs Args){
+  if( Args.IsWrite ){
+    std::cout << "Mem1 WRITE Handler Called By Hart " << Args.HartID << " for Address = 0x" << std::hex << Args.Addr << " with Data = 0x" << Args.Data << std::endl;
+  }else{
+    std::cout << "Mem1 READ Handler Called By Hart " << Args.HartID << " for Address = 0x" << std::hex << Args.Addr << std::endl;
+  }
+}
+
+inline void Mem2Handler( struct RevMem::CustomMemArgs Args){
+  if( Args.IsWrite ){
+    std::cout << "Mem2 WRITE Handler Called By Hart " << Args.HartID << " for Address = 0x" << std::hex << Args.Addr << " with Data = 0x" << Args.Data << std::endl;
+  }else{
+    std::cout << "Mem2 READ Handler Called By Hart " << Args.HartID << " for Address = 0x" << std::hex << Args.Addr << std::endl;
+  }
+}
+std::unordered_map<std::string, std::function<void(struct RevMem::CustomMemArgs)>> RevMem::CustomMemHandlers = {
   {"scratchpad", &ScratchpadHandler},
+  {"mem1", &Mem1Handler},
+  {"mem2", &Mem2Handler},
 };
+
+

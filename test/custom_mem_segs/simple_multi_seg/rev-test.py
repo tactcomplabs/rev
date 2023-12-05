@@ -31,12 +31,12 @@ comp_cpu.addParams({
         "scratchpad.size" : 1024*1024*1024,                    # Size of the scratchpad
         "scratchpad.baseAddr" : "0x80000000",            # Starting address of the scratchpad
         "mem1.size" : 1024*1024*1024,                    # Size of the scratchpad
-        "mem1.baseAddr" : "0x80000000",            # Starting address of the scratchpad
+        "mem1.baseAddr" : "0x70000000",            # Starting address of the scratchpad
         "mem2.size" : 1024*1024*1024,                    # Size of the scratchpad
-        "mem2.baseAddr" : "0x80000000",            # Starting address of the scratchpad
+        "mem2.baseAddr" : "0x90000000",            # Starting address of the scratchpad
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "basic-scratchpad.exe"),  # Target executable
+        "program" : os.getenv("REV_EXE", "simple_multi_seg.exe"),  # Target executable
         "splash" : 1                                  # Display the splash message
 })
 

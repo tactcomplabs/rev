@@ -3202,14 +3202,33 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
   return rtval;
 }
 
-// TEST: Scratchpad Access
+//// NOTE: These are not the only way to trigger custom mem seg accesses... this was just the simplest way I could
+////       think of to test it. (THESE DO NOT NEED TO BE MERGED)
 EcallStatus RevProc::ECALL_basic_scratchpad_access(RevInst& inst){
   auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
   uint64_t addr = RegFile->GetX<uint64_t>(RevReg::a0);
   MemReq req (addr, 10, RevRegClass::RegGPR, HartToExecID, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
   // Accessing a custom memory segment should trigger the custom handler
-  mem->ReadVal(HartToExecID, 0x80000000, reinterpret_cast<uint32_t*>(EcallState.buf.data()), req, REVMEM_FLAGS(0));
+  mem->ReadVal(HartToExecID, 0x80000000, reinterpret_cast<uint32_t*>(EcallState.buf.data()), req, RevFlag::F_NONE);
   return EcallStatus::SUCCESS;
 
+}
+
+EcallStatus RevProc::ECALL_basic_mem1_access(RevInst& inst){
+  auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
+  uint64_t addr = RegFile->GetX<uint64_t>(RevReg::a0);
+  MemReq req (addr, 10, RevRegClass::RegGPR, HartToExecID, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
+  // Accessing a custom memory segment should trigger the custom handler
+  mem->ReadVal(HartToExecID, 0x70000000, reinterpret_cast<uint32_t*>(EcallState.buf.data()), req, RevFlag::F_NONE);
+  return EcallStatus::SUCCESS;
+}
+
+EcallStatus RevProc::ECALL_basic_mem2_access(RevInst& inst){
+  auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
+  uint64_t addr = RegFile->GetX<uint64_t>(RevReg::a0);
+  MemReq req (addr, 10, RevRegClass::RegGPR, HartToExecID, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
+  // Accessing a custom memory segment should trigger the custom handler
+  mem->ReadVal(HartToExecID, 0x90000000, reinterpret_cast<uint32_t*>(EcallState.buf.data()), req, RevFlag::F_NONE);
+  return EcallStatus::SUCCESS;
 }
 

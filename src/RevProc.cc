@@ -1863,7 +1863,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
   #ifndef REV_TRACER
-  // Dump trace state 
+  // Dump trace state
   if (Tracer)  Tracer->Render(currentCycle);
   #endif
   return rtn;
@@ -2270,6 +2270,8 @@ void RevProc::InitEcallTable(){
     { 1000, &RevProc::ECALL_pthread_create},        //
     { 1001, &RevProc::ECALL_pthread_join},          //
     { 9999, &RevProc::ECALL_basic_scratchpad_access},
+    { 10000, &RevProc::ECALL_basic_mem1_access},
+    { 10001, &RevProc::ECALL_basic_mem2_access},
   };
 }
 

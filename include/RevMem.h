@@ -345,6 +345,17 @@ public:
 
   void AddCustomMemSeg(const uint64_t BaseAddr, const size_t Size, const std::string& Name);
 
+  struct CustomMemArgs {
+    bool IsWrite;
+    unsigned HartID;
+    uint64_t Addr;
+    size_t Len;
+    const void* Data;
+    const void* Target;
+    RevFlag Flag;
+    const SST::RevCPU::MemReq* Req;
+  } CustomMemArgs;
+
   class RevMemStats {
   public:
     uint64_t TLBHits;
@@ -372,20 +383,17 @@ private:
   RevMemCtrl *ctrl;             ///< RevMem: memory controller object
   SST::Output *output;          ///< RevMem: output handler
 
-  std::vector<std::shared_ptr<MemSegment>> MemSegs;       // Currently Allocated MemSegs
-  std::vector<std::shared_ptr<MemSegment>> FreeMemSegs;   // MemSegs that have been unallocated
-  std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
-  std::vector<std::shared_ptr<CustomMemSegment>> CustomMemSegs; // Memory Segments added via the python config file
+  std::vector<std::shared_ptr<MemSegment>> MemSegs;             ///< RevMem: Currently Allocated MemSegs
+  std::vector<std::shared_ptr<MemSegment>> FreeMemSegs;         ///< RevMem: MemSegs that have been unallocated
+  std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs;       ///< RevMem: For each RevThread there is a corresponding MemSeg that contains TLS & Stack
+  std::vector<std::shared_ptr<CustomMemSegment>> CustomMemSegs; ///< RevMem: Memory Segments added via the python config file
 
   uint64_t TLSBaseAddr;                                   ///< RevMem: TLS Base Address
   uint64_t TLSSize = sizeof(uint32_t);                    ///< RevMem: TLS Size (minimum size is enough to write the TID)
   uint64_t ThreadMemSize = _STACK_SIZE_;                  ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
-  uint64_t NextThreadMemAddr = memSize-1024;               ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
+  uint64_t NextThreadMemAddr = memSize-1024;              ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
 
-  static std::unordered_map<std::string, std::function<void(unsigned,
-                                                     uint64_t,
-                                                     uint64_t,
-                                                     size_t)>> CustomMemHandlers;
+  static std::unordered_map<std::string, std::function<void(struct CustomMemArgs)>> CustomMemHandlers;
 
   uint64_t SearchTLB(uint64_t vAddr);                       ///< RevMem: Used to check the TLB for an entry
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue

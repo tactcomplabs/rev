@@ -594,7 +594,11 @@ private:
   EcallStatus ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
 
   // CUSTOM MEM SEG FUNCTION
+  //// NOTE: These are not the only way to trigger custom mem seg accesses... this was just the simplest way I could
+  ////       think of to test it. (THESE DO NOT NEED TO BE MERGED)
   EcallStatus ECALL_basic_scratchpad_access(RevInst& inst); // 9999, rev_basic_scratchpad_access(uint64_t addr);
+  EcallStatus ECALL_basic_mem1_access(RevInst& inst); // 10000, rev_basic_mem1_access(uint64_t addr);
+  EcallStatus ECALL_basic_mem2_access(RevInst& inst); // 10001, rev_basic_mem2_access(uint64_t addr);
 
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
   std::unordered_map<uint32_t, std::function<EcallStatus(RevProc*, RevInst&)>> Ecalls;

@@ -16,6 +16,7 @@
 #include <memory>
 #include <mutex>
 #include <functional>
+#include <variant>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
@@ -696,7 +697,10 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void *Dat
     if( CustomSeg->contains(Addr) ){
       // Trigger the custom handler
       // TODO: Add error handling
-      CustomMemHandlers.find(CustomSeg->GetName())->second(Hart, Addr, Len, &Data);
+      // Make a CustomMemArgs Object
+
+      struct CustomMemArgs Args = {true, Hart, Addr, Len, Data, nullptr, RevFlag::F_NONE,nullptr};
+      CustomMemHandlers.find(CustomSeg->GetName())->second(Args);
       return true;
     }
   }
@@ -845,7 +849,8 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
     if( CustomSeg->contains(Addr) ){
       // Trigger the custom handler
       // TODO: Add error handling
-      CustomMemHandlers.find(CustomSeg->GetName())->second(Hart, Addr, 0, Len, Target);
+      struct CustomMemArgs Args = {false, Hart, Addr, Len, nullptr, Target, RevFlag::F_NONE, nullptr};
+      CustomMemHandlers.find(CustomSeg->GetName())->second(Args);
       return true;
     }
   }
@@ -1059,7 +1064,7 @@ void RevMem::AddCustomMemSeg(const uint64_t BaseAddr, const size_t SegSize, cons
   if( CustomMemHandlers.find(Name) == CustomMemHandlers.end() ){
     output->fatal(CALL_INFO, -1, "Error: Attempting to add a custom memory segment %s "
                                  "however there is no handler defined for accesses to this segment.\n"
-                                 "please add a function handler for %s inside of RevCustomMemHandlers.cc",
+                                 "please add a function handler for %s inside of RevCustomMemHandlers.cc\n\n",
                                  Name.c_str(), Name.c_str());
   }
 
