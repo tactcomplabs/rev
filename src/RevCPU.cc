@@ -240,8 +240,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       trc->SetCycleLimit(params.find<uint64_t>("trcLimit",0));
       trc->SetCmdTemplate(params.find<std::string>("trcOp", TRC_OP_DEFAULT).c_str());
 
+      // clear trace states
       trc->Reset();
+
+      // Assign to components
       Procs[i]->SetTracer(trc);
+      if (Ctrl) 
+        Ctrl->setTracer(trc);
     }
   }
   #endif

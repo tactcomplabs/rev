@@ -24,6 +24,7 @@
 #include <vector>
 
 // -- Rev Headers
+#include "RevCommon.h"
 
 // Integrated Disassembler (toolchain dependent)
 #ifdef REV_USE_SPIKE
@@ -42,14 +43,18 @@
 #define TRACE_REG_READ(R,V)  { if (Tracer) Tracer->regRead( (R), (V) ); }
 #define TRACE_REG_WRITE(R,V) { if (Tracer) Tracer->regWrite( (R), (V) ); }
 #define TRACE_PC_WRITE(PC)   { if (Tracer) Tracer->pcWrite( (PC) ); }
-#define TRACE_MEM_WRITE(ADR, LEN, DATA) { if (Tracer) Tracer->memWrite( (ADR), (LEN), (DATA) ); }
-#define TRACE_MEM_READ(ADR, LEN, DATA)  { if (Tracer) Tracer->memRead(  (ADR), (LEN), (DATA) ); }
+#define TRACE_MEM_WRITE(ADR, LEN, DATA)    { if (Tracer) Tracer->memWrite( (ADR), (LEN), (DATA) ); }
+#define TRACE_MEM_READ(ADR, LEN, DATA)     { if (Tracer) Tracer->memRead(  (ADR), (LEN), (DATA) ); }
+#define TRACE_MEMH_SENDREAD(ADR, LEN, REG) { if (Tracer) Tracer->memhSendRead( (ADR), (LEN), (REG) ); }
+#define TRACE_MEM_READ_RESPONSE(LEN, DATA, REQ) { if (Tracer) Tracer->memReadResponse( (LEN), (DATA), (REQ) ); }
 #else
 #define TRACE_REG_READ(R,V)
 #define TRACE_REG_WRITE(R,V)
 #define TRACE_PC_WRITE(PC)
 #define TRACE_MEM_WRITE(ADR, LEN, DATA)
 #define TRACE_MEM_READ(ADR, LEN, DATA)
+#define TRACE_MEMH_SENDREAD(ADR, LEN, REG)
+#define TRACE_MEM_READ_RESPONSE(LEN, DATA, REQ)
 #endif
 
 namespace SST::RevCPU{
@@ -114,22 +119,65 @@ namespace SST::RevCPU{
     } f;
   };
 
-  enum TraceKeyword_t { RegRead, RegWrite, MemLoad, MemStore, PcWrite };
+  enum TraceKeyword_t { 
+    RegRead,       // register read (non-fp)
+    RegWrite,      // register write (non-fp)
+    MemLoad,       // issue load request (simple mem)
+    MemStore,      // issue store request (simple mem)
+    MemhSendLoad,  // issue load request (memh)
+    PcWrite,       // write program counter
+    };
 
   // Generic record so we can preserve code ordering of events in trace
-  //     // register       memory
-  // a;  // reg             adr
-  // b;  // value           len
-  // c;  // origin(TODO)    data (limit 8 bytes)
+  //     // register       memory                   memh
+  // a;  // reg             adr                     adr
+  // b;  // value           len                     len
+  // c;  // origin(TODO)    data (limit 8 bytes)    reg
   struct TraceRec_t {
     TraceKeyword_t key;
-                 // register        memory
-    uint64_t a;  // reg             adr
-    uint64_t b;  // value           len
-    uint64_t c;  // origin(TODO)    data (limited to show 8 bytes)
-    TraceRec_t() {};
+                 // register        memory                  memh
+    uint64_t a;  // reg             adr                     adr
+    uint64_t b;  // value           len                     len
+    uint64_t c;  // origin(TODO)    data (limited 8 bytes)  reg
     TraceRec_t(TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C=0)
       : key(Key), a(A), b(B), c(C) {};
+  };
+
+  struct InstHeader_t {
+    size_t cycle;
+    unsigned id;
+    unsigned hart;
+    unsigned tid;
+    std::string defaultMnem = "?";
+    std::string& fallbackMnemonic = defaultMnem;
+    bool valid = false;
+    void set(size_t _cycle, unsigned _id, unsigned _hart, unsigned _tid, const std::string& _fallback) {
+      cycle = _cycle;
+      id = _id;
+      hart = _hart;
+      tid = _tid;
+      fallbackMnemonic = _fallback;
+      valid = true;
+    };
+    void clear() { valid = false; }
+  };
+
+  // aggregate read completion (memh)
+  struct CompletionRec_t {
+    unsigned int hart;
+    uint16_t destReg;
+    size_t len;
+    uint64_t addr;
+    uint64_t data; // first 8 bytes max
+    bool isFloat = false;
+    bool wait4Completion = false;
+    CompletionRec_t(unsigned int hart, uint16_t destReg, size_t len, uint64_t addr, 
+      void *data, RevRegClass regClass) 
+      : hart(hart), destReg(destReg), len(len), addr(addr),
+        isFloat(regClass == RevRegClass::RegFLOAT), wait4Completion(true) 
+    {
+      memcpy(&this->data, data, len > sizeof(this->data) ? sizeof(this->data) : len);
+    }
   };
 
   class RevTracer{
@@ -159,18 +207,28 @@ namespace SST::RevCPU{
       void memWrite(uint64_t adr, size_t len, const void *data);
       /// RevTracer: capture memory read
       void memRead(uint64_t adr, size_t len, void *data);
+      /// RevTracer: memh read request
+      void memhSendRead(uint64_t addr, size_t len, uint16_t reg);
+      /// RevTracer: data returning from memory read (memh)
+      void memReadResponse(size_t len, void *data, const MemReq* req);
       /// RevTracer: capture 32-bit program counter
       void pcWrite(uint32_t newpc);
       /// RevTracer: capture 64-bit program counter
       void pcWrite(uint64_t newpc);
-      /// RevTracer: render trace to output stream and update tracer state
-      void InstTrace(size_t cycle, unsigned id, unsigned hart, unsigned tid, std::string& fallbackMnemonic);
+      /// RevTracer: render instruction execution trace to output stream and update tracer state
+      void Exec(size_t cycle, unsigned id, unsigned hart, unsigned tid, const std::string& fallbackMnemonic);
+      /// RevTracer: Render captured states
+      void Render(size_t cycle);
       /// RevTracer: control whether to render captured states
       void SetOutputEnable(bool e) { outputEnabled=e; }
-      /// RevTracer: clear capture buffer and reset trace state
+      /// Reset trace state
       void Reset();
 
     private:
+
+      /// RevTracer: clear instruction trace capture buffer and reset trace state
+      void InstTraceReset();
+
       /// RevTracer: instance name
       std::string name;
       #ifdef REV_USE_SPIKE
@@ -183,10 +241,14 @@ namespace SST::RevCPU{
       SST::Output *pOutput;
       /// RevTracer: control whether output is printed or not ( sampling continues )
       bool outputEnabled = false;
+      /// RevTracer: Instruction header captured at execution phase.
+      InstHeader_t instHeader;
       /// RevTracer: Special affecting trace output
       TraceEvents_t events;
       /// RevTracer: buffer for captured states
       std::vector<TraceRec_t> traceRecs;
+      /// RevTracer: Completion records
+      std::vector<CompletionRec_t> completionRecs;
       /// RevTracer: saved program counter
       uint64_t pc = 0;
       /// RevTracer: previous program counter for branch determination
@@ -202,11 +264,11 @@ namespace SST::RevCPU{
       /// RevTracer: determine if this buffer should be rendered
       bool OutputOK();
       /// RevTracer: format register address for rendering
-      void fmt_reg(uint8_t r, std::stringstream& s);
+      std::string fmt_reg(uint8_t r);
       /// RevTracer: Format data associated with memory access
-      void fmt_data(unsigned len, uint64_t data, std::stringstream& s);
+      std::string fmt_data(unsigned len, uint64_t data);
       /// RevTracer: Generate string from captured state
-      std::string RenderOneLiner(const std::string& fallbackMnemonic);
+      std::string RenderExec(const std::string& fallbackMnemonic);
       /// RevTracer: User setting: starting cycle of trace (overrides programmtic control)
       uint64_t startCycle = 0;
       /// RevTracer: User setting: maximum number of lines to print

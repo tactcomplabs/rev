@@ -102,13 +102,12 @@ struct RevInst {
   uint8_t funct3      = 0; ///< RevInst: funct3 value
   uint8_t funct4      = 0; ///< RevInst: compressed funct4 value
   uint8_t funct6      = 0; ///< RevInst: compressed funct6 value
-  uint8_t funct7      = 0; ///< RevInst: funct7 value
+  uint8_t funct2or7   = 0; ///< RevInst: uncompressed funct2 or funct7 value
   uint64_t rd         =~0; ///< RevInst: rd value
   uint64_t rs1        =~0; ///< RevInst: rs1 value
   uint64_t rs2        =~0; ///< RevInst: rs2 value
   uint64_t rs3        =~0; ///< RevInst: rs3 value
   uint64_t imm        = 0; ///< RevInst: immediate value
-  uint8_t fmt         = 0; ///< RevInst: floating point format
   FRMode rm{FRMode::None}; ///< RevInst: floating point rounding mode
   uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
   uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
@@ -119,6 +118,7 @@ struct RevInst {
   uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
   unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
   uint16_t hart       = 0; ///< RevInst: What hart is this inst being executed on
+  bool isCoProcInst   = 0; ///< RevInst: whether instruction is coprocessor instruction
 
   explicit RevInst() = default; // prevent aggregate initialization
 
@@ -161,7 +161,7 @@ struct RevInstDefaults {
   static constexpr uint8_t     funct3      = 0b000;
   static constexpr uint8_t     funct4      = 0b000;      // compressed only
   static constexpr uint8_t     funct6      = 0b000;      // compressed only
-  static constexpr uint8_t     funct7      = 0b0000000;
+  static constexpr uint8_t     funct2or7   = 0b0000000;
   static constexpr uint16_t    offset      = 0b0000000;  // compressed only
   static constexpr uint16_t    jumpTarget  = 0b0000000;  // compressed only
   static constexpr RevRegClass rdClass     = RevRegClass::RegGPR;
@@ -193,7 +193,7 @@ struct RevInstEntry{
   uint8_t funct3;       ///< RevInstEntry: funct3 value
   uint8_t funct4;       ///< RevInstentry: compressed funct4 value
   uint8_t funct6;       ///< RevInstentry: compressed funct6 value
-  uint8_t funct7;       ///< RevInstEntry: funct7 value
+  uint8_t funct2or7;    ///< RevInstEntry: uncompressed funct2 or funct7 value
   uint16_t offset;      ///< RevInstEntry: compressed offset value
   uint16_t jumpTarget;  ///< RevInstEntry: compressed jump target value
 
@@ -232,7 +232,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
     InstEntry.funct3    = RevInstDefaultsPolicy::funct3;
     InstEntry.funct4    = RevInstDefaultsPolicy::funct4;
     InstEntry.funct6    = RevInstDefaultsPolicy::funct6;
-    InstEntry.funct7    = RevInstDefaultsPolicy::funct7;
+    InstEntry.funct2or7 = RevInstDefaultsPolicy::funct2or7;
     InstEntry.offset    = RevInstDefaultsPolicy::offset;
     InstEntry.jumpTarget= RevInstDefaultsPolicy::jumpTarget;
     InstEntry.rdClass   = RevInstDefaultsPolicy::rdClass;
@@ -254,7 +254,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   auto& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;}
   auto& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;}
   auto& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;}
-  auto& SetFunct7(uint8_t f7)        { InstEntry.funct7 = f7;    return *this;}
+  auto& SetFunct2or7(uint8_t f27)    { InstEntry.funct2or7 = f27;return *this;}
   auto& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;}
   auto& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;}
   auto& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;}
