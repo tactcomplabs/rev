@@ -10,7 +10,7 @@
 
 #include "RevLoader.h"
 #include "RevMem.h"
-#include <_types/_uint32_t.h>
+#include <cstdint>
 
 using namespace SST::RevCPU;
 using MemSegment = RevMem::MemSegment;
