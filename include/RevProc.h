@@ -51,7 +51,7 @@
 #include "RevProcPasskey.h"
 #include "RevHart.h"
 #define SYSCALL_TYPES_ONLY
-#include "../common/syscalls/syscalls.h"
+#include "../common/rev_includes/syscalls.h"
 #include "../common/include/RevCommon.h"
 
 namespace SST::RevCPU{
