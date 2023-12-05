@@ -12,12 +12,11 @@
 #include <stdlib.h>
 
 #define assert(x)                                                              \
-  if (!(x)) {                                                                  \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-  }
+  do                                                                           \
+    if (!(x)) {                                                                \
+      asm(".dword 0x00000000");                                                \
+    }                                                                          \
+  while (0)
 
 int main(int argc, char **argv) {
   int a = argc;
