@@ -30,7 +30,7 @@ comp_cpu.addParams({
         "enableCoProc" : 1,
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "ex1.exe"),  # Target executable
+        "program" : os.getenv("REV_EXE", "coproc_ex.exe"),  # Target executable
         "splash" : 1                                  # Display the splash message
 })
 comp_cpu.enableAllStatistics()

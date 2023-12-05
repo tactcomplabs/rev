@@ -13,13 +13,13 @@
 .PHONY: src
 
 EXAMPLE=simple_struct
-CC=${RVCC}
+CC=riscv64-unknown-elf-g++
 #ARCH=rv64g
 ARCH=rv64imafd
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CC) -march=$(ARCH) -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+	$(CC) -march=$(ARCH) -I../../../common/syscalls -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 
