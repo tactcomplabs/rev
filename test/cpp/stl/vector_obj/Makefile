@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: simple_struct
+# makefile: vector
 #
 # Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -12,14 +12,19 @@
 
 .PHONY: src
 
-EXAMPLE=simple_struct
+EXAMPLE=vector_obj
 CC=riscv64-unknown-elf-g++
-#ARCH=rv64g
-ARCH=rv64imafd
+ARCH=rv64gc
+CC="$(RVCC)"
+CXX="$(RVCXX)"
+
+# Use the git rev-parse command to get the root of the git repository
+GIT_ROOT=$(shell git rev-parse --show-toplevel)
+REV_INCLUDES=$(GIT_ROOT)/common/rev_includes
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CC) -march=$(ARCH) -I../../../common/syscalls -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+	$(CXX) -march=$(ARCH) -O0 -I$(REV_INCLUDES) -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

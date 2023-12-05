@@ -1,4 +1,5 @@
 #include "syscalls.h"
+#include "revalloc.h"
 #include <memory>
 #define assert(x)                                                              \
   do                                                                           \

@@ -1,6 +1,5 @@
-#include "revalloc.hpp"
+#include "revalloc.h"
 #include <vector>
-#include "rev-macros.h"
 
 #define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
 
