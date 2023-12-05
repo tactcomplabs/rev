@@ -12,7 +12,7 @@
 
 .PHONY: src
 
-EXAMPLE=ex1
+EXAMPLE=coproc_ex
 CC="${RVCC}"
 ARCH=rv64imafd
 #ABI=lp64

@@ -1,7 +1,5 @@
 /*
- * x0.c
- *
- * RISC-V ISA: RV64IMAFDC
+ * argc.c
  *
  * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
  * All Rights Reserved
@@ -20,22 +18,28 @@
     }                                                                          \
   while (0)
 
+// called with "argc.exe one two three; so argc == 4"
 int main(int argc, char **argv) {
-
-  asm volatile(" li a0, 6; \
-                  li a1, 6; \
-                  addi zero, a0, 0; \
-                  add a0, zero, a0;");
-
-  asm volatile(" bne a0, a1, fail;");
-  asm volatile("pass:");
-  asm volatile("j continue");
-
-  asm volatile("fail:");
-  assert(0);
-
-  asm volatile("continue:");
-  asm volatile("li ra, 0x0");
-
+  int a = argc;
+  assert(a == 4);
+  assert(argv[0][0] == 'a');
+  assert(argv[0][1] == 'r');
+  assert(argv[0][2] == 'g');
+  assert(argv[0][3] == 'c');
+  assert(argv[0][4] == '.');
+  assert(argv[0][5] == 'e');
+  assert(argv[0][6] == 'x');
+  assert(argv[0][7] == 'e');
+  assert(argv[1][0] == 'o');
+  assert(argv[1][1] == 'n');
+  assert(argv[1][2] == 'e');
+  assert(argv[2][0] == 't');
+  assert(argv[2][1] == 'w');
+  assert(argv[2][2] == 'o');
+  assert(argv[3][0] == 't');
+  assert(argv[3][1] == 'h');
+  assert(argv[3][2] == 'r');
+  assert(argv[3][3] == 'e');
+  assert(argv[3][4] == 'e');
   return 0;
 }

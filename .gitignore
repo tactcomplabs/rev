@@ -9,3 +9,5 @@
 *~
 .gdb_history
 *.out
+build/*
+*.asm
