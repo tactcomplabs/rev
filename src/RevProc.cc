@@ -416,8 +416,7 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   CompInst.funct4  = InstTable[Entry].funct4;
 
   // registers
-  CompInst.rd      = DECODE_RD(Inst);
-  CompInst.rs1     = DECODE_RD(Inst);
+  CompInst.rd      = CompInst.rs1 = DECODE_RD(Inst);
   CompInst.rs2     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm     = 0x00;
 
@@ -443,8 +442,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
   CompInst.funct3  = InstTable[Entry].funct3;
 
   // registers
-  CompInst.rd      = DECODE_RD(Inst);
-  CompInst.rs1     = DECODE_RD(Inst);
+  CompInst.rd      = CompInst.rs1 = DECODE_RD(Inst);
   CompInst.imm     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm    |= ((Inst & 0b1000000000000)>>7);
 
@@ -455,7 +453,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm =  ((Inst & 0b1100000) >> 2);        // [4:3]
     CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
     CompInst.imm |= ((Inst & 0b11100) << 4);          // [8:6]
-    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
+    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
   }else if( (CompInst.opcode == 0b10) &&
             (CompInst.funct3 == 0b010) ){
     // c.lwsp
@@ -463,7 +461,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm =  ((Inst & 0b1110000) >> 2);        // [4:2]
     CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
     CompInst.imm |= ((Inst & 1100) << 4);             // [7:6]
-    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
+    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
   }else if( (CompInst.opcode == 0b10) &&
             (CompInst.funct3 == 0b011) ){
     CompInst.imm = 0;
@@ -472,13 +470,13 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
       CompInst.imm =  ((Inst & 0b1100000) >> 2);        // [4:3]
       CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
       CompInst.imm |= ((Inst & 0b11100) << 4);          // [8:6]
-      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
+      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
     }else{
       // c.flwsp
       CompInst.imm =  ((Inst & 0b1110000) >> 2);        // [4:2]
       CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
       CompInst.imm |= ((Inst & 1100) << 4);             // [7:6]
-      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
+      CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
     }
   }else if( (CompInst.opcode == 0b01) &&
             (CompInst.funct3 == 0b011) &&
@@ -491,7 +489,7 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm |= ((Inst & 0b100000) << 1); // bit 6
     CompInst.imm |= ((Inst & 0b11000) << 4);  // bit 8:7
     CompInst.imm |= ((Inst & 0b1000000000000) >> 3);  // bit 9
-    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer) 
+    CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
     if( (CompInst.imm & 0b1000000000) > 0 ){
       // sign extend
       CompInst.imm |= 0b11111111111111111111111000000000;
@@ -557,7 +555,7 @@ RevInst RevProc::DecodeCSSInst(uint16_t Inst, unsigned Entry) const {
     // c.fsdsp
     CompInst.imm = 0;
     CompInst.imm =  ((Inst & 0b1110000000000) >> 7);    // [5:3]
-    CompInst.imm |= ((Inst & 0b1110000000) >> 1);       // [8:6] 
+    CompInst.imm |= ((Inst & 0b1110000000) >> 1);       // [8:6]
     CompInst.rs1 = 2;                                   // Force rs1 to x2 (stack pointer)
   }else if( CompInst.funct3 == 0b110 ){
     // c.swsp
@@ -642,7 +640,7 @@ RevInst RevProc::DecodeCLInst(uint16_t Inst, unsigned Entry) const {
   // registers
   CompInst.rd      = ((Inst & 0b11100) >> 2);
   CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
-  
+
   //Apply compressed offset
   CompInst.rd     = CRegIdx(CompInst.rd);
   CompInst.rs1    = CRegIdx(CompInst.rs1);
@@ -752,8 +750,7 @@ RevInst RevProc::DecodeCAInst(uint16_t Inst, unsigned Entry) const {
 
   // registers
   CompInst.rs2     = ((Inst & 0b11100) >> 2);
-  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
-  CompInst.rd      = ((Inst & 0b1110000000) >> 7);
+  CompInst.rd      = CompInst.rs1 = ((Inst & 0b1110000000) >> 7);
 
   //Adjust registers for compressed offset
   CompInst.rs2 = CRegIdx(CompInst.rs2);
@@ -780,7 +777,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
   CompInst.funct3  = InstTable[Entry].funct3;
 
   // registers
-  CompInst.rs1     = ((Inst & 0b1110000000) >> 7);
+  CompInst.rd = CompInst.rs1 = ((Inst & 0b1110000000) >> 7);
   CompInst.offset  = ((Inst & 0b1111100) >> 2);
   CompInst.offset |= ((Inst & 0b1110000000000) >> 5);
 
@@ -812,7 +809,7 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
     tmp[7] = o[7];
   } else if( (CompInst.opcode == 0b01) && (CompInst.funct3 == 0b100)) {
     //We have a shift or a andi
-    CompInst.rd = CompInst.rs1; //Already has compressed offset applied 
+    CompInst.rd = CompInst.rs1; //Already has compressed offset applied
   }
 
   CompInst.offset = ((uint16_t)tmp.to_ulong()) << 1; // scale to corrrect position to be consistent with other compressed ops
@@ -1641,7 +1638,7 @@ unsigned RevProc::GetNextHartToDecodeID() const {
 
 void RevProc::MarkLoadComplete(const MemReq& req){
 
-  auto it = LSQueue->find(make_lsq_hash(req.DestReg, req.RegType, req.Hart));
+  auto it = LSQueue->find(req.LSQHash());
   if( it != LSQueue->end()){
     DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
     LSQueue->erase(it);
@@ -1874,9 +1871,9 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Retired++;
 
       // Only clear the dependency if there is no outstanding load
-      if((RegFile->GetLSQueue()->count(make_lsq_hash(Pipeline.front().second.rd,
-                                                                 InstTable[Pipeline.front().second.entry].rdClass,
-                                                                 HartID))) == 0){
+      if((RegFile->GetLSQueue()->count(LSQHash(Pipeline.front().second.rd,
+                                               InstTable[Pipeline.front().second.entry].rdClass,
+                                               HartID))) == 0){
         DependencyClear(HartID, &(Pipeline.front().second));
       }
       Pipeline.pop_front();
@@ -1911,10 +1908,12 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       AddThreadsThatChangedState(std::move(ActiveThread));
     }
   }
-  #ifndef REV_TRACER
-  // Dump trace state 
+
+  #ifndef NO_REV_TRACER
+  // Dump trace state
   if (Tracer)  Tracer->Render(currentCycle);
   #endif
+
   return rtn;
 }
 

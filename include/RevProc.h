@@ -746,7 +746,7 @@ private:
   bool LSQCheck(unsigned HartID, const RevRegFile* regFile,
                 uint16_t reg, RevRegClass regClass) const {
     return (reg != 0 || regClass != RevRegClass::RegGPR) &&
-      regFile->GetLSQueue()->count(make_lsq_hash(reg, regClass, HartID)) > 0;
+      regFile->GetLSQueue()->count(LSQHash(reg, regClass, HartID)) > 0;
   }
 
   /// RevProc: Check scoreboard for a source register dependency
@@ -780,20 +780,22 @@ private:
   }
 
   /// RevProc: Set or clear scoreboard based on register number and floating point.
-  void DependencySet(unsigned HartID, uint16_t RegNum,
+  template<typename T>
+  void DependencySet(unsigned HartID, T RegNum,
                      bool isFloat, bool value = true){
-    if( RegNum < _REV_NUM_REGS_ ){
+    if( size_t(RegNum) < _REV_NUM_REGS_ ){
       RevRegFile* regFile = GetRegFile(HartID);
       if(isFloat){
-        regFile->FP_Scoreboard[RegNum] = value;
-      }else if( RegNum != 0 ){
-        regFile->RV_Scoreboard[RegNum] = value;
+        regFile->FP_Scoreboard[size_t(RegNum)] = value;
+      }else if( size_t(RegNum) != 0 ){
+        regFile->RV_Scoreboard[size_t(RegNum)] = value;
       }
     }
   }
 
   /// RevProc: Clear scoreboard on instruction retirement
-  void DependencyClear(unsigned HartID, uint16_t RegNum, bool isFloat){
+  template<typename T>
+  void DependencyClear(unsigned HartID, T RegNum, bool isFloat){
     DependencySet(HartID, RegNum, isFloat, false);
   }
 

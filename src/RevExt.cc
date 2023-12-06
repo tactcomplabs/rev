@@ -9,7 +9,7 @@
 //
 
 #include "RevExt.h"
-using namespace SST::RevCPU;
+namespace SST::RevCPU{
 
 /// Change the FP environment
 auto RevExt::SetFPEnv(unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile){
@@ -82,4 +82,5 @@ bool RevExt::Execute(unsigned Inst, const RevInst& payload, uint16_t HartID, Rev
   return ret;
 }
 
+} // namespace SST::RevCPU
 // EOF

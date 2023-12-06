@@ -22,7 +22,7 @@ class RV64A : public RevExt {
 
   static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete() );
-    R->LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+    R->LSQueue->insert( req.LSQHashPair() );
     M->LR(F->GetHartToExecID(),
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rd],
@@ -63,9 +63,7 @@ class RV64A : public RevExt {
                MemOp::MemOpAMO,
                true,
                R->GetMarkLoadComplete());
-    R->LSQueue->insert({make_lsq_hash(Inst.rd,
-                                      RevRegClass::RegGPR,
-                                      F->GetHartToExecID()), req});
+    R->LSQueue->insert( req.LSQHashPair() );
     M->AMOVal(F->GetHartToExecID(),
               R->RV64[Inst.rs1],
               &R->RV64[Inst.rs2],

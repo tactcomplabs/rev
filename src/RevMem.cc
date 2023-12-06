@@ -17,7 +17,8 @@
 #include <mutex>
 #include <functional>
 
-using namespace SST::RevCPU;
+namespace SST::RevCPU{
+
 using MemSegment = RevMem::MemSegment;
 
 RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, RevMemCtrl *Ctrl, SST::Output *Output )
@@ -147,7 +148,7 @@ bool RevMem::LRBase(unsigned Hart, uint64_t Addr, size_t Len,
   }else{
     memcpy(DataMem, BaseMem, Len);
     // clear the hazard
-    req.MarkLoadComplete(req);
+    req.MarkLoadComplete();
   }
 
   return true;
@@ -582,7 +583,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
     }
 
     // clear the hazard
-    req.MarkLoadComplete(req);
+    req.MarkLoadComplete();
     delete[] TmpD;
     delete[] TmpT;
   }
@@ -833,7 +834,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       }
       // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
       if(MemOp::MemOpAMO != req.ReqType){
-        req.MarkLoadComplete(req);
+        req.MarkLoadComplete();
       }
     }
 #ifdef _REV_DEBUG_
@@ -850,7 +851,7 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
       // clear the hazard- if this was an AMO operation then we will clear outside of this function in AMOMem()
       if(MemOp::MemOpAMO != req.ReqType){
         TRACE_MEM_READ(Addr, Len, DataMem);
-        req.MarkLoadComplete(req);
+        req.MarkLoadComplete();
       }
     }
   }
@@ -1004,4 +1005,5 @@ uint64_t RevMem::ExpandHeap(uint64_t Size){
   return heapend;
 }
 
+} // namespace SST::RevCPU
 // EOF

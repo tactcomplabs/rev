@@ -14,7 +14,8 @@
 #include <cmath>
 #include <memory>
 
-using namespace SST::RevCPU;
+namespace SST::RevCPU{
+
 using MemSegment = RevMem::MemSegment;
 
 const char splash_msg[] = "\
@@ -851,4 +852,5 @@ void RevCPU::InitMainThread(uint32_t MainThreadID, const uint64_t StartAddr){
   ReadyThreads.emplace_back(std::move(MainThread));
 }
 
+} // namespace SST::RevCPU
 // EOF

@@ -9,7 +9,7 @@
 //
 
 #include "RevOpts.h"
-using namespace SST::RevCPU;
+namespace SST::RevCPU{
 
 RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )
   : numCores(NumCores), numHarts(NumHarts), verbosity(Verbosity) {
@@ -273,4 +273,5 @@ bool RevOpts::GetMemCost( unsigned Core, unsigned &Min, unsigned &Max ){
   return true;
 }
 
+} // namespace SST::RevCPU
 // EOF

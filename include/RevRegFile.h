@@ -40,7 +40,7 @@ inline void BoxNaN(double* dest, const void* value){
 }
 
 /// RISC-V Register Mneumonics
-enum class RevReg {
+enum class RevReg : uint16_t {
   zero =  0, ra  =  1, sp   =  2, gp   =  3, tp  =  4, t0  =  5, t1   =  6, t2   =  7,
   s0   =  8, s1  =  9, a0   = 10, a1   = 11, a2  = 12, a3  = 13, a4   = 14, a5   = 15,
   a6   = 16, a7  = 17, s2   = 18, s3   = 19, s4  = 20, s5  = 21, s6   = 22, s7   = 23,

@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <sys/xattr.h>
 
-using namespace SST::RevCPU;
+namespace SST::RevCPU{
 
 /// Parse a string for an ECALL starting at address straddr, updating the state
 /// as characters are read, and call action() when the end of string is reached.
@@ -16,7 +16,7 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
   auto  rtval = EcallStatus::ERROR;
   auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
 
-  if( RegFile->GetLSQueue()->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExecID)) > 0 ){
+  if( RegFile->GetLSQueue()->count(LSQHash(RevReg::a0, RevRegClass::RegGPR, HartToExecID)) > 0 ){
     rtval = EcallStatus::CONTINUE;
   } else {
     // we don't know how long the path string is so read a byte (char)
@@ -39,21 +39,21 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
       EcallState.string.clear();   //reset the ECALL buffers
       EcallState.bytesRead = 0;
 
-      DependencyClear(HartToExecID, 10, false);
+      DependencyClear(HartToExecID, RevReg::a0, false);
       rtval = EcallStatus::SUCCESS;
     }else{
       //We are in the middle of the string - read one byte
-      MemReq req{straddr + EcallState.string.size(), 10,
+      MemReq req{straddr + EcallState.string.size(), RevReg::a0,
                  RevRegClass::RegGPR, HartToExecID, MemOp::MemOpREAD,
                  true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
-      LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
+      LSQueue->insert(req.LSQHashPair());
       mem->ReadVal(HartToExecID,
                   straddr + EcallState.string.size(),
                   EcallState.buf.data(),
                   req,
                    RevFlag::F_NONE);
       EcallState.bytesRead = 1;
-      DependencySet(HartToExecID, 10, false);
+      DependencySet(HartToExecID, RevReg::a0, false);
       rtval = EcallStatus::CONTINUE;
     }
   }
@@ -739,7 +739,7 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
   auto addr = RegFile->GetX<uint64_t>(RevReg::a1);
   auto nbytes = RegFile->GetX<uint64_t>(RevReg::a2);
 
-  auto lsq_hash = make_lsq_hash(10, RevRegClass::RegGPR, HartToExecID); // Cached hash value
+  auto lsq_hash = LSQHash(RevReg::a0, RevRegClass::RegGPR, HartToExecID); // Cached hash value
 
   if(EcallState.bytesRead && LSQueue->count(lsq_hash) == 0){
     EcallState.string += std::string_view(EcallState.buf.data(), EcallState.bytesRead);
@@ -751,14 +751,14 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
     int rc = write(fd, EcallState.string.data(), EcallState.string.size());
     RegFile->SetX(RevReg::a0, rc);
     EcallState.clear();
-    DependencyClear(HartToExecID, 10, false);
+    DependencyClear(HartToExecID, RevReg::a0, false);
     return EcallStatus::SUCCESS;
   }
 
   if (LSQueue->count(lsq_hash) == 0) {
-    MemReq req (addr + EcallState.string.size(), 10, RevRegClass::RegGPR,
+    MemReq req (addr + EcallState.string.size(), RevReg::a0, RevRegClass::RegGPR,
                 HartToExecID, MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
-    LSQueue->insert({lsq_hash, req});
+    LSQueue->insert(req.LSQHashPair());
 
     if(nleft >= 8){
       mem->ReadVal(HartToExecID, addr+EcallState.string.size(),
@@ -782,7 +782,7 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
       EcallState.bytesRead = 1;
     }
 
-    DependencySet(HartToExecID, 10, false);
+    DependencySet(HartToExecID, RevReg::a0, false);
     return EcallStatus::CONTINUE;
   }
 
@@ -3201,3 +3201,5 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
   }
   return rtval;
 }
+
+} // namespace SST::RevCPU
