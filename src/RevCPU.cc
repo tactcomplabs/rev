@@ -226,7 +226,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
       // Assign to components
       Procs[i]->SetTracer(trc);
-      if (Ctrl) 
+      if (Ctrl)
         Ctrl->setTracer(trc);
     }
   }
@@ -295,17 +295,18 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   TLBMissesPerCore.reserve(TLBMissesPerCore.size() + numCores);
 
   for(unsigned s = 0; s < numCores; s++){
-    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
-    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
-    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
-    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", "core_" + std::to_string(s)));
-    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", "core_" + std::to_string(s)));
-    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", "core_" + std::to_string(s)));
-    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
-    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
-    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
-    TLBHitsPerCore.push_back( registerStatistic<uint64_t>("TLBHitsPerCore", "core_" + std::to_string(s)));
-    TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
+    auto core = "core_" + std::to_string(s);
+    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", core));
+    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", core));
+    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", core));
+    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", core));
+    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", core));
+    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", core));
+    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", core));
+    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", core));
+    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", core));
+    TLBHitsPerCore.push_back( registerStatistic<uint64_t>("TLBHitsPerCore", core));
+    TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", core));
   }
 
   // determine whether we need to enable/disable manual coproc clocking
