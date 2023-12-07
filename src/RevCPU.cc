@@ -282,17 +282,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   InitMainThread(MainThreadID, StartAddr);
 
   // setup the per-proc statistics
-  TotalCycles.reserve(TotalCycles.size() + numCores);
-  CyclesWithIssue.reserve(CyclesWithIssue.size() + numCores);
-  FloatsRead.reserve(FloatsRead.size() + numCores);
-  FloatsWritten.reserve(FloatsWritten.size() + numCores);
-  DoublesRead.reserve(DoublesRead.size() + numCores);
-  DoublesWritten.reserve(DoublesWritten.size() + numCores);
-  BytesRead.reserve(BytesRead.size() + numCores);
-  BytesWritten.reserve(BytesWritten.size() + numCores);
-  FloatsExec.reserve(FloatsExec.size() + numCores);
-  TLBHitsPerCore.reserve(TLBHitsPerCore.size() + numCores);
-  TLBMissesPerCore.reserve(TLBMissesPerCore.size() + numCores);
+  TotalCycles.reserve(numCores);
+  CyclesWithIssue.reserve(numCores);
+  FloatsRead.reserve(numCores);
+  FloatsWritten.reserve(numCores);
+  DoublesRead.reserve(numCores);
+  DoublesWritten.reserve(numCores);
+  BytesRead.reserve(numCores);
+  BytesWritten.reserve(numCores);
+  FloatsExec.reserve(numCores);
+  TLBHitsPerCore.reserve(numCores);
+  TLBMissesPerCore.reserve(numCores);
 
   for(unsigned s = 0; s < numCores; s++){
     auto core = "core_" + std::to_string(s);
@@ -313,10 +313,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   DisableCoprocClock = params.find<bool>("independentCoprocClock", 0);
 
   // Create the completion array
-  Enabled = new bool [numCores];
-  for( unsigned i=0; i<numCores; i++ ){
-    Enabled[i] = false;
-  }
+  Enabled = new bool [numCores]{false};
 
   const unsigned Splash = params.find<bool>("splash", 0);
 
@@ -328,7 +325,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 }
 
 RevCPU::~RevCPU(){
-
   // delete the competion array
   delete[] Enabled;
 
