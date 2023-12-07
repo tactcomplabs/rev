@@ -120,13 +120,18 @@ public:
     uint64_t cyclesIdle_Total;
     uint64_t cyclesStalled;
     uint64_t floatsExec;
-    float    percentEff;
-    RevMem::RevMemStats memStats;
+    double   percentEff;
     uint64_t cyclesIdle_Pipeline;
     uint64_t cyclesIdle_MemoryFetch;
+    uint64_t retired;
   };
 
-  RevProcStats GetStats() { Stats.memStats = mem->memStats; return Stats; }
+  auto GetAndClearStats() {
+    Stats.percentEff = double(Stats.cyclesBusy)/Stats.totalCycles;
+    auto ret = std::make_pair(Stats, mem->GetAndClearStats());
+    Stats = {};
+    return ret;
+  }
 
   RevMem& GetMem() const { return *mem; }
 
@@ -232,8 +237,6 @@ private:
   std::bitset<_MAX_HARTS_> ValidHarts;      ///< RevProc: Bits 0 -> numHarts are 1
   std::bitset<_MAX_HARTS_> HartsClearToDecode; ///< RevProc: Thread is clear to start (proceed with decode)
   std::bitset<_MAX_HARTS_> HartsClearToExecute; ///< RevProc: Thread is clear to execute (no register dependencides)
-
-  uint64_t Retired;         ///< RevProc: number of retired instructions
 
   unsigned numHarts;        ///< RevProc: Number of Harts for this core
   RevOpts *opts;            ///< RevProc: options object

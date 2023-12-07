@@ -312,8 +312,7 @@ public:
   const uint64_t& GetTLSBaseAddr(){ return TLSBaseAddr; }
   const uint64_t& GetTLSSize(){ return TLSSize; }
 
-  class RevMemStats {
-  public:
+  struct RevMemStats {
     uint64_t TLBHits;
     uint64_t TLBMisses;
     uint32_t floatsRead;
@@ -324,12 +323,18 @@ public:
     uint32_t bytesWritten;
   };
 
-  RevMemStats memStats = {};
+  RevMemStats GetAndClearStats(){
+    auto ret = memStats;
+    memStats = {};
+    return ret;
+  }
 
 protected:
   char *physMem = nullptr;                 ///< RevMem: memory container
 
 private:
+  RevMemStats memStats = {};
+
   unsigned long memSize;        ///< RevMem: size of the target memory
   unsigned tlbSize;             ///< RevMem: number of entries in the TLB
   unsigned maxHeapSize;         ///< RevMem: maximum size of the heap

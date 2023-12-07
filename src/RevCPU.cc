@@ -571,18 +571,18 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
 }
 
 void RevCPU::UpdateCoreStatistics(unsigned coreNum){
-  RevProc::RevProcStats stats = Procs[coreNum]->GetStats();
+  auto [ stats, memStats ] = Procs[coreNum]->GetAndClearStats();
   TotalCycles[coreNum]->addData(stats.totalCycles);
   CyclesWithIssue[coreNum]->addData(stats.cyclesBusy);
-  FloatsRead[coreNum]->addData(stats.memStats.floatsRead);
-  FloatsWritten[coreNum]->addData(stats.memStats.floatsWritten);
-  DoublesRead[coreNum]->addData(stats.memStats.doublesRead);
-  DoublesWritten[coreNum]->addData(stats.memStats.doublesWritten);
-  BytesRead[coreNum]->addData(stats.memStats.bytesRead);
-  BytesWritten[coreNum]->addData(stats.memStats.bytesWritten);
+  FloatsRead[coreNum]->addData(memStats.floatsRead);
+  FloatsWritten[coreNum]->addData(memStats.floatsWritten);
+  DoublesRead[coreNum]->addData(memStats.doublesRead);
+  DoublesWritten[coreNum]->addData(memStats.doublesWritten);
+  BytesRead[coreNum]->addData(memStats.bytesRead);
+  BytesWritten[coreNum]->addData(memStats.bytesWritten);
   FloatsExec[coreNum]->addData(stats.floatsExec);
-  TLBHitsPerCore[coreNum]->addData(stats.memStats.TLBHits);
-  TLBMissesPerCore[coreNum]->addData(stats.memStats.TLBMisses);
+  TLBHitsPerCore[coreNum]->addData(memStats.TLBHits);
+  TLBMissesPerCore[coreNum]->addData(memStats.TLBMisses);
 }
 
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
