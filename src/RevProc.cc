@@ -1270,13 +1270,13 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   return DInst;
 }
 
-bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value) const {
+bool RevProc::DebugReadReg(unsigned Idx, uint64_t *Value, unsigned hartID) const {
   if( !Halted )
     return false;
-  if( Idx >= _REV_NUM_REGS_ ){
+  if( (Idx >= _REV_NUM_REGS_) || (hartID > Harts.size() ) ){
     return false;
   }
-  RevRegFile* regFile = GetRegFile(HartToExecID);
+  RevRegFile* regFile = GetRegFile(hartID);
   *Value = regFile->GetX<uint64_t>(Idx);
   return true;
 }

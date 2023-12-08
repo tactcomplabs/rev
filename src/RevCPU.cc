@@ -608,12 +608,8 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     if(dbgBreak || singleStep){
       RevProc* p = Procs[i];
       rdb.SetProcToDebug(p);
-      uint64_t r;
-       p->DebugReadReg(10, &r); 
-      std::cout << "Proc x10 =" << std::hex << r << std::dec << std::endl;
-      rdb.GetCommand();
+      while(rdb.GetCommand()){};
       breakAtCycle = rdb.GetNextBreakpoint();
-      continue;
     }
     UpdateThreadAssignments(i);
     if( Enabled[i] ){

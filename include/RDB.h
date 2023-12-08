@@ -27,15 +27,21 @@ class RDB {
   RDB(SST::Cycle_t firstBreak);
   ~RDB();
 
-  void GetCommand();
+  bool GetCommand();
   SST::Cycle_t GetNextBreakpoint(){return breakCycle;};
-  void SetNextBreakpoint(SST::Cycle_t breakCycle){ breakCycle = breakCycle;}
+  void SetNextBreakpoint(SST::Cycle_t cycle){ breakCycle = cycle;}
 
-  void SetProcToDebug(RevProc* proc){proc = proc;};
+  void SetProcToDebug(RevProc* p){proc = p;};
 
   protected:
   SST::Cycle_t breakCycle;
   RevProc* proc;
+  std::vector<std::string> cmdLine;
+
+  void PrintRegister();
+  void Step();
+  void PrintHelp();
+
 };
 
 };
