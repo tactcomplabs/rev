@@ -1929,29 +1929,29 @@ std::unique_ptr<RevThread> RevProc::PopThreadFromHart(unsigned HartID){
 
 
 void RevProc::PrintStatSummary(){
-  auto [ stats, memStats ] = GetAndClearStats();
+  auto memStatsTotal = mem->GetMemStatsTotal();
 
+  double eff = StatsTotal.totalCycles ? double(StatsTotal.cyclesBusy)/StatsTotal.totalCycles : 0;
   output->verbose(CALL_INFO, 2, 0,
                   "Program execution complete\n"
                   "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
                   " Idle Cycles: %" PRIu64 " Eff: %f\n",
-                  stats.totalCycles,
-                  stats.cyclesBusy,
-                  stats.cyclesIdle_Total,
-                  stats.percentEff);
+                  StatsTotal.totalCycles,
+                  StatsTotal.cyclesBusy,
+                  StatsTotal.cyclesIdle_Total,
+                  eff);
 
-  output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu32 " Bytes Written: %" PRIu32
-                  " Floats Read: %" PRIu32 " Doubles Read %" PRIu32 " Floats Exec: %" PRIu64
-                  " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
-                  memStats.bytesRead,
-                  memStats.bytesWritten,
-                  memStats.floatsRead,
-                  memStats.doublesRead,
-                  stats.floatsExec,
-                  memStats.TLBHits,
-                  memStats.TLBMisses,
-                  stats.retired);
-  return;
+  output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu64 " Bytes Written: %" PRIu64
+                  " Floats Read: %" PRIu64 " Doubles Read %" PRIu64 " Floats Exec: %" PRIu64
+                  " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n\n",
+                  memStatsTotal.bytesRead,
+                  memStatsTotal.bytesWritten,
+                  memStatsTotal.floatsRead,
+                  memStatsTotal.doublesRead,
+                  StatsTotal.floatsExec,
+                  memStatsTotal.TLBHits,
+                  memStatsTotal.TLBMisses,
+                  StatsTotal.retired);
 }
 
 RevRegFile* RevProc::GetRegFile(unsigned HartID) const {

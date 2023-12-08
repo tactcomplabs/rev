@@ -653,6 +653,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   if( rtn && CompletedThreads.size() ){
     for( unsigned i=0; i<numCores; i++ ){
+      UpdateCoreStatistics(i);
       Procs[i]->PrintStatSummary();
     }
     primaryComponentOKToEndSim();

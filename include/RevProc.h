@@ -120,16 +120,27 @@ public:
     uint64_t cyclesIdle_Total;
     uint64_t cyclesStalled;
     uint64_t floatsExec;
-    double   percentEff;
     uint64_t cyclesIdle_Pipeline;
     uint64_t cyclesIdle_MemoryFetch;
     uint64_t retired;
   };
 
   auto GetAndClearStats() {
-    Stats.percentEff = double(Stats.cyclesBusy)/Stats.totalCycles;
-    auto ret = std::make_pair(Stats, mem->GetAndClearStats());
-    Stats = {};
+    // Add each field from Stats into StatsTotal
+    for(auto stat : {
+        &RevProcStats::totalCycles,
+        &RevProcStats::cyclesBusy,
+        &RevProcStats::cyclesIdle_Total,
+        &RevProcStats::cyclesStalled,
+        &RevProcStats::floatsExec,
+        &RevProcStats::cyclesIdle_Pipeline,
+        &RevProcStats::retired}){
+      StatsTotal.*stat += Stats.*stat;
+    }
+
+    auto memStats = mem->GetAndClearStats();
+    auto ret = std::make_pair(Stats, memStats);
+    Stats = {};  // Zero out Stats
     return ret;
   }
 
@@ -254,6 +265,7 @@ private:
   std::unique_ptr<RevFeature> featureUP; ///< RevProc: feature handler
   RevFeature* feature;
   RevProcStats Stats{};                  ///< RevProc: collection of performance stats
+  RevProcStats StatsTotal{};             ///< RevProc: collection of total performance stats
   std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher
 
   std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.

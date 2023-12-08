@@ -59,7 +59,9 @@ comp_cpu.addParams({
     "splash" : 1
 })
 
-comp_cpu.enableAllStatistics()
+sst.setStatisticOutput("sst.statOutputCSV")
+sst.setStatisticLoadLevel(4)
+sst.enableAllStatisticsForComponentType("revcpu.RevCPU")
 
 # Conditional setup for memory hierarchy
 if args.enableMemH:
