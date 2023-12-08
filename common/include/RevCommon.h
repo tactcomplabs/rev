@@ -148,6 +148,21 @@ enum class ThreadState {
   DONE,     // Thread has finished; deallocate resources.
 };
 
+// HART Pipeline state 
+  // VALID  - Hart has a thread, Ready for prefetch
+  // DECODE- Hart has instructions, ready for decode stage
+  // READY_TO_EXEC - Hart has decoded instructions, and there are no dependencies
+  // EXEC - Hart is executing an instruction
+  // Each Hart will have a current and next for each of these. We act on the current at the start 
+  //     of ClockTick and then set next to current at the end of the loop
+
+struct HARTPipelineState {
+  bool VALID          = false;
+  bool DECODE         = false;
+  bool READY_TO_EXEC  = false;
+  bool EXEC           = false;
+  bool WRITEBACK      = false;
+};
 
 }//namespace SST::RevCPU
 

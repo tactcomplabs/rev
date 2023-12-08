@@ -38,6 +38,9 @@ class RevHart{
   ///< RevHart: Make RevProc a friend of this
   friend class RevProc;
 
+  HARTPipelineState curState;
+  HARTPipelineState nextState;
+
 public:
   ///< RevHart: Constructor
   RevHart(unsigned ID, const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& LSQueue,
@@ -78,6 +81,26 @@ public:
     // return the thread
     return std::move(Thread);
   }
+
+  ///< RevHart: Update current state based on next state - should only be called once 
+  ///  per ClockTick
+  void UpdateState(){
+    curState = nextState;
+  };
+
+  bool IsReadyToExec()  {return curState.READY_TO_EXEC;}
+  bool IsValid()        {return curState.VALID;}
+  bool IsRdyToDecode()  {return curState.DECODE;}
+  bool IsExec()         {return curState.EXEC;}
+  bool IsRdyForWB()     {return curState.WRITEBACK;}
+
+  void SetValid(bool val)       { nextState.VALID         = val;}
+  void SetRdyToDecode(bool val) { nextState.DECODE        = val;}
+  void SetRdyToExec(bool val)   { nextState.READY_TO_EXEC = val;}
+  void SetIsExec(bool val)      { nextState.EXEC          = val;}
+  void SetRdyForWB(bool val)    { nextState.WRITEBACK     = val;}
+
+
 }; // class RevHart
 
 } // namespace SST::RevCPU

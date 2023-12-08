@@ -201,6 +201,9 @@ public:
   ///< RevProc:
   void UpdateStatusOfHarts();
 
+  void SetValidHarts();
+  void SetDecodeHarts();
+
   ///< RevProc: Returns the id of an idle hart (or _INVALID_HART_ID_ if none are idle)
   unsigned FindIdleHartID() const ;
 
@@ -224,12 +227,14 @@ private:
   unsigned fault_width;     ///< RevProc: the width of the target fault
   unsigned id;              ///< RevProc: processor id
   uint64_t ExecPC;          ///< RevProc: executing PC
+  unsigned HartToPrefetchID;
   unsigned HartToDecodeID;    ///< RevProc: Current executing ThreadID
   unsigned HartToExecID;      ///< RevProc: Thread to dispatch instruction
 
   std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts without a thread assigned to them
   std::bitset<_MAX_HARTS_> IdleHarts;          ///< RevProc: bitset of Harts with no thread assigned
   std::bitset<_MAX_HARTS_> ValidHarts;      ///< RevProc: Bits 0 -> numHarts are 1
+  std::bitset<_MAX_HARTS_> HartsClearForIFetch;      ///< RevProc: Bits 0 -> numHarts are 1
   std::bitset<_MAX_HARTS_> HartsClearToDecode; ///< RevProc: Thread is clear to start (proceed with decode)
   std::bitset<_MAX_HARTS_> HartsClearToExecute; ///< RevProc: Thread is clear to execute (no register dependencides)
 
@@ -656,7 +661,7 @@ private:
   void SetPC(uint64_t PC) { RegFile->SetPC(PC); }
 
   /// RevProc: prefetch the next instruction
-  bool PrefetchInst();
+  bool PrefetchInst(uint64_t PC2Fetch);
 
   /// RevProc: decode the instruction at the current PC
   RevInst FetchAndDecodeInst();
@@ -729,6 +734,7 @@ private:
 
   /// RevProc: Determine next thread to execute
   unsigned GetNextHartToDecodeID() const;
+  unsigned GetNextHartToPrefetchID() const;
 
   /// RevProc: Whether any scoreboard bits are set
   bool AnyDependency(unsigned HartID, bool isFloat) const {

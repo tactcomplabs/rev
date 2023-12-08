@@ -24,7 +24,7 @@ RevProc::RevProc( unsigned Id,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), HartToDecodeID(0), HartToExecID(0), Retired(0x00ull),
+    id(Id), HartToPrefetchID(0), HartToDecodeID(0), HartToExecID(0), Retired(0x00ull),
     numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader),
     GetNewThreadID(std::move(GetNewTID)), output(Output), feature(nullptr),
     sfetch(nullptr), Tracer(nullptr) {
@@ -1295,16 +1295,15 @@ bool RevProc::DebugWriteReg(unsigned Idx, uint64_t Value) const {
   return true;
 }
 
-bool RevProc::PrefetchInst(){
-  uint64_t PC =Harts[HartToDecodeID]->RegFile->GetPC();
+bool RevProc::PrefetchInst(uint64_t PC2Fetch){
 
   // These are addresses that we can't decode
   // Return false back to the main program loop
-  if( PC == 0x00ull ){
+  if( PC2Fetch == 0x00ull ){
     return false;
   }
 
-  return sfetch->IsAvail(PC);
+  return sfetch->IsAvail(PC2Fetch);
 }
 
 RevInst RevProc::FetchAndDecodeInst(){
@@ -1617,6 +1616,26 @@ void RevProc::ExternalReleaseHart(RevProcPasskey<RevCoProc>, uint16_t HartID){
 }
 
 
+unsigned RevProc::GetNextHartToPrefetchID() const {
+  if(HartsClearForIFetch.none()) { return _REV_INVALID_HART_ID_;};
+
+  unsigned nextID = HartToPrefetchID;
+  if(HartsClearForIFetch[HartToPrefetchID]){
+    nextID = HartToPrefetchID;
+  }else{
+    for(size_t tID = 0; tID < Harts.size(); tID++){
+      nextID++;
+      if(nextID >= Harts.size()){
+        nextID = 0;
+      }
+      if(HartsClearForIFetch[nextID]){ break; };
+    }
+    output->verbose(CALL_INFO, 6, 0,
+                    "Core %" PRIu32 "; Hart Prefetch switch from %" PRIu32 " to %" PRIu32 "\n",
+                    id, HartToPrefetchID, nextID);
+  }
+  return nextID;
+}
 
 unsigned RevProc::GetNextHartToDecodeID() const {
   if(HartsClearToDecode.none()) { return HartToDecodeID;};
@@ -1665,23 +1684,42 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
 
   // This function updates the bitset of Harts that are
   // ready to decode
+
+  
+  //Update Hart current state based on previous cycle Next state
   UpdateStatusOfHarts();
+
+  //Find all Harts with a valid thread loaded
+  SetValidHarts();
+  if(HartsClearForIFetch.any() && (!Halted)){
+    HartToPrefetchID = GetNextHartToPrefetchID();
+    if(HartToPrefetchID != _REV_INVALID_HART_ID_){
+      uint64_t PC =Harts[HartToPrefetchID]->RegFile->GetPC();
+        // fetch the next instruction
+      if( !PrefetchInst(PC) ){
+        Stalled = true;
+        Stats.cyclesStalled++;
+        Harts[HartToPrefetchID]->SetRdyToDecode(false);
+      }else{
+        Stalled = false;
+        Harts[HartToPrefetchID]->SetRdyToDecode(true);
+      }
+    }
+  }
+
+  // From the valid harts, find all that are ready for Decode
+  SetDecodeHarts();
 
   if( HartsClearToDecode.any() && (!Halted)) {
     // Determine what hart is ready to decode
     HartToDecodeID = GetNextHartToDecodeID();
+    uint64_t PC =Harts[HartToPrefetchID]->RegFile->GetPC();
     ActiveThreadID = Harts.at(HartToDecodeID)->GetAssignedThreadID();
     RegFile = Harts[HartToDecodeID]->RegFile.get();
 
     feature->SetHartToExecID(HartToDecodeID);
 
-    // fetch the next instruction
-    if( !PrefetchInst() ){
-      Stalled = true;
-      Stats.cyclesStalled++;
-    }else{
-      Stalled = false;
-    }
+  
 
     if( !Stalled && !CoProcStallReq[HartToDecodeID]){
       Inst = FetchAndDecodeInst();
@@ -1703,6 +1741,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     Inst.entry = RegFile->GetEntry();
     rtn = true;
     ExecPC = RegFile->GetPC();
+  }else{
+    HartToExecID = _REV_INVALID_HART_ID_;
   }
 
   if( ( (HartToExecID != _REV_INVALID_HART_ID_)
@@ -1887,7 +1927,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
   // Check for completion states and new tasks
-  if( RegFile->GetPC() == 0x00ull ){
+  if(RegFile && RegFile->GetPC() == 0x00ull ){
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
@@ -2421,15 +2461,29 @@ void RevProc::InjectALUFault(std::pair<unsigned,unsigned> EToE, RevInst& Inst){
 ///           CoProc is done
 bool RevProc::HasNoWork() const { return HasNoBusyHarts() && (!coProc || coProc->IsDone()); }
 
-
 void RevProc::UpdateStatusOfHarts(){
-  // A Hart is ClearToDecode if:
-  //   1. It has a thread assigned to it (ie. NOT Idle)
-  //   2. It's last instruction is done executing (ie. cost is set to 0)
   for( size_t i=0; i<Harts.size(); i++ ){
-    HartsClearToDecode[i] = !IdleHarts[i] && Harts[i]->RegFile->cost == 0;
+    Harts[i]->UpdateState();
   }
   return;
 }
+
+void RevProc::SetValidHarts(){
+  // TODO: Rename this function 
+  // Set any loaded harts to valid
+  for( size_t i=0; i<Harts.size(); i++ ){
+    Harts[i]->SetValid(!IdleHarts[i]);
+    HartsClearForIFetch[i] = true;
+  }
+  return;
+}
+
+void RevProc::SetDecodeHarts(){
+  for( size_t i=0; i<Harts.size(); i++ ){
+    HartsClearToDecode[i] = Harts[i]->IsRdyToDecode();
+  }
+}
+
+
 
 // EOF
