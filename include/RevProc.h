@@ -50,6 +50,7 @@
 #include "RevRand.h"
 #include "RevProcPasskey.h"
 #include "RevHart.h"
+#include "RDB.h"
 #define SYSCALL_TYPES_ONLY
 #include "../common/syscalls/syscalls.h"
 #include "../common/include/RevCommon.h"
@@ -65,6 +66,8 @@ public:
 
   /// RevProc: standard destructor
   ~RevProc() = default;
+
+  friend class RDB;
 
   /// RevProc: per-processor clock function
   bool ClockTick( SST::Cycle_t currentCycle );

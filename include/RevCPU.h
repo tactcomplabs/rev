@@ -39,6 +39,7 @@
 #include "RevNIC.h"
 #include "RevCoProc.h"
 #include "RevRand.h"
+#include "RDB.h"
 
 namespace SST::RevCPU{
 
@@ -112,6 +113,7 @@ public:
     {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
     {"independentCoprocClock",  "Enables each coprocessor to register its own clock handler", "0"},
+    {"breakAtCycle",    "Break execution and drop into debugger at cycle", "0"},
     )
 
   // -------------------------------------------------------
@@ -210,6 +212,7 @@ private:
   unsigned RDMAPerCycle;              ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
   unsigned testStage;                 ///< RevCPU: controls the PAN Test harness staging
   unsigned testIters;                 ///< RevCPU: the number of message iters for each PAN Test
+  SST::Cycle_t breakAtCycle;          ///< RevCPU: The clock cycle to drop into the debugger - RDB
   std::string Exe;                    ///< RevCPU: binary executable
   std::string Args;                   ///< RevCPU: argument list
   RevOpts *Opts;                      ///< RevCPU: Simulation options object
@@ -292,6 +295,7 @@ private:
   std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
 
   SST::Clock::Handler<RevCPU>* ClockHandler;  ///< RevCPU: Clock Handler
+  RDB rdb;
 
   std::queue<std::pair<uint32_t, char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
   std::list<std::pair<uint8_t, int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>

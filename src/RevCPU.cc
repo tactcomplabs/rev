@@ -33,7 +33,7 @@ const char splash_msg[] = "\
 
 RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), EnableMemH(false),
-    DisableCoprocClock(false), Nic(nullptr), Ctrl(nullptr), ClockHandler(nullptr) {
+    DisableCoprocClock(false), Nic(nullptr), Ctrl(nullptr), ClockHandler(nullptr), rdb(0){
 
   const int Verbosity = params.find<int>("verbose", 0);
 
@@ -168,6 +168,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // Set max heap size
   const uint64_t maxHeapSize = params.find<unsigned long>("maxHeapSize", memSize/4);
   Mem->SetMaxHeapSize(maxHeapSize);
+
+  // Set Breakpoint
+  breakAtCycle = params.find<SST::Cycle_t>("breakAtCycle", 0);
+  rdb.SetNextBreakpoint(breakAtCycle);
 
   // Load the binary into memory
   // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
@@ -589,9 +593,28 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", currentCycle);
 
+  //RDB Control
+  bool dbgBreak = false;
+  bool singleStep = false;
+
+  if(breakAtCycle && (breakAtCycle == currentCycle)){ 
+    dbgBreak = true;
+    output.verbose(CALL_INFO, 1, 0, "Breakpoint found at Cycle: %" PRIu64 "\n", currentCycle);
+  }
+
   // Execute each enabled core
   for( size_t i=0; i<Procs.size(); i++ ){
     // Check if we have more work to assign and places to put it
+    if(dbgBreak || singleStep){
+      RevProc* p = Procs[i];
+      rdb.SetProcToDebug(p);
+      uint64_t r;
+       p->DebugReadReg(10, &r); 
+      std::cout << "Proc x10 =" << std::hex << r << std::dec << std::endl;
+      rdb.GetCommand();
+      breakAtCycle = rdb.GetNextBreakpoint();
+      continue;
+    }
     UpdateThreadAssignments(i);
     if( Enabled[i] ){
       if( !Procs[i]->ClockTick(currentCycle) ){
