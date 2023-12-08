@@ -24,7 +24,7 @@ RevProc::RevProc( unsigned Id,
                   SST::Output *Output )
   : Halted(false), Stalled(false), SingleStep(false),
     CrackFault(false), ALUFault(false), fault_width(0),
-    id(Id), HartToDecodeID(0), HartToExecID(0), Retired(0x00ull),
+    id(Id), HartToDecodeID(0), HartToExecID(0),
     numHarts(NumHarts), opts(Opts), mem(Mem), coProc(nullptr), loader(Loader),
     GetNewThreadID(std::move(GetNewTID)), output(Output), feature(nullptr),
     sfetch(nullptr), Tracer(nullptr) {
@@ -1868,7 +1868,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
                       "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
                       id, HartID, ActiveThreadID, ExecPC);
       #endif
-      Retired++;
+      Stats.retired++;
 
       // Only clear the dependency if there is no outstanding load
       if((RegFile->GetLSQueue()->count(LSQHash(Pipeline.front().second.rd,
@@ -1927,26 +1927,32 @@ std::unique_ptr<RevThread> RevProc::PopThreadFromHart(unsigned HartID){
   return Harts.at(HartID)->PopThread();
 }
 
+
 void RevProc::PrintStatSummary(){
-  output->verbose(CALL_INFO, 2, 0, "Program execution complete\n");
-  Stats.percentEff = float(Stats.cyclesBusy)/Stats.totalCycles;
+  auto memStatsTotal = mem->GetMemStatsTotal();
+
+  double eff = StatsTotal.totalCycles ? double(StatsTotal.cyclesBusy)/StatsTotal.totalCycles : 0;
   output->verbose(CALL_INFO, 2, 0,
-                  "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
+                  "Program execution complete\n"
+                  "Core %u Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
                   " Idle Cycles: %" PRIu64 " Eff: %f\n",
-                  Stats.totalCycles, Stats.cyclesBusy,
-                  Stats.cyclesIdle_Total, static_cast<double>(Stats.percentEff));
-  output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu32 " Bytes Written: %" PRIu32
-                  " Floats Read: %" PRIu32 " Doubles Read %" PRIu32 " Floats Exec: %" PRIu64
-                  " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n",
-                  mem->memStats.bytesRead,
-                  mem->memStats.bytesWritten,
-                  mem->memStats.floatsRead,
-                  mem->memStats.doublesRead,
-                  Stats.floatsExec,
-                  mem->memStats.TLBHits,
-                  mem->memStats.TLBMisses,
-                  Retired);
-  return;
+                  id,
+                  StatsTotal.totalCycles,
+                  StatsTotal.cyclesBusy,
+                  StatsTotal.cyclesIdle_Total,
+                  eff);
+
+  output->verbose(CALL_INFO, 3, 0, "\t Bytes Read: %" PRIu64 " Bytes Written: %" PRIu64
+                  " Floats Read: %" PRIu64 " Doubles Read %" PRIu64 " Floats Exec: %" PRIu64
+                  " TLB Hits: %" PRIu64 " TLB Misses: %" PRIu64 " Inst Retired: %" PRIu64 "\n\n",
+                  memStatsTotal.bytesRead,
+                  memStatsTotal.bytesWritten,
+                  memStatsTotal.floatsRead,
+                  memStatsTotal.doublesRead,
+                  StatsTotal.floatsExec,
+                  memStatsTotal.TLBHits,
+                  memStatsTotal.TLBMisses,
+                  StatsTotal.retired);
 }
 
 RevRegFile* RevProc::GetRegFile(unsigned HartID) const {

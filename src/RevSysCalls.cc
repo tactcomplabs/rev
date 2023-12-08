@@ -3137,12 +3137,11 @@ EcallStatus RevProc::ECALL_cpuinfo(RevInst& inst){
 // 501, rev_perf_stats(struct rev_perf_stats *stats)
 EcallStatus RevProc::ECALL_perf_stats(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: perf_stats called by thread %" PRIu32 "\n", GetActiveThreadID());
-  struct rev_stats rs;
-  struct rev_stats *dest = (struct rev_stats*) RegFile->GetX<uint64_t>(RevReg::a0);
+  rev_stats rs, *dest = reinterpret_cast<rev_stats*>(RegFile->GetX<uint64_t>(RevReg::a0));
 
   rs.cycles = Stats.totalCycles;
-  rs.instructions = Retired;
-  mem->WriteMem(HartToExecID, (uint64_t)dest, sizeof(struct rev_stats), &rs);
+  rs.instructions = Stats.retired;
+  mem->WriteMem(HartToExecID, (uint64_t)dest, sizeof(rev_stats), &rs);
   RegFile->SetX(RevReg::a0 ,0);
   return EcallStatus::SUCCESS;
 }
