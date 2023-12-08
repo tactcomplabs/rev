@@ -1934,8 +1934,9 @@ void RevProc::PrintStatSummary(){
   double eff = StatsTotal.totalCycles ? double(StatsTotal.cyclesBusy)/StatsTotal.totalCycles : 0;
   output->verbose(CALL_INFO, 2, 0,
                   "Program execution complete\n"
-                  "Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
+                  "Core %u Program Stats: Total Cycles: %" PRIu64 " Busy Cycles: %" PRIu64
                   " Idle Cycles: %" PRIu64 " Eff: %f\n",
+                  id,
                   StatsTotal.totalCycles,
                   StatsTotal.cyclesBusy,
                   StatsTotal.cyclesIdle_Total,
