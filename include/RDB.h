@@ -28,8 +28,8 @@ class RDB {
   ~RDB();
 
   bool GetCommand();
-  SST::Cycle_t GetNextBreakpoint(){return breakCycle;};
-  uint64_t GetPCBreakpoint(){return breakPC;}
+  SST::Cycle_t GetNextBreakpoint() const {return breakCycle;};
+  uint64_t GetPCBreakpoint() const {return breakPC;}
   void SetNextBreakpoint(SST::Cycle_t cycle){ breakCycle = cycle;}
 
   void SetProcToDebug(RevProc* p){proc = p;};
