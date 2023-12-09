@@ -56,6 +56,7 @@ comp_cpu.addParams({
     "startSymbol" : args.startSymbol,
     "enable_memH" : args.enableMemH,
     "args": args.args,
+    "breakAtCycle" : 13,
     "splash" : 1
 })
 
