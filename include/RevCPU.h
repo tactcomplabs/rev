@@ -184,6 +184,7 @@ public:
     {"SuccessRecv",         "Operation count for incoming Success Commands",        "count",  1},
     {"FailedRecv",          "Operation count for incoming Failed Commands",         "count",  1},
     {"BOTWRecv",            "Operation count for incoming BOTW Commands",           "count",  1},
+
     {"CyclesWithIssue",     "Cycles with succesful instruction issue",              "count",  1},
     {"TotalCycles",         "Total clock cycles",                                   "count",  1},
     {"FloatsRead",          "Total SP floating point values read",                  "count",  1},
@@ -193,10 +194,11 @@ public:
     {"BytesRead",           "Total bytes read",                                     "count",  1},
     {"BytesWritten",        "Total bytes written",                                  "count",  1},
     {"FloatsExec",          "Total SP or DP float instructions executed",           "count",  1},
-    {"TLBHits",             "TLB hits",                                             "count",  1},
-    {"TLBMisses",           "TLB misses",                                           "count",  1},
     {"TLBHitsPerCore",      "TLB hits per core",                                    "count",  1},
     {"TLBMissesPerCore",    "TLB misses per core",                                  "count",  1},
+
+    {"TLBHits",             "TLB hits",                                             "count",  1},
+    {"TLBMisses",           "TLB misses",                                           "count",  1},
     )
 
   // Passed as a function pointer to each RevProc for when they encounter a function that

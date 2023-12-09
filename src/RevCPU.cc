@@ -230,7 +230,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
       // Assign to components
       Procs[i]->SetTracer(trc);
-      if (Ctrl) 
+      if (Ctrl)
         Ctrl->setTracer(trc);
     }
   }
@@ -286,40 +286,38 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   InitMainThread(MainThreadID, StartAddr);
 
   // setup the per-proc statistics
-  TotalCycles.reserve(TotalCycles.size() + numCores);
-  CyclesWithIssue.reserve(CyclesWithIssue.size() + numCores);
-  FloatsRead.reserve(FloatsRead.size() + numCores);
-  FloatsWritten.reserve(FloatsWritten.size() + numCores);
-  DoublesRead.reserve(DoublesRead.size() + numCores);
-  DoublesWritten.reserve(DoublesWritten.size() + numCores);
-  BytesRead.reserve(BytesRead.size() + numCores);
-  BytesWritten.reserve(BytesWritten.size() + numCores);
-  FloatsExec.reserve(FloatsExec.size() + numCores);
-  TLBHitsPerCore.reserve(TLBHitsPerCore.size() + numCores);
-  TLBMissesPerCore.reserve(TLBMissesPerCore.size() + numCores);
+  TotalCycles.reserve(numCores);
+  CyclesWithIssue.reserve(numCores);
+  FloatsRead.reserve(numCores);
+  FloatsWritten.reserve(numCores);
+  DoublesRead.reserve(numCores);
+  DoublesWritten.reserve(numCores);
+  BytesRead.reserve(numCores);
+  BytesWritten.reserve(numCores);
+  FloatsExec.reserve(numCores);
+  TLBHitsPerCore.reserve(numCores);
+  TLBMissesPerCore.reserve(numCores);
 
   for(unsigned s = 0; s < numCores; s++){
-    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", "core_" + std::to_string(s)));
-    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", "core_" + std::to_string(s)));
-    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", "core_" + std::to_string(s)));
-    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", "core_" + std::to_string(s)));
-    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", "core_" + std::to_string(s)));
-    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", "core_" + std::to_string(s)));
-    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", "core_" + std::to_string(s)));
-    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", "core_" + std::to_string(s)));
-    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", "core_" + std::to_string(s)));
-    TLBHitsPerCore.push_back( registerStatistic<uint64_t>("TLBHitsPerCore", "core_" + std::to_string(s)));
-    TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", "core_" + std::to_string(s)));
+    auto core = "core_" + std::to_string(s);
+    TotalCycles.push_back(registerStatistic<uint64_t>("TotalCycles", core));
+    CyclesWithIssue.push_back(registerStatistic<uint64_t>("CyclesWithIssue", core));
+    FloatsRead.push_back( registerStatistic<uint64_t>("FloatsRead", core));
+    FloatsWritten.push_back( registerStatistic<uint64_t>("FloatsWritten", core));
+    DoublesRead.push_back( registerStatistic<uint64_t>("DoublesRead", core));
+    DoublesWritten.push_back( registerStatistic<uint64_t>("DoublesWritten", core));
+    BytesRead.push_back( registerStatistic<uint64_t>("BytesRead", core));
+    BytesWritten.push_back( registerStatistic<uint64_t>("BytesWritten", core));
+    FloatsExec.push_back( registerStatistic<uint64_t>("FloatsExec", core));
+    TLBHitsPerCore.push_back( registerStatistic<uint64_t>("TLBHitsPerCore", core));
+    TLBMissesPerCore.push_back( registerStatistic<uint64_t>("TLBMissesPerCore", core));
   }
 
   // determine whether we need to enable/disable manual coproc clocking
   DisableCoprocClock = params.find<bool>("independentCoprocClock", 0);
 
   // Create the completion array
-  Enabled = new bool [numCores];
-  for( unsigned i=0; i<numCores; i++ ){
-    Enabled[i] = false;
-  }
+  Enabled = new bool [numCores]{false};
 
   const unsigned Splash = params.find<bool>("splash", 0);
 
@@ -331,7 +329,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 }
 
 RevCPU::~RevCPU(){
-
   // delete the competion array
   delete[] Enabled;
 
@@ -574,18 +571,18 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
 }
 
 void RevCPU::UpdateCoreStatistics(unsigned coreNum){
-  RevProc::RevProcStats stats = Procs[coreNum]->GetStats();
+  auto [ stats, memStats ] = Procs[coreNum]->GetAndClearStats();
   TotalCycles[coreNum]->addData(stats.totalCycles);
   CyclesWithIssue[coreNum]->addData(stats.cyclesBusy);
-  FloatsRead[coreNum]->addData(stats.memStats.floatsRead);
-  FloatsWritten[coreNum]->addData(stats.memStats.floatsWritten);
-  DoublesRead[coreNum]->addData(stats.memStats.doublesRead);
-  DoublesWritten[coreNum]->addData(stats.memStats.doublesWritten);
-  BytesRead[coreNum]->addData(stats.memStats.bytesRead);
-  BytesWritten[coreNum]->addData(stats.memStats.bytesWritten);
+  FloatsRead[coreNum]->addData(memStats.floatsRead);
+  FloatsWritten[coreNum]->addData(memStats.floatsWritten);
+  DoublesRead[coreNum]->addData(memStats.doublesRead);
+  DoublesWritten[coreNum]->addData(memStats.doublesWritten);
+  BytesRead[coreNum]->addData(memStats.bytesRead);
+  BytesWritten[coreNum]->addData(memStats.bytesWritten);
   FloatsExec[coreNum]->addData(stats.floatsExec);
-  TLBHitsPerCore[coreNum]->addData(stats.memStats.TLBHits);
-  TLBMissesPerCore[coreNum]->addData(stats.memStats.TLBMisses);
+  TLBHitsPerCore[coreNum]->addData(memStats.TLBHits);
+  TLBMissesPerCore[coreNum]->addData(memStats.TLBMisses);
 }
 
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
@@ -681,6 +678,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   if( rtn && CompletedThreads.size() ){
     for( unsigned i=0; i<numCores; i++ ){
+      UpdateCoreStatistics(i);
       Procs[i]->PrintStatSummary();
     }
     primaryComponentOKToEndSim();
