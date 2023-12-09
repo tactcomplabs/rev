@@ -87,6 +87,9 @@ public:
   /// RevProc: retrieve the local PC for the correct feature set
   uint64_t GetPC() const { return RegFile ? RegFile->GetPC() : 0; }
 
+  /// RevProc: retrieve the local PC for the correct feature set
+  uint64_t GetPC(unsigned hartID) const { return IdleHarts[hartID] ? 0 : Harts[hartID]->RegFile->GetPC(); }
+
   /// RevProc: set time converter for RTC
   void SetTimeConverter(TimeConverter* tc) { timeConverter = tc; }
 

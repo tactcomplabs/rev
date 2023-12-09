@@ -595,9 +595,8 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   //RDB Control
   bool dbgBreak = false;
-  bool singleStep = false;
 
-  if(breakAtCycle && (breakAtCycle == currentCycle)){ 
+  if(currentCycle && (rdb.GetNextBreakpoint() == currentCycle)){ 
     dbgBreak = true;
     output.verbose(CALL_INFO, 1, 0, "Breakpoint found at Cycle: %" PRIu64 "\n", currentCycle);
   }
@@ -605,9 +604,16 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   // Execute each enabled core
   for( size_t i=0; i<Procs.size(); i++ ){
     // Check if we have more work to assign and places to put it
-    if(dbgBreak || singleStep){
+    if(dbgBreak){
       RevProc* p = Procs[i];
       rdb.SetProcToDebug(p);
+      while(rdb.GetCommand()){};
+      breakAtCycle = rdb.GetNextBreakpoint();
+    }
+
+    if(Procs[i]->GetPC(0) && (Procs[i]->GetPC(0) == rdb.GetPCBreakpoint())){
+      output.verbose(CALL_INFO, 1, 0, "Breakpoint found at PC: %" PRIx64 "\n", Procs[i]->GetPC(0));
+      rdb.SetProcToDebug(Procs[i]);
       while(rdb.GetCommand()){};
       breakAtCycle = rdb.GetNextBreakpoint();
     }
