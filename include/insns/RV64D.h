@@ -48,7 +48,7 @@ class RV64D : public RevExt {
     uint64_t u64 = R->GetX<uint64_t>(Inst.rs1);
     double fp;
     memcpy(&fp, &u64, sizeof(fp));
-    R->SetFP(Inst.rs1, fp);
+    R->SetFP(Inst.rd, fp);
     R->AdvancePC(Inst);
     return true;
   }
