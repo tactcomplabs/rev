@@ -15,8 +15,7 @@ EXAMPLE=pthread_basic
 
 #CC=riscv64-unknown-elf-gcc
 CC="${RVCC}"
-#ARCH=rv64g
-ARCH=rv64g
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
