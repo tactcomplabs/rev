@@ -18,6 +18,20 @@
 #include <type_traits>
 #include <utility>
 
+enum VerbosityMasks {
+    NO_MASK = 0x00,
+    MEMORY_MASK = 0x01,
+    NETWORK_MASK = 0x02,
+    CORE_MASK = 0x04,
+    THREAD_MASK = 0x08,
+    HART_MASK = 0x10,
+    COPROC_MASK = 0x20,
+    INITIALIZATION_MASK = 0x40,
+    REGISTER_MASK = 0x80,
+    TRACER_MASK = 0x100,
+    DEBUG_MASK = 0x200, // TODO: Potentially remove
+};
+
 #ifndef _REV_NUM_REGS_
 #define _REV_NUM_REGS_ 32
 #endif

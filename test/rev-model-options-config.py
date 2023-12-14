@@ -28,6 +28,7 @@ parser.add_argument("--verbose", type=int, help="Verbosity level", default=2)
 parser.add_argument("--machine", help="Machine type/configuration", default="[CORES:RV64GC]")
 parser.add_argument("--args", help="Command line arguments to pass to the target executable", default="")
 parser.add_argument("--startSymbol", help="ELF Symbol Rev should begin execution at", default="[0:main]")
+parser.add_argument("--verbosityMask", help="Verbosity Mask to use (See RevCommon.h for options)", default="0")
 
 # Parse arguments
 args = parser.parse_args()
@@ -45,6 +46,7 @@ clock = "2.0GHz"
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
     "verbose" : args.verbose,
+    "verbosityMask" : args.verbosityMask,
     "numCores" : args.numCores,
     "numHarts" : args.numHarts,
     "clock" : clock,

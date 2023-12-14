@@ -9,6 +9,7 @@
 //
 
 #include "RevCPU.h"
+#include "RevCommon.h"
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
@@ -37,8 +38,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   const int Verbosity = params.find<int>("verbose", 0);
 
+  // See if we have an output mask (See RevCommon.h for the mask values)
+  const int VerbosityMask = params.find<uint64_t>("verbosityMask", 0);
+
   // Initialize the output handler
-  output.init("RevCPU[" + getName() + ":@p:@t]: ", Verbosity, 0, SST::Output::STDOUT);
+  output.init("RevCPU[" + getName() + ":@p:@t]: ", Verbosity, VerbosityMask, SST::Output::STDOUT);
 
   // Register a new clock handler
   const std::string cpuClock = params.find<std::string>("clock", "1GHz");
