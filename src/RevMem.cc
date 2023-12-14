@@ -76,7 +76,7 @@ void RevMem::HandleMemFault(unsigned width){
 
   // write the fault (read-modify-write)
   *Addr |= rval;
-  output->verbose(CALL_INFO, 5, 0,
+  output->verbose(CALL_INFO, 5, MEMORY_MASK,
                   "FAULT:MEM: Memory fault %u bits at address : 0x%" PRIxPTR "\n",
                   width, reinterpret_cast<uintptr_t>(Addr));
 }
@@ -366,7 +366,7 @@ uint64_t RevMem::AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, si
         Seg->setSize(Seg->getSize() + BytesToExpandBy);
       } else {
         // If it contains the top address, we don't need to do anything
-        output->verbose(CALL_INFO, 10, 99,
+        output->verbose(CALL_INFO, 10, MEMORY_MASK,
                         "Warning: Memory segment already allocated that contains the requested rounded allocation at %" PRIx64 "of size %" PRIu64 " Bytes\n", BaseAddr, SegSize);
       }
       // Return the containing segments Base Address
@@ -415,7 +415,7 @@ void RevMem::SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size){
 // vector to see if there is a free segment that will fit the new data
 // If there is not a free segment, it will allocate a new segment at the end of the heap
 uint64_t RevMem::AllocMem(const uint64_t& SegSize){
-  output->verbose(CALL_INFO, 10, 99, "Attempting to allocate %" PRIu64 " bytes on the heap\n", SegSize);
+  output->verbose(CALL_INFO, 10, MEMORY_MASK, "Attempting to allocate %" PRIu64 " bytes on the heap\n", SegSize);
 
   uint64_t NewSegBaseAddr = 0;
   // Check if there is a free segment that can fit the new data
@@ -463,7 +463,7 @@ uint64_t RevMem::AllocMem(const uint64_t& SegSize){
 // If its unable to allocate at the location requested it will error. This may change in the future.
 uint64_t RevMem::AllocMemAt(const uint64_t& BaseAddr, const uint64_t& SegSize){
   int ret = 0;
-  output->verbose(CALL_INFO, 10, 99, "Attempting to allocate %" PRIu64 " bytes on the heap", SegSize);
+  output->verbose(CALL_INFO, 10, MEMORY_MASK, "Attempting to allocate %" PRIu64 " bytes on the heap", SegSize);
 
   // Check if this range exists in the FreeMemSegs vector
   for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
@@ -888,8 +888,8 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
 // 3. Deallocating memory that hasn't been allocated
 // - |---- FreeSeg ----| ==> SegFault :/
 uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
-  output->verbose(CALL_INFO, 10, 99,
-                  "Attempting to deallocate %lul bytes starting at BaseAddr = 0x%lx\n",
+  output->verbose(CALL_INFO, 10, MEMORY_MASK,
+                  "Attempting to deallocate %" PRIu64 " bytes starting at BaseAddr = 0x%" PRIx64 "\n",
                   Size, BaseAddr);
 
   int ret = -1;
@@ -910,7 +910,8 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
       }
       // (2.) Check if we're only deallocating a part of a segment
       else if( Size < AllocedSeg->getSize() ){
-        output->verbose(CALL_INFO, 10, 99, "  => partial deallocation detected\n");
+        // TODO: Make output consistent (ie. no =>)
+        output->verbose(CALL_INFO, 10, MEMORY_MASK, "  => partial deallocation detected\n");
         uint64_t oldAllocedSize = AllocedSeg->getSize();
         // Free data starts where alloced data used to
         // Before: |------------------- AllocedSeg ------------------------|
@@ -923,7 +924,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
       } // --- End Partial Deallocation
       // We are deallocating the entire segment (1.)
       else {
-        output->verbose(CALL_INFO, 10, 99, "  => entire deallocation\n");
+        output->verbose(CALL_INFO, 10, MEMORY_MASK, "  => entire deallocation\n");
         // Delete it from MemSegs
         MemSegs.erase(MemSegs.begin() + i);
         ret = 0;
@@ -945,7 +946,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
         // We can merge the two segments
         // by setting the Size of the FreeSeg to be the sum of the two
         // and NOT creating a new FreeMemSeg
-        output->verbose(CALL_INFO, 10, 99, "  => merging with previous free segment\n");
+        output->verbose(CALL_INFO, 10, MEMORY_MASK, "  => merging with previous free segment\n");
         FreeSeg->setSize(FreeSeg->getSize() + Size);
         // Dealloc success, return 0
         hasMerged = true;
@@ -953,7 +954,7 @@ uint64_t RevMem::DeallocMem(uint64_t BaseAddr, uint64_t Size){
       }
     }
     if (!hasMerged) {
-      output->verbose(CALL_INFO, 10, 99, "  => allocating new free segment\n");
+      output->verbose(CALL_INFO, 10, MEMORY_MASK, "  => allocating new free segment\n");
       // If we get here, the address that precedes the newly freed data is not free
       // We need to create a new FreeMemSeg that starts at the baseAddr of the previously
       // allocated data and is `Size` bytes long

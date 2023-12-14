@@ -62,7 +62,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   if( numHarts > _MAX_HARTS_ ){
     output.fatal(CALL_INFO, -1, "Error: number of harts must be <= %" PRIu32 "\n", _MAX_HARTS_);
   }
-  output.verbose(CALL_INFO, 1, 0,
+  output.verbose(CALL_INFO, 1, INITIALIZATION_MASK,
                  "Building Rev with %" PRIu32 " cores and %" PRIu32 " hart(s) on each core \n",
                  numCores, numHarts);
 
@@ -162,7 +162,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       output.fatal(CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
 
     if( EnableFaults )
-      output.verbose(CALL_INFO, 1, 0, "Warning: memory faults cannot be enabled with memHierarchy support\n");
+      output.verbose(CALL_INFO, 1, INITIALIZATION_MASK, "Warning: memory faults cannot be enabled with memHierarchy support\n");
   }
 
   // Set TLB Size
@@ -209,6 +209,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   #ifndef NO_REV_TRACER
   // Configure tracer and assign to each core
+  // TODO: Potentially remove
   if (output.getVerboseLevel()>=5) {
     for( unsigned i=0; i<numCores; i++ ){
       // Each core gets its very own tracer
@@ -216,7 +217,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       std::string diasmType;
       Opts->GetMachineModel(0,diasmType); // TODO first param is core
       if (trc->SetDisassembler(diasmType))
-        output.verbose(CALL_INFO, 1, 0, "Warning: tracer could not find disassembler. Using REV default\n");
+        output.verbose(CALL_INFO, 1, TRACER_MASK, "Warning: tracer could not find disassembler. Using REV default\n");
 
       trc->SetTraceSymbols(Loader->GetTraceSymbols());
 
@@ -281,7 +282,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     } // ... else no symbol provided, continue on with StartAddr as the target
   }
 
-  output.verbose(CALL_INFO, 11, 0, "Start address is 0x%" PRIx64 "\n", StartAddr);
+  output.verbose(CALL_INFO, 11, INITIALIZATION_MASK, "Start address is 0x%" PRIx64 "\n", StartAddr);
 
   InitMainThread(MainThreadID, StartAddr);
 
@@ -325,7 +326,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       output.verbose(CALL_INFO, 1, 0, splash_msg);
 
   // Done with initialization
-  output.verbose(CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n");
+  output.verbose(CALL_INFO, 1, INITIALIZATION_MASK, "Initialization of RevCPUs complete.\n");
 }
 
 RevCPU::~RevCPU(){
@@ -485,6 +486,7 @@ uint8_t RevCPU::createTag(){
 }
 
 void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
+  // TODO: No idea what mask to use here (@DAVE)
   output.verbose(CALL_INFO, 4, 0, "FAULT: Crack fault injected at cycle: %" PRIu64 "\n",
                  currentCycle);
 
@@ -498,13 +500,13 @@ void RevCPU::HandleCrackFault(SST::Cycle_t currentCycle){
 }
 
 void RevCPU::HandleMemFault(SST::Cycle_t currentCycle){
-  output.verbose(CALL_INFO, 4, 0, "FAULT: Memory fault injected at cycle: %" PRIu64 "\n",
+  output.verbose(CALL_INFO, 4, MEMORY_MASK, "FAULT: Memory fault injected at cycle: %" PRIu64 "\n",
                  currentCycle);
   Mem->HandleMemFault(fault_width);
 }
 
 void RevCPU::HandleRegFault(SST::Cycle_t currentCycle){
-  output.verbose(CALL_INFO, 4, 0, "FAULT: Register fault injected at cycle: %" PRIu64 "\n",
+  output.verbose(CALL_INFO, 4, REGISTER_MASK, "FAULT: Register fault injected at cycle: %" PRIu64 "\n",
                  currentCycle);
 
   // select a random processor core
@@ -588,7 +590,7 @@ void RevCPU::UpdateCoreStatistics(unsigned coreNum){
 bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
   bool rtn = true;
 
-  output.verbose(CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", currentCycle);
+  output.verbose(CALL_INFO, 8, NO_MASK, "Cycle: %" PRIu64 "\n", currentCycle);
 
   // Execute each enabled core
   for( size_t i=0; i<Procs.size(); i++ ){
@@ -601,13 +603,13 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
         }
         UpdateCoreStatistics(i);
         Enabled[i] = false;
-        output.verbose(CALL_INFO, 5, 0, "Closing Processor %zu at Cycle: %" PRIu64 "\n",
+        output.verbose(CALL_INFO, 5, CORE_MASK, "Closing Processor %zu at Cycle: %" PRIu64 "\n",
                        i, currentCycle);
       }
       if(EnableCoProc &&
          !CoProcs[i]->ClockTick(currentCycle) &&
          !DisableCoprocClock){
-        output.verbose(CALL_INFO, 5, 0, "Closing Co-Processor %zu at Cycle: %" PRIu64 "\n",
+        output.verbose(CALL_INFO, 5, COPROC_MASK, "Closing Co-Processor %zu at Cycle: %" PRIu64 "\n",
                        i, currentCycle);
 
       }
@@ -661,7 +663,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
       Procs[i]->PrintStatSummary();
     }
     primaryComponentOKToEndSim();
-    output.verbose(CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
+    output.verbose(CALL_INFO, 5, NO_MASK, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>(currentCycle));
   } else {
     rtn = false;
   }
@@ -682,15 +684,16 @@ void RevCPU::InitThread(std::unique_ptr<RevThread>&& ThreadToInit){
   RegState->SetX(RevReg::s0, gp); // s0 = x8 = frame pointer register
   // Set state to Ready
   ThreadToInit->SetState(ThreadState::READY);
-  output.verbose(CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", ThreadToInit->GetID());
-  output.verbose(CALL_INFO, 11, 0, "Thread Information: %s", ThreadToInit->to_string().c_str());
+  output.verbose(CALL_INFO, 4, THREAD_MASK, "Initializing Thread %" PRIu32 "\n", ThreadToInit->GetID());
+  output.verbose(CALL_INFO, 11, THREAD_MASK, "Thread Information: %s", ThreadToInit->to_string().c_str());
   ReadyThreads.emplace_back(std::move(ThreadToInit));
 }
 
 // Assigns a RevThred to a specific Proc which then loads it into a RevHart
 // This should not be called without first checking if the Proc has an IdleHart
 void RevCPU::AssignThread(std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID){
-  output.verbose(CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetID(), ProcID);
+  output.verbose(CALL_INFO, 4, THREAD_MASK, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetID(), ProcID);
+  output.verbose(CALL_INFO, 4, CORE_MASK, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetID(), ProcID);
   Procs[ProcID]->AssignThread(std::move(ThreadToAssign));
   return;
 }
@@ -706,7 +709,7 @@ bool RevCPU::ThreadCanProceed(const std::unique_ptr<RevThread>& Thread){
   // If the thread is waiting on another thread, check if that thread has completed
   if( WaitingOnTID != _INVALID_TID_ ){
     // Check if WaitingOnTID has completed... if so, return = true, else return false
-    output.verbose(CALL_INFO, 6, 0, "Thread %" PRIu32 " is waiting on Thread %u\n", Thread->GetID(), WaitingOnTID);
+    output.verbose(CALL_INFO, 6, THREAD_MASK, "Thread %" PRIu32 " is waiting on Thread %u\n", Thread->GetID(), WaitingOnTID);
 
     // Check if the WaitingOnTID has completed, if not, thread cannot proceed
     rtn = ( CompletedThreads.find(WaitingOnTID) != CompletedThreads.end() ) ? true : false;
@@ -786,13 +789,13 @@ void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
     switch ( Thread->GetState() ) {
     case ThreadState::DONE:
       // This thread has completed execution
-      output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is DONE\n", ThreadID, ProcID);
+      output.verbose(CALL_INFO, 8, THREAD_MASK, "Thread %" PRIu32 " on Core %" PRIu32 " is DONE\n", ThreadID, ProcID);
       CompletedThreads.emplace(ThreadID, std::move(Thread));
       break;
 
     case ThreadState::BLOCKED:
       // This thread is blocked (currently only caused by a rev_pthread_join)
-      output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 "on Core %" PRIu32 " is BLOCKED\n", ThreadID, ProcID);
+      output.verbose(CALL_INFO, 8, THREAD_MASK, "Thread %" PRIu32 "on Core %" PRIu32 " is BLOCKED\n", ThreadID, ProcID);
 
       // Set its state to BLOCKED
       Thread->SetState(ThreadState::BLOCKED);
@@ -802,7 +805,7 @@ void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
       break;
     case ThreadState::START:
       // A new thread was created
-      output.verbose(CALL_INFO, 99, 1, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu32, Thread->GetID(), ProcID);
+      output.verbose(CALL_INFO, 8, THREAD_MASK, "A new thread with ID = %" PRIu32 " was found on Core %" PRIu32, Thread->GetID(), ProcID);
 
       // Mark it ready for execution
       Thread->SetState(ThreadState::READY);
@@ -813,7 +816,7 @@ void RevCPU::HandleThreadStateChangesForProc(uint32_t ProcID){
       break;
 
     case ThreadState::RUNNING:
-      output.verbose(CALL_INFO, 11, 0, "Thread %" PRIu32 " on Core %" PRIu32 " is RUNNING\n", ThreadID, ProcID);
+      output.verbose(CALL_INFO, 11, THREAD_MASK, "Thread %" PRIu32 " on Core %" PRIu32 " is RUNNING\n", ThreadID, ProcID);
       break;
 
     case ThreadState::READY:
@@ -848,7 +851,8 @@ void RevCPU::InitMainThread(uint32_t MainThreadID, const uint64_t StartAddr){
                                                                       std::move(MainThreadRegState));
   MainThread->SetState(ThreadState::READY);
 
-  output.verbose(CALL_INFO, 11, 0, "Main thread initialized %s\n", MainThread->to_string().c_str());
+  output.verbose(CALL_INFO, 11, INITIALIZATION_MASK, "Main thread initialized %s\n", MainThread->to_string().c_str());
+  output.verbose(CALL_INFO, 11, THREAD_MASK, "Main thread initialized %s\n", MainThread->to_string().c_str());
 
   // Add to ReadyThreads so it gets scheduled
   ReadyThreads.emplace_back(std::move(MainThread));

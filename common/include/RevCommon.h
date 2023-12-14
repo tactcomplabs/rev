@@ -29,7 +29,7 @@ enum VerbosityMasks {
     INITIALIZATION_MASK = 0x40,
     REGISTER_MASK = 0x80,
     TRACER_MASK = 0x100,
-    DEBUG_MASK = 0x200, // TODO: Potentially remove
+    DEBUG_MASK = 0x200,
 };
 
 #ifndef _REV_NUM_REGS_

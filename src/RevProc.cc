@@ -9,6 +9,7 @@
 //
 
 #include "RevProc.h"
+#include "RevCommon.h"
 #include "RevSysCalls.cc"
 #include "sst/core/output.h"
 
@@ -128,7 +129,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
   if( !Ext )
     output->fatal(CALL_INFO, -1, "Error: failed to initialize RISC-V extensions\n");
 
-  output->verbose(CALL_INFO, 6, 0,
+  output->verbose(CALL_INFO, 6, CORE_MASK,
                   "Core %" PRIu32 " ; Enabling extension=%s\n",
                   id, Ext->GetName().data());
 
@@ -151,7 +152,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
 
   // load the compressed instructions
   if( feature->IsModeEnabled(RV_C) ){
-    output->verbose(CALL_INFO, 6, 0,
+    output->verbose(CALL_INFO, 6, CORE_MASK,
                     "Core %" PRIu32 " ; Enabling compressed extension=%s\n",
                     id, Ext->GetName().data());
 
@@ -168,7 +169,8 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
     }
     // load the optional compressed instructions
     if( Opt ){
-      output->verbose(CALL_INFO, 6, 0,
+      // TODO: Potentially make this a CORE MASK Too?
+      output->verbose(CALL_INFO, 6, INITIALIZATION_MASK,
                       "Core %" PRIu32 " ; Enabling optional compressed extension=%s\n",
                       id, Ext->GetName().data());
       CT = Ext->GetOInstTable();
@@ -190,7 +192,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
 }
 
 bool RevProc::SeedInstTable(){
-  output->verbose(CALL_INFO, 6, 0,
+  output->verbose(CALL_INFO, 6, INITIALIZATION_MASK,
                   "Core %" PRIu32 " ; Seeding instruction table for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
@@ -304,7 +306,7 @@ std::string RevProc::ExtractMnemonic(RevInstEntry Entry){
 }
 
 bool RevProc::InitTableMapping(){
-  output->verbose(CALL_INFO, 6, 0,
+  output->verbose(CALL_INFO, 6, INITIALIZATION_MASK,
                   "Core %" PRIu32 " ; Initializing table mapping for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
@@ -315,7 +317,7 @@ bool RevProc::InitTableMapping(){
       // map normal instruction
       EncToEntry.insert(
         std::pair<uint32_t, unsigned>(CompressEncoding(InstTable[i]), i) );
-      output->verbose(CALL_INFO, 6, 0,
+      output->verbose(CALL_INFO, 6, INITIALIZATION_MASK | CORE_MASK,
                       "Core %" PRIu32 " ; Table Entry %" PRIu32 " = %s\n",
                       id,
                       CompressEncoding(InstTable[i]),
@@ -324,7 +326,7 @@ bool RevProc::InitTableMapping(){
       // map compressed instruction
       CEncToEntry.insert(
         std::pair<uint32_t, unsigned>(CompressCEncoding(InstTable[i]), i) );
-      output->verbose(CALL_INFO, 6, 0,
+      output->verbose(CALL_INFO, 6, INITIALIZATION_MASK | CORE_MASK,
                       "Core %" PRIu32 " ; Compressed Table Entry %" PRIu32 " = %s\n",
                       id,
                       CompressCEncoding(InstTable[i]),
@@ -335,7 +337,7 @@ bool RevProc::InitTableMapping(){
 }
 
 bool RevProc::ReadOverrideTables(){
-  output->verbose(CALL_INFO, 6, 0,
+  output->verbose(CALL_INFO, 6, INITIALIZATION_MASK | CORE_MASK,
                   "Core %" PRIu32 " ; Reading override tables for machine model=%s\n",
                   id, feature->GetMachineModel().data());
 
@@ -1317,7 +1319,8 @@ RevInst RevProc::FetchAndDecodeInst(){
   }
 
   if(0 != Inst){
-    output->verbose(CALL_INFO, 6, 0,
+    // TODO: No idea what mask is technically right for this... It's kind of everything
+    output->verbose(CALL_INFO, 6, CORE_MASK,
                     "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
                     id, HartToDecodeID, ActiveThreadID,  PC, Inst);
   }else{
@@ -1556,7 +1559,10 @@ void RevProc::HandleRegFault(unsigned width){
     RegPrefix = "f";
   }
 
-  output->verbose(CALL_INFO, 5, 0,
+  output->verbose(CALL_INFO, 5, CORE_MASK,
+                  "FAULT:REG: Register fault of %" PRIu32 " bits into register %s%" PRIu32 "\n",
+                  width, RegPrefix, RegIdx);
+  output->verbose(CALL_INFO, 5, REGISTER_MASK,
                   "FAULT:REG: Register fault of %" PRIu32 " bits into register %s%" PRIu32 "\n",
                   width, RegPrefix, RegIdx);
 }
