@@ -24,20 +24,21 @@ class Zicbom : public RevExt{
     switch(Inst.imm){
     case 0b000000000000:
       // CBO.INVAL
-      M->InvLine(F->GetHartToExecID(), Inst.rs1);
+      M->InvLine(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1));
       break;
     case 0b000000000001:
       // CBO.FLUSH
-      M->FlushLine(F->GetHartToExecID(), Inst.rs1);
+      M->FlushLine(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1));
       break;
     case 0b000000000010:
       // CBO.CLEAN
-      M->CleanLine(F->GetHartToExecID(), Inst.rs1);
+      M->CleanLine(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1));
       break;
     default:
       return false;
       break;
     }
+    R->AdvancePC(Inst);
     return true;
   }
 
