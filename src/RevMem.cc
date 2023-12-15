@@ -860,6 +860,36 @@ bool RevMem::ReadMem(unsigned Hart, uint64_t Addr, size_t Len, void *Target,
   return true;
 }
 
+bool RevMem::FlushLine( unsigned Hart, uint64_t Addr ){
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  if( ctrl ){
+    ctrl->sendFLUSHRequest(Hart, Addr, physAddr, getLineSize(),
+                           false, RevFlag::F_NONE);
+  }
+  // else, this is effectively a nop
+  return true;
+}
+
+bool RevMem::InvLine( unsigned Hart, uint64_t Addr ){
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  if( ctrl ){
+    ctrl->sendFLUSHRequest(Hart, Addr, physAddr, getLineSize(),
+                           true, RevFlag::F_NONE);
+  }
+  // else, this is effectively a nop
+  return true;
+}
+
+bool RevMem::CleanLine( unsigned Hart, uint64_t Addr ){
+  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+  if( ctrl ){
+    ctrl->sendFENCE(Hart);
+    ctrl->sendFLUSHRequest(Hart, Addr, physAddr, getLineSize(),
+                           false, RevFlag::F_NONE);
+  }
+  // else, this is effectively a nop
+  return true;
+}
 
 
 // This function is used to remove/shrink a memory segment

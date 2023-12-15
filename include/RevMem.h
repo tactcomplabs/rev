@@ -155,6 +155,15 @@ public:
                 const MemReq& req,
                 RevFlag flags);
 
+  /// RevMem: flush a cache line
+  bool FlushLine( unsigned Hart, uint64_t Addr );
+
+  /// RevMem: invalidate a cache line
+  bool InvLine( unsigned Hart, uint64_t Addr );
+
+  /// RevMem: clean a line
+  bool CleanLine( unsigned Hart, uint64_t Addr );
+
   /// RevMem: DEPRECATED: read data from the target memory location
   [[deprecated("Simple RevMem interfaces have been deprecated")]]
   bool ReadMem( uint64_t Addr, size_t Len, void *Data );
