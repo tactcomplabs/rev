@@ -288,21 +288,27 @@ public:
   }
 
   /// GetFP: Get the specified FP register cast to a specific FP type
-  template<typename T, typename U>
+  // The second argument indicates whether it is a FMV/FS move/store
+  // instruction which just transfers bits and not care about NaN-Boxing.
+  template<typename T, bool FMV_FS = false, typename U>
   T GetFP(U rs) const {
     if constexpr(std::is_same_v<T, double>){
-      return DPF[size_t(rs)];                // The FP64 register's value
-    }else if( HasD ){
-      uint64_t i64;
-      memcpy(&i64, &DPF[size_t(rs)], sizeof(i64));   // The FP64 register's value
-      if (~i64 >> 32)                        // Check for boxed NaN
-        return NAN;                          // Return NaN if it's not boxed
-      auto i32 = static_cast<uint32_t>(i64); // For endian independence
-      float fp32;
-      memcpy(&fp32, &i32, sizeof(fp32));     // The bottom half of FP64
-      return fp32;                           // Reinterpreted as FP32
+      return DPF[size_t(rs)];                    // The FP64 register's value
     }else{
-      return SPF[size_t(rs)];                // The FP32 register's value
+      float fp32;
+      if( !HasD ){
+        fp32 = SPF[size_t(rs)];                  // The FP32 register's value
+      }else{
+        uint64_t i64;
+        memcpy(&i64, &DPF[size_t(rs)], sizeof(i64)); // The FP64 register's value
+        if (!FMV_FS && ~i64 >> 32){              // Check for boxed NaN unless FMV/FS
+          fp32 = NAN;                            // Return NaN if it's not boxed
+        }else{
+          auto i32 = static_cast<uint32_t>(i64); // For endian independence on host
+          memcpy(&fp32, &i32, sizeof(fp32));     // The bottom half of FP64
+        }
+      }
+      return fp32;                               // Reinterpreted as FP32
     }
   }
 

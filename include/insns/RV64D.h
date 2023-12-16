@@ -37,7 +37,7 @@ class RV64D : public RevExt {
 
   static bool fmvxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     uint64_t u64;
-    double fp = R->GetFP<double>(Inst.rs1);
+    double fp = R->GetFP<double, true>(Inst.rs1);
     memcpy(&u64, &fp, sizeof(u64));
     R->SetX(Inst.rd, u64);
     R->AdvancePC(Inst);
