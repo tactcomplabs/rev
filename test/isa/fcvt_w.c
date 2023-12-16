@@ -1,5 +1,5 @@
 /*
- * fcvt_w.c
+77;30700;0c * fcvt_w.c
  *
  * RISC-V ISA: RV32I
  *
@@ -13,15 +13,14 @@
 #include <stdint.h>
 #include <math.h>
 
-// TODO: Handle other rounding modes besides Round To Zero
+#pragma GCC diagnostic error "-Wdouble-promotion"
+#pragma GCC diagnostic error "-Wconversion"
+
 #define FCVT_TEST(test, to_t, from_t, inst, result, input, rm)  do {    \
-    volatile from_t in = input;                                         \
-    to_t res = 0x80808080;                                              \
-    asm volatile(#inst " %0, %1, " #rm : "=r"(res) : "f"(in));          \
-    if (res != result) {                                                \
-      asm volatile (" .word 0");                                        \
-      asm volatile (" .word " #test);                                   \
-    }                                                                   \
+    to_t res = (to_t) 0xE0E0E0E0;                                       \
+    asm volatile(#inst " %0, %1, " #rm : "=r"(res) : "f"(input));       \
+    if (res != (result))                                                \
+      asm volatile(" .word 0; .word " #test);                           \
   } while(0)
 
 int main(int argc, char **argv){

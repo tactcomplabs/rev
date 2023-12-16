@@ -15,14 +15,12 @@
 
 #pragma GCC diagnostic error "-Wdouble-promotion"
 #pragma GCC diagnostic error "-Wconversion"
-#pragma GCC diagnostic error "-Warith-conversion"
 
 #define FCVT_TEST(test, to_t, from_t, inst, result, input, rm)  do {    \
-    to_t res = (to_t) 0xeeeeeeee;                                       \
+    to_t res = (to_t) 0xE0E0E0E0;                                       \
     asm volatile( #inst " %0, %1" rm : "=f"(res) : "f"(input) );        \
-    if (isnan(result) ? !isnan(res) : res != (result)) {                \
+    if (res != (result))                                                \
       asm volatile(" .word 0; .word " #test);                           \
-    }                                                                   \
   } while(0)
 
 int main(int argc, char **argv){
@@ -36,9 +34,6 @@ int main(int argc, char **argv){
   FCVT_TEST(          4,   double,    float,   fcvt.d.s,                 -1.0,          -1.0f,      ""       );
   FCVT_TEST(          5,   double,    float,   fcvt.d.s,        (double) INFINITY,       INFINITY,  ""       );
   FCVT_TEST(          6,   double,    float,   fcvt.d.s,        (double) -INFINITY,     -INFINITY,  ""       );
-
-  // The compiler causes a bug which fails to test for NaN
-  //  FCVT_TEST(          7,   double,    float,   fcvt.d.s,        (double) NAN,            NAN,       ""       );
 
 #endif // __riscv_flen >= 64
 

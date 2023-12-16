@@ -15,14 +15,12 @@
 
 #pragma GCC diagnostic error "-Wdouble-promotion"
 #pragma GCC diagnostic error "-Wconversion"
-#pragma GCC diagnostic error "-Warith-conversion"
 
 #define FCVT_TEST(test, to_t, from_t, inst, result, input, rm)  do {    \
-    to_t res = (to_t) 0xeeeeeeee;                                       \
+    to_t res = (to_t) 0xE0E0E0E0;                                       \
     asm volatile( #inst " %0, %1, " #rm : "=f"(res) : "r"(input) );     \
-    if (res != result) {                                                \
+    if (res != (result))                                                \
       asm(" .word 0; .word " #test);                                    \
-    }                                                                   \
   } while(0)
 
 int main(int argc, char **argv){
