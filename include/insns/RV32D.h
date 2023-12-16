@@ -25,30 +25,24 @@ class RV32D : public RevExt{
   static bool cfldsp(RevFeature *F, RevRegFile *R,
                      RevMem *M, RevInst Inst) {
     // c.flwsp rd, $imm = lw rd, x2, $imm
-    // Inst.rs1  = 2;  //Removed - set in decode
     return fld(F, R, M, Inst);
   }
 
   static bool cfsdsp(RevFeature *F, RevRegFile *R,
                      RevMem *M, RevInst Inst) {
     // c.fsdsp rs2, $imm = fsd rs2, x2, $imm
-    //Inst.rs1  = 2; //Removed - set in decode
     return fsd(F, R, M, Inst);
   }
 
   static bool cfld(RevFeature *F, RevRegFile *R,
                    RevMem *M, RevInst Inst) {
     // c.fld %rd, %rs1, $imm = flw %rd, %rs1, $imm
-   // Inst.rd  = CRegIdx(Inst.rd);  //Removed - Scaled in decode
-   // Inst.rs1 = CRegIdx(Inst.rs1); // Removed - scaled in decode
     return fld(F, R, M, Inst);
   }
 
   static bool cfsd(RevFeature *F, RevRegFile *R,
                    RevMem *M, RevInst Inst) {
     // c.fsd rs2, rs1, $imm = fsd rs2, $imm(rs1)
- //   Inst.rs2 = CRegIdx(Inst.rd); //Removed - scaled in decode
- //   Inst.rs1 = CRegIdx(Inst.rs1); // Removed - scaled in decode
     return fsd(F, R, M, Inst);
   }
 
@@ -105,13 +99,13 @@ class RV32D : public RevExt{
   }
 
   static bool fcvtsd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->SetFP(Inst.rd, double{R->GetFP<float>(Inst.rs1)});
+    R->SetFP(Inst.rd, static_cast<float>(R->GetFP<double>(Inst.rs1)));
     R->AdvancePC(Inst);
     return true;
   }
 
   static bool fcvtds(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
-    R->SetFP(Inst.rd, static_cast<float>(R->GetFP<double>(Inst.rs1)));
+    R->SetFP(Inst.rd, static_cast<double>(R->GetFP<float>(Inst.rs1)));
     R->AdvancePC(Inst);
     return true;
   }
@@ -169,7 +163,7 @@ class RV32D : public RevExt{
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fsgnjn.d %rd, %rs1, %rs2"      ).SetOpcode( 0b1010011).SetFunct3(0b001 ).SetFunct2or7(0b0010001        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegFLOAT).Setrs3Class(  RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fsgnjnd ).InstEntry},
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fsgnjx.d %rd, %rs1, %rs2"      ).SetOpcode( 0b1010011).SetFunct3(0b010 ).SetFunct2or7(0b0010001        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegFLOAT).Setrs3Class(  RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fsgnjxd ).InstEntry},
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.s.d %rd, %rs1"            ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct2or7(0b0100000        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetfpcvtOp(0b01).SetImplFunc(&fcvtsd ).InstEntry},
-    {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.d.s %rd, %rs1"            ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct2or7(0b0100001        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetfpcvtOp(0b00).SetImplFunc(&fcvtsd ).InstEntry},
+    {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fcvt.d.s %rd, %rs1"            ).SetOpcode( 0b1010011).SetFunct3(0b0   ).SetFunct2or7(0b0100001        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetfpcvtOp(0b00).SetImplFunc(&fcvtds ).InstEntry},
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("feq.d %rd, %rs1, %rs2"         ).SetOpcode( 0b1010011).SetFunct3(0b010 ).SetFunct2or7(0b1010001        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegFLOAT).Setrs3Class(  RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&feqd ).InstEntry},
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("flt.d %rd, %rs1, %rs2"         ).SetOpcode( 0b1010011).SetFunct3(0b001 ).SetFunct2or7(0b1010001        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegFLOAT).Setrs3Class(  RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fltd ).InstEntry},
     {RevInstEntryBuilder<Rev32DInstDefaults>().SetMnemonic("fle.d %rd, %rs1, %rs2"         ).SetOpcode( 0b1010011).SetFunct3(0b000 ).SetFunct2or7(0b1010001        ).SetrdClass(RevRegClass::RegFLOAT      ).Setrs1Class(RevRegClass::RegFLOAT).Setrs2Class(RevRegClass::RegFLOAT).Setrs3Class(  RevRegClass::RegUNKNOWN).SetFormat(RVTypeR).SetImplFunc(&fled ).InstEntry},
