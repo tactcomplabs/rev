@@ -18,19 +18,22 @@
 #include <limits>
 
 namespace SST::RevCPU{
+#define CBO_INVAL_IMM 0b000000000000
+#define CBO_FLUSH_IMM 0b000000000001
+#define CBO_CLEAN_IMM 0b000000000010
 class Zicbom : public RevExt{
 
   static bool cmo(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     switch(Inst.imm){
-    case 0b000000000000:
+    case CBO_INVAL_IMM:
       // CBO.INVAL
       M->InvLine(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1));
       break;
-    case 0b000000000001:
+    case CBO_FLUSH_IMM:
       // CBO.FLUSH
       M->FlushLine(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1));
       break;
-    case 0b000000000010:
+    case CBO_CLEAN_IMM:
       // CBO.CLEAN
       M->CleanLine(F->GetHartToExecID(), R->GetX<uint64_t>(Inst.rs1));
       break;

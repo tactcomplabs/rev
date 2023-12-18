@@ -1,7 +1,7 @@
 /*
- * ex2.c
+ * zicbom.c
  *
- * RISC-V ISA: RV64I
+ * RISC-V ISA: RV64I_Zicbom
  *
  * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
  * All Rights Reserved
