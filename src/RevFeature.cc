@@ -74,6 +74,7 @@ bool RevFeature::ParseMachineModel(){
     { "Zam",        RV_ZAM | RV_A                                             },
     { "Ztso",       RV_ZTSO                                                   },
     { "Zfa",        RV_ZFA | RV_F | RV_ZICSR                                  },
+    { "Zicbom",     RV_ZICBOM                                                 },
   };
 
   // -- step 2: parse all the features

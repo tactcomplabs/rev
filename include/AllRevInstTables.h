@@ -30,5 +30,6 @@
 #include "insns/RV32D.h"
 #include "insns/RV64D.h"
 #include "insns/RV64P.h"
+#include "insns/Zicbom.h"
 
 #endif
