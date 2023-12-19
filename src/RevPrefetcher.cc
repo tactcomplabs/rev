@@ -75,7 +75,6 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
 }
 
 void RevPrefetcher::MarkInstructionLoadComplete(MemReq& req){
-  int i = 0;
   auto it = OutstandingFetchQ.begin();
   while(!OutstandingFetchQ.empty() && (it != OutstandingFetchQ.end())){
     if(it->Addr == req.Addr){
