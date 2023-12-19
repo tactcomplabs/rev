@@ -39,7 +39,8 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
                                                                       1);
   }
 
-  iFace->setNotifyOnReceive(new SST::Interfaces::SimpleNetwork::Handler<RevNIC>(this, &RevNIC::msgNotify));
+  iFace->setNotifyOnReceive(
+    new SST::Interfaces::SimpleNetwork::Handler<RevNIC>(this, &RevNIC::msgNotify));
 
   initBroadcastSent = false;
 
@@ -68,13 +69,15 @@ void RevNIC::init(unsigned int phase){
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
       req->src = iFace->getEndpointID();
       req->givePayload(ev);
-      iFace->sendInitData(req);
+      iFace->sendUntimedData(req);
     }
   }
 
-  while( SST::Interfaces::SimpleNetwork::Request * req = iFace->recvInitData() ) {
+  while( SST::Interfaces::SimpleNetwork::Request * req =
+         iFace->recvUntimedData() ) {
     nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
     numDest++;
+    hostMap[ev->getSource()] = req->src;
     output->verbose(CALL_INFO, 1, 0,
                     "%s received init message from %s\n",
                     getName().c_str(), ev->getSource().c_str());
@@ -91,19 +94,61 @@ void RevNIC::setup(){
 
 bool RevNIC::msgNotify(int vn){
   SST::Interfaces::SimpleNetwork::Request* req = iFace->recv(0);
-  if( req != nullptr ){
-    if( req != nullptr ){
-      nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
-      delete req;
-      (*msgHandler)(ev);
-    }
+  if( req == nullptr ){
+    return false;
   }
+
+  nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
+  (*msgHandler)(ev);
+
   return true;
 }
 
 void RevNIC::send(nicEvent* event, int destination){
-  SST::Interfaces::SimpleNetwork::Request *req = new SST::Interfaces::SimpleNetwork::Request();
+
+  // check to make sure the destination is valid
+  bool found = false;
+  for( auto i : hostMap ){
+    if( i.second == destination ){
+      found = true;
+    }
+  }
+
+  if( !found ){
+    output->fatal(CALL_INFO, -1,
+                  "%s, Error: RevNIC: unknown destination %d\n",
+                  getName().c_str(), destination);
+  }
+
+  event->setSource(getName());
+  SST::Interfaces::SimpleNetwork::Request *req =
+    new SST::Interfaces::SimpleNetwork::Request();
   req->dest = destination;
+  req->src = iFace->getEndpointID();
+  req->givePayload(event);
+  sendQ.push(req);
+}
+
+void RevNIC::send(nicEvent *event, std::string destination){
+
+  bool found = false;
+  auto realDest = 0;
+  for( auto i : hostMap ){
+    if( i.first == destination ){
+      realDest = i.second;
+      found = true;
+    }
+  }
+
+  if( !found ){
+    output->fatal(CALL_INFO, -1,
+                  "%s, Error: RevNIC: unknown destination %s\n",
+                  getName().c_str(), destination.c_str());
+  }
+
+  SST::Interfaces::SimpleNetwork::Request *req =
+    new SST::Interfaces::SimpleNetwork::Request();
+  req->dest = realDest;
   req->src = iFace->getEndpointID();
   req->givePayload(event);
   sendQ.push(req);

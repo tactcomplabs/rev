@@ -39,6 +39,9 @@ public:
   /// nicEvent: retrieve the source name
   std::string getSource() { return SrcName; }
 
+  /// nicEvent: set the source name
+  void setSource( std::string Src ){ SrcName = Src; }
+
   // nicEvent: retrieve the data payload
   std::vector<uint8_t> getData() { return Data; }
 
@@ -92,6 +95,9 @@ public:
 
   /// nicEvent: send a message on the network
   virtual void send(nicEvent *ev, int dest) = 0;
+
+  /// nicEvent: send a message on the network
+  virtual void send(nicEvent *ev, std::string dest) = 0;
 
   /// nicEvent: retrieve the number of potential destinations
   virtual int getNumDestinations() = 0;
@@ -151,6 +157,9 @@ public:
   /// RevNIC: send event to the destination id
   virtual void send(nicEvent *ev, int dest);
 
+  /// RevNIC: send event to the destination id
+  virtual void send(nicEvent *ev, std::string dest);
+
   /// RevNIC: retrieve the number of destinations
   virtual int getNumDestinations();
 
@@ -175,6 +184,8 @@ protected:
   int numDest;                            ///< RevNIC: number of SST destinations
 
   std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ; ///< RevNIC: buffered send queue
+
+  std::map<std::string,SST::Interfaces::SimpleNetwork::nid_t> hostMap;  ///< RevNIC: host map
 
 }; // end RevNIC
 
