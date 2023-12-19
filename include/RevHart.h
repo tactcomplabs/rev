@@ -26,7 +26,7 @@ class RevHart{
   EcallState Ecall{};
 
   ///< RevHart: Pointer to the Proc's LSQueue
-  const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& LSQueue;
+  const std::shared_ptr<std::multimap<uint64_t, MemReq>>& LSQueue;
 
   ///< RevHart: Pointer to the Proc's MarkLoadCompleteFunc
   std::function<void(const MemReq&)> MarkLoadCompleteFunc;
@@ -40,7 +40,7 @@ class RevHart{
 
 public:
   ///< RevHart: Constructor
-  RevHart(unsigned ID, const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& LSQueue,
+  RevHart(unsigned ID, const std::shared_ptr<std::multimap<uint64_t, MemReq>>& LSQueue,
           std::function<void(const MemReq&)> MarkLoadCompleteFunc)
     : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)) {}
 

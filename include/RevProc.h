@@ -26,13 +26,14 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <queue>
 #include <string>
 #include <sys/xattr.h>
 #include <time.h>
 #include <tuple>
-#include <unordered_map>
+#include <map>
 #include <utility>
 #include <vector>
 
@@ -169,7 +170,7 @@ public:
   void MarkLoadComplete(const MemReq& req);
 
   ///< RevProc: Get pointer to Load / Store queue used to track memory operations
-  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> GetLSQueue() const { return LSQueue; }
+  std::shared_ptr<std::multimap<uint64_t, MemReq>> GetLSQueue() const { return LSQueue; }
 
   ///< RevProc: Add a co-processor to the RevProc
   void SetCoProc(RevCoProc* coproc);
@@ -268,7 +269,7 @@ private:
   RevProcStats StatsTotal{};             ///< RevProc: collection of total performance stats
   std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher
 
-  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
+  std::shared_ptr<std::multimap<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
   TimeConverter* timeConverter;          ///< RevProc: Time converter for RTC
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecodeID RegFile
