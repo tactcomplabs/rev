@@ -63,13 +63,19 @@ void RevNIC::init(unsigned int phase){
   if( iFace->isNetworkInitialized() ){
     if( !initBroadcastSent) {
       initBroadcastSent = true;
-      nicEvent *ev = new nicEvent(getName());
+      std::vector<uint64_t> sendP;
+      sendP.push_back(ID);
+      sendP.push_back((uint64_t)(iFace->getEndpointID()));
+      nicEvent *ev = new nicEvent(sendP);
 
       SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
       req->src = iFace->getEndpointID();
       req->givePayload(ev);
       iFace->sendUntimedData(req);
+
+      // add myself
+      hostMap[ID] = iFace->getEndpointID();
     }
   }
 
@@ -77,10 +83,26 @@ void RevNIC::init(unsigned int phase){
          iFace->recvUntimedData() ) {
     nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
     numDest++;
-    hostMap[ev->getSource()] = req->src;
+    std::vector<uint64_t> recvP = ev->getData();
+    hostMap[recvP[0]] = req->src;
     output->verbose(CALL_INFO, 1, 0,
-                    "%s received init message from %s\n",
-                    getName().c_str(), ev->getSource().c_str());
+                    "%s received init message from logical ID=%" PRIu64 "\n",
+                    getName().c_str(), recvP[0]);
+  }
+
+  if( phase == 4 ){
+    output->verbose(CALL_INFO, 9, 0,
+                  "------------------------------------------------------\n");
+    output->verbose(CALL_INFO, 9, 0, "REVNIC NETWORK MAPPING\n");
+    output->verbose(CALL_INFO, 9, 0,
+                  "------------------------------------------------------\n");
+    for( auto const & [key, val] : hostMap ){
+      output->verbose(CALL_INFO, 9, 0,
+                      "Endpoint Logical ID=%" PRIu64 " == Physical ID=%" PRIu64 "\n",
+                      key, (uint64_t)(val));
+    }
+    output->verbose(CALL_INFO, 9, 0,
+                  "------------------------------------------------------\n");
   }
 }
 
@@ -104,57 +126,33 @@ bool RevNIC::msgNotify(int vn){
   return true;
 }
 
-void RevNIC::send(nicEvent* event, int destination){
+void RevNIC::send(nicEvent* event, uint64_t destination){
 
   // check to make sure the destination is valid
   bool found = false;
+  auto destID = 0;
   for( auto i : hostMap ){
-    if( i.second == destination ){
+    if( i.first == destination ){
+      destID = i.second;
       found = true;
     }
   }
 
   if( !found ){
     output->fatal(CALL_INFO, -1,
-                  "%s, Error: RevNIC: unknown destination %d\n",
+                  "%s, Error: RevNIC: unknown logical destination %" PRIu64 "\n",
                   getName().c_str(), destination);
   }
 
-  event->setSource(getName());
   SST::Interfaces::SimpleNetwork::Request *req =
     new SST::Interfaces::SimpleNetwork::Request();
-  req->dest = destination;
+  req->dest = destID;
   req->src = iFace->getEndpointID();
   req->givePayload(event);
   sendQ.push(req);
 }
 
-void RevNIC::send(nicEvent *event, std::string destination){
-
-  bool found = false;
-  auto realDest = 0;
-  for( auto i : hostMap ){
-    if( i.first == destination ){
-      realDest = i.second;
-      found = true;
-    }
-  }
-
-  if( !found ){
-    output->fatal(CALL_INFO, -1,
-                  "%s, Error: RevNIC: unknown destination %s\n",
-                  getName().c_str(), destination.c_str());
-  }
-
-  SST::Interfaces::SimpleNetwork::Request *req =
-    new SST::Interfaces::SimpleNetwork::Request();
-  req->dest = realDest;
-  req->src = iFace->getEndpointID();
-  req->givePayload(event);
-  sendQ.push(req);
-}
-
-int RevNIC::getNumDestinations(){
+uint64_t RevNIC::getNumDestinations(){
   return numDest;
 }
 
@@ -164,7 +162,9 @@ SST::Interfaces::SimpleNetwork::nid_t RevNIC::getAddress(){
 
 bool RevNIC::clockTick(Cycle_t cycle){
   while( !sendQ.empty() ){
-    if( iFace->spaceToSend(0, 512) && iFace->send(sendQ.front(), 0)) {
+    nicEvent *ev = static_cast<nicEvent *>(sendQ.front()->inspectPayload());
+    auto P = ev->getData();
+    if( iFace->spaceToSend(0, P.size()*64) && iFace->send(sendQ.front(), 0)) {
       sendQ.pop();
     }else{
       break;

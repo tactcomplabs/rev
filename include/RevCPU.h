@@ -112,6 +112,7 @@ public:
     {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
     {"independentCoprocClock",  "Enables each coprocessor to register its own clock handler", "0"},
+    {"networkID",       "Logical network ID for RevNIC",                "0"},
     )
 
   // -------------------------------------------------------

@@ -115,6 +115,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
     Nic = loadUserSubComponent<nicAPI>("nic");
 
+    uint64_t LogicalID = params.find<uint64_t>("networkID", 0);
+    Nic->setID(LogicalID);
+
     // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
     if(!Nic)
       output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
