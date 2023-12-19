@@ -41,7 +41,7 @@ RevProc::RevProc( unsigned Id,
   Opts->GetMemCost(Id, MinCost, MaxCost);
 
 
-  LSQueue = std::make_shared<std::multimap<uint64_t, MemReq>>();
+  LSQueue = std::make_shared<std::unordered_multimap<uint64_t, MemReq>>();
   LSQueue->clear();
 
   // Create the Hart Objects

@@ -29,7 +29,7 @@ class RevPrefetcher{
 public:
   /// RevPrefetcher: constructor
   RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth,
-                std::shared_ptr<std::multimap<uint64_t, MemReq>> lsq,
+                std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> lsq,
                 std::function<void(const MemReq&)> func)
     : mem(Mem), feature(Feature), depth(Depth), LSQueue(lsq), MarkLoadAsComplete(func), OutstandingFetchQ(){}
 
@@ -51,7 +51,7 @@ private:
   unsigned depth;                             ///< Depth of each prefetcher stream
   std::vector<uint64_t> baseAddr;             ///< Vector of base addresses for each stream
   std::vector<std::vector<uint32_t>> iStack; ///< Vector of instruction vectors
-  std::shared_ptr<std::multimap<uint64_t, MemReq>> LSQueue;
+  std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> LSQueue;
   std::function<void(const MemReq&)> MarkLoadAsComplete;
   std::vector<MemReq> OutstandingFetchQ;
 
