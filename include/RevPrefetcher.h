@@ -31,7 +31,7 @@ public:
   RevPrefetcher(RevMem *Mem, RevFeature *Feature, unsigned Depth,
                 std::shared_ptr<std::multimap<uint64_t, MemReq>> lsq,
                 std::function<void(const MemReq&)> func)
-    : mem(Mem), feature(Feature), depth(Depth), LSQueue(lsq), MarkLoadAsComplete(func){}
+    : mem(Mem), feature(Feature), depth(Depth), LSQueue(lsq), MarkLoadAsComplete(func), OutstandingFetchQ(){}
 
   /// RevPrefetcher: destructor
   ~RevPrefetcher() = default;
@@ -42,6 +42,9 @@ public:
   /// RevPrefetcher: determines in the target instruction is already cached in a stream
   bool IsAvail(uint64_t Addr);
 
+  /// RevPrefetcher: Mark Instruction fill as complete
+  void MarkInstructionLoadComplete(MemReq& req);
+
 private:
   RevMem *mem;                                ///< RevMem object
   RevFeature *feature;                        ///< RevFeature object
@@ -50,6 +53,7 @@ private:
   std::vector<std::vector<uint32_t>> iStack; ///< Vector of instruction vectors
   std::shared_ptr<std::multimap<uint64_t, MemReq>> LSQueue;
   std::function<void(const MemReq&)> MarkLoadAsComplete;
+  std::vector<MemReq> OutstandingFetchQ;
 
   /// fills a missed stream cache instruction
   void Fill(uint64_t Addr);

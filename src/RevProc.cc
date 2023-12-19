@@ -1646,6 +1646,8 @@ void RevProc::MarkLoadComplete(const MemReq& req){
           if(LSQueue->count(req.LSQHash()) == 1){   // Only clear the dependency if this is the LAST outstanding load for this register
             DependencyClear(i->second.Hart, i->second.DestReg, (i->second.RegType == RevRegClass::RegFLOAT));
           }
+          MemReq temp = req;
+          sfetch->MarkInstructionLoadComplete(temp);
           LSQueue->erase(i);                        // Remove this load from the queue
           addrMatch = true;                         // Flag that there was a succesful match (if left false an error condition occurs)
           break;
