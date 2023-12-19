@@ -43,7 +43,7 @@ public:
   bool IsAvail(uint64_t Addr);
 
   /// RevPrefetcher: Mark Instruction fill as complete
-  void MarkInstructionLoadComplete(MemReq& req);
+  void MarkInstructionLoadComplete(const MemReq& req);
 
 private:
   RevMem *mem;                                ///< RevMem object
