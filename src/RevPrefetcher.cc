@@ -78,13 +78,11 @@ void RevPrefetcher::MarkInstructionLoadComplete(const MemReq& req){
   auto it = OutstandingFetchQ.begin();
   while((it != OutstandingFetchQ.end())){
     if(it->Addr == req.Addr){
-      auto itToErase = it;
-      it++;
-      OutstandingFetchQ.erase(itToErase);
+      OutstandingFetchQ.erase(it++);
       break;
-    }else{
-      it++;
     }
+    it++;
+    
   }
 }
 
