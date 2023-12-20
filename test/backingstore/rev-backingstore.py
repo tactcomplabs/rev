@@ -5,7 +5,7 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-# rev-test-cache2.py
+# rev-backingstore.py
 #
 
 import os
