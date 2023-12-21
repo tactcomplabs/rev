@@ -92,7 +92,7 @@ private:
 
   FCSR fcsr{}; ///< RevRegFile: FCSR
 
-  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue{};
+  std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> LSQueue{};
   std::function<void(const MemReq&)> MarkLoadCompleteFunc{};
 
   union{  // Anonymous union. We zero-initialize the largest member
@@ -169,7 +169,7 @@ public:
   const auto& GetLSQueue() const { return LSQueue; }
 
   /// Set the Load/Store Queue
-  void SetLSQueue(std::shared_ptr<std::unordered_map<uint64_t, MemReq>> lsq){
+  void SetLSQueue(std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> lsq){
     LSQueue = std::move(lsq);
   }
 

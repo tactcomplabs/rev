@@ -126,7 +126,6 @@ struct MemReq{
     return std::make_pair( LSQHash(), *this );
   }
 
-private:
   uint64_t    Addr          = _INVALID_ADDR_;
   uint16_t    DestReg       = 0;
   RevRegClass RegType       = RevRegClass::RegUNKNOWN;
@@ -136,9 +135,6 @@ private:
 
   std::function<void(const MemReq&)> MarkLoadCompleteFunc = nullptr;
 
-  friend class RevTracer;
-  friend class RevMem;
-  friend class RevProc;
 };//struct MemReq
 
 // Enum for tracking the state of a RevThread.

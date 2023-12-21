@@ -41,7 +41,7 @@ RevProc::RevProc( unsigned Id,
   Opts->GetMemCost(Id, MinCost, MaxCost);
 
 
-  LSQueue = std::make_shared<std::unordered_map<uint64_t, MemReq>>();
+  LSQueue = std::make_shared<std::unordered_multimap<uint64_t, MemReq>>();
   LSQueue->clear();
 
   // Create the Hart Objects
@@ -1638,14 +1638,30 @@ unsigned RevProc::GetNextHartToDecodeID() const {
 
 void RevProc::MarkLoadComplete(const MemReq& req){
 
-  auto it = LSQueue->find(req.LSQHash());
-  if( it != LSQueue->end()){
-    DependencyClear(it->second.Hart, it->second.DestReg, (it->second.RegType == RevRegClass::RegFLOAT));
-    LSQueue->erase(it);
+  auto it = LSQueue->equal_range(req.LSQHash());      // Find all outstanding dependencies for this register
+  bool addrMatch = false;
+  if( it.first != LSQueue->end()){                  
+    for (auto i = it.first; i != it.second; ++i){    // Iterate over all outstanding loads for this reg (if any)
+        if(i->second.Addr == req.Addr){
+          if(LSQueue->count(req.LSQHash()) == 1){   // Only clear the dependency if this is the LAST outstanding load for this register
+            DependencyClear(i->second.Hart, i->second.DestReg, (i->second.RegType == RevRegClass::RegFLOAT));
+          }
+          sfetch->MarkInstructionLoadComplete(req);
+          LSQueue->erase(i);                        // Remove this load from the queue
+          addrMatch = true;                         // Flag that there was a succesful match (if left false an error condition occurs)
+          break;
+        }
+    }
   }else if(0 != req.DestReg){ //instruction pre-fetch fills target x0, we can ignore these
     output->fatal(CALL_INFO, -1,
                   "Core %" PRIu32 "; Hart %" PRIu32 "; Cannot find outstanding load for reg %" PRIu32 " from address %" PRIx64 "\n",
                   id, req.Hart, req.DestReg, req.Addr);
+  }
+  if(!addrMatch){
+    output->fatal(CALL_INFO, -1,
+                  "Core %" PRIu32 "; Hart %" PRIu32 "; Cannot find matching address for outstanding load for reg %" PRIu32 " from address %" PRIx64 "\n",
+                  id, req.Hart, req.DestReg, req.Addr);
+
   }
 }
 
