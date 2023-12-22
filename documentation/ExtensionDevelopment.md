@@ -363,7 +363,7 @@ There are several helper functions to make generating instruction implementation
 /// FP values outside the range of the target integer type are clipped
 /// at the integer type's numerical limits, whether signed or unsigned.
 template<typename FP, typename INT>
-bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// fclass: Return FP classification like the RISC-V fclass instruction
@@ -377,27 +377,27 @@ unsigned fclass(T val, bool quietNaN = true);
 ```c++
 /// Load template
 template<typename T>
-bool load(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool load(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// Store template
 template<typename T>
-bool store(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool store(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// Floating-point load template
 template<typename T>
-bool fload(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool fload(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// Floating-point store template
 template<typename T>
-bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool fstore(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// Floating-point operation template
 template<typename T, template<class> class OP>
-bool foper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool foper(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// Floating-point minimum functor
@@ -412,7 +412,7 @@ struct FMax;
 ```
 /// Floating-point conditional operation template
 template<typename T, template<class> class OP>
-bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// Arithmetic operator template
@@ -422,7 +422,7 @@ bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
 // The optional fourth parameter indicates W mode (32-bit on XLEN == 64)
 template<template<class> class OP, OpKind KIND,
          template<class> class SIGN = std::make_signed_t, bool W_MODE = false>
-bool oper(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool oper(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 ```c++
 /// Left shift functor
@@ -443,7 +443,7 @@ enum class DivRem { Div, Rem };
 // The second parameter is std::make_signed_t or std::make_unsigned_t
 // The optional third parameter indicates W mode (32-bit on XLEN == 64)
 template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
-bool divrem(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst);
+bool divrem(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 ```
 
 Many instructions can be implemented as references to template functions,
@@ -482,7 +482,7 @@ can then be used just like the names of ordinary functions.
 ### Implementing the instruction
 
 ```c++
-static bool zadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+static bool zadd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   if( F->IsRV32() ){
     R->SetX(Inst.rd, R->GetX<uint32_t>(Inst.rs1) + R->GetX<uint32_t>(Inst.rs2));
   }else{
@@ -493,7 +493,7 @@ static bool zadd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
 }
 ```
 ```c++
-static bool zsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+static bool zsub(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   if( F->IsRV32() ){
     R->SetX(Inst.rd, R->GetX<uint32_t>(Inst.rs1) - R->GetX<uint32_t>(Inst.rs2));
   }else{
@@ -503,7 +503,7 @@ static bool zsub(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   return true;
 }
 
-static bool zlb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+static bool zlb(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   if( F->IsRV32() ){
     M->ReadVal(F->GetHart(),
                R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
@@ -525,7 +525,7 @@ static bool zlb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
   return true;
 }
 
-static bool zsb(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+static bool zsb(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   M->Write(F->GetHart(),
            R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12),
            R->GetX<uint8_t>(Inst.rs2));
@@ -541,7 +541,7 @@ Or, with the helper functions:
   static constexpr auto& zsb  = store<int8_t>;
 ```
 
-As we can see from the source code above, each function must be formatted as: `static bool FUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst)`.  All instructions carry the same arguments.  The first thing to note is the ability to use the `RevFeature` object to query the device architecture.  The Rev model stores register state in different logical storage for RV32 and RV64.  As a result, if your extension supports both variations of *XLEN*, then its often useful to query the loaded features to see which register file to manipulate, but the `R->GetX<T>(reg)` and `R->SetX(reg, value) functions can automate this.
+As we can see from the source code above, each function must be formatted as: `static bool FUNC(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst)`.  All instructions carry the same arguments.  The first thing to note is the ability to use the `RevFeature` object to query the device architecture.  The Rev model stores register state in different logical storage for RV32 and RV64.  As a result, if your extension supports both variations of *XLEN*, then its often useful to query the loaded features to see which register file to manipulate, but the `R->GetX<T>(reg)` and `R->SetX(reg, value) functions can automate this.
 
 The second and third arguments represent the register file object and the memory object, respectively.  These objects permit the user to access internal register state and read/write memory.  Finally, the `RevInst` structure contains all the decoded state from the instruction.  This includes all the opcode and function codes as well as each of the encoded register values.  This structure also contains the floating point rounding mode information.  For more information on the exacting contents and their respective data types, see the `RevInstTable.h` header file.  
 

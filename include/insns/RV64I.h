@@ -20,7 +20,9 @@ namespace SST::RevCPU{
 class RV64I : public RevExt{
 
   // Compressed instructions
-  static bool cldsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool cldsp(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
+    RevInst Inst = CInst;
+
     // c.ldsp rd, $imm = lw rd, x2, $imm
     // Inst.rs1  = 2;  //Removed - set in decode
     //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
@@ -29,7 +31,9 @@ class RV64I : public RevExt{
     return ld(F, R, M, Inst);
   }
 
-  static bool csdsp(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool csdsp(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
+    RevInst Inst = CInst;
+
     // c.swsp rs2, $imm = sw rs2, x2, $imm
     // Inst.rs1  = 2; //Removed - set in decode
     //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
@@ -38,7 +42,9 @@ class RV64I : public RevExt{
     return sd(F, R, M, Inst);
   }
 
-  static bool cld(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool cld(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
+    RevInst Inst = CInst;
+
     // c.ld %rd, %rs1, $imm = ld %rd, %rs1, $imm
     //Inst.rd  = CRegIdx(Inst.rd);  //Removed - scaled in decode
     //Inst.rs1 = CRegIdx(Inst.rs1); //Removed - scaled in decode
@@ -47,7 +53,9 @@ class RV64I : public RevExt{
     return ld(F, R, M, Inst);
   }
 
-  static bool csd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool csd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
+    RevInst Inst = CInst;
+
     // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
     //Inst.rs2 = CRegIdx(Inst.rs2);  //Removed - scaled in decode
     //Inst.rs1 = CRegIdx(Inst.rs1); // Removed  - scaled in decode
@@ -55,7 +63,9 @@ class RV64I : public RevExt{
     return sd(F, R, M, Inst);
   }
 
-  static bool caddiw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool caddiw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
+    RevInst Inst = CInst;
+
     // c.addiw %rd, $imm = addiw %rd, %rd, $imm
     // Inst.rs1 = Inst.rd; //Removed - set in decode
     // uint64_t tmp = Inst.imm & 0b111111;
@@ -64,7 +74,9 @@ class RV64I : public RevExt{
     return addiw(F, R, M, Inst);
   }
 
-  static bool caddw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool caddw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
+    RevInst Inst = CInst;
+
     // c.addw %rd, %rs2 = addw %rd, %rd, %rs2
     //Inst.rd  = CRegIdx(Inst.rd);  //Removed - set in decode
     //Inst.rs1 = Inst.rd;  //Removed - set in decode
@@ -72,7 +84,9 @@ class RV64I : public RevExt{
     return addw(F, R, M, Inst);
   }
 
-  static bool csubw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool csubw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
+    RevInst Inst = CInst;
+
     // c.subw %rd, %rs2 = subw %rd, %rd, %rs2
     //Inst.rd  = CRegIdx(Inst.rd);  //Removed - set in decode
     //Inst.rs1 = Inst.rd;  //Removed - set in decode
