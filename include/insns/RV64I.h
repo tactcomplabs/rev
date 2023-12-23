@@ -37,25 +37,12 @@ class RV64I : public RevExt{
   static constexpr auto& sraw  = oper<ShiftRight, OpKind::Reg, std::make_signed_t,   true>;
 
   // Compressed instructions
-  // c.ldsp %rd, $imm = ld %rd, x2, $imm
   static constexpr auto& cldsp = ld;
-
-  // c.sdsp %rs2, $imm = sd %rs2, x2, $imm
   static constexpr auto& csdsp = sd;
-
-  // c.ld %rd, %rs1, $imm = ld %rd, %rs1, $$imm
-  static constexpr auto& cld = ld;
-
-  // c.sd %rs2, %rs1, $imm = sd %rs2, $imm(%rs1)
-  static constexpr auto& csd = sd;
-
-  // c.addiw %rd, $imm = addiw %rd, %rd, $imm
-  static constexpr auto& caddiw = addiw;
-
-  // c.addw %rd, %rs2 = addw %rd, %rd, %rs2
+  static constexpr auto& cld   = ld;
+  static constexpr auto& csd   = sd;
+  static constexpr auto& caddiw= addiw;
   static constexpr auto& caddw = addw;
-
-  // c.subw %rd, %rs2 = subw %rd, %rd, %rs2
   static constexpr auto& csubw = subw;
 
   // ----------------------------------------------------------------------

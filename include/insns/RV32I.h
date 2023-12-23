@@ -151,24 +151,6 @@ class RV32I : public RevExt {
     return (Inst.imm == 0 ? nop : addi)(F, R, M, Inst);
   }
 
-  // c.lwsp %rd, $imm = lw %rd, x2, $imm
-  static constexpr auto& clwsp = lw;
-
-  // c.swsp %rs2, $imm = sw %rs2, x2, $imm
-  static constexpr auto& cswsp = sw;
-
-  // c.lw %rd, %rs1, $imm = lw %rd, $imm(%rs1)
-  static constexpr auto& clw = lw;
-
-  // c.sw %rs2, %rs1, $imm = sw %rs2, $imm(%rs1)
-  static constexpr auto& csw = sw;
-
-  // c.j $imm = jal x0, $imm
-  static constexpr auto& cj = jal;
-
-  // c.jal $imm = jal x1, $imm
-  static constexpr auto& cjal = jal;
-
   // c.mv and c.jr. If c.mv %rd == x0 it is a HINT instruction and is effectively a NOP
   static bool CRFUNC_1000(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
     return (Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add : jalr)(F, R, M, Inst);
@@ -179,46 +161,29 @@ class RV32I : public RevExt {
     return (Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add : Inst.rs1 != 0 ? jalr : ebreak)(F, R, M, Inst);
   }
 
-  // c.beqz %rs1, $imm = beq %rs1, x0, $imm
-  static constexpr auto& cbeqz = beq;
-
-  // c.bnez %rs1, $imm = bne %rs1, x0, $imm
-  static constexpr auto& cbnez = bne;
-
-  // c.li %rd, $imm = addi %rd, x0, $imm
-  static constexpr auto& cli = addi;
-
   // c.addi16sp and c.lui
   static bool CIFUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
     return (Inst.rd == 2 ? addi : lui)(F, R, M, Inst);
   }
 
-  // c.addi %rd, $imm = addi %rd, %rd, $imm
+  static constexpr auto& clwsp = lw;
+  static constexpr auto& cswsp = sw;
+  static constexpr auto& clw   = lw;
+  static constexpr auto& csw   = sw;
+  static constexpr auto& cj    = jal;
+  static constexpr auto& cjal  = jal;
+  static constexpr auto& cbeqz = beq;
+  static constexpr auto& cbnez = bne;
+  static constexpr auto& cli   = addi;
   static constexpr auto& caddi = addi;
-
-  // c.slli %rd, $imm = slli %rd, %rd, $imm
   static constexpr auto& cslli = slli;
-
-    // c.srli %rd, $imm = srli %rd, %rd, $imm
   static constexpr auto& csrli = srli;
-
-  // c.srai %rd, $imm = srai %rd, %rd, $imm
   static constexpr auto& csrai = srai;
-
-  // c.andi %rd, $imm = sandi %rd, %rd, $imm
   static constexpr auto& candi = andi;
-
-  // c.and %rd, %rs2 = and %rd, %rd, %rs2
-  static constexpr auto& cand = f_and;
-
-  // c.or %rd, %rs2 = or %rd, %rd, %rs2
-  static constexpr auto& cor = f_or;
-
-  // c.xor %rd, %rs2 = xor %rd, %rd, %rs2
-  static constexpr auto& cxor = f_xor;
-
-  // c.sub %rd, %rs2 = sub %rd, %rd, %rs2
-  static constexpr auto& csub = sub;
+  static constexpr auto& cand  = f_and;
+  static constexpr auto& cor   = f_or;
+  static constexpr auto& cxor  = f_xor;
+  static constexpr auto& csub  = sub;
 
   // ----------------------------------------------------------------------
   //
