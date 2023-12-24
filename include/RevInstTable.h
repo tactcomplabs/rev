@@ -128,31 +128,8 @@ struct RevInst {
   }
 }; // RevInst
 
-#if 0
-
-/// CRegMap: Holds the compressed index to normal index mapping
-// TODO: Replace with macro below if mappings are trivial
-inline const std::map<uint8_t, uint8_t> CRegMap =
-{
-  {0b000,  8},
-  {0b001,  9},
-  {0b010, 10},
-  {0b011, 11},
-  {0b100, 12},
-  {0b101, 13},
-  {0b110, 14},
-  {0b111, 15},
-};
-
-/// CRegIdx: Maps the compressed index to normal index
-#define CRegIdx(x) (CRegMap.at(x))
-
-#else
-
 /// CRegIdx: Maps the compressed index to normal index
 #define CRegIdx(x) ((x) + 8)
-
-#endif
 
 struct RevInstDefaults {
   static constexpr uint8_t     opcode      = 0b00000000;
