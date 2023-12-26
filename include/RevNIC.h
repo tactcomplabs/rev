@@ -96,6 +96,9 @@ public:
 
   /// nicEvent: returns the NIC's network address
   virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
+
+  // nicEvent: returns the number of items in the send queue
+  virtual unsigned getNumOutstanding() = 0;
 }; /// end nicAPI
 
 /**
@@ -163,6 +166,9 @@ public:
 
   /// RevNIC: clock function
   virtual bool clockTick(Cycle_t cycle);
+
+  // nicEvent: returns the number of items in the send queue
+  virtual unsigned getNumOutstanding() { return sendQ.size(); }
 
 protected:
   SST::Output *output;                    ///< RevNIC: SST output object
