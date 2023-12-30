@@ -211,7 +211,7 @@ struct RevInstEntry{
   RevInstF format;      ///< RevInstEntry: instruction format
 
   /// RevInstEntry: Instruction implementation function
-  bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst);
+  bool (*func)(RevFeature *, RevRegFile *, RevMem *, const RevInst&);
 
   bool compressed;      ///< RevInstEntry: compressed instruction
 
@@ -267,7 +267,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   auto& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
   auto& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
 
-  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, RevInst)){
+  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&)){
     InstEntry.func = func;
     return *this;
   }

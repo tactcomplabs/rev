@@ -23,7 +23,7 @@ namespace SST::RevCPU{
 #define CBO_CLEAN_IMM 0b000000000010
 class Zicbom : public RevExt{
 
-  static bool cmo(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool cmo(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     switch(Inst.imm){
     case CBO_INVAL_IMM:
       // CBO.INVAL

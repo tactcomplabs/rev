@@ -20,7 +20,7 @@ namespace SST::RevCPU{
 
 class RV64A : public RevExt {
 
-  static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete() );
     R->LSQueue->insert( req.LSQHashPair() );
     M->LR(F->GetHartToExecID(),
@@ -32,7 +32,7 @@ class RV64A : public RevExt {
     return true;
   }
 
-  static bool scd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool scd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     M->SC(F->GetHartToExecID(),
           R->RV64[Inst.rs1],
           &R->RV64[Inst.rs2],
@@ -45,7 +45,7 @@ class RV64A : public RevExt {
 
   /// Atomic Memory Operations
   template<RevFlag F_AMO>
-  static bool amooperd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool amooperd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     uint32_t flags = static_cast<uint32_t>(F_AMO);
 
     if( Inst.aq && Inst.rl ){
