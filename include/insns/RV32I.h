@@ -22,12 +22,12 @@ namespace SST::RevCPU{
 
 class RV32I : public RevExt {
   // Standard instructions
-  static bool nop(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool nop(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool lui(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool lui(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetX(Inst.rd, static_cast<int32_t>(Inst.imm << 12));
     R->AdvancePC(Inst);
     return true;
@@ -147,22 +147,22 @@ class RV32I : public RevExt {
 
   // c.addi4spn %rd, $imm == addi %rd, x2, $imm
   // if Inst.imm == 0; this is a HINT instruction and is effectively a NOP
-  static bool caddi4spn(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool caddi4spn(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     return (Inst.imm == 0 ? nop : addi)(F, R, M, Inst);
   }
 
   // c.mv and c.jr. If c.mv %rd == x0 it is a HINT instruction and is effectively a NOP
-  static bool CRFUNC_1000(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+  static bool CRFUNC_1000(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst){
     return (Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add : jalr)(F, R, M, Inst);
   }
 
   // c.add, c.jalr and c.ebreak. If c.add %rd == x0 then it is a HINT instruction
-  static bool CRFUNC_1001(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+  static bool CRFUNC_1001(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst){
     return (Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add : Inst.rs1 != 0 ? jalr : ebreak)(F, R, M, Inst);
   }
 
   // c.addi16sp and c.lui
-  static bool CIFUNC(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool CIFUNC(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     return (Inst.rd == 2 ? addi : lui)(F, R, M, Inst);
   }
 
