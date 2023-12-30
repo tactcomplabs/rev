@@ -47,44 +47,44 @@ class RV32D : public RevExt{
   static constexpr auto& fcvtwd  = CvtFpToInt<double, int32_t>;
   static constexpr auto& fcvtwud = CvtFpToInt<double, uint32_t>;
 
-  static bool fsqrtd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fsqrtd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetFP(Inst.rd, std::sqrt(R->GetFP<double>(Inst.rs1)));
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool fsgnjd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fsgnjd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetFP(Inst.rd, std::copysign(R->GetFP<double>(Inst.rs1), R->GetFP<double>(Inst.rs2)));
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool fsgnjnd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fsgnjnd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetFP(Inst.rd, std::copysign(R->GetFP<double>(Inst.rs1), -R->GetFP<double>(Inst.rs2)));
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool fsgnjxd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fsgnjxd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     double rs1 = R->GetFP<double>(Inst.rs1), rs2 = R->GetFP<double>(Inst.rs2);
     R->SetFP(Inst.rd, std::copysign(rs1, std::signbit(rs1) ? -rs2 : rs2));
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool fcvtsd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fcvtsd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetFP(Inst.rd, static_cast<float>(R->GetFP<double>(Inst.rs1)));
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool fcvtds(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fcvtds(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetFP(Inst.rd, static_cast<double>(R->GetFP<float>(Inst.rs1)));
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool fclassd(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fclassd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     double fp64 = R->GetFP<double>(Inst.rs1);
     uint64_t i64;
     memcpy(&i64, &fp64, sizeof(i64));
@@ -94,13 +94,13 @@ class RV32D : public RevExt{
     return true;
   }
 
-  static bool fcvtdw(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fcvtdw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetFP(Inst.rd, static_cast<double>(R->GetX<int32_t>(Inst.rs1)));
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool fcvtdwu(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fcvtdwu(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetFP(Inst.rd, static_cast<double>(R->GetX<uint32_t>(Inst.rs1)));
     R->AdvancePC(Inst);
     return true;

@@ -33,20 +33,20 @@ class RV32I : public RevExt {
     return true;
   }
 
-  static bool auipc(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool auipc(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     auto ui = static_cast<int32_t>(Inst.imm << 12);
     R->SetX(Inst.rd, ui + R->GetPC());
     R->AdvancePC(Inst);
     return true;
   }
 
-  static bool jal(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool jal(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetX(Inst.rd, R->GetPC() + Inst.instSize);
     R->SetPC(R->GetPC() + Inst.ImmSignExt(21));
     return true;
   }
 
-  static bool jalr(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool jalr(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     auto ret = R->GetPC() + Inst.instSize;
     R->SetPC((R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12)) & -2);
     R->SetX(Inst.rd, ret);
@@ -98,19 +98,19 @@ class RV32I : public RevExt {
   static constexpr auto& srl  = oper<ShiftRight,    OpKind::Reg, std::make_unsigned_t>;
   static constexpr auto& sra  = oper<ShiftRight,    OpKind::Reg>;
 
-  static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     M->FenceMem(F->GetHartToExecID());
     R->AdvancePC(Inst);
     return true;  // temporarily disabled
   }
 
-  static bool fencei(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst) {
+  static bool fencei(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     M->FenceMem(F->GetHartToExecID());
     R->AdvancePC(Inst);
     return true;  // temporarily disabled
   }
 
-  static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, RevInst Inst){
+  static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst){
     /*
      * In reality this should be getting/setting a LOT of bits inside the
      * CSRs however because we are only concerned with ecall right now it's
