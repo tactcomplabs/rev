@@ -25,86 +25,86 @@
 namespace SST::RevCPU{
 
 /**
- * nicEvent : inherited class to handle the individual network events for RevNIC
+ * RevPkt : inherited class to handle the individual network events for RevNIC
  */
-class nicEvent : public SST::Event{
+class RevPkt : public SST::Event{
 public:
-  /// nicEvent: extended constructor
-  nicEvent(std::vector<uint64_t> data)
+  /// RevPkt: extended constructor
+  RevPkt(std::vector<uint64_t> data)
     : Event(), Data(std::move(data)) { }
 
-  // nicEvent: retrieve the data payload
+  // RevPkt: retrieve the data payload
   std::vector<uint64_t> getData() { return Data; }
 
-  // nicEvent: set the data payload
+  // RevPkt: set the data payload
   void setData(std::vector<uint64_t> D){ Data = D; }
 
-  /// nicEvent: virtual function to clone an event
+  /// RevPkt: virtual function to clone an event
   virtual Event* clone(void) override{
-    nicEvent* ev = new nicEvent(*this);
+    RevPkt* ev = new RevPkt(*this);
     return ev;
   }
 
 private:
-  std::vector<uint64_t> Data;     ///< nicEvent: Data payload
+  std::vector<uint64_t> Data;     ///< RevPkt: Data payload
 
 public:
-  /// nicEvent: secondary constructor
-  nicEvent() : Event() {}
+  /// RevPkt: secondary constructor
+  RevPkt() : Event() {}
 
-  /// nicEvent: event serializer
+  /// RevPkt: event serializer
   void serialize_order(SST::Core::Serialization::serializer &ser) override{
     Event::serialize_order(ser);
     ser & Data;
   }
 
-  /// nicEvent: implements the NIC serialization
-  ImplementSerializable(SST::RevCPU::nicEvent);
-};  // end nicEvent
+  /// RevPkt: implements the NIC serialization
+  ImplementSerializable(SST::RevCPU::RevPkt);
+};  // end RevPkt
 
 
 /**
- * nicAPI : Handles the subcomponent NIC API
+ * RevNicAPI : Handles the subcomponent NIC API
  */
-class nicAPI: public SST::SubComponent{
+class RevNicAPI: public SST::SubComponent{
 public:
-  SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::nicAPI)
+  SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::RevNicAPI)
 
-  /// nicEvent: constructor
-  nicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
+  /// RevPkt: constructor
+  RevNicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
 
-  /// nicEvent: default destructor
-  virtual ~nicAPI() = default;
+  /// RevPkt: default destructor
+  virtual ~RevNicAPI() = default;
 
-  /// nicEvent: registers the event handler with the core
+  /// RevPkt: registers the event handler with the core
   virtual void setMsgHandler(Event::HandlerBase* handler) = 0;
 
-  /// nicEvent: initializes the network
+  /// RevPkt: initializes the network
   virtual void init(unsigned int phase) = 0;
 
-  /// nicEvent: setup the network
+  /// RevPkt: setup the network
   virtual void setup() { }
 
-  /// nicEvent: set the source logical ID
+  /// RevPkt: set the source logical ID
   virtual void setID(uint64_t ID) = 0;
 
-  /// nicEvent: send a message on the network
-  virtual void send(nicEvent *ev, uint64_t dest) = 0;
+  /// RevPkt: send a message on the network
+  virtual void send(RevPkt *ev, uint64_t dest) = 0;
 
-  /// nicEvent: retrieve the number of potential destinations
+  /// RevPkt: retrieve the number of potential destinations
   virtual uint64_t getNumDestinations() = 0;
 
-  /// nicEvent: returns the NIC's network address
+  /// RevPkt: returns the NIC's network address
   virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
 
-  // nicEvent: returns the number of items in the send queue
+  // RevPkt: returns the number of items in the send queue
   virtual unsigned getNumOutstanding() = 0;
-}; /// end nicAPI
+}; /// end RevNicAPI
 
 /**
  * RevNIC: the Rev network interface controller subcomponent
  */
-class RevNIC : public nicAPI {
+class RevNIC : public RevNicAPI {
 public:
 
   // Register with the SST Core
@@ -114,7 +114,7 @@ public:
     "RevNIC",
     SST_ELI_ELEMENT_VERSION(1, 0, 0),
     "RISC-V SST NIC",
-    SST::RevCPU::nicAPI
+    SST::RevCPU::RevNicAPI
     )
 
   // Register the parameters
@@ -126,7 +126,7 @@ public:
 
   // Register the ports
   SST_ELI_DOCUMENT_PORTS(
-    {"network", "Port to network", {"simpleNetworkExample.nicEvent"} }
+    {"network", "Port to network", {"simpleNetworkExample.RevPkt"} }
     )
 
   // Register the subcomponent slots
@@ -153,7 +153,7 @@ public:
   virtual void setID(uint64_t I){ ID = I; }
 
   /// RevNIC: send event to the destination id
-  virtual void send(nicEvent *ev, uint64_t dest);
+  virtual void send(RevPkt *ev, uint64_t dest);
 
   /// RevNIC: retrieve the number of destinations
   virtual uint64_t getNumDestinations();
@@ -167,7 +167,7 @@ public:
   /// RevNIC: clock function
   virtual bool clockTick(Cycle_t cycle);
 
-  // nicEvent: returns the number of items in the send queue
+  // RevPkt: returns the number of items in the send queue
   virtual unsigned getNumOutstanding() { return sendQ.size(); }
 
 protected:

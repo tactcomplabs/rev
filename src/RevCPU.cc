@@ -33,7 +33,7 @@ const char splash_msg[] = "\
 
 RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), EnableMemH(false),
-    DisableCoprocClock(false), Nic(nullptr), Ctrl(nullptr), ClockHandler(nullptr) {
+    DisableCoprocClock(false), NIC(nullptr), Ctrl(nullptr), ClockHandler(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
@@ -113,16 +113,17 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   if( EnableNIC ){
     // Look up the network component
 
-    Nic = loadUserSubComponent<nicAPI>("nic");
+    NIC = loadUserSubComponent<RevNicAPI>("nic");
 
     uint64_t LogicalID = params.find<uint64_t>("networkID", 0);
-    Nic->setID(LogicalID);
+    NIC->setID(LogicalID);
 
     // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
-    if(!Nic)
+    if(!NIC){
       output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
+    }
 
-    Nic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
+    NIC->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
 
     // record the number of injected messages per cycle
     msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
@@ -446,8 +447,8 @@ void RevCPU::registerStatistics(){
 
 void RevCPU::setup(){
   if( EnableNIC ){
-    Nic->setup();
-    address = Nic->getAddress();
+    NIC->setup();
+    address = NIC->getAddress();
   }
   if( EnableMemH ){
     Ctrl->setup();
@@ -459,13 +460,13 @@ void RevCPU::finish(){
 
 void RevCPU::init( unsigned int phase ){
   if( EnableNIC )
-    Nic->init(phase);
+    NIC->init(phase);
   if( EnableMemH )
     Ctrl->init(phase);
 }
 
 void RevCPU::handleMessage(Event *ev){
-  nicEvent *event = static_cast<nicEvent*>(ev);
+  RevPkt *event = static_cast<RevPkt*>(ev);
   // -- RevNIC: This is where you can unpack and handle the data payload
   delete event;
 }

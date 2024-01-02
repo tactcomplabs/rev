@@ -14,7 +14,7 @@ using namespace SST;
 using namespace RevCPU;
 
 RevNIC::RevNIC(ComponentId_t id, Params& params)
-  : nicAPI(id, params) {
+  : RevNicAPI(id, params) {
   // setup the initial logging functions
   int verbosity = params.find<int>("verbose", 0);
   output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
@@ -66,7 +66,7 @@ void RevNIC::init(unsigned int phase){
       std::vector<uint64_t> sendP;
       sendP.push_back(ID);
       sendP.push_back((uint64_t)(iFace->getEndpointID()));
-      nicEvent *ev = new nicEvent(sendP);
+      RevPkt *ev = new RevPkt(sendP);
 
       SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
@@ -81,7 +81,7 @@ void RevNIC::init(unsigned int phase){
 
   while( SST::Interfaces::SimpleNetwork::Request * req =
          iFace->recvUntimedData() ) {
-    nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
+    RevPkt *ev = static_cast<RevPkt*>(req->takePayload());
     numDest++;
     std::vector<uint64_t> recvP = ev->getData();
     hostMap[recvP[0]] = req->src;
@@ -120,13 +120,13 @@ bool RevNIC::msgNotify(int vn){
     return false;
   }
 
-  nicEvent *ev = static_cast<nicEvent*>(req->takePayload());
+  RevPkt *ev = static_cast<RevPkt*>(req->takePayload());
   (*msgHandler)(ev);
 
   return true;
 }
 
-void RevNIC::send(nicEvent* event, uint64_t destination){
+void RevNIC::send(RevPkt* event, uint64_t destination){
 
   // check to make sure the destination is valid
   bool found = false;
@@ -162,7 +162,7 @@ SST::Interfaces::SimpleNetwork::nid_t RevNIC::getAddress(){
 
 bool RevNIC::clockTick(Cycle_t cycle){
   while( !sendQ.empty() ){
-    nicEvent *ev = static_cast<nicEvent *>(sendQ.front()->inspectPayload());
+    RevPkt *ev = static_cast<RevPkt *>(sendQ.front()->inspectPayload());
     auto P = ev->getData();
     if( iFace->spaceToSend(0, P.size()*64) && iFace->send(sendQ.front(), 0)) {
       sendQ.pop();
