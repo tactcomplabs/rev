@@ -60,6 +60,53 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
   return rtval;
 }
 
+/// Read from memory until the given size is reached, then call action()
+/// TODO: Potentially don't use string?
+EcallStatus RevProc::EcallReadData(RevInst& inst,
+                                   uint64_t Addr,
+                                   size_t BytesToRead,
+                                   std::function<void()> action){
+  auto  rtval = EcallStatus::ERROR;
+  auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
+
+  if( RegFile->GetLSQueue()->count(LSQHash(RevReg::a0, RevRegClass::RegGPR, HartToExecID)) > 0 ){
+    rtval = EcallStatus::CONTINUE;
+  } else {
+    // Read a byte at a time up to the specified size
+    if(EcallState.bytesRead != 0){
+      EcallState.string += std::string_view(EcallState.buf.data(), EcallState.bytesRead);
+      EcallState.bytesRead = 0;
+    }
+
+    // Check if we have read the specified number of bytes
+    if(EcallState.string.size() == BytesToRead){
+      // Reached the specified size - we're done
+      action();
+
+      EcallState.string.clear();   // reset the ECALL buffers
+      EcallState.bytesRead = 0;
+
+      DependencyClear(HartToExecID, RevReg::a0, false);
+      rtval = EcallStatus::SUCCESS;
+    }else{
+      // Continue reading one byte at a time
+      MemReq req{Addr + EcallState.string.size(), RevReg::a0,
+                 RevRegClass::RegGPR, HartToExecID, MemOp::MemOpREAD,
+                 true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
+      LSQueue->insert(req.LSQHashPair());
+      mem->ReadVal(HartToExecID,
+                  Addr + EcallState.string.size(),
+                  EcallState.buf.data(),
+                  req,
+                   RevFlag::F_NONE);
+      EcallState.bytesRead = 1;
+      DependencySet(HartToExecID, RevReg::a0, false);
+      rtval = EcallStatus::CONTINUE;
+    }
+  }
+  return rtval;
+}
+
 // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
 EcallStatus RevProc::ECALL_io_setup(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
