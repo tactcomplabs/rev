@@ -31,6 +31,8 @@ class RevHart{
   ///< RevHart: Pointer to the Proc's MarkLoadCompleteFunc
   std::function<void(const MemReq&)> MarkLoadCompleteFunc;
 
+  ///< RevHart: Pointer to the SST output object
+  SST::Output *output = nullptr;
   ///< RevHart: Thread currently executing on this Hart
   std::unique_ptr<RevThread> Thread = nullptr;
   std::unique_ptr<RevRegFile> RegFile = nullptr;
@@ -41,8 +43,8 @@ class RevHart{
 public:
   ///< RevHart: Constructor
   RevHart(unsigned ID, const std::shared_ptr<std::unordered_map<uint64_t, MemReq>>& LSQueue,
-          std::function<void(const MemReq&)> MarkLoadCompleteFunc)
-    : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)) {}
+          std::function<void(const MemReq&)> MarkLoadCompleteFunc, SST::Output *output)
+    : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)), output(output) {}
 
   ///< RevHart: Destructor
   ~RevHart() = default;
