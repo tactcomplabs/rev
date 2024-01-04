@@ -48,7 +48,7 @@ bool RevFeature::ParseMachineModel(){
   output->verbose(CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", ProcID, mac);
 
   ///< List of architecture extensions. These must listed in canonical order
-  ///< as shown in Table 27.11, Chapter 27, of the RiSC-V Unpriviledged Spec.
+  ///< as shown in Table 27.11, Chapter 27, of the RISC-V Unpriviledged Spec.
   ///< By using a canonical ordering, the extensions' presence can be tested
   ///< in linear time complexity of the table and the string. Some of the
   ///< extensions imply other extensions, so the extension flags are ORed.

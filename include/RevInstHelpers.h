@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "RevInstTable.h"
+#include "RevFenv.h"
 
 namespace SST::RevCPU{
 
@@ -337,10 +338,20 @@ bool bcond(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   return true;
 }
 
+/// Rev FMA template which handles 0.0 * NAN and NAN * 0.0 correctly
+// RISC-V requires INVALID exception even when z = qNaN
+template<typename T>
+inline auto revFMA(T x, T y, T z){
+  if((!y && std::isinf(x)) || (!x && std::isinf(y))){
+    feraiseexcept(FE_INVALID);
+  }
+  return std::fma(x, y, z);
+}
+
 /// Fused Multiply-Add
 template<typename T>
 bool fmadd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-  R->SetFP(Inst.rd, std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->SetFP(Inst.rd, revFMA(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
   R->AdvancePC(Inst);
   return true;
 }
@@ -348,7 +359,7 @@ bool fmadd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
 /// Fused Multiply-Subtract
 template<typename T>
 bool fmsub(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-  R->SetFP(Inst.rd, std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), -R->GetFP<T>(Inst.rs3)));
+  R->SetFP(Inst.rd, revFMA(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), -R->GetFP<T>(Inst.rs3)));
   R->AdvancePC(Inst);
   return true;
 }
@@ -357,7 +368,7 @@ bool fmsub(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
 template<typename T>
 bool fnmsub(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst)
 {
-  R->SetFP(Inst.rd, std::fma(-R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->SetFP(Inst.rd, revFMA(-R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
   R->AdvancePC(Inst);
   return true;
 }
@@ -365,7 +376,7 @@ bool fnmsub(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst)
 /// Fused Negated (Multiply-Add)
 template<typename T>
 bool fnmadd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-  R->SetFP(Inst.rd, -std::fma(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
+  R->SetFP(Inst.rd, -revFMA(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
   R->AdvancePC(Inst);
   return true;
 }

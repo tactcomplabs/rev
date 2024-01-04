@@ -246,6 +246,11 @@ bool RevProc::SeedInstTable(){
     EnableExt(new Zicbom(feature, mem, output), false);
   }
 
+  // Zicsr-Extension
+  if( feature->IsModeEnabled(RV_ZICSR) ){
+    EnableExt(new ZiCSR(feature, mem, output), false);
+  }
+
   return true;
 }
 
@@ -1640,7 +1645,7 @@ void RevProc::MarkLoadComplete(const MemReq& req){
 
   auto it = LSQueue->equal_range(req.LSQHash());      // Find all outstanding dependencies for this register
   bool addrMatch = false;
-  if( it.first != LSQueue->end()){                  
+  if( it.first != LSQueue->end()){
     for (auto i = it.first; i != it.second; ++i){    // Iterate over all outstanding loads for this reg (if any)
         if(i->second.Addr == req.Addr){
           if(LSQueue->count(req.LSQHash()) == 1){   // Only clear the dependency if this is the LAST outstanding load for this register

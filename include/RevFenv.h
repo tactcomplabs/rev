@@ -11,8 +11,9 @@
 #ifndef _REV_FENV_H_
 #define _REV_FENV_H_
 
+#include <cmath>
 #include <cfenv>
-#include <memory>
+#include <stdexcept>
 
 // GCC and Clang do not fully support FENV_ACCESS now. See:
 //
@@ -30,25 +31,33 @@ namespace SST::RevCPU{
 // TODO: Right now we only need to save/restore rounding mode.
 // Later, we may need to save and restore the entire fenv_t state
 class RevFenv{
-  int saved_round;      ///< Saved Floating-Point Rounding Mode
-
-  // We use Meyers singleton to avoid initialization order fiasco
-  static int& round(){
-    thread_local int round = fegetround();
-    return round;
-  }
+  FCSR& fcsr;
+  std::fenv_t saved_env;
 
 public:
-
-  /// Constructor saves Fenv state
-  RevFenv() : saved_round(round()) {
-    if(saved_round < 0){
-      throw std::runtime_error("Getting floating-point rounding mode with fegetround() is not working.");
+  /// Constructor saves Fenv state to be restored at destruction
+  explicit RevFenv(RevRegFile* R) : fcsr(R->GetFCSR()){
+    // Save FP environment and set flags to default
+    if(feholdexcept(&saved_env)){
+      throw std::runtime_error("Getting floating-point environment "
+                               "with feholdexcept() is not working.");
     }
   }
 
-  /// Destructor restores Fenv state
-  ~RevFenv() { SetRound(saved_round); }
+  /// Destructor sets flags and restores host FP Environment
+  ~RevFenv(){
+    // RISC-V does not support FP traps
+    // Set the accumulated fflags based on exceptions
+    int except = std::fetestexcept(FE_ALL_EXCEPT);
+    if(except & FE_DIVBYZERO) fcsr.DZ = true;
+    if(except & FE_INEXACT)   fcsr.NX = true;
+    if(except & FE_INVALID)   fcsr.NV = true;
+    if(except & FE_OVERFLOW)  fcsr.OF = true;
+    if(except & FE_UNDERFLOW) fcsr.UF = true;
+
+    // Restore the host's saved FP Environment
+    fesetenv(&saved_env);
+  }
 
   // We allow moving, but not copying RevFenv
   // This is to ensure that there is only a single copy
@@ -60,21 +69,17 @@ public:
   RevFenv& operator=(const RevFenv&) = delete;
   RevFenv& operator=(RevFenv&&) = delete;
 
-  // Get the current FP rounding state
-  static int GetRound(){
-    return round();
+  // Get the FP rounding mode
+  static int& GetFPRoundingMode(){
+    thread_local int round = fegetround();
+    return round;
   }
 
-  // Set the FP rounding state if it differs from current
-  static int SetRound(int mode){
-    int rc = 0;
-    if(mode != round()){
-      rc = fesetround(mode);
-      if(rc == 0){
-        round() = mode;
-      }
-    }
-    return rc;
+  // Set the FP rounding mode
+  static void SetFPRoundingMode(int mode){
+    int& round = GetFPRoundingMode();
+    if(!fesetround(mode))
+      round = mode;
   }
 }; // RevFenv
 

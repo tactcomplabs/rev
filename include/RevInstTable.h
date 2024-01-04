@@ -108,6 +108,7 @@ struct RevInst {
   uint64_t rs2        =~0; ///< RevInst: rs2 value
   uint64_t rs3        =~0; ///< RevInst: rs3 value
   uint64_t imm        = 0; ///< RevInst: immediate value
+  bool raisefpe       = 0; ///< RevInst: raises FP exceptions
   FRMode rm{FRMode::None}; ///< RevInst: floating point rounding mode
   uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
   uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
@@ -173,6 +174,7 @@ struct RevInstDefaults {
   static constexpr RevInstF    format      = RVTypeR;
   static constexpr bool        compressed  = false;
   static constexpr uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
+  static constexpr bool        raisefpe    = false;
 }; // RevInstDefaults
 
 /*! \struct RevInstEntry
@@ -215,7 +217,9 @@ struct RevInstEntry{
 
   bool compressed;      ///< RevInstEntry: compressed instruction
 
-  uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
+  uint8_t fpcvtOp;      ///<RevInstEntry: Stores the overloaded rs2 field in R-type instructions
+
+  bool raisefpe;        ///<RevInstEntry: Whether FP exceptions are raised
 }; // RevInstEntry
 
 template <typename RevInstDefaultsPolicy>
@@ -244,6 +248,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
     InstEntry.format    = RevInstDefaultsPolicy::format;
     InstEntry.compressed= false;
     InstEntry.fpcvtOp   = RevInstDefaultsPolicy::fpcvtOp;
+    InstEntry.raisefpe  = false;
   }
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
@@ -266,6 +271,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   auto& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
   auto& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
   auto& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
+  auto& SetRaiseFPE(bool c)          { InstEntry.raisefpe = c;   return *this;}
 
   auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&)){
     InstEntry.func = func;
