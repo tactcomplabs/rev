@@ -20,7 +20,7 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
   output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
 
   const std::string nicClock = params.find<std::string>("clock", "1GHz");
-  registerClock(nicClock, new Clock::Handler<RevNIC>(this, &RevNIC::clockTick));
+  registerClock(nicClock, new Clock::Handler<RevNIC>(this, &RevNIC::ClockTick));
 
   // load the SimpleNetwork interfaces
   iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1);
@@ -32,11 +32,11 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
     netparams.insert("out_buf_size", "256B");
     netparams.insert("link_bw", "40GiB/s");
     iFace = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>("merlin.linkcontrol",
-                                                                      "iface",
-                                                                      0,
-                                                                      ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
-                                                                      netparams,
-                                                                      1);
+                                                     "iface",
+                                                     0,
+                                                     ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
+                                                     netparams,
+                                                     1);
   }
 
   iFace->setNotifyOnReceive(
@@ -64,30 +64,30 @@ void RevNIC::init(unsigned int phase){
     if( !initBroadcastSent) {
       initBroadcastSent = true;
       std::vector<uint64_t> sendP;
-      sendP.push_back(ID);
+      sendP.push_back(LogicalID);
       sendP.push_back((uint64_t)(iFace->getEndpointID()));
-      RevPkt *ev = new RevPkt(PacketType::INIT_BCAST, ID, sendP);
+      RevPkt *Pkt = new RevPkt(PacketType::INIT_BCAST, LogicalID, sendP);
 
       SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
       req->src = iFace->getEndpointID();
-      req->givePayload(ev);
+      req->givePayload(Pkt);
       iFace->sendUntimedData(req);
 
       // add myself
-      hostMap[ID] = iFace->getEndpointID();
+      hostMap[LogicalID] = iFace->getEndpointID();
     }
   }
 
   while( SST::Interfaces::SimpleNetwork::Request * req =
          iFace->recvUntimedData() ) {
-    RevPkt *ev = static_cast<RevPkt*>(req->takePayload());
+    RevPkt *Pkt = static_cast<RevPkt*>(req->takePayload());
     numDest++;
-    std::vector<uint64_t> recvP = ev->getData();
-    hostMap[recvP[0]] = req->src;
+    std::vector<uint64_t> RecvPkt = Pkt->getData();
+    hostMap[RecvPkt[0]] = req->src;
     output->verbose(CALL_INFO, 1, 0,
                     "%s received init message from logical ID=%" PRIu64 "\n",
-                    getName().c_str(), recvP[0]);
+                    getName().c_str(), RecvPkt[0]);
   }
 
   if( phase == 4 ){
@@ -109,12 +109,28 @@ void RevNIC::init(unsigned int phase){
 void RevNIC::setup(){
   if( msgHandler == nullptr ){
     output->fatal(CALL_INFO, -1,
-                  "%s, Error: RevNIC implements a callback-based notification and parent has not registerd a callback function\n",
+                  "%s, Error: RevNIC implements a callback-based notification and parent has not registered a callback function\n",
                   getName().c_str());
   }
 }
 
-bool RevNIC::msgNotify(int vn){
+void RevNIC::AckThisPkt(RevPkt *pkt){
+  std::vector<uint64_t> AckData;
+  AckData[AckFmt::MSGID] = pkt->getMsgID();
+  RevPkt *AckPkt = new RevPkt(PacketType::ACK, LogicalID, AckData);
+  send(AckPkt, pkt->getSrc());
+}
+
+void RevNIC::ProcessAck(RevPkt *pkt){
+  const auto& Data = pkt->getData();
+  const uint64_t MsgID = Data[AckFmt::MSGID];
+
+  // Remove from list of outstanding acks
+  if( OutstandingAcks.find(MsgID) != OutstandingAcks.end() ){
+    OutstandingAcks.erase(MsgID);
+  }
+}
+
   SST::Interfaces::SimpleNetwork::Request* req = iFace->recv(0);
   if( req == nullptr ){
     return false;
@@ -144,6 +160,8 @@ void RevNIC::send(RevPkt* event, uint64_t destination){
                   getName().c_str(), destination);
   }
 
+  OutstandingAcks.insert(event->getMsgID());
+
   SST::Interfaces::SimpleNetwork::Request *req =
     new SST::Interfaces::SimpleNetwork::Request();
   req->dest = destID;
@@ -160,11 +178,12 @@ SST::Interfaces::SimpleNetwork::nid_t RevNIC::getAddress(){
   return iFace->getEndpointID();
 }
 
-bool RevNIC::clockTick(Cycle_t cycle){
+
+bool RevNIC::ClockTick(Cycle_t cycle){
   while( !sendQ.empty() ){
-    RevPkt *ev = static_cast<RevPkt *>(sendQ.front()->inspectPayload());
-    auto P = ev->getData();
-    if( iFace->spaceToSend(0, P.size()*64) && iFace->send(sendQ.front(), 0)) {
+    RevPkt *Pkt = static_cast<RevPkt *>(sendQ.front()->inspectPayload());
+    std::vector<uint64_t> PktData  = Pkt->getData();
+    if( iFace->spaceToSend(0, PktData.size()*64) && iFace->send(sendQ.front(), 0)) {
       sendQ.pop();
     }else{
       break;

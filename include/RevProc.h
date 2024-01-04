@@ -50,6 +50,7 @@
 #include "RevRand.h"
 #include "RevProcPasskey.h"
 #include "RevHart.h"
+#include "RevNIC.h"
 #define SYSCALL_TYPES_ONLY
 #include "../common/syscalls/syscalls.h"
 #include "../common/include/RevCommon.h"
@@ -231,6 +232,17 @@ public:
   ///< RevProc: Returns true if there are any IdleHarts
   bool HasIdleHart() const { return IdleHarts.any(); }
 
+  ///< RevProc: Assign a NIC to this Core / optionally Hart
+  ///           (Called from RevCPU)
+  void AssignNIC(RevNicAPI* nic, unsigned hartID = _REV_INVALID_HART_ID_);
+
+  ///< RevProc: Give's access to an 'external' NIC
+  ///           The key caveat here over the AssignNIC function is that
+  ///           this Proc doesn't override the messageHandler of the NIC
+  ///           Only use this is you want certain cores to have certain NICs
+  ///           (Called from RevCPU)
+  void GiveAccessToNIC(RevNicAPI* nic, unsigned hartID = _REV_INVALID_HART_ID_);
+
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
   bool Stalled;             ///< RevProc: determines if the core is stalled on instruction fetch
@@ -243,10 +255,10 @@ private:
   unsigned HartToDecodeID;    ///< RevProc: Current executing ThreadID
   unsigned HartToExecID;      ///< RevProc: Thread to dispatch instruction
 
-  std::vector<std::shared_ptr<RevHart>> Harts; ///< RevProc: vector of Harts without a thread assigned to them
-  std::bitset<_MAX_HARTS_> IdleHarts;          ///< RevProc: bitset of Harts with no thread assigned
-  std::bitset<_MAX_HARTS_> ValidHarts;      ///< RevProc: Bits 0 -> numHarts are 1
-  std::bitset<_MAX_HARTS_> HartsClearToDecode; ///< RevProc: Thread is clear to start (proceed with decode)
+  std::vector<std::shared_ptr<RevHart>> Harts;  ///< RevProc: vector of Harts without a thread assigned to them
+  std::bitset<_MAX_HARTS_> IdleHarts;           ///< RevProc: bitset of Harts with no thread assigned
+  std::bitset<_MAX_HARTS_> ValidHarts;          ///< RevProc: Bits 0 -> numHarts are 1
+  std::bitset<_MAX_HARTS_> HartsClearToDecode;  ///< RevProc: Thread is clear to start (proceed with decode)
   std::bitset<_MAX_HARTS_> HartsClearToExecute; ///< RevProc: Thread is clear to execute (no register dependencides)
 
   unsigned numHarts;        ///< RevProc: Number of Harts for this core
@@ -268,18 +280,24 @@ private:
   RevProcStats StatsTotal{};             ///< RevProc: collection of total performance stats
   std::unique_ptr<RevPrefetcher> sfetch; ///< RevProc: stream instruction prefetcher
 
-  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue; ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
+  ///< RevProc: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
+  std::shared_ptr<std::unordered_map<uint64_t, MemReq>> LSQueue;
   TimeConverter* timeConverter;          ///< RevProc: Time converter for RTC
 
   RevRegFile* RegFile = nullptr; ///< RevProc: Initial pointer to HartToDecodeID RegFile
   uint32_t ActiveThreadID = _INVALID_TID_; ///< Software ThreadID (Not the Hart) that belongs to the Hart currently decoding
 
   RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
+  RevNicAPI* NIC = nullptr;                  ///< RevProc: NIC object
+
+  ///< RevProc: In the event you assign a NIC specifically to this Hart you can optionally assign a message handler
+  void NetworkMsgHandler(Event *ev);
 
   std::bitset<_MAX_HARTS_> CoProcStallReq;
+
   ///< RevProc: Utility function for system calls that involve reading a string from memory
-  EcallStatus EcallReadData(RevInst& inst, size_t NumBytesToRead, uint64_t Addr, std::function<void()>);
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
+  EcallStatus EcallReadData(RevInst& inst,  size_t BytesToRead, uint64_t Addr, std::function<void()>);
 
   // - Many of these are not implemented
   // - Their existence in the ECalls table is solely to not throw errors
@@ -608,6 +626,10 @@ private:
   EcallStatus ECALL_pthread_create(RevInst& inst);         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
   EcallStatus ECALL_pthread_join(RevInst& inst);           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
+
+  // =============== REV Network Functions
+  EcallStatus ECALL_get_logical_network_id(RevInst& inst); // 2000, rev_send_network_msg(unsigned networkID, char *msg, size_t len);
+  EcallStatus ECALL_send_network_msg(RevInst& inst);       // 2001, rev_send_network_msg(unsigned networkID, char *msg, size_t len);
 
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
   std::unordered_map<uint32_t, std::function<EcallStatus(RevProc*, RevInst&)>> Ecalls;

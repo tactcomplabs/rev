@@ -2323,6 +2323,8 @@ void RevProc::InitEcallTable(){
     { 501, &RevProc::ECALL_perf_stats},             //  rev_cpuinfo(struct rev_perf_stats *stats)
     { 1000, &RevProc::ECALL_pthread_create},        //
     { 1001, &RevProc::ECALL_pthread_join},          //
+    { 2000, &RevProc::ECALL_get_logical_network_id},// 2000, rev_get_logical_network_id();
+    { 2001, &RevProc::ECALL_send_network_msg},      // 2001, rev_send_network_msg(unsigned networkID, char *msg, size_t len);
   };
 }
 
@@ -2435,6 +2437,57 @@ void RevProc::UpdateStatusOfHarts(){
     HartsClearToDecode[i] = !IdleHarts[i] && Harts[i]->RegFile->cost == 0;
   }
   return;
+}
+
+void RevProc::AssignNIC(RevNicAPI* NIC, unsigned HartID){
+  // Check if we're assigning to a Hart or to the Proc
+  if( HartID != _REV_INVALID_HART_ID_ ){
+    if( HartID >= Harts.size() ){
+      output->fatal(CALL_INFO, -1, "Attempted to assign a NIC to a Hart that doesn't exist. "
+                                   "This is a bug\n");
+    }
+    output->verbose(CALL_INFO, 2, 0, "Assigning NIC to Hart %u\n", HartID);
+    Harts[HartID]->AssignNIC(NIC);
+  }
+  // Not assigning to Hart, let's make sure we haven't already assigned a NIC
+  // to this core
+  else if( this->NIC == nullptr ){
+    output->fatal(CALL_INFO, -1, "Attempted to assign a NIC to a Proc "
+                                 "that already has one assigned."
+                                 " This is a bug\n");
+  }
+  else {
+    this->NIC = NIC;
+    // If you do not wish to override the message handler use (GiveAccessToNIC instead)
+    NIC->setMsgHandler(new Event::Handler<RevProc>(this, &RevProc::NetworkMsgHandler));
+  }
+}
+
+void RevProc::GiveAccessToNIC(RevNicAPI* NIC, unsigned HartID){
+  // Check if we are only giving access to a specific Hart
+  if( HartID != _REV_INVALID_HART_ID_ ){
+    if( HartID >= Harts.size() ){
+      output->fatal(CALL_INFO, -1, "Attempted to give hart %" PRIu32 ") access to a NIC "
+                                   "but that hart doesn't exist.This is a bug\n");
+    }
+    output->verbose(CALL_INFO, 2, 0, "Assigning NIC to Hart %u\n", HartID);
+    Harts[HartID]->AssignNIC(NIC);
+  }
+  // Not assigning to Hart, let's make sure we haven't already assigned a NIC
+  // to this core
+  else if( this->NIC == nullptr ){
+    output->fatal(CALL_INFO, -1, "Attempted to assign a NIC to a Proc "
+                                 "that already has one assigned."
+                                 " This is a bug\n");
+  }
+  else { this->NIC = NIC; }
+}
+
+
+void RevProc::NetworkMsgHandler(Event *ev){
+  RevPkt *event = static_cast<RevPkt*>(ev);
+  output->verbose(CALL_INFO, 2, 0, "Received a packet from the network for Proc %" PRIu32 "\n", id);
+  delete event;
 }
 
 // EOF

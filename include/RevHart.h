@@ -14,11 +14,13 @@
 // -- SST Headers
 #include "RevSysCalls.h"
 #include "RevThread.h"
+//#include "RevNIC.h"
 #include "SST.h"
 
 namespace SST::RevCPU{
 
 class RevHart{
+
   ///< RevHart: Id for the Hart (0,1,2,3,etc)
   unsigned ID;
 
@@ -33,9 +35,16 @@ class RevHart{
 
   ///< RevHart: Pointer to the SST output object
   SST::Output *output = nullptr;
+
   ///< RevHart: Thread currently executing on this Hart
   std::unique_ptr<RevThread> Thread = nullptr;
   std::unique_ptr<RevRegFile> RegFile = nullptr;
+
+  ///< RevHart: NIC interface for this Hart
+  //RevNicAPI* NIC = nullptr;
+
+  ///< RevHart: Pointer to a message handler for this hart if you assign a nic to it
+  void NetworkMsgHandler(Event *ev);
 
   ///< RevHart: Make RevProc a friend of this
   friend class RevProc;
@@ -46,8 +55,8 @@ public:
           std::function<void(const MemReq&)> MarkLoadCompleteFunc, SST::Output *output)
     : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)), output(output) {}
 
-  ///< RevHart: Destructor
-  ~RevHart() = default;
+  ///< RevHart: Destructor (delete NIC if it exists)
+  ~RevHart() = default; // { if(NIC) delete NIC; }
 
   ///< RevHart: Get the EcallState
   EcallState& GetEcallState() { return Ecall; }
@@ -80,6 +89,18 @@ public:
     // return the thread
     return std::move(Thread);
   }
+
+//  ///< RevHart: Assign a NIC to this Core / optionally Hart
+//  ///           (Called from RevCPU)
+//  void AssignNIC(RevNicAPI* nic);
+//
+//  ///< RevHart: Give's access to an 'external' NIC
+//  ///           The key caveat here over the AssignNIC function is that
+//  ///           this Hart doesn't override the messageHandler of the NIC
+//  ///           Only use this is you want certain harts to have certain NICs
+//  ///           (Called from RevProc)
+//  void GiveAccessToNIC(RevNicAPI* nic);
+//
 }; // class RevHart
 
 } // namespace SST::RevCPU
