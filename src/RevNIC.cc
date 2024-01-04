@@ -8,6 +8,7 @@
 // See LICENSE in the top level directory for licensing details
 //
 
+#include "RevCPU.h"
 #include "RevNIC.h"
 
 using namespace SST;
@@ -40,7 +41,7 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
   }
 
   iFace->setNotifyOnReceive(
-    new SST::Interfaces::SimpleNetwork::Handler<RevNIC>(this, &RevNIC::msgNotify));
+    new SST::Interfaces::SimpleNetwork::Handler<RevNIC>(this, &RevNIC::msgRecvNotify));
 
   initBroadcastSent = false;
 
@@ -131,16 +132,40 @@ void RevNIC::ProcessAck(RevPkt *pkt){
   }
 }
 
+bool RevNIC::msgRecvNotify(int vn){
   SST::Interfaces::SimpleNetwork::Request* req = iFace->recv(0);
   if( req == nullptr ){
     return false;
   }
 
-  RevPkt *ev = static_cast<RevPkt*>(req->takePayload());
-  (*msgHandler)(ev);
+
+  RevPkt *Pkt = static_cast<RevPkt*>(req->takePayload());
+  if( Pkt->getType() == PacketType::DATA ){
+    AckThisPkt(Pkt);
+  } else if( Pkt->getType() == PacketType::ACK ){
+    ProcessAck(Pkt);
+  } else if( Pkt->getType() == PacketType::INIT_BCAST ){
+    std::vector<uint64_t> RecvPkt = Pkt->getData();
+    hostMap[RecvPkt[0]] = req->src;
+    output->verbose(CALL_INFO, 1, 0,
+                    "%s received init message from logical ID=%" PRIu64 "\n",
+                    getName().c_str(), RecvPkt[0]);
+  } else {
+    output->fatal(CALL_INFO, -1,
+                  "%s, Error: RevNIC: unknown packet type\n",
+                  getName().c_str());
+  }
+
+  (*msgHandler)(Pkt);
 
   return true;
 }
+
+//bool RevNIC::msgSendNotify(int vn){
+//  // Add stats?
+//  return true;
+//}
+
 
 void RevNIC::send(RevPkt* event, uint64_t destination){
 
@@ -168,6 +193,24 @@ void RevNIC::send(RevPkt* event, uint64_t destination){
   req->src = iFace->getEndpointID();
   req->givePayload(event);
   sendQ.push(req);
+}
+
+void RevNIC::sendString(const std::string& str, PacketType Type, uint64_t dest){
+  std::vector<uint64_t> PktData = StringToVecU64(str);
+  RevPkt *Pkt = new RevPkt(Type, LogicalID, PktData);
+  send(Pkt, dest);
+}
+
+std::vector<uint64_t> RevNIC::StringToVecU64(const std::string& str) {
+  std::vector<uint64_t> result;
+  for (size_t i = 0; i < str.size(); i += 8) {
+    uint64_t packed = 0;
+    for (size_t j = 0; j < 8 && i + j < str.size(); ++j) {
+      packed |= static_cast<uint64_t>(str[i + j]) << (j * 8);
+    }
+    result.emplace_back(packed);
+  }
+  return result;
 }
 
 uint64_t RevNIC::getNumDestinations(){

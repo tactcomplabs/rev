@@ -204,6 +204,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
       Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
+      // TODO: Update this once we allow params to specify certain Harts/Cores for NIC access
+      if( EnableNIC ){
+        Procs[i]->AssignNIC(NIC, _REV_INVALID_HART_ID_);
+      }
     }
   }
 

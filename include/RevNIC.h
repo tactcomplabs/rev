@@ -82,9 +82,9 @@ public:
   }
 
 private:
-  PacketType Type;               ///< RevPkt: Packet type
-  uint64_t SrcLogicalID;        ///< RevPkt: Source logical ID
-  uint64_t MsgID;                ///< RevPkt: Message ID
+  PacketType Type;                ///< RevPkt: Packet type
+  uint64_t SrcLogicalID;          ///< RevPkt: Source logical ID
+  uint64_t MsgID;                 ///< RevPkt: Packet type
   std::vector<uint64_t> Data;     ///< RevPkt: Data payload
 
 public:
@@ -92,7 +92,7 @@ public:
   RevPkt() : Event() {}
 
   /// RevPkt: event serializer
-  void serialize_order(SST::Core::Serialization::serializer &ser) override{
+  void serialize_order(SST::Core::Serialization::serializer &ser) override {
     Event::serialize_order(ser);
     ser & Type;
     ser & SrcLogicalID;
@@ -108,39 +108,54 @@ public:
 /**
  * RevNicAPI : Handles the subcomponent NIC API
  */
-class RevNicAPI: public SST::SubComponent{
+class RevNicAPI: public SST::SubComponent {
 public:
   SST_ELI_REGISTER_SUBCOMPONENT_API(SST::RevCPU::RevNicAPI)
 
-  /// RevPkt: constructor
+  SST_ELI_DOCUMENT_PARAMS({ "verbose", "Set the verbosity of output for the memory controller", "0" } )
+
+  /// RevNicAPI: constructor
   RevNicAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
 
-  /// RevPkt: default destructor
+  /// RevNicAPI: default destructor
   virtual ~RevNicAPI() = default;
 
-  /// RevPkt: registers the event handler with the core
+  /// RevNicAPI: registers the event handler with the core
   virtual void setMsgHandler(Event::HandlerBase* handler) = 0;
 
-  /// RevPkt: initializes the network
+  /// RevNicAPI: initializes the network
   virtual void init(unsigned int phase) = 0;
 
-  /// RevPkt: setup the network
+  /// RevNicAPI: setup the network
   virtual void setup() { }
 
-  /// RevPkt: set the source logical ID
-  virtual void setID(uint64_t ID) = 0;
+  /// RevNicAPI: get the source logical ID
+  virtual uint64_t GetLogicalID() = 0;
 
-  /// RevPkt: send a message on the network
-  virtual void send(RevPkt *ev, uint64_t dest) = 0;
+  /// RevNicAPI: set the source logical ID
+  virtual void SetLogicalID(uint64_t logicalID) = 0;
 
-  /// RevPkt: retrieve the number of potential destinations
+  /// RevNicAPI: send a message on the network
+  virtual void send(RevPkt *pkt, uint64_t logicalDestID) = 0;
+
+  // TODO: Comment
+  virtual void sendString(const std::string& str, PacketType Type, uint64_t dest) = 0;
+
+  /// RevNicAPI: retrieve the number of potential destinations
   virtual uint64_t getNumDestinations() = 0;
 
-  /// RevPkt: returns the NIC's network address
+  /// RevNicAPI: returns the NIC's network address
   virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
 
-  // RevPkt: returns the number of items in the send queue
+  // RevNicAPI: returns the number of items in the send queue
   virtual unsigned getNumOutstanding() = 0;
+
+  virtual std::vector<uint64_t> StringToVecU64(const std::string& str) = 0;
+
+  virtual void ProcessAck(RevPkt* pkt) = 0;
+
+  virtual void AckThisPkt(RevPkt *pkt) = 0;
+
 }; /// end RevNicAPI
 
 /**
@@ -168,7 +183,7 @@ public:
 
   // Register the ports
   SST_ELI_DOCUMENT_PORTS(
-    {"network", "Port to network", {"simpleNetworkExample.RevPkt"} }
+    {"network", "Port to network", {"simpleNetworkExample.nicEvent"} }
     )
 
   // Register the subcomponent slots
@@ -192,10 +207,16 @@ public:
   virtual void setup();
 
   /// RevNIC: set the source ID
-  virtual void setID(uint64_t I){ ID = I; }
+  virtual uint64_t GetLogicalID(){ return LogicalID; }
+
+  /// RevNIC: set the source ID
+  virtual void SetLogicalID(uint64_t logicalID){ LogicalID = logicalID; }
 
   /// RevNIC: send event to the destination id
-  virtual void send(RevPkt *ev, uint64_t dest);
+  virtual void send(RevPkt *pkt, uint64_t logicalDestID);
+
+  // TODO: Comment
+  virtual void sendString(const std::string& str, PacketType Type, uint64_t dest);
 
   /// RevNIC: retrieve the number of destinations
   virtual uint64_t getNumDestinations();
@@ -203,14 +224,24 @@ public:
   /// RevNIC: get the endpoint's network address
   virtual SST::Interfaces::SimpleNetwork::nid_t getAddress();
 
-  /// RevNIC: callback function for the SimpleNetwork interface
-  bool msgNotify(int virtualNetwork);
+  /// RevNIC: callback functions for the SimpleNetwork interface
+  bool msgRecvNotify(int virtualNetwork);
+  //bool msgSendNotify(int virtualNetwork);
 
   /// RevNIC: clock function
-  virtual bool clockTick(Cycle_t cycle);
+  virtual bool ClockTick(Cycle_t cycle);
 
-  // RevPkt: returns the number of items in the send queue
+  /// RevNIC: returns the number of items in the send queue
   virtual unsigned getNumOutstanding() { return sendQ.size(); }
+
+  /// RevNIC: sends ack to src of pkt
+  virtual void AckThisPkt(RevPkt *pkt);
+
+  /// RevNIC: convert a std::string to a std::vector<uint64_t> (used for sendString )
+  virtual std::vector<uint64_t> StringToVecU64(const std::string& str);
+
+  /// RevNIC: process the received ack (ie. remove from outstanding acks)
+  virtual void ProcessAck(RevPkt *pkt);
 
 protected:
   SST::Output *output;                    ///< RevNIC: SST output object
@@ -223,11 +254,13 @@ protected:
 
   uint64_t numDest;                       ///< RevNIC: number of SST destinations
 
-  uint64_t ID;                            ///< RevNIC: logical source ID
+  uint64_t LogicalID;                            ///< RevNIC: logical source ID
 
   std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ; ///< RevNIC: buffered send queue
 
   std::map<uint64_t,SST::Interfaces::SimpleNetwork::nid_t> hostMap;  ///< RevNIC: host map
+
+  std::set<uint64_t> OutstandingAcks;      ///< RevNIC: outstanding acks
 
 }; // end RevNIC
 

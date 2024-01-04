@@ -289,7 +289,7 @@ private:
   TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
   SST::Output output;                 ///< RevCPU: SST output handler
 
-  RevNicAPI *NIC;                        ///< RevCPU: Network interface controller
+  RevNicAPI *NIC;                     ///< RevCPU: Network interface controller
   RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
 
   std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev

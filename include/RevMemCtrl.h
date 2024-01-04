@@ -317,7 +317,8 @@ protected:
 // ----------------------------------------
 class RevBasicMemCtrl : public RevMemCtrl{
 public:
-  SST_ELI_REGISTER_SUBCOMPONENT(RevBasicMemCtrl, "revcpu",
+  SST_ELI_REGISTER_SUBCOMPONENT(RevBasicMemCtrl,  // class_name (name of subcomponent class [not a string])
+                                "revcpu",         //
                                 "RevBasicMemCtrl",
                                 SST_ELI_ELEMENT_VERSION(1, 0, 0),
                                 "RISC-V Rev basic memHierachy controller",

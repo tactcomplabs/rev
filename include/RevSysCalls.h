@@ -32,6 +32,7 @@ enum class EcallStatus{
 
 // State information for ECALLs
 struct EcallState {
+  // TODO: change to vector?
   std::array<char, 64> buf;
   std::string string;
   std::string path_string;
