@@ -63,8 +63,8 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
 /// Read from memory until the given size is reached, then call action()
 /// TODO: Potentially don't use string?
 EcallStatus RevProc::EcallReadData(RevInst& inst,
-                                   uint64_t Addr,
                                    size_t BytesToRead,
+                                   uint64_t Addr,
                                    std::function<void()> action){
   auto  rtval = EcallStatus::ERROR;
   auto& EcallState = Harts.at(HartToExecID)->GetEcallState();

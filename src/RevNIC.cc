@@ -66,7 +66,7 @@ void RevNIC::init(unsigned int phase){
       std::vector<uint64_t> sendP;
       sendP.push_back(ID);
       sendP.push_back((uint64_t)(iFace->getEndpointID()));
-      RevPkt *ev = new RevPkt(sendP);
+      RevPkt *ev = new RevPkt(PacketType::INIT_BCAST, ID, sendP);
 
       SST::Interfaces::SimpleNetwork::Request * req = new SST::Interfaces::SimpleNetwork::Request();
       req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;

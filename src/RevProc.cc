@@ -46,7 +46,7 @@ RevProc::RevProc( unsigned Id,
 
   // Create the Hart Objects
   for( size_t i=0; i<numHarts; i++ ){
-    Harts.emplace_back(std::make_unique<RevHart>(i, LSQueue, [=](const MemReq& req){ this->MarkLoadComplete(req); }));
+    Harts.emplace_back(std::make_unique<RevHart>(i, LSQueue, [=](const MemReq& req){ this->MarkLoadComplete(req); }, output));
     ValidHarts.set(i, true);
   }
 

@@ -278,6 +278,7 @@ private:
 
   std::bitset<_MAX_HARTS_> CoProcStallReq;
   ///< RevProc: Utility function for system calls that involve reading a string from memory
+  EcallStatus EcallReadData(RevInst& inst, size_t NumBytesToRead, uint64_t Addr, std::function<void()>);
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
 
   // - Many of these are not implemented

@@ -22,7 +22,27 @@
 // -- SST Headers
 #include "SST.h"
 
+#include "RevRand.h"
+
 namespace SST::RevCPU{
+
+using namespace SST::Interfaces;
+
+enum AckFmt : uint64_t {
+  MSGID = 0,
+  SRCID = 1,
+  DSTID = 2,
+  TYPE = 3,
+};
+
+// NOTE: this probably doesn't need to be a uint64_t
+enum class PacketType : uint64_t {
+  INIT_BCAST = 0,
+  ACK = 1,
+  DATA = 2,
+  TERM = 3,
+  TERM_ACK = 4, // Need separate ACK for this to prevent deadlock
+};
 
 /**
  * RevPkt : inherited class to handle the individual network events for RevNIC
@@ -30,14 +50,30 @@ namespace SST::RevCPU{
 class RevPkt : public SST::Event{
 public:
   /// RevPkt: extended constructor
-  RevPkt(std::vector<uint64_t> data)
-    : Event(), Data(std::move(data)) { }
+  RevPkt(PacketType Type, uint64_t Src, std::vector<uint64_t> Data)
+    : Event(), Type(Type), SrcLogicalID(Src), Data(std::move(Data)) {
+
+    // create a random message ID
+    MsgID = RevRand(0, UINT64_MAX);
+  }
 
   // RevPkt: retrieve the data payload
   std::vector<uint64_t> getData() { return Data; }
 
   // RevPkt: set the data payload
   void setData(std::vector<uint64_t> D){ Data = D; }
+
+  // RevPkt: retrieve the packet type
+  PacketType& getType() { return Type; }
+
+  // RevPkt: set the packet type
+  void setType(PacketType T){ Type = T; }
+
+  // RevPkt: retrieve the source logical ID
+  uint64_t getSrc() { return SrcLogicalID; }
+
+  // RevPkt: Get the message ID
+  uint64_t getMsgID(){ return MsgID; }
 
   /// RevPkt: virtual function to clone an event
   virtual Event* clone(void) override{
@@ -46,6 +82,9 @@ public:
   }
 
 private:
+  PacketType Type;               ///< RevPkt: Packet type
+  uint64_t SrcLogicalID;        ///< RevPkt: Source logical ID
+  uint64_t MsgID;                ///< RevPkt: Message ID
   std::vector<uint64_t> Data;     ///< RevPkt: Data payload
 
 public:
@@ -55,6 +94,9 @@ public:
   /// RevPkt: event serializer
   void serialize_order(SST::Core::Serialization::serializer &ser) override{
     Event::serialize_order(ser);
+    ser & Type;
+    ser & SrcLogicalID;
+    ser & MsgID;
     ser & Data;
   }
 
