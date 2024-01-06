@@ -338,13 +338,12 @@ public:
   template<typename T>
   void SetCSR(size_t i, T val) {
     if(i <= 3){
-      // Write back to fcsr
+      // We store fcsr separately from the global CSR
       if(!(i & 1)) val &= ~T{0x1f};
       if(!(i & 2)) val &= ~T{0xe0};
       static_assert(sizeof(fcsr) <= sizeof(val));
       memcpy(&fcsr, &val, sizeof(fcsr));
     }else{
-      // Write back to general CSR
       CSR[i] = val;
     }
   }
