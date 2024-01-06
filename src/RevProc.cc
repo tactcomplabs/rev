@@ -1,7 +1,7 @@
 //
 // _RevProc_cc_
 //
-// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -1640,7 +1640,7 @@ void RevProc::MarkLoadComplete(const MemReq& req){
 
   auto it = LSQueue->equal_range(req.LSQHash());      // Find all outstanding dependencies for this register
   bool addrMatch = false;
-  if( it.first != LSQueue->end()){                  
+  if( it.first != LSQueue->end()){
     for (auto i = it.first; i != it.second; ++i){    // Iterate over all outstanding loads for this reg (if any)
         if(i->second.Addr == req.Addr){
           if(LSQueue->count(req.LSQHash()) == 1){   // Only clear the dependency if this is the LAST outstanding load for this register
