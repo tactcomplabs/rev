@@ -25,37 +25,53 @@ class ZiCSR : public RevExt {
   enum class CSRKind { Write, Set, Clear };
 
   template<typename T, CSRKind KIND, bool IsImm>
-  static bool RevCSR(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+  static bool RevCSRImpl(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+    // CSRRW zero is a NOP
+    if(KIND == CSRKind::Write && Inst.rd == 0)
+      return true;
+
     // Get the old value of the CSR
-    T old = R->GetCSR(Inst.imm);
+    T old = R->GetCSR<T>(Inst.imm);
 
     // Operand is an zero-extended 5-bit immediate or register
     T val = IsImm ? ZeroExt(Inst.rs1, 5) : R->GetX<T>(Inst.rs1);
 
-    // Store the old CSR value in rd (ignored if rd == 0)
+    // Store the old CSR value in rd
     R->SetX(Inst.rd, old);
 
-    if constexpr(KIND == CSRKind::Write){
-      if(Inst.rd != 0 && Inst.rs1 == 0)
-        val = 0;       // If CSRRW rs1 == 0, zero out value
-    }else if(Inst.rs1 == 0){
-      return true;     // If CSRR[SC] rs1 == 0, do not modify CSR
-    }else if constexpr(KIND == CSRKind::Set){
+    if(Inst.rs1 == 0){
+      if(KIND == CSRKind::Write){
+        val = 0;         // If CSRRW rs1 == 0, store 0 in destination
+      }else{
+        return true;     // If CSRR[SC] rs1 == 0, do not modify CSR
+      }
+    }else if(KIND == CSRKind::Set){
       val = old |  val;
-    }else if constexpr(KIND == CSRKind::Clear){
+    }else if(KIND == CSRKind::Clear){
       val = old & ~val;
     }
-
     R->SetCSR(Inst.imm, val);
     return true;
   }
 
-  static constexpr auto& csrrw  = RevCSR<uint32_t, CSRKind::Write, false>;
-  static constexpr auto& csrrs  = RevCSR<uint32_t, CSRKind::Set,   false>;
-  static constexpr auto& csrrc  = RevCSR<uint32_t, CSRKind::Clear, false>;
-  static constexpr auto& csrrwi = RevCSR<uint32_t, CSRKind::Write,  true>;
-  static constexpr auto& csrrsi = RevCSR<uint32_t, CSRKind::Set,    true>;
-  static constexpr auto& csrrci = RevCSR<uint32_t, CSRKind::Clear,  true>;
+  template<CSRKind KIND, bool IsImm>
+  static bool RevCSR(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+    bool ret;
+    if(R->IsRV32){
+      ret = RevCSRImpl<uint32_t, KIND, IsImm>(F, R, M, Inst);
+    }else{
+      ret = RevCSRImpl<uint64_t, KIND, IsImm>(F, R, M, Inst);
+    }
+    R->AdvancePC(Inst);
+    return ret;
+  }
+
+  static constexpr auto& csrrw  = RevCSR<CSRKind::Write, false>;
+  static constexpr auto& csrrs  = RevCSR<CSRKind::Set,   false>;
+  static constexpr auto& csrrc  = RevCSR<CSRKind::Clear, false>;
+  static constexpr auto& csrrwi = RevCSR<CSRKind::Write,  true>;
+  static constexpr auto& csrrsi = RevCSR<CSRKind::Set,    true>;
+  static constexpr auto& csrrci = RevCSR<CSRKind::Clear,  true>;
 
   // ----------------------------------------------------------------------
   //
@@ -66,19 +82,17 @@ class ZiCSR : public RevExt {
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   std::vector<RevInstEntry> ZiCSRTable = {
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrw %rd, %rs1, $imm" ).SetCost(1).SetOpcode(0b1110011).SetFunct3(0b001).SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeU).SetImplFunc(&csrrw ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrs %rd, %rs1, $imm" ).SetCost(1).SetOpcode(0b1110011).SetFunct3(0b010).SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeU).SetImplFunc(&csrrs ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrc %rd, %rs1, $imm" ).SetCost(1).SetOpcode(0b1110011).SetFunct3(0b011).SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeU).SetImplFunc(&csrrc ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrwi %rd, %rs1, $imm").SetCost(1).SetOpcode(0b1110011).SetFunct3(0b101).SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeU).SetImplFunc(&csrrwi ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrsi %rd, %rs1, $imm").SetCost(1).SetOpcode(0b1110011).SetFunct3(0b110).SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeU).SetImplFunc(&csrrsi ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrci %rd, %rs1, $imm").SetCost(1).SetOpcode(0b1110011).SetFunct3(0b111).SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeU).SetImplFunc(&csrrci ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrw %csr, %rd, %rs1" ).SetCost(1).SetOpcode(0b1110011).SetFunct3(0b001).SetRaiseFPE().SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeI).SetImplFunc(&csrrw ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrs %csr, %rd, %rs1" ).SetCost(1).SetOpcode(0b1110011).SetFunct3(0b010).SetRaiseFPE().SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeI).SetRaiseFPE().SetImplFunc(&csrrs ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrc %csr, %rd, %rs1" ).SetCost(1).SetOpcode(0b1110011).SetFunct3(0b011).SetRaiseFPE().SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeI).SetImplFunc(&csrrc ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrwi %csr, %rd, $imm").SetCost(1).SetOpcode(0b1110011).SetFunct3(0b101).SetRaiseFPE().SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeI).SetImplFunc(&csrrwi ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrsi %csr, %rd, $imm").SetCost(1).SetOpcode(0b1110011).SetFunct3(0b110).SetRaiseFPE().SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeI).SetImplFunc(&csrrsi ).InstEntry},
+    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("csrrci %csr, %rd, $imm").SetCost(1).SetOpcode(0b1110011).SetFunct3(0b111).SetRaiseFPE().SetFunct2or7(0b0).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FVal).SetFormat(RVTypeI).SetImplFunc(&csrrci ).InstEntry},
   };
 
 public:
   /// ZiCSR: standard constructor
-  ZiCSR( RevFeature *Feature,
-         RevMem *RevMem,
-         SST::Output *Output )
+  ZiCSR( RevFeature *Feature, RevMem *RevMem, SST::Output *Output )
     : RevExt( "ZiCSR", Feature, RevMem, Output ) {
     SetTable(std::move(ZiCSRTable));
   }

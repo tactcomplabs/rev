@@ -76,8 +76,7 @@ struct FCSR{
 
 #define CSR_LIMIT 0x1000
 
-class RevRegFile {
-public:
+struct RevRegFile {
   const bool IsRV32;                  ///< RevRegFile: Cached copy of Features->IsRV32()
   const bool HasD;                    ///< RevRegFile: Cached copy of Features->HasD()
 
@@ -109,10 +108,10 @@ private:
   std::bitset<_REV_NUM_REGS_> FP_Scoreboard{}; ///< RevRegFile: Scoreboard for SPF/DPF RF to manage pipeline hazard
 
   // Supervisor Mode CSRs
-  std::array<uint32_t, CSR_LIMIT> CSR;
+  uint64_t CSR[CSR_LIMIT];
 
   // Floating-point CSR
-  FCSR fcsr;
+  FCSR fcsr{};
 
   union{  // Anonymous union. We zero-initialize the largest member
     uint64_t RV64_SEPC{};    // Holds address of instruction that caused the exception (ie. ECALL)
@@ -319,25 +318,30 @@ public:
   }
 
   /// Get a CSR register
-  uint32_t GetCSR(size_t i) const {
-    uint32_t old;
+  template<typename T>
+  T GetCSR(size_t i) const {
+    T old;
     if(i <= 3){
       // We store fcsr separately from the global CSR
-      memcpy(&old, &fcsr, sizeof(old));
-      if(!(i & 1)) old &= ~0x1f;
-      if(!(i & 2)) old &=  0xe0;
+      static_assert(sizeof(fcsr) <= sizeof(old));
+      old = 0;
+      memcpy(&old, &fcsr, sizeof(fcsr));
+      if(!(i & 1)) old &= ~T{0x1f};
+      if(!(i & 2)) old &= ~T{0xe0};
     }else{
-      old = CSR[i];
+      old = static_cast<T>(CSR[i]);
     }
     return old;
   }
 
   /// Set a CSR register
-  void SetCSR(size_t i, uint32_t val) {
+  template<typename T>
+  void SetCSR(size_t i, T val) {
     if(i <= 3){
       // Write back to fcsr
-      if(!(i & 1)) val &= ~0x1f;
-      if(!(i & 2)) val &=  0xe0;
+      if(!(i & 1)) val &= ~T{0x1f};
+      if(!(i & 2)) val &= ~T{0xe0};
+      static_assert(sizeof(fcsr) <= sizeof(val));
       memcpy(&fcsr, &val, sizeof(fcsr));
     }else{
       // Write back to general CSR
@@ -375,10 +379,6 @@ public:
 
   template<typename T, template<class> class OP>
   friend bool fcondop(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
-
-  enum class CSRKind;
-  template<typename T, CSRKind KIND, bool IsImm>
-  friend bool RevCSR(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst);
 
   friend std::ostream& operator<<(std::ostream& os, const RevRegFile& regFile);
 

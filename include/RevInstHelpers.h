@@ -286,16 +286,16 @@ enum class DivRem { Div, Rem };
 // The second parameter is std::make_signed_t or std::make_unsigned_t
 // The optional third parameter indicates W mode (32-bit on XLEN == 64)
 template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
-  bool divrem(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+bool divrem(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   if( !W_MODE && R->IsRV32 ){
     using T = SIGN<int32_t>;
     T rs1 = R->GetX<T>(Inst.rs1);
     T rs2 = R->GetX<T>(Inst.rs2);
     T res;
     if constexpr(DIVREM == DivRem::Div){
-        res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
-          rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
-      }else{
+      res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
+        rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
+    }else{
       res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
         rs2 == -T{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
     }
@@ -306,9 +306,9 @@ template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
     T rs2 = R->GetX<T>(Inst.rs2);
     T res;
     if constexpr(DIVREM == DivRem::Div){
-        res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
-          rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
-      }else{
+      res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
+        rs2 == -T{1} ? rs1 : rs2 ? rs1 / rs2 : -T{1};
+    }else{
       res = std::is_signed_v<T> && rs1 == std::numeric_limits<T>::min() &&
         rs2 == -T{1} ? 0 : rs2 ? rs1 % rs2 : rs1;
     }
@@ -339,7 +339,7 @@ bool bcond(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
 }
 
 /// Rev FMA template which handles 0.0 * NAN and NAN * 0.0 correctly
-// RISC-V requires INVALID exception even when z = qNaN
+// RISC-V requires INVALID exception when x * y is INVALID even when z = qNaN
 template<typename T>
 inline auto revFMA(T x, T y, T z){
   if((!y && std::isinf(x)) || (!x && std::isinf(y))){
@@ -348,7 +348,7 @@ inline auto revFMA(T x, T y, T z){
   return std::fma(x, y, z);
 }
 
-/// Fused Multiply-Add
+/// Fused Multiply+Add
 template<typename T>
 bool fmadd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   R->SetFP(Inst.rd, revFMA(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));
@@ -373,7 +373,7 @@ bool fnmsub(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst)
   return true;
 }
 
-/// Fused Negated (Multiply-Add)
+/// Fused Negated (Multiply+Add)
 template<typename T>
 bool fnmadd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
   R->SetFP(Inst.rd, -revFMA(R->GetFP<T>(Inst.rs1), R->GetFP<T>(Inst.rs2), R->GetFP<T>(Inst.rs3)));

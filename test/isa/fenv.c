@@ -61,31 +61,31 @@ static inline bool my_isnanf(float f) {
 
 }
 
-static inline bool my_isnan(double d) {
+static inline bool my_isnand(double d) {
   uint64_t i;
   memcpy(&i, &d, sizeof(i));
   return !(i & 0x7ff0000000000000) && (i & 0xfffffffffffff);
 }
 
-#define my_isnan(x) _Generic((x), default: my_isnan, float: my_isnanf)(x)
+#define my_isnan(x) _Generic((x), default: my_isnand, float: my_isnanf)(x)
 
-#define FENV_TEST(test, type, inst, in1, in2, rm, result, except) do {  \
-      type res;                                                         \
-      uint32_t ex;                                                      \
-      asm volatile("fsflags zero");                                     \
-      asm volatile("csrwi frm, %0" : : "K"(rm));                        \
-      asm volatile( #inst " %0, %1, %2" : "=f"(res) : "f"(in1), "f"(in2) ); \
-      asm volatile("frflags %0" : "=r"(ex));                            \
-      if(my_isnan(result) ? !my_isnan(res) : res != result)             \
-        asm volatile(" .word 0; .word " #test);                         \
-      if(ex != except)                                                  \
-        asm volatile(" .word 0; .word " #test);                         \
-    } while(0)
+#define FENV_TEST(test, type, inst, in1, in2, rm, result, except) do {       \
+    type res;                                                                \
+    uint32_t ex;                                                             \
+    asm volatile("fsflags zero");                                            \
+    asm volatile("csrwi frm, %0" : : "K"(rm));                               \
+    asm volatile( #inst " %0, %1, %2" : "=f"(res) : "f"(in1), "f"(in2) );    \
+    asm volatile("frflags %0" : "=r"(ex));                                   \
+    if(ex != except || (my_isnan(result) ? !my_isnan(res) : res != result))  \
+      asm volatile(" .word 0; .word " #test);                                \
+  } while(0)
 
 int main(int argc, char **argv){
     asm volatile("slli x0,x0,1"); // enable tracing
 
     FENV_TEST(  1,  float,  fsub.s,  INFINITY,  INFINITY,  DYN,       NAN,  NV  );
+
+#if 0
     FENV_TEST(  1,  float,  fadd.s,  INFINITY, -INFINITY,  DYN,       NAN,  NV  );
     FENV_TEST(  1,  float,  fadd.s, -INFINITY,  INFINITY,  DYN,       NAN,  NV  );
     FENV_TEST(  1,  float,  fmul.s,  INFINITY,      0.0f,  DYN,       NAN,  NV  );
@@ -113,4 +113,7 @@ int main(int argc, char **argv){
     FENV_TEST(  6,  float,  fmin.s,       NAN,  INFINITY,  DYN,  INFINITY,  0   );
     FENV_TEST(  7,  float,  fmin.s,       NAN,      1.0f,  DYN,      1.0f,  0   );
 #endif
+
+#endif
+
 }

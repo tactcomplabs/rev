@@ -28,19 +28,58 @@
 
 namespace SST::RevCPU{
 
-// TODO: Right now we only need to save/restore rounding mode.
-// Later, we may need to save and restore the entire fenv_t state
 class RevFenv{
-  FCSR& fcsr;
-  std::fenv_t saved_env;
+  FCSR& fcsr;             // Reverence to this register file's FCSR
+  std::fenv_t saved_env;  // The saved FP environment which is restored
 
 public:
+
   /// Constructor saves Fenv state to be restored at destruction
-  explicit RevFenv(RevRegFile* R) : fcsr(R->GetFCSR()){
+  explicit RevFenv(RevRegFile* R, FRMode rm, SST::Output* output)
+    : fcsr(R->GetFCSR()){
+
     // Save FP environment and set flags to default
     if(feholdexcept(&saved_env)){
       throw std::runtime_error("Getting floating-point environment "
                                "with feholdexcept() is not working.");
+    }
+
+    // Raise any exceptions in fcsr on the host
+    if(fcsr.DZ) feraiseexcept(FE_DIVBYZERO);
+    if(fcsr.NX) feraiseexcept(FE_INEXACT);
+    if(fcsr.NV) feraiseexcept(FE_INVALID);
+    if(fcsr.OF) feraiseexcept(FE_OVERFLOW);
+    if(fcsr.UF) feraiseexcept(FE_UNDERFLOW);
+
+    // If the encoded rounding mode is dynamic, load the frm register
+    if(rm == FRMode::DYN){
+      rm = R->GetFRM();
+    }
+
+    // Set the Floating-Point Rounding Mode on the host
+    switch(rm){
+      case FRMode::None:
+      case FRMode::RNE:   // Round to Nearest, ties to Even
+        RevFenv::SetFPRoundingMode(FE_TONEAREST);
+        break;
+      case FRMode::RTZ:   // Round towards Zero
+        RevFenv::SetFPRoundingMode(FE_TOWARDZERO);
+        break;
+      case FRMode::RDN:   // Round Down (towards -Inf)
+        RevFenv::SetFPRoundingMode(FE_DOWNWARD);
+        break;
+      case FRMode::RUP:   // Round Up (towards +Inf)
+        RevFenv::SetFPRoundingMode(FE_UPWARD);
+        break;
+      case FRMode::RMM:   // Round to Nearest, ties to Max Magnitude
+        output->fatal(CALL_INFO, -1,
+                      "Error: Round to nearest Max Magnitude not implemented"
+                      " at PC = 0x%" PRIx64 "\n", R->GetPC());
+        break;
+      case FRMode::DYN:
+        output->fatal(CALL_INFO, -1, "Illegal FCSR Rounding Mode of"
+                      " DYN at PC = 0x%" PRIx64 "\n", R->GetPC());
+        break;
     }
   }
 

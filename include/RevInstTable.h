@@ -229,7 +229,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   RevInstEntryBuilder() : RevInstDefaultsPolicy() {
     //Set default values
     InstEntry.mnemonic  = std::string("nop");
-    InstEntry.func      = NULL;
+    InstEntry.func      = nullptr;
     InstEntry.opcode    = RevInstDefaultsPolicy::opcode;
     InstEntry.cost      = RevInstDefaultsPolicy::cost;
     InstEntry.funct2    = RevInstDefaultsPolicy::funct2;
@@ -271,7 +271,7 @@ struct RevInstEntryBuilder : RevInstDefaultsPolicy{
   auto& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
   auto& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
   auto& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
-  auto& SetRaiseFPE(bool c)          { InstEntry.raisefpe = c;   return *this;}
+  auto& SetRaiseFPE(bool c = true)   { InstEntry.raisefpe = c;   return *this;}
 
   auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&)){
     InstEntry.func = func;
