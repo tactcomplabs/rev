@@ -1,5 +1,5 @@
 //
-// _CSR_h_
+// _ZiCSR_h_
 //
 // Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -27,7 +27,7 @@ class ZiCSR : public RevExt {
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // Because CSR has a 32/64-bit width, this function is templatized
   template<typename T, CSRKind KIND, bool IsImm>
-  static bool ModCSR(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+  static bool ModCSRImpl(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     T old = 0;
 
     // CSRRW with rd == zero does not read CSR
@@ -61,23 +61,23 @@ class ZiCSR : public RevExt {
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // This calls the 32/64-bit ModCSR depending on the current XLEN
   template<CSRKind KIND, bool IsImm>
-  static bool RevModCSR(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+  static bool ModCSR(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     bool ret;
     if(R->IsRV32){
-      ret = ModCSR<uint32_t, KIND, IsImm>(F, R, M, Inst);
+      ret = ModCSRImpl<uint32_t, KIND, IsImm>(F, R, M, Inst);
     }else{
-      ret = ModCSR<uint64_t, KIND, IsImm>(F, R, M, Inst);
+      ret = ModCSRImpl<uint64_t, KIND, IsImm>(F, R, M, Inst);
     }
     R->AdvancePC(Inst);
     return ret;
   }
 
-  static constexpr auto& csrrw  = RevModCSR<CSRKind::Write, false>;
-  static constexpr auto& csrrs  = RevModCSR<CSRKind::Set,   false>;
-  static constexpr auto& csrrc  = RevModCSR<CSRKind::Clear, false>;
-  static constexpr auto& csrrwi = RevModCSR<CSRKind::Write,  true>;
-  static constexpr auto& csrrsi = RevModCSR<CSRKind::Set,    true>;
-  static constexpr auto& csrrci = RevModCSR<CSRKind::Clear,  true>;
+  static constexpr auto& csrrw  = ModCSR<CSRKind::Write, false>;
+  static constexpr auto& csrrs  = ModCSR<CSRKind::Set,   false>;
+  static constexpr auto& csrrc  = ModCSR<CSRKind::Clear, false>;
+  static constexpr auto& csrrwi = ModCSR<CSRKind::Write,  true>;
+  static constexpr auto& csrrsi = ModCSR<CSRKind::Set,    true>;
+  static constexpr auto& csrrci = ModCSR<CSRKind::Clear,  true>;
 
   // ----------------------------------------------------------------------
   //
