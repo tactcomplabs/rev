@@ -62,19 +62,21 @@ class RV64D : public RevExt {
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64DInstDefaults : RevInstDefaults {
-    static constexpr uint8_t     opcode   = 0b1010011;
-    static constexpr RevRegClass rdClass  = RevRegClass::RegFLOAT;
-    static constexpr RevRegClass rs1Class = RevRegClass::RegFLOAT;
-    static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
+    Rev64DInstDefaults(){
+      SetOpcode(0b1010011);
+      SetrdClass(RevRegClass::RegFLOAT);
+      Setrs1Class(RevRegClass::RegFLOAT);
+      Setrs2Class(RevRegClass::RegUNKNOWN);
+    }
   };
 
   std::vector<RevInstEntry> RV64DTable = {
-    {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.l.d %rd, %rs1"  ).SetFunct2or7(0b1100001).SetfpcvtOp(0b10).SetRaiseFPE().SetImplFunc( &fcvtld ).InstEntry},
-    {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.lu.d %rd, %rs1" ).SetFunct2or7(0b1100001).SetfpcvtOp(0b11).SetRaiseFPE().SetImplFunc( &fcvtlud ).InstEntry},
-    {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.d.l %rd, %rs1"  ).SetFunct2or7(0b1101001).SetfpcvtOp(0b10).SetRaiseFPE().SetImplFunc( &fcvtdl ).InstEntry},
-    {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fcvt.d.lu %rd, %rs1" ).SetFunct2or7(0b1101001).SetfpcvtOp(0b11).SetRaiseFPE().SetImplFunc( &fcvtdlu ).InstEntry},
-    {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fmv.x.d %rd, %rs1"   ).SetFunct2or7(0b1110001).SetImplFunc( &fmvxd ).InstEntry},
-    {RevInstEntryBuilder<Rev64DInstDefaults>().SetMnemonic("fmv.d.x %rd, %rs1"   ).SetFunct2or7(0b1111001).SetImplFunc( &fmvdx ).InstEntry},
+    { Rev64DInstDefaults().SetMnemonic("fcvt.l.d %rd, %rs1"  ).SetFunct2or7(0b1100001).SetfpcvtOp(0b10).SetRaiseFPE().SetImplFunc(fcvtld) },
+    { Rev64DInstDefaults().SetMnemonic("fcvt.lu.d %rd, %rs1" ).SetFunct2or7(0b1100001).SetfpcvtOp(0b11).SetRaiseFPE().SetImplFunc(fcvtlud) },
+    { Rev64DInstDefaults().SetMnemonic("fcvt.d.l %rd, %rs1"  ).SetFunct2or7(0b1101001).SetfpcvtOp(0b10).SetRaiseFPE().SetImplFunc(fcvtdl) },
+    { Rev64DInstDefaults().SetMnemonic("fcvt.d.lu %rd, %rs1" ).SetFunct2or7(0b1101001).SetfpcvtOp(0b11).SetRaiseFPE().SetImplFunc(fcvtdlu) },
+    { Rev64DInstDefaults().SetMnemonic("fmv.x.d %rd, %rs1"   ).SetFunct2or7(0b1110001).SetImplFunc(fmvxd) },
+    { Rev64DInstDefaults().SetMnemonic("fmv.d.x %rd, %rs1"   ).SetFunct2or7(0b1111001).SetImplFunc(fmvdx) },
   };
 
 public:

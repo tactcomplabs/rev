@@ -96,25 +96,19 @@ class RV64A : public RevExt {
   // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
-  struct Rev64AInstDefaults : RevInstDefaults {
-    static constexpr uint8_t     opcode   = 0b0101111;
-    static constexpr uint8_t     funct3   = 0b011;
-    static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
-  };
   std::vector<RevInstEntry> RV64ATable = {
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("lr.d %rd, (%rs1)"          ).SetFunct2or7(0b00010).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&lrd ).InstEntry},
-    {RevInstEntryBuilder<Rev64AInstDefaults>().SetMnemonic("sc.d %rd, %rs1, %rs2"      ).SetFunct2or7(0b00011                        ).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(&scd ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoswap.d %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b00001).SetImplFunc( &amoswapd ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoadd.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b00000).SetImplFunc( &amoaddd ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoxor.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b00100).SetImplFunc( &amoxord ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoand.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b01100).SetImplFunc( &amoandd ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amoor.w %rd, %rs1, %rs2").SetCost(   1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b01000).SetImplFunc( &amoord ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amomin.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b10000).SetImplFunc( &amomind ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amomax.w %rd, %rs1, %rs2").SetCost(  1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b10100).SetImplFunc( &amomaxd ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b11000).SetImplFunc( &amominud ).InstEntry},
-    {RevInstEntryBuilder<RevInstDefaults>().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetCost( 1).SetOpcode( 0b0101111).SetFunct3(0b011).SetFunct2or7( 0b11100).SetImplFunc( &amomaxud ).InstEntry},
+    { RevInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b00010).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(lrd) },
+    { RevInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b00011).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(scd) },
+    { RevInstDefaults().SetMnemonic("amoswap.d %rd, %rs1, %rs2").SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b00001).SetImplFunc(amoswapd)   },
+    { RevInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b00000).SetImplFunc(amoaddd)    },
+    { RevInstDefaults().SetMnemonic("amoxor.w %rd, %rs1, %rs2" ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b00100).SetImplFunc(amoxord)    },
+    { RevInstDefaults().SetMnemonic("amoand.w %rd, %rs1, %rs2" ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b01100).SetImplFunc(amoandd)    },
+    { RevInstDefaults().SetMnemonic("amoor.w %rd, %rs1, %rs2"  ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b01000).SetImplFunc(amoord)     },
+    { RevInstDefaults().SetMnemonic("amomin.w %rd, %rs1, %rs2" ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b10000).SetImplFunc(amomind)    },
+    { RevInstDefaults().SetMnemonic("amomax.w %rd, %rs1, %rs2" ).SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b10100).SetImplFunc(amomaxd)    },
+    { RevInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b11000).SetImplFunc(amominud)   },
+    { RevInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetOpcode(0b0101111).SetFunct3(0b011).SetFunct2or7(0b11100).SetImplFunc(amomaxud)   },
   };
-
 
 public:
   /// RV64A: standard constructor

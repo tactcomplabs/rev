@@ -87,23 +87,26 @@ class ZiCSR : public RevExt {
   // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
   //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
-#define INIT                                    \
-  SetOpcode(0b1110011).                         \
-  SetRaiseFPE().                                \
-  SetFunct2or7(0).                              \
-  SetrdClass(RevRegClass::RegGPR).              \
-  Setrs2Class(RevRegClass::RegUNKNOWN).         \
-  Setimm12(0b0).                                \
-  Setimm(FVal).                                 \
-  SetFormat(RVTypeI)
+  struct RevZiCSRInstDefaults : RevInstDefaults {
+    RevZiCSRInstDefaults(){
+      SetOpcode(0b1110011);
+      SetRaiseFPE();
+      SetFunct2or7(0);
+      SetrdClass(RevRegClass::RegGPR);
+      Setrs2Class(RevRegClass::RegUNKNOWN);
+      Setimm12(0b0);
+      Setimm(FVal);
+      SetFormat(RVTypeI);
+    }
+  };
 
   std::vector<RevInstEntry> ZiCSRTable = {
-    { RevInstEntryBuilder<RevInstDefaults>().INIT.SetMnemonic("csrrw %csr, %rd, %rs1" ).SetFunct3(0b001).SetImplFunc(csrrw ).InstEntry },
-    { RevInstEntryBuilder<RevInstDefaults>().INIT.SetMnemonic("csrrs %csr, %rd, %rs1" ).SetFunct3(0b010).SetImplFunc(csrrs ).InstEntry },
-    { RevInstEntryBuilder<RevInstDefaults>().INIT.SetMnemonic("csrrc %csr, %rd, %rs1" ).SetFunct3(0b011).SetImplFunc(csrrc ).InstEntry },
-    { RevInstEntryBuilder<RevInstDefaults>().INIT.SetMnemonic("csrrwi %csr, %rd, $imm").SetFunct3(0b101).SetImplFunc(csrrwi).InstEntry },
-    { RevInstEntryBuilder<RevInstDefaults>().INIT.SetMnemonic("csrrsi %csr, %rd, $imm").SetFunct3(0b110).SetImplFunc(csrrsi).InstEntry },
-    { RevInstEntryBuilder<RevInstDefaults>().INIT.SetMnemonic("csrrci %csr, %rd, $imm").SetFunct3(0b111).SetImplFunc(csrrci).InstEntry },
+    { RevZiCSRInstDefaults().SetMnemonic("csrrw %csr, %rd, %rs1" ).SetFunct3(0b001).SetImplFunc(csrrw ) },
+    { RevZiCSRInstDefaults().SetMnemonic("csrrs %csr, %rd, %rs1" ).SetFunct3(0b010).SetImplFunc(csrrs ) },
+    { RevZiCSRInstDefaults().SetMnemonic("csrrc %csr, %rd, %rs1" ).SetFunct3(0b011).SetImplFunc(csrrc ) },
+    { RevZiCSRInstDefaults().SetMnemonic("csrrwi %csr, %rd, $imm").SetFunct3(0b101).SetImplFunc(csrrwi) },
+    { RevZiCSRInstDefaults().SetMnemonic("csrrsi %csr, %rd, $imm").SetFunct3(0b110).SetImplFunc(csrrsi) },
+    { RevZiCSRInstDefaults().SetMnemonic("csrrci %csr, %rd, $imm").SetFunct3(0b111).SetImplFunc(csrrci) },
   };
 
 public:
