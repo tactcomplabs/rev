@@ -30,6 +30,7 @@
 #include <sst/core/timeConverter.h>
 #include <sst/core/model/element_python.h>
 #include <sst/core/rng/mersenne.h>
+#include <sst/core/model/element_python.h>
 
 #pragma GCC diagnostic pop
 

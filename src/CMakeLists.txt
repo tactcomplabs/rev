@@ -24,8 +24,16 @@ set(RevCPUSrcs
   RevThread.cc
   )
 
+set(RevPy
+  pyrevcpu.py
+  )
+
+set(ODFLAGS "od -v -t x1 < ${RevPy} | sed -e 's/^[^ ]*[ ]*//g' -e '/^\\s*$$/d' -e 's/\\([0-9a-f]*\\)[ $$]*/0x\\1,/g' > ${REVCPU_INCLUDE_PATH}/pyrevcpu.inc")
+
+add_custom_target(RevPyInc ${ODFLAGS})
+
 add_subdirectory(../common common)
-add_library(revcpu SHARED ${RevCPUSrcs})
+add_library(revcpu SHARED ${RevCPUSrcs} ${RevPyInc})
 target_include_directories(revcpu PRIVATE ${REVCPU_INCLUDE_PATH} PUBLIC ${SST_INSTALL_DIR}/include)
 
 install(TARGETS revcpu DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})

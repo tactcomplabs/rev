@@ -28,7 +28,7 @@ class RevCPU():
   def enableRevSim(self,cpus,cores,clock,memSize,machine,startAddr,memCost,program,verbose):
     print("Enabling Rev CPU component params")
     self._numCPU = cpus
-    for i in range(0, cpus)
+    for i in range(cpus):
       print("Building RevCPU " + str(i))
       sst.pushNamePrefix("CPU"+str(i))
 
