@@ -28,11 +28,33 @@ namespace SST::RevCPU{
 
 using namespace SST::Interfaces;
 
-enum AckFmt : uint64_t {
+enum class AckFmt : uint64_t {
   MSGID = 0,
   SRCID = 1,
-  DSTID = 2,
-  TYPE = 3,
+  TYPE = 2,
+};
+
+enum class DataFmt : uint64_t {
+  MSGID = 0,
+  SRCID = 1,
+  TYPE = 2,
+};
+
+enum class InitFmt : uint64_t {
+  SRC_LOGICAL_ID = 0,
+  SRC_ENDPOINT_ID = 1,
+  TYPE = 2,
+};
+
+enum class NetworkNodeType : uint64_t {
+  PRIMARY_REV = 0,
+  SECONDARY_REV = 1,
+};
+
+// Maybe don't need this?
+enum DataType : uint64_t {
+  STRING = 0,
+  VECTOR = 1,
 };
 
 // NOTE: this probably doesn't need to be a uint64_t
@@ -46,7 +68,7 @@ enum class PacketType : uint64_t {
 
 /**
  * RevPkt : inherited class to handle the individual network events for RevNIC
- */
+ **/
 class RevPkt : public SST::Event{
 public:
   /// RevPkt: extended constructor
@@ -154,7 +176,11 @@ public:
 
   virtual void ProcessAck(RevPkt* pkt) = 0;
 
-  virtual void AckThisPkt(RevPkt *pkt) = 0;
+  virtual void AckThisPkt(const uint64_t MsgID, const uint64_t DestLogicalID) = 0;
+
+  virtual size_t GetNumUnackedPkts() = 0;
+
+  virtual std::string VecU64ToString(const std::vector<uint64_t>& vec) = 0;
 
 }; /// end RevNicAPI
 
@@ -226,7 +252,8 @@ public:
 
   /// RevNIC: callback functions for the SimpleNetwork interface
   bool msgRecvNotify(int virtualNetwork);
-  //bool msgSendNotify(int virtualNetwork);
+
+  // bool msgSendNotify(int virtualNetwork);
 
   /// RevNIC: clock function
   virtual bool ClockTick(Cycle_t cycle);
@@ -235,13 +262,18 @@ public:
   virtual unsigned getNumOutstanding() { return sendQ.size(); }
 
   /// RevNIC: sends ack to src of pkt
-  virtual void AckThisPkt(RevPkt *pkt);
+  virtual void AckThisPkt(const uint64_t msgID, const uint64_t srcID);
 
   /// RevNIC: convert a std::string to a std::vector<uint64_t> (used for sendString )
   virtual std::vector<uint64_t> StringToVecU64(const std::string& str);
 
+  virtual std::string VecU64ToString(const std::vector<uint64_t>& vec);
+
   /// RevNIC: process the received ack (ie. remove from outstanding acks)
   virtual void ProcessAck(RevPkt *pkt);
+
+  /// RevNIC: return the number of unacked messages
+  virtual size_t GetNumUnackedPkts() { return OutstandingAcks.size(); }
 
 protected:
   SST::Output *output;                    ///< RevNIC: SST output object

@@ -206,7 +206,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       Procs.push_back( new RevProc( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
       // TODO: Update this once we allow params to specify certain Harts/Cores for NIC access
       if( EnableNIC ){
-        Procs[i]->AssignNIC(NIC, _REV_INVALID_HART_ID_);
+        Procs[i]->GiveAccessToNIC(NIC, _REV_INVALID_HART_ID_);
       }
     }
   }
@@ -656,6 +656,10 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   // check to see if the network has any outstanding messages: fixme
   if( !TrackTags.empty() || !ZeroRqst.empty() ){
+    rtn = false;
+  }
+
+  if( EnableNIC && NIC->GetNumUnackedPkts() ){
     rtn = false;
   }
 

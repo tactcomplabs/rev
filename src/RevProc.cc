@@ -2451,7 +2451,7 @@ void RevProc::AssignNIC(RevNicAPI* NIC, unsigned HartID){
   }
   // Not assigning to Hart, let's make sure we haven't already assigned a NIC
   // to this core
-  else if( this->NIC == nullptr ){
+  else if( this->NIC != nullptr ){
     output->fatal(CALL_INFO, -1, "Attempted to assign a NIC to a Proc "
                                  "that already has one assigned."
                                  " This is a bug\n");
@@ -2475,12 +2475,18 @@ void RevProc::GiveAccessToNIC(RevNicAPI* NIC, unsigned HartID){
   }
   // Not assigning to Hart, let's make sure we haven't already assigned a NIC
   // to this core
-  else if( this->NIC == nullptr ){
+  else if( this->NIC != nullptr ){
     output->fatal(CALL_INFO, -1, "Attempted to assign a NIC to a Proc "
                                  "that already has one assigned."
                                  " This is a bug\n");
   }
-  else { this->NIC = NIC; }
+  else {
+    // TODO: FIXME
+    for( const auto& Hart : Harts ){
+      Hart->GiveAccessToNIC(NIC);
+    }
+    this->NIC = NIC;
+  }
 }
 
 

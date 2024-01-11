@@ -115,20 +115,31 @@ void RevNIC::setup(){
   }
 }
 
-void RevNIC::AckThisPkt(RevPkt *pkt){
+void RevNIC::AckThisPkt(const uint64_t MsgIDToAck, const uint64_t DestLogicalID){
   std::vector<uint64_t> AckData;
-  AckData[AckFmt::MSGID] = pkt->getMsgID();
+  AckData.push_back(MsgIDToAck);
   RevPkt *AckPkt = new RevPkt(PacketType::ACK, LogicalID, AckData);
-  send(AckPkt, pkt->getSrc());
+  send(AckPkt, DestLogicalID);
 }
 
+enum class AckFmt : uint64_t {
+  MSGID = 0,
+  SRCID = 1,
+  TYPE = 2,
+};
+
 void RevNIC::ProcessAck(RevPkt *pkt){
-  const auto& Data = pkt->getData();
-  const uint64_t MsgID = Data[AckFmt::MSGID];
+  auto Data = pkt->getData();
+  const uint64_t AckedMsgID = Data.at((size_t)AckFmt::MSGID);
 
   // Remove from list of outstanding acks
-  if( OutstandingAcks.find(MsgID) != OutstandingAcks.end() ){
-    OutstandingAcks.erase(MsgID);
+  if( OutstandingAcks.find(AckedMsgID) != OutstandingAcks.end() ){
+    OutstandingAcks.erase(AckedMsgID);
+  } else {
+    output->fatal(CALL_INFO, -1,
+                "%s, Error: RevNIC: received ack for unknown message ID=%" PRIu64 "\n",
+                getName().c_str(), AckedMsgID);
+
   }
 }
 
@@ -138,10 +149,13 @@ bool RevNIC::msgRecvNotify(int vn){
     return false;
   }
 
-
   RevPkt *Pkt = static_cast<RevPkt*>(req->takePayload());
   if( Pkt->getType() == PacketType::DATA ){
-    AckThisPkt(Pkt);
+    // output the data packet
+    std::vector<uint64_t> PktData = Pkt->getData();
+    // convert to string
+    std::string str = VecU64ToString(PktData);
+    AckThisPkt(Pkt->getMsgID(), Pkt->getSrc());
   } else if( Pkt->getType() == PacketType::ACK ){
     ProcessAck(Pkt);
   } else if( Pkt->getType() == PacketType::INIT_BCAST ){
@@ -161,12 +175,6 @@ bool RevNIC::msgRecvNotify(int vn){
   return true;
 }
 
-//bool RevNIC::msgSendNotify(int vn){
-//  // Add stats?
-//  return true;
-//}
-
-
 void RevNIC::send(RevPkt* event, uint64_t destination){
 
   // check to make sure the destination is valid
@@ -185,7 +193,14 @@ void RevNIC::send(RevPkt* event, uint64_t destination){
                   getName().c_str(), destination);
   }
 
-  OutstandingAcks.insert(event->getMsgID());
+  output->verbose(CALL_INFO, 1, 0,
+                  "%s sending message to logical destination %" PRIu64 "\n",
+                  getName().c_str(), destination);
+
+  // NOTE: Only ACKing DATA packets for now
+  if( event->getType() == PacketType::DATA){
+    OutstandingAcks.insert(event->getMsgID());
+  }
 
   SST::Interfaces::SimpleNetwork::Request *req =
     new SST::Interfaces::SimpleNetwork::Request();
@@ -213,6 +228,19 @@ std::vector<uint64_t> RevNIC::StringToVecU64(const std::string& str) {
   return result;
 }
 
+std::string RevNIC::VecU64ToString(const std::vector<uint64_t>& vec) {
+  std::string result;
+  for (uint64_t packed : vec) {
+    for (size_t j = 0; j < 8; ++j) {
+      char c = static_cast<char>((packed >> (j * 8)) & 0xFF);
+      if (c != 0) {  // Assuming null-termination for strings
+        result += c;
+      }
+    }
+  }
+  return result;
+}
+
 uint64_t RevNIC::getNumDestinations(){
   return numDest;
 }
@@ -220,7 +248,6 @@ uint64_t RevNIC::getNumDestinations(){
 SST::Interfaces::SimpleNetwork::nid_t RevNIC::getAddress(){
   return iFace->getEndpointID();
 }
-
 
 bool RevNIC::ClockTick(Cycle_t cycle){
   while( !sendQ.empty() ){
