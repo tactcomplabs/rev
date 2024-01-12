@@ -41,17 +41,17 @@ struct RevExt{
   virtual ~RevExt() = default;
 
   /// RevExt: sets the internal instruction table
-  void SetTable(std::vector<RevInstEntry> InstVect){
+  void SetTable(std::vector<RevInstEntry>&& InstVect){
     table = std::move(InstVect);
   }
 
   /// RevExt: sets the internal compressed instruction table
-  void SetCTable(std::vector<RevInstEntry> InstVect){
+  void SetCTable(std::vector<RevInstEntry>&& InstVect){
     ctable = std::move(InstVect);
   }
 
   /// RevExt: sets the optional table (used for variant-specific compressed encodings)
-  void SetOTable(std::vector<RevInstEntry> InstVect){
+  void SetOTable(std::vector<RevInstEntry>&& InstVect){
     otable = std::move(InstVect);
   }
 
