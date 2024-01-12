@@ -147,7 +147,6 @@ class RV32D : public RevExt{
       SetrdClass (RevRegClass::RegFLOAT);
       Setrs1Class(RevRegClass::RegFLOAT);
       Setrs2Class(RevRegClass::RegFLOAT);
-      Setrs3Class(RevRegClass::RegUNKNOWN);
       SetRaiseFPE(true);
     }
   };
@@ -186,10 +185,10 @@ class RV32D : public RevExt{
   };
 
   std::vector<RevInstEntry> RV32DCTable = {
-    { RevCInstDefaults().SetMnemonic("c.fldsp %rd, $imm"     ).SetOpcode(0b10).SetFunct3(0b001).SetImplFunc(cfldsp).SetrdClass (RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).Setimm(FVal).SetFormat(RVCTypeCI ).SetCompressed(true) },
-    { RevCInstDefaults().SetMnemonic("c.fsdsp %rs1, $imm"    ).SetOpcode(0b10).SetFunct3(0b101).SetImplFunc(cfsdsp).Setrs1Class(RevRegClass::RegGPR  ).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCSS).SetCompressed(true) },
-    { RevCInstDefaults().SetMnemonic("c.fld %rd, %rs1, $imm" ).SetOpcode(0b00).SetFunct3(0b001).SetImplFunc(cfld  ).SetrdClass (RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).Setimm(FVal).SetFormat(RVCTypeCL ).SetCompressed(true) },
-    { RevCInstDefaults().SetMnemonic("c.fsd %rs2, %rs1, $imm").SetOpcode(0b00).SetFunct3(0b101).SetImplFunc(cfsd  ).Setrs1Class(RevRegClass::RegGPR  ).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS ).SetCompressed(true) },
+    { RevCInstDefaults().SetMnemonic("c.fldsp %rd, $imm"     ).SetOpcode(0b10).SetFunct3(0b001).SetImplFunc(cfldsp).SetrdClass (RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).Setimm(FVal).SetFormat(RVCTypeCI ) },
+    { RevCInstDefaults().SetMnemonic("c.fsdsp %rs1, $imm"    ).SetOpcode(0b10).SetFunct3(0b101).SetImplFunc(cfsdsp).Setrs1Class(RevRegClass::RegGPR  ).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCSS) },
+    { RevCInstDefaults().SetMnemonic("c.fld %rd, %rs1, $imm" ).SetOpcode(0b00).SetFunct3(0b001).SetImplFunc(cfld  ).SetrdClass (RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).Setimm(FVal).SetFormat(RVCTypeCL ) },
+    { RevCInstDefaults().SetMnemonic("c.fsd %rs2, %rs1, $imm").SetOpcode(0b00).SetFunct3(0b101).SetImplFunc(cfsd  ).Setrs1Class(RevRegClass::RegGPR  ).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS ) },
   };
 
 public:

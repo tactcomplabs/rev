@@ -149,7 +149,6 @@ class RV32F : public RevExt{
       SetrdClass (RevRegClass::RegFLOAT);
       Setrs1Class(RevRegClass::RegFLOAT);
       Setrs2Class(RevRegClass::RegFLOAT);
-      Setrs3Class(RevRegClass::RegUNKNOWN);
       SetRaiseFPE(true);
     }
   };
@@ -186,10 +185,10 @@ class RV32F : public RevExt{
   };
 
   std::vector<RevInstEntry> RV32FCOTable = {
-    { RevCInstDefaults().SetMnemonic("c.flwsp %rd, $imm"     ).SetOpcode(0b10).SetFunct3(0b011).SetImplFunc(cflwsp).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR).Setimm(FVal).SetFormat(RVCTypeCI) },
-    { RevCInstDefaults().SetMnemonic("c.fswsp %rs2, $imm"    ).SetOpcode(0b10).SetFunct3(0b111).SetImplFunc(cfswsp).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCSS) },
-    { RevCInstDefaults().SetMnemonic("c.flw %rd, %rs1, $imm" ).SetOpcode(0b00).SetFunct3(0b011).SetImplFunc(cflw  ).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR).Setimm(FVal).SetFormat(RVCTypeCL) },
-    { RevCInstDefaults().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetOpcode(0b00).SetFunct3(0b111).SetImplFunc(cfsw  ).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS) },
+    { RevCInstDefaults().SetMnemonic("c.flwsp %rd, $imm"     ).SetFunct3(0b011).SetImplFunc(cflwsp).Setimm(FVal).SetrdClass(RevRegClass::RegFLOAT  )                                   .SetFormat(RVCTypeCI ).SetOpcode(0b10) },
+    { RevCInstDefaults().SetMnemonic("c.fswsp %rs2, $imm"    ).SetFunct3(0b111).SetImplFunc(cfswsp).Setimm(FVal).SetrdClass(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegFLOAT).SetFormat(RVCTypeCSS).SetOpcode(0b10) },
+    { RevCInstDefaults().SetMnemonic("c.flw %rd, %rs1, $imm" ).SetFunct3(0b011).SetImplFunc(cflw  ).Setimm(FVal).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR)  .SetFormat(RVCTypeCL ).SetOpcode(0b00) },
+    { RevCInstDefaults().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetFunct3(0b111).SetImplFunc(cfsw  ).Setimm(FVal).SetrdClass(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegFLOAT).SetFormat(RVCTypeCS ).SetOpcode(0b00) },
   };
 
 public:
