@@ -16,6 +16,7 @@ using namespace RevCPU;
 
 RevNIC::RevNIC(ComponentId_t id, Params& params)
   : RevNicAPI(id, params) {
+  std::cout << "IN THE CONSTRUCTOR" << std::endl;
   // setup the initial logging functions
   int verbosity = params.find<int>("verbose", 0);
   output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
@@ -24,8 +25,10 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
   registerClock(nicClock, new Clock::Handler<RevNIC>(this, &RevNIC::ClockTick));
 
   // load the SimpleNetwork interfaces
+  std::cout << "Loading SimpleNetwork interface..." << std::endl;
   iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1);
   if( !iFace ){
+    std::cout << "Loading anonymous SimpleNetwork interface..." << std::endl;
     // load the anonymous nic
     Params netparams;
     netparams.insert("port_name", params.find<std::string>("port", "network"));
@@ -39,6 +42,7 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
                                                      netparams,
                                                      1);
   }
+  std::cout << "SimpleNetwork interface loaded." << std::endl;
 
   iFace->setNotifyOnReceive(
     new SST::Interfaces::SimpleNetwork::Handler<RevNIC>(this, &RevNIC::msgRecvNotify));

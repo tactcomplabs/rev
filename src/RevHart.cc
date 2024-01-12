@@ -12,9 +12,9 @@ namespace SST::RevCPU{
 
 void RevHart::AssignNIC(RevNicAPI *nic){
   // Make sure we don't already have a NIC
-  if(NIC){
-    output->fatal(CALL_INFO, -1, "Error: NIC already assigned to this hart.\n");
-  }
+  //if(NIC){
+  //  output->fatal(CALL_INFO, -1, "Error: NIC already assigned to this hart.\n");
+  //}
   output->verbose(CALL_INFO, 2, 0, "Assigning NIC to hart %" PRIu32 "\n and overriding the message handler.\n", ID);
   NIC = nic;
   NIC->setMsgHandler(new SST::Event::Handler<RevHart>(this, &RevHart::NetworkMsgHandler));

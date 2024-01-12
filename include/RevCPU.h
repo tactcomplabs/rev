@@ -94,6 +94,7 @@ public:
     {"prefetchDepth",   "Instruction prefetch depth per core",          "core:1"},
     {"table",           "Instruction cost table",                       "core:/path/to/table"},
     {"enable_nic",      "Enable the internal RevNIC",                   "0"},
+    {"nicPerCore",      "Enable an individual RevNIC for every RevProc (Core)", "0"},
     {"enable_pan",      "Enable PAN network endpoint",                  "0"},
     {"enable_test",     "Enable PAN network endpoint test",             "0"},
     {"enable_pan_stats", "Enable PAN network statistics",               "1"},
@@ -125,7 +126,8 @@ public:
   // RevCPU SubComponent Parameter Data
   // -------------------------------------------------------
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-    {"nic", "Network interface", "SST::RevCPU::RevNIC"},
+    // TODO: Figure out a better way of doing this (numCores isn't accurate)
+    {"nic", "Network interface(s)", "SST::RevCPU::RevNIC"},
     {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
     {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
     {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"},
@@ -275,6 +277,9 @@ private:
   uint64_t PrevAddr;                  ///< RevCPU: previous address for handling PAN messages
 
   bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
+  bool NICPerCore;                    ///< RevCPU: Flag for enabling a NIC per core
+  bool NICPerHart;                    ///< RevCPU: (TODO:) Flag for enabling a NIC per hart -- Plumbing is there, but not fully implemented
+
   bool EnableMemH;                    ///< RevCPU: Enable memHierarchy
   bool EnableCoProc;                  ///< RevCPU: Enable a co-processor attached to all cores
 
@@ -289,7 +294,10 @@ private:
   TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
   SST::Output output;                 ///< RevCPU: SST output handler
 
-  RevNicAPI *NIC;                     ///< RevCPU: Network interface controller
+// TODO: Probably a better way to do this
+  RevNicAPI *NIC;                     ///< RevCPU: Network interface controller(s)
+  std::vector<RevNicAPI*> NICs;       ///< RevCPU: Network interface controller(s)
+
   RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
 
   std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
