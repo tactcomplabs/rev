@@ -63,6 +63,7 @@ class RV64D : public RevExt {
   // ----------------------------------------------------------------------
   struct Rev64DInstDefaults : RevInstDefaults {
     Rev64DInstDefaults(){
+      SetFormat(RVTypeR);
       SetOpcode(0b1010011);
       Setrs2Class(RevRegClass::RegUNKNOWN);
       SetRaiseFPE(true);

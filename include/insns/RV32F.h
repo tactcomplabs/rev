@@ -186,10 +186,10 @@ class RV32F : public RevExt{
   };
 
   std::vector<RevInstEntry> RV32FCOTable = {
-    { RevInstDefaults().SetMnemonic("c.flwsp %rd, $imm"     ).SetCost(1).SetOpcode(0b10).SetFunct3(0b011).SetImplFunc(cflwsp).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR).Setimm(FVal).SetFormat(RVCTypeCI).SetCompressed(true) },
-    { RevInstDefaults().SetMnemonic("c.fswsp %rs2, $imm"    ).SetCost(1).SetOpcode(0b10).SetFunct3(0b111).SetImplFunc(cfswsp).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCSS).SetCompressed(true) },
-    { RevInstDefaults().SetMnemonic("c.flw %rd, %rs1, $imm" ).SetCost(1).SetOpcode(0b00).SetFunct3(0b011).SetImplFunc(cflw  ).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR).Setimm(FVal).SetFormat(RVCTypeCL).SetCompressed(true) },
-    { RevInstDefaults().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetCost(1).SetOpcode(0b00).SetFunct3(0b111).SetImplFunc(cfsw  ).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS).SetCompressed(true) },
+    { RevCInstDefaults().SetMnemonic("c.flwsp %rd, $imm"     ).SetOpcode(0b10).SetFunct3(0b011).SetImplFunc(cflwsp).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR).Setimm(FVal).SetFormat(RVCTypeCI) },
+    { RevCInstDefaults().SetMnemonic("c.fswsp %rs2, $imm"    ).SetOpcode(0b10).SetFunct3(0b111).SetImplFunc(cfswsp).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCSS) },
+    { RevCInstDefaults().SetMnemonic("c.flw %rd, %rs1, $imm" ).SetOpcode(0b00).SetFunct3(0b011).SetImplFunc(cflw  ).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR).Setimm(FVal).SetFormat(RVCTypeCL) },
+    { RevCInstDefaults().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetOpcode(0b00).SetFunct3(0b111).SetImplFunc(cfsw  ).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS) },
   };
 
 public:

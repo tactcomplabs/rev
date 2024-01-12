@@ -215,12 +215,19 @@ struct RevInstEntry{
   auto& SetCompressed(bool c)        { this->compressed = c;     return *this; }
   auto& SetfpcvtOp(uint8_t op)       { this->fpcvtOp    = op;    return *this; }
   auto& SetRaiseFPE(bool c)          { this->raisefpe   = c;     return *this; }
-  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&)){
-                                       this->func = func;     return *this; }
+  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&))
+                                     { this->func = func;        return *this; }
 }; // RevInstEntry
 
 // The default initialization for RevInstDefaults is the same as RevInstEntry
 using RevInstDefaults = RevInstEntry;
+
+// Compressed instruction defaults
+struct RevCInstDefaults : RevInstDefaults{
+  RevCInstDefaults(){
+    SetCompressed(true);
+  }
+};
 
 } // namespace SST::RevCPU
 

@@ -41,8 +41,9 @@ class RV64M : public RevExt{
   // ----------------------------------------------------------------------
   struct Rev64MInstDefaults : RevInstDefaults {
     Rev64MInstDefaults(){
+      SetFormat(RVTypeR);
       SetOpcode(0b0111011);
-      SetFunct2or7(0b01);
+      SetFunct2or7(0b0000001);
     }
   };
 

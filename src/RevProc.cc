@@ -246,6 +246,11 @@ bool RevProc::SeedInstTable(){
     EnableExt(new Zicbom(feature, mem, output), false);
   }
 
+  // Zifencei-Extension
+  if( feature->IsModeEnabled(RV_ZIFENCEI) ){
+    EnableExt(new Zifencei(feature, mem, output), false);
+  }
+
   return true;
 }
 
