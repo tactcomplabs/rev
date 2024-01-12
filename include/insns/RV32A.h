@@ -123,20 +123,17 @@ class RV32A : public RevExt {
   //
   // RISC-V RV32A Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct RV32AInstDefaults : RevInstDefaults {
     RV32AInstDefaults(){
-      SetFormat(RVTypeR);
       SetOpcode(0b0101111);
       SetFunct3(0b010);
     }
   };
 
   std::vector<RevInstEntry> RV32ATable = {
-    { RV32AInstDefaults().SetMnemonic("lr.w %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrw     ).Setrs2Class(RevRegClass::RegUNKNOWN) },
+    { RV32AInstDefaults().SetMnemonic("lr.w %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrw     )
+      .Setrs2Class(RevRegClass::RegUNKNOWN) },
     { RV32AInstDefaults().SetMnemonic("sc.w %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scw     ) },
     { RV32AInstDefaults().SetMnemonic("amoswap.w %rd, %rs1, %rs2").SetFunct2or7(0b0000001).SetImplFunc(amoswapw) },
     { RV32AInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000000).SetImplFunc(amoaddw ) },

@@ -39,13 +39,9 @@ class RV64F : public RevExt {
   //
   // RISC-V RV64F Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64FInstDefaults : RevInstDefaults {
     Rev64FInstDefaults(){
-      SetFormat(RVTypeR);
       SetOpcode(0b1010011);
       Setrs2Class(RevRegClass::RegUNKNOWN);
       SetRaiseFPE(true);

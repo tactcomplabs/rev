@@ -116,14 +116,10 @@ class RV64I : public RevExt{
   //
   // RISC-V RV64I Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
 
   struct Rev64InstDefaults : RevInstDefaults {
     Rev64InstDefaults(){
-      SetFormat(RVTypeR);
       SetOpcode(0b0111011);
     }
   };

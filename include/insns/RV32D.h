@@ -136,13 +136,9 @@ class RV32D : public RevExt{
   //
   // RISC-V RV32D Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev32DInstDefaults : RevInstDefaults {
     Rev32DInstDefaults(){
-      SetFormat(RVTypeR);
       SetOpcode(0b1010011);
       SetrdClass (RevRegClass::RegFLOAT);
       Setrs1Class(RevRegClass::RegFLOAT);

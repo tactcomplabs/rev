@@ -41,9 +41,6 @@ class RV64P : public RevExt{
   //
   // RISC-V RV64P Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64PInstDefaults : RevInstDefaults {
     Rev64PInstDefaults(){

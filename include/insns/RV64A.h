@@ -92,14 +92,10 @@ class RV64A : public RevExt {
   //
   // RISC-V RV64A Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
 
   struct Rev64AInstDefaults : RevInstDefaults {
     Rev64AInstDefaults(){
-      SetFormat(RVTypeR);
       SetOpcode(0b0101111);
       SetFunct3(0b011);
     }
@@ -107,11 +103,8 @@ class RV64A : public RevExt {
 
   std::vector<RevInstEntry> RV64ATable = {
     { Rev64AInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrd     )
-      .Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN) },
-
-    { Rev64AInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scd     )
       .Setrs2Class(RevRegClass::RegUNKNOWN) },
-
+    { Rev64AInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scd     ) },
     { Rev64AInstDefaults().SetMnemonic("amoswap.d %rd, %rs1, %rs2").SetFunct2or7(0b0000001).SetImplFunc(amoswapd) },
     { Rev64AInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000000).SetImplFunc(amoaddd ) },
     { Rev64AInstDefaults().SetMnemonic("amoxor.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000100).SetImplFunc(amoxord ) },

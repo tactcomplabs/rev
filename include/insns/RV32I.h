@@ -439,9 +439,6 @@ class RV32I : public RevExt {
   //
   // RISC-V RV32I Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
 
   std::vector<RevInstEntry> RV32ITable = {
@@ -514,7 +511,6 @@ class RV32I : public RevExt {
     { RevCInstDefaults().SetMnemonic("c.srli %rd, $imm"     ).SetFunct3(   0b100).SetImplFunc(csrli      ).Setimm(FVal).SetFormat(RVCTypeCB).SetOpcode(0b01).SetFunct2(0b00) },
     { RevCInstDefaults().SetMnemonic("c.srai %rd, $imm"     ).SetFunct3(   0b100).SetImplFunc(csrai      ).Setimm(FVal).SetFormat(RVCTypeCB).SetOpcode(0b01).SetFunct2(0b01) },
     { RevCInstDefaults().SetMnemonic("c.andi %rd, $imm"     ).SetFunct3(   0b100).SetImplFunc(candi      ).Setimm(FVal).SetFormat(RVCTypeCB).SetOpcode(0b01).SetFunct2(0b10) },
-
     { RevCInstDefaults().SetMnemonic("c.and %rd, %rs1"      ).SetFunct6(0b100011).SetImplFunc(cand       )             .SetFormat(RVCTypeCA).SetOpcode(0b01).SetFunct2(0b11) },
     { RevCInstDefaults().SetMnemonic("c.or %rd, %rs1"       ).SetFunct6(0b100011).SetImplFunc(cor        )             .SetFormat(RVCTypeCA).SetOpcode(0b01).SetFunct2(0b10) },
     { RevCInstDefaults().SetMnemonic("c.xor %rd, %rs1"      ).SetFunct6(0b100011).SetImplFunc(cxor       )             .SetFormat(RVCTypeCA).SetOpcode(0b01).SetFunct2(0b01) },
