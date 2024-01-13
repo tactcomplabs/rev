@@ -3784,6 +3784,36 @@ int rev_perf_stats(struct rev_stats *stats) {
   return rc;
 }
 
+int rev_get_cpu_id(){
+  int rc;
+  asm volatile (
+    "li a7, 10000 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
+int rev_get_core_id(){
+  int rc;
+  asm volatile (
+    "li a7, 10001 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
+int rev_get_hart_id(){
+  int rc;
+  asm volatile (
+    "li a7, 10002 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
 typedef unsigned long int rev_pthread_t;
 
 // pthread_t *restrict thread

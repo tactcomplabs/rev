@@ -3250,8 +3250,30 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
 }
 
 EcallStatus RevProc::ECALL_get_logical_network_id(RevInst& inst){
+EcallStatus RevProc::ECALL_get_cpu_id(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
-                  "ECALL: get_logical_network_id called by thread %" PRIu32
+                  "ECALL: get_cpu_id called by thread %" PRIu32
+                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+  RegFile->SetX(RevReg::a0, CPUComponentID);
+  return EcallStatus::SUCCESS;
+}
+
+EcallStatus RevProc::ECALL_get_core_id(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0,
+                  "ECALL: get_core_id called by thread %" PRIu32
+                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+  RegFile->SetX(RevReg::a0, id);
+  return EcallStatus::SUCCESS;
+}
+
+EcallStatus RevProc::ECALL_get_hart_id(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0,
+                  "ECALL: get_hart_id called by thread %" PRIu32
+                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+  RegFile->SetX(RevReg::a0, HartToExecID);
+  return EcallStatus::SUCCESS;
+}
+
                   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
   const auto& Nic = Harts.at(HartToExecID)->NIC;
   if( !Nic ){

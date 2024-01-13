@@ -2325,6 +2325,10 @@ void RevProc::InitEcallTable(){
     { 1001, &RevProc::ECALL_pthread_join},          //
     { 2000, &RevProc::ECALL_get_logical_network_id},// 2000, rev_get_logical_network_id();
     { 2001, &RevProc::ECALL_send_network_msg},      // 2001, rev_send_network_msg(unsigned networkID, char *msg, size_t len);
+    // TODO: Organize
+    { 10000, &RevProc::ECALL_get_cpu_id}, // 10000, rev_get_cpu_id();
+    { 10001, &RevProc::ECALL_get_core_id}, // 10001, rev_get_core_id();
+    { 10002, &RevProc::ECALL_get_hart_id}, // 10002, rev_get_hart_id();
   };
 }
 
