@@ -3249,7 +3249,6 @@ EcallStatus RevProc::ECALL_pthread_join(RevInst& inst){
   return rtval;
 }
 
-EcallStatus RevProc::ECALL_get_logical_network_id(RevInst& inst){
 EcallStatus RevProc::ECALL_get_cpu_id(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
                   "ECALL: get_cpu_id called by thread %" PRIu32
@@ -3274,6 +3273,9 @@ EcallStatus RevProc::ECALL_get_hart_id(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
+EcallStatus RevProc::ECALL_get_logical_nic_id(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0,
+                  "ECALL: get_logical_nic_id called by thread %" PRIu32
                   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
   const auto& Nic = Harts.at(HartToExecID)->NIC;
   if( !Nic ){
@@ -3286,13 +3288,13 @@ EcallStatus RevProc::ECALL_get_hart_id(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
-EcallStatus RevProc::ECALL_send_network_msg(RevInst& inst){
+EcallStatus RevProc::ECALL_send_nic_msg(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
-                  "ECALL: send_network_msg called by thread %" PRIu32
+                  "ECALL: send_nic_msg called by thread %" PRIu32
                   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
   const auto& Nic = Harts.at(HartToExecID)->NIC;
   if( !Nic ){
-    output->fatal(CALL_INFO, -1, "ECALL: send_network_msg called by thread %" PRIu32
+    output->fatal(CALL_INFO, -1, "ECALL: send_nic_msg called by thread %" PRIu32
                   " on hart %" PRIu32 " which has no NIC\n", ActiveThreadID, HartToExecID);
   }
 
@@ -3309,8 +3311,46 @@ EcallStatus RevProc::ECALL_send_network_msg(RevInst& inst){
 
   return EcallReadData(inst,  BufSize, BufAddr, action);
 }
-//EcallStatus RevProc::ECALL_migrate_thread(RevInst& inst){
-//
-//}
+
+EcallStatus RevProc::ECALL_get_logical_noc_id(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0,
+                  "ECALL: get_logical_noc_id called by thread %" PRIu32
+                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+  const auto& Noc = Harts.at(HartToExecID)->NOC;
+  if( !Noc ){
+    output->fatal(CALL_INFO, -1, "ECALL: get_logical_noc_id called by thread %" PRIu32
+                  " on hart %" PRIu32 " which has no NOC\n", ActiveThreadID, HartToExecID);
+  }
+
+  RegFile->SetX(RevReg::a0, Noc->GetLogicalID());
+
+  return EcallStatus::SUCCESS;
+}
+
+EcallStatus RevProc::ECALL_send_noc_msg(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0,
+                  "ECALL: send_noc_msg called by thread %" PRIu32
+                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+  const auto& Noc = Harts.at(HartToExecID)->NOC;
+  if( !Noc ){
+    output->fatal(CALL_INFO, -1, "ECALL: send_noc_msg called by thread %" PRIu32
+                  " on hart %" PRIu32 " which has no NOC\n", ActiveThreadID, HartToExecID);
+  }
+
+  uint64_t DestLogicalID = RegFile->GetX<uint64_t>(RevReg::a0);
+  uint64_t BufAddr = RegFile->GetX<uint64_t>(RevReg::a1);
+  uint64_t BufSize = RegFile->GetX<uint64_t>(RevReg::a2);
+
+  const auto& ECALL = Harts[HartToExecID]->GetEcallState();
+
+  auto action = [&](){
+    // Create the request
+    Noc->sendString(ECALL.string, RevNOCPacketType::DATA, DestLogicalID);
+  };
+
+  return EcallReadData(inst,  BufSize, BufAddr, action);
+}
+
+
 
 } // namespace SST::RevCPU

@@ -51,6 +51,7 @@
 #include "RevProcPasskey.h"
 #include "RevHart.h"
 #include "RevNIC.h"
+#include "RevNOC.h"
 #define SYSCALL_TYPES_ONLY
 #include "../common/syscalls/syscalls.h"
 #include "../common/include/RevCommon.h"
@@ -65,7 +66,10 @@ public:
            std::function<uint32_t()> GetNewThreadID, SST::Output *Output );
 
   /// RevProc: standard destructor
-  ~RevProc() = default;
+  ~RevProc(){
+    if(NIC) delete NIC;
+    if(NOC) delete NOC;
+  }
 
   /// RevProc: per-processor clock function
   bool ClockTick( SST::Cycle_t currentCycle );
@@ -243,6 +247,21 @@ public:
   ///           (Called from RevCPU)
   void GiveAccessToNIC(RevNicAPI* nic, unsigned hartID = _REV_INVALID_HART_ID_);
 
+  ///< RevProc: Assign a NOC Interface to this Core / optionally Hart
+  ///           (Called from RevCPU)
+  ///  TODO: Make this more flexible post Jan 17th
+  void AssignNOC(RevNocAPI* noc, unsigned hartID = _REV_INVALID_HART_ID_);
+
+  ///< RevProc: Give's access to an 'external' NOC interface
+  ///           The key caveat here over the AssignNOC function is that
+  ///           this Proc doesn't override the MsgHandler of the NOC
+  ///           Only use this is you want certain cores to have certain NICs
+  ///           (Called from RevCPU)
+  void GiveAccessToNOC(RevNocAPI* nic, unsigned hartID = _REV_INVALID_HART_ID_);
+
+  void SetComponentID(unsigned id) { CPUComponentID = id; }
+
+
 private:
   bool Halted;              ///< RevProc: determines if the core is halted
   bool Stalled;             ///< RevProc: determines if the core is stalled on instruction fetch
@@ -251,6 +270,7 @@ private:
   bool ALUFault;            ///< RevProc: determines if we need to handle an ALU fault
   unsigned fault_width;     ///< RevProc: the width of the target fault
   unsigned id;              ///< RevProc: processor id
+  unsigned CPUComponentID;              ///< RevProc: component id of this instance of Rev
   uint64_t ExecPC;          ///< RevProc: executing PC
   unsigned HartToDecodeID;    ///< RevProc: Current executing ThreadID
   unsigned HartToExecID;      ///< RevProc: Thread to dispatch instruction
@@ -288,16 +308,20 @@ private:
   uint32_t ActiveThreadID = _INVALID_TID_; ///< Software ThreadID (Not the Hart) that belongs to the Hart currently decoding
 
   RevTracer* Tracer = nullptr;            ///< RevProc: Tracer object
-  RevNicAPI* NIC = nullptr;                  ///< RevProc: NIC object
+  RevNicAPI* NIC = nullptr;               ///< RevProc: NIC interface
+  RevNocAPI* NOC = nullptr;               ///< RevProc: NOC interface
 
   ///< RevProc: In the event you assign a NIC specifically to this Hart you can optionally assign a message handler
-  void NetworkMsgHandler(Event *ev);
+  void NICMsgHandler(Event *ev);
+
+  ///< RevProc: In the event you assign a NIC specifically to this Hart you can optionally assign a message handler
+  void NOCMsgHandler(Event *ev);
 
   std::bitset<_MAX_HARTS_> CoProcStallReq;
 
   ///< RevProc: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
-  EcallStatus EcallReadData(RevInst& inst,  size_t BytesToRead, uint64_t Addr, std::function<void()>);
+  EcallStatus EcallReadData(RevInst& inst, size_t BytesToRead, uint64_t Addr, std::function<void()>);
 
   // - Many of these are not implemented
   // - Their existence in the ECalls table is solely to not throw errors
@@ -630,9 +654,13 @@ private:
   EcallStatus ECALL_pthread_join(RevInst& inst);           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
 
-  // =============== REV Network Functions
-  EcallStatus ECALL_get_logical_network_id(RevInst& inst); // 2000, rev_send_network_msg(unsigned networkID, char *msg, size_t len);
-  EcallStatus ECALL_send_network_msg(RevInst& inst);       // 2001, rev_send_network_msg(unsigned networkID, char *msg, size_t len);
+  // =============== REV NIC Functions
+  EcallStatus ECALL_get_logical_nic_id(RevInst& inst); // 2000, rev_get_logical_nic_id();
+  EcallStatus ECALL_send_nic_msg(RevInst& inst);       // 2001, rev_send_nic_msg(unsigned networkID, char *msg, size_t len);
+
+  // =============== REV NOC Functions
+  EcallStatus ECALL_get_logical_noc_id(RevInst& inst); // 3000, rev_get_logical_noc_id();
+  EcallStatus ECALL_send_noc_msg(RevInst& inst);       // 3001, rev_send_noc_msg(unsigned networkID, char *msg, size_t len);
 
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
   std::unordered_map<uint32_t, std::function<EcallStatus(RevProc*, RevInst&)>> Ecalls;

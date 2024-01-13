@@ -15,6 +15,7 @@
 #include "RevSysCalls.h"
 #include "RevThread.h"
 #include "RevNIC.h"
+#include "RevNOC.h"
 #include "SST.h"
 
 namespace SST::RevCPU{
@@ -43,8 +44,14 @@ class RevHart{
   ///< RevHart: NIC interface for this Hart
   RevNicAPI* NIC = nullptr;
 
+  ///< RevHart: NOC interface for this Hart
+  RevNocAPI* NOC = nullptr;
+
   ///< RevHart: Pointer to a message handler for this hart if you assign a nic to it
-  void NetworkMsgHandler(Event *ev);
+  void NICMsgHandler(Event *ev);
+
+  ///< RevHart: Pointer to a message handler for this hart if you assign a nic to it
+  void NOCMsgHandler(Event *ev);
 
   ///< RevHart: Make RevProc a friend of this
   friend class RevProc;
@@ -56,7 +63,7 @@ public:
     : ID(ID), LSQueue(LSQueue), MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)), output(output) {}
 
   ///< RevHart: Destructor (delete NIC if it exists)
-  ~RevHart() { if(NIC) delete NIC; }
+  ~RevHart() = default;
 
   ///< RevHart: Get the EcallState
   EcallState& GetEcallState() { return Ecall; }
@@ -100,6 +107,15 @@ public:
   ///           Only use this is you want certain harts to have certain NICs
   ///           (Called from RevProc)
   void GiveAccessToNIC(RevNicAPI* nic);
+
+  ///< RevHart: Assigns NOC interface to this Hart
+  ///           This function overrides the messageHandler of the NOC
+  ///           and only this Hart can receive messages from this NOC interface
+  void AssignNOC(RevNocAPI* noc);
+
+  ///< RevHart: Give's access to an 'external' NOC interface
+  ///           (Doesn't override the messageHandler)
+  void GiveAccessToNOC(RevNocAPI* noc);
 
 }; // class RevHart
 

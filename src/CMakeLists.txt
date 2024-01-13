@@ -14,6 +14,7 @@ set(RevCPUSrcs
   RevMem.cc
   RevMemCtrl.cc
   RevNIC.cc
+  RevNOC.cc
   RevOpts.cc
   RevHart.cc
   RevProc.cc

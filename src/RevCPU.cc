@@ -10,10 +10,6 @@
 
 #include "RevCPU.h"
 #include "RevCommon.h"
-#include "RevMem.h"
-#include "RevNIC.h"
-#include "RevThread.h"
-#include "sst/core/output.h"
 #include <cmath>
 #include <memory>
 
@@ -191,59 +187,59 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       //}
     }
   }
+  // TODO: Clean this up... used solely to make the `rev_get_cpu_id` system call possible
+  for( unsigned i=0; i<numCores; i++ ){
+    Procs[i]->SetComponentID(id);
+  }
 
-  NICPerCore = params.find<bool>("nicPerCore", 0);
-  if( NICPerCore ){
-    output.verbose(CALL_INFO, 1, 0, "NIC per core enabled\n");
+  EnableNOC = params.find<bool>("enable_noc", 0);
+  if( EnableNOC ){
+    output.verbose(CALL_INFO, 1, 0, "NOC Enabled. There will be one NOC Interface per core\n");
     for( size_t i=0; i<numCores; i++ ){
       // Use the Cantor pairing function to create a unique ID for each NIC
-      // NOTE: This implies you cannot assign the networkID when using NICPerCore
-      // This will *always* be a whole number
-      uint64_t LogicalID = static_cast<uint64_t>((0.5) * (i + id+1) * (i + id+1 + 1) + id+1);
+      // NOTE: This implies you cannot assign the networkID
+      // This will *always* be a whole number (0,0) is the only exception so we add 1 to id
+      const uint64_t LogicalID = static_cast<uint64_t>((0.5) * (id + i ) * (id + i + 1) + id);
 
       // Look up the network component
-      RevNicAPI* nic = loadUserSubComponent<RevNicAPI>("nic" + std::to_string(i));
+      RevNocAPI* noc = loadUserSubComponent<RevNocAPI>("noc" + std::to_string(i));
 
-      nic->SetLogicalID(LogicalID);
+      noc->SetLogicalID(LogicalID);
 
-      // Temporary
-      nic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
+      // Temporary as we will call AssignNOC which will override the message handler with
+      // the RevProc::NOCMsgHandler
+      noc->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::NOCMsgHandler));
 
       // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
-      if(!nic){
+      if(!noc){
         output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
       } else {
-        NICs.emplace_back(nic);
+        NOCs.emplace_back(noc);
       }
 
     }
   }
 
-  // Only check for enable_nic if we didn't setup a nic per core
-  if( !NICPerCore ){
-    // See if we should load the network interface controller
-    EnableNIC = params.find<bool>("enable_nic", 0);
+  // See if we should load the network interface controller
+  EnableNIC = params.find<bool>("enable_nic", 0);
 
-    if( EnableNIC ){
-      // Look up the network component
-      NICs.emplace_back(loadUserSubComponent<RevNicAPI>("nic"));
+  if( EnableNIC ){
+    // TODO: Add support for multiple NICs... almost all the functionality is there
+    // Look up the network component
+    NICs.emplace_back(loadUserSubComponent<RevNicAPI>("nic"));
 
-      uint64_t LogicalID = params.find<uint64_t>("networkID", 0);
-      NICs[0]->SetLogicalID(LogicalID);
+    uint64_t LogicalID = params.find<uint64_t>("networkID", 0);
+    NICs[0]->SetLogicalID(LogicalID);
 
-      // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
-      if(!NICs[0]){
-        output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
-      }
-
-      NICs[0]->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
-
-      // record the number of injected messages per cycle
-      msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
-      //for( unsigned i=0; i<numCores; i++ ){
-      //  Procs[i]->GiveAccessToNIC(NICs[0], _REV_INVALID_HART_ID_);
-      //}
+    // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
+    if(!NICs[0]){
+      output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
     }
+
+    NICs[0]->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::NICMsgHandler));
+
+    // record the number of injected messages per cycle
+    msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
   }
 
   #ifndef NO_REV_TRACER
@@ -493,12 +489,13 @@ void RevCPU::setup(){
       Procs[i]->GiveAccessToNIC(NICs[0], _REV_INVALID_HART_ID_);
     }
   }
-  else if( NICPerCore ){
-    for( size_t i=0; i<NICs.size(); i++ ){
-      NICs[i]->setup();
-      output.verbose(CALL_INFO, 1, 0, "Assigning NIC with logical ID %" PRIu64 " to core %zu\n", NICs[i]->GetLogicalID(), i);
-      Procs[i]->AssignNIC(NICs[i]);
-      NICs.erase(NICs.begin());
+  if( EnableNOC ){
+    output.verbose(CALL_INFO, 1, 0, "Setting up NOC interfaces\n");
+    for( size_t i=0; i<NOCs.size(); i++ ){
+      output.verbose(CALL_INFO, 1, 0, "Setting up NOC interface %zu\n", i);
+      NOCs[i]->setup();
+      output.verbose(CALL_INFO, 1, 0, "Assigning NIC with logical ID %" PRIu64 " to core %zu\n", NOCs[i]->GetLogicalID(), i);
+      Procs[i]->AssignNOC(NOCs[i]);
     }
   }
   if( EnableMemH ){
@@ -510,28 +507,31 @@ void RevCPU::finish(){
 }
 
 void RevCPU::init( unsigned int phase ){
-  output.verbose(CALL_INFO, 1, 0, "RevCPU::init() - phase = %d\n", phase);
   if( EnableNIC ){
-    output.verbose(CALL_INFO, 1, 0, "RevCPU::init(phase = %d) - EnableNIC\n", phase);
     NICs[0]->init(phase);
   }
-  if( NICPerCore ){
-    output.verbose(CALL_INFO, 1, 0, "RevCPU::init(phase = %d) - NICPerCore\n", phase);
-    for( size_t i=0; i<NICs.size(); i++ ){
-      if( NICs[i] == nullptr ){
-        std::cout << "NIC is null" << std::endl;
-      }
-      NICs[i]->init(phase);
-      output.verbose(CALL_INFO, 1, 0, "RevCPU::init(phase = %d) - NICPerCore[%zu] DONE\n", phase, i);
+  if( EnableNOC ){
+    output.verbose(CALL_INFO, 1, 0, "Initializing NOC interfaces\n");
+    for( size_t i=0; i<NOCs.size(); i++ ){
+      NOCs[i]->init(phase);
+      output.verbose(CALL_INFO, 1, 0, "RevCPU::init(phase = %d) - NOC DONE\n", phase, i);
     }
   }
   if( EnableMemH )
     Ctrl->init(phase);
 }
 
-void RevCPU::handleMessage(Event *ev){
+void RevCPU::NICMsgHandler(Event *ev){
   RevPkt *event = static_cast<RevPkt*>(ev);
+  output.verbose(CALL_INFO, 2, 0, "Received a packet from the network for RevCPU\n");
   // -- RevNIC: This is where you can unpack and handle the data payload
+  delete event;
+}
+
+void RevCPU::NOCMsgHandler(Event *ev){
+  RevNOCPkt *event = static_cast<RevNOCPkt*>(ev);
+  output.verbose(CALL_INFO, 2, 0, "Received a packet from the NOC on RevCPU\n");
+  // -- RevNOC: This is where you can unpack and handle the data payload
   delete event;
 }
 
@@ -721,6 +721,15 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
 
   if( EnableNIC && NICs[0]->GetNumUnackedPkts() ){
     rtn = false;
+  }
+
+  if( EnableNOC ){
+    for( const auto& noc : NOCs ){
+      if( noc->GetNumUnackedPkts() ){
+        rtn = false;
+        break;
+      }
+    }
   }
 
   if( rtn && CompletedThreads.size() ){

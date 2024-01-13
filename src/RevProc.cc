@@ -2323,12 +2323,16 @@ void RevProc::InitEcallTable(){
     { 501, &RevProc::ECALL_perf_stats},             //  rev_cpuinfo(struct rev_perf_stats *stats)
     { 1000, &RevProc::ECALL_pthread_create},        //
     { 1001, &RevProc::ECALL_pthread_join},          //
-    { 2000, &RevProc::ECALL_get_logical_network_id},// 2000, rev_get_logical_network_id();
-    { 2001, &RevProc::ECALL_send_network_msg},      // 2001, rev_send_network_msg(unsigned networkID, char *msg, size_t len);
+    { 2000, &RevProc::ECALL_get_logical_nic_id},// 2000, rev_get_logical_noc_id();
+    { 2001, &RevProc::ECALL_send_nic_msg},      // 2001, rev_send_nic_msg(unsigned networkID, char *msg, size_t len);
+    { 3000, &RevProc::ECALL_get_logical_noc_id},// 3000, rev_get_logical_noc_id();
+    { 3001, &RevProc::ECALL_send_noc_msg},      // 3001, rev_send_noc_msg(unsigned networkID, char *msg, size_t len);
+    //
     // TODO: Organize
     { 10000, &RevProc::ECALL_get_cpu_id}, // 10000, rev_get_cpu_id();
     { 10001, &RevProc::ECALL_get_core_id}, // 10001, rev_get_core_id();
     { 10002, &RevProc::ECALL_get_hart_id}, // 10002, rev_get_hart_id();
+
   };
 }
 
@@ -2463,7 +2467,7 @@ void RevProc::AssignNIC(RevNicAPI* NIC, unsigned HartID){
   else {
     this->NIC = NIC;
     // If you do not wish to override the message handler use (GiveAccessToNIC instead)
-    NIC->setMsgHandler(new Event::Handler<RevProc>(this, &RevProc::NetworkMsgHandler));
+    NIC->setMsgHandler(new Event::Handler<RevProc>(this, &RevProc::NICMsgHandler));
     for( const auto& Hart : Harts ){
       Hart->GiveAccessToNIC(NIC);
     }
@@ -2496,11 +2500,45 @@ void RevProc::GiveAccessToNIC(RevNicAPI* NIC, unsigned HartID){
   }
 }
 
+void RevProc::AssignNOC(RevNocAPI* NOC, unsigned HartID){
+  // Check if we're assigning to a Hart or to the Proc
+  if( HartID != _REV_INVALID_HART_ID_ ){
+    if( HartID >= Harts.size() ){
+      output->fatal(CALL_INFO, -1, "Attempted to assign a NOC to a Hart that doesn't exist. "
+                                   "This is a bug\n");
+    }
+    output->verbose(CALL_INFO, 2, 0, "Assigning NOC to Hart %u\n", HartID);
+    Harts[HartID]->AssignNOC(NOC);
+  }
+  // Not assigning to Hart, let's make sure we haven't already assigned a NOC
+  // to this core
+  else if( this->NOC != nullptr ){
+    output->fatal(CALL_INFO, -1, "Attempted to assign a NOC to a Proc "
+                                 "that already has one assigned."
+                                 " This is a bug\n");
+  }
+  else {
+    this->NOC = NOC;
+    // If you do not wish to override the message handler use (GiveAccessToNOC instead)
+    NOC->setMsgHandler(new Event::Handler<RevProc>(this, &RevProc::NOCMsgHandler));
+    for( const auto& Hart : Harts ){
+      Hart->GiveAccessToNOC(NOC);
+    }
+  }
+}
 
-void RevProc::NetworkMsgHandler(Event *ev){
+void RevProc::NICMsgHandler(Event *ev){
   RevPkt *event = static_cast<RevPkt*>(ev);
-  output->verbose(CALL_INFO, 2, 0, "Received a packet from the network for Proc %" PRIu32 "\n", id);
+  output->verbose(CALL_INFO, 2, 0, "Received a packet from the network on Proc %" PRIu32 "\n", id);
   delete event;
 }
 
+// Use "Procs[i]->AssignNOC(NOC)" from RevCPU to override the NOC interface's message handler with this function
+// Use `Procs[i]->AssignNOC(NOC, HartID)` from RevCPU to override the NOC interface's message handler with RevHart::NOCMsgHandler
+// Use `Procs[i]->GiveAccessToNOC(NOC)` from RevCPU to not override the NOC interface's message handler (and use the one in RevCPU)
+void RevProc::NOCMsgHandler(Event *ev){
+  RevPkt *event = static_cast<RevPkt*>(ev);
+  output->verbose(CALL_INFO, 2, 0, "Received a packet from the network on Proc %" PRIu32 "\n", id);
+  delete event;
+}
 // EOF

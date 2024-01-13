@@ -3841,7 +3841,7 @@ int rev_pthread_join( rev_pthread_t thread ){
   return rc;
 }
 
-long long rev_get_logical_network_id(){
+long long rev_get_logical_nic_id(){
   int rc;
   asm volatile (
     "li a7, 2000 \n\t"
@@ -3851,9 +3851,26 @@ long long rev_get_logical_network_id(){
   return rc;
 }
 
-void rev_send_network_msg(unsigned networkID, uint64_t Addr, uint64_t Size){
+void rev_send_nic_msg(unsigned networkID, uint64_t Addr, uint64_t Size){
   asm volatile (
     "li a7, 2001 \n\t"
+    "ecall \n\t"
+    );
+}
+
+long long rev_get_logical_noc_id(){
+  int rc;
+  asm volatile (
+    "li a7, 3000 \n\t"
+    "ecall \n\t"
+    "mv %0, a0" : "=r" (rc)
+    );
+  return rc;
+}
+
+void rev_send_noc_msg(unsigned networkID, uint64_t Addr, uint64_t Size){
+  asm volatile (
+    "li a7, 3001 \n\t"
     "ecall \n\t"
     );
 }

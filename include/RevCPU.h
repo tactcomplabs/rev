@@ -37,6 +37,7 @@
 #include "RevProc.h"
 #include "RevThread.h"
 #include "RevNIC.h"
+#include "RevNOC.h"
 #include "RevCoProc.h"
 #include "RevRand.h"
 
@@ -127,7 +128,9 @@ public:
   // -------------------------------------------------------
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
     // TODO: Figure out a better way of doing this (numCores isn't accurate)
-    {"nic%{numCores}d", "Network interface(s)", "SST::RevCPU::RevNIC"},
+    {"noc%{numCores}d", "Network-On-Chip interface(s)", "SST::RevCPU::RevNOC"},
+    // TODO: Figure out a better way of doing this (numCores isn't accurate)
+    {"nic%{numNic}d", "Network interface(s)", "SST::RevCPU::RevNIC"},
     {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
     {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
     {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"},
@@ -276,9 +279,12 @@ private:
 
   uint64_t PrevAddr;                  ///< RevCPU: previous address for handling PAN messages
 
-  bool EnableNIC = false;                     ///< RevCPU: Flag for enabling the NIC
-  bool NICPerCore;                    ///< RevCPU: Flag for enabling a NIC per core
-  bool NICPerHart;                    ///< RevCPU: (TODO:) Flag for enabling a NIC per hart -- Plumbing is there, but not fully implemented
+  bool EnableNIC = false;             ///< RevCPU: Flag for enabling the NIC
+  //bool NICPerCore;                    ///< RevCPU: (TODO: Unused) Flag for enabling a NIC per core
+  //bool NICPerHart;                    ///< RevCPU: (TODO:) Flag for enabling a NIC per hart -- Plumbing is there, but not fully implemented
+
+  // TODO:Expand to support various configurations
+  bool EnableNOC = false;             ///< RevCPU: Flag for enabling the NIC (NOTE: This assumes a single instance of NOC per core)
 
   bool EnableMemH;                    ///< RevCPU: Enable memHierarchy
   bool EnableCoProc;                  ///< RevCPU: Enable a co-processor attached to all cores
@@ -297,6 +303,7 @@ private:
 // TODO: Probably a better way to do this
   // RevNicAPI *NIC;                     ///< RevCPU: Network interface controller(s)
   std::vector<RevNicAPI*> NICs;       ///< RevCPU: Network interface controller(s)
+  std::vector<RevNocAPI*> NOCs;       ///< RevCPU: Network interface controller(s)
 
   RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
 
@@ -395,7 +402,10 @@ private:
   void DecodeFaultWidth(const std::string& width);
 
   /// RevCPU: RevNIC message handler
-  void handleMessage(SST::Event *ev);
+  void NICMsgHandler(SST::Event *ev);
+
+  /// RevCPU: RevNOC message handler
+  void NOCMsgHandler(SST::Event *ev);
 
   /// RevCPU: Creates a unique tag for this message
   uint8_t createTag();
