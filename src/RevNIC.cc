@@ -7,16 +7,15 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
-
 #include "RevCPU.h"
 #include "RevNIC.h"
+#include <ostream>
 
 using namespace SST;
 using namespace RevCPU;
 
 RevNIC::RevNIC(ComponentId_t id, Params& params)
   : RevNicAPI(id, params) {
-  std::cout << "IN THE CONSTRUCTOR" << std::endl;
   // setup the initial logging functions
   int verbosity = params.find<int>("verbose", 0);
   output = new SST::Output("", verbosity, 0, SST::Output::STDOUT);
@@ -25,10 +24,8 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
   registerClock(nicClock, new Clock::Handler<RevNIC>(this, &RevNIC::ClockTick));
 
   // load the SimpleNetwork interfaces
-  std::cout << "Loading SimpleNetwork interface..." << std::endl;
   iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>("iface", ComponentInfo::SHARE_NONE, 1);
   if( !iFace ){
-    std::cout << "Loading anonymous SimpleNetwork interface..." << std::endl;
     // load the anonymous nic
     Params netparams;
     netparams.insert("port_name", params.find<std::string>("port", "network"));
@@ -42,7 +39,6 @@ RevNIC::RevNIC(ComponentId_t id, Params& params)
                                                      netparams,
                                                      1);
   }
-  std::cout << "SimpleNetwork interface loaded." << std::endl;
 
   iFace->setNotifyOnReceive(
     new SST::Interfaces::SimpleNetwork::Handler<RevNIC>(this, &RevNIC::msgRecvNotify));
@@ -63,9 +59,11 @@ void RevNIC::setMsgHandler(Event::HandlerBase* handler){
 }
 
 void RevNIC::init(unsigned int phase){
+  // convert the std::cout's to output->verbose's
   iFace->init(phase);
 
   if( iFace->isNetworkInitialized() ){
+    output->verbose(CALL_INFO, 1, 0, "%s network is initialized\n", getName().c_str());
     if( !initBroadcastSent) {
       initBroadcastSent = true;
       std::vector<uint64_t> sendP;
@@ -266,6 +264,5 @@ bool RevNIC::ClockTick(Cycle_t cycle){
 
   return false;
 }
-
 
 // EOF

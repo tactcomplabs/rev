@@ -2460,6 +2460,9 @@ void RevProc::AssignNIC(RevNicAPI* NIC, unsigned HartID){
     this->NIC = NIC;
     // If you do not wish to override the message handler use (GiveAccessToNIC instead)
     NIC->setMsgHandler(new Event::Handler<RevProc>(this, &RevProc::NetworkMsgHandler));
+    for( const auto& Hart : Harts ){
+      Hart->GiveAccessToNIC(NIC);
+    }
   }
 }
 

@@ -9,9 +9,11 @@
 //
 
 #include "RevCPU.h"
+#include "RevCommon.h"
 #include "RevMem.h"
 #include "RevNIC.h"
 #include "RevThread.h"
+#include "sst/core/output.h"
 #include <cmath>
 #include <memory>
 
@@ -34,7 +36,7 @@ const char splash_msg[] = "\
 
 RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   : SST::Component(id), testStage(0), PrivTag(0), address(-1), EnableMemH(false),
-    DisableCoprocClock(false), NIC(nullptr), Ctrl(nullptr), ClockHandler(nullptr) {
+    DisableCoprocClock(false), NICs({}), Ctrl(nullptr), ClockHandler(nullptr) {
 
   const int Verbosity = params.find<int>("verbose", 0);
 
@@ -192,11 +194,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   NICPerCore = params.find<bool>("nicPerCore", 0);
   if( NICPerCore ){
-    Params netparams;
-    netparams.insert("port_name", params.find<std::string>("port", "network"));
-    netparams.insert("in_buf_size", "256B");
-    netparams.insert("out_buf_size", "256B");
-    netparams.insert("link_bw", "40GiB/s");
     output.verbose(CALL_INFO, 1, 0, "NIC per core enabled\n");
     for( size_t i=0; i<numCores; i++ ){
       // Use the Cantor pairing function to create a unique ID for each NIC
@@ -205,47 +202,47 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       uint64_t LogicalID = static_cast<uint64_t>((0.5) * (i + id+1) * (i + id+1 + 1) + id+1);
 
       // Look up the network component
-      const auto& nic = loadAnonymousSubComponent<RevNicAPI>("revcpu.RevNIC", "nic", i, ComponentInfo::SHARE_NONE, netparams);
-      NICs.push_back(nic);
+      RevNicAPI* nic = loadUserSubComponent<RevNicAPI>("nic" + std::to_string(i));
 
-      NICs[i]->SetLogicalID(LogicalID);
+      nic->SetLogicalID(LogicalID);
+
+      // Temporary
+      nic->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
 
       // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
-      //if(!nic){
-      //  output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
-      //} else {
-      //  NICs.push_back(nic);
-      //}
+      if(!nic){
+        output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
+      } else {
+        NICs.emplace_back(nic);
+      }
 
     }
   }
 
   // Only check for enable_nic if we didn't setup a nic per core
   if( !NICPerCore ){
-  // See if we should load the network interface controller
+    // See if we should load the network interface controller
     EnableNIC = params.find<bool>("enable_nic", 0);
 
     if( EnableNIC ){
       // Look up the network component
-      std::cout << "Creating NIC for core " << id << "\n" << std::endl;
-      NIC = loadUserSubComponent<RevNicAPI>("nic");
-      std::cout << "==> NIC Loaded" << std::endl;
+      NICs.emplace_back(loadUserSubComponent<RevNicAPI>("nic"));
 
       uint64_t LogicalID = params.find<uint64_t>("networkID", 0);
-      NIC->SetLogicalID(LogicalID);
+      NICs[0]->SetLogicalID(LogicalID);
 
       // check to see if the nic was loaded.  if not, DO NOT load an anonymous endpoint
-      if(!NIC){
+      if(!NICs[0]){
         output.fatal(CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n");
       }
 
-      NIC->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
+      NICs[0]->setMsgHandler(new Event::Handler<RevCPU>(this, &RevCPU::handleMessage));
 
       // record the number of injected messages per cycle
       msgPerCycle = params.find<unsigned>("msgPerCycle", 1);
-      for( unsigned i=0; i<numCores; i++ ){
-        Procs[i]->GiveAccessToNIC(NIC, _REV_INVALID_HART_ID_);
-      }
+      //for( unsigned i=0; i<numCores; i++ ){
+      //  Procs[i]->GiveAccessToNIC(NICs[0], _REV_INVALID_HART_ID_);
+      //}
     }
   }
 
@@ -488,20 +485,19 @@ void RevCPU::registerStatistics(){
 }
 
 void RevCPU::setup(){
+  std::cout << "RevCPU::setup()" << std::endl;
   if( EnableNIC ){
-    NIC->setup();
-    address = NIC->getAddress();
+    NICs[0]->setup();
+    address = NICs[0]->getAddress();
     for( size_t i=0; i<Procs.size(); i++ ){
-      Procs[i]->GiveAccessToNIC(NIC, address);
+      Procs[i]->GiveAccessToNIC(NICs[0], _REV_INVALID_HART_ID_);
     }
   }
   else if( NICPerCore ){
-    std::cout << "RevCPU::setup()" << std::endl;
     for( size_t i=0; i<NICs.size(); i++ ){
       NICs[i]->setup();
-      std::cout << "===> NIC::setup()" << std::endl;
+      output.verbose(CALL_INFO, 1, 0, "Assigning NIC with logical ID %" PRIu64 " to core %zu\n", NICs[i]->GetLogicalID(), i);
       Procs[i]->AssignNIC(NICs[i]);
-      std::cout << "===> NIC::Assigned()" << std::endl;
       NICs.erase(NICs.begin());
     }
   }
@@ -514,13 +510,19 @@ void RevCPU::finish(){
 }
 
 void RevCPU::init( unsigned int phase ){
-  std::cout << "RevCPU::init()" << std::endl;
+  output.verbose(CALL_INFO, 1, 0, "RevCPU::init() - phase = %d\n", phase);
   if( EnableNIC ){
-    NIC->init(phase);
+    output.verbose(CALL_INFO, 1, 0, "RevCPU::init(phase = %d) - EnableNIC\n", phase);
+    NICs[0]->init(phase);
   }
-  else if( NICPerCore ){
+  if( NICPerCore ){
+    output.verbose(CALL_INFO, 1, 0, "RevCPU::init(phase = %d) - NICPerCore\n", phase);
     for( size_t i=0; i<NICs.size(); i++ ){
+      if( NICs[i] == nullptr ){
+        std::cout << "NIC is null" << std::endl;
+      }
       NICs[i]->init(phase);
+      output.verbose(CALL_INFO, 1, 0, "RevCPU::init(phase = %d) - NICPerCore[%zu] DONE\n", phase, i);
     }
   }
   if( EnableMemH )
@@ -717,7 +719,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ){
     rtn = false;
   }
 
-  if( EnableNIC && NIC->GetNumUnackedPkts() ){
+  if( EnableNIC && NICs[0]->GetNumUnackedPkts() ){
     rtn = false;
   }
 
