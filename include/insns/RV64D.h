@@ -64,19 +64,18 @@ class RV64D : public RevExt {
   struct Rev64DInstDefaults : RevInstDefaults {
     Rev64DInstDefaults(){
       SetOpcode(0b1010011);
-      SetrdClass(RevRegClass::RegFLOAT);
-      Setrs1Class(RevRegClass::RegFLOAT);
       Setrs2Class(RevRegClass::RegUNKNOWN);
+      SetRaiseFPE(true);
     }
   };
 
   std::vector<RevInstEntry> RV64DTable = {
-    { Rev64DInstDefaults().SetMnemonic("fcvt.l.d %rd, %rs1"  ).SetFunct2or7(0b1100001).SetfpcvtOp(0b10).SetRaiseFPE().SetImplFunc(fcvtld) },
-    { Rev64DInstDefaults().SetMnemonic("fcvt.lu.d %rd, %rs1" ).SetFunct2or7(0b1100001).SetfpcvtOp(0b11).SetRaiseFPE().SetImplFunc(fcvtlud) },
-    { Rev64DInstDefaults().SetMnemonic("fcvt.d.l %rd, %rs1"  ).SetFunct2or7(0b1101001).SetfpcvtOp(0b10).SetRaiseFPE().SetImplFunc(fcvtdl) },
-    { Rev64DInstDefaults().SetMnemonic("fcvt.d.lu %rd, %rs1" ).SetFunct2or7(0b1101001).SetfpcvtOp(0b11).SetRaiseFPE().SetImplFunc(fcvtdlu) },
-    { Rev64DInstDefaults().SetMnemonic("fmv.x.d %rd, %rs1"   ).SetFunct2or7(0b1110001).SetImplFunc(fmvxd) },
-    { Rev64DInstDefaults().SetMnemonic("fmv.d.x %rd, %rs1"   ).SetFunct2or7(0b1111001).SetImplFunc(fmvdx) },
+    { Rev64DInstDefaults().SetMnemonic("fcvt.l.d %rd, %rs1" ).SetFunct2or7(0b1100001).SetImplFunc(fcvtld ).SetrdClass(RevRegClass::RegGPR  ).Setrs1Class(RevRegClass::RegFLOAT).SetfpcvtOp(0b10) },
+    { Rev64DInstDefaults().SetMnemonic("fcvt.lu.d %rd, %rs1").SetFunct2or7(0b1100001).SetImplFunc(fcvtlud).SetrdClass(RevRegClass::RegGPR  ).Setrs1Class(RevRegClass::RegFLOAT).SetfpcvtOp(0b11) },
+    { Rev64DInstDefaults().SetMnemonic("fcvt.d.l %rd, %rs1" ).SetFunct2or7(0b1101001).SetImplFunc(fcvtdl ).SetrdClass(RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).SetfpcvtOp(0b10) },
+    { Rev64DInstDefaults().SetMnemonic("fcvt.d.lu %rd, %rs1").SetFunct2or7(0b1101001).SetImplFunc(fcvtdlu).SetrdClass(RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).SetfpcvtOp(0b11) },
+    { Rev64DInstDefaults().SetMnemonic("fmv.x.d %rd, %rs1"  ).SetFunct2or7(0b1110001).SetImplFunc(fmvxd  ).SetrdClass(RevRegClass::RegGPR  ).Setrs1Class(RevRegClass::RegFLOAT).SetRaiseFPE(false) },
+    { Rev64DInstDefaults().SetMnemonic("fmv.d.x %rd, %rs1"  ).SetFunct2or7(0b1111001).SetImplFunc(fmvdx  ).SetrdClass(RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).SetRaiseFPE(false) },
   };
 
 public:

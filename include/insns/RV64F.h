@@ -46,18 +46,16 @@ class RV64F : public RevExt {
   struct Rev64FInstDefaults : RevInstDefaults {
     Rev64FInstDefaults(){
       SetOpcode(0b1010011);
-      SetrdClass(RevRegClass::RegFLOAT);
-      Setrs1Class(RevRegClass::RegFLOAT);
       Setrs2Class(RevRegClass::RegUNKNOWN);
-      SetRaiseFPE();
+      SetRaiseFPE(true);
     }
   };
 
   std::vector<RevInstEntry> RV64FTable = {
-    { Rev64FInstDefaults().SetMnemonic("fcvt.l.s  %rd, %rs1").SetFunct2or7(0b1100000).SetfpcvtOp(0b10).SetImplFunc(fcvtls)  },
-    { Rev64FInstDefaults().SetMnemonic("fcvt.lu.s %rd, %rs1").SetFunct2or7(0b1100000).SetfpcvtOp(0b11).SetImplFunc(fcvtlus) },
-    { Rev64FInstDefaults().SetMnemonic("fcvt.s.l %rd, %rs1" ).SetFunct2or7(0b1101000).SetfpcvtOp(0b10).SetImplFunc(fcvtsl)  },
-    { Rev64FInstDefaults().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct2or7(0b1101000).SetfpcvtOp(0b11).SetImplFunc(fcvtslu) },
+    { Rev64FInstDefaults().SetMnemonic("fcvt.l.s  %rd, %rs1").SetFunct2or7(0b1100000).SetImplFunc(fcvtls ).SetrdClass(RevRegClass::RegGPR  ).Setrs1Class(RevRegClass::RegFLOAT).SetfpcvtOp(0b10) },
+    { Rev64FInstDefaults().SetMnemonic("fcvt.lu.s %rd, %rs1").SetFunct2or7(0b1100000).SetImplFunc(fcvtlus).SetrdClass(RevRegClass::RegGPR  ).Setrs1Class(RevRegClass::RegFLOAT).SetfpcvtOp(0b11) },
+    { Rev64FInstDefaults().SetMnemonic("fcvt.s.l  %rd, %rs1").SetFunct2or7(0b1101000).SetImplFunc(fcvtsl ).SetrdClass(RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).SetfpcvtOp(0b10) },
+    { Rev64FInstDefaults().SetMnemonic("fcvt.s.lu %rd, %rs1").SetFunct2or7(0b1101000).SetImplFunc(fcvtslu).SetrdClass(RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).SetfpcvtOp(0b11) },
   };
 
 public:
