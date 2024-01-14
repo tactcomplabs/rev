@@ -119,6 +119,11 @@ class RV32A : public RevExt {
   static constexpr auto& amominuw = amooper<RevFlag::F_AMOMINU>;
   static constexpr auto& amomaxuw = amooper<RevFlag::F_AMOMAXU>;
 
+  // ----------------------------------------------------------------------
+  //
+  // RISC-V RV32A Instructions
+  //
+  // ----------------------------------------------------------------------
   struct RV32AInstDefaults : RevInstDefaults {
     RV32AInstDefaults(){
       SetOpcode(0b0101111);
@@ -126,26 +131,19 @@ class RV32A : public RevExt {
     }
   };
 
-  // ----------------------------------------------------------------------
-  //
-  // RISC-V RV32A Instructions
-  //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
-  // ----------------------------------------------------------------------
   std::vector<RevInstEntry> RV32ATable = {
-    { RV32AInstDefaults().SetMnemonic("lr.w %rd, (%rs1)"         ).SetFunct2or7(0b00010).SetImplFunc(lrw).Setrs2Class(RevRegClass::RegUNKNOWN) },
-    { RV32AInstDefaults().SetMnemonic("sc.w %rd, %rs1, %rs2"     ).SetFunct2or7(0b00011).SetImplFunc(scw)      },
-    { RV32AInstDefaults().SetMnemonic("amoswap.w %rd, %rs1, %rs2").SetFunct2or7(0b00001).SetImplFunc(amoswapw) },
-    { RV32AInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetFunct2or7(0b00000).SetImplFunc(amoaddw)  },
-    { RV32AInstDefaults().SetMnemonic("amoxor.w %rd, %rs1, %rs2" ).SetFunct2or7(0b00100).SetImplFunc(amoxorw)  },
-    { RV32AInstDefaults().SetMnemonic("amoand.w %rd, %rs1, %rs2" ).SetFunct2or7(0b01100).SetImplFunc(amoandw)  },
-    { RV32AInstDefaults().SetMnemonic("amoor.w %rd, %rs1, %rs2"  ).SetFunct2or7(0b01000).SetImplFunc(amoorw)   },
-    { RV32AInstDefaults().SetMnemonic("amomin.w %rd, %rs1, %rs2" ).SetFunct2or7(0b10000).SetImplFunc(amominw)  },
-    { RV32AInstDefaults().SetMnemonic("amomax.w %rd, %rs1, %rs2" ).SetFunct2or7(0b10100).SetImplFunc(amomaxw)  },
-    { RV32AInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetFunct2or7(0b11000).SetImplFunc(amominuw) },
-    { RV32AInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetFunct2or7(0b11100).SetImplFunc(amomaxuw) },
+    { RV32AInstDefaults().SetMnemonic("lr.w %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrw     )
+      .Setrs2Class(RevRegClass::RegUNKNOWN) },
+    { RV32AInstDefaults().SetMnemonic("sc.w %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scw     ) },
+    { RV32AInstDefaults().SetMnemonic("amoswap.w %rd, %rs1, %rs2").SetFunct2or7(0b0000001).SetImplFunc(amoswapw) },
+    { RV32AInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000000).SetImplFunc(amoaddw ) },
+    { RV32AInstDefaults().SetMnemonic("amoxor.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000100).SetImplFunc(amoxorw ) },
+    { RV32AInstDefaults().SetMnemonic("amoand.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0001100).SetImplFunc(amoandw ) },
+    { RV32AInstDefaults().SetMnemonic("amoor.w %rd, %rs1, %rs2"  ).SetFunct2or7(0b0001000).SetImplFunc(amoorw  ) },
+    { RV32AInstDefaults().SetMnemonic("amomin.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0010000).SetImplFunc(amominw ) },
+    { RV32AInstDefaults().SetMnemonic("amomax.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0010100).SetImplFunc(amomaxw ) },
+    { RV32AInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011000).SetImplFunc(amominuw) },
+    { RV32AInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011100).SetImplFunc(amomaxuw) },
   };
 
 public:
@@ -153,7 +151,7 @@ public:
   RV32A( RevFeature *Feature,
          RevMem *RevMem,
          SST::Output *Output )
-    : RevExt( "RV32A", Feature, RevMem, Output) {
+    : RevExt("RV32A", Feature, RevMem, Output) {
     SetTable(std::move(RV32ATable));
   }
 

@@ -39,7 +39,6 @@ class Zicbom : public RevExt{
       break;
     default:
       return false;
-      break;
     }
     R->AdvancePC(Inst);
     return true;
@@ -47,12 +46,12 @@ class Zicbom : public RevExt{
 
   struct RevZicbomInstDefaults : RevInstDefaults {
     RevZicbomInstDefaults(){
+      SetFormat(RVTypeI);
       SetOpcode(0b0001111);
       SetFunct3(0b010);
       Setrs2Class(RevRegClass::RegUNKNOWN);
       SetrdClass(RevRegClass::RegUNKNOWN);
       Setimm(FEnc);
-      SetFormat(RVTypeI);
       SetImplFunc(cmo);
     }
   };

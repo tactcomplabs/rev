@@ -21,16 +21,19 @@ class RV64P : public RevExt{
 
   static bool future(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetX(Inst.rd, !!M->SetFuture(R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12)));
+    // R->AdvancePC(Inst);
     return true;
   }
 
   static bool rfuture(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetX(Inst.rd, !!M->RevokeFuture(R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12)));
+    // R->AdvancePC(Inst);
     return true;
   }
 
   static bool sfuture(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
     R->SetX(Inst.rd, !!M->StatusFuture(R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12)));
+    // R->AdvancePC(Inst);
     return true;
   }
 
@@ -38,9 +41,6 @@ class RV64P : public RevExt{
   //
   // RISC-V RV64P Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64PInstDefaults : RevInstDefaults {
     Rev64PInstDefaults(){
@@ -52,7 +52,7 @@ class RV64P : public RevExt{
   };
 
   std::vector<RevInstEntry> RV64PTable = {
-    { Rev64PInstDefaults().SetMnemonic("future %rd, $imm(%rs1)" ).SetFunct3(0b111).SetImplFunc(future)  },
+    { Rev64PInstDefaults().SetMnemonic("future %rd, $imm(%rs1)" ).SetFunct3(0b111).SetImplFunc( future) },
     { Rev64PInstDefaults().SetMnemonic("rfuture %rd, $imm(%rs1)").SetFunct3(0b101).SetImplFunc(rfuture) },
     { Rev64PInstDefaults().SetMnemonic("sfuture %rd, $imm(%rs1)").SetFunct3(0b100).SetImplFunc(sfuture) },
   };

@@ -195,35 +195,39 @@ struct RevInstEntry{
   bool (*func)(RevFeature  *, RevRegFile *, RevMem *, const RevInst&) = nullptr;
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
-  auto& SetMnemonic(std::string m)   { this->mnemonic = m;    return *this; }
-  auto& SetCost(uint32_t c)          { this->cost = c;        return *this; }
-  auto& SetOpcode(uint8_t op)        { this->opcode = op;     return *this; }
-  auto& SetFunct2(uint8_t f2)        { this->funct2 = f2;     return *this; }
-  auto& SetFunct3(uint8_t f3)        { this->funct3 = f3;     return *this; }
-  auto& SetFunct4(uint8_t f4)        { this->funct4 = f4;     return *this; }
-  auto& SetFunct6(uint8_t f6)        { this->funct6 = f6;     return *this; }
-  auto& SetFunct2or7(uint8_t f27)    { this->funct2or7 = f27; return *this; }
-  auto& SetOffset(uint16_t off)      { this->offset = off;    return *this; }
-  auto& SetJumpTarget(uint16_t jt)   { this->jumpTarget = jt; return *this; }
-  auto& SetrdClass(RevRegClass rd)   { this->rdClass = rd;    return *this; }
-  auto& Setrs1Class(RevRegClass rs1) { this->rs1Class = rs1;  return *this; }
-  auto& Setrs2Class(RevRegClass rs2) { this->rs2Class = rs2;  return *this; }
-  auto& Setrs3Class(RevRegClass rs3) { this->rs3Class = rs3;  return *this; }
-  auto& Setimm12(uint16_t imm12)     { this->imm12 = imm12;   return *this; }
-  auto& Setimm(RevImmFunc imm)       { this->imm = imm;       return *this; }
-  auto& SetFormat(RevInstF format)   { this->format = format; return *this; }
-  auto& SetCompressed(bool c)        { this->compressed = c;  return *this; }
-  auto& SetfpcvtOp(uint8_t op)       { this->fpcvtOp = op;    return *this; }
-  auto& SetRaiseFPE(bool c = true)   { this->raisefpe = c;    return *this; }
-
-  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&)){
-    this->func = func;
-    return *this;
-  }
+  auto& SetMnemonic(std::string m)   { this->mnemonic   = std::move(m); return *this; }
+  auto& SetCost(uint32_t c)          { this->cost       = c;     return *this; }
+  auto& SetOpcode(uint8_t op)        { this->opcode     = op;    return *this; }
+  auto& SetFunct2(uint8_t f2)        { this->funct2     = f2;    return *this; }
+  auto& SetFunct3(uint8_t f3)        { this->funct3     = f3;    return *this; }
+  auto& SetFunct4(uint8_t f4)        { this->funct4     = f4;    return *this; }
+  auto& SetFunct6(uint8_t f6)        { this->funct6     = f6;    return *this; }
+  auto& SetFunct2or7(uint8_t f27)    { this->funct2or7  = f27;   return *this; }
+  auto& SetOffset(uint16_t off)      { this->offset     = off;   return *this; }
+  auto& SetJumpTarget(uint16_t jt)   { this->jumpTarget = jt;    return *this; }
+  auto& SetrdClass(RevRegClass rd)   { this->rdClass    = rd;    return *this; }
+  auto& Setrs1Class(RevRegClass rs1) { this->rs1Class   = rs1;   return *this; }
+  auto& Setrs2Class(RevRegClass rs2) { this->rs2Class   = rs2;   return *this; }
+  auto& Setrs3Class(RevRegClass rs3) { this->rs3Class   = rs3;   return *this; }
+  auto& Setimm12(uint16_t imm12)     { this->imm12      = imm12; return *this; }
+  auto& Setimm(RevImmFunc imm)       { this->imm        = imm;   return *this; }
+  auto& SetFormat(RevInstF format)   { this->format     = format;return *this; }
+  auto& SetCompressed(bool c)        { this->compressed = c;     return *this; }
+  auto& SetfpcvtOp(uint8_t op)       { this->fpcvtOp    = op;    return *this; }
+  auto& SetRaiseFPE(bool c)          { this->raisefpe   = c;     return *this; }
+  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&))
+                                     { this->func = func;        return *this; }
 }; // RevInstEntry
 
 // The default initialization for RevInstDefaults is the same as RevInstEntry
 using RevInstDefaults = RevInstEntry;
+
+// Compressed instruction defaults
+struct RevCInstDefaults : RevInstDefaults{
+  RevCInstDefaults(){
+    SetCompressed(true);
+  }
+};
 
 } // namespace SST::RevCPU
 

@@ -90,7 +90,7 @@ class ZiCSR : public RevExt {
   struct RevZiCSRInstDefaults : RevInstDefaults {
     RevZiCSRInstDefaults(){
       SetOpcode(0b1110011);
-      SetRaiseFPE();
+      SetRaiseFPE(true);
       SetFunct2or7(0);
       SetrdClass(RevRegClass::RegGPR);
       Setrs2Class(RevRegClass::RegUNKNOWN);

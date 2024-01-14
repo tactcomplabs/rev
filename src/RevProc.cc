@@ -251,6 +251,11 @@ bool RevProc::SeedInstTable(){
     EnableExt(new ZiCSR(feature, mem, output), false);
   }
 
+  // Zifencei-Extension
+  if( feature->IsModeEnabled(RV_ZIFENCEI) ){
+    EnableExt(new Zifencei(feature, mem, output), false);
+  }
+
   return true;
 }
 
@@ -1031,7 +1036,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RevRegClass::RegUNKNOWN)){
     DInst.imm  = DECODE_IMM12(Inst) & 0b011111;
   }else{
-    DInst.imm     = 0x0;
+    DInst.imm  = 0x0;
   }
 
   // Size
@@ -1263,6 +1268,11 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   }
   if( InstTable[Entry].rs3Class != RevRegClass::RegUNKNOWN ){
     DInst.rs3  = DECODE_RS3(Inst);
+  }
+
+  // Decode any ancillary SP/DP float options
+  if( IsFloat(Entry) ){
+    DInst.rm = DECODE_RM(Inst);
   }
 
   // imm

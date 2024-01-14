@@ -35,14 +35,11 @@ class RV64M : public RevExt{
   //
   // RISC-V RV64M Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64MInstDefaults : RevInstDefaults {
     Rev64MInstDefaults(){
       SetOpcode(0b0111011);
-      SetFunct2or7(0b01);
+      SetFunct2or7(0b0000001);
     }
   };
 

@@ -48,7 +48,7 @@ bool RevFeature::ParseMachineModel(){
   output->verbose(CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", ProcID, mac);
 
   ///< List of architecture extensions. These must listed in canonical order
-  ///< as shown in Table 27.11, Chapter 27, of the RISC-V Unpriviledged Spec.
+  ///< as shown in Table 27.11, Chapter 27, of the RISC-V Unprivileged Spec.
   ///< By using a canonical ordering, the extensions' presence can be tested
   ///< in linear time complexity of the table and the string. Some of the
   ///< extensions imply other extensions, so the extension flags are ORed.
@@ -80,15 +80,15 @@ bool RevFeature::ParseMachineModel(){
   // -- step 2: parse all the features
   // Note: Extension strings, if present, must appear in the order listed in the table above.
   if (*mac){
-    for (const auto& tab : table) {
+    for (const auto& [ ext, flags ] : table) {
       // Look for an architecture string matching the current extension
-      if(!strncasecmp(mac, tab.first.data(), tab.first.size())){
+      if(!strncasecmp(mac, ext.data(), ext.size())){
 
         // Set the machine entries for the matching extension
-        SetMachineEntry(RevFeatureType{tab.second});
+        SetMachineEntry(RevFeatureType{flags});
 
         // Move past the currently matching extension
-        mac += tab.first.size();
+        mac += ext.size();
 
         // Skip underscore separators
         while (*mac == '_') ++mac;
