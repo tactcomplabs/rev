@@ -102,8 +102,7 @@ class RV64A : public RevExt {
   };
 
   std::vector<RevInstEntry> RV64ATable = {
-    { Rev64AInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrd     )
-      .Setrs2Class(RevRegClass::RegUNKNOWN) },
+    { Rev64AInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrd     ).Setrs2Class(RevRegClass::RegUNKNOWN) },
     { Rev64AInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scd     ) },
     { Rev64AInstDefaults().SetMnemonic("amoswap.d %rd, %rs1, %rs2").SetFunct2or7(0b0000001).SetImplFunc(amoswapd) },
     { Rev64AInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000000).SetImplFunc(amoaddd ) },
