@@ -646,7 +646,7 @@ struct rev_stats {
 // int rev_faccessat2(int dfd, const char  *filename, int mode, int flags);
 // int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags);
 
-int rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx){
+static int rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx){
   int rc;
   asm volatile (
     "li a7, 0 \n\t"
@@ -656,7 +656,7 @@ int rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx){
   return rc;
 }
 
-int rev_io_destroy(aio_context_t ctx){
+static int rev_io_destroy(aio_context_t ctx){
   int rc;
   asm volatile (
     "li a7, 1 \n\t"
@@ -666,7 +666,7 @@ int rev_io_destroy(aio_context_t ctx){
   return rc;
 }
 
-int rev_io_submit(aio_context_t, long, struct iocb  *  *){
+static int rev_io_submit(aio_context_t, long, struct iocb  *  *){
   int rc;
   asm volatile (
     "li a7, 2 \n\t"
@@ -676,7 +676,7 @@ int rev_io_submit(aio_context_t, long, struct iocb  *  *){
   return rc;
 }
 
-int rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result){
+static int rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result){
   int rc;
   asm volatile (
     "li a7, 3 \n\t"
@@ -686,7 +686,7 @@ int rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *re
   return rc;
 }
 
-int rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout){
+static int rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout){
   int rc;
   asm volatile (
     "li a7, 4 \n\t"
@@ -696,7 +696,7 @@ int rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event
   return rc;
 }
 
-int rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags){
+static int rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags){
   int rc;
   asm volatile (
     "li a7, 5 \n\t"
@@ -706,7 +706,7 @@ int rev_setxattr(const char  *path, const char  *name, const void  *value, size_
   return rc;
 }
 
-int rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags){
+static int rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags){
   int rc;
   asm volatile (
     "li a7, 6 \n\t"
@@ -716,7 +716,7 @@ int rev_lsetxattr(const char  *path, const char  *name, const void  *value, size
   return rc;
 }
 
-int rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags){
+static int rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags){
   int rc;
   asm volatile (
     "li a7, 7 \n\t"
@@ -726,7 +726,7 @@ int rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, in
   return rc;
 }
 
-int rev_getxattr(const char  *path, const char  *name, void  *value, size_t size){
+static int rev_getxattr(const char  *path, const char  *name, void  *value, size_t size){
   int rc;
   asm volatile (
     "li a7, 8 \n\t"
@@ -736,7 +736,7 @@ int rev_getxattr(const char  *path, const char  *name, void  *value, size_t size
   return rc;
 }
 
-int rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size){
+static int rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size){
   int rc;
   asm volatile (
     "li a7, 9 \n\t"
@@ -746,7 +746,7 @@ int rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t siz
   return rc;
 }
 
-int rev_fgetxattr(int fd, const char  *name, void  *value, size_t size){
+static int rev_fgetxattr(int fd, const char  *name, void  *value, size_t size){
   int rc;
   asm volatile (
     "li a7, 10 \n\t"
@@ -756,7 +756,7 @@ int rev_fgetxattr(int fd, const char  *name, void  *value, size_t size){
   return rc;
 }
 
-int rev_listxattr(const char  *path, char  *list, size_t size){
+static int rev_listxattr(const char  *path, char  *list, size_t size){
   int rc;
   asm volatile (
     "li a7, 11 \n\t"
@@ -766,7 +766,7 @@ int rev_listxattr(const char  *path, char  *list, size_t size){
   return rc;
 }
 
-int rev_llistxattr(const char  *path, char  *list, size_t size){
+static int rev_llistxattr(const char  *path, char  *list, size_t size){
   int rc;
   asm volatile (
     "li a7, 12 \n\t"
@@ -776,7 +776,7 @@ int rev_llistxattr(const char  *path, char  *list, size_t size){
   return rc;
 }
 
-int rev_flistxattr(int fd, char  *list, size_t size){
+static int rev_flistxattr(int fd, char  *list, size_t size){
   int rc;
   asm volatile (
     "li a7, 13 \n\t"
@@ -786,7 +786,7 @@ int rev_flistxattr(int fd, char  *list, size_t size){
   return rc;
 }
 
-int rev_removexattr(const char  *path, const char  *name){
+static int rev_removexattr(const char  *path, const char  *name){
   int rc;
   asm volatile (
     "li a7, 14 \n\t"
@@ -796,7 +796,7 @@ int rev_removexattr(const char  *path, const char  *name){
   return rc;
 }
 
-int rev_lremovexattr(const char  *path, const char  *name){
+static int rev_lremovexattr(const char  *path, const char  *name){
   int rc;
   asm volatile (
     "li a7, 15 \n\t"
@@ -806,7 +806,7 @@ int rev_lremovexattr(const char  *path, const char  *name){
   return rc;
 }
 
-int rev_fremovexattr(int fd, const char  *name){
+static int rev_fremovexattr(int fd, const char  *name){
   int rc;
   asm volatile (
     "li a7, 16 \n\t"
@@ -816,7 +816,7 @@ int rev_fremovexattr(int fd, const char  *name){
   return rc;
 }
 
-int rev_getcwd(char  *buf, unsigned long size){
+static int rev_getcwd(char  *buf, unsigned long size){
   int rc;
   asm volatile (
     "li a7, 17 \n\t"
@@ -826,7 +826,7 @@ int rev_getcwd(char  *buf, unsigned long size){
   return rc;
 }
 
-int rev_lookup_dcookie(uint64_t cookie64, char  *buf, size_t len){
+static int rev_lookup_dcookie(uint64_t cookie64, char  *buf, size_t len){
   int rc;
   asm volatile (
     "li a7, 18 \n\t"
@@ -836,7 +836,7 @@ int rev_lookup_dcookie(uint64_t cookie64, char  *buf, size_t len){
   return rc;
 }
 
-int rev_eventfd2(unsigned int count, int flags){
+static int rev_eventfd2(unsigned int count, int flags){
   int rc;
   asm volatile (
     "li a7, 19 \n\t"
@@ -846,7 +846,7 @@ int rev_eventfd2(unsigned int count, int flags){
   return rc;
 }
 
-int rev_epoll_create1(int flags){
+static int rev_epoll_create1(int flags){
   int rc;
   asm volatile (
     "li a7, 20 \n\t"
@@ -856,7 +856,7 @@ int rev_epoll_create1(int flags){
   return rc;
 }
 
-int rev_epoll_ctl(int epfd, int op, int fd, struct epoll_event  *event){
+static int rev_epoll_ctl(int epfd, int op, int fd, struct epoll_event  *event){
   int rc;
   asm volatile (
     "li a7, 21 \n\t"
@@ -866,7 +866,7 @@ int rev_epoll_ctl(int epfd, int op, int fd, struct epoll_event  *event){
   return rc;
 }
 
-int rev_epoll_pwait(int epfd, struct epoll_event  *events, int maxevents, int timeout, const sigset_t  *sigmask, size_t sigsetsize){
+static int rev_epoll_pwait(int epfd, struct epoll_event  *events, int maxevents, int timeout, const sigset_t  *sigmask, size_t sigsetsize){
   int rc;
   asm volatile (
     "li a7, 22 \n\t"
@@ -876,7 +876,7 @@ int rev_epoll_pwait(int epfd, struct epoll_event  *events, int maxevents, int ti
   return rc;
 }
 
-int rev_dup(unsigned int fildes){
+static int rev_dup(unsigned int fildes){
   int rc;
   asm volatile (
     "li a7, 23 \n\t"
@@ -886,7 +886,7 @@ int rev_dup(unsigned int fildes){
   return rc;
 }
 
-int rev_dup3(unsigned int oldfd, unsigned int newfd, int flags){
+static int rev_dup3(unsigned int oldfd, unsigned int newfd, int flags){
   int rc;
   asm volatile (
     "li a7, 24 \n\t"
@@ -896,7 +896,7 @@ int rev_dup3(unsigned int oldfd, unsigned int newfd, int flags){
   return rc;
 }
 
-int rev_fcntl64(unsigned int fd, unsigned int cmd, unsigned long arg){
+static int rev_fcntl64(unsigned int fd, unsigned int cmd, unsigned long arg){
   int rc;
   asm volatile (
     "li a7, 25 \n\t"
@@ -906,7 +906,7 @@ int rev_fcntl64(unsigned int fd, unsigned int cmd, unsigned long arg){
   return rc;
 }
 
-int rev_inotify_init1(int flags){
+static int rev_inotify_init1(int flags){
   int rc;
   asm volatile (
     "li a7, 26 \n\t"
@@ -916,7 +916,7 @@ int rev_inotify_init1(int flags){
   return rc;
 }
 
-int rev_inotify_add_watch(int fd, const char  *path, uint32_t mask){
+static int rev_inotify_add_watch(int fd, const char  *path, uint32_t mask){
   int rc;
   asm volatile (
     "li a7, 27 \n\t"
@@ -926,7 +926,7 @@ int rev_inotify_add_watch(int fd, const char  *path, uint32_t mask){
   return rc;
 }
 
-int rev_inotify_rm_watch(int fd, int32_t wd){
+static int rev_inotify_rm_watch(int fd, int32_t wd){
   int rc;
   asm volatile (
     "li a7, 28 \n\t"
@@ -936,7 +936,7 @@ int rev_inotify_rm_watch(int fd, int32_t wd){
   return rc;
 }
 
-int rev_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg){
+static int rev_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg){
   int rc;
   asm volatile (
     "li a7, 29 \n\t"
@@ -946,7 +946,7 @@ int rev_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg){
   return rc;
 }
 
-int rev_ioprio_set(int which, int who, int ioprio){
+static int rev_ioprio_set(int which, int who, int ioprio){
   int rc;
   asm volatile (
     "li a7, 30 \n\t"
@@ -956,7 +956,7 @@ int rev_ioprio_set(int which, int who, int ioprio){
   return rc;
 }
 
-int rev_ioprio_get(int which, int who){
+static int rev_ioprio_get(int which, int who){
   int rc;
   asm volatile (
     "li a7, 31 \n\t"
@@ -966,7 +966,7 @@ int rev_ioprio_get(int which, int who){
   return rc;
 }
 
-int rev_flock(unsigned int fd, unsigned int cmd){
+static int rev_flock(unsigned int fd, unsigned int cmd){
   int rc;
   asm volatile (
     "li a7, 32 \n\t"
@@ -976,7 +976,7 @@ int rev_flock(unsigned int fd, unsigned int cmd){
   return rc;
 }
 
-int rev_mknodat(int dfd, const char  * filename, umode_t mode, unsigned dev){
+static int rev_mknodat(int dfd, const char  * filename, umode_t mode, unsigned dev){
   int rc;
   asm volatile (
     "li a7, 33 \n\t"
@@ -986,7 +986,7 @@ int rev_mknodat(int dfd, const char  * filename, umode_t mode, unsigned dev){
   return rc;
 }
 
-int rev_mkdirat(int dfd, const char  * pathname, umode_t mode){
+static int rev_mkdirat(int dfd, const char  * pathname, umode_t mode){
   int rc;
   asm volatile (
     "li a7, 34 \n\t"
@@ -996,7 +996,7 @@ int rev_mkdirat(int dfd, const char  * pathname, umode_t mode){
   return rc;
 }
 
-int rev_unlinkat(int dfd, const char  * pathname, int flag){
+static int rev_unlinkat(int dfd, const char  * pathname, int flag){
   int rc;
   asm volatile (
     "li a7, 35 \n\t"
@@ -1006,7 +1006,7 @@ int rev_unlinkat(int dfd, const char  * pathname, int flag){
   return rc;
 }
 
-int rev_symlinkat(const char  * oldname, int newdfd, const char  * newname){
+static int rev_symlinkat(const char  * oldname, int newdfd, const char  * newname){
   int rc;
   asm volatile (
     "li a7, 36 \n\t"
@@ -1026,7 +1026,7 @@ int rev_symlinkat(const char  * oldname, int newdfd, const char  * newname){
 //   return rc;
 // }
 
-int rev_renameat(int olddfd, const char  * oldname, int newdfd, const char  * newname){
+static int rev_renameat(int olddfd, const char  * oldname, int newdfd, const char  * newname){
   int rc;
   asm volatile (
     "li a7, 38 \n\t"
@@ -1036,7 +1036,7 @@ int rev_renameat(int olddfd, const char  * oldname, int newdfd, const char  * ne
   return rc;
 }
 
-int rev_umount(char  *name, int flags){
+static int rev_umount(char  *name, int flags){
   int rc;
   asm volatile (
     "li a7, 39 \n\t"
@@ -1056,7 +1056,7 @@ int rev_umount(char  *name, int flags){
 //   return rc;
 // }
 
-int rev_pivot_root(const char  *new_root, const char  *put_old){
+static int rev_pivot_root(const char  *new_root, const char  *put_old){
   int rc;
   asm volatile (
     "li a7, 41 \n\t"
@@ -1066,7 +1066,7 @@ int rev_pivot_root(const char  *new_root, const char  *put_old){
   return rc;
 }
 
-int rev_ni_syscall(void){
+static int rev_ni_syscall(void){
   int rc;
   asm volatile (
     "li a7, 42 \n\t"
@@ -1076,7 +1076,7 @@ int rev_ni_syscall(void){
   return rc;
 }
 
-int rev_statfs64(const char  *path, size_t sz, struct statfs64  *buf){
+static int rev_statfs64(const char  *path, size_t sz, struct statfs64  *buf){
   int rc;
   asm volatile (
     "li a7, 43 \n\t"
@@ -1086,7 +1086,7 @@ int rev_statfs64(const char  *path, size_t sz, struct statfs64  *buf){
   return rc;
 }
 
-int rev_fstatfs64(unsigned int fd, size_t sz, struct statfs64  *buf){
+static int rev_fstatfs64(unsigned int fd, size_t sz, struct statfs64  *buf){
   int rc;
   asm volatile (
     "li a7, 44 \n\t"
@@ -1096,7 +1096,7 @@ int rev_fstatfs64(unsigned int fd, size_t sz, struct statfs64  *buf){
   return rc;
 }
 
-int rev_truncate64(const char  *path, loff_t length){
+static int rev_truncate64(const char  *path, loff_t length){
   int rc;
   asm volatile (
     "li a7, 45 \n\t"
@@ -1106,7 +1106,7 @@ int rev_truncate64(const char  *path, loff_t length){
   return rc;
 }
 
-int rev_ftruncate64(unsigned int fd, loff_t length){
+static int rev_ftruncate64(unsigned int fd, loff_t length){
   int rc;
   asm volatile (
     "li a7, 46 \n\t"
@@ -1116,7 +1116,7 @@ int rev_ftruncate64(unsigned int fd, loff_t length){
   return rc;
 }
 
-int rev_fallocate(int fd, int mode, loff_t offset, loff_t len){
+static int rev_fallocate(int fd, int mode, loff_t offset, loff_t len){
   int rc;
   asm volatile (
     "li a7, 47 \n\t"
@@ -1126,7 +1126,7 @@ int rev_fallocate(int fd, int mode, loff_t offset, loff_t len){
   return rc;
 }
 
-int rev_faccessat(int dfd, const char  *filename, int mode){
+static int rev_faccessat(int dfd, const char  *filename, int mode){
   int rc;
   asm volatile (
     "li a7, 48 \n\t"
@@ -1136,7 +1136,7 @@ int rev_faccessat(int dfd, const char  *filename, int mode){
   return rc;
 }
 
-int rev_chdir(const char  *filename){
+static int rev_chdir(const char  *filename){
   int rc;
   asm volatile (
     "li a7, 49 \n\t"
@@ -1146,7 +1146,7 @@ int rev_chdir(const char  *filename){
   return rc;
 }
 
-int rev_fchdir(unsigned int fd){
+static int rev_fchdir(unsigned int fd){
   int rc;
   asm volatile (
     "li a7, 50 \n\t"
@@ -1156,7 +1156,7 @@ int rev_fchdir(unsigned int fd){
   return rc;
 }
 
-int rev_chroot(const char  *filename){
+static int rev_chroot(const char  *filename){
   int rc;
   asm volatile (
     "li a7, 51 \n\t"
@@ -1166,7 +1166,7 @@ int rev_chroot(const char  *filename){
   return rc;
 }
 
-int rev_fchmod(unsigned int fd, umode_t mode){
+static int rev_fchmod(unsigned int fd, umode_t mode){
   int rc;
   asm volatile (
     "li a7, 52 \n\t"
@@ -1176,7 +1176,7 @@ int rev_fchmod(unsigned int fd, umode_t mode){
   return rc;
 }
 
-int rev_fchmodat(int dfd, const char  * filename, umode_t mode){
+static int rev_fchmodat(int dfd, const char  * filename, umode_t mode){
   int rc;
   asm volatile (
     "li a7, 53 \n\t"
@@ -1186,7 +1186,7 @@ int rev_fchmodat(int dfd, const char  * filename, umode_t mode){
   return rc;
 }
 
-int rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag){
+static int rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag){
   int rc;
   asm volatile (
     "li a7, 54 \n\t"
@@ -1196,7 +1196,7 @@ int rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int fl
   return rc;
 }
 
-int rev_fchown(unsigned int fd, uid_t user, gid_t group){
+static int rev_fchown(unsigned int fd, uid_t user, gid_t group){
   int rc;
   asm volatile (
     "li a7, 55 \n\t"
@@ -1206,7 +1206,7 @@ int rev_fchown(unsigned int fd, uid_t user, gid_t group){
   return rc;
 }
 
-int rev_openat(int dfd, const char  *filename, int flags, umode_t mode){
+static int rev_openat(int dfd, const char  *filename, int flags, umode_t mode){
   int rc;
   asm volatile (
     "li a7, 56 \n\t"
@@ -1216,7 +1216,7 @@ int rev_openat(int dfd, const char  *filename, int flags, umode_t mode){
   return rc;
 }
 
-int rev_close(unsigned int fd){
+static int rev_close(unsigned int fd){
   int rc;
   asm volatile (
     "li a7, 57 \n\t"
@@ -1226,7 +1226,7 @@ int rev_close(unsigned int fd){
   return rc;
 }
 
-int rev_vhangup(void){
+static int rev_vhangup(void){
   int rc;
   asm volatile (
     "li a7, 58 \n\t"
@@ -1236,7 +1236,7 @@ int rev_vhangup(void){
   return rc;
 }
 
-int rev_pipe2(int  *fildes, int flags){
+static int rev_pipe2(int  *fildes, int flags){
   int rc;
   asm volatile (
     "li a7, 59 \n\t"
@@ -1246,7 +1246,7 @@ int rev_pipe2(int  *fildes, int flags){
   return rc;
 }
 
-int rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr){
+static int rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr){
   int rc;
   asm volatile (
     "li a7, 60 \n\t"
@@ -1256,7 +1256,7 @@ int rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr){
   return rc;
 }
 
-int rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int count){
+static int rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int count){
   int rc;
   asm volatile (
     "li a7, 61 \n\t"
@@ -1266,7 +1266,7 @@ int rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int
   return rc;
 }
 
-int rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence){
+static int rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence){
   int rc;
   asm volatile (
     "li a7, 62 \n\t"
@@ -1276,7 +1276,7 @@ int rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_
   return rc;
 }
 
-int rev_read(unsigned int fd, char  *buf, size_t count){
+static int rev_read(unsigned int fd, char  *buf, size_t count){
   int rc;
   asm volatile (
     "li a7, 63 \n\t"
@@ -1286,7 +1286,7 @@ int rev_read(unsigned int fd, char  *buf, size_t count){
   return rc;
 }
 
-int rev_write(unsigned int fd, const char  *buf, size_t count){
+static int rev_write(unsigned int fd, const char  *buf, size_t count){
   int rc;
   asm volatile (
     "li a7, 64 \n\t"
@@ -1296,7 +1296,7 @@ int rev_write(unsigned int fd, const char  *buf, size_t count){
   return rc;
 }
 
-int rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen){
+static int rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen){
   int rc;
   asm volatile (
     "li a7, 65 \n\t"
@@ -1306,7 +1306,7 @@ int rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen){
   return rc;
 }
 
-int rev_writev(unsigned long fd, const struct iovec  *vec, unsigned long vlen){
+static int rev_writev(unsigned long fd, const struct iovec  *vec, unsigned long vlen){
   int rc;
   asm volatile (
     "li a7, 66 \n\t"
@@ -1316,7 +1316,7 @@ int rev_writev(unsigned long fd, const struct iovec  *vec, unsigned long vlen){
   return rc;
 }
 
-int rev_pread64(unsigned int fd, char  *buf, size_t count, loff_t pos){
+static int rev_pread64(unsigned int fd, char  *buf, size_t count, loff_t pos){
   int rc;
   asm volatile (
     "li a7, 67 \n\t"
@@ -1326,7 +1326,7 @@ int rev_pread64(unsigned int fd, char  *buf, size_t count, loff_t pos){
   return rc;
 }
 
-int rev_pwrite64(unsigned int fd, const char  *buf, size_t count, loff_t pos){
+static int rev_pwrite64(unsigned int fd, const char  *buf, size_t count, loff_t pos){
   int rc;
   asm volatile (
     "li a7, 68 \n\t"
@@ -1336,7 +1336,7 @@ int rev_pwrite64(unsigned int fd, const char  *buf, size_t count, loff_t pos){
   return rc;
 }
 
-int rev_preadv(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h){
+static int rev_preadv(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h){
   int rc;
   asm volatile (
     "li a7, 69 \n\t"
@@ -1346,7 +1346,7 @@ int rev_preadv(unsigned long fd, const struct iovec  *vec, unsigned long vlen, u
   return rc;
 }
 
-int rev_pwritev(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h){
+static int rev_pwritev(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h){
   int rc;
   asm volatile (
     "li a7, 70 \n\t"
@@ -1356,7 +1356,7 @@ int rev_pwritev(unsigned long fd, const struct iovec  *vec, unsigned long vlen, 
   return rc;
 }
 
-int rev_sendfile64(int out_fd, int in_fd, loff_t  *offset, size_t count){
+static int rev_sendfile64(int out_fd, int in_fd, loff_t  *offset, size_t count){
   int rc;
   asm volatile (
     "li a7, 71 \n\t"
@@ -1366,7 +1366,7 @@ int rev_sendfile64(int out_fd, int in_fd, loff_t  *offset, size_t count){
   return rc;
 }
 
-int rev_pselect6_time32(int, fd_set  *, fd_set  *, fd_set  *, struct old_timespec32  *, void  *){
+static int rev_pselect6_time32(int, fd_set  *, fd_set  *, fd_set  *, struct old_timespec32  *, void  *){
   int rc;
   asm volatile (
     "li a7, 72 \n\t"
@@ -1376,7 +1376,7 @@ int rev_pselect6_time32(int, fd_set  *, fd_set  *, fd_set  *, struct old_timespe
   return rc;
 }
 
-int rev_ppoll_time32(struct pollfd  *, unsigned int, struct old_timespec32  *, const sigset_t  *, size_t){
+static int rev_ppoll_time32(struct pollfd  *, unsigned int, struct old_timespec32  *, const sigset_t  *, size_t){
   int rc;
   asm volatile (
     "li a7, 73 \n\t"
@@ -1386,7 +1386,7 @@ int rev_ppoll_time32(struct pollfd  *, unsigned int, struct old_timespec32  *, c
   return rc;
 }
 
-int rev_signalfd4(int ufd, sigset_t  *user_mask, size_t sizemask, int flags){
+static int rev_signalfd4(int ufd, sigset_t  *user_mask, size_t sizemask, int flags){
   int rc;
   asm volatile (
     "li a7, 74 \n\t"
@@ -1396,7 +1396,7 @@ int rev_signalfd4(int ufd, sigset_t  *user_mask, size_t sizemask, int flags){
   return rc;
 }
 
-int rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags){
+static int rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 75 \n\t"
@@ -1416,7 +1416,7 @@ int rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsign
 //   return rc;
 // }
 
-int rev_tee(int fdin, int fdout, size_t len, unsigned int flags){
+static int rev_tee(int fdin, int fdout, size_t len, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 77 \n\t"
@@ -1426,7 +1426,7 @@ int rev_tee(int fdin, int fdout, size_t len, unsigned int flags){
   return rc;
 }
 
-int rev_readlinkat(int dfd, const char  *path, char  *buf, int bufsiz){
+static int rev_readlinkat(int dfd, const char  *path, char  *buf, int bufsiz){
   int rc;
   asm volatile (
     "li a7, 78 \n\t"
@@ -1436,7 +1436,7 @@ int rev_readlinkat(int dfd, const char  *path, char  *buf, int bufsiz){
   return rc;
 }
 
-int rev_newfstatat(int dfd, const char  *filename, struct stat  *statbuf, int flag){
+static int rev_newfstatat(int dfd, const char  *filename, struct stat  *statbuf, int flag){
   int rc;
   asm volatile (
     "li a7, 79 \n\t"
@@ -1446,7 +1446,7 @@ int rev_newfstatat(int dfd, const char  *filename, struct stat  *statbuf, int fl
   return rc;
 }
 
-int rev_newfstat(unsigned int fd, struct stat  *statbuf){
+static int rev_newfstat(unsigned int fd, struct stat  *statbuf){
   int rc;
   asm volatile (
     "li a7, 80 \n\t"
@@ -1456,7 +1456,7 @@ int rev_newfstat(unsigned int fd, struct stat  *statbuf){
   return rc;
 }
 
-int rev_sync(void){
+static int rev_sync(void){
   int rc;
   asm volatile (
     "li a7, 81 \n\t"
@@ -1466,7 +1466,7 @@ int rev_sync(void){
   return rc;
 }
 
-int rev_fsync(unsigned int fd){
+static int rev_fsync(unsigned int fd){
   int rc;
   asm volatile (
     "li a7, 82 \n\t"
@@ -1476,7 +1476,7 @@ int rev_fsync(unsigned int fd){
   return rc;
 }
 
-int rev_fdatasync(unsigned int fd){
+static int rev_fdatasync(unsigned int fd){
   int rc;
   asm volatile (
     "li a7, 83 \n\t"
@@ -1486,7 +1486,7 @@ int rev_fdatasync(unsigned int fd){
   return rc;
 }
 
-int rev_sync_file_range2(int fd, unsigned int flags, loff_t offset, loff_t nbytes){
+static int rev_sync_file_range2(int fd, unsigned int flags, loff_t offset, loff_t nbytes){
   int rc;
   asm volatile (
     "li a7, 84 \n\t"
@@ -1496,7 +1496,7 @@ int rev_sync_file_range2(int fd, unsigned int flags, loff_t offset, loff_t nbyte
   return rc;
 }
 
-int rev_sync_file_range(int fd, loff_t offset, loff_t nbytes, unsigned int flags){
+static int rev_sync_file_range(int fd, loff_t offset, loff_t nbytes, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 84 \n\t"
@@ -1506,7 +1506,7 @@ int rev_sync_file_range(int fd, loff_t offset, loff_t nbytes, unsigned int flags
   return rc;
 }
 
-int rev_timerfd_create(int clockid, int flags){
+static int rev_timerfd_create(int clockid, int flags){
   int rc;
   asm volatile (
     "li a7, 85 \n\t"
@@ -1516,7 +1516,7 @@ int rev_timerfd_create(int clockid, int flags){
   return rc;
 }
 
-int rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr){
+static int rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr){
   int rc;
   asm volatile (
     "li a7, 86 \n\t"
@@ -1526,7 +1526,7 @@ int rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *u
   return rc;
 }
 
-int rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr){
+static int rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr){
   int rc;
   asm volatile (
     "li a7, 87 \n\t"
@@ -1536,7 +1536,7 @@ int rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr){
   return rc;
 }
 
-int rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags){
+static int rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags){
   int rc;
   asm volatile (
     "li a7, 88 \n\t"
@@ -1546,7 +1546,7 @@ int rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *uti
   return rc;
 }
 
-int rev_acct(const char  *name){
+static int rev_acct(const char  *name){
   int rc;
   asm volatile (
     "li a7, 89 \n\t"
@@ -1556,7 +1556,7 @@ int rev_acct(const char  *name){
   return rc;
 }
 
-int rev_capget(cap_user_header_t header, cap_user_data_t dataptr){
+static int rev_capget(cap_user_header_t header, cap_user_data_t dataptr){
   int rc;
   asm volatile (
     "li a7, 90 \n\t"
@@ -1566,7 +1566,7 @@ int rev_capget(cap_user_header_t header, cap_user_data_t dataptr){
   return rc;
 }
 
-int rev_capset(cap_user_header_t header, const cap_user_data_t data){
+static int rev_capset(cap_user_header_t header, const cap_user_data_t data){
   int rc;
   asm volatile (
     "li a7, 91 \n\t"
@@ -1576,7 +1576,7 @@ int rev_capset(cap_user_header_t header, const cap_user_data_t data){
   return rc;
 }
 
-int rev_personality(unsigned int personality){
+static int rev_personality(unsigned int personality){
   int rc;
   asm volatile (
     "li a7, 92 \n\t"
@@ -1586,7 +1586,7 @@ int rev_personality(unsigned int personality){
   return rc;
 }
 
-int rev_exit(int error_code){
+static int rev_exit(int error_code){
   int rc;
   asm volatile (
     "li a7, 93 \n\t"
@@ -1596,7 +1596,7 @@ int rev_exit(int error_code){
   return rc;
 }
 
-int rev_exit_group(int error_code){
+static int rev_exit_group(int error_code){
   int rc;
   asm volatile (
     "li a7, 94 \n\t"
@@ -1606,7 +1606,7 @@ int rev_exit_group(int error_code){
   return rc;
 }
 
-int rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru){
+static int rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru){
   int rc;
   asm volatile (
     "li a7, 95 \n\t"
@@ -1616,7 +1616,7 @@ int rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct
   return rc;
 }
 
-int rev_set_tid_address(int  *tidptr){
+static int rev_set_tid_address(int  *tidptr){
   int rc;
   asm volatile (
     "li a7, 96 \n\t"
@@ -1626,7 +1626,7 @@ int rev_set_tid_address(int  *tidptr){
   return rc;
 }
 
-int rev_unshare(unsigned long unshare_flags){
+static int rev_unshare(unsigned long unshare_flags){
   int rc;
   asm volatile (
     "li a7, 97 \n\t"
@@ -1646,7 +1646,7 @@ int rev_unshare(unsigned long unshare_flags){
 //   return rc;
 // }
 
-int rev_set_robust_list(struct robust_list_head  *head, size_t len){
+static int rev_set_robust_list(struct robust_list_head  *head, size_t len){
   int rc;
   asm volatile (
     "li a7, 99 \n\t"
@@ -1656,7 +1656,7 @@ int rev_set_robust_list(struct robust_list_head  *head, size_t len){
   return rc;
 }
 
-int rev_get_robust_list(int pid, struct robust_list_head  *  *head_ptr, size_t  *len_ptr){
+static int rev_get_robust_list(int pid, struct robust_list_head  *  *head_ptr, size_t  *len_ptr){
   int rc;
   asm volatile (
     "li a7, 100 \n\t"
@@ -1666,7 +1666,7 @@ int rev_get_robust_list(int pid, struct robust_list_head  *  *head_ptr, size_t  
   return rc;
 }
 
-int rev_nanosleep(struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp){
+static int rev_nanosleep(struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp){
   int rc;
   asm volatile (
     "li a7, 101 \n\t"
@@ -1676,7 +1676,7 @@ int rev_nanosleep(struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rm
   return rc;
 }
 
-int rev_getitimer(int which, struct __kernel_old_itimerval  *value){
+static int rev_getitimer(int which, struct __kernel_old_itimerval  *value){
   int rc;
   asm volatile (
     "li a7, 102 \n\t"
@@ -1686,7 +1686,7 @@ int rev_getitimer(int which, struct __kernel_old_itimerval  *value){
   return rc;
 }
 
-int rev_setitimer(int which, struct __kernel_old_itimerval  *value, struct __kernel_old_itimerval  *ovalue){
+static int rev_setitimer(int which, struct __kernel_old_itimerval  *value, struct __kernel_old_itimerval  *ovalue){
   int rc;
   asm volatile (
     "li a7, 103 \n\t"
@@ -1696,7 +1696,7 @@ int rev_setitimer(int which, struct __kernel_old_itimerval  *value, struct __ker
   return rc;
 }
 
-int rev_kexec_load(unsigned long entry, unsigned long nr_segments, struct kexec_segment  *segments, unsigned long flags){
+static int rev_kexec_load(unsigned long entry, unsigned long nr_segments, struct kexec_segment  *segments, unsigned long flags){
   int rc;
   asm volatile (
     "li a7, 104 \n\t"
@@ -1706,7 +1706,7 @@ int rev_kexec_load(unsigned long entry, unsigned long nr_segments, struct kexec_
   return rc;
 }
 
-int rev_init_module(void  *umod, unsigned long len, const char  *uargs){
+static int rev_init_module(void  *umod, unsigned long len, const char  *uargs){
   int rc;
   asm volatile (
     "li a7, 105 \n\t"
@@ -1716,7 +1716,7 @@ int rev_init_module(void  *umod, unsigned long len, const char  *uargs){
   return rc;
 }
 
-int rev_delete_module(const char  *name_user, unsigned int flags){
+static int rev_delete_module(const char  *name_user, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 106 \n\t"
@@ -1726,7 +1726,7 @@ int rev_delete_module(const char  *name_user, unsigned int flags){
   return rc;
 }
 
-int rev_timer_create(clockid_t which_clock, struct sigevent  *timer_event_spec, timer_t  * created_timer_id){
+static int rev_timer_create(clockid_t which_clock, struct sigevent  *timer_event_spec, timer_t  * created_timer_id){
   int rc;
   asm volatile (
     "li a7, 107 \n\t"
@@ -1736,7 +1736,7 @@ int rev_timer_create(clockid_t which_clock, struct sigevent  *timer_event_spec, 
   return rc;
 }
 
-int rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting){
+static int rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting){
   int rc;
   asm volatile (
     "li a7, 108 \n\t"
@@ -1746,7 +1746,7 @@ int rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting){
   return rc;
 }
 
-int rev_timer_getoverrun(timer_t timer_id){
+static int rev_timer_getoverrun(timer_t timer_id){
   int rc;
   asm volatile (
     "li a7, 109 \n\t"
@@ -1756,7 +1756,7 @@ int rev_timer_getoverrun(timer_t timer_id){
   return rc;
 }
 
-int rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting){
+static int rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting){
   int rc;
   asm volatile (
     "li a7, 110 \n\t"
@@ -1766,7 +1766,7 @@ int rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimers
   return rc;
 }
 
-int rev_timer_delete(timer_t timer_id){
+static int rev_timer_delete(timer_t timer_id){
   int rc;
   asm volatile (
     "li a7, 111 \n\t"
@@ -1776,7 +1776,7 @@ int rev_timer_delete(timer_t timer_id){
   return rc;
 }
 
-int rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp){
+static int rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp){
   int rc;
   asm volatile (
     "li a7, 112 \n\t"
@@ -1786,7 +1786,7 @@ int rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp
   return rc;
 }
 
-int rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp){
+static int rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp){
   int rc;
   asm volatile (
     "li a7, 113 \n\t"
@@ -1796,7 +1796,7 @@ int rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp){
   return rc;
 }
 
-int rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp){
+static int rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp){
   int rc;
   asm volatile (
     "li a7, 114 \n\t"
@@ -1806,7 +1806,7 @@ int rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp){
   return rc;
 }
 
-int rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp){
+static int rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp){
   int rc;
   asm volatile (
     "li a7, 115 \n\t"
@@ -1816,7 +1816,7 @@ int rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_
   return rc;
 }
 
-int rev_syslog(int type, char  *buf, int len){
+static int rev_syslog(int type, char  *buf, int len){
   int rc;
   asm volatile (
     "li a7, 116 \n\t"
@@ -1826,7 +1826,7 @@ int rev_syslog(int type, char  *buf, int len){
   return rc;
 }
 
-int rev_ptrace(long request, long pid, unsigned long addr, unsigned long data){
+static int rev_ptrace(long request, long pid, unsigned long addr, unsigned long data){
   int rc;
   asm volatile (
     "li a7, 117 \n\t"
@@ -1836,7 +1836,7 @@ int rev_ptrace(long request, long pid, unsigned long addr, unsigned long data){
   return rc;
 }
 
-int rev_sched_setparam(pid_t pid, struct sched_param  *param){
+static int rev_sched_setparam(pid_t pid, struct sched_param  *param){
   int rc;
   asm volatile (
     "li a7, 118 \n\t"
@@ -1846,7 +1846,7 @@ int rev_sched_setparam(pid_t pid, struct sched_param  *param){
   return rc;
 }
 
-int rev_sched_setscheduler(pid_t pid, int policy, struct sched_param  *param){
+static int rev_sched_setscheduler(pid_t pid, int policy, struct sched_param  *param){
   int rc;
   asm volatile (
     "li a7, 119 \n\t"
@@ -1856,7 +1856,7 @@ int rev_sched_setscheduler(pid_t pid, int policy, struct sched_param  *param){
   return rc;
 }
 
-int rev_sched_getscheduler(pid_t pid){
+static int rev_sched_getscheduler(pid_t pid){
   int rc;
   asm volatile (
     "li a7, 120 \n\t"
@@ -1866,7 +1866,7 @@ int rev_sched_getscheduler(pid_t pid){
   return rc;
 }
 
-int rev_sched_getparam(pid_t pid, struct sched_param  *param){
+static int rev_sched_getparam(pid_t pid, struct sched_param  *param){
   int rc;
   asm volatile (
     "li a7, 121 \n\t"
@@ -1876,7 +1876,7 @@ int rev_sched_getparam(pid_t pid, struct sched_param  *param){
   return rc;
 }
 
-int rev_sched_setaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr){
+static int rev_sched_setaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr){
   int rc;
   asm volatile (
     "li a7, 122 \n\t"
@@ -1886,7 +1886,7 @@ int rev_sched_setaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask
   return rc;
 }
 
-int rev_sched_getaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr){
+static int rev_sched_getaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr){
   int rc;
   asm volatile (
     "li a7, 123 \n\t"
@@ -1896,7 +1896,7 @@ int rev_sched_getaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask
   return rc;
 }
 
-int rev_sched_yield(void){
+static int rev_sched_yield(void){
   int rc;
   asm volatile (
     "li a7, 124 \n\t"
@@ -1906,7 +1906,7 @@ int rev_sched_yield(void){
   return rc;
 }
 
-int rev_sched_get_priority_max(int policy){
+static int rev_sched_get_priority_max(int policy){
   int rc;
   asm volatile (
     "li a7, 125 \n\t"
@@ -1916,7 +1916,7 @@ int rev_sched_get_priority_max(int policy){
   return rc;
 }
 
-int rev_sched_get_priority_min(int policy){
+static int rev_sched_get_priority_min(int policy){
   int rc;
   asm volatile (
     "li a7, 126 \n\t"
@@ -1926,7 +1926,7 @@ int rev_sched_get_priority_min(int policy){
   return rc;
 }
 
-int rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval){
+static int rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval){
   int rc;
   asm volatile (
     "li a7, 127 \n\t"
@@ -1936,7 +1936,7 @@ int rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval){
   return rc;
 }
 
-int rev_restart_syscall(void){
+static int rev_restart_syscall(void){
   int rc;
   asm volatile (
     "li a7, 128 \n\t"
@@ -1946,7 +1946,7 @@ int rev_restart_syscall(void){
   return rc;
 }
 
-int rev_kill(pid_t pid, int sig){
+static int rev_kill(pid_t pid, int sig){
   int rc;
   asm volatile (
     "li a7, 129 \n\t"
@@ -1956,7 +1956,7 @@ int rev_kill(pid_t pid, int sig){
   return rc;
 }
 
-int rev_tkill(pid_t pid, int sig){
+static int rev_tkill(pid_t pid, int sig){
   int rc;
   asm volatile (
     "li a7, 130 \n\t"
@@ -1966,7 +1966,7 @@ int rev_tkill(pid_t pid, int sig){
   return rc;
 }
 
-int rev_tgkill(pid_t tgid, pid_t pid, int sig){
+static int rev_tgkill(pid_t tgid, pid_t pid, int sig){
   int rc;
   asm volatile (
     "li a7, 131 \n\t"
@@ -1976,7 +1976,7 @@ int rev_tgkill(pid_t tgid, pid_t pid, int sig){
   return rc;
 }
 
-int rev_sigaltstack(const struct sigaltstack  *uss, struct sigaltstack  *uoss){
+static int rev_sigaltstack(const struct sigaltstack  *uss, struct sigaltstack  *uoss){
   int rc;
   asm volatile (
     "li a7, 132 \n\t"
@@ -1986,7 +1986,7 @@ int rev_sigaltstack(const struct sigaltstack  *uss, struct sigaltstack  *uoss){
   return rc;
 }
 
-int rev_rt_sigsuspend(sigset_t  *unewset, size_t sigsetsize){
+static int rev_rt_sigsuspend(sigset_t  *unewset, size_t sigsetsize){
   int rc;
   asm volatile (
     "li a7, 133 \n\t"
@@ -1996,7 +1996,7 @@ int rev_rt_sigsuspend(sigset_t  *unewset, size_t sigsetsize){
   return rc;
 }
 
-int rev_rt_sigaction(int, const struct sigaction  *, struct sigaction  *, size_t){
+static int rev_rt_sigaction(int, const struct sigaction  *, struct sigaction  *, size_t){
   int rc;
   asm volatile (
     "li a7, 134 \n\t"
@@ -2006,7 +2006,7 @@ int rev_rt_sigaction(int, const struct sigaction  *, struct sigaction  *, size_t
   return rc;
 }
 
-int rev_rt_sigprocmask(int how, sigset_t  *set, sigset_t  *oset, size_t sigsetsize){
+static int rev_rt_sigprocmask(int how, sigset_t  *set, sigset_t  *oset, size_t sigsetsize){
   int rc;
   asm volatile (
     "li a7, 135 \n\t"
@@ -2016,7 +2016,7 @@ int rev_rt_sigprocmask(int how, sigset_t  *set, sigset_t  *oset, size_t sigsetsi
   return rc;
 }
 
-int rev_rt_sigpending(sigset_t  *set, size_t sigsetsize){
+static int rev_rt_sigpending(sigset_t  *set, size_t sigsetsize){
   int rc;
   asm volatile (
     "li a7, 136 \n\t"
@@ -2026,7 +2026,7 @@ int rev_rt_sigpending(sigset_t  *set, size_t sigsetsize){
   return rc;
 }
 
-int rev_rt_sigtimedwait_time32(const sigset_t  *uthese, siginfo_t  *uinfo, const struct old_timespec32  *uts, size_t sigsetsize){
+static int rev_rt_sigtimedwait_time32(const sigset_t  *uthese, siginfo_t  *uinfo, const struct old_timespec32  *uts, size_t sigsetsize){
   int rc;
   asm volatile (
     "li a7, 137 \n\t"
@@ -2036,7 +2036,7 @@ int rev_rt_sigtimedwait_time32(const sigset_t  *uthese, siginfo_t  *uinfo, const
   return rc;
 }
 
-int rev_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t  *uinfo){
+static int rev_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t  *uinfo){
   int rc;
   asm volatile (
     "li a7, 138 \n\t"
@@ -2046,7 +2046,7 @@ int rev_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t  *uinfo){
   return rc;
 }
 
-int rev_setpriority(int which, int who, int niceval){
+static int rev_setpriority(int which, int who, int niceval){
   int rc;
   asm volatile (
     "li a7, 140 \n\t"
@@ -2056,7 +2056,7 @@ int rev_setpriority(int which, int who, int niceval){
   return rc;
 }
 
-int rev_getpriority(int which, int who){
+static int rev_getpriority(int which, int who){
   int rc;
   asm volatile (
     "li a7, 141 \n\t"
@@ -2066,7 +2066,7 @@ int rev_getpriority(int which, int who){
   return rc;
 }
 
-int rev_reboot(int magic1, int magic2, unsigned int cmd, void  *arg){
+static int rev_reboot(int magic1, int magic2, unsigned int cmd, void  *arg){
   int rc;
   asm volatile (
     "li a7, 142 \n\t"
@@ -2076,7 +2076,7 @@ int rev_reboot(int magic1, int magic2, unsigned int cmd, void  *arg){
   return rc;
 }
 
-int rev_setregid(gid_t rgid, gid_t egid){
+static int rev_setregid(gid_t rgid, gid_t egid){
   int rc;
   asm volatile (
     "li a7, 143 \n\t"
@@ -2086,7 +2086,7 @@ int rev_setregid(gid_t rgid, gid_t egid){
   return rc;
 }
 
-int rev_setgid(gid_t gid){
+static int rev_setgid(gid_t gid){
   int rc;
   asm volatile (
     "li a7, 144 \n\t"
@@ -2096,7 +2096,7 @@ int rev_setgid(gid_t gid){
   return rc;
 }
 
-int rev_setreuid(uid_t ruid, uid_t euid){
+static int rev_setreuid(uid_t ruid, uid_t euid){
   int rc;
   asm volatile (
     "li a7, 145 \n\t"
@@ -2106,7 +2106,7 @@ int rev_setreuid(uid_t ruid, uid_t euid){
   return rc;
 }
 
-int rev_setuid(uid_t uid){
+static int rev_setuid(uid_t uid){
   int rc;
   asm volatile (
     "li a7, 146 \n\t"
@@ -2116,7 +2116,7 @@ int rev_setuid(uid_t uid){
   return rc;
 }
 
-int rev_setresuid(uid_t ruid, uid_t euid, uid_t suid){
+static int rev_setresuid(uid_t ruid, uid_t euid, uid_t suid){
   int rc;
   asm volatile (
     "li a7, 147 \n\t"
@@ -2126,7 +2126,7 @@ int rev_setresuid(uid_t ruid, uid_t euid, uid_t suid){
   return rc;
 }
 
-int rev_getresuid(uid_t  *ruid, uid_t  *euid, uid_t  *suid){
+static int rev_getresuid(uid_t  *ruid, uid_t  *euid, uid_t  *suid){
   int rc;
   asm volatile (
     "li a7, 148 \n\t"
@@ -2136,7 +2136,7 @@ int rev_getresuid(uid_t  *ruid, uid_t  *euid, uid_t  *suid){
   return rc;
 }
 
-int rev_setresgid(gid_t rgid, gid_t egid, gid_t sgid){
+static int rev_setresgid(gid_t rgid, gid_t egid, gid_t sgid){
   int rc;
   asm volatile (
     "li a7, 149 \n\t"
@@ -2146,7 +2146,7 @@ int rev_setresgid(gid_t rgid, gid_t egid, gid_t sgid){
   return rc;
 }
 
-int rev_getresgid(gid_t  *rgid, gid_t  *egid, gid_t  *sgid){
+static int rev_getresgid(gid_t  *rgid, gid_t  *egid, gid_t  *sgid){
   int rc;
   asm volatile (
     "li a7, 150 \n\t"
@@ -2156,7 +2156,7 @@ int rev_getresgid(gid_t  *rgid, gid_t  *egid, gid_t  *sgid){
   return rc;
 }
 
-int rev_setfsuid(uid_t uid){
+static int rev_setfsuid(uid_t uid){
   int rc;
   asm volatile (
     "li a7, 151 \n\t"
@@ -2166,7 +2166,7 @@ int rev_setfsuid(uid_t uid){
   return rc;
 }
 
-int rev_setfsgid(gid_t gid){
+static int rev_setfsgid(gid_t gid){
   int rc;
   asm volatile (
     "li a7, 152 \n\t"
@@ -2176,7 +2176,7 @@ int rev_setfsgid(gid_t gid){
   return rc;
 }
 
-int rev_times(struct tms  *tbuf){
+static int rev_times(struct tms  *tbuf){
   int rc;
   asm volatile (
     "li a7, 153 \n\t"
@@ -2186,7 +2186,7 @@ int rev_times(struct tms  *tbuf){
   return rc;
 }
 
-int rev_setpgid(pid_t pid, pid_t pgid){
+static int rev_setpgid(pid_t pid, pid_t pgid){
   int rc;
   asm volatile (
     "li a7, 154 \n\t"
@@ -2196,7 +2196,7 @@ int rev_setpgid(pid_t pid, pid_t pgid){
   return rc;
 }
 
-int rev_getpgid(pid_t pid){
+static int rev_getpgid(pid_t pid){
   int rc;
   asm volatile (
     "li a7, 155 \n\t"
@@ -2206,7 +2206,7 @@ int rev_getpgid(pid_t pid){
   return rc;
 }
 
-int rev_getsid(pid_t pid){
+static int rev_getsid(pid_t pid){
   int rc;
   asm volatile (
     "li a7, 156 \n\t"
@@ -2216,7 +2216,7 @@ int rev_getsid(pid_t pid){
   return rc;
 }
 
-int rev_setsid(void){
+static int rev_setsid(void){
   int rc;
   asm volatile (
     "li a7, 157 \n\t"
@@ -2226,7 +2226,7 @@ int rev_setsid(void){
   return rc;
 }
 
-int rev_getgroups(int gidsetsize, gid_t  *grouplist){
+static int rev_getgroups(int gidsetsize, gid_t  *grouplist){
   int rc;
   asm volatile (
     "li a7, 158 \n\t"
@@ -2236,7 +2236,7 @@ int rev_getgroups(int gidsetsize, gid_t  *grouplist){
   return rc;
 }
 
-int rev_setgroups(int gidsetsize, gid_t  *grouplist){
+static int rev_setgroups(int gidsetsize, gid_t  *grouplist){
   int rc;
   asm volatile (
     "li a7, 159 \n\t"
@@ -2246,7 +2246,7 @@ int rev_setgroups(int gidsetsize, gid_t  *grouplist){
   return rc;
 }
 
-int rev_newuname(struct new_utsname  *name){
+static int rev_newuname(struct new_utsname  *name){
   int rc;
   asm volatile (
     "li a7, 160 \n\t"
@@ -2256,7 +2256,7 @@ int rev_newuname(struct new_utsname  *name){
   return rc;
 }
 
-int rev_sethostname(char  *name, int len){
+static int rev_sethostname(char  *name, int len){
   int rc;
   asm volatile (
     "li a7, 161 \n\t"
@@ -2266,7 +2266,7 @@ int rev_sethostname(char  *name, int len){
   return rc;
 }
 
-int rev_setdomainname(char  *name, int len){
+static int rev_setdomainname(char  *name, int len){
   int rc;
   asm volatile (
     "li a7, 162 \n\t"
@@ -2276,7 +2276,7 @@ int rev_setdomainname(char  *name, int len){
   return rc;
 }
 
-int rev_getrlimit(unsigned int resource, struct rlimit  *rlim){
+static int rev_getrlimit(unsigned int resource, struct rlimit  *rlim){
   int rc;
   asm volatile (
     "li a7, 163 \n\t"
@@ -2286,7 +2286,7 @@ int rev_getrlimit(unsigned int resource, struct rlimit  *rlim){
   return rc;
 }
 
-int rev_setrlimit(unsigned int resource, struct rlimit  *rlim){
+static int rev_setrlimit(unsigned int resource, struct rlimit  *rlim){
   int rc;
   asm volatile (
     "li a7, 164 \n\t"
@@ -2296,7 +2296,7 @@ int rev_setrlimit(unsigned int resource, struct rlimit  *rlim){
   return rc;
 }
 
-int rev_getrusage(int who, struct rusage  *ru){
+static int rev_getrusage(int who, struct rusage  *ru){
   int rc;
   asm volatile (
     "li a7, 165 \n\t"
@@ -2306,7 +2306,7 @@ int rev_getrusage(int who, struct rusage  *ru){
   return rc;
 }
 
-int rev_umask(int mask){
+static int rev_umask(int mask){
   int rc;
   asm volatile (
     "li a7, 166 \n\t"
@@ -2316,7 +2316,7 @@ int rev_umask(int mask){
   return rc;
 }
 
-int rev_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5){
+static int rev_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5){
   int rc;
   asm volatile (
     "li a7, 167 \n\t"
@@ -2326,7 +2326,7 @@ int rev_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long 
   return rc;
 }
 
-int rev_getcpu(unsigned  *cpu, unsigned  *node, struct getcpu_cache  *cache){
+static int rev_getcpu(unsigned  *cpu, unsigned  *node, struct getcpu_cache  *cache){
   int rc;
   asm volatile (
     "li a7, 168 \n\t"
@@ -2336,7 +2336,7 @@ int rev_getcpu(unsigned  *cpu, unsigned  *node, struct getcpu_cache  *cache){
   return rc;
 }
 
-int rev_gettimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz){
+static int rev_gettimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz){
   int rc;
   asm volatile (
     "li a7, 169 \n\t"
@@ -2346,7 +2346,7 @@ int rev_gettimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz){
   return rc;
 }
 
-int rev_settimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz){
+static int rev_settimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz){
   int rc;
   asm volatile (
     "li a7, 170 \n\t"
@@ -2356,7 +2356,7 @@ int rev_settimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz){
   return rc;
 }
 
-int rev_adjtimex(struct __kernel_timex  *txc_p){
+static int rev_adjtimex(struct __kernel_timex  *txc_p){
   int rc;
   asm volatile (
     "li a7, 171 \n\t"
@@ -2366,7 +2366,7 @@ int rev_adjtimex(struct __kernel_timex  *txc_p){
   return rc;
 }
 
-int rev_getpid(void){
+static int rev_getpid(void){
   int rc;
   asm volatile (
     "li a7, 172 \n\t"
@@ -2376,7 +2376,7 @@ int rev_getpid(void){
   return rc;
 }
 
-int rev_getppid(void){
+static int rev_getppid(void){
   int rc;
   asm volatile (
     "li a7, 173 \n\t"
@@ -2386,7 +2386,7 @@ int rev_getppid(void){
   return rc;
 }
 
-int rev_getuid(void){
+static int rev_getuid(void){
   int rc;
   asm volatile (
     "li a7, 174 \n\t"
@@ -2396,7 +2396,7 @@ int rev_getuid(void){
   return rc;
 }
 
-int rev_geteuid(void){
+static int rev_geteuid(void){
   int rc;
   asm volatile (
     "li a7, 175 \n\t"
@@ -2406,7 +2406,7 @@ int rev_geteuid(void){
   return rc;
 }
 
-int rev_getgid(void){
+static int rev_getgid(void){
   int rc;
   asm volatile (
     "li a7, 176 \n\t"
@@ -2416,7 +2416,7 @@ int rev_getgid(void){
   return rc;
 }
 
-int rev_getegid(void){
+static int rev_getegid(void){
   int rc;
   asm volatile (
     "li a7, 177 \n\t"
@@ -2426,7 +2426,7 @@ int rev_getegid(void){
   return rc;
 }
 
-int rev_gettid(void){
+static int rev_gettid(void){
   int rc;
   asm volatile (
     "li a7, 178 \n\t"
@@ -2436,7 +2436,7 @@ int rev_gettid(void){
   return rc;
 }
 
-int rev_sysinfo(struct sysinfo  *info){
+static int rev_sysinfo(struct sysinfo  *info){
   int rc;
   asm volatile (
     "li a7, 179 \n\t"
@@ -2446,7 +2446,7 @@ int rev_sysinfo(struct sysinfo  *info){
   return rc;
 }
 
-int rev_mq_open(const char  *name, int oflag, umode_t mode, struct mq_attr  *attr){
+static int rev_mq_open(const char  *name, int oflag, umode_t mode, struct mq_attr  *attr){
   int rc;
   asm volatile (
     "li a7, 180 \n\t"
@@ -2456,7 +2456,7 @@ int rev_mq_open(const char  *name, int oflag, umode_t mode, struct mq_attr  *att
   return rc;
 }
 
-int rev_mq_unlink(const char  *name){
+static int rev_mq_unlink(const char  *name){
   int rc;
   asm volatile (
     "li a7, 181 \n\t"
@@ -2506,7 +2506,7 @@ int rev_mq_unlink(const char  *name){
 //   return rc;
 // }
 
-int rev_msgget(key_t key, int msgflg){
+static int rev_msgget(key_t key, int msgflg){
   int rc;
   asm volatile (
     "li a7, 186 \n\t"
@@ -2516,7 +2516,7 @@ int rev_msgget(key_t key, int msgflg){
   return rc;
 }
 
-int rev_old_msgctl(int msqid, int cmd, struct msqid_ds  *buf){
+static int rev_old_msgctl(int msqid, int cmd, struct msqid_ds  *buf){
   int rc;
   asm volatile (
     "li a7, 187 \n\t"
@@ -2526,7 +2526,7 @@ int rev_old_msgctl(int msqid, int cmd, struct msqid_ds  *buf){
   return rc;
 }
 
-int rev_msgrcv(int msqid, struct msgbuf  *msgp, size_t msgsz, long msgtyp, int msgflg){
+static int rev_msgrcv(int msqid, struct msgbuf  *msgp, size_t msgsz, long msgtyp, int msgflg){
   int rc;
   asm volatile (
     "li a7, 188 \n\t"
@@ -2536,7 +2536,7 @@ int rev_msgrcv(int msqid, struct msgbuf  *msgp, size_t msgsz, long msgtyp, int m
   return rc;
 }
 
-int rev_msgsnd(int msqid, struct msgbuf  *msgp, size_t msgsz, int msgflg){
+static int rev_msgsnd(int msqid, struct msgbuf  *msgp, size_t msgsz, int msgflg){
   int rc;
   asm volatile (
     "li a7, 189 \n\t"
@@ -2546,7 +2546,7 @@ int rev_msgsnd(int msqid, struct msgbuf  *msgp, size_t msgsz, int msgflg){
   return rc;
 }
 
-int rev_semget(key_t key, int nsems, int semflg){
+static int rev_semget(key_t key, int nsems, int semflg){
   int rc;
   asm volatile (
     "li a7, 190 \n\t"
@@ -2556,7 +2556,7 @@ int rev_semget(key_t key, int nsems, int semflg){
   return rc;
 }
 
-int rev_semctl(int semid, int semnum, int cmd, unsigned long arg){
+static int rev_semctl(int semid, int semnum, int cmd, unsigned long arg){
   int rc;
   asm volatile (
     "li a7, 191 \n\t"
@@ -2566,7 +2566,7 @@ int rev_semctl(int semid, int semnum, int cmd, unsigned long arg){
   return rc;
 }
 
-int rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout){
+static int rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout){
   int rc;
   asm volatile (
     "li a7, 192 \n\t"
@@ -2576,7 +2576,7 @@ int rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct
   return rc;
 }
 
-int rev_semop(int semid, struct sembuf  *sops, unsigned nsops){
+static int rev_semop(int semid, struct sembuf  *sops, unsigned nsops){
   int rc;
   asm volatile (
     "li a7, 193 \n\t"
@@ -2586,7 +2586,7 @@ int rev_semop(int semid, struct sembuf  *sops, unsigned nsops){
   return rc;
 }
 
-int rev_shmget(key_t key, size_t size, int flag){
+static int rev_shmget(key_t key, size_t size, int flag){
   int rc;
   asm volatile (
     "li a7, 194 \n\t"
@@ -2596,7 +2596,7 @@ int rev_shmget(key_t key, size_t size, int flag){
   return rc;
 }
 
-int rev_old_shmctl(int shmid, int cmd, struct shmid_ds  *buf){
+static int rev_old_shmctl(int shmid, int cmd, struct shmid_ds  *buf){
   int rc;
   asm volatile (
     "li a7, 195 \n\t"
@@ -2606,7 +2606,7 @@ int rev_old_shmctl(int shmid, int cmd, struct shmid_ds  *buf){
   return rc;
 }
 
-int rev_shmat(int shmid, char  *shmaddr, int shmflg){
+static int rev_shmat(int shmid, char  *shmaddr, int shmflg){
   int rc;
   asm volatile (
     "li a7, 196 \n\t"
@@ -2616,7 +2616,7 @@ int rev_shmat(int shmid, char  *shmaddr, int shmflg){
   return rc;
 }
 
-int rev_shmdt(char  *shmaddr){
+static int rev_shmdt(char  *shmaddr){
   int rc;
   asm volatile (
     "li a7, 197 \n\t"
@@ -2626,7 +2626,7 @@ int rev_shmdt(char  *shmaddr){
   return rc;
 }
 
-int rev_socket(int, int, int){
+static int rev_socket(int, int, int){
   int rc;
   asm volatile (
     "li a7, 198 \n\t"
@@ -2636,7 +2636,7 @@ int rev_socket(int, int, int){
   return rc;
 }
 
-int rev_socketpair(int, int, int, int  *){
+static int rev_socketpair(int, int, int, int  *){
   int rc;
   asm volatile (
     "li a7, 199 \n\t"
@@ -2646,7 +2646,7 @@ int rev_socketpair(int, int, int, int  *){
   return rc;
 }
 
-int rev_bind(int, struct sockaddr  *, int){
+static int rev_bind(int, struct sockaddr  *, int){
   int rc;
   asm volatile (
     "li a7, 200 \n\t"
@@ -2656,7 +2656,7 @@ int rev_bind(int, struct sockaddr  *, int){
   return rc;
 }
 
-int rev_listen(int, int){
+static int rev_listen(int, int){
   int rc;
   asm volatile (
     "li a7, 201 \n\t"
@@ -2666,7 +2666,7 @@ int rev_listen(int, int){
   return rc;
 }
 
-int rev_accept(int, struct sockaddr  *, int  *){
+static int rev_accept(int, struct sockaddr  *, int  *){
   int rc;
   asm volatile (
     "li a7, 202 \n\t"
@@ -2676,7 +2676,7 @@ int rev_accept(int, struct sockaddr  *, int  *){
   return rc;
 }
 
-int rev_connect(int, struct sockaddr  *, int){
+static int rev_connect(int, struct sockaddr  *, int){
   int rc;
   asm volatile (
     "li a7, 203 \n\t"
@@ -2686,7 +2686,7 @@ int rev_connect(int, struct sockaddr  *, int){
   return rc;
 }
 
-int rev_getsockname(int, struct sockaddr  *, int  *){
+static int rev_getsockname(int, struct sockaddr  *, int  *){
   int rc;
   asm volatile (
     "li a7, 204 \n\t"
@@ -2696,7 +2696,7 @@ int rev_getsockname(int, struct sockaddr  *, int  *){
   return rc;
 }
 
-int rev_getpeername(int, struct sockaddr  *, int  *){
+static int rev_getpeername(int, struct sockaddr  *, int  *){
   int rc;
   asm volatile (
     "li a7, 205 \n\t"
@@ -2706,7 +2706,7 @@ int rev_getpeername(int, struct sockaddr  *, int  *){
   return rc;
 }
 
-int rev_sendto(int, void  *, size_t, unsigned, struct sockaddr  *, int){
+static int rev_sendto(int, void  *, size_t, unsigned, struct sockaddr  *, int){
   int rc;
   asm volatile (
     "li a7, 206 \n\t"
@@ -2716,7 +2716,7 @@ int rev_sendto(int, void  *, size_t, unsigned, struct sockaddr  *, int){
   return rc;
 }
 
-int rev_recvfrom(int, void  *, size_t, unsigned, struct sockaddr  *, int  *){
+static int rev_recvfrom(int, void  *, size_t, unsigned, struct sockaddr  *, int  *){
   int rc;
   asm volatile (
     "li a7, 207 \n\t"
@@ -2726,7 +2726,7 @@ int rev_recvfrom(int, void  *, size_t, unsigned, struct sockaddr  *, int  *){
   return rc;
 }
 
-int rev_setsockopt(int fd, int level, int optname, char  *optval, int optlen){
+static int rev_setsockopt(int fd, int level, int optname, char  *optval, int optlen){
   int rc;
   asm volatile (
     "li a7, 208 \n\t"
@@ -2736,7 +2736,7 @@ int rev_setsockopt(int fd, int level, int optname, char  *optval, int optlen){
   return rc;
 }
 
-int rev_getsockopt(int fd, int level, int optname, char  *optval, int  *optlen){
+static int rev_getsockopt(int fd, int level, int optname, char  *optval, int  *optlen){
   int rc;
   asm volatile (
     "li a7, 209 \n\t"
@@ -2746,7 +2746,7 @@ int rev_getsockopt(int fd, int level, int optname, char  *optval, int  *optlen){
   return rc;
 }
 
-int rev_shutdown(int, int){
+static int rev_shutdown(int, int){
   int rc;
   asm volatile (
     "li a7, 210 \n\t"
@@ -2756,7 +2756,7 @@ int rev_shutdown(int, int){
   return rc;
 }
 
-int rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags){
+static int rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags){
   int rc;
   asm volatile (
     "li a7, 211 \n\t"
@@ -2766,7 +2766,7 @@ int rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags){
   return rc;
 }
 
-int rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags){
+static int rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags){
   int rc;
   asm volatile (
     "li a7, 212 \n\t"
@@ -2776,7 +2776,7 @@ int rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags){
   return rc;
 }
 
-int rev_readahead(int fd, loff_t offset, size_t count){
+static int rev_readahead(int fd, loff_t offset, size_t count){
   int rc;
   asm volatile (
     "li a7, 213 \n\t"
@@ -2786,7 +2786,7 @@ int rev_readahead(int fd, loff_t offset, size_t count){
   return rc;
 }
 
-int rev_brk(unsigned long brk){
+static int rev_brk(unsigned long brk){
   int rc;
   asm volatile (
     "li a7, 214 \n\t"
@@ -2796,7 +2796,7 @@ int rev_brk(unsigned long brk){
   return rc;
 }
 
-int rev_munmap(unsigned long addr, size_t len){
+static int rev_munmap(unsigned long addr, size_t len){
   int rc;
   asm volatile (
     "li a7, 215 \n\t"
@@ -2806,7 +2806,7 @@ int rev_munmap(unsigned long addr, size_t len){
   return rc;
 }
 
-int rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr){
+static int rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr){
   int rc;
   asm volatile (
     "li a7, 216 \n\t"
@@ -2816,7 +2816,7 @@ int rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len,
   return rc;
 }
 
-int rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid){
+static int rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid){
   int rc;
   asm volatile (
     "li a7, 217 \n\t"
@@ -2826,7 +2826,7 @@ int rev_add_key(const char  *_type, const char  *_description, const void  *_pay
   return rc;
 }
 
-int rev_request_key(const char  *_type, const char  *_description, const char  *_callout_info, key_serial_t destringid){
+static int rev_request_key(const char  *_type, const char  *_description, const char  *_callout_info, key_serial_t destringid){
   int rc;
   asm volatile (
     "li a7, 218 \n\t"
@@ -2836,7 +2836,7 @@ int rev_request_key(const char  *_type, const char  *_description, const char  *
   return rc;
 }
 
-int rev_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5){
+static int rev_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5){
   int rc;
   asm volatile (
     "li a7, 219 \n\t"
@@ -2846,7 +2846,7 @@ int rev_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long ar
   return rc;
 }
 
-int rev_fork(){
+static int rev_fork(){
   int rc;
   asm volatile (
     "li a7, 220 \n\t"
@@ -2856,7 +2856,7 @@ int rev_fork(){
   return rc;
 }
 
-int rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *){
+static int rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *){
   int rc;
   asm volatile (
     "li a7, 220 \n\t"
@@ -2866,7 +2866,7 @@ int rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *){
   return rc;
 }
 
-int rev_execve(const char  *filename, const char  *const  *argv, const char  *const  *envp){
+static int rev_execve(const char  *filename, const char  *const  *argv, const char  *const  *envp){
   int rc;
   asm volatile (
     "li a7, 221 \n\t"
@@ -2876,17 +2876,16 @@ int rev_execve(const char  *filename, const char  *const  *argv, const char  *co
   return rc;
 }
 
-uint64_t rev_mmap(uint64_t addr, size_t length, int prot, int flags, int fd, off_t offset){
-  int rc;
+__attribute__((naked))
+static void* rev_mmap(uint64_t addr, size_t length, int prot, int flags, int fd, off_t offset){
   asm volatile (
     "li a7, 222 \n\t"
     "ecall \n\t"
-    "mv %0, a0" : "=r" (rc)
+    "ret"
     );
-  return rc;
 }
 
-int rev_fadvise64_64(int fd, loff_t offset, loff_t len, int advice){
+static int rev_fadvise64_64(int fd, loff_t offset, loff_t len, int advice){
   int rc;
   asm volatile (
     "li a7, 223 \n\t"
@@ -2896,7 +2895,7 @@ int rev_fadvise64_64(int fd, loff_t offset, loff_t len, int advice){
   return rc;
 }
 
-int rev_swapon(const char  *specialfile, int swap_flags){
+static int rev_swapon(const char  *specialfile, int swap_flags){
   int rc;
   asm volatile (
     "li a7, 224 \n\t"
@@ -2906,7 +2905,7 @@ int rev_swapon(const char  *specialfile, int swap_flags){
   return rc;
 }
 
-int rev_swapoff(const char  *specialfile){
+static int rev_swapoff(const char  *specialfile){
   int rc;
   asm volatile (
     "li a7, 225 \n\t"
@@ -2916,7 +2915,7 @@ int rev_swapoff(const char  *specialfile){
   return rc;
 }
 
-int rev_mprotect(unsigned long start, size_t len, unsigned long prot){
+static int rev_mprotect(unsigned long start, size_t len, unsigned long prot){
   int rc;
   asm volatile (
     "li a7, 226 \n\t"
@@ -2926,7 +2925,7 @@ int rev_mprotect(unsigned long start, size_t len, unsigned long prot){
   return rc;
 }
 
-int rev_msync(unsigned long start, size_t len, int flags){
+static int rev_msync(unsigned long start, size_t len, int flags){
   int rc;
   asm volatile (
     "li a7, 227 \n\t"
@@ -2936,7 +2935,7 @@ int rev_msync(unsigned long start, size_t len, int flags){
   return rc;
 }
 
-int rev_mlock(unsigned long start, size_t len){
+static int rev_mlock(unsigned long start, size_t len){
   int rc;
   asm volatile (
     "li a7, 228 \n\t"
@@ -2946,7 +2945,7 @@ int rev_mlock(unsigned long start, size_t len){
   return rc;
 }
 
-int rev_munlock(unsigned long start, size_t len){
+static int rev_munlock(unsigned long start, size_t len){
   int rc;
   asm volatile (
     "li a7, 229 \n\t"
@@ -2956,7 +2955,7 @@ int rev_munlock(unsigned long start, size_t len){
   return rc;
 }
 
-int rev_mlockall(int flags){
+static int rev_mlockall(int flags){
   int rc;
   asm volatile (
     "li a7, 230 \n\t"
@@ -2966,7 +2965,7 @@ int rev_mlockall(int flags){
   return rc;
 }
 
-int rev_munlockall(void){
+static int rev_munlockall(void){
   int rc;
   asm volatile (
     "li a7, 231 \n\t"
@@ -2976,7 +2975,7 @@ int rev_munlockall(void){
   return rc;
 }
 
-int rev_mincore(unsigned long start, size_t len, unsigned char  * vec){
+static int rev_mincore(unsigned long start, size_t len, unsigned char  * vec){
   int rc;
   asm volatile (
     "li a7, 232 \n\t"
@@ -2986,7 +2985,7 @@ int rev_mincore(unsigned long start, size_t len, unsigned char  * vec){
   return rc;
 }
 
-int rev_madvise(unsigned long start, size_t len, int behavior){
+static int rev_madvise(unsigned long start, size_t len, int behavior){
   int rc;
   asm volatile (
     "li a7, 233 \n\t"
@@ -2996,7 +2995,7 @@ int rev_madvise(unsigned long start, size_t len, int behavior){
   return rc;
 }
 
-int rev_remap_file_pages(unsigned long start, unsigned long size, unsigned long prot, unsigned long pgoff, unsigned long flags){
+static int rev_remap_file_pages(unsigned long start, unsigned long size, unsigned long prot, unsigned long pgoff, unsigned long flags){
   int rc;
   asm volatile (
     "li a7, 234 \n\t"
@@ -3006,7 +3005,7 @@ int rev_remap_file_pages(unsigned long start, unsigned long size, unsigned long 
   return rc;
 }
 
-int rev_mbind(unsigned long start, unsigned long len, unsigned long mode, const unsigned long  *nmask, unsigned long maxnode, unsigned flags){
+static int rev_mbind(unsigned long start, unsigned long len, unsigned long mode, const unsigned long  *nmask, unsigned long maxnode, unsigned flags){
   int rc;
   asm volatile (
     "li a7, 235 \n\t"
@@ -3016,7 +3015,7 @@ int rev_mbind(unsigned long start, unsigned long len, unsigned long mode, const 
   return rc;
 }
 
-int rev_get_mempolicy(int  *policy, unsigned long  *nmask, unsigned long maxnode, unsigned long addr, unsigned long flags){
+static int rev_get_mempolicy(int  *policy, unsigned long  *nmask, unsigned long maxnode, unsigned long addr, unsigned long flags){
   int rc;
   asm volatile (
     "li a7, 236 \n\t"
@@ -3026,7 +3025,7 @@ int rev_get_mempolicy(int  *policy, unsigned long  *nmask, unsigned long maxnode
   return rc;
 }
 
-int rev_set_mempolicy(int mode, const unsigned long  *nmask, unsigned long maxnode){
+static int rev_set_mempolicy(int mode, const unsigned long  *nmask, unsigned long maxnode){
   int rc;
   asm volatile (
     "li a7, 237 \n\t"
@@ -3036,7 +3035,7 @@ int rev_set_mempolicy(int mode, const unsigned long  *nmask, unsigned long maxno
   return rc;
 }
 
-int rev_migrate_pages(pid_t pid, unsigned long maxnode, const unsigned long  *from, const unsigned long  *to){
+static int rev_migrate_pages(pid_t pid, unsigned long maxnode, const unsigned long  *from, const unsigned long  *to){
   int rc;
   asm volatile (
     "li a7, 238 \n\t"
@@ -3046,7 +3045,7 @@ int rev_migrate_pages(pid_t pid, unsigned long maxnode, const unsigned long  *fr
   return rc;
 }
 
-int rev_move_pages(pid_t pid, unsigned long nr_pages, const void  *  *pages, const int  *nodes, int  *status, int flags){
+static int rev_move_pages(pid_t pid, unsigned long nr_pages, const void  *  *pages, const int  *nodes, int  *status, int flags){
   int rc;
   asm volatile (
     "li a7, 239 \n\t"
@@ -3056,7 +3055,7 @@ int rev_move_pages(pid_t pid, unsigned long nr_pages, const void  *  *pages, con
   return rc;
 }
 
-int rev_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig, siginfo_t  *uinfo){
+static int rev_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig, siginfo_t  *uinfo){
   int rc;
   asm volatile (
     "li a7, 240 \n\t"
@@ -3066,7 +3065,7 @@ int rev_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig, siginfo_t  *uinfo){
   return rc;
 }
 
-int rev_perf_event_open(){
+static int rev_perf_event_open(){
   int rc;
   asm volatile (
     "li a7, 241 \n\t"
@@ -3076,7 +3075,7 @@ int rev_perf_event_open(){
   return rc;
 }
 
-int rev_accept4(int, struct sockaddr  *, int *, int){
+static int rev_accept4(int, struct sockaddr  *, int *, int){
   int rc;
   asm volatile (
     "li a7, 242 \n\t"
@@ -3086,7 +3085,7 @@ int rev_accept4(int, struct sockaddr  *, int *, int){
 return rc;
 }
 
-int rev_recvmmsg_time32(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags, struct old_timespec32* timeout){
+static int rev_recvmmsg_time32(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags, struct old_timespec32* timeout){
   int rc;
   asm volatile (
     "li a7, 243 \n\t"
@@ -3096,7 +3095,7 @@ int rev_recvmmsg_time32(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigne
   return rc;
 }
 
-int rev_wait4(pid_t pid, int  *stat_addr, int options, struct rusage *ru){
+static int rev_wait4(pid_t pid, int  *stat_addr, int options, struct rusage *ru){
   int rc;
   asm volatile (
     "li a7, 260 \n\t"
@@ -3106,7 +3105,7 @@ int rev_wait4(pid_t pid, int  *stat_addr, int options, struct rusage *ru){
   return rc;
 }
 
-int rev_prlimit64(pid_t pid, unsigned int resource, const struct rlimit64  *new_rlim, struct rlimit64  *old_rlim){;
+static int rev_prlimit64(pid_t pid, unsigned int resource, const struct rlimit64  *new_rlim, struct rlimit64  *old_rlim){;
   int rc;
   asm volatile (
     "li a7, 261 \n\t"
@@ -3116,7 +3115,7 @@ int rev_prlimit64(pid_t pid, unsigned int resource, const struct rlimit64  *new_
   return rc;
 }
 
-int rev_fanotify_init(unsigned int flags, unsigned int event_int){
+static int rev_fanotify_init(unsigned int flags, unsigned int event_int){
   int rc;
   asm volatile (
     "li a7, 262 \n\t"
@@ -3126,7 +3125,7 @@ int rev_fanotify_init(unsigned int flags, unsigned int event_int){
 return rc;
 }
 
-int rev_fanotify_mark(int fanotify_fd, unsigned int flags, uint64_t mask, int fd, const char  *p){
+static int rev_fanotify_mark(int fanotify_fd, unsigned int flags, uint64_t mask, int fd, const char  *p){
   int rc;
   asm volatile (
     "li a7, 263 \n\t"
@@ -3136,7 +3135,7 @@ int rev_fanotify_mark(int fanotify_fd, unsigned int flags, uint64_t mask, int fd
   return rc;
 }
 
-int rev_name_to_handle_at(int dfd, const char  *name, struct file_handle  *handle, int  *mnt_id, int flag){
+static int rev_name_to_handle_at(int dfd, const char  *name, struct file_handle  *handle, int  *mnt_id, int flag){
   int rc;
   asm volatile (
     "li a7, 264 \n\t"
@@ -3146,7 +3145,7 @@ int rev_name_to_handle_at(int dfd, const char  *name, struct file_handle  *handl
   return rc;
 }
 
-int rev_open_by_handle_at(int mountdirfd, struct file_handle  *handle, int flags){
+static int rev_open_by_handle_at(int mountdirfd, struct file_handle  *handle, int flags){
   int rc;
   asm volatile (
     "li a7, 265 \n\t"
@@ -3156,7 +3155,7 @@ int rev_open_by_handle_at(int mountdirfd, struct file_handle  *handle, int flags
 return rc;
 }
 
-int rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex *tx){
+static int rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex *tx){
   int rc;
   asm volatile (
     "li a7, 266 \n\t"
@@ -3166,7 +3165,7 @@ int rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex *tx){
   return rc;
 }
 
-int rev_syncfs(int fd){
+static int rev_syncfs(int fd){
   int rc;
   asm volatile (
     "li a7, 267 \n\t"
@@ -3176,7 +3175,7 @@ int rev_syncfs(int fd){
   return rc;
 }
 
-int rev_setns(int fd, int nstype ){
+static int rev_setns(int fd, int nstype ){
   int rc;
   asm volatile (
     "li a7, 268 \n\t"
@@ -3186,7 +3185,7 @@ int rev_setns(int fd, int nstype ){
 return rc;
 }
 
-int rev_sendmmsg(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags){
+static int rev_sendmmsg(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags){
   int rc;
   asm volatile (
     "li a7, 269 \n\t"
@@ -3196,7 +3195,7 @@ int rev_sendmmsg(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags
   return rc;
 }
 
-int rev_process_vm_readv(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags){
+static int rev_process_vm_readv(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags){
   int rc;
   asm volatile (
     "li a7, 270 \n\t"
@@ -3206,7 +3205,7 @@ int rev_process_vm_readv(pid_t pid, const struct iovec  *lvec, unsigned long lio
   return rc;
 }
 
-int rev_process_vm_writev(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags){
+static int rev_process_vm_writev(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags){
   int rc;
   asm volatile (
     "li a7, 271 \n\t"
@@ -3216,7 +3215,7 @@ int rev_process_vm_writev(pid_t pid, const struct iovec  *lvec, unsigned long li
   return rc;
 }
 
-int rev_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long idx2){
+static int rev_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long idx2){
   int rc;
   asm volatile (
     "li a7, 272 \n\t"
@@ -3226,7 +3225,7 @@ int rev_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long
 return rc;
 }
 
-int rev_finit_module(int fd, const char  *uargs, int flags){
+static int rev_finit_module(int fd, const char  *uargs, int flags){
   int rc;
   asm volatile (
     "li a7, 273 \n\t"
@@ -3236,7 +3235,7 @@ int rev_finit_module(int fd, const char  *uargs, int flags){
 return rc;
 }
 
-int rev_sched_setattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags){
+static int rev_sched_setattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 274 \n\t"
@@ -3246,7 +3245,7 @@ int rev_sched_setattr(pid_t pid, struct sched_attr  *attr, unsigned int size, un
 return rc;
 }
 
-int rev_sched_getattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags){
+static int rev_sched_getattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 275 \n\t"
@@ -3256,7 +3255,7 @@ int rev_sched_getattr(pid_t pid, struct sched_attr  *attr, unsigned int size, un
   return rc;
 }
 
-int rev_renameat2(int olddfd, const char  *oldname, int newdfd, const char  *newname, unsigned int flags){
+static int rev_renameat2(int olddfd, const char  *oldname, int newdfd, const char  *newname, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 276 \n\t"
@@ -3266,7 +3265,7 @@ int rev_renameat2(int olddfd, const char  *oldname, int newdfd, const char  *new
   return rc;
 }
 
-int rev_seccomp(unsigned int op, unsigned int flags, void *uargs){
+static int rev_seccomp(unsigned int op, unsigned int flags, void *uargs){
   int rc;
   asm volatile (
     "li a7, 277 \n\t"
@@ -3276,7 +3275,7 @@ int rev_seccomp(unsigned int op, unsigned int flags, void *uargs){
   return rc;
 }
 
-int rev_getrandom(char  *buf, size_t count, unsigned int flags){
+static int rev_getrandom(char  *buf, size_t count, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 278 \n\t"
@@ -3286,7 +3285,7 @@ int rev_getrandom(char  *buf, size_t count, unsigned int flags){
   return rc;
 }
 
-int rev_memfd_create(const char  *uname_ptr, unsigned int flags){
+static int rev_memfd_create(const char  *uname_ptr, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 279 \n\t"
@@ -3296,7 +3295,7 @@ int rev_memfd_create(const char  *uname_ptr, unsigned int flags){
   return rc;
 }
 
-int rev_bpf(int cmd, union bpf_attr *attr, unsigned int size){
+static int rev_bpf(int cmd, union bpf_attr *attr, unsigned int size){
   int rc;
   asm volatile (
     "li a7, 280 \n\t"
@@ -3306,7 +3305,7 @@ int rev_bpf(int cmd, union bpf_attr *attr, unsigned int size){
   return rc;
 }
 
-int rev_execveat(int dfd, const char  *filename, const char  *const  *argv, const char  *const  *envp, int flags){
+static int rev_execveat(int dfd, const char  *filename, const char  *const  *argv, const char  *const  *envp, int flags){
   int rc;
   asm volatile (
     "li a7, 281 \n\t"
@@ -3316,7 +3315,7 @@ int rev_execveat(int dfd, const char  *filename, const char  *const  *argv, cons
   return rc;
 }
 
-int rev_userfaultfd(int flags){
+static int rev_userfaultfd(int flags){
   int rc;
   asm volatile (
     "li a7, 282 \n\t"
@@ -3326,7 +3325,7 @@ int rev_userfaultfd(int flags){
   return rc;
 }
 
-int rev_membarrier(int cmd, unsigned int flags, int cpu_id){
+static int rev_membarrier(int cmd, unsigned int flags, int cpu_id){
   int rc;
   asm volatile (
     "li a7, 283 \n\t"
@@ -3336,7 +3335,7 @@ int rev_membarrier(int cmd, unsigned int flags, int cpu_id){
   return rc;
 }
 
-int rev_mlock2(unsigned long start, size_t len, int flags){
+static int rev_mlock2(unsigned long start, size_t len, int flags){
   int rc;
   asm volatile (
     "li a7, 284 \n\t"
@@ -3346,7 +3345,7 @@ int rev_mlock2(unsigned long start, size_t len, int flags){
   return rc;
 }
 
-int rev_copy_file_range(int fd_in, loff_t  *off_in, int fd_out, loff_t  *off_out, size_t len, unsigned int flags){
+static int rev_copy_file_range(int fd_in, loff_t  *off_in, int fd_out, loff_t  *off_out, size_t len, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 285 \n\t"
@@ -3356,7 +3355,7 @@ int rev_copy_file_range(int fd_in, loff_t  *off_in, int fd_out, loff_t  *off_out
   return rc;
 }
 
-int rev_preadv2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags){
+static int rev_preadv2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags){
   int rc;
   asm volatile (
     "li a7, 286 \n\t"
@@ -3366,7 +3365,7 @@ int rev_preadv2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, 
 return rc;
 }
 
-int rev_pwritev2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags){
+static int rev_pwritev2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags){
   int rc;
   asm volatile (
     "li a7, 287 \n\t"
@@ -3376,7 +3375,7 @@ int rev_pwritev2(unsigned long fd, const struct iovec  *vec, unsigned long vlen,
 return rc;
 }
 
-int rev_pkey_mprotect(unsigned long start, size_t len, unsigned long prot){
+static int rev_pkey_mprotect(unsigned long start, size_t len, unsigned long prot){
   int rc;
   asm volatile (
     "li a7, 288 \n\t"
@@ -3386,7 +3385,7 @@ int rev_pkey_mprotect(unsigned long start, size_t len, unsigned long prot){
 return rc;
 }
 
-int rev_pkey_alloc(unsigned long flags, unsigned long init_val){
+static int rev_pkey_alloc(unsigned long flags, unsigned long init_val){
   int rc;
   asm volatile (
     "li a7, 289 \n\t"
@@ -3396,7 +3395,7 @@ int rev_pkey_alloc(unsigned long flags, unsigned long init_val){
   return rc;
 }
 
-int rev_pkey_free(int pkey){
+static int rev_pkey_free(int pkey){
   int rc;
   asm volatile (
     "li a7, 290 \n\t"
@@ -3406,7 +3405,7 @@ int rev_pkey_free(int pkey){
   return rc;
 }
 
-int rev_statx(int dfd, const char  *path, unsigned flags, unsigned mask, struct statx *buffer){
+static int rev_statx(int dfd, const char  *path, unsigned flags, unsigned mask, struct statx *buffer){
   int rc;
   asm volatile (
     "li a7, 291 \n\t"
@@ -3416,7 +3415,7 @@ int rev_statx(int dfd, const char  *path, unsigned flags, unsigned mask, struct 
   return rc;
 }
 
-int rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig){
+static int rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig){
   int rc;
   asm volatile (
     "li a7, 292 \n\t"
@@ -3426,7 +3425,7 @@ int rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_even
   return rc;
 }
 
-int rev_rseq(struct rseq  *rseq, uint32_t rseq_len, int flags, uint32_t sig){
+static int rev_rseq(struct rseq  *rseq, uint32_t rseq_len, int flags, uint32_t sig){
   int rc;
   asm volatile (
     "li a7, 293 \n\t"
@@ -3436,7 +3435,7 @@ int rev_rseq(struct rseq  *rseq, uint32_t rseq_len, int flags, uint32_t sig){
   return rc;
 }
 
-int rev_kexec_file_load(int kernel_fd, int initrd_fd, unsigned long cmdline_len, const char  *cmdline_ptr, unsigned long flags){
+static int rev_kexec_file_load(int kernel_fd, int initrd_fd, unsigned long cmdline_len, const char  *cmdline_ptr, unsigned long flags){
   int rc;
   asm volatile (
     "li a7, 294 \n\t"
@@ -3594,7 +3593,7 @@ int rev_kexec_file_load(int kernel_fd, int initrd_fd, unsigned long cmdline_len,
 // return rc;
 // }
 
-int rev_pidfd_send_signal(int pidfd, int sig, siginfo_t  *info, unsigned int flags){
+static int rev_pidfd_send_signal(int pidfd, int sig, siginfo_t  *info, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 424 \n\t"
@@ -3604,7 +3603,7 @@ int rev_pidfd_send_signal(int pidfd, int sig, siginfo_t  *info, unsigned int fla
 return rc;
 }
 
-int rev_io_uring_setup(uint32_t entries, struct io_uring_params *p){
+static int rev_io_uring_setup(uint32_t entries, struct io_uring_params *p){
   int rc;
   asm volatile (
     "li a7, 425 \n\t"
@@ -3614,7 +3613,7 @@ int rev_io_uring_setup(uint32_t entries, struct io_uring_params *p){
   return rc;
 }
 
-int rev_io_uring_enter(unsigned int fd, uint32_t to_submit, uint32_t min_complete, uint32_t flags, const sigset_t  *sig, size_t sigsz){
+static int rev_io_uring_enter(unsigned int fd, uint32_t to_submit, uint32_t min_complete, uint32_t flags, const sigset_t  *sig, size_t sigsz){
   int rc;
   asm volatile (
     "li a7, 426 \n\t"
@@ -3624,7 +3623,7 @@ int rev_io_uring_enter(unsigned int fd, uint32_t to_submit, uint32_t min_complet
   return rc;
 }
 
-int rev_io_uring_register(unsigned int fd, unsigned int op, void  *arg, unsigned int nr_args){
+static int rev_io_uring_register(unsigned int fd, unsigned int op, void  *arg, unsigned int nr_args){
   int rc;
   asm volatile (
     "li a7, 427 \n\t"
@@ -3634,7 +3633,7 @@ int rev_io_uring_register(unsigned int fd, unsigned int op, void  *arg, unsigned
   return rc;
 }
 
-int rev_open_tree(int dfd, const char  *path, unsigned flags){
+static int rev_open_tree(int dfd, const char  *path, unsigned flags){
   int rc;
   asm volatile (
     "li a7, 428 \n\t"
@@ -3644,7 +3643,7 @@ int rev_open_tree(int dfd, const char  *path, unsigned flags){
   return rc;
 }
 
-int rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags){
+static int rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags){
   int rc;
   asm volatile (
     "li a7, 429 \n\t"
@@ -3654,7 +3653,7 @@ int rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char 
   return rc;
 }
 
-int rev_fsopen(const char  *fs_name, unsigned int flags){
+static int rev_fsopen(const char  *fs_name, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 430 \n\t"
@@ -3664,7 +3663,7 @@ int rev_fsopen(const char  *fs_name, unsigned int flags){
   return rc;
 }
 
-int rev_fsconfig(int fs_fd, unsigned int cmd, const char  *key, const void  *value, int aux){
+static int rev_fsconfig(int fs_fd, unsigned int cmd, const char  *key, const void  *value, int aux){
   int rc;
   asm volatile (
     "li a7, 431 \n\t"
@@ -3674,7 +3673,7 @@ int rev_fsconfig(int fs_fd, unsigned int cmd, const char  *key, const void  *val
   return rc;
 }
 
-int rev_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags){
+static int rev_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags){
   int rc;
   asm volatile (
     "li a7, 432 \n\t"
@@ -3684,7 +3683,7 @@ int rev_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags){
 return rc;
 }
 
-int rev_fspick(int dfd, const char  *path, unsigned int flags){
+static int rev_fspick(int dfd, const char  *path, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 433 \n\t"
@@ -3694,7 +3693,7 @@ int rev_fspick(int dfd, const char  *path, unsigned int flags){
   return rc;
 }
 
-int rev_pidfd_open(pid_t pid, unsigned int flags){
+static int rev_pidfd_open(pid_t pid, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 434 \n\t"
@@ -3704,7 +3703,7 @@ int rev_pidfd_open(pid_t pid, unsigned int flags){
   return rc;
 }
 
-int rev_clone3(struct clone_args  *uargs, size_t size){
+static int rev_clone3(struct clone_args  *uargs, size_t size){
   int rc;
   asm volatile (
     "li a7, 435 \n\t"
@@ -3714,7 +3713,7 @@ int rev_clone3(struct clone_args  *uargs, size_t size){
   return rc;
 }
 
-int rev_close_range(unsigned int fd, unsigned int max_fd, unsigned int flags){
+static int rev_close_range(unsigned int fd, unsigned int max_fd, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 436 \n\t"
@@ -3724,7 +3723,7 @@ int rev_close_range(unsigned int fd, unsigned int max_fd, unsigned int flags){
   return rc;
 }
 
-int rev_openat2(int dfd, const char  *filename, struct open_how *how, size_t size){
+static int rev_openat2(int dfd, const char  *filename, struct open_how *how, size_t size){
   int rc;
   asm volatile (
     "li a7, 437 \n\t"
@@ -3734,7 +3733,7 @@ int rev_openat2(int dfd, const char  *filename, struct open_how *how, size_t siz
   return rc;
 }
 
-int rev_pidfd_getfd(int pidfd, int fd, unsigned int flags){
+static int rev_pidfd_getfd(int pidfd, int fd, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 438 \n\t"
@@ -3744,7 +3743,7 @@ int rev_pidfd_getfd(int pidfd, int fd, unsigned int flags){
   return rc;
 }
 
-int rev_faccessat2(int dfd, const char  *filename, int mode, int flags){
+static int rev_faccessat2(int dfd, const char  *filename, int mode, int flags){
   int rc;
   asm volatile (
     "li a7, 439 \n\t"
@@ -3754,7 +3753,7 @@ int rev_faccessat2(int dfd, const char  *filename, int mode, int flags){
   return rc;
 }
 
-int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags){
+static int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags){
   int rc;
   asm volatile (
     "li a7, 440 \n\t"
@@ -3764,7 +3763,7 @@ int rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int be
   return rc;
 }
 
-int rev_cpuinfo(struct rev_cpuinfo *info) {
+static int rev_cpuinfo(struct rev_cpuinfo *info) {
   int rc;
   asm volatile (
     "li a7, 500 \n\t"
@@ -3774,7 +3773,7 @@ int rev_cpuinfo(struct rev_cpuinfo *info) {
   return rc;
 }
 
-int rev_perf_stats(struct rev_stats *stats) {
+static int rev_perf_stats(struct rev_stats *stats) {
   int rc;
   asm volatile (
     "li a7, 501 \n\t"
@@ -3791,7 +3790,7 @@ typedef unsigned long int rev_pthread_t;
 // void *(*start_routine)(void *)
 // void *restrict arg);
 // ==================== REV PTHREADS
-int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ){
+static int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ){
   int rc;
   asm volatile (
     "li a7, 1000 \n\t"
@@ -3801,7 +3800,7 @@ int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg )
   return rc;
 }
 
-int rev_pthread_join( rev_pthread_t thread ){
+static int rev_pthread_join( rev_pthread_t thread ){
   int rc;
   asm volatile (
     "li a7, 1001 \n\t"
