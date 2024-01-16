@@ -1,5 +1,5 @@
 //
-// _libRevComponent_cc_
+// _librevcpu_cc_
 //
 // Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -21,9 +21,9 @@ class RevCPUPyModule : public SSTElementPythonModule {
 public:
 
   /// Constructor
-  explicit RevCPUPyModule(std::string library) :
-    SSTElementPythonModule(std::move(library)) {
-    createPrimaryModule(pyrevcpu, "pyrevcpu.py");
+  RevCPUPyModule(std::string library) :
+    SSTElementPythonModule(library) {
+    auto primary_module = createPrimaryModule(pyrevcpu, "pyrevcpu.py");
   }
 
   // Register the library with ELI

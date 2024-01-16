@@ -24,13 +24,23 @@ set(RevCPUSrcs
   RevThread.cc
   )
 
-set(RevPy
-  pyrevcpu.py
+set(RevPyInc
+  "${REVCPU_INCLUDE_PATH}/pyrevcpu.inc"
   )
 
-set(ODFLAGS "od -v -t x1 < ${RevPy} | sed -e 's/^[^ ]*[ ]*//g' -e '/^\\s*$$/d' -e 's/\\([0-9a-f]*\\)[ $$]*/0x\\1,/g' > ${REVCPU_INCLUDE_PATH}/pyrevcpu.inc")
+set(ODSHELL "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_python_inc.sh")
 
-add_custom_target(RevPyInc ${ODFLAGS})
+add_custom_command(OUTPUT ${RevPyInc}
+  COMMAND ${ODSHELL} ${CMAKE_CURRENT_SOURCE_DIR}/pyrevcpu.py ${RevPyInc}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Building Rev python include: ${RevPyInc}"
+  VERBATIM
+  )
+
+add_custom_target(BuildRevPyInc ALL
+  DEPENDS ${RevPyInc}
+  VERBATIM
+  )
 
 add_subdirectory(../common common)
 add_library(revcpu SHARED ${RevCPUSrcs} ${RevPyInc})
