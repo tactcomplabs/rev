@@ -41,6 +41,8 @@ struct RevExt{
   virtual ~RevExt() = default;
 
   /// RevExt: sets the internal instruction table
+  // Note: && means the argument should be an rvalue or std::move(lvalue)
+  // This avoids deep std::vector copies and uses only one std::vector move.
   void SetTable(std::vector<RevInstEntry>&& InstVect){
     table = std::move(InstVect);
   }
