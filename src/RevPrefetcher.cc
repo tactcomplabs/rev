@@ -1,14 +1,22 @@
 //
 // _RevPrefetcher_cc_
 //
-// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "../include/RevPrefetcher.h"
+#include "RevPrefetcher.h"
+
+namespace SST::RevCPU{
+
+/*RevPrefetcher::~RevPrefetcher(){
+// delete all the existing streams
+for(auto* s : iStack)
+delete[] s;
+}*/
 
 bool RevPrefetcher::IsAvail(uint64_t Addr){
 
@@ -19,12 +27,7 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         return false;
@@ -37,7 +40,7 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
 
       // we may be short of instruction width in our current stream
       // determine if an adjacent stream has the payload
-      if( lastAddr-Addr < 4 ){
+      if( (lastAddr-Addr < 4) || ( (Addr & 0x03) != 0) ){
 
         uint32_t TmpInst;
         bool Fetched = false;
@@ -50,6 +53,16 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
         }
       }
 
+      if(!OutstandingFetchQ.empty()){
+        auto it = LSQueue->equal_range(OutstandingFetchQ.back().LSQHash());      // Find all outstanding dependencies for this register
+        if( it.first != LSQueue->end()){                  
+          for (auto i = it.first; i != it.second; ++i){    // Iterate over all outstanding loads for this reg (if any)
+            if(i->second.Addr == OutstandingFetchQ.back().Addr){
+              return false;
+            }
+          }
+        }
+      }
       // the instruction is available in the stream cache
       return true;
     }
@@ -61,17 +74,24 @@ bool RevPrefetcher::IsAvail(uint64_t Addr){
   return false;
 }
 
+void RevPrefetcher::MarkInstructionLoadComplete(const MemReq& req){
+  auto it = OutstandingFetchQ.begin();
+  while((it != OutstandingFetchQ.end())){
+    if(it->Addr == req.Addr){
+      OutstandingFetchQ.erase(it++);
+      break;
+    }
+    it++;
+    
+  }
+}
+
 bool RevPrefetcher::FetchUpper(uint64_t Addr, bool &Fetched, uint32_t &UInst){
   uint64_t lastAddr = 0x00ull;
   for( unsigned i=0; i<baseAddr.size(); i++ ){
     lastAddr = baseAddr[i] + (depth*4);
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         Fetched = false;
@@ -107,12 +127,7 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
     if( (Addr >= baseAddr[i]) && (Addr < lastAddr) ){
       // found it, fetch the address
       // first, calculate the vector offset
-      uint32_t Off = 0;
-      if( Addr == baseAddr[i] ){
-        Off = 0;  // lets avoid division by zero
-      }else{
-        Off = (uint32_t)((Addr-baseAddr[i])/4);
-      }
+      uint32_t Off = static_cast<uint32_t>((Addr-baseAddr[i])/4);
       if( Off > (depth-1) ){
         // some sort of error occurred
         Fetched = false;
@@ -162,47 +177,42 @@ bool RevPrefetcher::InstFetch(uint64_t Addr, bool &Fetched, uint32_t &Inst){
 
 void RevPrefetcher::Fill(uint64_t Addr){
 
-  // determine if the address is 32bit aligned
-  if((Addr%4)!=0){
-    // not 32bit aligned, adjust the base address by 2 bytes
-    Fill(Addr&0xFFFFFFFFFFFFFFFC);
-    return;
-  }
+  // If address is not 32bit aligned... then make it aligned
+  Addr &= 0xFFFFFFFFFFFFFFFC;
 
   // allocate a new stream buffer
   baseAddr.push_back(Addr);
-  iStack.push_back( new uint32_t[depth] );
-  iHazard.push_back( new bool[depth] );
+  iStack.push_back( std::vector<uint32_t>(depth) );
 
   // initialize it
-  unsigned x = baseAddr.size()-1;
-  for( unsigned y = 0; y<depth; y++ ){
+  size_t x = baseAddr.size() - 1;
+  for( size_t y = 0; y < depth; y++ ){
     iStack[x][y] = REVPREF_INIT_ADDR;
-    iHazard[x][y] = true;
   }
 
   // now fill it
-  for( unsigned y=0; y<depth; y++ ){
-    mem->ReadVal( feature->GetHart(), Addr+(y*4),
-                  (uint32_t *)(&iStack[x][y]),
-                  &(iHazard[x][y]),
-                  REVMEM_FLAGS(0x00) );
-
+  for( size_t y=0; y<depth; y++ ){
+    MemReq req( Addr+(y*4), RevReg::zero, RevRegClass::RegGPR,
+                feature->GetHartToExecID(), MemOp::MemOpREAD, true,
+                MarkLoadAsComplete );
+    LSQueue->insert( req.LSQHashPair() );
+    OutstandingFetchQ.emplace_back(req);
+    mem->ReadVal<uint32_t>( feature->GetHartToExecID(), Addr+(y*4),
+                            &iStack[x][y],
+                            req,
+                            RevFlag::F_NONE );
+    //Track outstanding requests
   }
+
 }
 
-void RevPrefetcher::DeleteStream(unsigned i){
+void RevPrefetcher::DeleteStream(size_t i){
   // delete the target stream as we no longer need it
-  if( i > (baseAddr.size()-1) ){
-    return ;
+  if( i < baseAddr.size() ){
+    iStack.erase(iStack.begin() + i);
+    baseAddr.erase(baseAddr.begin() + i);
   }
-
-  // delete it
-  delete [] iStack[i];
-  delete [] iHazard[i];
-  iStack.erase(iStack.begin() + i);
-  iHazard.erase(iHazard.begin() + i);
-  baseAddr.erase(baseAddr.begin() + i);
 }
 
+} // namespace SST::RevCPU
 // EOF

@@ -42,7 +42,7 @@ int main(int argc, char **argv){
   TEST_RR_OP( 15, addw, 0xfffffffffffffffe, 0xffffffffffffffff, 0xffffffffffffffff );
 
   TEST_RR_OP( 16, addw, 0xffffffff80000000, 0x0000000000000001, 0x000000007fffffff );
-  
+
   //-------------------------------------------------------------
   // Source/Destination tests
   //-------------------------------------------------------------
@@ -52,10 +52,10 @@ int main(int argc, char **argv){
   TEST_RR_SRC12_EQ_DEST( 19, addw, 26, 13 );
 
 asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
       assert(false);
 
 asm volatile("continue:");

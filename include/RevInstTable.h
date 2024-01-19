@@ -1,7 +1,7 @@
 //
 // _RevInstTable_h_
 //
-// Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -12,35 +12,16 @@
 #define _SST_REVCPU_REVINSTTABLE_H_
 
 #include <bitset>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <map>
-#include "RevMem.h"
-#include "RevFeature.h"
-#include "RevRF.hpp"
+#include <memory>
+#include <string>
+#include <type_traits>
 
-#ifndef _REV_NUM_REGS_
-#define _REV_NUM_REGS_ 32
-#endif
-
-#ifndef _REV_MAX_FORMAT_
-#define _REV_MAX_FORMAT_ 7
-#endif
-
-#ifndef _REV_MAX_REGCLASS_
-#define _REV_MAX_REGCLASS_ 3
-#endif
-
-#ifndef _REV_HART_COUNT_
-#define _REV_HART_COUNT_ 1
-#endif
-
-#ifndef _REV_INVALID_HART_ID_
-#define _REV_INVALID_HART_ID_ (uint16_t)~(uint16_t(0))
-#endif
-
-// Masks
-#define MASK8   0b11111111                          // 8bit mask
-#define MASK16  0b1111111111111111                  // 16bit mask
-#define MASK32  0b11111111111111111111111111111111  // 32bit mask
+#include "RevRegFile.h"
 
 // Register Decoding Macros
 #define DECODE_RD(x)    (((x)>>(7))&(0b11111))
@@ -56,434 +37,243 @@
 #define DECODE_FUNCT2(x)  (((x)>>(25))&(0b11))
 #define DECODE_FUNCT3(x)  (((x)>>(12))&(0b111))
 
+#define DECODE_RM(x)    static_cast<FRMode>(DECODE_FUNCT3(x))
 #define DECODE_RL(x)    (((x)>>(25))&(0b1))
 #define DECODE_AQ(x)    (((x)>>(26))&(0b1))
 
-// RV{32,64}{F,D} macros
-#define FCSR_NX(x)  ((x)&(0b1))             // FCSR: NX field
-#define FCSR_UF(x)  (((x)&(0b10))>>1)       // FCSR: UF field
-#define FCSR_OF(x)  (((x)&(0b100))>>2)      // FCSR: OF field
-#define FCSR_DZ(x)  (((x)&(0b1000))>>3)     // FCSR: DZ field
-#define FCSR_NV(x)  (((x)&(0b10000))>>4)    // FCSR: NV field
-#define FCSR_FRM(x) (((x)&(0b11100000))>>5) // FCSR: FRM field
+namespace SST::RevCPU{
 
-#define FRM_RNE   0b000                     // Rounding mode: Round to Nearest, ties to Even
-#define FRM_RTZ   0b001                     // Rounding mode: Round towards Zero
-#define FRM_RDN   0b010                     // Rounding mode: Round Down (towards -INF)
-#define FRM_RUP   0b011                     // Rounding mode: Round Up (towards +INF)
-#define FRM_RMM   0b100                     // Rounding mode: Round to Nearest, ties to Max Magnitude
+/* Ref: RISC-V Priviledged Spec (pg. 39) */
+enum EXCEPTION_CAUSE : uint32_t {
+  MISALIGNED_INST_ADDR      = 0,
+  INST_ACCESS_FAULT         = 1,
+  ILLEGAL_INST              = 2,
+  BREAKPOINT                = 3,
+  LOAD_ADDR_MISALIGNED      = 4,
+  LOAD_ACCESS_FAULT         = 5,
+  STORE_AMO_ADDR_MISALIGNED = 6,
+  STORE_AMO_ACCESS_FAULT    = 7,
+  ECALL_USER_MODE           = 8,
+  ECALL_SUPERVISOR_MODE     = 9,
+  ECALL_MACHINE_MODE        = 11,
+  INST_PAGE_FAULT           = 12,
+  LOAD_PAGE_FAULT           = 13,
+  STORE_AMO_PAGE_FAULT      = 15,
+};
 
-// RV{32,64} Register Operation Macros
-                    //(r) = ((r) & (~r));
-#define SEXT(r,x,b) do {\
-                    (r) = ( (x) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT(r,x,b) do {\
-                    (r) = (x) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
+enum RevInstF : int {    ///< Rev CPU Instruction Formats
+  RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format
+  RVTypeR       = 1,     ///< RevInstF: R-Type
+  RVTypeI       = 2,     ///< RevInstF: I-Type
+  RVTypeS       = 3,     ///< RevInstF: S-Type
+  RVTypeU       = 4,     ///< RevInstF: U-Type
+  RVTypeB       = 5,     ///< RevInstF: B-Type
+  RVTypeJ       = 6,     ///< RevInstF: J-Type
+  RVTypeR4      = 7,     ///< RevInstF: R4-Type for AMOs
+  // -- Compressed Formats
+  RVCTypeCR     = 10,    ///< RevInstF: Compressed CR-Type
+  RVCTypeCI     = 11,    ///< RevInstF: Compressed CI-Type
+  RVCTypeCSS    = 12,    ///< RevInstF: Compressed CSS-Type
+  RVCTypeCIW    = 13,    ///< RevInstF: Compressed CIW-Type
+  RVCTypeCL     = 14,    ///< RevInstF: Compressed CL-Type
+  RVCTypeCS     = 15,    ///< RevInstF: Compressed CS-Type
+  RVCTypeCA     = 16,    ///< RevInstF: Compressed CA-Type
+  RVCTypeCB     = 17,    ///< RevInstF: Compressed CB-Type
+  RVCTypeCJ     = 18,    ///< RevInstF: Compressed CJ-Type
+};
 
-#define SEXTI(r,b)  do {\
-                    (r) = ( (r) ^ ((1UL) << ((b) - 1)) ) - ((1UL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI(r,b)  do {\
-                    (r) = (r) & (((1UL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
+enum RevImmFunc : int {  ///< Rev Immediate Values
+  FUnk          = 0,     ///< RevRegClass: Imm12 is not used
+  FImm          = 1,     ///< RevRegClass: Imm12 is an immediate
+  FEnc          = 2,     ///< RevRegClass: Imm12 is an encoding value
+  FVal          = 3,     ///< RevRegClass: Imm12 is an incoming register value
+};
 
-#define SEXT64(r,x,b) do {\
-                    (r) = ( (x) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register
-#define ZEXT64(r,x,b) do {\
-                    (r) = (x) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register
+/*! \struct RevInst
+ *  \brief Rev decoded instruction
+ *
+ * Contains all the details required to execute
+ * following a successful crack + decode
+ *
+ */
+struct RevInst {
+  uint8_t opcode      = 0; ///< RevInst: opcode
+  uint8_t funct2      = 0; ///< RevInst: compressed funct2 value
+  uint8_t funct3      = 0; ///< RevInst: funct3 value
+  uint8_t funct4      = 0; ///< RevInst: compressed funct4 value
+  uint8_t funct6      = 0; ///< RevInst: compressed funct6 value
+  uint8_t funct2or7   = 0; ///< RevInst: uncompressed funct2 or funct7 value
+  uint64_t rd         =~0; ///< RevInst: rd value
+  uint64_t rs1        =~0; ///< RevInst: rs1 value
+  uint64_t rs2        =~0; ///< RevInst: rs2 value
+  uint64_t rs3        =~0; ///< RevInst: rs3 value
+  uint64_t imm        = 0; ///< RevInst: immediate value
+  FRMode rm{FRMode::None}; ///< RevInst: floating point rounding mode
+  uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
+  uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
+  uint16_t offset     = 0; ///< RevInst: compressed offset
+  uint16_t jumpTarget = 0; ///< RevInst: compressed jumpTarget
+  uint8_t instSize    = 0; ///< RevInst: size of the instruction in bytes
+  bool compressed     = 0; ///< RevInst: determines if the instruction is compressed
+  uint32_t cost       = 0; ///< RevInst: the cost to execute this instruction, in clock cycles
+  unsigned entry      = 0; ///< RevInst: Where to find this instruction in the InstTables
+  uint16_t hart       = 0; ///< RevInst: What hart is this inst being executed on
+  bool isCoProcInst   = 0; ///< RevInst: whether instruction is coprocessor instruction
 
-#define SEXTI64(r,b)  do {\
-                    (r) = ( (r) ^ ((1ULL) << ((b) - 1)) ) - ((1ULL) << ((b) - 1));\
-                    }while(0)                // Sign extend the target register inline
-#define ZEXTI64(r,b)  do {\
-                    (r) = (r) & (((1ULL) << (b)) - 1);\
-                    }while(0)                // Zero extend the target register inline
+  explicit RevInst() = default; // prevent aggregate initialization
 
-// Swizzle Macro
-#define SWIZZLE(q,in,start,dest ) q |= ((in >> start) & 1) << dest;
-
-/// td_u32: convert u32 in two's complement to decimal
-static inline uint32_t td_u32(uint32_t binary, unsigned bits){
-  uint32_t tmp = binary;
-  uint32_t i = 0;
-  if( (binary & (1UL<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<32; i++ ){
-      tmp |= (1UL<<i);
-    }
-
-    // invert all the bits
-    tmp = ~tmp;
-
-    // add 1
-    tmp += 1;
-
-    // set the sign bit
-    tmp = tmp*-1;
+  ///< RevInst: Sign-extended immediate value
+  constexpr int32_t ImmSignExt(size_t bits) const {
+    return SignExt(imm, bits);
   }
-  return tmp;
-}
+}; // RevInst
 
-/// td_u64: convert u64 in two's complement to decimal
-static inline uint64_t td_u64(uint64_t binary, unsigned bits){
-  uint64_t tmp = binary;
-  uint64_t sext = 0x00ull;
-  uint64_t i = 0;
+#if 0
 
-  if( (binary & (1ULL<<(bits-1))) > 0 ){
-    // sign extend to 64 bits
-    for( i=0; i<bits; i++ ){
-      sext |= (1ULL<<i);
-    }
-    sext = ~sext;
+/// CRegMap: Holds the compressed index to normal index mapping
+// TODO: Replace with macro below if mappings are trivial
+inline const std::map<uint8_t, uint8_t> CRegMap =
+{
+  {0b000,  8},
+  {0b001,  9},
+  {0b010, 10},
+  {0b011, 11},
+  {0b100, 12},
+  {0b101, 13},
+  {0b110, 14},
+  {0b111, 15},
+};
 
-    tmp = tmp | sext;
+/// CRegIdx: Maps the compressed index to normal index
+#define CRegIdx(x) (CRegMap.at(x))
 
-    // invert all the bits
-    tmp = ~tmp;
+#else
 
-    // add 1
-    tmp += 1;
+/// CRegIdx: Maps the compressed index to normal index
+#define CRegIdx(x) ((x) + 8)
 
-    // set the sign bit
-    tmp = tmp*-1;
+#endif
+
+struct RevInstDefaults {
+  static constexpr uint8_t     opcode      = 0b00000000;
+  static constexpr uint32_t    cost        = 1;
+  static constexpr uint8_t     funct2      = 0b000;      // compressed only
+  static constexpr uint8_t     funct3      = 0b000;
+  static constexpr uint8_t     funct4      = 0b000;      // compressed only
+  static constexpr uint8_t     funct6      = 0b000;      // compressed only
+  static constexpr uint8_t     funct2or7   = 0b0000000;
+  static constexpr uint16_t    offset      = 0b0000000;  // compressed only
+  static constexpr uint16_t    jumpTarget  = 0b0000000;  // compressed only
+  static constexpr RevRegClass rdClass     = RevRegClass::RegGPR;
+  static constexpr RevRegClass rs1Class    = RevRegClass::RegGPR;
+  static constexpr RevRegClass rs2Class    = RevRegClass::RegGPR;
+  static constexpr RevRegClass rs3Class    = RevRegClass::RegUNKNOWN;
+  static constexpr uint16_t    imm12       = 0b000000000000;
+  static constexpr RevImmFunc  imm         = FUnk;
+  static constexpr RevInstF    format      = RVTypeR;
+  static constexpr bool        compressed  = false;
+  static constexpr uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
+}; // RevInstDefaults
+
+/*! \struct RevInstEntry
+ *  \brief Rev instruction entry
+ *
+ * Contains all the details required to decode and execute
+ * a target instruction as well as its cost function
+ *
+ */
+struct RevInstEntry{
+  // disassembly
+  std::string mnemonic; ///< RevInstEntry: instruction mnemonic
+  uint32_t cost;        ///< RevInstEntry: instruction code in cycles
+
+  // storage
+  uint8_t opcode;       ///< RevInstEntry: opcode
+  uint8_t funct2;       ///< RevInstentry: compressed funct2 value
+  uint8_t funct3;       ///< RevInstEntry: funct3 value
+  uint8_t funct4;       ///< RevInstentry: compressed funct4 value
+  uint8_t funct6;       ///< RevInstentry: compressed funct6 value
+  uint8_t funct2or7;    ///< RevInstEntry: uncompressed funct2 or funct7 value
+  uint16_t offset;      ///< RevInstEntry: compressed offset value
+  uint16_t jumpTarget;  ///< RevInstEntry: compressed jump target value
+
+  // register encodings
+  RevRegClass rdClass;  ///< RevInstEntry: Rd register class
+  RevRegClass rs1Class; ///< RevInstEntry: Rs1 register class
+  RevRegClass rs2Class; ///< RevInstEntry: Rs2 register class
+  RevRegClass rs3Class; ///< RevInstEntry: Rs3 register class
+
+  uint16_t imm12;       ///< RevInstEntry: imm12 value
+
+  RevImmFunc imm;       ///< RevInstEntry: does the imm12 exist?
+
+  // formatting
+  RevInstF format;      ///< RevInstEntry: instruction format
+
+  /// RevInstEntry: Instruction implementation function
+  bool (*func)(RevFeature *, RevRegFile *, RevMem *, const RevInst&);
+
+  bool compressed;      ///< RevInstEntry: compressed instruction
+
+  uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
+}; // RevInstEntry
+
+template <typename RevInstDefaultsPolicy>
+struct RevInstEntryBuilder : RevInstDefaultsPolicy{
+  RevInstEntry InstEntry;
+
+  RevInstEntryBuilder() : RevInstDefaultsPolicy() {
+    //Set default values
+    InstEntry.mnemonic  = std::string("nop");
+    InstEntry.func      = NULL;
+    InstEntry.opcode    = RevInstDefaultsPolicy::opcode;
+    InstEntry.cost      = RevInstDefaultsPolicy::cost;
+    InstEntry.funct2    = RevInstDefaultsPolicy::funct2;
+    InstEntry.funct3    = RevInstDefaultsPolicy::funct3;
+    InstEntry.funct4    = RevInstDefaultsPolicy::funct4;
+    InstEntry.funct6    = RevInstDefaultsPolicy::funct6;
+    InstEntry.funct2or7 = RevInstDefaultsPolicy::funct2or7;
+    InstEntry.offset    = RevInstDefaultsPolicy::offset;
+    InstEntry.jumpTarget= RevInstDefaultsPolicy::jumpTarget;
+    InstEntry.rdClass   = RevInstDefaultsPolicy::rdClass;
+    InstEntry.rs1Class  = RevInstDefaultsPolicy::rs1Class;
+    InstEntry.rs2Class  = RevInstDefaultsPolicy::rs2Class;
+    InstEntry.rs3Class  = RevInstDefaultsPolicy::rs3Class;
+    InstEntry.imm12     = RevInstDefaultsPolicy::imm12;
+    InstEntry.imm       = RevInstDefaultsPolicy::imm;
+    InstEntry.format    = RevInstDefaultsPolicy::format;
+    InstEntry.compressed= false;
+    InstEntry.fpcvtOp   = RevInstDefaultsPolicy::fpcvtOp;
   }
-  return tmp;
-}
 
-/// dt_u32: convert u32 in decimal to two's complement
-static inline uint32_t dt_u32(int32_t binary, unsigned bits){
-  uint32_t tmp = binary;
-  uint32_t i = 0;
-  if( (binary & (1UL<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<32; i++ ){
-      tmp |= (1UL<<i);
-    }
+  // Begin Set() functions to allow call chaining - all Set() must return *this
+  auto& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;}
+  auto& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;}
+  auto& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;}
+  auto& SetFunct2(uint8_t f2)        { InstEntry.funct2 = f2;    return *this;}
+  auto& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;}
+  auto& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;}
+  auto& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;}
+  auto& SetFunct2or7(uint8_t f27)    { InstEntry.funct2or7 = f27;return *this;}
+  auto& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;}
+  auto& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;}
+  auto& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;}
+  auto& Setrs1Class(RevRegClass rs1) { InstEntry.rs1Class = rs1; return *this;}
+  auto& Setrs2Class(RevRegClass rs2) { InstEntry.rs2Class = rs2; return *this;}
+  auto& Setrs3Class(RevRegClass rs3) { InstEntry.rs3Class = rs3; return *this;}
+  auto& Setimm12(uint16_t imm12)     { InstEntry.imm12 = imm12;  return *this;}
+  auto& Setimm(RevImmFunc imm)       { InstEntry.imm = imm;      return *this;}
+  auto& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
+  auto& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
+  auto& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
 
-    // invert all the bits
-    tmp = ~tmp;
-
-    // add 1
-    tmp += 1;
-
-    // set the sign bit
-    tmp = tmp*-1;
+  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&)){
+    InstEntry.func = func;
+    return *this;
   }
-  return tmp;
-}
 
-/// td_u64: convert u64 in decimal to two's complement
-static inline uint64_t dt_u64(int64_t binary, unsigned bits){
-  uint64_t tmp = binary;
-  uint64_t i = 0;
-  if( (binary & (1ULL<<(bits-1))) > 0 ){
-    // sign extend to 32 bits
-    for( i=bits; i<64; i++ ){
-      tmp |= (1ULL<<i);
-    }
+}; // class RevInstEntryBuilder;
 
-    // invert all the bits
-    tmp = ~tmp;
-
-    // add 1
-    tmp += 1;
-
-    // set the sign bit
-    tmp = tmp*-1;
-  }
-  return tmp;
-}
-
-namespace SST{
-  namespace RevCPU {
-
-    /* Ref: RISC-V Priviledged Spec (pg. 39) */
-    enum EXCEPTION_CAUSE {
-      MISALIGNED_INST_ADDR      = 0,
-      INST_ACCESS_FAULT         = 1,
-      ILLEGAL_INST              = 2,
-      BREAKPOINT                = 3,
-      LOAD_ADDR_MISALIGNED      = 4,
-      LOAD_ACCESS_FAULT         = 5,
-      STORE_AMO_ADDR_MISALIGNED = 6,
-      STORE_AMO_ACCESS_FAULT    = 7,
-      ECALL_USER_MODE           = 8,
-      ECALL_SUPERVISOR_MODE     = 9,
-      ECALL_MACHINE_MODE        = 11,
-      INST_PAGE_FAULT           = 12,
-      LOAD_PAGE_FAULT           = 13,
-      STORE_AMO_PAGE_FAULT      = 15
-    };
-
-    typedef struct{
-      RevRF<uint32_t, _REV_NUM_REGS_> RV32;    ///< RevRegFile: RV32I register file
-      RevRF<uint64_t, _REV_NUM_REGS_> RV64;    ///< RevRegFile: RV32I register file
-      float SPF[_REV_NUM_REGS_];        ///< RevRegFile: RVxxF register file
-      double DPF[_REV_NUM_REGS_];       ///< RevRegFile: RVxxD register file
-
-      /* Supervisor Mode CSRs */
-      uint64_t RV64_SSTATUS; // During ecall, previous priviledge mode is saved in this register (Incomplete)
-      uint64_t RV64_SEPC;    // Holds address of instruction that caused the exception (ie. ECALL)
-      uint64_t RV64_SCAUSE;  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
-      uint64_t RV64_STVAL;   // Used to store additional info about exception (ECALL does not use this and sets value to 0)
-      uint64_t RV64_STVEC;   // Holds the base address of the exception handling routine (trap handler) that the processor jumps to when and exception occurs
-
-      uint32_t RV32_SSTATUS;
-      uint32_t RV32_SEPC;
-      uint32_t RV32_SCAUSE;
-      uint32_t RV32_STVAL;
-      uint32_t RV32_STVEC;
-
-      bool RV32_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV32I RF to manage pipeline hazard
-      bool RV64_Scoreboard[_REV_NUM_REGS_]; ///< RevRegFile: Scoreboard for RV64I RF to manage pipeline hazard
-      bool SPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for SPF RF to manage pipeline hazard
-      bool DPF_Scoreboard[_REV_NUM_REGS_];  ///< RevRegFile: Scoreboard for DPF RF to manage pipeline hazard
-
-      uint32_t RV32_PC;                 ///< RevRegFile: RV32 PC
-      uint64_t RV64_PC;                 ///< RevRegFile: RV64 PC
-      uint64_t FCSR;                    ///< RevRegFile: FCSR
-
-      uint32_t cost;                    ///< RevRegFile: Cost of the instruction
-      bool trigger;                     ///< RevRegFile: Has the instruction been triggered?
-      unsigned Entry;                   ///< RevRegFile: Instruction entry
-    }RevRegFile;                        ///< RevProc: register file construct
-
-    static std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-    static std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
-
-    typedef enum{
-      RVTypeUNKNOWN = 0,  ///< RevInstf: Unknown format
-      RVTypeR       = 1,  ///< RevInstF: R-Type
-      RVTypeI       = 2,  ///< RevInstF: I-Type
-      RVTypeS       = 3,  ///< RevInstF: S-Type
-      RVTypeU       = 4,  ///< RevInstF: U-Type
-      RVTypeB       = 5,  ///< RevInstF: B-Type
-      RVTypeJ       = 6,  ///< RevInstF: J-Type
-      RVTypeR4      = 7,  ///< RevInstF: R4-Type for AMOs
-      // -- Compressed Formats
-      RVCTypeCR     = 10, ///< RevInstF: Compressed CR-Type
-      RVCTypeCI     = 11, ///< RevInstF: Compressed CI-Type
-      RVCTypeCSS    = 12, ///< RevInstF: Compressed CSS-Type
-      RVCTypeCIW    = 13, ///< RevInstF: Compressed CIW-Type
-      RVCTypeCL     = 14, ///< RevInstF: Compressed CL-Type
-      RVCTypeCS     = 15, ///< RevInstF: Compressed CS-Type
-      RVCTypeCA     = 16, ///< RevInstF: Compressed CA-Type
-      RVCTypeCB     = 17, ///< RevInstF: Compressed CB-Type
-      RVCTypeCJ     = 18  ///< RevInstF: Compressed CJ-Type
-    }RevInstF;            ///< Rev CPU Instruction Formats
-
-    typedef enum{
-      RegUNKNOWN    = 0,  ///< RevRegClass: Unknown register file
-      RegIMM        = 1,  ///< RevRegClass: Treat the reg class like an immediate: S-Format
-      RegGPR        = 2,  ///< RevRegClass: GPR reg file
-      RegCSR        = 3,  ///< RevRegClass: CSR reg file
-      RegFLOAT      = 4   ///< RevRegClass: Float register file
-    }RevRegClass;         ///< Rev CPU Register Classes
-
-    typedef enum{
-      FUnk          = 0,  ///< RevRegClass: Imm12 is not used
-      FImm          = 1,  ///< RevRegClass: Imm12 is an immediate
-      FEnc          = 2,  ///< RevRegClass: Imm12 is an encoding value
-      FVal          = 3   ///< RevRegClass: Imm12 is an incoming register value
-    }RevImmFunc;          ///< Rev Immediate Values
-
-    /*! \struct RevInst
-     *  \brief Rev decoded instruction
-     *
-     * Contains all the details required to execute
-     * following a successful crack + decode
-     *
-     */
-    typedef struct{
-      uint8_t opcode;       ///< RevInst: opcode
-      uint8_t funct2;       ///< RevInst: compressed funct2 value
-      uint8_t funct3;       ///< RevInst: funct3 value
-      uint8_t funct4;       ///< RevInst: compressed funct4 value
-      uint8_t funct6;       ///< RevInst: compressed funct6 value
-      uint8_t funct7;       ///< RevInst: funct7 value
-      uint8_t rd;           ///< RevInst: rd value
-      uint8_t rs1;          ///< RevInst: rs1 value
-      uint8_t rs2;          ///< RevInst: rs2 value
-      uint8_t rs3;          ///< RevInst: rs3 value
-      uint32_t imm;         ///< RevInst: immediate value
-      uint8_t fmt;          ///< RevInst: floating point format
-      uint8_t rm;           ///< RevInst: floating point rounding mode
-      uint8_t aq;           ///< RevInst: aq field for atomic instructions
-      uint8_t rl;           ///< RevInst: rl field for atomic instructions
-      uint16_t offset;      ///< RevInst: compressed offset
-      uint16_t jumpTarget;  ///< RevInst: compressed jumpTarget
-      size_t instSize;      ///< RevInst: size of the instruction in bytes
-      bool compressed;      ///< RevInst: determines if the instruction is compressed
-      uint32_t cost;        ///< RevInst: the cost to execute this instruction, in clock cycles
-      unsigned entry;       ///< RevInst: Where to find this instruction in the InstTables
-      bool *hazard;         ///< RevInst: signals a load hazard
-    }RevInst;
-
-    /// RevInstEntry: Holds the compressed index to normal index mapping
-    static std::map<uint8_t,uint8_t> CRegMap =
-    {
-      {0b000,8},
-      {0b001,9},
-      {0b010,10},
-      {0b011,11},
-      {0b100,12},
-      {0b101,13},
-      {0b110,14},
-      {0b111,15}
-    };
-
-    class RevInstDefaults {
-      public:
-      uint8_t     opcode;
-      uint32_t    cost;
-      uint8_t     funct2;     // compressed only
-      uint8_t     funct3;
-      uint8_t     funct4;     // compressed only
-      uint8_t     funct6;     // compressed only
-      uint8_t     funct7;
-      uint16_t    offset;     // compressed only
-      uint16_t    jumpTarget; // compressed only
-      RevRegClass rdClass;
-      RevRegClass rs1Class;
-      RevRegClass rs2Class;
-      RevRegClass rs3Class;
-      uint16_t    imm12;
-      RevImmFunc  imm;
-      RevInstF    format;
-      bool        compressed;
-      uint8_t     fpcvtOp;
-
-      RevInstDefaults(){
-        opcode    = 0b00000000;
-        cost      = 1;
-        funct2    = 0b000;      // compressed only
-        funct3    = 0b000;
-        funct4    = 0b000;      // compressed only
-        funct6    = 0b000;      // compressed only
-        funct7    = 0b0000000;
-        offset    = 0b0000000;  // compressed only
-        jumpTarget= 0b0000000;  // compressed only
-        rdClass   = RegGPR;
-        rs1Class  = RegGPR;
-        rs2Class  = RegGPR;
-        rs3Class  = RegUNKNOWN;
-        imm12     = 0b000000000000;
-        imm       = FUnk;
-        format    = RVTypeR;
-        compressed = false;
-        fpcvtOp  = 0b00000;    // overloaded rs2 field for R-type FP instructions
-      }
-    };
-
-    /*! \struct RevInstEntry
-     *  \brief Rev instruction entry
-     *
-     * Contains all the details required to decode and execute
-     * a target instruction as well as its cost function
-     *
-     */
-    typedef struct {
-        // disassembly
-        std::string mnemonic; ///< RevInstEntry: instruction mnemonic
-        uint32_t cost;        ///< RevInstEntry: instruction code in cycles
-
-        // storage
-        uint8_t opcode;       ///< RevInstEntry: opcode
-        uint8_t funct2;       ///< RevInstentry: compressed funct2 value
-        uint8_t funct3;       ///< RevInstEntry: funct3 value
-        uint8_t funct4;       ///< RevInstentry: compressed funct4 value
-        uint8_t funct6;       ///< RevInstentry: compressed funct6 value
-        uint8_t funct7;       ///< RevInstEntry: funct7 value
-        uint16_t offset;      ///< RevInstEntry: compressed offset value
-        uint16_t jumpTarget;  ///< RevInstEntry: compressed jump target value
-
-        // register encodings
-        RevRegClass rdClass;  ///< RevInstEntry: Rd register class
-        RevRegClass rs1Class; ///< RevInstEntry: Rs1 register class
-        RevRegClass rs2Class; ///< RevInstEntry: Rs2 register class
-        RevRegClass rs3Class; ///< RevInstEntry: Rs3 register class
-
-        uint16_t imm12;       ///< RevInstEntry: imm12 value
-
-        RevImmFunc imm;       ///< RevInstEntry: does the imm12 exist?
-
-        // formatting
-        RevInstF format;      ///< RevInstEntry: instruction format
-
-        /// RevInstEntry: Instruction implementation function
-        bool (*func)(RevFeature *, RevRegFile *, RevMem *, RevInst);
-
-        bool compressed;      ///< RevInstEntry: compressed instruction
-
-        uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
-      } RevInstEntry;
-
-
-    template <typename RevInstDefaultsPolicy>
-    class RevInstEntryBuilder : public RevInstDefaultsPolicy{
-      public:
-
-      RevInstEntry InstEntry;
-
-      RevInstEntryBuilder() : RevInstDefaultsPolicy() {
-        //Set default values
-        InstEntry.mnemonic  = std::string("nop");
-        InstEntry.func      = NULL;
-        InstEntry.opcode    = RevInstDefaultsPolicy::opcode;
-        InstEntry.cost      = RevInstDefaultsPolicy::cost;
-        InstEntry.funct2    = RevInstDefaultsPolicy::funct2;
-        InstEntry.funct3    = RevInstDefaultsPolicy::funct3;
-        InstEntry.funct4    = RevInstDefaultsPolicy::funct4;
-        InstEntry.funct6    = RevInstDefaultsPolicy::funct6;
-        InstEntry.funct7    = RevInstDefaultsPolicy::funct7;
-        InstEntry.offset    = RevInstDefaultsPolicy::offset;
-        InstEntry.jumpTarget= RevInstDefaultsPolicy::jumpTarget;
-        InstEntry.rdClass   = RevInstDefaultsPolicy::rdClass;
-        InstEntry.rs1Class  = RevInstDefaultsPolicy::rs1Class;
-        InstEntry.rs2Class  = RevInstDefaultsPolicy::rs2Class;
-        InstEntry.rs3Class  = RevInstDefaultsPolicy::rs3Class;
-        InstEntry.imm12     = RevInstDefaultsPolicy::imm12;
-        InstEntry.imm       = RevInstDefaultsPolicy::imm;
-        InstEntry.format    = RevInstDefaultsPolicy::format;
-        InstEntry.compressed= false;
-        InstEntry.fpcvtOp  = RevInstDefaultsPolicy::fpcvtOp;
-      }
-
-      // Begin Set() functions to allow call chaining - all Set() must return *this
-      RevInstEntryBuilder& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;};
-      RevInstEntryBuilder& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;};
-      RevInstEntryBuilder& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;};
-      RevInstEntryBuilder& SetFunct2(uint8_t f2)        { InstEntry.funct2 = f2;    return *this;};
-      RevInstEntryBuilder& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;};
-      RevInstEntryBuilder& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;};
-      RevInstEntryBuilder& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;};
-      RevInstEntryBuilder& SetFunct7(uint8_t f7)        { InstEntry.funct7 = f7;    return *this;};
-      RevInstEntryBuilder& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;};
-      RevInstEntryBuilder& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;};
-      RevInstEntryBuilder& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;};
-      RevInstEntryBuilder& Setrs1Class(RevRegClass rs1) {InstEntry.rs1Class = rs1;  return *this;};
-      RevInstEntryBuilder& Setrs2Class(RevRegClass rs2) {InstEntry.rs2Class = rs2;  return *this;};
-      RevInstEntryBuilder& Setrs3Class(RevRegClass rs3) {InstEntry.rs3Class = rs3;  return *this;};
-      RevInstEntryBuilder& Setimm12(uint16_t imm12)     {InstEntry.imm12 = imm12;   return *this;};
-      RevInstEntryBuilder& Setimm(RevImmFunc imm)       {InstEntry.imm = imm;       return *this;};
-      RevInstEntryBuilder& SetFormat(RevInstF format)   {InstEntry.format = format; return *this;};
-      RevInstEntryBuilder& SetCompressed(bool c)        {InstEntry.compressed = c;  return *this;};
-      RevInstEntryBuilder& SetfpcvtOp(uint8_t op)       {InstEntry.fpcvtOp = op;    return *this;};
-
-      RevInstEntryBuilder& SetImplFunc(bool (*func)(RevFeature *,
-                                                    RevRegFile *,
-                                                    RevMem *,
-                                                    RevInst)){
-        InstEntry.func = func; return *this;};
-
-    }; // class RevInstEntryBuilder;
-
-  } // namespace RevCPU
-} // namespace SST
+} // namespace SST::RevCPU
 
 #endif

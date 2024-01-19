@@ -20,7 +20,7 @@
 int main(int argc, char **argv){
 
  // #-------------------------------------------------------------
- // # Basic tests of flw, fld, fsw, and fsd 
+ // # Basic tests of flw, fld, fsw, and fsd
  // #-------------------------------------------------------------
  //
 
@@ -37,12 +37,12 @@ int main(int argc, char **argv){
       ASM_GEN(fsw f1, 24(a1)); \
       ASM_GEN(ld a0, 24(a1))
     );
-  
+
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

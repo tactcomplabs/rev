@@ -39,10 +39,10 @@ int main(int argc, char **argv){
   TEST_RR_SRC12_EQ_DEST( 10, mulh, 169, 13<<32 );
 
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(false);
 
 asm volatile("continue:");

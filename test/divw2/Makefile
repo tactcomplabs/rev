@@ -14,8 +14,7 @@
 
 EXAMPLE=divw2
 CC=${RVCC}
-#ARCH=rv64g
-ARCH=rv64imafd
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c

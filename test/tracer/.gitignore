@@ -1,0 +1,6 @@
+*.log
+*.exe
+*.csv
+*.trc
+*.d
+*.dis

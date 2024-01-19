@@ -34,10 +34,10 @@ int main(int argc, char **argv){
   //TEST_FCLASS_S(11, 1 << 9, 0x7fc00000 ) // All NaNs classified as signaling
 
   asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" ); 
+asm volatile("pass:" );
      asm volatile("j continue");
 
-asm volatile("fail:" ); 
+asm volatile("fail:" );
      assert(0);
 
 asm volatile("continue:");
@@ -45,5 +45,3 @@ asm volatile("li ra, 0x0");
 
   return 0;
 }
-
-

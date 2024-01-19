@@ -9,4 +9,4 @@ if [ -f minfft.exe ]; then
 else
   echo "Test MINFFT: minfft.exe not Found - likely build failed"
   exit 1
-fi 
+fi

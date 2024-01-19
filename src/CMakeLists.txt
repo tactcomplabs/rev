@@ -7,8 +7,6 @@
 #
 
 set(RevCPUSrcs
-  PanExec.cc
-  PanNet.cc
   RevCPU.cc
   RevExt.cc
   RevFeature.cc
@@ -18,17 +16,23 @@ set(RevCPUSrcs
   RevNIC.cc
   RevOpts.cc
   RevProc.cc
-  RevThreadCtx.cc
+  RevTracer.cc
   librevcpu.cc
   RevPrefetcher.cc
   RevCoProc.cc
+  RevRegFile.cc
+  RevThread.cc
   )
 
+add_subdirectory(../common common)
 add_library(revcpu SHARED ${RevCPUSrcs})
-target_include_directories(revcpu PRIVATE ${REVCPU_INCLUDE_PATH})
-target_include_directories(revcpu PUBLIC ${SST_INSTALL_DIR}/include)
+target_include_directories(revcpu PRIVATE ${REVCPU_INCLUDE_PATH} PUBLIC ${SST_INSTALL_DIR}/include)
 
 install(TARGETS revcpu DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
-install (CODE "execute_process(COMMAND sst-register revcpu revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR})")
-
+install(CODE "execute_process(COMMAND sst-register revcpu revcpu_LIBDIR=${CMAKE_CURRENT_SOURCE_DIR})")
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  install(CODE "execute_process(COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_undefined_symbols.sh ${CMAKE_CURRENT_SOURCE_DIR}/librevcpu.dylib)")
+else()
+  install(CODE "execute_process(COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_undefined_symbols.sh ${CMAKE_CURRENT_SOURCE_DIR}/librevcpu.so)")
+endif()
 # EOF
