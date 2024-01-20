@@ -41,22 +41,22 @@ public:
   int GetVerbosity() { return verbosity; }
 
   /// RevOpts: initialize the set of starting addresses
-  bool InitStartAddrs( std::vector<std::string> StartAddrs );
+  bool InitStartAddrs( const std::vector<std::string>& StartAddrs );
 
   /// RevOpts: initialize the set of potential starting symbols
-  bool InitStartSymbols( std::vector<std::string> StartSymbols );
+  bool InitStartSymbols( const std::vector<std::string>& StartSymbols );
 
   /// RevOpts: initialize the set of machine models
-  bool InitMachineModels( std::vector<std::string> Machines );
+  bool InitMachineModels( const std::vector<std::string>& Machines );
 
   /// RevOpts: initalize the set of instruction tables
-  bool InitInstTables( std::vector<std::string> InstTables );
+  bool InitInstTables( const std::vector<std::string>& InstTables );
 
   /// RevOpts: initialize the memory latency cost tables
-  bool InitMemCosts( std::vector<std::string> MemCosts );
+  bool InitMemCosts( const std::vector<std::string>& MemCosts );
 
   /// RevOpts: initialize the prefetch depths
-  bool InitPrefetchDepth( std::vector<std::string> Depths );
+  bool InitPrefetchDepth( const std::vector<std::string>& Depths );
 
   /// RevOpts: retrieve the start address for the target core
   bool GetStartAddr( unsigned Core, uint64_t &StartAddr );
