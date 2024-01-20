@@ -69,42 +69,23 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   Args = params.find<std::string>("args", "");
 
   // Create the options object
-  // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
-  Opts = new RevOpts(numCores, numHarts, Verbosity);
+  Opts = new(std::nothrow) RevOpts(numCores, numHarts, Verbosity);
   if( !Opts )
     output.fatal(CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
 
   // Initialize the remaining options
-  {
-    std::vector<std::string> startAddrs;
-    params.find_array<std::string>("startAddr", startAddrs);
-    if( !Opts->InitStartAddrs( startAddrs ) )
-      output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting addresses\n" );
-
-    std::vector<std::string> startSyms;
-    params.find_array<std::string>("startSymbol", startSyms);
-    if( !Opts->InitStartSymbols( startSyms ) )
-      output.fatal(CALL_INFO, -1, "Error: failed to initialize the starting symbols\n" );
-
-    std::vector<std::string> machModels;
-    params.find_array<std::string>("machine", machModels);
-    if( !Opts->InitMachineModels( machModels ) )
-      output.fatal(CALL_INFO, -1, "Error: failed to initialize the machine models\n" );
-
-    std::vector<std::string> instTables;
-    params.find_array<std::string>("table", instTables);
-    if( !Opts->InitInstTables( instTables ) )
-      output.fatal(CALL_INFO, -1, "Error: failed to initialize the instruction tables\n" );
-
-    std::vector<std::string> memCosts;
-    params.find_array<std::string>("memCost", memCosts);
-    if( !Opts->InitMemCosts( memCosts ) )
-      output.fatal(CALL_INFO, -1, "Error: failed to initialize the memory latency range\n" );
-
-    std::vector<std::string> prefetchDepths;
-    params.find_array<std::string>("prefetchDepth", prefetchDepths);
-    if( !Opts->InitPrefetchDepth( prefetchDepths) )
-      output.fatal(CALL_INFO, -1, "Error: failed to initalize the prefetch depth\n" );
+  for( auto [ParamName, InitFunc] : {
+      std::pair( "startAddr",     &RevOpts::InitStartAddrs    ),
+      std::pair( "startSymbol",   &RevOpts::InitStartSymbols  ),
+      std::pair( "machine",       &RevOpts::InitMachineModels ),
+      std::pair( "table",         &RevOpts::InitInstTables    ),
+      std::pair( "memCost",       &RevOpts::InitMemCosts      ),
+      std::pair( "prefetchDepth", &RevOpts::InitPrefetchDepth ),
+    }){
+    std::vector<std::string> optList;
+    params.find_array(ParamName, optList);
+    if( !(Opts->*InitFunc)(optList) )
+      output.fatal(CALL_INFO, -1, "Error: failed to initialize %s\n", ParamName);
   }
 
   // See if we should load the network interface controller
