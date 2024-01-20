@@ -58,7 +58,7 @@ void RevOpts::splitStr(const std::string& s,
   }
 }
 
-bool RevOpts::InitPrefetchDepth( std::vector<std::string> Depths ){
+bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ){
   std::vector<std::string> vstr;
   for(unsigned i=0; i<Depths.size(); i++ ){
     std::string s = Depths[i];
@@ -79,7 +79,7 @@ bool RevOpts::InitPrefetchDepth( std::vector<std::string> Depths ){
   return true;
 }
 
-bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
+bool RevOpts::InitStartAddrs( const std::vector<std::string>& StartAddrs ){
   std::vector<std::string> vstr;
 
   // check to see if we expand into multiple cores
@@ -119,7 +119,7 @@ bool RevOpts::InitStartAddrs( std::vector<std::string> StartAddrs ){
   return true;
 }
 
-bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
+bool RevOpts::InitStartSymbols( const std::vector<std::string>& StartSymbols ){
   std::vector<std::string> vstr;
   for(unsigned i=0; i<StartSymbols.size(); i++ ){
     std::string s = StartSymbols[i];
@@ -137,7 +137,7 @@ bool RevOpts::InitStartSymbols( std::vector<std::string> StartSymbols ){
   return true;
 }
 
-bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
+bool RevOpts::InitMachineModels( const std::vector<std::string>& Machines ){
   std::vector<std::string> vstr;
 
   // check to see if we expand into multiple cores
@@ -173,7 +173,7 @@ bool RevOpts::InitMachineModels( std::vector<std::string> Machines ){
   return true;
 }
 
-bool RevOpts::InitInstTables( std::vector<std::string> InstTables ){
+bool RevOpts::InitInstTables( const std::vector<std::string>& InstTables ){
   std::vector<std::string> vstr;
   for( unsigned i=0; i<InstTables.size(); i++ ){
     std::string s = InstTables[i];
@@ -191,7 +191,7 @@ bool RevOpts::InitInstTables( std::vector<std::string> InstTables ){
   return true;
 }
 
-bool RevOpts::InitMemCosts( std::vector<std::string> MemCosts ){
+bool RevOpts::InitMemCosts( const std::vector<std::string>& MemCosts ){
   std::vector<std::string> vstr;
 
   for( unsigned i=0; i<MemCosts.size(); i++ ){
