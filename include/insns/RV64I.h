@@ -18,82 +18,6 @@
 namespace SST::RevCPU{
 
 class RV64I : public RevExt{
-
-  // Compressed instructions
-  static bool cldsp(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
-    RevInst Inst = CInst;
-
-    // c.ldsp rd, $imm = lw rd, x2, $imm
-    // Inst.rs1  = 2;  //Removed - set in decode
-    //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
-    //Inst.imm = ((Inst.imm & 0b111111)*8);
-    Inst.imm = ((Inst.imm & 0b111111111));  //Bits placed correctly in decode, no need to scale
-    return ld(F, R, M, Inst);
-  }
-
-  static bool csdsp(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
-    RevInst Inst = CInst;
-
-    // c.swsp rs2, $imm = sw rs2, x2, $imm
-    // Inst.rs1  = 2; //Removed - set in decode
-    //ZEXT(Inst.imm, ((Inst.imm&0b111111))*8, 32);
-    //Inst.imm = ((Inst.imm & 0b111111)*8);
-    Inst.imm = ((Inst.imm & 0b1111111111)); // bits placed correctly in decode, no need to scale
-    return sd(F, R, M, Inst);
-  }
-
-  static bool cld(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
-    RevInst Inst = CInst;
-
-    // c.ld %rd, %rs1, $imm = ld %rd, %rs1, $imm
-    //Inst.rd  = CRegIdx(Inst.rd);  //Removed - scaled in decode
-    //Inst.rs1 = CRegIdx(Inst.rs1); //Removed - scaled in decode
-    //Inst.imm = ((Inst.imm&0b11111)*8);
-    Inst.imm = (Inst.imm&0b11111111); //8-bit immd, zero-extended, scaled at decode
-    return ld(F, R, M, Inst);
-  }
-
-  static bool csd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
-    RevInst Inst = CInst;
-
-    // c.sd rs2, rs1, $imm = sd rs2, $imm(rs1)
-    //Inst.rs2 = CRegIdx(Inst.rs2);  //Removed - scaled in decode
-    //Inst.rs1 = CRegIdx(Inst.rs1); // Removed  - scaled in decode
-    Inst.imm = (Inst.imm&0b11111111); //imm is 8-bits, zero extended, decoder pre-aligns bits, no scaling needed
-    return sd(F, R, M, Inst);
-  }
-
-  static bool caddiw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
-    RevInst Inst = CInst;
-
-    // c.addiw %rd, $imm = addiw %rd, %rd, $imm
-    // Inst.rs1 = Inst.rd; //Removed - set in decode
-    // uint64_t tmp = Inst.imm & 0b111111;
-    // SEXT(Inst.imm, tmp, 6);
-    Inst.imm = Inst.ImmSignExt(6);
-    return addiw(F, R, M, Inst);
-  }
-
-  static bool caddw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
-    RevInst Inst = CInst;
-
-    // c.addw %rd, %rs2 = addw %rd, %rd, %rs2
-    //Inst.rd  = CRegIdx(Inst.rd);  //Removed - set in decode
-    //Inst.rs1 = Inst.rd;  //Removed - set in decode
-    //Inst.rs2  = CRegIdx(Inst.rs2);  //Removed - set in decode
-    return addw(F, R, M, Inst);
-  }
-
-  static bool csubw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& CInst) {
-    RevInst Inst = CInst;
-
-    // c.subw %rd, %rs2 = subw %rd, %rd, %rs2
-    //Inst.rd  = CRegIdx(Inst.rd);  //Removed - set in decode
-    //Inst.rs1 = Inst.rd;  //Removed - set in decode
-    //Inst.rs2  = CRegIdx(Inst.rs2);  //Removed - set in decode
-    return subw(F, R, M, Inst);
-  }
-
   // Standard instructions
   static constexpr auto& ld    = load<int64_t>;
   static constexpr auto& lwu   = load<uint32_t>;
@@ -111,6 +35,15 @@ class RV64I : public RevExt{
   static constexpr auto& sllw  = oper<ShiftLeft,  OpKind::Reg, std::make_unsigned_t, true>;
   static constexpr auto& srlw  = oper<ShiftRight, OpKind::Reg, std::make_unsigned_t, true>;
   static constexpr auto& sraw  = oper<ShiftRight, OpKind::Reg, std::make_signed_t,   true>;
+
+  // Compressed instructions
+  static constexpr auto& cldsp = ld;
+  static constexpr auto& csdsp = sd;
+  static constexpr auto& cld   = ld;
+  static constexpr auto& csd   = sd;
+  static constexpr auto& caddiw= addiw;
+  static constexpr auto& caddw = addw;
+  static constexpr auto& csubw = subw;
 
   // ----------------------------------------------------------------------
   //
