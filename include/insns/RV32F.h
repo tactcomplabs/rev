@@ -20,28 +20,6 @@
 namespace SST::RevCPU{
 
 class RV32F : public RevExt{
-
-  // Compressed instructions
-  static bool cflwsp(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    // c.flwsp rd, $imm = lw rd, x2, $imm
-    return flw(F, R, M, Inst);
-  }
-
-  static bool cfswsp(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    // c.swsp rs2, $imm = sw rs2, x2, $imm
-    return fsw(F, R, M, Inst);
-  }
-
-  static bool cflw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    // c.flw %rd, %rs1, $imm = flw %rd, %rs1, $imm
-    return flw(F, R, M, Inst);
-  }
-
-  static bool cfsw(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    // c.fsw rs2, rs1, $imm = fsw rs2, $imm(rs1)
-    return fsw(F, R, M, Inst);
-  }
-
   // Standard instructions
   static constexpr auto& flw = fload<float>;
   static constexpr auto& fsw = fstore<float>;
@@ -133,6 +111,12 @@ class RV32F : public RevExt{
     R->AdvancePC(Inst);
     return true;
   }
+
+  // Compressed instructions
+  static constexpr auto& cflwsp = flw;
+  static constexpr auto& cfswsp = fsw;
+  static constexpr auto& cflw   = flw;
+  static constexpr auto& cfsw   = fsw;
 
   // ----------------------------------------------------------------------
   //

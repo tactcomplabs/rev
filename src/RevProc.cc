@@ -420,9 +420,25 @@ RevInst RevProc::DecodeCRInst(uint16_t Inst, unsigned Entry) const {
   CompInst.rs2     = DECODE_LOWER_CRS2(Inst);
   CompInst.imm     = 0x00;
 
-  //if c.mv force rs1 to x0
-  if((0b10 == CompInst.opcode) && (0b1000 == CompInst.funct4) && (0 != CompInst.rs2)){
-    CompInst.rs1 = 0;
+  if(0b10 == CompInst.opcode){
+    if(0b1000 == CompInst.funct4){
+      if( 0 != CompInst.rs2 ){
+        // if c.mv force rs1 to x0
+        CompInst.rs1 = 0;
+      }else{
+        // if c.jr force rd to x0
+        CompInst.rd = 0;
+      }
+    }else if(0b1001 == CompInst.funct4){
+      if( 0 != CompInst.rs2 ){
+        // if c.add
+      }else if( 0 != CompInst.rs1 ){
+        // if c.jalr force rd to x1
+        CompInst.rd = 1;
+      }else{
+        // if c.ebreak
+      }
+    }
   }
 
   CompInst.instSize = 2;
@@ -490,10 +506,8 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm |= ((Inst & 0b11000) << 4);  // bit 8:7
     CompInst.imm |= ((Inst & 0b1000000000000) >> 3);  // bit 9
     CompInst.rs1 = 2;                                 // Force rs1 to be x2 (stack pointer)
-    if( (CompInst.imm & 0b1000000000) > 0 ){
-      // sign extend
-      CompInst.imm |= 0b11111111111111111111111000000000;
-    }
+    // sign extend
+    CompInst.imm = CompInst.ImmSignExt(10);
   }else if( (CompInst.opcode == 0b01) &&
             (CompInst.funct3 == 0b011)  &&
             (CompInst.rd != 0) && (CompInst.rd != 2) ){
@@ -501,10 +515,8 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm = 0;
     CompInst.imm =  ((Inst & 0b1111100) << 10);       // [16:12]
     CompInst.imm |= ((Inst & 0b1000000000000) << 5);  // [17]
-    if( (CompInst.imm & 0b100000000000000000) > 0 ){
-      // sign extend
-      CompInst.imm |= 0b11111111111111000000000000000000;
-    }
+    // sign extend
+    CompInst.imm = CompInst.ImmSignExt(18);
     CompInst.imm >>= 12;  //immd value will be re-aligned on execution
   }else if( (CompInst.opcode == 0b01) &&
             (CompInst.funct3 == 0b010) &&
@@ -514,13 +526,11 @@ RevInst RevProc::DecodeCIInst(uint16_t Inst, unsigned Entry) const {
     CompInst.imm =  ((Inst & 0b1111100) >> 2);        // [4:0]
     CompInst.imm |= ((Inst & 0b1000000000000) >> 7);  // [5]
     CompInst.rs1 = 0;                                 // Force rs1 to be x0, expands to add rd, x0, imm
-    if( (CompInst.imm & 0b100000) > 0 ){
-      // sign extend
-      CompInst.imm |= 0b11111111111111111111111111000000;
-    }
-  }else if( (CompInst.imm & 0b100000) > 0 ){
     // sign extend
-    CompInst.imm |= 0b11111111111111111111111111100000;
+    CompInst.imm = CompInst.ImmSignExt(6);
+  }else{
+    // sign extend
+    CompInst.imm = CompInst.ImmSignExt(6);
   }
 
   //if c.addi, expands to addi %rd, %rd, $imm so set rs1 to rd -or-
@@ -601,15 +611,8 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry) const {
   // Apply compressed offset
   CompInst.rd      = CRegIdx(CompInst.rd);
 
-  //Set rs1 to x2 if this is an addi4spn
-  if((0x00 == CompInst.opcode) && (0x00 == CompInst.funct3) ){
-    CompInst.rs1 = 2;
-  }
-
-
   //swizzle: nzuimm[5:4|9:6|2|3]
-  std::bitset<32> imm(CompInst.imm);
-  std::bitset<32> tmp(0);
+  std::bitset<32> imm(CompInst.imm), tmp;
   tmp[0] = imm[1];
   tmp[1] = imm[0];
   tmp[2] = imm[6];
@@ -620,6 +623,12 @@ RevInst RevProc::DecodeCIWInst(uint16_t Inst, unsigned Entry) const {
   tmp[7] = imm[5];
 
   CompInst.imm = tmp.to_ulong();
+
+  // Set rs1 to x2 and scale offset by 4 if this is an addi4spn
+  if((0x00 == CompInst.opcode) && (0x00 == CompInst.funct3) ){
+    CompInst.imm = (CompInst.imm & 0b11111111)*4;
+    CompInst.rs1 = 2;
+  }
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -784,18 +793,13 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
   //Apply compressed offset
   CompInst.rs1 = CRegIdx(CompInst.rs1);
 
-  //Set rs2 to x0 if c.beqz or c.bnez
-  if((0b01 == CompInst.opcode) && ((0b110 == CompInst.funct3) || (0b111 == CompInst.funct3))){
-    CompInst.rs2 = 0;
-  }
-
   //If c.srli, c.srai or c.andi set rd to rs1
   if((0b01 == CompInst.opcode) && (0b100 == CompInst.funct3)){
     CompInst.rd = CompInst.rs1;
   }
 
   //swizzle: offset[8|4:3]  offset[7:6|2:1|5]
-  std::bitset<16> tmp(0);
+  std::bitset<16> tmp;
   // handle c.beqz/c.bnez offset
   if( (CompInst.opcode == 0b01) && (CompInst.funct3 >= 0b110) ){
     std::bitset<16> o(CompInst.offset);
@@ -807,14 +811,20 @@ RevInst RevProc::DecodeCBInst(uint16_t Inst, unsigned Entry) const {
     tmp[5] = o[3];
     tmp[6] = o[4];
     tmp[7] = o[7];
-  } else if( (CompInst.opcode == 0b01) && (CompInst.funct3 == 0b100)) {
-    //We have a shift or a andi
-    CompInst.rd = CompInst.rs1; //Already has compressed offset applied
   }
 
   CompInst.offset = ((uint16_t)tmp.to_ulong()) << 1; // scale to corrrect position to be consistent with other compressed ops
-  CompInst.imm = ((Inst & 0b01111100) >> 2);
-  CompInst.imm |= ((Inst & 0b01000000000000) >> 7);
+
+  if( (0b01 == CompInst.opcode) && (CompInst.funct3 >= 0b110) ){
+    //Set rs2 to x0 if c.beqz or c.bnez
+    CompInst.rs2 = 0;
+    CompInst.imm = CompInst.offset;
+    CompInst.imm = CompInst.ImmSignExt(9);
+  }else{
+    CompInst.imm = ((Inst & 0b01111100) >> 2);
+    CompInst.imm |= ((Inst & 0b01000000000000) >> 7);
+    CompInst.imm = CompInst.ImmSignExt(6);
+  }
 
   CompInst.instSize = 2;
   CompInst.compressed = true;
@@ -836,9 +846,7 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry) const {
   uint16_t offset = ((Inst & 0b1111111111100) >> 2);
 
   //swizzle bits offset[11|4|9:8|10|6|7|3:1|5]
-  std::bitset<16> offsetBits(offset);
-  std::bitset<16> target;
-  target.reset();
+  std::bitset<16> offsetBits(offset), target;
   target[0] = offsetBits[1];
   target[1] = offsetBits[2];
   target[2] = offsetBits[3];
@@ -851,12 +859,15 @@ RevInst RevProc::DecodeCJInst(uint16_t Inst, unsigned Entry) const {
   target[9] = offsetBits[6];
   target[10] = offsetBits[10];
   CompInst.jumpTarget = ((u_int16_t)target.to_ulong()) << 1;
-  //CompInst.jumpTarget = ((u_int16_t)target.to_ulong());
 
-  //Set rd to x1 if this is a c.jal
-  if((0b01 == CompInst.opcode) && (0b001 == CompInst.funct3)){
-    CompInst.rd = 1;
+  if((0b01 == CompInst.opcode) && (0b001 == CompInst.funct3 ||
+                                   0b101 == CompInst.funct3)){
+    //Set rd to x1 if this is a c.jal, x0 if this is a c.j
+    CompInst.rd = (0b001 == CompInst.funct3) ? 1 : 0;
+    CompInst.imm = CompInst.jumpTarget;
+    CompInst.imm = CompInst.ImmSignExt(12);
   }
+
   CompInst.instSize = 2;
   CompInst.compressed = true;
 
