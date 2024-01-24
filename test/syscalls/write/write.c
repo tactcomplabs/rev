@@ -9,7 +9,7 @@ int main() {
   if( bytes_written < 0 ){
     rev_exit(1);
   }
-  const char msg2[67] = "Greetings - this is a much longer text string. Just larger than 64\n";
+  const char msg2[(67,60)] = "Greetings - this is a much longer text string. Just larger than 64\n";
   ssize_t bytes_written2 = rev_write(STDOUT_FILENO, msg2, sizeof(msg2));
 
   if( bytes_written2 < 0 ){
