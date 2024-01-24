@@ -217,70 +217,64 @@ The first thing we need to do is create the basic header file at `src/insns/RV32
 
 using namespace SST::RevCPU;
 
-namespace SST{
-  namespace RevCPU{
-    struct RV32Z : RevExt {
+namespace SST::RevCPU{
+  class RV32Z : public RevExt {
 
-    // RV32Z Implementation Functions
+  // RV32Z Implementation Functions
 
-    // RV32Z Instruction Table
+  // RV32Z Instruction Table
 
-      /// RV32Z: standard constructor
-      RV32Z( RevFeature *Feature,
-             RevRegFile *RegFile,
-             RevMem *RevMem,
-             SST::Output *Output )
-        : RevExt( "RV32Z", Feature, RegFile, RevMem, Output ) {
-          SetTable(RV32ZTable);
-        }
+public:
+  /// RV32Z: standard constructor
+  RV32Z( RevFeature *Feature,
+         RevRegFile *RegFile,
+         RevMem *RevMem,
+         SST::Output *Output )
+    : RevExt( "RV32Z", Feature, RegFile, RevMem, Output ) {
+      SetTable(std::move(RV32ZTable));
+    }
 
-      /// RV32Z: standard destructor
-      ~RV32Z() = default;
-
-    }; // end class RV32I
-  } // namespace RevCPU
-} // namespace SST
+  }; // end class RV32Z
+} // namespace SST::RevCPU
 ```
 
-There are a few important things we need to point out before we move on. First,
-notice how the new implementation class resides inside the `SST::RevCPU`
+There are a few important things we need to point out before we move on.
+First, notice how the new implementation class resides inside the `SST::RevCPU`
 namespace and inherits functions from the base `RevExt` class. This is very
 important in order to correctly load your new instructions into the simulator.
 Second, notice how we instantiate the constructor for the new extension. The
-constructor **MUST** contain a call to `SetTable(RV32ZTable)`. Given that this
-is a header-only implementation, the order of which the class constructors and
-associated data members must be preserved. This method forces the child
-constructor to create its private data members before registering them with the
-base class.
+constructor **MUST** contain a call to `SetTable(std::move(RV32ZTable))`. The
+`std::move()` is required because `SetTable()` requires an rvalue argument.
+This design avoids deep copies of the tables, and limits the number of moves
+to one. The child constructor constructs its private data members before
+registering them with the base class.
 
 Now that we have our basic skeleton in place, we can start creating our
 instruction table. The table is actually a C++ vector of struct entries where
 each entry corresponds to a single instruction entry. This needs to be done in
 the private section of the class (see the comment above for RV32Z Instruction
-Table). The stuct for each entry is created by an in-line creation of a
-`RevInstEntryBuilder< >` object. This object will utilize the class declared in
-the template parameter for the default values. The base default values can be
-found in the `RevInstDefaults` class and can be overriden through inheritence
-(shown in the example below). The individual elements of the `RevInstEntry`
-struct are initialized using named arguments so they can be initialized in any
-order. It is important to end the argument initialization chain with
-`.InstEntry` as this is the actual struct that will be added to the
-`std::vector`.First, lets create a few basic entries in our table, then we'll
-explain what each entry is used for.
+Table). The struct for each entry is created by an in-line creation of a
+`RevInstDefaults` object, or a class derived from `RevInstDefaults`. This
+will create the class for the default values. The base default values can be
+found in the `RevInstDefaults` class and can be overriden by calling `Set*`
+functions in the derived class constructor (shown in the example below). The
+individual elements of the `RevInstEntry` struct are initialized by calling
+chains of `Set*` functions with named arguments as suffixes, so they can be
+initialized in any order. First, lets create a few basic entries in our table,
+then we'll explain what each entry is used for.
 
 ```c++
 struct Rev32ZInstDefaults : RevInstDefaults {
-  RevRegF format = RVTypeR; 
-}
+  Rev32ZInstDefaults(){
+    SetFormat(RVTypeR);
+  }
+};
+
 std::vector<RevInstEntry> RV32ZTable = {
-{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zadd %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0000000).
-   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR)Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zadd).InstEntry },
-{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsub %rd, %rs1, %rs2").SetCost(1).SetOpcode(0b0110011).SetFunct3(0b000).SetFunct7(0b0100000).
-   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetImplFunc(&zsub).InstEntry },
-{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zlb %rd, $imm(%rs1)").SetCost(1).SetOpcode(0b0000011).SetFunct3(0b000).SetFunct7(0b0).
-   SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FImm).SetFormat(RVTypeI).SetImplFunc(&zlb).InstEntry },
-{RevInstEntryBuilder<Rev32ZInstDefaults>().SetMnemonic("zsb %rs2, $imm(%rs1)").SetCost(1).SetOpcode(0b0100011).SetFunct3(0b000).SetFunct7(0b0).
-   SetrdClass(RegIMM).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).Setimm12(0b0).Setimm(FUnk).SetFormat(RVTypeS).SetImplFunc(&zsub).InstEntry },
+{ Rev32ZInstDefaults().SetMnemonic("zadd %rd, %rs1, %rs2").SetCost(1).SetFunct3(0b000).SetFunct2or7(0b0000000).SetImplFunc(zadd).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).SetOpcode(0b0110011).Setimm12(0b0).Setimm(FUnk) },
+{ Rev32ZInstDefaults().SetMnemonic("zsub %rd, %rs1, %rs2").SetCost(1).SetFunct3(0b000).SetFunct2or7(0b0100000).SetImplFunc(zsub).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).SetOpcode(0b0110011).Setimm12(0b0).Setimm(FUnk) },
+{ Rev32ZInstDefaults().SetMnemonic("zlb %rd, $imm(%rs1)").SetCost(1).SetFunct3(0b000).SetFunct2or7(0b0).SetImplFunc(zlb).SetrdClass(RevRegClass::RegGPR).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegUNKNOWN).Setrs3Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeI).SetOpcode(0b0000011).Setimm12(0b0).Setimm(FImm) },
+{ Rev32ZInstDefaults().SetMnemonic("zsb %rs2, $imm(%rs1)").SetCost(1).SetFunct3(0b000).SetFunct2or7(0b0).SetImplFunc(zsub).SetrdClass(RegIMM).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).Setrs3Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeS).SetOpcode(0b0100011).Setimm12(0b0).Setimm(FUnk) },
 };
 ```
 
@@ -290,19 +284,19 @@ For this, we've created four instructions: `zadd`, `zsub`, `zlb` and `zsb` to re
 | ----------- | ----------- | ----------- |
 | 1 | mnemonic | This describes how to *type* the instruction.  This is a specical syntax that can utilized during debugging or disassembly.  Register fields are noted using percent signs and their field name and immediate fields are noted using the dollar sign and their field name.  Ex: `add %rd, %rs1, %rs2` or `lb %rd, $imm(%rs1)` |
 | 2 | cost | This is a nonzero value that represents the cost (in clock cycles) of the default instruction implementation.  This will determine how many cycles this instruction will execute prior to being retired.  This value can be overridden by the user at runtime. |
-| 3 | opcode | This is the seven bit opcode of the instruction. |
 | 4 | funct3 | This is the funct3 encoding field.  If the respective instruction does not utilize the field, set this value to `0b000` |
-| 5 | funct7 | This is the funct7 encoding field.  If the respective instruction does not utilize the field, set this value to `0b0000000` |
-| 6 | rdClass | If the instruction has an `rd` register slot, this denotes the register class utilized.  Values for this can be one of `RevRegClass::RegGPR` for the general purpose register file, `RegCSR` for the CSR register file, `RegFloat` for the floating point register file, `RegIMM` (treat the reg class like an immediate, only utilized in the S-format) or `RevRegClass::RegUNKNOWN` if the field is not utilized. |
-| 7 | rs1Class | Defines the register class for the `rs1` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
-| 8 | rs2Class | Defines the register class for the `rs2` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
-| 9 | rs3Class | Defines the register class for the `rs3` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
-| 10 | imm12 | Defines the value of the `imm12` slot if the immediate is hardwired to a single value. |
-| 11 | imm | Defines the functionality of th `imm12` field.  If the field is not used, set this to `Funk`.  `FImm` indicates that the field is present and utilized, `FEnc` indicates that this field is an encoding value and `FVal` is an incoming register value.  When using `FEnc`, the `imm12` entry (10) must also be set. |
-| 12 | format | Defines the instruction format.  This is one of: `RVTypeUNKNOWN`, `RVTypeR`, `RVTypeI`, `RVTypeS`, `RVTypeU`, `RVTypeB`, `RVTypeJ` or `RVTypeR4` |
-| 13 | func | This contains a function pointer to the implementation function of the target instruction |
+| 5 | funct2or7 | This is the funct2or7 encoding field.  If the respective instruction does not utilize the field, set this value to `0b0000000` |
+| 6 | func | This contains a function pointer to the implementation function of the target instruction |
+| 7 | rdClass | If the instruction has an `rd` register slot, this denotes the register class utilized.  Values for this can be one of `RevRegClass::RegGPR` for the general purpose register file, `RegCSR` for the CSR register file, `RegFloat` for the floating point register file, `RegIMM` (treat the reg class like an immediate, only utilized in the S-format) or `RevRegClass::RegUNKNOWN` if the field is not utilized. |
+| 8 | rs1Class | Defines the register class for the `rs1` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 9 | rs2Class | Defines the register class for the `rs2` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 10 | rs3Class | Defines the register class for the `rs3` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 11 | format | Defines the instruction format.  This is one of: `RVTypeUNKNOWN`, `RVTypeR`, `RVTypeI`, `RVTypeS`, `RVTypeU`, `RVTypeB`, `RVTypeJ` or `RVTypeR4` |
+| 12 | opcode | This is the seven bit opcode of the instruction. |
+| 13 | imm12 | Defines the value of the `imm12` slot if the immediate is hardwired to a single value. |
+| 14 | imm | Defines the functionality of th `imm12` field.  If the field is not used, set this to `Funk`.  `FImm` indicates that the field is present and utilized, `FEnc` indicates that this field is an encoding value and `FVal` is an incoming register value.  When using `FEnc`, the `imm12` entry (10) must also be set. |
 
-Now that we have our instruction encoding tables, we can begin implementing each of our instruction functions in the private section of the header file.  Note that this must be done **above** the instruction table as the symbol names must be defined prior to their use in the instruction table.  First, we'll show an example implementation of our four instructions before outlining all the requirements and features.
+Now that we have our instruction encoding tables, we can begin implementing each of our instruction functions in the private section of the header file. First, we'll show an example implementation of our four instructions before outlining all the requirements and features.
 
 ### Helper Functions
 There are several helper functions to make generating instruction implementations easier.
@@ -545,9 +539,11 @@ As we can see from the source code above, each function must be formatted as: `s
 
 The second and third arguments represent the register file object and the memory object, respectively.  These objects permit the user to access internal register state and read/write memory.  Finally, the `RevInst` structure contains all the decoded state from the instruction.  This includes all the opcode and function codes as well as each of the encoded register values.  This structure also contains the floating point rounding mode information.  For more information on the exacting contents and their respective data types, see the `RevInstTable.h` header file.  
 
-Now that we've decoded the necessary state and the simulation execution engine launches the function, we can start executing the target arithmetic.  For example, in the `zadd` function, we seek to add two unsigned integers of *XLEN* size.  Normally, this could be achieved using a simple `Rd = Rs1 + Rs2`.  However, recall from the RISC-V specification that arithmetic is performed in two's complement form.  As a result, we must utilize some utility functions to convert to/from two's complement form.  The `td_u32` and `td_u64` functions convert a value *from* two's complement *to* decimal form.  The `dt_u32` and `dt_u64` convert values from decimal form to two's complement.  As you can see in the `zadd` and `zsub` functions, we utilize the `Inst` payload to decode the register indices, the `RevRegFile` structure to retrieve the necesary register value and the `td_u32/64` functions to convert to decimal form.  We then perform the arithmetic, convert the value back to two's complement form and write it back to the register file.  The final step in the basic arithmetic functions is incrementing the PC.  The PC can be manually manipulated (eg, for branch operations), but this is normally done by incrementing the PC by the size of the instruction payload (in bytes).
+Now that we've decoded the necessary state and the simulation execution engine launches the function, we can start executing the target arithmetic.  For example, in the `zadd` function, we seek to add two unsigned integers of *XLEN* size. We use `R->GetX<uint32_t>(Inst.rs1)` and `R->GetX<uint32_t>(Inst.rs2)` to read registers as `uint32_t` values, add two values, and then use `R->SetX(Inst.rd, val)` to write the result into the destination register.
 
-In the next functions, `zlb` and `zsb` we seek to load and store data to memory.  Just as we did above, we need to convert the input values to decimal form in order to perform the necessary address arithmetic.  We then utilize the `RevMem` object to write the desired number of bytes or read the desired number of bytes via the `ReadU8` and `WriteU8` routines.  The `RevMem` object provides a number of standard interfaces for writing common data types, arbitrary data and performing load reserve/store conditional operations.  Also note the use of the `SEXT` macro.  This performs sign extension on the incoming load value.  The infrastructure also provides a `ZEXT` macro for zero extension.  
+The final step in the basic arithmetic functions is incrementing the PC.  The PC can be manually manipulated (eg, for branch operations) with `R->SetPC(PC)`, but this is normally done by incrementing the PC by the size of the instruction payload (in bytes) with `R->AdvancePC(Inst)`.
+
+In the next functions, `zlb` and `zsb` we seek to load and store data to memory. We utilize the `RevMem` object to write the desired number of bytes or read the desired number of bytes via the `Read` and `Write` methods.  The `RevMem` object provides a number of standard interfaces for writing common data types, arbitrary data and performing load reserve/store conditional operations.  Also note the use of the `SignExt()` function.  This performs sign extension on the incoming load value.  The infrastructure also provides a `ZeroExt()` function for zero extension.  
 
 Finally, it is important to note the use of the `M->RandCost()` function.  Typically, RISC-V processor implementations do not hazard on memory store operations given the inherent weak memory ordering (or TSO).  However, for load operations, the processor is required to flag a hazard in order to ensure that the data returns before it is utilized in subsquent operations.  The `RandCost()` function provides the simulator the ability to add an arbitrary cost to load operations that is randomly generated in the range of `F->GetMinCost()` and `F->GetMaxCost()`.  These values are set at runtime by the user in the SST Python script.  In this manner, each load operation will generate a random *cost* and set its respective cost (in cycles).  
 
