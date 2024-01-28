@@ -161,7 +161,8 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
 
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
-      mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
+      const uint64_t AlignedAddr = mem->AlignUp(ph[i].p_paddr, ph[i].p_align);
+      mem->AddStaticMemSeg(AlignedAddr, ph[i].p_memsz);
     }
   }
 
@@ -174,7 +175,8 @@ bool RevLoader::LoadElf32(char *membuf, size_t sz){
     }
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
-      mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
+      const uint64_t AlignedAddr = mem->AlignUp(ph[i].p_paddr, ph[i].p_align);
+      mem->AddStaticMemSeg(AlignedAddr, ph[i].p_memsz);
     }
   }
 
@@ -324,13 +326,15 @@ bool RevLoader::LoadElf64(char *membuf, size_t sz){
 
     // Add a memory segment for the program header
     if( ph[i].p_memsz ){
-      mem->AddRoundedMemSeg(ph[i].p_paddr, ph[i].p_memsz, __PAGE_SIZE__);
+      const uint64_t AlignedAddr = mem->AlignUp(ph[i].p_paddr, ph[i].p_align);
+      mem->AddStaticMemSeg(AlignedAddr, ph[i].p_memsz);
     }
   }
 
   // Add the first thread's memory
   mem->AddThreadMem();
 
+  // TODO: Add searching for __heap_start
   uint64_t StaticDataEnd = 0;
   uint64_t BSSEnd = 0;
   uint64_t DataEnd = 0;

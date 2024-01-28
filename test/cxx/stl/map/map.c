@@ -1,22 +1,30 @@
-#include "revalloc.hpp"
+// #include "revalloc.hpp"
+#include "rev-macros.h"
 #include <map>
 #include <string>
-#include "rev-macros.h"
 
-#define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
+#define assert(x)                                                              \
+  if (!(x)) {                                                                  \
+    asm(".byte 0x00");                                                         \
+    asm(".byte 0x00");                                                         \
+    asm(".byte 0x00");                                                         \
+    asm(".byte 0x00");                                                         \
+  }
 
-typedef std::basic_string<char,  std::char_traits<char>, Allocator<char> > revString;
+// typedef std::basic_string<char,  std::char_traits<char>, Allocator<char> >
+// revString;
 
 int main() {
 
-  //When constructing the map the correct method is to use the default constructor and then
-  //  insert each element as shown (using std::pair)
+  // When constructing the map the correct method is to use the default
+  // constructor and then
+  //   insert each element as shown (using std::pair)
 
-  std::map< revString, 
-            int, 
-            std::less<revString>,
-            Allocator<std::pair<const revString, int>> > m;
-
+  // std::map< revString,
+  //           int,
+  //           std::less<revString>,
+  //           Allocator<std::pair<const revString, int>> > m;
+  std::map<std::string, int> m;
 
   m.insert(std::pair{"CPU", 10});
   m.insert(std::pair{"GPU", 11});
@@ -34,13 +42,13 @@ int main() {
   assert(m.count("RAM") == 1);
   assert(m.count("Nope") == 0);
 
-  m.extract("RAM");           //Use extract instead of erase
-  assert(m.size () == 2);
+  m.extract("RAM"); // Use extract instead of erase
+  assert(m.size() == 2);
   assert(m["CPU"] == 15);
   assert(m.count("RAM") == 0);
 
   m.extract("GPU");
-  assert(m.size () == 1);
+  assert(m.size() == 1);
 
   return 0;
 }

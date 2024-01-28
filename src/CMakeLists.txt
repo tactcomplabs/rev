@@ -13,6 +13,7 @@ set(RevCPUSrcs
   RevLoader.cc
   RevMem.cc
   RevMemCtrl.cc
+  RevHeap.cc
   RevNIC.cc
   RevOpts.cc
   RevProc.cc

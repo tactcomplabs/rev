@@ -549,7 +549,7 @@ struct rev_stats {
 // int rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags);
 // int rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags);
 // int rev_readahead(int fd, loff_t offset, size_t count);
-// int rev_brk(unsigned long brk);
+// int rev_sbrk(unsigned long brk);
 // int rev_munmap(unsigned long addr, size_t len);
 // int rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr);
 // int rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid);
@@ -2786,7 +2786,7 @@ static int rev_readahead(int fd, loff_t offset, size_t count){
   return rc;
 }
 
-static int rev_brk(unsigned long brk){
+static int rev_sbrk(int increment){
   int rc;
   asm volatile (
     "li a7, 214 \n\t"

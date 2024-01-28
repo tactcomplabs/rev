@@ -2248,7 +2248,7 @@ void RevProc::InitEcallTable(){
     { 211, &RevProc::ECALL_sendmsg},                //  rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags)
     { 212, &RevProc::ECALL_recvmsg},                //  rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags)
     { 213, &RevProc::ECALL_readahead},              //  rev_readahead(int fd, loff_t offset, size_t count)
-    { 214, &RevProc::ECALL_brk},                    //  rev_brk(unsigned long brk)
+    { 214, &RevProc::ECALL_sbrk},                    //  rev_brk(unsigned long brk)
     { 215, &RevProc::ECALL_munmap},                 //  rev_munmap(unsigned long addr, size_t len)
     { 216, &RevProc::ECALL_mremap},                 //  rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr)
     { 217, &RevProc::ECALL_add_key},                //  rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid)

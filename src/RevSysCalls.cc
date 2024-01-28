@@ -2003,38 +2003,63 @@ EcallStatus RevProc::ECALL_readahead(RevInst& inst){
   return EcallStatus::SUCCESS;
 }
 
-// 214, rev_brk(unsigned long brk)
-EcallStatus RevProc::ECALL_brk(RevInst& inst){
-  auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
+// 214, rev_sbrk(unsigned long brk)
+EcallStatus RevProc::ECALL_sbrk(RevInst& inst){
+  output->verbose(CALL_INFO, 2, 0,
+                  "ECALL: sbrk called by thread %" PRIu32
+                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+  auto increment = RegFile->GetX<uint64_t>(RevReg::a0);
+  auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
+  auto lsq_hash = LSQHash(RevReg::a0, RevRegClass::RegGPR, HartToExecID); // Cached hash value
+  auto rtval = EcallStatus::CONTINUE;
 
-  const uint64_t heapend = mem->GetHeapEnd();
-  if( Addr > 0 && Addr > heapend ){
-    uint64_t Size = Addr - heapend;
-    mem->ExpandHeap(Size);
+  // Read the BRK value from the backing store
+  if( LSQueue->count(lsq_hash) == 0 && EcallState.bytesRead == 0 ){
+    MemReq req (mem->GetBRKValueAddr(), RevReg::a0,
+                RevRegClass::RegGPR, HartToExecID,
+                MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
+    LSQueue->insert(req.LSQHashPair());
+
+    mem->ReadVal(HartToExecID, mem->GetBRKValueAddr(),
+                 reinterpret_cast<uint64_t*>(EcallState.buf.data()),
+                 req, RevFlag::F_NONE);
+
+    EcallState.bytesRead = sizeof(uint64_t);
   } else {
-    output->fatal(CALL_INFO, 11,
-                  "Out of memory / Unable to expand system break (brk) to "
-                  "Addr = 0x%" PRIx64 "\n", Addr);
+    uint64_t brk = *reinterpret_cast<uint64_t*>(EcallState.buf.data());
+    // Store the current brk value as the return value
+    RegFile->SetX(RevReg::a0, brk);
+
+    uint64_t NewBrk = brk + increment;
+
+    mem->sbrk(NewBrk);
+
+    // Write the updated value back to the backing store
+    mem->WriteMem(HartToExecID, mem->GetBRKValueAddr(),
+                  sizeof(uint64_t), reinterpret_cast<uint64_t*>(&NewBrk));
+
+    rtval = EcallStatus::SUCCESS;
   }
-  return EcallStatus::SUCCESS;
+  return rtval;
 }
 
 // 215, rev_munmap(unsigned long addr, size_t len)
 EcallStatus RevProc::ECALL_munmap(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
                   "ECALL: munmap called\n");
-  auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
-  auto Size = RegFile->GetX<uint64_t>(RevReg::a1);
+  // FIXME:
+  //auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
+  //auto Size = RegFile->GetX<uint64_t>(RevReg::a1);
 
-  int rc =  mem->DeallocMem(Addr, Size) == uint64_t(-1);
-  if(rc == -1){
-    output->fatal(CALL_INFO, 11,
-                  "Failed to perform munmap(Addr = 0x%" PRIx64 ", Size = %" PRIu64 ")"
-                  "likely because the memory was not allocated to begin with" ,
-                  Addr, Size);
-  }
+  //int rc =  mem->DeallocMem(Addr, Size) == uint64_t(-1);
+  //if(rc == -1){
+  //  output->fatal(CALL_INFO, 11,
+  //                "Failed to perform munmap(Addr = 0x%" PRIx64 ", Size = %" PRIu64 ")"
+  //                "likely because the memory was not allocated to begin with" ,
+  //                Addr, Size);
+  //}
 
-  RegFile->SetX(RevReg::a0, rc);
+  //RegFile->SetX(RevReg::a0, rc);
   return EcallStatus::SUCCESS;
 }
 
@@ -2233,7 +2258,7 @@ EcallStatus RevProc::ECALL_execve(RevInst& inst){
 // 222, rev_old_mmap(struct mmap_arg_struct  *arg)
 EcallStatus RevProc::ECALL_mmap(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0,
-                  "ECALL: mmap called\n");
+                  "ECALL: mmap called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
 
   auto addr = RegFile->GetX<uint64_t>(RevReg::a0);
   auto size = RegFile->GetX<uint64_t>(RevReg::a1);
@@ -2243,19 +2268,17 @@ EcallStatus RevProc::ECALL_mmap(RevInst& inst){
   // auto offset = RegFile->GetX<off_t>(RevReg::a5);
 
   if( !addr ){
-    // If address is NULL... We add it to MemSegs.end()->getTopAddr()+1
-    addr = mem->AllocMem(size);
-    // addr = mem->AddMemSeg(Size);
-  } else {
-    // We were passed an address... try to put a segment there.
-    // Currently there is no handling of getting it 'close' to the
-    // suggested address... instead if it can't allocate a new segment
-    // there it fails.
-    if( !mem->AllocMemAt(addr, size) ){
-      output->fatal(CALL_INFO, 11,
-                    "Failed to add mem segment\n");
-    }
+    // TODO: Update If address is NULL... We add it to MMapMemSegs.end()->getTopAddr()+1
+    // addr = mem->AllocMem(size);
+    output->fatal(CALL_INFO, -1, "MMAP now requires you to specify an address in Rev."
+                                 "If this was from a library call or something similar "
+                                 "please open an issue.\n");
   }
+  // We were passed an address... try to put a segment there.
+  // Currently there is no handling of getting it 'close' to the
+  // suggested address... instead if it can't allocate a new segment
+  // there it fails.
+  mem->AddMMapMemSeg(addr, size);
   RegFile->SetX(RevReg::a0, addr);
   return EcallStatus::SUCCESS;
 }

@@ -11,6 +11,7 @@
 #ifndef _SST_REVCPU_REVMEM_H_
 #define _SST_REVCPU_REVMEM_H_
 
+#include "RevHeap.h"
 #define __PAGE_SIZE__ 4096
 
 // -- C++ Headers
@@ -261,6 +262,7 @@ public:
   /// RevMem: Randomly assign a memory cost
   unsigned RandCost( unsigned Min, unsigned Max ) { return RevRand(Min, Max); }
 
+  // TODO: Remove
   /// RevMem: Used to access & incremenet the global software PID counter
   uint32_t GetNewThreadPID();
 
@@ -277,49 +279,55 @@ public:
   void SetNextThreadMemAddr(const uint64_t& NextAddr){ NextThreadMemAddr = NextAddr; }
 
   ///< RevMem: Get MemSegs vector
-  std::vector<std::shared_ptr<MemSegment>>& GetMemSegs(){ return MemSegs; }
+  std::vector<std::shared_ptr<MemSegment>>& GetStaticMemSegs(){ return StaticMemSegs; }
 
   ///< RevMem: Get ThreadMemSegs vector
   std::vector<std::shared_ptr<MemSegment>>& GetThreadMemSegs(){ return ThreadMemSegs; }
 
   ///< RevMem: Get FreeMemSegs vector
-  std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; }
+  // TODO: Update
+  // std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs(){ return FreeMemSegs; }
 
+  // TODO: Change
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
   uint64_t AddMemSeg(const uint64_t& SegSize);
 
+  /// TODO: Change
   /// RevMem: Add new thread mem (starting at TopAddr [growing down])
   std::shared_ptr<MemSegment> AddThreadMem();
 
   /// RevMem: Add new MemSegment (starting at BaseAddr)
-  uint64_t AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize);
+  // TODO: Remove
+  // uint64_t AddMemSegAt(const uint64_t& BaseAddr, const uint64_t& SegSize);
+
+  uint64_t AddStaticMemSeg(const uint64_t BaseAddr, const uint64_t SegSize);
+  uint64_t AddMMapMemSeg(const uint64_t BaseAddr, const uint64_t SegSize);
 
   /// RevMem: Add new MemSegment (starting at BaseAddr) and round it up to the nearest page
-  uint64_t AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, size_t RoundUpSize);
+  // TODO: Remove
+  // uint64_t AddRoundedMemSeg(uint64_t BaseAddr, const uint64_t& SegSize, size_t RoundUpSize);
 
   /// RevMem: Removes or shrinks segment
-  uint64_t DeallocMem(uint64_t BaseAddr, uint64_t Size);
+  // uint64_t DeallocMem(uint64_t BaseAddr, uint64_t Size);
 
   /// RevMem: Removes or shrinks segment
-  uint64_t AllocMem(const uint64_t& Size);
+  uint64_t AllocMem(const uint64_t Size);
 
   /// RevMem: Attempts to allocate memory at a specific address
-  uint64_t AllocMemAt(const uint64_t& BaseAddr, const uint64_t& Size);
+  // uint64_t AllocMemAt(const uint64_t BaseAddr, const uint64_t Size);
 
   /// RevMem: Sets the HeapStart & HeapEnd to EndOfStaticData
-  void InitHeap(const uint64_t& EndOfStaticData);
+  void InitHeap(const uint64_t EndOfStaticData);
 
-  void SetHeapStart(const uint64_t& HeapStart){ heapstart = HeapStart; }
-  void SetHeapEnd(const uint64_t& HeapEnd){ heapend = HeapEnd; }
-  const uint64_t& GetHeapEnd(){ return heapend; }
+  // uint64_t GetHeapEnd(){ return heapend; }
 
-  uint64_t ExpandHeap(uint64_t Size);
+  // uint64_t ExpandHeap(uint64_t Size);
 
   void SetTLSInfo(const uint64_t& BaseAddr, const uint64_t& Size);
 
   // RevMem: Used to get the TLS BaseAddr & Size
-  const uint64_t& GetTLSBaseAddr(){ return TLSBaseAddr; }
-  const uint64_t& GetTLSSize(){ return TLSSize; }
+  uint64_t GetTLSBaseAddr(){ return TLSBaseAddr; }
+  uint64_t GetTLSSize(){ return TLSSize; }
 
   struct RevMemStats {
     uint64_t TLBHits;
@@ -355,8 +363,16 @@ RevMemStats GetMemStatsTotal() const {
     return memStatsTotal;
   }
 
+  uint64_t AlignUp(const uint64_t Addr, const uint64_t Align);
+  uint64_t AlignDown(const uint64_t Addr, const uint64_t Align);
+  // TODO: maybe move to RevHeap
+  uint64_t GetBRKValueAddr(){ return BRKValueAddr; }
+
+  void sbrk(int64_t increment){ Heap->sbrk(increment); }
+
 protected:
   char *physMem = nullptr;                 ///< RevMem: memory container
+  std::shared_ptr<RevHeap> Heap;           ///< RevMem: heap object
 
 private:
   RevMemStats memStats = {};
@@ -371,21 +387,29 @@ private:
   RevMemCtrl *ctrl;             ///< RevMem: memory controller object
   SST::Output *output;          ///< RevMem: output handler
 
+  std::vector<std::shared_ptr<MemSegment>> StaticMemSegs; ///< RevMem: TODO: update comment
+  // TODO: Delete FreeMemSegs
+  // std::vector<std::shared_ptr<MemSegment>> FreeMemSegs;   // MemSegs that have been unallocated
 
-  std::vector<std::shared_ptr<MemSegment>> MemSegs;       // Currently Allocated MemSegs
-  std::vector<std::shared_ptr<MemSegment>> FreeMemSegs;   // MemSegs that have been unallocated
+
+  std::vector<std::shared_ptr<MemSegment>> MMapSegs; ///< RevMem: TODO: update comment
+
+  // TODO: Change to be a single mem segment
   std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs; // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
 
   uint64_t TLSBaseAddr;                                   ///< RevMem: TLS Base Address
   uint64_t TLSSize = sizeof(uint32_t);                    ///< RevMem: TLS Size (minimum size is enough to write the TID)
   uint64_t ThreadMemSize = _STACK_SIZE_;                  ///< RevMem: Size of a thread's memory segment (StackSize + TLSSize)
-  uint64_t NextThreadMemAddr = memSize-1024;                  ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
+  ///
+  ///
+  /// TODO: Write this to backing store instead
+  uint64_t NextThreadMemAddr = memSize-1024;              ///< RevMem: Next top address for a new thread's memory (starts at the point the 1024 bytes for argc/argv ends)
 
   uint64_t SearchTLB(uint64_t vAddr);                       ///< RevMem: Used to check the TLB for an entry
   void AddToTLB(uint64_t vAddr, uint64_t physAddr);         ///< RevMem: Used to add a new entry to TLB & LRUQueue
   void FlushTLB();                                          ///< RevMem: Used to flush the TLB & LRUQueue
   uint64_t CalcPhysAddr(uint64_t pageNum, uint64_t vAddr);  ///< RevMem: Used to calculate the physical address based on virtual address
-  bool isValidVirtAddr(uint64_t vAddr);               ///< RevMem: Used to check if a virtual address exists in MemSegs
+  bool isValidVirtAddr(uint64_t vAddr);                     ///< RevMem: Used to check if a virtual address exists in MemSegs
 
   std::map<uint64_t, std::pair<uint32_t, bool>> pageMap;   ///< RevMem: map of logical to pair<physical addresses, allocated>
   uint32_t                                      pageSize;  ///< RevMem: size of allocated pages
@@ -396,6 +420,8 @@ private:
   uint64_t heapend;        ///< RevMem: top of the stack
   uint64_t heapstart;      ///< RevMem: top of the stack
   uint64_t stacktop = 0;   ///< RevMem: top of the stack
+  uint64_t BRK = 0;        ///< RevMem: TODO: Idk if I like this or not...
+  uint64_t BRKValueAddr = 0; ///< RevMem: address of the BRK value (This should be the same across any rev executing the same binary)
 
   std::vector<uint64_t> FutureRes;  ///< RevMem: future operation reservations
 

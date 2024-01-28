@@ -1,11 +1,18 @@
-#include "revalloc.hpp"
-#include <vector>
+// #include "revalloc.hpp"
 #include "rev-macros.h"
+#include <vector>
 
-#define assert(x) if (!(x)) { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); }
+#define assert(x)                                                              \
+  if (!(x)) {                                                                  \
+    asm(".byte 0x00");                                                         \
+    asm(".byte 0x00");                                                         \
+    asm(".byte 0x00");                                                         \
+    asm(".byte 0x00");                                                         \
+  }
 
 int main() {
-  std::vector<int, Allocator<int> > v;
+  // std::vector<int, Allocator<int> > v;
+  std::vector<int> v;
   v.push_back(0xbeef);
   int a = v.back();
   assert(a == 0xbeef);
@@ -20,11 +27,11 @@ int main() {
   assert(v.size() == 1);
   assert(v[0] == 0xbeef);
   v.clear();
-  for(int i = 0; i < 100; i++){
+  for (int i = 0; i < 100; i++) {
     v.push_back(i);
   }
   assert(v.size() == 100);
-  for(int i = 0; i < 100; i++){
+  for (int i = 0; i < 100; i++) {
     assert(v[i] == i);
   }
   return 0;
