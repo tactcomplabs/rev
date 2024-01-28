@@ -9,6 +9,7 @@
 //
 
 #include "RevHeap.h"
+#include "RevMem.h"
 #include <cstring>
 #include <cmath>
 #include <utility>
@@ -25,7 +26,9 @@ RevHeap::RevHeap( RevMem* Mem, const size_t MaxHeapSize, const uint64_t baseAddr
   FreeList.reserve(MaxHeapSize/64);
 
   if( MaxHeapSize % 64 != 0 ){
-    output->fatal(CALL_INFO, -1, "RevHeap: MaxHeapSize must be a multiple of 64B\n");
+    const size_t AdjustedMaxHeapSize = Mem->AlignDown(MaxHeapSize, 64);
+    output->verbose(CALL_INFO, 1, 0, "RevHeap: Adjusting MaxHeapSize from %zu to %zu\n", MaxHeapSize, AdjustedMaxHeapSize);
+    MaxSize = AdjustedMaxHeapSize;
   }
 
   if( BaseAddr % 64 != 0 ){
@@ -46,6 +49,7 @@ RevHeap::RevHeap( RevMem* Mem, const size_t MaxHeapSize, const uint64_t baseAddr
 // you expect global heap allocations to be valid
 bool RevHeap::isValidVirtAddr(const uint64_t addr){
   // Calculate what chunk it would be in
+  // Check to see if the address is within 8 bytes under BaseAddr
   uint64_t Chunk = (addr - BaseAddr) / 64;
   if( Chunk >= FreeList.size() ){
     return false;

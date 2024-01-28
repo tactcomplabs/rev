@@ -325,6 +325,11 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   // Check the heap
   if( Heap && Heap->isValidVirtAddr(vAddr) ){
     return true;
+  } else {
+    // FIXME:
+    if( vAddr == BRKValueAddr ){
+      return true;
+    }
   }
 
   for( const auto& Seg : MMapSegs ){
