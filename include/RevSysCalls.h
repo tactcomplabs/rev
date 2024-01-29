@@ -41,7 +41,7 @@ struct EcallState {
     string.clear();
     path_string.clear();
     bytesRead = 0;
-    buf[0] = '\0';
+    buf.fill('\0');
   }
   EcallState() {
     buf[0] = '\0';
