@@ -1255,11 +1255,6 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2  = DECODE_RS2(Inst);
   DInst.rs3  = DECODE_RS3(Inst);
 
-  // Decode any ancillary SP/DP float options
-  if( IsFloat(Entry) ){
-    DInst.rm = DECODE_RM(Inst);
-  }
-
   // imm
   DInst.imm     = 0x0;
 
