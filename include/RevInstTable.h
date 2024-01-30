@@ -69,7 +69,7 @@ enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVTypeU       = 4,     ///< RevInstF: U-Type
   RVTypeB       = 5,     ///< RevInstF: B-Type
   RVTypeJ       = 6,     ///< RevInstF: J-Type
-  RVTypeR4      = 7,     ///< RevInstF: R4-Type for AMOs
+  RVTypeR4      = 7,     ///< RevInstF: R4-Type for FMAs
   // -- Compressed Formats
   RVCTypeCR     = 10,    ///< RevInstF: Compressed CR-Type
   RVCTypeCI     = 11,    ///< RevInstF: Compressed CI-Type
