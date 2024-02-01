@@ -36,8 +36,7 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
       // from the caller, such as performing a syscall using EcallState.string.
       action();
 
-      EcallState.string.clear();   //reset the ECALL buffers
-      EcallState.bytesRead = 0;
+      EcallState.clear();   //reset the ECALL buffers
 
       DependencyClear(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
       rtval = EcallStatus::SUCCESS;
@@ -48,9 +47,9 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
                  true, [=](const MemReq& req){this->MarkLoadComplete(req);}};
       LSQueue->insert(req.LSQHashPair());
       mem->ReadVal(HartToExecID,
-                  straddr + EcallState.string.size(),
-                  EcallState.buf.data(),
-                  req,
+                   straddr + EcallState.string.size(),
+                   EcallState.buf.data(),
+                   req,
                    RevFlag::F_NONE);
       EcallState.bytesRead = 1;
       DependencySet(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
