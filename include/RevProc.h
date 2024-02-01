@@ -178,6 +178,7 @@ public:
   ///< RevProc: Allow a co-processor to query the bits in scoreboard. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
   ///  RevProc
+  [[deprecated("RevRegClass regClass is used instead of bool isFloat")]]
   bool ExternalDepCheck(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t reg, bool IsFloat){
     RevRegClass regClass = IsFloat ? RevRegClass::RegFLOAT : RevRegClass::RegGPR;
     const RevRegFile* regFile = GetRegFile(HartID);
@@ -187,15 +188,43 @@ public:
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
   ///  RevProc
+  [[deprecated("RevRegClass regClass is used instead of bool isFloat")]]
   void ExternalDepSet(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat, bool value = true){
-    DependencySet(HartID, RegNum, isFloat, value);
+    RevRegClass regClass = isFloat ? RevRegClass::RegFLOAT : RevRegClass::RegGPR;
+    DependencySet(HartID, RegNum, regClass, value);
   }
 
   ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
   ///  RevProc
+  [[deprecated("RevRegClass regClass is used instead of bool isFloat")]]
   void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, bool isFloat){
-    DependencyClear(HartID, RegNum, isFloat);
+    RevRegClass regClass = isFloat ? RevRegClass::RegFLOAT : RevRegClass::RegGPR;
+    DependencyClear(HartID, RegNum, regClass);
+  }
+
+  //--------------- External Interface for use with Co-Processor -------------------------
+  ///< RevProc: Allow a co-processor to query the bits in scoreboard. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
+  ///  RevProc
+  bool ExternalDepCheck(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t reg, RevRegClass regClass){
+    const RevRegFile* regFile = GetRegFile(HartID);
+    return LSQCheck(HartID, regFile, reg, regClass) ||
+      ScoreboardCheck(regFile, reg, regClass);
+  }
+
+  ///< RevProc: Allow a co-processor to manipulate the scoreboard by setting a bit. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalDepSet(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, RevRegClass regClass, bool value = true){
+    DependencySet(HartID, RegNum, regClass, value);
+  }
+
+  ///< RevProc: Allow a co-processor to manipulate the scoreboard by clearing a bit. Note the RevProcPassKey may only
+  ///  be created by a RevCoProc (or a class derived from RevCoProc) so this funciton may not be called from even within
+  ///  RevProc
+  void ExternalDepClear(RevProcPasskey<RevCoProc>, uint16_t HartID, uint16_t RegNum, RevRegClass regClass){
+    DependencyClear(HartID, RegNum, regClass);
   }
 
   ///< RevProc: Allow a co-processor to stall the pipeline of this proc and hold it in a stall condition
@@ -730,45 +759,45 @@ private:
   /// RevProc: decode a compressed CJ-type isntruction
   RevInst DecodeCJInst(uint16_t Inst, unsigned Entry) const;
 
-  /// RevProc: determine if the instruction is floating-point
-  bool IsFloat(unsigned Entry) const {
-    // Note: This is crude and looks for ANY FP register operands;
-    // InstTable[...].r<reg>Class should be used when doing hazard
-    // detection on particular registers, since some instructions
-    // combine integer and FP register operands. See DependencySet().
-    return( InstTable[Entry].rdClass  == RevRegClass::RegFLOAT ||
-            InstTable[Entry].rs1Class == RevRegClass::RegFLOAT ||
-            InstTable[Entry].rs2Class == RevRegClass::RegFLOAT ||
-            InstTable[Entry].rs3Class == RevRegClass::RegFLOAT );
-  }
-
   /// RevProc: Determine next thread to execute
   unsigned GetNextHartToDecodeID() const;
 
   /// RevProc: Whether any scoreboard bits are set
-  bool AnyDependency(unsigned HartID, bool isFloat) const {
+  bool AnyDependency(unsigned HartID,
+                     RevRegClass regClass = RevRegClass::RegUNKNOWN) const {
     const RevRegFile* regFile = GetRegFile(HartID);
-    return isFloat ? regFile->FP_Scoreboard.any() : regFile->RV_Scoreboard.any();
+    switch(regClass){
+      case RevRegClass::RegGPR:
+        return regFile->RV_Scoreboard.any();
+      case RevRegClass::RegFLOAT:
+        return regFile->FP_Scoreboard.any();
+      case RevRegClass::RegUNKNOWN:
+        return regFile->RV_Scoreboard.any() || regFile->FP_Scoreboard.any();
+      default:
+        return false;
+    }
   }
 
-  /// RevProc: Whether any scoreboard bits are set
-  bool AnyDependency(unsigned HartID) const {
-    const auto& RegFile = Harts.at(HartID)->RegFile;
-    return RegFile->FP_Scoreboard.any() || RegFile->RV_Scoreboard.any();
-  }
-
-  /// RevProc: Check LS queue for outstanding load - ignore r0
+  /// RevProc: Check LS queue for outstanding load - ignore x0
   bool LSQCheck(unsigned HartID, const RevRegFile* regFile,
                 uint16_t reg, RevRegClass regClass) const {
-    return (reg != 0 || regClass != RevRegClass::RegGPR) &&
-      regFile->GetLSQueue()->count(LSQHash(reg, regClass, HartID)) > 0;
+    if(reg == 0 && regClass == RevRegClass::RegGPR){
+      return false;   // GPR x0 is not considered
+    }else{
+      return regFile->GetLSQueue()->count(LSQHash(reg, regClass, HartID)) > 0;
+    }
   }
 
   /// RevProc: Check scoreboard for a source register dependency
   bool ScoreboardCheck(const RevRegFile* regFile, uint16_t reg, RevRegClass regClass) const {
-    return reg < _REV_NUM_REGS_ &&
-      ( (regClass == RevRegClass::RegFLOAT && regFile->FP_Scoreboard[reg]) ||
-        (regClass == RevRegClass::RegGPR && reg != 0 && regFile->RV_Scoreboard[reg]) );
+    switch(regClass){
+      case RevRegClass::RegGPR:
+        return reg != 0 && regFile->RV_Scoreboard[reg];
+      case RevRegClass::RegFLOAT:
+        return regFile->FP_Scoreboard[reg];
+      default:
+        return false;
+    }
   }
 
   bool HartHasNoDependencies(unsigned HartID) const {
@@ -785,7 +814,7 @@ private:
   void DependencySet(unsigned HartID, const RevInst* Inst, bool value = true){
     DependencySet(HartID,
                   Inst->rd,
-                  InstTable[Inst->entry].rdClass == RevRegClass::RegFLOAT,
+                  InstTable[Inst->entry].rdClass,
                   value);
   }
 
@@ -797,21 +826,27 @@ private:
   /// RevProc: Set or clear scoreboard based on register number and floating point.
   template<typename T>
   void DependencySet(unsigned HartID, T RegNum,
-                     bool isFloat, bool value = true){
+                     RevRegClass regClass, bool value = true){
     if( size_t(RegNum) < _REV_NUM_REGS_ ){
-      RevRegFile* regFile = GetRegFile(HartID);
-      if(isFloat){
-        regFile->FP_Scoreboard[size_t(RegNum)] = value;
-      }else if( size_t(RegNum) != 0 ){
-        regFile->RV_Scoreboard[size_t(RegNum)] = value;
-      }
+        RevRegFile* regFile = GetRegFile(HartID);
+        switch(regClass){
+        case RevRegClass::RegGPR:
+            if(size_t(RegNum) != 0)
+            regFile->RV_Scoreboard[size_t(RegNum)] = value;
+            break;
+        case RevRegClass::RegFLOAT:
+            regFile->FP_Scoreboard[size_t(RegNum)] = value;
+            break;
+        default:
+            break;
+        }
     }
   }
 
   /// RevProc: Clear scoreboard on instruction retirement
   template<typename T>
-  void DependencyClear(unsigned HartID, T RegNum, bool isFloat){
-    DependencySet(HartID, RegNum, isFloat, false);
+  void DependencyClear(unsigned HartID, T RegNum, RevRegClass regClass){
+    DependencySet(HartID, RegNum, regClass, false);
   }
 
 }; // class RevProc
