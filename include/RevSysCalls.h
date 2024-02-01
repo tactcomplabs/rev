@@ -42,6 +42,7 @@ struct EcallState {
     path_string.clear();
     bytesRead = 0;
   }
+
   explicit EcallState() = default;
 }; // struct EcallState
 }  // namespace SST::RevCPU

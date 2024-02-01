@@ -35,9 +35,6 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
       // action is usually passed in as a lambda with local code and captures
       // from the caller, such as performing a syscall using EcallState.string.
       action();
-
-      EcallState.clear();   //reset the ECALL buffers
-
       DependencyClear(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
       rtval = EcallStatus::SUCCESS;
     }else{
@@ -119,6 +116,7 @@ EcallStatus RevProc::ECALL_setxattr(RevInst& inst){
     // will move the ECALL.string to ECALL.path_string and continue below
     auto action = [&]{
       ECALL.path_string = std::move(ECALL.string);
+      ECALL.string.clear();
     };
     auto rtv = EcallLoadAndParseString(inst, path, action);
 
@@ -145,9 +143,6 @@ EcallStatus RevProc::ECALL_setxattr(RevInst& inst){
                         size,
                         flags);
 #endif
-
-      // Clear path_string so that later calls parse path_string first
-      ECALL.path_string.clear();
 
       // setxattr return code
       RegFile->SetX(RevReg::a0, rc);
