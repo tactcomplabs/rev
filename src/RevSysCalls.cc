@@ -39,7 +39,7 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
       EcallState.string.clear();   //reset the ECALL buffers
       EcallState.bytesRead = 0;
 
-      DependencyClear(HartToExecID, RevReg::a0, false);
+      DependencyClear(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
       rtval = EcallStatus::SUCCESS;
     }else{
       //We are in the middle of the string - read one byte
@@ -53,7 +53,7 @@ EcallStatus RevProc::EcallLoadAndParseString(RevInst& inst,
                   req,
                    RevFlag::F_NONE);
       EcallState.bytesRead = 1;
-      DependencySet(HartToExecID, RevReg::a0, false);
+      DependencySet(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
       rtval = EcallStatus::CONTINUE;
     }
   }
@@ -751,7 +751,7 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
     int rc = write(fd, EcallState.string.data(), EcallState.string.size());
     RegFile->SetX(RevReg::a0, rc);
     EcallState.clear();
-    DependencyClear(HartToExecID, RevReg::a0, false);
+    DependencyClear(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
     return EcallStatus::SUCCESS;
   }
 
@@ -782,7 +782,7 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
       EcallState.bytesRead = 1;
     }
 
-    DependencySet(HartToExecID, RevReg::a0, false);
+    DependencySet(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
     return EcallStatus::CONTINUE;
   }
 
