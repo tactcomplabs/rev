@@ -27,7 +27,7 @@ REVLIBPATH ?= $(REVHOME)/build/src
 
 # configuration
 # rev core needs to use rv64imfdc to support compact instructions in stdlib (apparantly)
-ARCH             ?= rv64imfd
+ARCH             ?= rv64gc
 # ABI              ?= -mabi=lp64d
 
 # Targets
