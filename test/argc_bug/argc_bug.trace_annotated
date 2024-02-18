@@ -1,0 +1,500 @@
+[2000]:  *I 0x101a8:fc010113  + addi    sp, sp, -64	 0x3ffffbfc<-sp sp<-0x3ffffbbc 
+[3000]:  *I 0x101ac:02113c23    sd      ra, 56(sp)	 0x3ffffbbc<-sp 0x0<-ra [0x3ffffbf4,8]<-0x0000000000000000 
+[4000]:  *I 0x101b0:02813823    sd      s0, 48(sp)	 0x3ffffbbc<-sp 0x11880<-s0 [0x3ffffbec,8]<-0x0000000000011880 
+[5000]:  *I 0x101b4:04010413    addi    s0, sp, 64	 0x3ffffbbc<-sp s0<-0x3ffffbfc 
+[6000]:  *I 0x101b8:00050793    mv      a5, a0	 0x5<-a0 a5<-0x5 
+[7000]:  *I 0x101bc:fcb43023    sd      a1, -64(s0)	 0x3ffffbfc<-s0 0x3ffffb94<-a1 [0x3ffffbbc,8]<-0x000000003ffffb94 
+[8000]:  *I 0x101c0:fcf42623    sw      a5, -52(s0)	 0x3ffffbfc<-s0 0x5<-a5 [0x3ffffbc8,4]<-0x00000005 
+[9000]:  *I 0x101c4:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[10000]:  *I 0x101c8:fcc42783    lw      a5, -52(s0)	 0x3ffffbfc<-s0 0x00000005<-[0x3ffffbc8,4] a5<-0x5 
+[11000]:  *I 0x101cc:0007871b    sext.w  a4, a5	 0x5<-a5 a4<-0x5 
+[12000]:  *I 0x101d0:00500793    li      a5, 5	 0x0<-zero a5<-0x5 
+[13000]:  *I 0x101d4:00f70463    beq     a4, a5, pc + 8	 0x5<-a4 0x5<-a5 pc<-0x101dc 
+[14000]:  *I 0x101dc:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0
+###  assert(argv[1][0]=='6');
+[15000]:  *I 0x101e0:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[16000]:  *I 0x101e4:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[17000]:  *I 0x101e8:00878793    addi    a5, a5, 8	 0x3ffffb94<-a5 a5<-0x3ffffb9c 
+[18000]:  *I 0x101ec:0007b783    ld      a5, 0(a5)	 0x3ffffb9c<-a5 0x000000003ffffff7<-[0x3ffffb9c,8] a5<-0x3ffffff7
+### ascii 6 lives at 0x3ffffff7
+[19000]:  *I 0x101f0:0007c783    lbu     a5, 0(a5)	 0x3ffffff7<-a5 0x36<-[0x3ffffff7,1] a5<-0x36 
+[20000]:  *I 0x101f4:00078713    mv      a4, a5	 0x36<-a5 a4<-0x36 
+[21000]:  *I 0x101f8:03600793    li      a5, 54	 0x0<-zero a5<-0x36 
+[22000]:  *I 0x101fc:00f70463    beq     a4, a5, pc + 8	 0x36<-a4 0x36<-a5 pc<-0x10204 
+[23000]:  *I 0x10204:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0
+### assert(argv[1][1]=='4');
+[24000]:  *I 0x10208:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[25000]:  *I 0x1020c:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[26000]:  *I 0x10210:00878793    addi    a5, a5, 8	 0x3ffffb94<-a5 a5<-0x3ffffb9c 
+[27000]:  *I 0x10214:0007b783    ld      a5, 0(a5)	 0x3ffffb9c<-a5 0x000000003ffffff7<-[0x3ffffb9c,8] a5<-0x3ffffff7 
+[28000]:  *I 0x10218:00178793    addi    a5, a5, 1	 0x3ffffff7<-a5 a5<-0x3ffffff8
+### ascii 0x4 lives at 0x3ffffff8
+[29000]:  *I 0x1021c:0007c783    lbu     a5, 0(a5)	 0x3ffffff8<-a5 0x34<-[0x3ffffff8,1] a5<-0x34 
+[30000]:  *I 0x10220:00078713    mv      a4, a5	 0x34<-a5 a4<-0x34 
+[31000]:  *I 0x10224:03400793    li      a5, 52	 0x0<-zero a5<-0x34 
+[32000]:  *I 0x10228:00f70463    beq     a4, a5, pc + 8	 0x34<-a4 0x34<-a5 pc<-0x10230
+
+[33000]:  *I 0x10230:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0 
+[34000]:  *I 0x10234:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[35000]:  *I 0x10238:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[36000]:  *I 0x1023c:00878793    addi    a5, a5, 8	 0x3ffffb94<-a5 a5<-0x3ffffb9c 
+[37000]:  *I 0x10240:0007b783    ld      a5, 0(a5)	 0x3ffffb9c<-a5 0x000000003ffffff7<-[0x3ffffb9c,8] a5<-0x3ffffff7 
+[38000]:  *I 0x10244:00278793    addi    a5, a5, 2	 0x3ffffff7<-a5 a5<-0x3ffffff9 
+[39000]:  *I 0x10248:0007c783    lbu     a5, 0(a5)	 0x3ffffff9<-a5 0x00<-[0x3ffffff9,1] a5<-0x0 
+[40000]:  *I 0x1024c:00078463    beqz    a5, pc + 8	 0x0<-a5 0x0<-zero pc<-0x10254 
+[41000]:  *I 0x10254:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0 
+###  assert(argv[2][0]=='4');
+[42000]:  *I 0x10258:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[43000]:  *I 0x1025c:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[44000]:  *I 0x10260:01078793    addi    a5, a5, 16	 0x3ffffb94<-a5 a5<-0x3ffffba4 
+# Load 0x34 ('4') from Mem[0x3ffffffa]
+[45000]:  *I 0x10264:0007b783    ld      a5, 0(a5)	 0x3ffffba4<-a5 0x000000003ffffffa<-[0x3ffffba4,8] a5<-0x3ffffffa 
+[46000]:  *I 0x10268:0007c783    lbu     a5, 0(a5)	 0x3ffffffa<-a5 0x34<-[0x3ffffffa,1] a5<-0x34 
+[47000]:  *I 0x1026c:00078713    mv      a4, a5	 0x34<-a5 a4<-0x34 
+[48000]:  *I 0x10270:03400793    li      a5, 52	 0x0<-zero a5<-0x34
+# Passes: assert(argv[2][0]=='4');
+[49000]:  *I 0x10274:00f70463    beq     a4, a5, pc + 8	 0x34<-a4 0x34<-a5 pc<-0x1027c 
+[50000]:  *I 0x1027c:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0 
+[51000]:  *I 0x10280:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[52000]:  *I 0x10284:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[53000]:  *I 0x10288:01078793    addi    a5, a5, 16	 0x3ffffb94<-a5 a5<-0x3ffffba4
+### Here load 0x3ffffffa from 0x3fffffba4 (pointer to argv[2][0] - correct
+[54000]:  *I 0x1028c:0007b783    ld      a5, 0(a5)	 0x3ffffba4<-a5 0x000000003ffffffa<-[0x3ffffba4,8] a5<-0x3ffffffa 
+[55000]:  *I 0x10290:00178793    addi    a5, a5, 1	 0x3ffffffa<-a5 a5<-0x3ffffffb 
+[56000]:  *I 0x10294:0007c783    lbu     a5, 0(a5)	 0x3ffffffb<-a5 0x00<-[0x3ffffffb,1] a5<-0x0 
+[57000]:  *I 0x10298:00078463    beqz    a5, pc + 8	 0x0<-a5 0x0<-zero pc<-0x102a0 
+[58000]:  *I 0x102a0:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0 
+[59000]:  *I 0x102a4:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[60000]:  *I 0x102a8:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[61000]:  *I 0x102ac:01878793    addi    a5, a5, 24	 0x3ffffb94<-a5 a5<-0x3ffffbac 
+[62000]:  *I 0x102b0:0007b783    ld      a5, 0(a5)	 0x3ffffbac<-a5 0x000000003ffffffc<-[0x3ffffbac,8] a5<-0x3ffffffc 
+[63000]:  *I 0x102b4:0007c783    lbu     a5, 0(a5)	 0x3ffffffc<-a5 0x32<-[0x3ffffffc,1] a5<-0x32 
+[64000]:  *I 0x102b8:00078713    mv      a4, a5	 0x32<-a5 a4<-0x32 
+[65000]:  *I 0x102bc:03200793    li      a5, 50	 0x0<-zero a5<-0x32 
+[66000]:  *I 0x102c0:00f70463    beq     a4, a5, pc + 8	 0x32<-a4 0x32<-a5 pc<-0x102c8 
+[67000]:  *I 0x102c8:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0 
+[68000]:  *I 0x102cc:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[69000]:  *I 0x102d0:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[70000]:  *I 0x102d4:01878793    addi    a5, a5, 24	 0x3ffffb94<-a5 a5<-0x3ffffbac 
+[71000]:  *I 0x102d8:0007b783    ld      a5, 0(a5)	 0x3ffffbac<-a5 0x000000003ffffffc<-[0x3ffffbac,8] a5<-0x3ffffffc 
+[72000]:  *I 0x102dc:00178793    addi    a5, a5, 1	 0x3ffffffc<-a5 a5<-0x3ffffffd 
+[73000]:  *I 0x102e0:0007c783    lbu     a5, 0(a5)	 0x3ffffffd<-a5 0x00<-[0x3ffffffd,1] a5<-0x0 
+[74000]:  *I 0x102e4:00078463    beqz    a5, pc + 8	 0x0<-a5 0x0<-zero pc<-0x102ec 
+[75000]:  *I 0x102ec:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0 
+[76000]:  *I 0x102f0:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[77000]:  *I 0x102f4:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[78000]:  *I 0x102f8:02078793    addi    a5, a5, 32	 0x3ffffb94<-a5 a5<-0x3ffffbb4 
+[79000]:  *I 0x102fc:0007b783    ld      a5, 0(a5)	 0x3ffffbb4<-a5 0x000000003ffffffe<-[0x3ffffbb4,8] a5<-0x3ffffffe 
+[80000]:  *I 0x10300:0007c783    lbu     a5, 0(a5)	 0x3ffffffe<-a5 0x33<-[0x3ffffffe,1] a5<-0x33 
+[81000]:  *I 0x10304:00078713    mv      a4, a5	 0x33<-a5 a4<-0x33 
+[82000]:  *I 0x10308:03300793    li      a5, 51	 0x0<-zero a5<-0x33 
+[83000]:  *I 0x1030c:00f70463    beq     a4, a5, pc + 8	 0x33<-a4 0x33<-a5 pc<-0x10314 
+[85000]:  *I 0x10314:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0 
+[86000]:  *I 0x10318:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[87000]:  *I 0x1031c:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[88000]:  *I 0x10320:02078793    addi    a5, a5, 32	 0x3ffffb94<-a5 a5<-0x3ffffbb4 
+[89000]:  *I 0x10324:0007b783    ld      a5, 0(a5)	 0x3ffffbb4<-a5 0x000000003ffffffe<-[0x3ffffbb4,8] a5<-0x3ffffffe 
+[90000]:  *I 0x10328:00178793    addi    a5, a5, 1	 0x3ffffffe<-a5 a5<-0x3fffffff 
+[91000]:  *I 0x1032c:0007c783    lbu     a5, 0(a5)	 0x3fffffff<-a5 0x00<-[0x3fffffff,1] a5<-0x0 
+[92000]:  *I 0x10330:00078463    beqz    a5, pc + 8	 0x0<-a5 0x0<-zero pc<-0x10338 
+[93000]:  *I 0x10338:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0
+
+### int arg1 = atoi(argv[1]);
+### argv[1][0] at 0x3ffffff7
+### Note:  s0=sp+64; a=mem[mem[s0-64]+8]
+[94000]:  *I 0x1033c:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[95000]:  *I 0x10340:00878793    addi    a5, a5, 8	 0x3ffffb94<-a5 a5<-0x3ffffb9c 
+[96000]:  *I 0x10344:0007b783    ld      a5, 0(a5)	 0x3ffffb9c<-a5 0x000000003ffffff7<-[0x3ffffb9c,8] a5<-0x3ffffff7
+[97000]:  *I 0x10348:00078513    mv      a0, a5	 0x3ffffff7<-a5 a0<-0x3ffffff7 
+[98000]:  *I 0x1034c:270000ef    jal     pc + 0x270	 ra<-0x10350 pc<-0x105bc <atoi>
+
+[100000]:  *I 0x105bc:46291141    c.addi  sp, -16	 0x3ffffbbc<-sp sp<-0x3ffffbac 
+[101000]:  *I 0x105be:45814629    c.li    a2, 10	 0x0<-zero a2<-0xa 
+[102000]:  *I 0x105c0:e4064581    c.li    a1, 0	 0x0<-zero a1<-0x0 
+[103000]:  *I 0x105c2:00efe406    c.sdsp  ra, 8(sp)	 0x3ffffbac<-sp 0x10350<-ra [0x3ffffbb4,8]<-0x0000000000010350
+### ra updated
+[104000]:  *I 0x105c4:2c8000ef    jal     pc + 0x2c8	 ra<-0x105c8 pc<-0x1088c <strtol> 
+[106000]:  *I 0x1088c:862e86b2    c.mv    a3, a2	 0x0<-zero 0xa<-a2 a3<-0xa 
+[107000]:  *I 0x1088e:85aa862e    c.mv    a2, a1	 0x0<-zero 0x0<-a1 a2<-0x0 
+[108000]:  *I 0x10890:b50385aa    c.mv    a1, a0	 0x0<-zero 0x3ffffff7<-a0 a1<-0x3ffffff7 
+[109000]:  *I 0x10892:f581b503    ld      a0, -168(gp)	 0x11880<-gp 0x0000000000011080<-[0x117d8,8] a0<-0x11080 
+[110000]:  *I 0x10896:715db58d    c.j     pc - 414	 zero<-0x0 pc<-0x106f8 <_strtol_l.constprop.0> 
+[112000]:  *I 0x106f8:ec061101    c.addi  sp, -32	 0x3ffffbac<-sp sp<-0x3ffffb8c
+
+###!!! For some reason &(argv[2][0] 0x3ffffba4 is being overwritten with the value of ra which is a link register updated at 0x105c4 jal
+###!!! Later, we try to read this value to try to access argv[2][0] and crash
+
+[113000]:  *I 0x106fa:e822ec06    c.sdsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x105c8<-ra [0x3ffffba4,8]<-0x00000000000105c8 
+[114000]:  *I 0x106fc:e426e822    c.sdsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x3ffffbfc<-s0 [0x3ffffb9c,8]<-0x000000003ffffbfc 
+[115000]:  *I 0x106fe:e04ae426    c.sdsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0<-s1 [0x3ffffb94,8]<-0x0000000000000000 
+[116000]:  *I 0x10700:0793e04a    c.sdsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0<-s2 [0x3ffffb8c,8]<-0x0000000000000000 
+[117000]:  *I 0x10702:02400793    li      a5, 36	 0x0<-zero a5<-0x24 
+[118000]:  *I 0x10706:0cd7e963    bltu    a5, a3, pc + 210	 0x24<-a5 0xa<-a3 
+[119000]:  *I 0x1070a:88ae4785    c.li    a5, 1	 0x0<-zero a5<-0x1 
+[120000]:  *I 0x1070c:081788ae    c.mv    a7, a1	 0x0<-zero 0x3ffffff7<-a1 a7<-0x3ffffff7 
+[121000]:  *I 0x1070e:00000817    auipc   a6, 0x0	 a6<-0x1070e 
+[122000]:  *I 0x10712:33380813    addi    a6, a6, 819	 0x1070e<-a6 a6<-0x10a41 
+[123000]:  *I 0x10716:0cf68163    beq     a3, a5, pc + 194	 0xa<-a3 0x1<-a5
+
+### read '6' from 0x3ffffff7 (correct)
+[124000]:  *I 0x1071a:0008c703    lbu     a4, 0(a7)	 0x3ffffff7<-a7 0x36<-[0x3ffffff7,1] a4<-0x36 
+[125000]:  *I 0x1071e:08858346    c.mv    t1, a7	 0x0<-zero 0x3ffffff7<-a7 t1<-0x3ffffff7 
+[126000]:  *I 0x10720:07b30885    c.addi  a7, 1	 0x3ffffff7<-a7 a7<-0x3ffffff8 
+[127000]:  *I 0x10722:00e807b3    add     a5, a6, a4	 0x10a41<-a6 0x36<-a4 a5<-0x10a77 
+[128000]:  *I 0x10726:0007c783    lbu     a5, 0(a5)	 0x10a77<-a5 0x04<-[0x10a77,1] a5<-0x4 
+[129000]:  *I 0x1072a:f7fd8ba1    c.andi  a5, 8	 0x4<-a5 a5<-0x0 
+[130000]:  *I 0x1072c:0813f7fd    c.bnez  a5, pc - 18	 0x0<-a5 0x0<-zero 
+[131000]:  *I 0x1072e:02d00813    li      a6, 45	 0x0<-zero a6<-0x2d 
+[132000]:  *I 0x10732:0007079b    sext.w  a5, a4	 0x36<-a4 a5<-0x36 
+[134000]:  *I 0x10736:11070f63    beq     a4, a6, pc + 286	 0x36<-a4 0x2d<-a6 
+[135000]:  *I 0x1073a:02b00713    li      a4, 43	 0x0<-zero a4<-0x2b 
+[136000]:  *I 0x1073e:0ae78863    beq     a5, a4, pc + 176	 0x36<-a5 0x2b<-a4 
+[137000]:  *I 0x10742:808554fd    c.li    s1, -1	 0x0<-zero s1<-0xffffffffffffffff 
+[138000]:  *I 0x10744:49018085    c.srli  s1, 1	 0xffffffffffffffff<-s1 s1<-0x7fffffffffffffff 
+[139000]:  *I 0x10746:eadd4901    c.li    s2, 0	 0x0<-zero s2<-0x0 
+[140000]:  *I 0x10748:0713eadd    c.bnez  a3, pc + 182	 0xa<-a3 0x0<-zero pc<-0x107fe 
+[142000]:  *I 0x107fe:83b64741    c.li    a4, 16	 0x0<-zero a4<-0x10 
+[143000]:  *I 0x10800:9ae383b6    c.mv    t2, a3	 0x0<-zero 0xa<-a3 t2<-0xa 
+[144000]:  *I 0x10802:f4e69ae3    bne     a3, a4, pc - 172	 0xa<-a3 0x10<-a4 pc<-0x10756 
+[145000]:  *I 0x10756:0274f433    remu    s0, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 s0<-0x7 
+[146000]:  *I 0x1075a:871b4ea5    c.li    t4, 9	 0x0<-zero t4<-0x9 
+[147000]:  *I 0x1075c:fd07871b    addiw   a4, a5, -48	 0x36<-a5 a4<-0x6 
+[148000]:  *I 0x10760:48014e01    c.li    t3, 0	 0x0<-zero t3<-0x0 
+[149000]:  *I 0x10762:42e54801    c.li    a6, 0	 0x0<-zero a6<-0x0 
+[150000]:  *I 0x10764:5f7d42e5    c.li    t0, 25	 0x0<-zero t0<-0x19 
+[151000]:  *I 0x10766:831b5f7d    c.li    t5, -1	 0x0<-zero t5<-0xffffffffffffffff 
+[152000]:  *I 0x10768:0007831b    sext.w  t1, a5	 0x36<-a5 t1<-0x36 
+[153000]:  *I 0x1076c:0274dfb3    divu    t6, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 t6<-0xccccccccccccccc 
+[154000]:  *I 0x10770:e9632401    c.addiw s0, 0	 0x7<-s0 s0<-0x7 
+[155000]:  *I 0x10772:02eee963    bltu    t4, a4, pc + 50	 0x9<-t4 0x6<-a4 
+[157000]:  *I 0x10776:de6387ba    c.mv    a5, a4	 0x0<-zero 0x6<-a4 a5<-0x6 
+[158000]:  *I 0x10778:02d7de63    bge     a5, a3, pc + 60	 0x6<-a5 0xa<-a3 
+[159000]:  *I 0x1077c:01ee0b63    beq     t3, t5, pc + 22	 0x0<-t3 0xffffffffffffffff<-t5 
+[160000]:  *I 0x10780:e8635e7d    c.li    t3, -1	 0x0<-zero t3<-0xffffffffffffffff 
+[161000]:  *I 0x10782:010fe863    bltu    t6, a6, pc + 16	 0xccccccccccccccc<-t6 0x0<-a6 
+[162000]:  *I 0x10786:0b0f8a63    beq     t6, a6, pc + 180	 0xccccccccccccccc<-t6 0x0<-a6 
+[163000]:  *I 0x1078a:08334e05    c.li    t3, 1	 0x0<-zero t3<-0x1 
+[164000]:  *I 0x1078c:02780833    mul     a6, a6, t2	 0x0<-a6 0xa<-t2 a6<-0x0 
+[165000]:  *I 0x10790:c783983e    c.add   a6, a5	 0x0<-a6 0x6<-a5 a6<-0x6
+### read '4' from 0x3ffffff8 (correct)
+[166000]:  *I 0x10792:0008c783    lbu     a5, 0(a7)	 0x3ffffff8<-a7 0x34<-[0x3ffffff8,1] a5<-0x34 
+[167000]:  *I 0x10796:871b0885    c.addi  a7, 1	 0x3ffffff8<-a7 a7<-0x3ffffff9 
+[168000]:  *I 0x10798:fd07871b    addiw   a4, a5, -48	 0x34<-a5 a4<-0x4 
+[169000]:  *I 0x1079c:0007831b    sext.w  t1, a5	 0x34<-a5 t1<-0x34 
+[170000]:  *I 0x107a0:fceefbe3    bgeu    t4, a4, pc - 42	 0x9<-t4 0x4<-a4 pc<-0x10776 
+[171000]:  *I 0x10776:de6387ba    c.mv    a5, a4	 0x0<-zero 0x4<-a4 a5<-0x4 
+[172000]:  *I 0x10778:02d7de63    bge     a5, a3, pc + 60	 0x4<-a5 0xa<-a3 
+[173000]:  *I 0x1077c:01ee0b63    beq     t3, t5, pc + 22	 0x1<-t3 0xffffffffffffffff<-t5 
+[174000]:  *I 0x10780:e8635e7d    c.li    t3, -1	 0x0<-zero t3<-0xffffffffffffffff 
+[175000]:  *I 0x10782:010fe863    bltu    t6, a6, pc + 16	 0xccccccccccccccc<-t6 0x6<-a6 
+[176000]:  *I 0x10786:0b0f8a63    beq     t6, a6, pc + 180	 0xccccccccccccccc<-t6 0x6<-a6 
+[177000]:  *I 0x1078a:08334e05    c.li    t3, 1	 0x0<-zero t3<-0x1 
+[178000]:  *I 0x1078c:02780833    mul     a6, a6, t2	 0x6<-a6 0xa<-t2 a6<-0x3c 
+[179000]:  *I 0x10790:c783983e    c.add   a6, a5	 0x3c<-a6 0x4<-a5 a6<-0x40
+### read null from 0x3ffffff9 (correct string termination)
+[180000]:  *I 0x10792:0008c783    lbu     a5, 0(a7)	 0x3ffffff9<-a7 0x00<-[0x3ffffff9,1] a5<-0x0 
+[181000]:  *I 0x10796:871b0885    c.addi  a7, 1	 0x3ffffff9<-a7 a7<-0x3ffffffa 
+[182000]:  *I 0x10798:fd07871b    addiw   a4, a5, -48	 0x0<-a5 a4<-0xffffffffffffffd0 
+[183000]:  *I 0x1079c:0007831b    sext.w  t1, a5	 0x0<-a5 t1<-0x0 
+[184000]:  *I 0x107a0:fceefbe3    bgeu    t4, a4, pc - 42	 0x9<-t4 0xffffffffffffffd0<-a4 
+[185000]:  *I 0x107a4:fbf3071b    addiw   a4, t1, -65	 0x0<-t1 a4<-0xffffffffffffffbf 
+[186000]:  *I 0x107a8:08e2e263    bltu    t0, a4, pc + 132	 0x19<-t0 0xffffffffffffffbf<-a4 pc<-0x1082c 
+[187000]:  *I 0x1082c:f9f3031b    addiw   t1, t1, -97	 0x0<-t1 t1<-0xffffffffffffff9f 
+[188000]:  *I 0x10830:f862e2e3    bltu    t0, t1, pc - 124	 0x19<-t0 0xffffffffffffff9f<-t1 pc<-0x107b4 
+[189000]:  *I 0x107b4:056357fd    c.li    a5, -1	 0x0<-zero a5<-0xffffffffffffffff 
+[190000]:  *I 0x107b6:08fe0563    beq     t3, a5, pc + 138	 0x1<-t3 0xffffffffffffffff<-a5 
+[191000]:  *I 0x107ba:00090463    beqz    s2, pc + 8	 0x0<-s2 0x0<-zero pc<-0x107c2 
+[192000]:  *I 0x107c2:1b63c601    c.beqz  a2, pc + 8	 0x0<-a2 0x0<-zero pc<-0x107ca 
+[193000]:  *I 0x107ca:644260e2    c.ldsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x00000000000105c8<-[0x3ffffba4,8] ra<-0x105c8 
+[194000]:  *I 0x107cc:64a26442    c.ldsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x000000003ffffbfc<-[0x3ffffb9c,8] s0<-0x3ffffbfc 
+[195000]:  *I 0x107ce:690264a2    c.ldsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb94,8] s1<-0x0 
+[196000]:  *I 0x107d0:85426902    c.ldsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb8c,8] s2<-0x0 
+[197000]:  *I 0x107d2:61058542    c.mv    a0, a6	 0x0<-zero 0x40<-a6 a0<-0x40 
+[198000]:  *I 0x107d4:80826105    c.addi16sp sp, 32	 0x3ffffb8c<-sp sp<-0x3ffffbac 
+[199000]:  *I 0x107d6:00ef8082    ret	 0x105c8<-ra pc<-0x105c8 zero<-0x0 
+[200000]:  *I 0x105c8:250160a2    c.ldsp  ra, 8(sp)	 0x3ffffbac<-sp 0x0000000000010350<-[0x3ffffbb4,8] ra<-0x10350 
+[201000]:  *I 0x105ca:01412501    c.addiw a0, 0	 0x40<-a0 a0<-0x40 
+[202000]:  *I 0x105cc:80820141    c.addi  sp, 16	 0x3ffffbac<-sp sp<-0x3ffffbbc 
+[203000]:  *I 0x105ce:11418082    ret	 0x10350<-ra pc<-0x10350 zero<-0x0 
+[204000]:  *I 0x10350:00050793    mv      a5, a0	 0x40<-a0 a5<-0x40
+### result for argv[1] is 64 - correct
+[205000]:  *I 0x10354:fef42623    sw      a5, -20(s0)	 0x3ffffbfc<-s0 0x40<-a5 [0x3ffffbe8,4]<-0x00000040
+
+###  int arg2 = atoi(argv[2]);
+###  argv[2][0] should be at 0x3ffffffa but we are getting some wild value of 0x105c8 which is in program space
+### 
+[206000]:  *I 0x10358:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[207000]:  *I 0x1035c:01078793    addi    a5, a5, 16	 0x3ffffb94<-a5 a5<-0x3ffffba4 
+[208000]:  *I 0x10360:0007b783    ld      a5, 0(a5)	 0x3ffffba4<-a5 0x00000000000105c8<-[0x3ffffba4,8] a5<-0x105c8 
+[209000]:  *I 0x10364:00078513    mv      a0, a5	 0x105c8<-a5 a0<-0x105c8 
+[210000]:  *I 0x10368:254000ef    jal     pc + 0x254	 ra<-0x1036c pc<-0x105bc <atoi>
+
+[211000]:  *I 0x105bc:46291141    c.addi  sp, -16	 0x3ffffbbc<-sp sp<-0x3ffffbac 
+[212000]:  *I 0x105be:45814629    c.li    a2, 10	 0x0<-zero a2<-0xa 
+[213000]:  *I 0x105c0:e4064581    c.li    a1, 0	 0x0<-zero a1<-0x0 
+[214000]:  *I 0x105c2:00efe406    c.sdsp  ra, 8(sp)	 0x3ffffbac<-sp 0x1036c<-ra [0x3ffffbb4,8]<-0x000000000001036c 
+[215000]:  *I 0x105c4:2c8000ef    jal     pc + 0x2c8	 ra<-0x105c8 pc<-0x1088c <strtol> 
+[216000]:  *I 0x1088c:862e86b2    c.mv    a3, a2	 0x0<-zero 0xa<-a2 a3<-0xa 
+[217000]:  *I 0x1088e:85aa862e    c.mv    a2, a1	 0x0<-zero 0x0<-a1 a2<-0x0 
+[218000]:  *I 0x10890:b50385aa    c.mv    a1, a0	 0x0<-zero 0x105c8<-a0 a1<-0x105c8 
+[219000]:  *I 0x10892:f581b503    ld      a0, -168(gp)	 0x11880<-gp 0x0000000000011080<-[0x117d8,8] a0<-0x11080 
+[220000]:  *I 0x10896:715db58d    c.j     pc - 414	 zero<-0x0 pc<-0x106f8 <_strtol_l.constprop.0> 
+[222000]:  *I 0x106f8:ec061101    c.addi  sp, -32	 0x3ffffbac<-sp sp<-0x3ffffb8c 
+[223000]:  *I 0x106fa:e822ec06    c.sdsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x105c8<-ra [0x3ffffba4,8]<-0x00000000000105c8 
+[224000]:  *I 0x106fc:e426e822    c.sdsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x3ffffbfc<-s0 [0x3ffffb9c,8]<-0x000000003ffffbfc 
+[225000]:  *I 0x106fe:e04ae426    c.sdsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0<-s1 [0x3ffffb94,8]<-0x0000000000000000 
+[226000]:  *I 0x10700:0793e04a    c.sdsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0<-s2 [0x3ffffb8c,8]<-0x0000000000000000 
+[227000]:  *I 0x10702:02400793    li      a5, 36	 0x0<-zero a5<-0x24 
+[228000]:  *I 0x10706:0cd7e963    bltu    a5, a3, pc + 210	 0x24<-a5 0xa<-a3 
+[229000]:  *I 0x1070a:88ae4785    c.li    a5, 1	 0x0<-zero a5<-0x1 
+[230000]:  *I 0x1070c:081788ae    c.mv    a7, a1	 0x0<-zero 0x105c8<-a1 a7<-0x105c8 
+[231000]:  *I 0x1070e:00000817    auipc   a6, 0x0	 a6<-0x1070e 
+[232000]:  *I 0x10712:33380813    addi    a6, a6, 819	 0x1070e<-a6 a6<-0x10a41 
+[233000]:  *I 0x10716:0cf68163    beq     a3, a5, pc + 194	 0xa<-a3 0x1<-a5
+###!!! READING FROM PROGRAM SPACE!!!
+[234000]:  *I 0x1071a:0008c703    lbu     a4, 0(a7)	 0x105c8<-a7 0xa2<-[0x105c8,1] a4<-0xa2 
+[235000]:  *I 0x1071e:08858346    c.mv    t1, a7	 0x0<-zero 0x105c8<-a7 t1<-0x105c8 
+[236000]:  *I 0x10720:07b30885    c.addi  a7, 1	 0x105c8<-a7 a7<-0x105c9 
+[237000]:  *I 0x10722:00e807b3    add     a5, a6, a4	 0x10a41<-a6 0xa2<-a4 a5<-0x10ae3 
+[238000]:  *I 0x10726:0007c783    lbu     a5, 0(a5)	 0x10ae3<-a5 0x00<-[0x10ae3,1] a5<-0x0 
+[239000]:  *I 0x1072a:f7fd8ba1    c.andi  a5, 8	 0x0<-a5 a5<-0x0 
+[240000]:  *I 0x1072c:0813f7fd    c.bnez  a5, pc - 18	 0x0<-a5 0x0<-zero 
+[241000]:  *I 0x1072e:02d00813    li      a6, 45	 0x0<-zero a6<-0x2d 
+[242000]:  *I 0x10732:0007079b    sext.w  a5, a4	 0xa2<-a4 a5<-0xa2 
+[244000]:  *I 0x10736:11070f63    beq     a4, a6, pc + 286	 0xa2<-a4 0x2d<-a6 
+[245000]:  *I 0x1073a:02b00713    li      a4, 43	 0x0<-zero a4<-0x2b 
+[246000]:  *I 0x1073e:0ae78863    beq     a5, a4, pc + 176	 0xa2<-a5 0x2b<-a4 
+[247000]:  *I 0x10742:808554fd    c.li    s1, -1	 0x0<-zero s1<-0xffffffffffffffff 
+[248000]:  *I 0x10744:49018085    c.srli  s1, 1	 0xffffffffffffffff<-s1 s1<-0x7fffffffffffffff 
+[249000]:  *I 0x10746:eadd4901    c.li    s2, 0	 0x0<-zero s2<-0x0 
+[250000]:  *I 0x10748:0713eadd    c.bnez  a3, pc + 182	 0xa<-a3 0x0<-zero pc<-0x107fe 
+[251000]:  *I 0x107fe:83b64741    c.li    a4, 16	 0x0<-zero a4<-0x10 
+[252000]:  *I 0x10800:9ae383b6    c.mv    t2, a3	 0x0<-zero 0xa<-a3 t2<-0xa 
+[253000]:  *I 0x10802:f4e69ae3    bne     a3, a4, pc - 172	 0xa<-a3 0x10<-a4 pc<-0x10756 
+[254000]:  *I 0x10756:0274f433    remu    s0, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 s0<-0x7 
+[255000]:  *I 0x1075a:871b4ea5    c.li    t4, 9	 0x0<-zero t4<-0x9 
+[256000]:  *I 0x1075c:fd07871b    addiw   a4, a5, -48	 0xa2<-a5 a4<-0x72 
+[257000]:  *I 0x10760:48014e01    c.li    t3, 0	 0x0<-zero t3<-0x0 
+[258000]:  *I 0x10762:42e54801    c.li    a6, 0	 0x0<-zero a6<-0x0 
+[259000]:  *I 0x10764:5f7d42e5    c.li    t0, 25	 0x0<-zero t0<-0x19 
+[260000]:  *I 0x10766:831b5f7d    c.li    t5, -1	 0x0<-zero t5<-0xffffffffffffffff 
+[261000]:  *I 0x10768:0007831b    sext.w  t1, a5	 0xa2<-a5 t1<-0xa2 
+[262000]:  *I 0x1076c:0274dfb3    divu    t6, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 t6<-0xccccccccccccccc 
+[263000]:  *I 0x10770:e9632401    c.addiw s0, 0	 0x7<-s0 s0<-0x7 
+[264000]:  *I 0x10772:02eee963    bltu    t4, a4, pc + 50	 0x9<-t4 0x72<-a4 pc<-0x107a4 
+[265000]:  *I 0x107a4:fbf3071b    addiw   a4, t1, -65	 0xa2<-t1 a4<-0x61 
+[266000]:  *I 0x107a8:08e2e263    bltu    t0, a4, pc + 132	 0x19<-t0 0x61<-a4 pc<-0x1082c 
+[267000]:  *I 0x1082c:f9f3031b    addiw   t1, t1, -97	 0xa2<-t1 t1<-0x41 
+[268000]:  *I 0x10830:f862e2e3    bltu    t0, t1, pc - 124	 0x19<-t0 0x41<-t1 pc<-0x107b4 
+[269000]:  *I 0x107b4:056357fd    c.li    a5, -1	 0x0<-zero a5<-0xffffffffffffffff 
+[270000]:  *I 0x107b6:08fe0563    beq     t3, a5, pc + 138	 0x0<-t3 0xffffffffffffffff<-a5 
+[271000]:  *I 0x107ba:00090463    beqz    s2, pc + 8	 0x0<-s2 0x0<-zero pc<-0x107c2 
+[272000]:  *I 0x107c2:1b63c601    c.beqz  a2, pc + 8	 0x0<-a2 0x0<-zero pc<-0x107ca 
+[273000]:  *I 0x107ca:644260e2    c.ldsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x00000000000105c8<-[0x3ffffba4,8] ra<-0x105c8 
+[274000]:  *I 0x107cc:64a26442    c.ldsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x000000003ffffbfc<-[0x3ffffb9c,8] s0<-0x3ffffbfc 
+[275000]:  *I 0x107ce:690264a2    c.ldsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb94,8] s1<-0x0 
+[276000]:  *I 0x107d0:85426902    c.ldsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb8c,8] s2<-0x0 
+[277000]:  *I 0x107d2:61058542    c.mv    a0, a6	 0x0<-zero 0x0<-a6 a0<-0x0 
+[278000]:  *I 0x107d4:80826105    c.addi16sp sp, 32	 0x3ffffb8c<-sp sp<-0x3ffffbac 
+[279000]:  *I 0x107d6:00ef8082    ret	 0x105c8<-ra pc<-0x105c8 zero<-0x0 
+[280000]:  *I 0x105c8:250160a2    c.ldsp  ra, 8(sp)	 0x3ffffbac<-sp 0x000000000001036c<-[0x3ffffbb4,8] ra<-0x1036c 
+[281000]:  *I 0x105ca:01412501    c.addiw a0, 0	 0x0<-a0 a0<-0x0 
+[282000]:  *I 0x105cc:80820141    c.addi  sp, 16	 0x3ffffbac<-sp sp<-0x3ffffbbc 
+[283000]:  *I 0x105ce:11418082    ret	 0x1036c<-ra pc<-0x1036c zero<-0x0 
+[284000]:  *I 0x1036c:00050793    mv      a5, a0	 0x0<-a0 a5<-0x0
+
+###!!! result for argv2 = 0 : Incorrect.
+[285000]:  *I 0x10370:fef42423    sw      a5, -24(s0)	 0x3ffffbfc<-s0 0x0<-a5 [0x3ffffbe4,4]<-0x00000000
+
+###   int arg3 = atoi(argv[3]);
+[286000]:  *I 0x10374:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[287000]:  *I 0x10378:01878793    addi    a5, a5, 24	 0x3ffffb94<-a5 a5<-0x3ffffbac 
+[288000]:  *I 0x1037c:0007b783    ld      a5, 0(a5)	 0x3ffffbac<-a5 0x000000003ffffffc<-[0x3ffffbac,8] a5<-0x3ffffffc 
+[289000]:  *I 0x10380:00078513    mv      a0, a5	 0x3ffffffc<-a5 a0<-0x3ffffffc 
+[290000]:  *I 0x10384:238000ef    jal     pc + 0x238	 ra<-0x10388 pc<-0x105bc <atoi> 
+[291000]:  *I 0x105bc:46291141    c.addi  sp, -16	 0x3ffffbbc<-sp sp<-0x3ffffbac 
+[292000]:  *I 0x105be:45814629    c.li    a2, 10	 0x0<-zero a2<-0xa 
+[293000]:  *I 0x105c0:e4064581    c.li    a1, 0	 0x0<-zero a1<-0x0 
+[294000]:  *I 0x105c2:00efe406    c.sdsp  ra, 8(sp)	 0x3ffffbac<-sp 0x10388<-ra [0x3ffffbb4,8]<-0x0000000000010388 
+[295000]:  *I 0x105c4:2c8000ef    jal     pc + 0x2c8	 ra<-0x105c8 pc<-0x1088c <strtol> 
+[296000]:  *I 0x1088c:862e86b2    c.mv    a3, a2	 0x0<-zero 0xa<-a2 a3<-0xa 
+[297000]:  *I 0x1088e:85aa862e    c.mv    a2, a1	 0x0<-zero 0x0<-a1 a2<-0x0 
+[298000]:  *I 0x10890:b50385aa    c.mv    a1, a0	 0x0<-zero 0x3ffffffc<-a0 a1<-0x3ffffffc 
+[299000]:  *I 0x10892:f581b503    ld      a0, -168(gp)	 0x11880<-gp 0x0000000000011080<-[0x117d8,8] a0<-0x11080 
+[300000]:  *I 0x10896:715db58d    c.j     pc - 414	 zero<-0x0 pc<-0x106f8 <_strtol_l.constprop.0> 
+[302000]:  *I 0x106f8:ec061101    c.addi  sp, -32	 0x3ffffbac<-sp sp<-0x3ffffb8c 
+[303000]:  *I 0x106fa:e822ec06    c.sdsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x105c8<-ra [0x3ffffba4,8]<-0x00000000000105c8 
+[304000]:  *I 0x106fc:e426e822    c.sdsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x3ffffbfc<-s0 [0x3ffffb9c,8]<-0x000000003ffffbfc 
+[305000]:  *I 0x106fe:e04ae426    c.sdsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0<-s1 [0x3ffffb94,8]<-0x0000000000000000 
+[306000]:  *I 0x10700:0793e04a    c.sdsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0<-s2 [0x3ffffb8c,8]<-0x0000000000000000 
+[307000]:  *I 0x10702:02400793    li      a5, 36	 0x0<-zero a5<-0x24 
+[308000]:  *I 0x10706:0cd7e963    bltu    a5, a3, pc + 210	 0x24<-a5 0xa<-a3 
+[309000]:  *I 0x1070a:88ae4785    c.li    a5, 1	 0x0<-zero a5<-0x1 
+[310000]:  *I 0x1070c:081788ae    c.mv    a7, a1	 0x0<-zero 0x3ffffffc<-a1 a7<-0x3ffffffc 
+[311000]:  *I 0x1070e:00000817    auipc   a6, 0x0	 a6<-0x1070e 
+[312000]:  *I 0x10712:33380813    addi    a6, a6, 819	 0x1070e<-a6 a6<-0x10a41 
+[313000]:  *I 0x10716:0cf68163    beq     a3, a5, pc + 194	 0xa<-a3 0x1<-a5 
+[314000]:  *I 0x1071a:0008c703    lbu     a4, 0(a7)	 0x3ffffffc<-a7 0x32<-[0x3ffffffc,1] a4<-0x32 
+[315000]:  *I 0x1071e:08858346    c.mv    t1, a7	 0x0<-zero 0x3ffffffc<-a7 t1<-0x3ffffffc 
+[316000]:  *I 0x10720:07b30885    c.addi  a7, 1	 0x3ffffffc<-a7 a7<-0x3ffffffd 
+[317000]:  *I 0x10722:00e807b3    add     a5, a6, a4	 0x10a41<-a6 0x32<-a4 a5<-0x10a73 
+[318000]:  *I 0x10726:0007c783    lbu     a5, 0(a5)	 0x10a73<-a5 0x04<-[0x10a73,1] a5<-0x4 
+[319000]:  *I 0x1072a:f7fd8ba1    c.andi  a5, 8	 0x4<-a5 a5<-0x0 
+[320000]:  *I 0x1072c:0813f7fd    c.bnez  a5, pc - 18	 0x0<-a5 0x0<-zero 
+[321000]:  *I 0x1072e:02d00813    li      a6, 45	 0x0<-zero a6<-0x2d 
+[322000]:  *I 0x10732:0007079b    sext.w  a5, a4	 0x32<-a4 a5<-0x32 
+[323000]:  *I 0x10736:11070f63    beq     a4, a6, pc + 286	 0x32<-a4 0x2d<-a6 
+[324000]:  *I 0x1073a:02b00713    li      a4, 43	 0x0<-zero a4<-0x2b 
+[325000]:  *I 0x1073e:0ae78863    beq     a5, a4, pc + 176	 0x32<-a5 0x2b<-a4 
+[326000]:  *I 0x10742:808554fd    c.li    s1, -1	 0x0<-zero s1<-0xffffffffffffffff 
+[327000]:  *I 0x10744:49018085    c.srli  s1, 1	 0xffffffffffffffff<-s1 s1<-0x7fffffffffffffff 
+[328000]:  *I 0x10746:eadd4901    c.li    s2, 0	 0x0<-zero s2<-0x0 
+[329000]:  *I 0x10748:0713eadd    c.bnez  a3, pc + 182	 0xa<-a3 0x0<-zero pc<-0x107fe 
+[330000]:  *I 0x107fe:83b64741    c.li    a4, 16	 0x0<-zero a4<-0x10 
+[331000]:  *I 0x10800:9ae383b6    c.mv    t2, a3	 0x0<-zero 0xa<-a3 t2<-0xa 
+[332000]:  *I 0x10802:f4e69ae3    bne     a3, a4, pc - 172	 0xa<-a3 0x10<-a4 pc<-0x10756 
+[333000]:  *I 0x10756:0274f433    remu    s0, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 s0<-0x7 
+[334000]:  *I 0x1075a:871b4ea5    c.li    t4, 9	 0x0<-zero t4<-0x9 
+[335000]:  *I 0x1075c:fd07871b    addiw   a4, a5, -48	 0x32<-a5 a4<-0x2 
+[336000]:  *I 0x10760:48014e01    c.li    t3, 0	 0x0<-zero t3<-0x0 
+[337000]:  *I 0x10762:42e54801    c.li    a6, 0	 0x0<-zero a6<-0x0 
+[338000]:  *I 0x10764:5f7d42e5    c.li    t0, 25	 0x0<-zero t0<-0x19 
+[339000]:  *I 0x10766:831b5f7d    c.li    t5, -1	 0x0<-zero t5<-0xffffffffffffffff 
+[340000]:  *I 0x10768:0007831b    sext.w  t1, a5	 0x32<-a5 t1<-0x32 
+[341000]:  *I 0x1076c:0274dfb3    divu    t6, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 t6<-0xccccccccccccccc 
+[342000]:  *I 0x10770:e9632401    c.addiw s0, 0	 0x7<-s0 s0<-0x7 
+[343000]:  *I 0x10772:02eee963    bltu    t4, a4, pc + 50	 0x9<-t4 0x2<-a4 
+[345000]:  *I 0x10776:de6387ba    c.mv    a5, a4	 0x0<-zero 0x2<-a4 a5<-0x2 
+[346000]:  *I 0x10778:02d7de63    bge     a5, a3, pc + 60	 0x2<-a5 0xa<-a3 
+[347000]:  *I 0x1077c:01ee0b63    beq     t3, t5, pc + 22	 0x0<-t3 0xffffffffffffffff<-t5 
+[348000]:  *I 0x10780:e8635e7d    c.li    t3, -1	 0x0<-zero t3<-0xffffffffffffffff 
+[349000]:  *I 0x10782:010fe863    bltu    t6, a6, pc + 16	 0xccccccccccccccc<-t6 0x0<-a6 
+[350000]:  *I 0x10786:0b0f8a63    beq     t6, a6, pc + 180	 0xccccccccccccccc<-t6 0x0<-a6 
+[351000]:  *I 0x1078a:08334e05    c.li    t3, 1	 0x0<-zero t3<-0x1 
+[352000]:  *I 0x1078c:02780833    mul     a6, a6, t2	 0x0<-a6 0xa<-t2 a6<-0x0 
+[353000]:  *I 0x10790:c783983e    c.add   a6, a5	 0x0<-a6 0x2<-a5 a6<-0x2 
+[354000]:  *I 0x10792:0008c783    lbu     a5, 0(a7)	 0x3ffffffd<-a7 0x00<-[0x3ffffffd,1] a5<-0x0 
+[355000]:  *I 0x10796:871b0885    c.addi  a7, 1	 0x3ffffffd<-a7 a7<-0x3ffffffe 
+[356000]:  *I 0x10798:fd07871b    addiw   a4, a5, -48	 0x0<-a5 a4<-0xffffffffffffffd0 
+[357000]:  *I 0x1079c:0007831b    sext.w  t1, a5	 0x0<-a5 t1<-0x0 
+[358000]:  *I 0x107a0:fceefbe3    bgeu    t4, a4, pc - 42	 0x9<-t4 0xffffffffffffffd0<-a4 
+[359000]:  *I 0x107a4:fbf3071b    addiw   a4, t1, -65	 0x0<-t1 a4<-0xffffffffffffffbf 
+[360000]:  *I 0x107a8:08e2e263    bltu    t0, a4, pc + 132	 0x19<-t0 0xffffffffffffffbf<-a4 pc<-0x1082c 
+[361000]:  *I 0x1082c:f9f3031b    addiw   t1, t1, -97	 0x0<-t1 t1<-0xffffffffffffff9f 
+[362000]:  *I 0x10830:f862e2e3    bltu    t0, t1, pc - 124	 0x19<-t0 0xffffffffffffff9f<-t1 pc<-0x107b4 
+[363000]:  *I 0x107b4:056357fd    c.li    a5, -1	 0x0<-zero a5<-0xffffffffffffffff 
+[364000]:  *I 0x107b6:08fe0563    beq     t3, a5, pc + 138	 0x1<-t3 0xffffffffffffffff<-a5 
+[365000]:  *I 0x107ba:00090463    beqz    s2, pc + 8	 0x0<-s2 0x0<-zero pc<-0x107c2 
+[366000]:  *I 0x107c2:1b63c601    c.beqz  a2, pc + 8	 0x0<-a2 0x0<-zero pc<-0x107ca 
+[367000]:  *I 0x107ca:644260e2    c.ldsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x00000000000105c8<-[0x3ffffba4,8] ra<-0x105c8 
+[368000]:  *I 0x107cc:64a26442    c.ldsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x000000003ffffbfc<-[0x3ffffb9c,8] s0<-0x3ffffbfc 
+[369000]:  *I 0x107ce:690264a2    c.ldsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb94,8] s1<-0x0 
+[370000]:  *I 0x107d0:85426902    c.ldsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb8c,8] s2<-0x0 
+[371000]:  *I 0x107d2:61058542    c.mv    a0, a6	 0x0<-zero 0x2<-a6 a0<-0x2 
+[372000]:  *I 0x107d4:80826105    c.addi16sp sp, 32	 0x3ffffb8c<-sp sp<-0x3ffffbac 
+[373000]:  *I 0x107d6:00ef8082    ret	 0x105c8<-ra pc<-0x105c8 zero<-0x0 
+[374000]:  *I 0x105c8:250160a2    c.ldsp  ra, 8(sp)	 0x3ffffbac<-sp 0x0000000000010388<-[0x3ffffbb4,8] ra<-0x10388 
+[375000]:  *I 0x105ca:01412501    c.addiw a0, 0	 0x2<-a0 a0<-0x2 
+[376000]:  *I 0x105cc:80820141    c.addi  sp, 16	 0x3ffffbac<-sp sp<-0x3ffffbbc 
+[377000]:  *I 0x105ce:11418082    ret	 0x10388<-ra pc<-0x10388 zero<-0x0 
+[378000]:  *I 0x10388:00050793    mv      a5, a0	 0x2<-a0 a5<-0x2
+
+### result for argv[3]==2: Correct
+[379000]:  *I 0x1038c:fef42223    sw      a5, -28(s0)	 0x3ffffbfc<-s0 0x2<-a5 [0x3ffffbe0,4]<-0x00000002 
+
+###  int arg4 = atoi(argv[4]);
+[380000]:  *I 0x10390:fc043783    ld      a5, -64(s0)	 0x3ffffbfc<-s0 0x000000003ffffb94<-[0x3ffffbbc,8] a5<-0x3ffffb94 
+[381000]:  *I 0x10394:02078793    addi    a5, a5, 32	 0x3ffffb94<-a5 a5<-0x3ffffbb4 
+[382000]:  *I 0x10398:0007b783    ld      a5, 0(a5)	 0x3ffffbb4<-a5 0x0000000000010388<-[0x3ffffbb4,8] a5<-0x10388 
+[383000]:  *I 0x1039c:00078513    mv      a0, a5	 0x10388<-a5 a0<-0x10388 
+[384000]:  *I 0x103a0:21c000ef    jal     pc + 0x21c	 ra<-0x103a4 pc<-0x105bc <atoi> 
+[385000]:  *I 0x105bc:46291141    c.addi  sp, -16	 0x3ffffbbc<-sp sp<-0x3ffffbac 
+[386000]:  *I 0x105be:45814629    c.li    a2, 10	 0x0<-zero a2<-0xa 
+[387000]:  *I 0x105c0:e4064581    c.li    a1, 0	 0x0<-zero a1<-0x0 
+[388000]:  *I 0x105c2:00efe406    c.sdsp  ra, 8(sp)	 0x3ffffbac<-sp 0x103a4<-ra [0x3ffffbb4,8]<-0x00000000000103a4 
+[389000]:  *I 0x105c4:2c8000ef    jal     pc + 0x2c8	 ra<-0x105c8 pc<-0x1088c <strtol> 
+[390000]:  *I 0x1088c:862e86b2    c.mv    a3, a2	 0x0<-zero 0xa<-a2 a3<-0xa 
+[391000]:  *I 0x1088e:85aa862e    c.mv    a2, a1	 0x0<-zero 0x0<-a1 a2<-0x0 
+[392000]:  *I 0x10890:b50385aa    c.mv    a1, a0	 0x0<-zero 0x10388<-a0 a1<-0x10388 
+[393000]:  *I 0x10892:f581b503    ld      a0, -168(gp)	 0x11880<-gp 0x0000000000011080<-[0x117d8,8] a0<-0x11080 
+[394000]:  *I 0x10896:715db58d    c.j     pc - 414	 zero<-0x0 pc<-0x106f8 <_strtol_l.constprop.0> 
+[396000]:  *I 0x106f8:ec061101    c.addi  sp, -32	 0x3ffffbac<-sp sp<-0x3ffffb8c 
+[397000]:  *I 0x106fa:e822ec06    c.sdsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x105c8<-ra [0x3ffffba4,8]<-0x00000000000105c8 
+[398000]:  *I 0x106fc:e426e822    c.sdsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x3ffffbfc<-s0 [0x3ffffb9c,8]<-0x000000003ffffbfc 
+[399000]:  *I 0x106fe:e04ae426    c.sdsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0<-s1 [0x3ffffb94,8]<-0x0000000000000000 
+[400000]:  *I 0x10700:0793e04a    c.sdsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0<-s2 [0x3ffffb8c,8]<-0x0000000000000000 
+[401000]:  *I 0x10702:02400793    li      a5, 36	 0x0<-zero a5<-0x24 
+[402000]:  *I 0x10706:0cd7e963    bltu    a5, a3, pc + 210	 0x24<-a5 0xa<-a3 
+[403000]:  *I 0x1070a:88ae4785    c.li    a5, 1	 0x0<-zero a5<-0x1 
+[404000]:  *I 0x1070c:081788ae    c.mv    a7, a1	 0x0<-zero 0x10388<-a1 a7<-0x10388 
+[405000]:  *I 0x1070e:00000817    auipc   a6, 0x0	 a6<-0x1070e 
+[406000]:  *I 0x10712:33380813    addi    a6, a6, 819	 0x1070e<-a6 a6<-0x10a41 
+[407000]:  *I 0x10716:0cf68163    beq     a3, a5, pc + 194	 0xa<-a3 0x1<-a5 
+[408000]:  *I 0x1071a:0008c703    lbu     a4, 0(a7)	 0x10388<-a7 0x93<-[0x10388,1] a4<-0x93 
+[409000]:  *I 0x1071e:08858346    c.mv    t1, a7	 0x0<-zero 0x10388<-a7 t1<-0x10388 
+[410000]:  *I 0x10720:07b30885    c.addi  a7, 1	 0x10388<-a7 a7<-0x10389 
+[411000]:  *I 0x10722:00e807b3    add     a5, a6, a4	 0x10a41<-a6 0x93<-a4 a5<-0x10ad4 
+[412000]:  *I 0x10726:0007c783    lbu     a5, 0(a5)	 0x10ad4<-a5 0x00<-[0x10ad4,1] a5<-0x0 
+[413000]:  *I 0x1072a:f7fd8ba1    c.andi  a5, 8	 0x0<-a5 a5<-0x0 
+[414000]:  *I 0x1072c:0813f7fd    c.bnez  a5, pc - 18	 0x0<-a5 0x0<-zero 
+[415000]:  *I 0x1072e:02d00813    li      a6, 45	 0x0<-zero a6<-0x2d 
+[416000]:  *I 0x10732:0007079b    sext.w  a5, a4	 0x93<-a4 a5<-0x93 
+[417000]:  *I 0x10736:11070f63    beq     a4, a6, pc + 286	 0x93<-a4 0x2d<-a6 
+[418000]:  *I 0x1073a:02b00713    li      a4, 43	 0x0<-zero a4<-0x2b 
+[419000]:  *I 0x1073e:0ae78863    beq     a5, a4, pc + 176	 0x93<-a5 0x2b<-a4 
+[420000]:  *I 0x10742:808554fd    c.li    s1, -1	 0x0<-zero s1<-0xffffffffffffffff 
+[421000]:  *I 0x10744:49018085    c.srli  s1, 1	 0xffffffffffffffff<-s1 s1<-0x7fffffffffffffff 
+[422000]:  *I 0x10746:eadd4901    c.li    s2, 0	 0x0<-zero s2<-0x0 
+[423000]:  *I 0x10748:0713eadd    c.bnez  a3, pc + 182	 0xa<-a3 0x0<-zero pc<-0x107fe 
+[424000]:  *I 0x107fe:83b64741    c.li    a4, 16	 0x0<-zero a4<-0x10 
+[425000]:  *I 0x10800:9ae383b6    c.mv    t2, a3	 0x0<-zero 0xa<-a3 t2<-0xa 
+[426000]:  *I 0x10802:f4e69ae3    bne     a3, a4, pc - 172	 0xa<-a3 0x10<-a4 pc<-0x10756 
+[427000]:  *I 0x10756:0274f433    remu    s0, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 s0<-0x7 
+[428000]:  *I 0x1075a:871b4ea5    c.li    t4, 9	 0x0<-zero t4<-0x9 
+[429000]:  *I 0x1075c:fd07871b    addiw   a4, a5, -48	 0x93<-a5 a4<-0x63 
+[430000]:  *I 0x10760:48014e01    c.li    t3, 0	 0x0<-zero t3<-0x0 
+[431000]:  *I 0x10762:42e54801    c.li    a6, 0	 0x0<-zero a6<-0x0 
+[432000]:  *I 0x10764:5f7d42e5    c.li    t0, 25	 0x0<-zero t0<-0x19 
+[433000]:  *I 0x10766:831b5f7d    c.li    t5, -1	 0x0<-zero t5<-0xffffffffffffffff 
+[434000]:  *I 0x10768:0007831b    sext.w  t1, a5	 0x93<-a5 t1<-0x93 
+[435000]:  *I 0x1076c:0274dfb3    divu    t6, s1, t2	 0x7fffffffffffffff<-s1 0xa<-t2 t6<-0xccccccccccccccc 
+[436000]:  *I 0x10770:e9632401    c.addiw s0, 0	 0x7<-s0 s0<-0x7 
+[437000]:  *I 0x10772:02eee963    bltu    t4, a4, pc + 50	 0x9<-t4 0x63<-a4 pc<-0x107a4 
+[438000]:  *I 0x107a4:fbf3071b    addiw   a4, t1, -65	 0x93<-t1 a4<-0x52 
+[439000]:  *I 0x107a8:08e2e263    bltu    t0, a4, pc + 132	 0x19<-t0 0x52<-a4 pc<-0x1082c 
+[440000]:  *I 0x1082c:f9f3031b    addiw   t1, t1, -97	 0x93<-t1 t1<-0x32 
+[441000]:  *I 0x10830:f862e2e3    bltu    t0, t1, pc - 124	 0x19<-t0 0x32<-t1 pc<-0x107b4 
+[442000]:  *I 0x107b4:056357fd    c.li    a5, -1	 0x0<-zero a5<-0xffffffffffffffff 
+[443000]:  *I 0x107b6:08fe0563    beq     t3, a5, pc + 138	 0x0<-t3 0xffffffffffffffff<-a5 
+[444000]:  *I 0x107ba:00090463    beqz    s2, pc + 8	 0x0<-s2 0x0<-zero pc<-0x107c2 
+[445000]:  *I 0x107c2:1b63c601    c.beqz  a2, pc + 8	 0x0<-a2 0x0<-zero pc<-0x107ca 
+[446000]:  *I 0x107ca:644260e2    c.ldsp  ra, 24(sp)	 0x3ffffb8c<-sp 0x00000000000105c8<-[0x3ffffba4,8] ra<-0x105c8 
+[447000]:  *I 0x107cc:64a26442    c.ldsp  s0, 16(sp)	 0x3ffffb8c<-sp 0x000000003ffffbfc<-[0x3ffffb9c,8] s0<-0x3ffffbfc 
+[448000]:  *I 0x107ce:690264a2    c.ldsp  s1, 8(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb94,8] s1<-0x0 
+[449000]:  *I 0x107d0:85426902    c.ldsp  s2, 0(sp)	 0x3ffffb8c<-sp 0x0000000000000000<-[0x3ffffb8c,8] s2<-0x0 
+[450000]:  *I 0x107d2:61058542    c.mv    a0, a6	 0x0<-zero 0x0<-a6 a0<-0x0 
+[451000]:  *I 0x107d4:80826105    c.addi16sp sp, 32	 0x3ffffb8c<-sp sp<-0x3ffffbac 
+[452000]:  *I 0x107d6:00ef8082    ret	 0x105c8<-ra pc<-0x105c8 zero<-0x0 
+[453000]:  *I 0x105c8:250160a2    c.ldsp  ra, 8(sp)	 0x3ffffbac<-sp 0x00000000000103a4<-[0x3ffffbb4,8] ra<-0x103a4 
+[454000]:  *I 0x105ca:01412501    c.addiw a0, 0	 0x0<-a0 a0<-0x0 
+[455000]:  *I 0x105cc:80820141    c.addi  sp, 16	 0x3ffffbac<-sp sp<-0x3ffffbbc 
+[456000]:  *I 0x105ce:11418082    ret	 0x103a4<-ra pc<-0x103a4 zero<-0x0 
+[457000]:  *I 0x103a4:00050793    mv      a5, a0	 0x0<-a0 a5<-0x0
+###!!! result for argv[4] = 0 : Incorrect
+[458000]:  *I 0x103a8:fef42023    sw      a5, -32(s0)	 0x3ffffbfc<-s0 0x0<-a5 [0x3ffffbdc,4]<-0x00000000
+
+###   assert(arg1==64);
+[459000]:  *I 0x103ac:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[460000]:  *I 0x103b0:fec42783    lw      a5, -20(s0)	 0x3ffffbfc<-s0 0x00000040<-[0x3ffffbe8,4] a5<-0x40 
+[461000]:  *I 0x103b4:0007871b    sext.w  a4, a5	 0x40<-a5 a4<-0x40 
+[462000]:  *I 0x103b8:04000793    li      a5, 64	 0x0<-zero a5<-0x40 
+[463000]:  *I 0x103bc:00f70463    beq     a4, a5, pc + 8	 0x40<-a4 0x40<-a5 pc<-0x103c4 
+[464000]:  *I 0x103c4:00201013    slli    zero, zero, 2	 0x0<-zero zero<-0x0
+
+###  assert(arg2==4);
+[465000]:  *I 0x103c8:00301013    slli    zero, zero, 3	 0x0<-zero zero<-0x0 
+[466000]:  *I 0x103cc:fe842783    lw      a5, -24(s0)	 0x3ffffbfc<-s0 0x00000000<-[0x3ffffbe4,4] a5<-0x0 
+[467000]:  *I 0x103d0:0007871b    sext.w  a4, a5	 0x0<-a5 a4<-0x0 
+[468000]:  *I 0x103d4:00400793    li      a5, 4	 0x0<-zero a5<-0x4
+# Fails:  assert(arg2==4);
+[469000]:  *I 0x103d8:00f70463    beq     a4, a5, pc + 8	 0x0<-a4 0x4<-a5 
