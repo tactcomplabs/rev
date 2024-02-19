@@ -827,17 +827,19 @@ private:
   template<typename T>
   void DependencySet(unsigned HartID, T RegNum,
                      RevRegClass regClass, bool value = true){
-    RevRegFile* regFile = GetRegFile(HartID);
-    switch(regClass){
-      case RevRegClass::RegGPR:
-        if(size_t(RegNum) != 0)
-          regFile->RV_Scoreboard[size_t(RegNum)] = value;
-        break;
-      case RevRegClass::RegFLOAT:
-        regFile->FP_Scoreboard[size_t(RegNum)] = value;
-        break;
-      default:
-        break;
+    if( size_t(RegNum) < _REV_NUM_REGS_ ){
+        RevRegFile* regFile = GetRegFile(HartID);
+        switch(regClass){
+        case RevRegClass::RegGPR:
+            if(size_t(RegNum) != 0)
+            regFile->RV_Scoreboard[size_t(RegNum)] = value;
+            break;
+        case RevRegClass::RegFLOAT:
+            regFile->FP_Scoreboard[size_t(RegNum)] = value;
+            break;
+        default:
+            break;
+        }
     }
   }
 
