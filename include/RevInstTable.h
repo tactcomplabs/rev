@@ -108,6 +108,7 @@ struct RevInst {
   uint64_t rs2        =~0; ///< RevInst: rs2 value
   uint64_t rs3        =~0; ///< RevInst: rs3 value
   uint64_t imm        = 0; ///< RevInst: immediate value
+  bool raisefpe       = 0; ///< RevInst: raises FP exceptions
   FRMode rm{FRMode::None}; ///< RevInst: floating point rounding mode
   uint8_t aq          = 0; ///< RevInst: aq field for atomic instructions
   uint8_t rl          = 0; ///< RevInst: rl field for atomic instructions
@@ -131,27 +132,6 @@ struct RevInst {
 /// CRegIdx: Maps the compressed index to normal index
 #define CRegIdx(x) ((x) + 8)
 
-struct RevInstDefaults {
-  static constexpr uint8_t     opcode      = 0b00000000;
-  static constexpr uint32_t    cost        = 1;
-  static constexpr uint8_t     funct2      = 0b000;      // compressed only
-  static constexpr uint8_t     funct3      = 0b000;
-  static constexpr uint8_t     funct4      = 0b000;      // compressed only
-  static constexpr uint8_t     funct6      = 0b000;      // compressed only
-  static constexpr uint8_t     funct2or7   = 0b0000000;
-  static constexpr uint16_t    offset      = 0b0000000;  // compressed only
-  static constexpr uint16_t    jumpTarget  = 0b0000000;  // compressed only
-  static constexpr RevRegClass rdClass     = RevRegClass::RegGPR;
-  static constexpr RevRegClass rs1Class    = RevRegClass::RegGPR;
-  static constexpr RevRegClass rs2Class    = RevRegClass::RegGPR;
-  static constexpr RevRegClass rs3Class    = RevRegClass::RegUNKNOWN;
-  static constexpr uint16_t    imm12       = 0b000000000000;
-  static constexpr RevImmFunc  imm         = FUnk;
-  static constexpr RevInstF    format      = RVTypeR;
-  static constexpr bool        compressed  = false;
-  static constexpr uint8_t     fpcvtOp     = 0b00000;    // overloaded rs2 field for R-type FP instructions
-}; // RevInstDefaults
-
 /*! \struct RevInstEntry
  *  \brief Rev instruction entry
  *
@@ -161,95 +141,70 @@ struct RevInstDefaults {
  */
 struct RevInstEntry{
   // disassembly
-  std::string mnemonic; ///< RevInstEntry: instruction mnemonic
-  uint32_t cost;        ///< RevInstEntry: instruction code in cycles
+  std::string  mnemonic  = "nop"; ///< RevInstEntry: instruction mnemonic
+  uint32_t         cost  = 1;     ///< RevInstEntry: instruction code in cycles
 
   // storage
-  uint8_t opcode;       ///< RevInstEntry: opcode
-  uint8_t funct2;       ///< RevInstentry: compressed funct2 value
-  uint8_t funct3;       ///< RevInstEntry: funct3 value
-  uint8_t funct4;       ///< RevInstentry: compressed funct4 value
-  uint8_t funct6;       ///< RevInstentry: compressed funct6 value
-  uint8_t funct2or7;    ///< RevInstEntry: uncompressed funct2 or funct7 value
-  uint16_t offset;      ///< RevInstEntry: compressed offset value
-  uint16_t jumpTarget;  ///< RevInstEntry: compressed jump target value
+  uint8_t        opcode  = 0;     ///< RevInstEntry: opcode
+  uint8_t        funct2  = 0;     ///< RevInstentry: compressed funct2 value
+  uint8_t        funct3  = 0;     ///< RevInstEntry: funct3 value
+  uint8_t        funct4  = 0;     ///< RevInstentry: compressed funct4 value
+  uint8_t        funct6  = 0;     ///< RevInstentry: compressed funct6 value
+  uint8_t     funct2or7  = 0;     ///< RevInstEntry: uncompressed funct2 or funct7 value
+  uint16_t       offset  = 0;     ///< RevInstEntry: compressed offset value
+  uint16_t   jumpTarget  = 0;     ///< RevInstEntry: compressed jump target value
 
   // register encodings
-  RevRegClass rdClass;  ///< RevInstEntry: Rd register class
-  RevRegClass rs1Class; ///< RevInstEntry: Rs1 register class
-  RevRegClass rs2Class; ///< RevInstEntry: Rs2 register class
-  RevRegClass rs3Class; ///< RevInstEntry: Rs3 register class
-
-  uint16_t imm12;       ///< RevInstEntry: imm12 value
-
-  RevImmFunc imm;       ///< RevInstEntry: does the imm12 exist?
+  RevRegClass   rdClass  = RevRegClass::RegGPR;  ///< RevInstEntry: Rd register class
+  RevRegClass  rs1Class  = RevRegClass::RegGPR;  ///< RevInstEntry: Rs1 register class
+  RevRegClass  rs2Class  = RevRegClass::RegGPR;  ///< RevInstEntry: Rs2 register class
+  RevRegClass  rs3Class  = RevRegClass::RegUNKNOWN; ///< RevInstEntry: Rs3 register class
+  uint16_t        imm12  = 0;       ///< RevInstEntry: imm12 value
+  RevImmFunc        imm  = FUnk;    ///< RevInstEntry: does the imm12 exist?
 
   // formatting
-  RevInstF format;      ///< RevInstEntry: instruction format
+  RevInstF       format  = RVTypeR; ///< RevInstEntry: instruction format
+  bool       compressed  = false;   ///< RevInstEntry: compressed instruction
+  uint8_t       fpcvtOp  = 0;       ///<RevInstEntry: Stores the rs2 field in R-instructions
+  bool         raisefpe  = false;   ///<RevInstEntry: Whether FP exceptions are raised
 
-  /// RevInstEntry: Instruction implementation function
-  bool (*func)(RevFeature *, RevRegFile *, RevMem *, const RevInst&);
-
-  bool compressed;      ///< RevInstEntry: compressed instruction
-
-  uint8_t fpcvtOp;   ///<RenInstEntry: Stores the overloaded rs2 field in R-type instructions
-}; // RevInstEntry
-
-template <typename RevInstDefaultsPolicy>
-struct RevInstEntryBuilder : RevInstDefaultsPolicy{
-  RevInstEntry InstEntry;
-
-  RevInstEntryBuilder() : RevInstDefaultsPolicy() {
-    //Set default values
-    InstEntry.mnemonic  = std::string("nop");
-    InstEntry.func      = NULL;
-    InstEntry.opcode    = RevInstDefaultsPolicy::opcode;
-    InstEntry.cost      = RevInstDefaultsPolicy::cost;
-    InstEntry.funct2    = RevInstDefaultsPolicy::funct2;
-    InstEntry.funct3    = RevInstDefaultsPolicy::funct3;
-    InstEntry.funct4    = RevInstDefaultsPolicy::funct4;
-    InstEntry.funct6    = RevInstDefaultsPolicy::funct6;
-    InstEntry.funct2or7 = RevInstDefaultsPolicy::funct2or7;
-    InstEntry.offset    = RevInstDefaultsPolicy::offset;
-    InstEntry.jumpTarget= RevInstDefaultsPolicy::jumpTarget;
-    InstEntry.rdClass   = RevInstDefaultsPolicy::rdClass;
-    InstEntry.rs1Class  = RevInstDefaultsPolicy::rs1Class;
-    InstEntry.rs2Class  = RevInstDefaultsPolicy::rs2Class;
-    InstEntry.rs3Class  = RevInstDefaultsPolicy::rs3Class;
-    InstEntry.imm12     = RevInstDefaultsPolicy::imm12;
-    InstEntry.imm       = RevInstDefaultsPolicy::imm;
-    InstEntry.format    = RevInstDefaultsPolicy::format;
-    InstEntry.compressed= false;
-    InstEntry.fpcvtOp   = RevInstDefaultsPolicy::fpcvtOp;
-  }
+  /// Instruction implementation function
+  bool (*func)(RevFeature *, RevRegFile *, RevMem *, const RevInst&) = nullptr;
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
-  auto& SetMnemonic(std::string m)   { InstEntry.mnemonic = m;   return *this;}
-  auto& SetCost(uint32_t c)          { InstEntry.cost = c;       return *this;}
-  auto& SetOpcode(uint8_t op)        { InstEntry.opcode = op;    return *this;}
-  auto& SetFunct2(uint8_t f2)        { InstEntry.funct2 = f2;    return *this;}
-  auto& SetFunct3(uint8_t f3)        { InstEntry.funct3 = f3;    return *this;}
-  auto& SetFunct4(uint8_t f4)        { InstEntry.funct4 = f4;    return *this;}
-  auto& SetFunct6(uint8_t f6)        { InstEntry.funct6 = f6;    return *this;}
-  auto& SetFunct2or7(uint8_t f27)    { InstEntry.funct2or7 = f27;return *this;}
-  auto& SetOffset(uint16_t off)      { InstEntry.offset = off;   return *this;}
-  auto& SetJumpTarget(uint16_t jt)   { InstEntry.jumpTarget = jt;return *this;}
-  auto& SetrdClass(RevRegClass rd)   { InstEntry.rdClass = rd;   return *this;}
-  auto& Setrs1Class(RevRegClass rs1) { InstEntry.rs1Class = rs1; return *this;}
-  auto& Setrs2Class(RevRegClass rs2) { InstEntry.rs2Class = rs2; return *this;}
-  auto& Setrs3Class(RevRegClass rs3) { InstEntry.rs3Class = rs3; return *this;}
-  auto& Setimm12(uint16_t imm12)     { InstEntry.imm12 = imm12;  return *this;}
-  auto& Setimm(RevImmFunc imm)       { InstEntry.imm = imm;      return *this;}
-  auto& SetFormat(RevInstF format)   { InstEntry.format = format;return *this;}
-  auto& SetCompressed(bool c)        { InstEntry.compressed = c; return *this;}
-  auto& SetfpcvtOp(uint8_t op)       { InstEntry.fpcvtOp = op;   return *this;}
+  auto& SetMnemonic(std::string m)   { this->mnemonic   = std::move(m); return *this; }
+  auto& SetCost(uint32_t c)          { this->cost       = c;     return *this; }
+  auto& SetOpcode(uint8_t op)        { this->opcode     = op;    return *this; }
+  auto& SetFunct2(uint8_t f2)        { this->funct2     = f2;    return *this; }
+  auto& SetFunct3(uint8_t f3)        { this->funct3     = f3;    return *this; }
+  auto& SetFunct4(uint8_t f4)        { this->funct4     = f4;    return *this; }
+  auto& SetFunct6(uint8_t f6)        { this->funct6     = f6;    return *this; }
+  auto& SetFunct2or7(uint8_t f27)    { this->funct2or7  = f27;   return *this; }
+  auto& SetOffset(uint16_t off)      { this->offset     = off;   return *this; }
+  auto& SetJumpTarget(uint16_t jt)   { this->jumpTarget = jt;    return *this; }
+  auto& SetrdClass(RevRegClass rd)   { this->rdClass    = rd;    return *this; }
+  auto& Setrs1Class(RevRegClass rs1) { this->rs1Class   = rs1;   return *this; }
+  auto& Setrs2Class(RevRegClass rs2) { this->rs2Class   = rs2;   return *this; }
+  auto& Setrs3Class(RevRegClass rs3) { this->rs3Class   = rs3;   return *this; }
+  auto& Setimm12(uint16_t imm12)     { this->imm12      = imm12; return *this; }
+  auto& Setimm(RevImmFunc imm)       { this->imm        = imm;   return *this; }
+  auto& SetFormat(RevInstF format)   { this->format     = format;return *this; }
+  auto& SetCompressed(bool c)        { this->compressed = c;     return *this; }
+  auto& SetfpcvtOp(uint8_t op)       { this->fpcvtOp    = op;    return *this; }
+  auto& SetRaiseFPE(bool c)          { this->raisefpe   = c;     return *this; }
+  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&))
+                                     { this->func = func;        return *this; }
+}; // RevInstEntry
 
-  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&)){
-    InstEntry.func = func;
-    return *this;
+// The default initialization for RevInstDefaults is the same as RevInstEntry
+using RevInstDefaults = RevInstEntry;
+
+// Compressed instruction defaults
+struct RevCInstDefaults : RevInstDefaults{
+  RevCInstDefaults(){
+    SetCompressed(true);
   }
-
-}; // class RevInstEntryBuilder;
+};
 
 } // namespace SST::RevCPU
 

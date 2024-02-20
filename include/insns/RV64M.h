@@ -35,21 +35,20 @@ class RV64M : public RevExt{
   //
   // RISC-V RV64M Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct Rev64MInstDefaults : RevInstDefaults {
-    static constexpr uint8_t opcode    = 0b0111011;
-    static constexpr uint8_t funct2or7 = 0b0000001;
+    Rev64MInstDefaults(){
+      SetOpcode(0b0111011);
+      SetFunct2or7(0b0000001);
+    }
   };
 
-  std::vector<RevInstEntry > RV64MTable = {
-    {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("mulw %rd, %rs1, %rs2" ).SetFunct3(0b000).SetImplFunc(&mulw ).InstEntry},
-    {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("divw %rd, %rs1, %rs2" ).SetFunct3(0b100).SetImplFunc(&divw ).InstEntry},
-    {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("divuw %rd, %rs1, %rs2").SetFunct3(0b101).SetImplFunc(&divuw ).InstEntry},
-    {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("remw %rd, %rs1, %rs2" ).SetFunct3(0b110).SetImplFunc(&remw ).InstEntry},
-    {RevInstEntryBuilder<Rev64MInstDefaults>().SetMnemonic("remuw %rd, %rs1, %rs2").SetFunct3(0b111).SetImplFunc(&remuw ).InstEntry},
+  std::vector<RevInstEntry> RV64MTable = {
+    { Rev64MInstDefaults().SetMnemonic("mulw %rd, %rs1, %rs2" ).SetFunct3(0b000).SetImplFunc(mulw)  },
+    { Rev64MInstDefaults().SetMnemonic("divw %rd, %rs1, %rs2" ).SetFunct3(0b100).SetImplFunc(divw)  },
+    { Rev64MInstDefaults().SetMnemonic("divuw %rd, %rs1, %rs2").SetFunct3(0b101).SetImplFunc(divuw) },
+    { Rev64MInstDefaults().SetMnemonic("remw %rd, %rs1, %rs2" ).SetFunct3(0b110).SetImplFunc(remw)  },
+    { Rev64MInstDefaults().SetMnemonic("remuw %rd, %rs1, %rs2").SetFunct3(0b111).SetImplFunc(remuw) },
   };
 
 public:
