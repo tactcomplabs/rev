@@ -39,25 +39,27 @@ class Zicbom : public RevExt{
       break;
     default:
       return false;
-      break;
     }
     R->AdvancePC(Inst);
     return true;
   }
 
   struct RevZicbomInstDefaults : RevInstDefaults {
-    static constexpr uint8_t     opcode   = 0b0001111;
-    static constexpr uint8_t     funct3   = 0b010;
-    static constexpr RevRegClass rs1Class = RevRegClass::RegGPR;
-    static constexpr RevRegClass rs2Class = RevRegClass::RegUNKNOWN;
-    static constexpr RevRegClass rs3Class = RevRegClass::RegUNKNOWN;
-    static constexpr RevRegClass rdClass  = RevRegClass::RegUNKNOWN;
+    RevZicbomInstDefaults(){
+      SetFormat(RVTypeI);
+      SetOpcode(0b0001111);
+      SetFunct3(0b010);
+      Setrs2Class(RevRegClass::RegUNKNOWN);
+      SetrdClass(RevRegClass::RegUNKNOWN);
+      Setimm(FEnc);
+      SetImplFunc(cmo);
+    }
   };
 
   std::vector<RevInstEntry> ZicbomTable = {
-    {RevInstEntryBuilder<RevZicbomInstDefaults>().SetMnemonic("cbo.clean").SetCost(1).Setimm12(0b000000000001).Setimm(FEnc).SetFormat(RVTypeI).SetImplFunc(&cmo).InstEntry},
-    {RevInstEntryBuilder<RevZicbomInstDefaults>().SetMnemonic("cbo.flush").SetCost(1).Setimm12(0b000000000010).Setimm(FEnc).SetFormat(RVTypeI).SetImplFunc(&cmo).InstEntry},
-    {RevInstEntryBuilder<RevZicbomInstDefaults>().SetMnemonic("cbo.inval").SetCost(1).Setimm12(0b000000000000).Setimm(FEnc).SetFormat(RVTypeI).SetImplFunc(&cmo).InstEntry},
+    { RevZicbomInstDefaults().SetMnemonic("cbo.clean").Setimm12(0b0001) },
+    { RevZicbomInstDefaults().SetMnemonic("cbo.flush").Setimm12(0b0010) },
+    { RevZicbomInstDefaults().SetMnemonic("cbo.inval").Setimm12(0b0000) },
   };
 
 public:

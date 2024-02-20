@@ -246,6 +246,11 @@ bool RevProc::SeedInstTable(){
     EnableExt(new Zicbom(feature, mem, output), false);
   }
 
+  // Zifencei-Extension
+  if( feature->IsModeEnabled(RV_ZIFENCEI) ){
+    EnableExt(new Zifencei(feature, mem, output), false);
+  }
+
   return true;
 }
 
@@ -1037,7 +1042,7 @@ RevInst RevProc::DecodeRInst(uint32_t Inst, unsigned Entry) const {
   if( (InstTable[Entry].imm == FImm) && (InstTable[Entry].rs2Class == RevRegClass::RegUNKNOWN)){
     DInst.imm  = DECODE_IMM12(Inst) & 0b011111;
   }else{
-    DInst.imm     = 0x0;
+    DInst.imm  = 0x0;
   }
 
   // Size
