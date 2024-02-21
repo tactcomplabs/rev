@@ -312,11 +312,11 @@ struct iocb {
    uint16_t   aio_key;
    uint16_t   aio_rw_flags;
    uint16_t   aio_lio_opcode;
-   int16_t   aio_reqprio;
+   int16_t    aio_reqprio;
    uint32_t   aio_fildes;
    uint64_t   aio_buf;
    uint64_t   aio_nbytes;
-   int64_t   aio_offset;
+   int64_t    aio_offset;
    uint64_t   aio_reserved2;
    uint32_t   aio_flags;
    uint32_t   aio_resfd;
@@ -333,8 +333,6 @@ struct rev_stats {
 };
 
 #ifndef SYSCALL_TYPES_ONLY
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvisibility"
 
 //-----------------------------------------------------------------------------
 // Create a Rev wrapper to a System Call
@@ -657,7 +655,6 @@ typedef unsigned long int rev_pthread_t;
 SYSCALL( 1000, int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ) );
 SYSCALL( 1001, int rev_pthread_join( rev_pthread_t thread ) );
 
-#pragma GCC diagnostic pop
 #endif //SYSCALL_TYPES_ONLY
 
 #endif
