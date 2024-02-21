@@ -744,7 +744,6 @@ EcallStatus RevProc::ECALL_write(RevInst& inst){
   if(nleft == 0 && LSQueue->count(lsq_hash) == 0){
     int rc = write(fd, EcallState.string.data(), EcallState.string.size());
     RegFile->SetX(RevReg::a0, rc);
-    EcallState.clear();
     DependencyClear(HartToExecID, RevReg::a0, RevRegClass::RegGPR);
     return EcallStatus::SUCCESS;
   }
@@ -2210,7 +2209,6 @@ EcallStatus RevProc::ECALL_clone(RevInst& inst){
 
  //    // clean up ecall state
  //    rtval = EcallStatus::SUCCESS;
- //    ECALL.bytesRead = 0;
 
  //  } //else
   return rtval;
@@ -3066,7 +3064,6 @@ EcallStatus RevProc::ECALL_clone3(RevInst& inst){
 
  //    // clean up ecall state
  //    rtval = EcallStatus::SUCCESS;
- //    ECALL.bytesRead = 0;
 
  //  } //else
   return rtval;

@@ -39,6 +39,7 @@ else()
   message(FATAL_ERROR "RVCXX environment varible is not set.")
 endif()
 
+set(RVOBJDUMP "$ENV{RVOBJDUMP}")
 if(NOT RVOBJDUMP)
   file(GLOB RVOBJDUMP_FILES "${RISCV_BIN_PATH}/*objdump")
   list(GET RVOBJDUMP_FILES 0 RVOBJDUMP)
