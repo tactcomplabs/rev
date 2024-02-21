@@ -1260,11 +1260,6 @@ RevInst RevProc::DecodeR4Inst(uint32_t Inst, unsigned Entry) const {
   DInst.rs2  = DECODE_RS2(Inst);
   DInst.rs3  = DECODE_RS3(Inst);
 
-  // Decode any ancillary SP/DP float options
-  if( IsFloat(Entry) ){
-    DInst.rm = DECODE_RM(Inst);
-  }
-
   // imm
   DInst.imm     = 0x0;
 
@@ -2363,8 +2358,10 @@ void RevProc::ExecEcall(RevInst& inst){
 
     // For now, rewind the PC and keep executing the ECALL until we
     // have completed
-    if(EcallStatus::SUCCESS != status){
+    if( status != EcallStatus::SUCCESS ){
       RegFile->SetPC( RegFile->GetPC() - inst.instSize );
+    } else {
+      Harts[HartToDecodeID]->GetEcallState().clear();
     }
   } else {
     output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu64 " not found", EcallCode);

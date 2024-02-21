@@ -169,7 +169,7 @@ struct RevInstEntry{
   bool         raisefpe  = false;   ///<RevInstEntry: Whether FP exceptions are raised
 
   /// Instruction implementation function
-  bool (*func)(RevFeature  *, RevRegFile *, RevMem *, const RevInst&) = nullptr;
+  bool (*func)(RevFeature *, RevRegFile *, RevMem *, const RevInst&) = nullptr;
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
   auto& SetMnemonic(std::string m)   { this->mnemonic   = std::move(m); return *this; }
