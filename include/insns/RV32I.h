@@ -129,14 +129,6 @@ class RV32I : public RevExt {
 
   static constexpr auto& ebreak = nop;
 
-  // Unimplemented Zicsr extension instructions
-  static constexpr auto& csrrw  = nop;
-  static constexpr auto& csrrs  = nop;
-  static constexpr auto& csrrc  = nop;
-  static constexpr auto& csrrwi = nop;
-  static constexpr auto& csrrsi = nop;
-  static constexpr auto& csrrci = nop;
-
   // Compressed instructions
 
   // c.addi4spn %rd, $imm == addi %rd, x2, $imm

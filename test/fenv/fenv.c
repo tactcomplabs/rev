@@ -18,9 +18,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#pragma GCC diagnostic error "-Wdouble-promotion"
-#pragma GCC diagnostic error "-Wconversion"
-
 #ifndef SNANF
 static const union {
   uint32_t i;
@@ -76,7 +73,9 @@ static inline bool my_isnand(double d) {
     asm volatile("csrwi frm, %0" : : "K"(rm));                               \
     asm volatile( #inst " %0, %1, %2" : "=f"(res) : "f"(in1), "f"(in2) );    \
     asm volatile("frflags %0" : "=r"(ex));                                   \
-    if(ex != except || (my_isnan(result) ? !my_isnan(res) : res != result))  \
+    if(ex != except)                                                         \
+      asm volatile(" .word 0; .word " #test);                                \
+    if(my_isnan(result) ? !my_isnan(res) : res != result)                    \
       asm volatile(" .word 0; .word " #test);                                \
   } while(0)
 
