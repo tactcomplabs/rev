@@ -638,7 +638,7 @@ private:
   EcallStatus ECALL_pthread_exit(RevInst& inst);           // 1002, rev_pthread_exit(void* retval);
 
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
-  std::unordered_map<uint32_t, std::function<EcallStatus(RevProc*, RevInst&)>> Ecalls;
+  std::unordered_map<uint32_t, EcallStatus(RevProc::*)(RevInst&)> Ecalls;
 
   /// RevProc: Initialize all of the ecalls inside the above table
   void InitEcallTable();
@@ -832,7 +832,7 @@ private:
         switch(regClass){
         case RevRegClass::RegGPR:
             if(size_t(RegNum) != 0)
-            regFile->RV_Scoreboard[size_t(RegNum)] = value;
+              regFile->RV_Scoreboard[size_t(RegNum)] = value;
             break;
         case RevRegClass::RegFLOAT:
             regFile->FP_Scoreboard[size_t(RegNum)] = value;

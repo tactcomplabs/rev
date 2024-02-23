@@ -74,6 +74,25 @@ struct FCSR{
   uint32_t     : 24;
 };
 
+// Ref: RISC-V Privileged Spec (pg. 39)
+enum class RevExceptionCause : int32_t {
+  NONE                      = -1,
+  MISALIGNED_INST_ADDR      = 0,
+  INST_ACCESS_FAULT         = 1,
+  ILLEGAL_INST              = 2,
+  BREAKPOINT                = 3,
+  LOAD_ADDR_MISALIGNED      = 4,
+  LOAD_ACCESS_FAULT         = 5,
+  STORE_AMO_ADDR_MISALIGNED = 6,
+  STORE_AMO_ACCESS_FAULT    = 7,
+  ECALL_USER_MODE           = 8,
+  ECALL_SUPERVISOR_MODE     = 9,
+  ECALL_MACHINE_MODE        = 11,
+  INST_PAGE_FAULT           = 12,
+  LOAD_PAGE_FAULT           = 13,
+  STORE_AMO_PAGE_FAULT      = 15,
+};
+
 class RevRegFile {
 public:
   const bool IsRV32;                  ///< RevRegFile: Cached copy of Features->IsRV32()
@@ -121,10 +140,7 @@ private:
     uint32_t RV32_SEPC;
   };
 
-  union{  // Anonymous union. We zero-initialize the largest member
-    uint64_t RV64_SCAUSE{};  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)/
-    uint32_t RV32_SCAUSE;
-  };
+  RevExceptionCause SCAUSE = RevExceptionCause::NONE;  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
 
   union{  // Anonymous union. We zero-initialize the largest member
     uint64_t RV64_STVAL{};   // Used to store additional info about exception (ECALL does not use this and sets value to 0)
@@ -217,13 +233,13 @@ public:
   }
 
   /// Set the exception cause
-  template<typename T>
-  void SetSCAUSE(T val){
-    if( IsRV32 ){
-      RV32_SCAUSE = val;
-    }else{
-      RV64_SCAUSE = val;
-    }
+  void SetSCAUSE(RevExceptionCause val){
+    SCAUSE = val;
+  }
+
+  /// Get the exception cause
+  RevExceptionCause GetSCAUSE() const {
+    return SCAUSE;
   }
 
   /// GetX: Get the specifed X register cast to a specific integral type

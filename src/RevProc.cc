@@ -1807,8 +1807,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       * Exception Handling
       * - Currently this is only for ecall
       */
-    if( (RegFile->RV64_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ||
-        (RegFile->RV32_SCAUSE == EXCEPTION_CAUSE::ECALL_USER_MODE) ){
+    if( RegFile->GetSCAUSE() == RevExceptionCause::ECALL_USER_MODE ){
       // Ecall found
       output->verbose(CALL_INFO, 6, 0,
                       "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 " - Exception Raised: ECALL with code = %" PRIu64 "\n",
@@ -2342,24 +2341,35 @@ void RevProc::InitEcallTable(){
 // supported exceptions at this point there is no need just yet.
 //
 void RevProc::ExecEcall(RevInst& inst){
-  auto EcallCode =Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(RevReg::a7);
-  auto it = Ecalls.find(EcallCode);
-  if( it != Ecalls.end() ){
-    EcallStatus status = it->second(this, inst);
+  EcallStatus status = EcallStatus::SUCCESS;
 
-    // Trap handled... 0 cause registers
-   RegFile->RV64_SCAUSE = uint64_t(status);
-   RegFile->RV32_SCAUSE = uint32_t(status);
-
-    // For now, rewind the PC and keep executing the ECALL until we
-    // have completed
-    if( status != EcallStatus::SUCCESS ){
-      RegFile->SetPC( RegFile->GetPC() - inst.instSize );
-    } else {
-      Harts[HartToDecodeID]->GetEcallState().clear();
+  // Check for any outstanding dependencies on a0-a7
+  for(RevReg reg :
+      { RevReg::a0, RevReg::a1, RevReg::a2, RevReg::a3,
+        RevReg::a4, RevReg::a5, RevReg::a6, RevReg::a7 } ){
+    if(LSQCheck(HartToDecodeID, RegFile, uint16_t(reg), RevRegClass::RegGPR) ||
+       ScoreboardCheck(RegFile, uint16_t(reg), RevRegClass::RegGPR)){
+      status = EcallStatus::CONTINUE;
+      break;
     }
+  }
+
+  // If no outstanding dependencies, look up and perform the Ecall
+  if(status == EcallStatus::SUCCESS){
+    auto EcallCode = Harts[HartToDecodeID]->RegFile->GetX<uint64_t>(RevReg::a7);
+    auto it = Ecalls.find(EcallCode);
+    if( it == Ecalls.end() ){
+      output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu64 " not found", EcallCode);
+    }
+    status = (this->*it->second)(inst);
+  }
+
+  // For now, rewind the PC and keep executing the ECALL until we have completed
+  if( status != EcallStatus::SUCCESS ){
+    RegFile->SetPC( RegFile->GetPC() - inst.instSize );
   } else {
-    output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu64 " not found", EcallCode);
+    Harts[HartToDecodeID]->GetEcallState().clear();
+    RegFile->SetSCAUSE(RevExceptionCause::NONE);
   }
 }
 
