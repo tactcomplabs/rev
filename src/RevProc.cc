@@ -2015,15 +2015,15 @@ bool RevProc::ExecEcall(){
   }
 
   // Execute the Ecall handler
-  bool success = (this->*it->second)() == EcallStatus::SUCCESS;
+  bool completed = (this->*it->second)() != EcallStatus::CONTINUE;
 
   // If we have completed, reset the EcallState and SCAUSE
-  if( success ){
+  if(completed){
     Harts[HartToDecodeID]->GetEcallState().clear();
     RegFile->SetSCAUSE(RevExceptionCause::NONE);
   }
 
-  return success;
+  return completed;
 }
 
 // Looks for a hart without a thread assigned to it and then assigns it.
