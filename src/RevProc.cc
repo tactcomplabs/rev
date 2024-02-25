@@ -1701,7 +1701,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
 
     // Now that we have decoded the instruction, check for pipeline hazards
-    if(Stalled || DependencyCheck(HartToDecodeID, &Inst) || CoProcStallReq[HartToDecodeID]){
+    if(ExecEcall() || Stalled || DependencyCheck(HartToDecodeID, &Inst) || CoProcStallReq[HartToDecodeID]){
       RegFile->SetCost(0);         // We failed dependency check, so set cost to 0 - this will
       Stats.cyclesIdle_Pipeline++; // prevent the instruction from advancing to the next stage
       HartsClearToExecute[HartToDecodeID] = false;
@@ -1720,8 +1720,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   if( ( (HartToExecID != _REV_INVALID_HART_ID_)
          && !RegFile->GetTrigger())
          && !Halted
-         && HartsClearToExecute[HartToExecID]
-         && !ExecEcall()) {
+         && HartsClearToExecute[HartToExecID]) {
     // trigger the next instruction
     // HartToExecID = HartToDecodeID;
     RegFile->SetTrigger(true);
@@ -1988,25 +1987,26 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
 // Eventually this will be integrated into a TrapHandler however since ECALLs are the only
 // supported exceptions at this point there is no need just yet.
 //
+// Returns true if an ECALL is in progress
 bool RevProc::ExecEcall(){
-  // If there is not an ECALL in progress, return false
-  if( RegFile->GetSCAUSE() != RevExceptionCause::ECALL_USER_MODE ){
+  if( RegFile->GetSCAUSE() != RevExceptionCause::ECALL_USER_MODE )
     return false;
-  }
 
+  // ECALL in progress
   uint32_t EcallCode = RegFile->GetX<uint32_t>(RevReg::a7);
-
   output->verbose(CALL_INFO, 6, 0,
                   "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32
                   " - Exception Raised: ECALL with code = %" PRIu32 "\n",
                   id, HartToExecID, ActiveThreadID, EcallCode);
 
+  // TODO: Cache handler function during ECALL instruction execution
   auto it = Ecalls.find(EcallCode);
   if( it == Ecalls.end() ){
     output->fatal(CALL_INFO, -1, "Ecall Code = %" PRIu32 " not found", EcallCode);
   }
 
   // Execute the Ecall handler
+  HartToExecID = HartToDecodeID;
   bool completed = (this->*it->second)() != EcallStatus::CONTINUE;
 
   // If we have completed, reset the EcallState and SCAUSE
@@ -2015,8 +2015,7 @@ bool RevProc::ExecEcall(){
     RegFile->SetSCAUSE(RevExceptionCause::NONE);
   }
 
-  // Return true iff an ECALL hasn't completed
-  return !completed;
+  return true;
 }
 
 // Looks for a hart without a thread assigned to it and then assigns it.
