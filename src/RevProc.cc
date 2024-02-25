@@ -1688,28 +1688,14 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     feature->SetHartToExecID(HartToDecodeID);
 
     // fetch the next instruction
-    Stalled = !PrefetchInst();
-
-   /*
-    * Exception Handling
-    * - Currently this is only for ecall
-    */
-    switch( RegFile->GetSCAUSE() ){
-      case RevExceptionCause::ECALL_USER_MODE:
-        // Execute system call on this RevProc, stalling current instruction until complete
-        if(!ExecEcall()){
-          Stalled = true;
-        }
-        break;
-
-      default:
-        break;
+    if( !PrefetchInst() ){
+      Stalled = true;
+      Stats.cyclesStalled++;
+    }else{
+      Stalled = false;
     }
 
-    if(Stalled)
-      Stats.cyclesStalled++;
-
-    if(!Stalled && !CoProcStallReq[HartToDecodeID]){
+    if( !Stalled && !CoProcStallReq[HartToDecodeID]){
       Inst = FetchAndDecodeInst();
       Inst.entry = RegFile->GetEntry();
     }
@@ -1734,7 +1720,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   if( ( (HartToExecID != _REV_INVALID_HART_ID_)
          && !RegFile->GetTrigger())
          && !Halted
-         && HartsClearToExecute[HartToExecID]) {
+         && HartsClearToExecute[HartToExecID]
+         && !ExecEcall()) {
     // trigger the next instruction
     // HartToExecID = HartToDecodeID;
     RegFile->SetTrigger(true);
@@ -2002,6 +1989,11 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
 // supported exceptions at this point there is no need just yet.
 //
 bool RevProc::ExecEcall(){
+  // If there is not an ECALL in progress, return false
+  if( RegFile->GetSCAUSE() != RevExceptionCause::ECALL_USER_MODE ){
+    return false;
+  }
+
   uint32_t EcallCode = RegFile->GetX<uint32_t>(RevReg::a7);
 
   output->verbose(CALL_INFO, 6, 0,
@@ -2023,7 +2015,8 @@ bool RevProc::ExecEcall(){
     RegFile->SetSCAUSE(RevExceptionCause::NONE);
   }
 
-  return completed;
+  // Return true iff an ECALL hasn't completed
+  return !completed;
 }
 
 // Looks for a hart without a thread assigned to it and then assigns it.
