@@ -43,24 +43,6 @@
 
 namespace SST::RevCPU{
 
-/* Ref: RISC-V Priviledged Spec (pg. 39) */
-enum EXCEPTION_CAUSE : uint32_t {
-  MISALIGNED_INST_ADDR      = 0,
-  INST_ACCESS_FAULT         = 1,
-  ILLEGAL_INST              = 2,
-  BREAKPOINT                = 3,
-  LOAD_ADDR_MISALIGNED      = 4,
-  LOAD_ACCESS_FAULT         = 5,
-  STORE_AMO_ADDR_MISALIGNED = 6,
-  STORE_AMO_ACCESS_FAULT    = 7,
-  ECALL_USER_MODE           = 8,
-  ECALL_SUPERVISOR_MODE     = 9,
-  ECALL_MACHINE_MODE        = 11,
-  INST_PAGE_FAULT           = 12,
-  LOAD_PAGE_FAULT           = 13,
-  STORE_AMO_PAGE_FAULT      = 15,
-};
-
 enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format
   RVTypeR       = 1,     ///< RevInstF: R-Type

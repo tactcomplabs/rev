@@ -25,9 +25,9 @@
 namespace SST::RevCPU{
 
 enum class EcallStatus{
-  SUCCESS = 0,
-  CONTINUE = EXCEPTION_CAUSE::ECALL_USER_MODE,
-  ERROR = 255,
+  SUCCESS,
+  CONTINUE,
+  ERROR,
 };
 
 // State information for ECALLs
