@@ -549,43 +549,47 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
 
-  uint64_t pageNum = Addr >> addrShift;
-  uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
-  char *BaseMem = &physMem[physAddr];
-
   if( ctrl ){
     // sending to the RevMemCtrl
+    uint64_t pageNum = Addr >> addrShift;
+    uint64_t physAddr = CalcPhysAddr(pageNum, Addr);
+    char *BaseMem = &physMem[physAddr];
+
     ctrl->sendAMORequest(Hart, Addr, (uint64_t)(BaseMem), Len,
                          static_cast<char *>(Data), Target, req, flags);
   }else{
     // process the request locally
-    char *TmpD = new char [8]{};
-    char *TmpT = new char [8]{};
-    std::memset(TmpD, 0, 8);
-    std::memcpy(TmpD, static_cast<char *>(Data), Len);
-    std::memset(TmpT, 0, 8);
+    union{
+      uint32_t TmpD4;
+      uint64_t TmpD8;
+    };
 
+    // Get a copy of the data operand
+    memcpy(&TmpD8, Data, Len);
+
+    // Read Target from memory
     ReadMem(Hart, Addr, Len, Target, req, flags);
 
-    std::memcpy(TmpT, static_cast<char *>(Target), Len);
+    union{
+      uint32_t TmpT4;
+      uint64_t TmpT8;
+    };
+
+    // Make a copy of Target for atomic operation
+    memcpy(&TmpT8, Target, Len);
+
+    // Perform atomic operation
     if( Len == 4 ){
-      ApplyAMO(flags, Target, *(uint32_t *)(TmpD));
+      ApplyAMO(flags, &TmpT4, TmpD4);
     }else{
-      ApplyAMO(flags, Target, *(uint64_t *)(TmpD));
+      ApplyAMO(flags, &TmpT8, TmpD8);
     }
 
-    WriteMem(Hart, Addr, Len, Target, flags);
-
-    if( Len == 4 ){
-      std::memcpy((uint32_t *)(Target), (uint32_t *)(TmpT), Len);
-    }else{
-      std::memcpy((uint64_t *)(Target), (uint64_t *)(TmpT), Len);
-    }
+    // Write new value to memory
+    WriteMem(Hart, Addr, Len, &TmpT8, flags);
 
     // clear the hazard
     req.MarkLoadComplete();
-    delete[] TmpD;
-    delete[] TmpT;
   }
 
   return true;
