@@ -116,7 +116,7 @@ class RV32I : public RevExt {
 
     R->SetSEPC();    // Save PC of instruction that raised exception
     R->SetSTVAL(0);  // MTVAL/STVAL unused for ecall and is set to 0
-    R->SetSCAUSE(EXCEPTION_CAUSE::ECALL_USER_MODE);
+    R->SetSCAUSE(RevExceptionCause::ECALL_USER_MODE);
 
     /*
      * Trap Handler is not implemented because we only have one exception
