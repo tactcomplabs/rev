@@ -51,7 +51,6 @@ public:
 
     // Set the Floating-Point Rounding Mode on the host
     switch(rm){
-      case FRMode::None:
       case FRMode::RNE:   // Round to Nearest, ties to Even
         fesetround(FE_TONEAREST);
         break;
@@ -73,10 +72,14 @@ public:
         output->fatal(CALL_INFO, -1, "Illegal FCSR Rounding Mode of"
                       " DYN at PC = 0x%" PRIx64 "\n", R->GetPC());
         break;
+      default:
+        output->fatal(CALL_INFO, -1, "Unknown Rounding Mode at PC = 0x%"
+                      PRIx64 "\n", R->GetPC());
+        break;
     }
   }
 
-  /// Destructor sets flags and restores host FP Environment
+  /// Destructor sets FP exception flags and restores host FP Environment
   ~RevFenv(){
     // RISC-V does not support FP traps
     // Set the accumulated fflags based on exceptions
