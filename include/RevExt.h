@@ -40,6 +40,12 @@ struct RevExt{
   /// RevExt: standard destructor. virtual so that Extensions[i] can be deleted
   virtual ~RevExt() = default;
 
+  // We do not allow copying, moving or assigning
+  RevExt(const RevExt&) = delete;
+  RevExt(RevExt&&) = delete;
+  RevExt& operator=(const RevExt&) = delete;
+  RevExt& operator=(RevExt&&) = delete;
+
   /// RevExt: sets the internal instruction table
   // Note: && means the argument should be an rvalue or std::move(lvalue)
   // This avoids deep std::vector copies and uses only one std::vector move.
@@ -64,13 +70,13 @@ struct RevExt{
   bool Execute(unsigned Inst, const RevInst& Payload, uint16_t HartID, RevRegFile* regFile);
 
   /// RevExt: retrieves the extension's instruction table
-  const std::vector<RevInstEntry>& GetInstTable(){ return table; }
+  const std::vector<RevInstEntry>& GetInstTable()  const { return table; }
 
   /// RevExt: retrieves the extension's compressed instruction table
-  const std::vector<RevInstEntry>& GetCInstTable(){ return ctable; }
+  const std::vector<RevInstEntry>& GetCInstTable() const { return ctable; }
 
   /// RevExt: retrieves the extension's optional instruction table
-  const std::vector<RevInstEntry>& GetOInstTable(){ return otable; }
+  const std::vector<RevInstEntry>& GetOInstTable() const { return otable; }
 
 private:
   std::string_view const name;      ///< RevExt: extension name

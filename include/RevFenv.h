@@ -17,10 +17,9 @@
 
 // GCC and Clang do not fully support FENV_ACCESS now. See:
 //
+// https://bugs.llvm.org/show_bug.cgi?id=8100
 // https://gcc.gnu.org/legacy-ml/gcc-patches/2003-09/msg00104.html
 // https://gcc.gcc.gnu.narkive.com/hDi1eOot/setting-frounding-math-by-default
-// https://bugs.llvm.org/show_bug.cgi?id=8100
-// https://github.com/llvm/llvm-project/issues/8472
 // https://discourse.llvm.org/t/why-is-pragma-stdc-fenv-access-not-supported/46128/25
 //
 // Currently FP_MODE_FLAG in CMakeLists.txt is used as a workaround
@@ -38,7 +37,7 @@ public:
   RevFenv(RevRegFile* R, FRMode rm, SST::Output* output)
     : fcsr(R->GetFCSR()){
 
-    // Save FP environment and set flags to default
+    // Save host's FP environment and set flags to default, non-trapping
     if(feholdexcept(&saved_env)){
       throw std::runtime_error("Getting floating-point environment "
                                "with feholdexcept() is not working.");
@@ -50,18 +49,19 @@ public:
     }
 
     // Set the Floating-Point Rounding Mode on the host
+    int ret = 0;
     switch(rm){
       case FRMode::RNE:   // Round to Nearest, ties to Even
-        fesetround(FE_TONEAREST);
+        ret = fesetround(FE_TONEAREST);
         break;
       case FRMode::RTZ:   // Round towards Zero
-        fesetround(FE_TOWARDZERO);
+        ret = fesetround(FE_TOWARDZERO);
         break;
       case FRMode::RDN:   // Round Down (towards -Inf)
-        fesetround(FE_DOWNWARD);
+        ret = fesetround(FE_DOWNWARD);
         break;
       case FRMode::RUP:   // Round Up (towards +Inf)
-        fesetround(FE_UPWARD);
+        ret = fesetround(FE_UPWARD);
         break;
       case FRMode::RMM:   // Round to Nearest, ties to Max Magnitude
         output->fatal(CALL_INFO, -1,
@@ -76,6 +76,10 @@ public:
         output->fatal(CALL_INFO, -1, "Unknown Rounding Mode at PC = 0x%"
                       PRIx64 "\n", R->GetPC());
         break;
+    }
+    if(ret != 0){
+      output->fatal(CALL_INFO, -1, "Could not set FP rounding mode at PC = 0x%"
+                    PRIx64 "\n", R->GetPC());
     }
   }
 
@@ -94,9 +98,10 @@ public:
     fesetenv(&saved_env);
   }
 
-  // We allow moving, but not copying RevFenv.
+  // We allow moving, but not copying or assigning RevFenv.
   RevFenv(RevFenv&&) = default;
   RevFenv(const RevFenv&) = delete;
+  RevFenv& operator=(const RevFenv&) = delete;
 }; // RevFenv
 
 } // namespace SST::RevCPU

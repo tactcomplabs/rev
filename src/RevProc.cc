@@ -149,7 +149,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
                     "Core %" PRIu32 " ; Enabling compressed extension=%s\n",
                     id, Ext->GetName().data());
 
-    std::vector<RevInstEntry> CT = Ext->GetCInstTable();
+    const std::vector<RevInstEntry>& CT = Ext->GetCInstTable();
     InstTable.reserve(InstTable.size() + CT.size());
 
     for( unsigned i=0; i<CT.size(); i++ ){
@@ -165,7 +165,7 @@ bool RevProc::EnableExt(RevExt* Ext, bool Opt){
       output->verbose(CALL_INFO, 6, 0,
                       "Core %" PRIu32 " ; Enabling optional compressed extension=%s\n",
                       id, Ext->GetName().data());
-      CT = Ext->GetOInstTable();
+      const std::vector<RevInstEntry>& CT = Ext->GetOInstTable();
 
       InstTable.reserve(InstTable.size() + CT.size());
 
