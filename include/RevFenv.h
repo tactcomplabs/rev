@@ -38,7 +38,7 @@ public:
     : fcsr(R->GetFCSR()){
 
     // Save host's FP environment and set flags to default, non-trapping
-    if(feholdexcept(&saved_env)){
+    if(std::feholdexcept(&saved_env)){
       throw std::runtime_error("Getting floating-point environment "
                                "with feholdexcept() is not working.");
     }
@@ -52,16 +52,16 @@ public:
     int ret = 0;
     switch(rm){
       case FRMode::RNE:   // Round to Nearest, ties to Even
-        ret = fesetround(FE_TONEAREST);
+        ret = std::fesetround(FE_TONEAREST);
         break;
       case FRMode::RTZ:   // Round towards Zero
-        ret = fesetround(FE_TOWARDZERO);
+        ret = std::fesetround(FE_TOWARDZERO);
         break;
       case FRMode::RDN:   // Round Down (towards -Inf)
-        ret = fesetround(FE_DOWNWARD);
+        ret = std::fesetround(FE_DOWNWARD);
         break;
       case FRMode::RUP:   // Round Up (towards +Inf)
-        ret = fesetround(FE_UPWARD);
+        ret = std::fesetround(FE_UPWARD);
         break;
       case FRMode::RMM:   // Round to Nearest, ties to Max Magnitude
         output->fatal(CALL_INFO, -1,
@@ -95,7 +95,7 @@ public:
     if(except & FE_UNDERFLOW) fcsr.UF = true;
 
     // Restore the host's saved FP Environment
-    fesetenv(&saved_env);
+    std::fesetenv(&saved_env);
   }
 
   // We allow moving, but not copying or assigning RevFenv.

@@ -24,18 +24,48 @@
 
 namespace SST::RevCPU{
 
+// Limits when converting from floating-point to integer
+template<typename FP, typename INT> constexpr FP fpmax = 0;
+template<typename FP, typename INT> constexpr FP fpmin = 0;
+template<> constexpr  float fpmax< float,  int32_t> =  0x1.fffffep+30f;
+template<> constexpr  float fpmin< float,  int32_t> = -0x1p+31f;
+template<> constexpr  float fpmax< float, uint32_t> =  0x1.fffffep+31f;
+template<> constexpr  float fpmin< float, uint32_t> =  0x0p+0f;
+template<> constexpr  float fpmax< float,  int64_t> =  0x1.fffffep+62f;
+template<> constexpr  float fpmin< float,  int64_t> = -0x1p+63f;
+template<> constexpr  float fpmax< float, uint64_t> =  0x1.fffffep+63f;
+template<> constexpr  float fpmin< float, uint64_t> =  0x0p+0f;
+template<> constexpr double fpmax<double,  int32_t> =  0x1.fffffffcp+30;
+template<> constexpr double fpmin<double,  int32_t> = -0x1p+31;
+template<> constexpr double fpmax<double, uint32_t> =  0x1.fffffffep+31;
+template<> constexpr double fpmin<double, uint32_t> =  0x0p+0;
+template<> constexpr double fpmax<double,  int64_t> =  0x1.fffffffffffffp+62;
+template<> constexpr double fpmin<double,  int64_t> = -0x1p+63;
+template<> constexpr double fpmax<double, uint64_t> =  0x1.fffffffffffffp+63;
+template<> constexpr double fpmin<double, uint64_t> =  0x0p+0;
+
 /// General template for converting between Floating Point and Integer.
 /// FP values outside the range of the target integer type are clipped
 /// at the integer type's numerical limits, whether signed or unsigned.
 template<typename FP, typename INT>
 bool CvtFpToInt(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-  FP fp = R->GetFP<FP>(Inst.rs1); // Read the FP register
-  constexpr INT max = std::numeric_limits<INT>::max();
-  constexpr INT min = std::numeric_limits<INT>::min();
-  INT res = std::isnan(fp) || fp > FP(max) ? max : fp < FP(min) ? min : static_cast<INT>(fp);
+  // Read the FP register. Round to integer according to current rounding mode.
+  FP fp = std::nearbyint(R->GetFP<FP>(Inst.rs1));
+
+  // Convert to integer type
+  INT res;
+  if(std::isnan(fp) || fp > fpmax<FP, INT>){
+    std::feraiseexcept(FE_INVALID);
+    res = std::numeric_limits<INT>::max();
+  }else if(fp < fpmin<FP, INT>){
+    std::feraiseexcept(FE_INVALID);
+    res = std::numeric_limits<INT>::min();
+  }else{
+    res = static_cast<INT>(fp);
+  }
 
   // Make final result signed so sign extension occurs when sizeof(INT) < XLEN
-  R->SetX(Inst.rd, static_cast<std::make_signed_t<INT>>(res));
+  R->SetX(Inst.rd, std::make_signed_t<INT>(res));
 
   R->AdvancePC(Inst);
   return true;
@@ -50,17 +80,17 @@ template<typename T>
 unsigned fclass(T val, bool quietNaN = true) {
   switch(std::fpclassify(val)){
   case FP_INFINITE:
-    return std::signbit(val) ? 1 : 1 << 7;
+    return std::signbit(val) ? 1u : 1u << 7;
   case FP_NAN:
-    return quietNaN ? 1 << 9 : 1 << 8;
+    return quietNaN ? 1u << 9 : 1u << 8;
   case FP_NORMAL:
-    return std::signbit(val) ? 1 << 1 : 1 << 6;
+    return std::signbit(val) ? 1u << 1 : 1u << 6;
   case FP_SUBNORMAL:
-    return std::signbit(val) ? 1 << 2 : 1 << 5;
+    return std::signbit(val) ? 1u << 2 : 1u << 5;
   case FP_ZERO:
-    return std::signbit(val) ? 1 << 3 : 1 << 4;
+    return std::signbit(val) ? 1u << 3 : 1u << 4;
   default:
-    return 0;
+    return 0u;
   }
 }
 
