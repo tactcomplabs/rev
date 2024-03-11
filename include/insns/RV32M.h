@@ -50,6 +50,7 @@ class RV32M : public RevExt{
     }
   };
 
+  // clang-format off
   std::vector<RevInstEntry> RV32MTable = {
     { RevMInstDefaults().SetMnemonic("mul %rd, %rs1, %rs2"   ).SetFunct3(0b000).SetImplFunc(mul   ) },
     { RevMInstDefaults().SetMnemonic("mulh %rd, %rs1, %rs2"  ).SetFunct3(0b001).SetImplFunc(mulh  ) },
@@ -60,6 +61,7 @@ class RV32M : public RevExt{
     { RevMInstDefaults().SetMnemonic("rem %rd, %rs1, %rs2"   ).SetFunct3(0b110).SetImplFunc(rem   ) },
     { RevMInstDefaults().SetMnemonic("remu %rd, %rs1, %rs20" ).SetFunct3(0b111).SetImplFunc(remu  ) },
   };
+  // clang-format on
 
 public:
   /// RV32M: standard constructor

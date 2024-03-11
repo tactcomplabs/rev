@@ -57,6 +57,7 @@ class RV64I : public RevExt{
     }
   };
 
+  // clang-format off
   std::vector<RevInstEntry> RV64ITable = {
     { Rev64InstDefaults().SetMnemonic("lwu %rd, $imm(%rs1)"   ).SetFunct3(0b110).SetImplFunc(lwu   ).Setimm(FImm).SetFormat(RVTypeI).SetOpcode(0b0000011).Setrs2Class(RevRegClass::RegUNKNOWN) },
     { Rev64InstDefaults().SetMnemonic("ld %rd, $imm(%rs1)"    ).SetFunct3(0b011).SetImplFunc(ld    ).Setimm(FImm).SetFormat(RVTypeI).SetOpcode(0b0000011).Setrs2Class(RevRegClass::RegUNKNOWN) },
@@ -81,6 +82,7 @@ class RV64I : public RevExt{
     { RevCInstDefaults().SetMnemonic("c.addw %rd, %rs1"       ).SetFunct2( 0b01).SetImplFunc(caddw )             .SetFormat(RVCTypeCA ).SetOpcode(0b01).SetFunct6(0b100111) },
     { RevCInstDefaults().SetMnemonic("c.subw %rd, %rs1"       ).SetFunct2( 0b00).SetImplFunc(csubw )             .SetFormat(RVCTypeCA ).SetOpcode(0b01).SetFunct6(0b100111) },
   };
+  // clang-format on
 
 public:
   /// RV64I: standard constructor

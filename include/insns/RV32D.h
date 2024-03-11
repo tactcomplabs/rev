@@ -126,6 +126,8 @@ class RV32D : public RevExt{
       SetRaiseFPE(true);
     }
   };
+
+  // clang-format off
   std::vector<RevInstEntry> RV32DTable = {
     { Rev32DInstDefaults().SetMnemonic("fld %rd, $imm(%rs1)"           ).SetFunct3(0b011).SetFunct2or7(0b0000000).SetImplFunc(fld    ).Setrs1Class(RevRegClass::RegGPR).Setrs2Class(RevRegClass::RegGPR).SetFormat(RVTypeI).SetOpcode(0b0000111).SetRaiseFPE(false) },
     { Rev32DInstDefaults().SetMnemonic("fsd %rs2, $imm(%rs1)"          ).SetFunct3(0b011).SetFunct2or7(0b0000000).SetImplFunc(fsd    ).Setrs1Class(RevRegClass::RegGPR).SetrdClass(RevRegClass::RegIMM).SetFormat(RVTypeS).SetOpcode(0b0100111).SetRaiseFPE(false) },
@@ -163,6 +165,7 @@ class RV32D : public RevExt{
     { RevCInstDefaults().SetMnemonic("c.fld %rd, %rs1, $imm" ).SetOpcode(0b00).SetFunct3(0b001).SetImplFunc(cfld  ).SetrdClass (RevRegClass::RegFLOAT).Setrs1Class(RevRegClass::RegGPR  ).Setimm(FVal).SetFormat(RVCTypeCL ) },
     { RevCInstDefaults().SetMnemonic("c.fsd %rs2, %rs1, $imm").SetOpcode(0b00).SetFunct3(0b101).SetImplFunc(cfsd  ).Setrs1Class(RevRegClass::RegGPR  ).Setrs2Class(RevRegClass::RegFLOAT).Setimm(FVal).SetFormat(RVCTypeCS ) },
   };
+  // clang-format on
 
 public:
   /// RV32D: standard constructor

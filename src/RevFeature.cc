@@ -52,6 +52,7 @@ bool RevFeature::ParseMachineModel(){
   ///< By using a canonical ordering, the extensions' presence can be tested
   ///< in linear time complexity of the table and the string. Some of the
   ///< extensions imply other extensions, so the extension flags are ORed.
+  // clang-format off
   static constexpr std::pair<std::string_view, uint32_t> table[] = {
     { "E",          RV_E                                                      },
     { "I",          RV_I                                                      },
@@ -76,6 +77,7 @@ bool RevFeature::ParseMachineModel(){
     { "Zfa",        RV_ZFA | RV_F | RV_ZICSR                                  },
     { "Zicbom",     RV_ZICBOM                                                 },
   };
+  // clang-format on
 
   // -- step 2: parse all the features
   // Note: Extension strings, if present, must appear in the order listed in the table above.

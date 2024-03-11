@@ -324,6 +324,7 @@ public:
                                 SST::RevCPU::RevMemCtrl
     )
 
+  // clang-format off
   SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the memory controller",    "0" },
                           { "clock",          "Sets the clock frequency of the memory conroller",         "1Ghz" },
                           { "max_loads",      "Sets the maximum number of outstanding loads",             "64"},
@@ -382,6 +383,7 @@ public:
     {"AMOSwapBytes",        "Counts the number of bytes in AMOSwap transactions", "bytes", 1},
     {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1},
     )
+  // clang-format on
 
   enum MemCtrlStats : uint32_t {
     ReadInFlight        = 0,
@@ -678,6 +680,7 @@ void ApplyAMO(RevFlag flags, void* Target, T value){
   auto  TmpBufU    = static_cast<std::make_unsigned_t <T> >(value);
 
   // Table mapping atomic operations to executable code
+  // clang-format off
   static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
     { RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
     { RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
@@ -689,7 +692,7 @@ void ApplyAMO(RevFlag flags, void* Target, T value){
     { RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
     { RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
   };
-
+  // clang-format on
   for (auto& [ flag, op ] : table){
     if( RevFlagHas(flags, flag) ){
       op();

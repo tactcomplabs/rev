@@ -56,11 +56,13 @@ class Zicbom : public RevExt{
     }
   };
 
+  // clang-format off
   std::vector<RevInstEntry> ZicbomTable = {
     { RevZicbomInstDefaults().SetMnemonic("cbo.clean").Setimm12(0b0001) },
     { RevZicbomInstDefaults().SetMnemonic("cbo.flush").Setimm12(0b0010) },
     { RevZicbomInstDefaults().SetMnemonic("cbo.inval").Setimm12(0b0000) },
   };
+  // clang-format on
 
 public:
   Zicbom( RevFeature *Feature,

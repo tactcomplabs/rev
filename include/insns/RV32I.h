@@ -185,6 +185,7 @@ class RV32I : public RevExt {
   //
   // ----------------------------------------------------------------------
 
+  // clang-format off
   std::vector<RevInstEntry> RV32ITable = {
     { RevInstDefaults().SetMnemonic("lui %rd, $imm"        ).SetFunct3(   0b000).SetImplFunc(lui   ).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeU).SetOpcode(0b0110111) },
     { RevInstDefaults().SetMnemonic("auipc %rd, $imm"      ).SetFunct3(   0b000).SetImplFunc(auipc ).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeU).SetOpcode(0b0010111) },
@@ -265,6 +266,7 @@ class RV32I : public RevExt {
   std::vector<RevInstEntry> RV32ICOTable = {
     { RevCInstDefaults().SetMnemonic("c.jal $imm").SetOpcode(0b01).SetFunct3(0b001).SetFormat(RVCTypeCJ).SetImplFunc(cjal) },
   };
+  // clang-format on
 
 public:
   /// RV32I: standard constructor

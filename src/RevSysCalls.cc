@@ -3194,6 +3194,7 @@ EcallStatus RevProc::ECALL_pthread_join(){
 /* ========================================= */
 /* System Call (ecall) Implementations Below */
 /* ========================================= */
+// clang-format off
 const std::unordered_map<uint32_t, EcallStatus(RevProc::*)()> RevProc::Ecalls = {
     { 0,   &RevProc::ECALL_io_setup },               //  rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
     { 1,   &RevProc::ECALL_io_destroy },             //  rev_io_destroy(aio_context_t ctx)
@@ -3512,5 +3513,6 @@ const std::unordered_map<uint32_t, EcallStatus(RevProc::*)()> RevProc::Ecalls = 
     { 1000, &RevProc::ECALL_pthread_create },        //
     { 1001, &RevProc::ECALL_pthread_join },          //
 };
+// clang-format on
 
 } // namespace SST::RevCPU

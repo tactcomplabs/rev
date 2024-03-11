@@ -49,6 +49,7 @@
 #endif
 
 // Clone Flags
+// clang-format off
 #define CSIGNAL              0x000000ff /* Signal mask to be sent at exit */
 #define CLONE_VM             0x00000100 /* Set if VM shared between processes */
 #define CLONE_FS             0x00000200 /* Set if fs info shared between processes */
@@ -184,6 +185,8 @@
 #define STDIN_FILENO    0       /* standard input file descriptor */
 #define STDOUT_FILENO   1       /* standard output file descriptor */
 #define STDERR_FILENO   2       /* standard error file descriptor */
+
+// clang-format on
 
 struct __aio_sigset;
 struct epoll_event;
@@ -339,6 +342,7 @@ struct rev_stats {
 // __attribute__((naked)) prevents GCC/Clang from modifying any registers in
 // the prologue or epilogue, and prevents optimizing away the ECALL at -O3
 //-----------------------------------------------------------------------------
+// clang-format off
 #define REV_SYSCALL(NUM, PROTO) __attribute__((naked)) \
   static PROTO{ asm(" li a7," #NUM "; ecall; ret"); }
 
@@ -654,6 +658,7 @@ typedef unsigned long int rev_pthread_t;
 // void *restrict arg);
 REV_SYSCALL( 1000, int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ) );
 REV_SYSCALL( 1001, int rev_pthread_join( rev_pthread_t thread ) );
+// clang-format on
 
 #endif //SYSCALL_TYPES_ONLY
 
