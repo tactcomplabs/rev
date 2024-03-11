@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# This pre-commit hook checks if any versions of clang-format
+# are installed, and if so, uses the installed version to format
+# the staged changes.
+#
+# Based on https://github.com/rocm/rocBLAS
+
+# Fail on error
+set -e
+
+export PATH=$PATH:/usr/bin:/bin
+
+# Redirect stdout to stderr
+exec >&2
+
+# Do everything from top - level
+cd "$(git rev-parse --show-toplevel)"
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+    against=HEAD
+else
+    # Initial commit: diff against an empty tree object
+    against=1346dd7e51d04da7049e0d49f6cbb81b028db538
+fi
+
+if [[ "$1" == "--reformat" ]]; then
+    files=$(git ls-files --exclude-standard)
+else
+    files=$(git diff-index --cached --name-only $against)
+fi
+
+[[ -z "$files" ]] && exit
+
+# Change the copyright date at the top of any text files
+for file in $files; do
+    [[ -L $file ]] && continue
+    echo "Processing copyright dates in $file"
+    if [[ -e $file ]]; then
+        /usr/bin/perl -pi -e 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 }
+            s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" && git add -u "$file"
+    fi
+done
+
+# do the formatting
+for file in $files; do
+    [[ -L $file ]] && continue
+    if [[ -e $file ]] && echo "$file" | grep -Eq '\.c$|\.h$|\.hpp$|\.cpp$|\.cl$|\.in$|\.txt$|\.yaml$|\.yml$|\.sh$|\.py$|\.pl$|\.cmake$|\.md$|\.rst$|\.groovy$|\.ini$|\.awk$|\.csv$'; then
+        echo "Processing line endings in $file"
+        sed -i -e 's/[[:space:]]*$//' "$file" # Remove whitespace at end of lines
+        sed -i -e '$a\' "$file" # Add missing newline to end of file
+
+        echo "Converting non-ASCII characters to ASCII equivalents in $file"
+        # Convert UTF8 non-ASCII to ASCII
+        temp=$(mktemp)
+        [[ -w $temp ]]
+        iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
+        chmod --reference="$file" "$temp"
+        mv -f "$temp" "$file"
+        git add -u "$file"
+    fi
+done
+
+# if clang-format exists, run it on C/C++ files
+if command -v clang-format >/dev/null; then
+    for file in $files; do
+        [[ -L $file ]] && continue
+        if [[ -e $file ]] && echo "$file" | grep -Eq '\.cc$|\.h$'; then
+            echo "clang-format -i $file"
+            clang-format -i "$file"
+            git add -u "$file"
+        fi
+    done
+else
+    echo "clang-format command not found, skipping file formatting."
+    # exit 127
+fi
