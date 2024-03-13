@@ -16,7 +16,7 @@ export PATH=$PATH:/usr/bin:/bin
 exec >&2
 
 # Terminal colors
-if [[ -z ${NO_COLOR+x} ]] && tty -s; then
+if [[ -z ${NO_COLOR+x} ]] && tty -s <&2; then
     RED="\033[91m"
     YELLOW="\033[93m"
     GREEN="\033[92m"
