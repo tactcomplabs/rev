@@ -50,7 +50,6 @@ SpaceBeforeInheritanceColon: true
 SpaceBeforeCpp11BracedList: false
 SpaceBeforeCaseColon: false
 SpaceBeforeAssignmentOperators: true
-SpaceAfterTemplateKeyword: false
 SpaceAfterLogicalNot: false
 SpaceAfterCStyleCast: true
 SpaceAroundPointerQualifiers: Default
