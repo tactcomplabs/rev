@@ -74,10 +74,7 @@ if command -v clang-format >/dev/null; then
         fi
     done
 else
-    echo ""
-    echo "command not found: clang-format"
-    echo ""
-
+    echo "\ncommand not found: clang-format\n"
     INSTALL=
     if [[ $OSTYPE = darwin* ]]; then
         INSTALL="brew install clang-format"
@@ -88,12 +85,10 @@ else
             INSTALL="sudo apt-get install clang-format"
         fi
     fi
-
     if [[ -n $INSTALL ]]; then
         echo "To install clang-format, type:\n\n$INSTALL"
     else
         echo "Install clang-format and make sure it is in PATH."
     fi
-
     exit 1
 fi
