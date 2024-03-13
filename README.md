@@ -41,6 +41,7 @@ version for this is `3.19`.
 Building the Rev SST component from source using CMake (>= 3.19) can be performed as follows:
 
     git clone
+    git config core.hooksPath .githooks
     cd rev/build
     cmake -DRVCC=/path/to/riscv/compiler/exe ..
     make -j
@@ -73,7 +74,7 @@ RISC-V compiler from source. This will permit you to tune the necessary options
 in order to support a multitude of different standard, optional and custom
 extensions.
 
-We recommend compiling the [riscv-gnu-toolchain](https://github.com/riscv/riscv-gnu-toolchain) 
+We recommend compiling the [riscv-gnu-toolchain](https://github.com/riscv/riscv-gnu-toolchain)
 using the `multilib` option. This is analogous to the following:
 
     git clone https://github.com/riscv/riscv-gnu-toolchain

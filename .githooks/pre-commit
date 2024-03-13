@@ -1,13 +1,11 @@
 #!/bin/bash
 #
-# This pre-commit hook checks if any versions of clang-format
-# are installed, and if so, uses the installed version to format
-# the staged changes.
+# This pre-commit hook reformats text files to meet coding guidelines.
 #
 # Based on https://github.com/rocm/rocBLAS
 #
 # shellcheck enable=all
-# shellcheck disable=1003,2028,2248,2249,2250
+# shellcheck disable=1003,2028,2034,2248,2249,2250
 
 set -eEu
 shopt -s nocasematch xpg_echo
@@ -17,78 +15,103 @@ export PATH=$PATH:/usr/bin:/bin
 # Redirect stdout to stderr
 exec >&2
 
-# Do everything from top level
-top=$(git rev-parse --show-toplevel)
-cd "$top"
-
-if git rev-parse --verify HEAD >/dev/null 2>&1; then
-    against=HEAD
+# Terminal colors
+if [[ -z ${NO_COLOR+x} ]] && tty -s; then
+    RED="\033[91m"
+    YELLOW="\033[93m"
+    GREEN="\033[92m"
+    END="\033[0m"
 else
-    # Initial commit: diff against an empty tree object
-    against=1346dd7e51d04da7049e0d49f6cbb81b028db538
+    RED=
+    YELLOW=
+    GREEN=
+    END=
 fi
 
-if [[ "${1:-}" == "--reformat" ]]; then
+# Check for existence of clang-format or print error message on how to install
+check_clang_format() {
+    if ! command -v clang-format >/dev/null; then
+        echo "${RED}"
+        echo "Error: clang-format not found\n"
+        INSTALL=
+        if [[ $OSTYPE = darwin* ]]; then
+            if command -v brew >/dev/null; then
+                INSTALL="brew install clang-format"
+            fi
+        elif [[ $OSTYPE = linux* ]]; then
+            if [[ -f /etc/redhat-release ]]; then
+                if command -v dnf >/dev/null; then
+                    INSTALL="sudo dnf install clang-format"
+                elif command -v yum >/dev/null; then
+                    INSTALL="sudo yum install clang-format"
+                fi
+            elif [[ -f /etc/debian_version ]] && command -v apt-get >/dev/null; then
+                INSTALL="sudo apt-get install clang-format"
+            fi
+        fi
+        if [[ -n $INSTALL ]]; then
+            echo "To install clang-format, run:\n\n$INSTALL"
+        else
+            echo "Install clang-format and make sure it is in PATH."
+        fi
+        echo "${END}"
+        exit 1
+    fi
+}
+
+# Test a file for changes and add them to the Git commit if changed
+detect_change() {
+    if ! cmp -s "$1" "$2"; then
+        echo "${YELLOW}$1: $3${END}"
+        cp -f "$2" "$1"
+        git add -u "$1"
+    fi
+}
+
+# Generate list of modified files.
+# If --reformat is used, all files are reformatted.
+if [[ ${1:-} = --reformat ]]; then
     files=$(git ls-files --exclude-standard)
 else
+    if git rev-parse --verify HEAD >/dev/null 2>&1; then
+        against=HEAD
+    else
+        # Initial commit: diff against an empty tree object
+        against=1346dd7e51d04da7049e0d49f6cbb81b028db538
+    fi
     files=$(git diff-index --cached --name-only $against)
 fi
 
-[[ -z "$files" ]] && exit
-
-# Change the copyright date at the top of any text files
 for file in $files; do
-    [[ -L $file ]] && continue
-    if [[ -e $file ]]; then
-        echo "Processing copyright dates in $file"
-        /usr/bin/perl -pi -e 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 }
-            s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" && git add -u "$file"
-    fi
-done
+    # Skip non-regular files (e.g. symlinks)
+    [[ -f $file ]] || continue
 
-# do the formatting
-for file in $files; do
-    [[ -L $file ]] && continue
-    if [[ -e $file ]] && echo "$file" | grep -Eq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.C$|\.cxx$|\.cl$|\.in$|\.txt$|\.yaml$|\.yml$|\.sh$|\.py$|\.pl$|\.cmake$|\.md$|\.rst$|\.groovy$|\.ini$|\.awk$|\.csv$'; then
-        echo "Processing line endings in $file"
-        sed -i -e 's/[[:space:]]*$//' "$file" # Remove whitespace at end of lines
-        sed -i -e '$a\' "$file" # Add missing newline to end of file
-
-        echo "Converting non-ASCII characters to ASCII equivalents in $file"
+    # Fix formatting on text files
+    if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$|\.cl$|\.in$|\.txt$|\.yaml$|\.yml$|\.sh$|\.py$|\.pl$|\.cmake$|\.md$|\.rst$|\.groovy$|\.ini$|\.awk$|\.csv$|\.s$|\.asm$|\.inc$|\.conf$|\.ld$'; then
         temp=$(mktemp)
+        trap 'rm -f "$temp"' ERR
+
+        # Change the copyright date at the top of any text files
+        if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" > "$temp"; then
+            detect_change "$file" "$temp" "Changing copyright date"
+        fi
+
+        # Replace non-ASCII characters with ASCII equivalents
         iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
-        cp -f "$temp" "$file"
+        detect_change "$file" "$temp" "Converting non-ASCII characters to ASCII equivalents"
+
+        # Remove whitespace at end of lines; add missing newline at end of file
+        sed -e 's/[[:space:]]*$//' -e '$a\' "$file" > "$temp"
+        detect_change "$file" "$temp" "Correcting whitespace at line endings"
+
+        # Run clang-format on C/C++ files
+        if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$'; then
+            check_clang_format
+            clang-format "$file" > "$temp"
+            detect_change "$file" "$temp" "clang-format reformatted according to coding guidelines"
+        fi
+
         rm -f "$temp"
-        git add -u "$file"
+        trap ERR
     fi
 done
-
-# if clang-format exists, run it on C/C++ files
-if command -v clang-format >/dev/null; then
-    for file in $files; do
-        [[ -L $file ]] && continue
-        if [[ -e $file ]] && echo "$file" | grep -Eq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.C$|\.cxx$'; then
-            echo "clang-format -i $file"
-            clang-format -i "$file"
-            git add -u "$file"
-        fi
-    done
-else
-    echo "\ncommand not found: clang-format\n"
-    INSTALL=
-    if [[ $OSTYPE = darwin* ]]; then
-        INSTALL="brew install clang-format"
-    elif [[ $OSTYPE = linux* ]]; then
-        if [[ -f /etc/redhat-release ]]; then
-            INSTALL="sudo yum install clang-format"
-        elif [[ -f /etc/debian_version ]]; then
-            INSTALL="sudo apt-get install clang-format"
-        fi
-    fi
-    if [[ -n $INSTALL ]]; then
-        echo "To install clang-format, type:\n\n$INSTALL"
-    else
-        echo "Install clang-format and make sure it is in PATH."
-    fi
-    exit 1
-fi
