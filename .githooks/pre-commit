@@ -18,7 +18,8 @@ export PATH=$PATH:/usr/bin:/bin
 exec >&2
 
 # Do everything from top level
-cd "$(git rev-parse --show-toplevel)"
+top=$(git rev-parse --show-toplevel)
+cd "$top"
 
 if git rev-parse --verify HEAD >/dev/null 2>&1; then
     against=HEAD
