@@ -74,6 +74,8 @@ struct FCSR{
   uint32_t     : 24;
 };
 
+#define CSR_LIMIT 0x1000
+
 // Ref: RISC-V Privileged Spec (pg. 39)
 enum class RevExceptionCause : int32_t {
   NONE                      = -1,
@@ -93,8 +95,7 @@ enum class RevExceptionCause : int32_t {
   STORE_AMO_PAGE_FAULT      = 15,
 };
 
-class RevRegFile {
-public:
+struct RevRegFile {
   const bool IsRV32;                  ///< RevRegFile: Cached copy of Features->IsRV32()
   const bool HasD;                    ///< RevRegFile: Cached copy of Features->HasD()
 
@@ -108,8 +109,6 @@ private:
     uint32_t RV32_PC;                   ///< RevRegFile: RV32 PC
     uint64_t RV64_PC{};                 ///< RevRegFile: RV64 PC
   };
-
-  FCSR fcsr{}; ///< RevRegFile: FCSR
 
   std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> LSQueue{};
   std::function<void(const MemReq&)> MarkLoadCompleteFunc{};
@@ -128,12 +127,10 @@ private:
   std::bitset<_REV_NUM_REGS_> FP_Scoreboard{}; ///< RevRegFile: Scoreboard for SPF/DPF RF to manage pipeline hazard
 
   // Supervisor Mode CSRs
-#if 0 // not used
-  union{  // Anonymous union. We zero-initialize the largest member
-    uint64_t RV64_SSTATUS{}; // During ecall, previous priviledge mode is saved in this register (Incomplete)
-    uint32_t RV32_SSTATUS;
-  };
-#endif
+  uint64_t CSR[CSR_LIMIT];
+
+  // Floating-point CSR
+  FCSR fcsr{};
 
   union{  // Anonymous union. We zero-initialize the largest member
     uint64_t RV64_SEPC{};    // Holds address of instruction that caused the exception (ie. ECALL)
@@ -205,11 +202,6 @@ public:
   /// Invoke the MarkLoadComplete function
   void MarkLoadComplete(const MemReq& req) const {
     MarkLoadCompleteFunc(req);
-  }
-
-  /// Return the Floating-Point Rounding Mode
-  FRMode GetFPRound() const{
-    return static_cast<FRMode>(fcsr.frm);
   }
 
   /// Capture the PC of current instruction which raised exception
@@ -340,6 +332,46 @@ public:
       SPF[size_t(rd)] = value;               // Store in FP32 register
     }
   }
+
+  /// Get a CSR register
+  template<typename T>
+  T GetCSR(size_t i) const {
+    T old;
+    if(i <= 3){
+      // We store fcsr separately from the global CSR
+      static_assert(sizeof(fcsr) <= sizeof(old));
+      old = 0;
+      memcpy(&old, &fcsr, sizeof(fcsr));
+      if(!(i & 1)) old &= ~T{0x1f};
+      if(!(i & 2)) old &= ~T{0xe0};
+    }else{
+      old = static_cast<T>(CSR[i]);
+    }
+    return old;
+  }
+
+  /// Set a CSR register
+  template<typename T>
+  void SetCSR(size_t i, T val) {
+    if(i <= 3){
+      // We store fcsr separately from the global CSR
+      if(!(i & 1)) val &= ~T{0x1f};
+      if(!(i & 2)) val &= ~T{0xe0};
+      static_assert(sizeof(fcsr) <= sizeof(val));
+      memcpy(&fcsr, &val, sizeof(fcsr));
+    }else{
+      CSR[i] = val;
+    }
+  }
+
+  /// Get the Floating-Point Rounding Mode
+  FRMode GetFRM() const { return static_cast<FRMode>(fcsr.frm); }
+
+  /// Set the Floating-Point Rounding Mode
+  void SetFRM(FRMode rm) { fcsr.frm = static_cast<uint8_t>(rm); }
+
+  /// Return the Floating-Point Status Register
+  FCSR& GetFCSR() { return fcsr; }
 
   // Friend functions and classes to access internal register state
   template<typename FP, typename INT>
