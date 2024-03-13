@@ -2,7 +2,7 @@
 
 exec >&2
 
-if [ -z ${NO_COLOR+x} ] && tty -s; then
+if [ -z ${NO_COLOR+x} ] && tty -s <&2; then
   RED="\033[91m"
   END="\033[0m"
 else
