@@ -62,7 +62,7 @@ check_clang_format() {
 # Test a file for changes and add them to the Git commit if changed
 detect_change() {
     if ! cmp -s "$1" "$2"; then
-        printf "${YELLOW}$3${END}" "$1"
+        printf "${YELLOW}$3${END}\n" "$1"
         cp -f "$2" "$1"
         git add -u "$1"
     fi
