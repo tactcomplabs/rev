@@ -5,10 +5,10 @@
 # Based on https://github.com/rocm/rocBLAS
 #
 # shellcheck enable=all
-# shellcheck disable=1003,2028,2034,2059,2248,2249,2250
+# shellcheck disable=2034,2059,2250
 
-set -eEu
-shopt -s nocasematch xpg_echo
+set -eEu -o pipefail
+shopt -s nocasematch
 
 export PATH=$PATH:/usr/bin:/bin
 
@@ -28,11 +28,36 @@ else
     END=
 fi
 
+usage() {
+    cat<<EOF
+Usage: $0 [ --reformat] [ --nostage ]
+
+Format files prior to commit so that they match style guidelines
+
+Options:
+    --reformat   Reformat all files in the source tree, rather than staged files
+    --nostage    Do not add files modified by $0 to the staging area
+EOF
+    exit 1
+}
+
+# Parse command-line options
+REFORMAT=
+NOSTAGE=
+for opt in "$@"; do
+    if [[ $opt = -* ]]; then
+        case $opt in
+            --reformat) REFORMAT=1 ;;
+            --nostage)  NOSTAGE=1  ;;
+            *) usage
+        esac
+    fi
+done
+
 # Check for existence of clang-format or print error message on how to install
 check_clang_format() {
     if ! command -v clang-format >/dev/null; then
-        echo "${RED}"
-        echo "Error: clang-format not found\n"
+        printf "${RED}\nError: clang-format not found\n"
         INSTALL=
         if [[ $OSTYPE = darwin* ]]; then
             if command -v brew >/dev/null; then
@@ -50,11 +75,10 @@ check_clang_format() {
             fi
         fi
         if [[ -n $INSTALL ]]; then
-            echo "To install clang-format, run:\n\n$INSTALL"
+            printf "To install clang-format, run:\n\n%s\n${END}" "$INSTALL"
         else
-            echo "Install clang-format and make sure it is in PATH."
+            printf "Install clang-format and make sure it is in PATH.\n${END}"
         fi
-        echo "${END}"
         exit 1
     fi
 }
@@ -64,13 +88,13 @@ detect_change() {
     if ! cmp -s "$1" "$2"; then
         printf "${YELLOW}$3${END}\n" "$1"
         cp -f "$2" "$1"
-        git add -u "$1"
+        [[ -z $NOSTAGE ]] && git add -u "$1"
     fi
 }
 
 # Generate list of modified files.
 # If --reformat is used, all files are reformatted.
-if [[ ${1:-} = --reformat ]]; then
+if [[ -n $REFORMAT ]]; then
     files=$(git ls-files --exclude-standard)
 else
     if git rev-parse --verify HEAD >/dev/null 2>&1; then
@@ -79,8 +103,11 @@ else
         # Initial commit: diff against an empty tree object
         against=1346dd7e51d04da7049e0d49f6cbb81b028db538
     fi
-    files=$(git diff-index --cached --name-only $against)
+    files=$(git diff-index --cached --name-only "$against")
 fi
+
+temp=$(mktemp)
+trap 'rm -f "$temp"' EXIT
 
 for file in $files; do
     # Skip non-regular files (e.g. symlinks)
@@ -88,8 +115,6 @@ for file in $files; do
 
     # Fix formatting on text files
     if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$|\.cl$|\.in$|\.txt$|\.yaml$|\.yml$|\.sh$|\.py$|\.pl$|\.cmake$|\.md$|\.rst$|\.groovy$|\.ini$|\.awk$|\.csv$|\.s$|\.asm$|\.inc$|\.conf$|\.ld$'; then
-        temp=$(mktemp)
-        trap 'rm -f "$temp"' ERR
 
         # Change the copyright date at the top of any text files
         if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" > "$temp"; then
@@ -100,10 +125,6 @@ for file in $files; do
         iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
         detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
 
-        # Remove whitespace at end of lines; add missing newline at end of file
-        sed -e 's/[[:space:]]*$//' -e '$a\' "$file" > "$temp"
-        detect_change "$file" "$temp" "%s: Correcting whitespace at line endings"
-
         # Run clang-format on C/C++ files
         if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$'; then
             check_clang_format
@@ -111,7 +132,8 @@ for file in $files; do
             detect_change "$file" "$temp" "%s: Reformatting with clang-format according to coding guidelines"
         fi
 
-        rm -f "$temp"
-        trap ERR
+        # Remove whitespace at end of lines; add missing newline at end of file
+        sed -e 's/[[:space:]]*$//' "$file" | awk 1 > "$temp"
+        detect_change "$file" "$temp" "%s: Correcting whitespace at line endings"
     fi
 done
