@@ -115,15 +115,14 @@ for file in $files; do
 
     # Fix formatting on text files
     if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$|\.cl$|\.in$|\.txt$|\.yaml$|\.yml$|\.sh$|\.py$|\.pl$|\.cmake$|\.md$|\.rst$|\.groovy$|\.ini$|\.awk$|\.csv$|\.s$|\.asm$|\.inc$|\.conf$|\.ld$'; then
+        # Replace non-ASCII characters with ASCII equivalents
+        iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
+        detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
 
         # Change the copyright date at the top of any text files
         if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" > "$temp"; then
             detect_change "$file" "$temp" "%s: Changing copyright date"
         fi
-
-        # Replace non-ASCII characters with ASCII equivalents
-        iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
-        detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
 
         # Run clang-format on C/C++ files
         if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$'; then
@@ -132,8 +131,12 @@ for file in $files; do
             detect_change "$file" "$temp" "%s: Reformatting with clang-format according to coding guidelines"
         fi
 
-        # Remove whitespace at end of lines; add missing newline at end of file
-        sed -e 's/[[:space:]]*$//' "$file" | awk 1 > "$temp"
-        detect_change "$file" "$temp" "%s: Correcting whitespace at line endings"
+        # Remove trailing whitespace at end of lines
+        sed -e 's/[[:space:]]*$//' < "$file" > "$temp"
+        detect_change "$file" "$temp" "%s: Removing trailing whitespace at line endings"
+
+        # Add missing newline at EOF
+        awk 1 < "$file" > "$temp"
+        detect_change "$file" "$temp" "%s: Adding missing newline at end of file"
     fi
 done
