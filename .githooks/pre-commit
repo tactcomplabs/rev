@@ -5,54 +5,55 @@
 # Based on https://github.com/rocm/rocBLAS
 #
 # shellcheck enable=all
-# shellcheck disable=2034,2059,2250
+# shellcheck disable=2034,2059,2250,2310
 
-set -eEu -o pipefail
-shopt -s nocasematch
-
-export PATH=$PATH:/usr/bin:/bin
-
-# Redirect stdout to stderr
-exec >&2
+set_shell_options() {
+    set -eEu -o pipefail
+    shopt -s nocasematch
+    export PATH=$PATH:/usr/bin:/bin
+    exec >&2
+}
 
 # Terminal colors
-if [[ -z ${NO_COLOR+x} ]] && tty -s <&2; then
-    RED="\033[91m"
-    YELLOW="\033[93m"
-    GREEN="\033[92m"
-    END="\033[0m"
-else
-    RED=
-    YELLOW=
-    GREEN=
-    END=
-fi
+set_colors() {
+    if [[ -z ${NO_COLOR+x} ]] && tty -s <&2; then
+        RED="\033[91m"
+        YELLOW="\033[93m"
+        GREEN="\033[92m"
+        END="\033[0m"
+    else
+        RED=
+        YELLOW=
+        GREEN=
+        END=
+    fi
+}
 
 usage() {
     cat<<EOF
-Usage: $0 [ --reformat] [ --nostage ]
+Usage: pre-commit [ --reformat] [ --nostage ]
 
 Format files prior to commit so that they match style guidelines
 
 Options:
     --reformat   Reformat all files in the source tree, rather than staged files
-    --nostage    Do not add files modified by $0 to the staging area
+    --nostage    Do not add files modified by pre-commit to the staging area
 EOF
     exit 1
 }
 
 # Parse command-line options
-REFORMAT=
-NOSTAGE=
-for opt in "$@"; do
-    if [[ $opt = -* ]]; then
+parse_options() {
+    REFORMAT=
+    NOSTAGE=
+    for opt in "$@"; do
         case $opt in
             --reformat) REFORMAT=1 ;;
             --nostage)  NOSTAGE=1  ;;
             *) usage
         esac
-    fi
-done
+    done
+}
 
 # Check for existence of clang-format or print error message on how to install
 check_clang_format() {
@@ -88,55 +89,83 @@ detect_change() {
     if ! cmp -s "$1" "$2"; then
         printf "${YELLOW}$3${END}\n" "$1"
         cp -f "$2" "$1"
-        [[ -z $NOSTAGE ]] && git add -u "$1"
+        if [[ -z $NOSTAGE ]]; then
+            git add -u "$1"
+        fi
     fi
 }
 
-# Generate list of modified files.
-# If --reformat is used, all files are reformatted.
-if [[ -n $REFORMAT ]]; then
-    files=$(git ls-files --exclude-standard)
-else
-    if git rev-parse --verify HEAD >/dev/null 2>&1; then
-        against=HEAD
+# Generate list of modified files
+# If --reformat is used, all files are reformatted
+get_files() {
+    if [[ -n $REFORMAT ]]; then
+        git ls-files --exclude-standard
     else
-        # Initial commit: diff against an empty tree object
-        against=1346dd7e51d04da7049e0d49f6cbb81b028db538
+        if git rev-parse --verify HEAD >/dev/null 2>&1; then
+            against=HEAD
+        else
+            # Initial commit: diff against initial commit
+            against=$(git log --reverse --pretty=format:%H | head -1)
+        fi
+        git diff-index --cached --name-only "$against"
     fi
-    files=$(git diff-index --cached --name-only "$against")
-fi
+}
 
-temp=$(mktemp)
-trap 'rm -f "$temp"' EXIT
+# Test if argument is a text regular file
+# git grep tests whether Git considers it a text file
+is_text_file() {
+    [[ -f $1 ]] && git grep -Iqe . -- "$1"
+}
 
-for file in $files; do
-    # Skip non-regular files (e.g. symlinks)
-    [[ -f $file ]] || continue
+# Test if argument is a C/C++ file
+is_cxx_file() {
+    case $1 in
+        *.c|*.h|*.cc|*.hpp|*.cpp|*.cxx) true ;;
+        *) false
+    esac
+}
+
+reformat_files() {
+    # Temporary file for reformatting
+    temp=$(mktemp)
+    trap 'rm -f "$temp"' EXIT
+
+    # Do everything from top level
+    top=$(git rev-parse --show-toplevel)
+    cd "$top"
 
     # Fix formatting on text files
-    if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$|\.cl$|\.in$|\.txt$|\.yaml$|\.yml$|\.sh$|\.py$|\.pl$|\.cmake$|\.md$|\.rst$|\.groovy$|\.ini$|\.awk$|\.csv$|\.s$|\.asm$|\.inc$|\.conf$|\.ld$'; then
-        # Replace non-ASCII characters with ASCII equivalents
-        iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
-        detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
+    for file in $(get_files); do
+        if is_text_file "$file"; then
+            # Replace non-ASCII characters with ASCII equivalents
+            iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
+            detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
 
-        # Change the copyright date at the top of any text files
-        if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" > "$temp"; then
-            detect_change "$file" "$temp" "%s: Changing copyright date"
+            # Change the copyright date at the top of any text files
+            if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' < "$file" > "$temp"; then
+                detect_change "$file" "$temp" "%s: Changing copyright date"
+            fi
+
+            # Run clang-format on C/C++ files
+            if is_cxx_file "$file"; then
+                check_clang_format
+                clang-format -- "$file" > "$temp"
+                detect_change "$file" "$temp" "%s: Reformatting with clang-format according to coding guidelines"
+            fi
+
+            # Remove trailing whitespace at end of lines
+            sed -e 's/[[:space:]]*$//' < "$file" > "$temp"
+            detect_change "$file" "$temp" "%s: Removing trailing whitespace at line endings"
+
+            # Add missing newline at EOF
+            awk 1 < "$file" > "$temp"
+            detect_change "$file" "$temp" "%s: Adding missing newline at end of file"
         fi
+    done
+}
 
-        # Run clang-format on C/C++ files
-        if echo "$file" | grep -Eiq '\.cc$|\.c$|\.h$|\.hpp$|\.cpp$|\.cxx$'; then
-            check_clang_format
-            clang-format "$file" > "$temp"
-            detect_change "$file" "$temp" "%s: Reformatting with clang-format according to coding guidelines"
-        fi
-
-        # Remove trailing whitespace at end of lines
-        sed -e 's/[[:space:]]*$//' < "$file" > "$temp"
-        detect_change "$file" "$temp" "%s: Removing trailing whitespace at line endings"
-
-        # Add missing newline at EOF
-        awk 1 < "$file" > "$temp"
-        detect_change "$file" "$temp" "%s: Adding missing newline at end of file"
-    fi
-done
+# Main Program
+set_shell_options
+set_colors
+parse_options "$@"
+reformat_files
