@@ -101,6 +101,7 @@ class RV64A : public RevExt {
     }
   };
 
+  // clang-format off
   std::vector<RevInstEntry> RV64ATable = {
     { Rev64AInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrd     ).Setrs2Class(RevRegClass::RegUNKNOWN) },
     { Rev64AInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scd     ) },
@@ -114,6 +115,7 @@ class RV64A : public RevExt {
     { Rev64AInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011000).SetImplFunc(amominud) },
     { Rev64AInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011100).SetImplFunc(amomaxud) },
   };
+  // clang-format on
 
 public:
   /// RV64A: standard constructor

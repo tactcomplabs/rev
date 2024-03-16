@@ -39,6 +39,7 @@
 #endif
 
 // Tracing macros
+// clang-format off
 #ifndef NO_REV_TRACER
 #define TRACE_REG_READ(R,V)  do{ if (Tracer) Tracer->regRead( (R), (V) ); }while(0)
 #define TRACE_REG_WRITE(R,V) do{ if (Tracer) Tracer->regWrite( (R), (V) ); }while(0)
@@ -56,12 +57,13 @@
 #define TRACE_MEMH_SENDREAD(ADR, LEN, REG)
 #define TRACE_MEM_READ_RESPONSE(LEN, DATA, REQ)
 #endif
+// clang-format on
 
 namespace SST::RevCPU{
 
   // Tracing controls are using custom hint SLTI rd = x0
   // See unpriv-isa-asiidoc.pdf Section 2.9 HINT Instruction
-  // OP     RD    Space  Assembly           Encoding 
+  // OP     RD    Space  Assembly           Encoding
   // SLTI   rd=x0 2^17   slti  x0, x0, ?    0x00?02013  //
   // SLTIU  rd=x0 2^17   sltiu x0, x0, ?    0x00?03013  //
   // SLLI   rd=x0 2^10   slli  x0, x0, ?    0x00?01013  // Default
@@ -70,7 +72,7 @@ namespace SST::RevCPU{
   // SLT    rd=x0 2^10   slt   x0, x0, x?   0x00?02033  // Not supported
   // SLTU   rd=x0 2^10   sltu  x0, x0, x?   0x00?03033  // Not supported
   const std::map<std::string, uint32_t> s2op {
-    {"slti",  0x00002013}, 
+    {"slti",  0x00002013},
     {"sltiu", 0x00003013},
     {"slli",  0x00001013},
     {"srli",  0x00005013},
@@ -89,7 +91,7 @@ namespace SST::RevCPU{
   };
 
   constexpr unsigned NOP_COUNT = 5; // must match TRC_CMD_IDX size
-  
+
   enum class EVENT_SYMBOL : unsigned {
     OK = 0x0,
     STALL = 0x1,
@@ -105,7 +107,7 @@ namespace SST::RevCPU{
     {EVENT_SYMBOL::TRACE_ON,'+'},
     {EVENT_SYMBOL::TRACE_OFF,'-'}
   };
-    
+
   union TraceEvents_t {
     uint64_t v = 0;
     struct {
@@ -119,7 +121,7 @@ namespace SST::RevCPU{
     } f;
   };
 
-  enum TraceKeyword_t { 
+  enum TraceKeyword_t {
     RegRead,       // register read (non-fp)
     RegWrite,      // register write (non-fp)
     MemLoad,       // issue load request (simple mem)
@@ -171,10 +173,10 @@ namespace SST::RevCPU{
     uint64_t data; // first 8 bytes max
     bool isFloat = false;
     bool wait4Completion = false;
-    CompletionRec_t(unsigned int hart, uint16_t destReg, size_t len, uint64_t addr, 
-      void *data, RevRegClass regClass) 
+    CompletionRec_t(unsigned int hart, uint16_t destReg, size_t len, uint64_t addr,
+      void *data, RevRegClass regClass)
       : hart(hart), destReg(destReg), len(len), addr(addr),
-        isFloat(regClass == RevRegClass::RegFLOAT), wait4Completion(true) 
+        isFloat(regClass == RevRegClass::RegFLOAT), wait4Completion(true)
     {
       memcpy(&this->data, data, len > sizeof(this->data) ? sizeof(this->data) : len);
     }
@@ -203,7 +205,7 @@ namespace SST::RevCPU{
       void regRead(size_t r, uint64_t v);
       /// RevTracer: capture register write.
       void regWrite(size_t r, uint64_t v);
-      /// RevTracer: capture memory write. 
+      /// RevTracer: capture memory write.
       void memWrite(uint64_t adr, size_t len, const void *data);
       /// RevTracer: capture memory read
       void memRead(uint64_t adr, size_t len, void *data);
@@ -234,7 +236,7 @@ namespace SST::RevCPU{
       #ifdef REV_USE_SPIKE
       /// RevTracer: instruction parser used by disassembler
       isa_parser_t* isaParser;
-      /// RevTracer: disassembler 
+      /// RevTracer: disassembler
       disassembler_t* diasm;
       #endif
       /// RevTracer: pointer to output stream
@@ -252,7 +254,7 @@ namespace SST::RevCPU{
       /// RevTracer: saved program counter
       uint64_t pc = 0;
       /// RevTracer: previous program counter for branch determination
-      uint64_t lastPC = 0; 
+      uint64_t lastPC = 0;
       /// RevTracer: saved instruction
       uint32_t insn = 0;
       /// RevTracer: map of instruction addresses to symbols
@@ -273,7 +275,7 @@ namespace SST::RevCPU{
       uint64_t startCycle = 0;
       /// RevTracer: User setting: maximum number of lines to print
       uint64_t cycleLimit = 0;
-      /// RevTracer: support for trace control push/pop 
+      /// RevTracer: support for trace control push/pop
       std::vector<bool> enableQ;
       /// RevTracer: current pointer into trace controls queue
       unsigned enableQindex;

@@ -15,6 +15,7 @@ namespace SST::RevCPU{
 
 /// MemOp: Formatted Output
 std::ostream& operator<<(std::ostream& os, MemOp op){
+// clang-format off
   switch(op){
     case MemOp::MemOpREAD:        return os << "MemOpREAD";
     case MemOp::MemOpWRITE:       return os << "MemOpWRITE";
@@ -27,6 +28,7 @@ std::ostream& operator<<(std::ostream& os, MemOp op){
     case MemOp::MemOpFENCE:       return os << "MemOpFENCE";
     case MemOp::MemOpAMO:         return os << "MemOpAMO";
   }
+// clang-format on
   return os;
 }
 

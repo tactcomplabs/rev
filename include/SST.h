@@ -18,6 +18,8 @@
 #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+// The #include order is important, so we prevent clang-format from reordering
+// clang-format off
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/event.h>
@@ -30,6 +32,7 @@
 #include <sst/core/timeConverter.h>
 #include <sst/core/model/element_python.h>
 #include <sst/core/rng/mersenne.h>
+// clang-format on
 
 #pragma GCC diagnostic pop
 

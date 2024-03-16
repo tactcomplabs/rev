@@ -154,6 +154,7 @@ struct RevInstEntry{
   bool (*func)(RevFeature *, RevRegFile *, RevMem *, const RevInst&) = nullptr;
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
+  // clang-format off
   auto& SetMnemonic(std::string m)   { this->mnemonic   = std::move(m); return *this; }
   auto& SetCost(uint32_t c)          { this->cost       = c;     return *this; }
   auto& SetOpcode(uint8_t op)        { this->opcode     = op;    return *this; }
@@ -176,6 +177,7 @@ struct RevInstEntry{
   auto& SetRaiseFPE(bool c)          { this->raisefpe   = c;     return *this; }
   auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&))
                                      { this->func = func;        return *this; }
+  // clang-format on
 }; // RevInstEntry
 
 // The default initialization for RevInstDefaults is the same as RevInstEntry

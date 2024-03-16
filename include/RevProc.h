@@ -315,6 +315,7 @@ private:
   // - Beside each function declaration is the system call code followed by its corresponding declaration
   //   that you can find in `common/syscalls.h` (the file to be included to use system calls inside of rev)
   //
+  // clang-format off
   EcallStatus ECALL_io_setup();               // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
   EcallStatus ECALL_io_destroy();             // 1, rev_io_destroy(aio_context_t ctx)
   EcallStatus ECALL_io_submit();              // 2, rev_io_submit(aio_context_t, long, struct iocb  *  *)
@@ -636,6 +637,7 @@ private:
   EcallStatus ECALL_pthread_create();         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
   EcallStatus ECALL_pthread_join();           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit();           // 1002, rev_pthread_exit(void* retval);
+  // clang-format on
 
   /// RevProc: Table of ecall codes w/ corresponding function pointer implementations
   static const std::unordered_map<uint32_t, EcallStatus(RevProc::*)()> Ecalls;

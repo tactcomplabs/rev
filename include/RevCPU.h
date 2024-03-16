@@ -79,6 +79,7 @@ public:
   // -------------------------------------------------------
   // RevCPU Component Parameter Data
   // -------------------------------------------------------
+  // clang-format off
   SST_ELI_DOCUMENT_PARAMS(
     {"verbose",         "Sets the verbosity level of output",           "0" },
     {"clock",           "Clock for the CPU",                            "1GHz" },
@@ -220,6 +221,7 @@ private:
   std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
   bool *Enabled;                      ///< RevCPU: Completion structure
 
+  // clang-format on
   // Initializes a RevThread object.
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
   void InitThread(std::unique_ptr<RevThread>&& ThreadToInit);

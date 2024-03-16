@@ -131,6 +131,7 @@ class RV32A : public RevExt {
     }
   };
 
+  // clang-format off
   std::vector<RevInstEntry> RV32ATable = {
     { RV32AInstDefaults().SetMnemonic("lr.w %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrw     )
       .Setrs2Class(RevRegClass::RegUNKNOWN) },
@@ -145,6 +146,7 @@ class RV32A : public RevExt {
     { RV32AInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011000).SetImplFunc(amominuw) },
     { RV32AInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011100).SetImplFunc(amomaxuw) },
   };
+  // clang-format on
 
 public:
   /// RV32A: standard constructor

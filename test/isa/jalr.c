@@ -18,7 +18,7 @@
 
 #define FAIL do { asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); asm(".byte 0x00"); } while(0)
 
-int main(int argc, char **argv){
+int main(void){
     void* ret1 = 0, *retaddr1 = 0;
 
     // Different input and output registers for JALR

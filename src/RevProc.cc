@@ -267,8 +267,9 @@ uint32_t RevProc::CompressEncoding(RevInstEntry Entry){
   Value |= uint32_t(Entry.funct3)  << 8;
   Value |= uint32_t(Entry.funct2or7)<< 11;
   Value |= uint32_t(Entry.imm12)   << 18;
-  Value |= uint32_t(Entry.fpcvtOp) << 30;  //this is a 5 bit field, but only the lower two bits are used, so it *just* fits
-                                           //without going to a uint64
+  // this is a 5 bit field, but only the lower two bits are used, so it *just*
+  // fits without going to a uint64
+  Value |= uint32_t(Entry.fpcvtOp) << 30;
 
   return Value;
 }

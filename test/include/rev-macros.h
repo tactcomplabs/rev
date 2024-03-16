@@ -1,3 +1,5 @@
+// clang-format off
+
 #ifndef __REV_MACROS_H__
 #define __REV_MACROS_H__
 
