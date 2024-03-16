@@ -50,6 +50,7 @@
 #include "RevRand.h"
 #include "RevProcPasskey.h"
 #include "RevHart.h"
+#include "RDB.h"
 #define SYSCALL_TYPES_ONLY
 #include "../common/syscalls/syscalls.h"
 #include "../common/include/RevCommon.h"
@@ -65,6 +66,8 @@ public:
 
   /// RevProc: standard destructor
   ~RevProc() = default;
+
+  friend class RDB;
 
   /// RevProc: per-processor clock function
   bool ClockTick( SST::Cycle_t currentCycle );
@@ -82,13 +85,16 @@ public:
   bool SingleStepHart();
 
   /// RevProc: retrieve the local PC for the correct feature set
-  uint64_t GetPC() const { return RegFile->GetPC(); }
+  uint64_t GetPC() const { return RegFile ? RegFile->GetPC() : 0; }
+
+  /// RevProc: retrieve the local PC for the correct feature set
+  uint64_t GetPC(unsigned hartID) const { return IdleHarts[hartID] ? 0 : Harts[hartID]->RegFile->GetPC(); }
 
   /// RevProc: set time converter for RTC
   void SetTimeConverter(TimeConverter* tc) { timeConverter = tc; }
 
   /// RevProc: Debug mode read a register
-  bool DebugReadReg(unsigned Idx, uint64_t *Value) const;
+  bool DebugReadReg(unsigned Idx, uint64_t *Value, unsigned hartID) const;
 
   /// RevProc: Debug mode write a register
   bool DebugWriteReg(unsigned Idx, uint64_t Value) const;
