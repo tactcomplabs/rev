@@ -263,7 +263,7 @@ private:
           tempT;    ///< RevMemOp: temporary target buffer for R-M-W ops
   RevFlag flags;    ///< RevMemOp: request flags
   void*   target;   ///< RevMemOp: target register pointer
-  MemReq  procReq;  ///< RevMemOp: original request from RevProc
+  MemReq  procReq;  ///< RevMemOp: original request from RevCore
 };
 
 // ----------------------------------------

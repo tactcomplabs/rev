@@ -1,7 +1,7 @@
 #include "RevSysCalls.h"
 #include "RevCommon.h"
+#include "RevCore.h"
 #include "RevMem.h"
-#include "RevProc.h"
 #include <bitset>
 #include <filesystem>
 #include <sys/xattr.h>
@@ -10,7 +10,7 @@ namespace SST::RevCPU {
 
 /// Parse a string for an ECALL starting at address straddr, updating the state
 /// as characters are read, and call action() when the end of string is reached.
-EcallStatus RevProc::EcallLoadAndParseString( uint64_t                straddr,
+EcallStatus RevCore::EcallLoadAndParseString( uint64_t                straddr,
                                               std::function< void() > action ) {
   auto  rtval      = EcallStatus::ERROR;
   auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
@@ -62,7 +62,7 @@ EcallStatus RevProc::EcallLoadAndParseString( uint64_t                straddr,
 }
 
 // 0, rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
-EcallStatus RevProc::ECALL_io_setup() {
+EcallStatus RevCore::ECALL_io_setup() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -74,7 +74,7 @@ EcallStatus RevProc::ECALL_io_setup() {
 }
 
 // 1, rev_io_destroy(aio_context_t ctx)
-EcallStatus RevProc::ECALL_io_destroy() {
+EcallStatus RevCore::ECALL_io_destroy() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -86,7 +86,7 @@ EcallStatus RevProc::ECALL_io_destroy() {
 }
 
 // 2, rev_io_submit(aio_context_t, long, struct iocb  *  *)
-EcallStatus RevProc::ECALL_io_submit() {
+EcallStatus RevCore::ECALL_io_submit() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -98,7 +98,7 @@ EcallStatus RevProc::ECALL_io_submit() {
 }
 
 // 3, rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result)
-EcallStatus RevProc::ECALL_io_cancel() {
+EcallStatus RevCore::ECALL_io_cancel() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -110,7 +110,7 @@ EcallStatus RevProc::ECALL_io_cancel() {
 }
 
 // 4, rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout)
-EcallStatus RevProc::ECALL_io_getevents() {
+EcallStatus RevCore::ECALL_io_getevents() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -122,7 +122,7 @@ EcallStatus RevProc::ECALL_io_getevents() {
 }
 
 // 5, rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
-EcallStatus RevProc::ECALL_setxattr() {
+EcallStatus RevCore::ECALL_setxattr() {
 #if 0
   // TODO: Need to load the data from (value, size bytes) into
   // hostValue vector before it can be passed to setxattr() on host.
@@ -182,7 +182,7 @@ EcallStatus RevProc::ECALL_setxattr() {
 }
 
 // 6, rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
-EcallStatus RevProc::ECALL_lsetxattr() {
+EcallStatus RevCore::ECALL_lsetxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -194,7 +194,7 @@ EcallStatus RevProc::ECALL_lsetxattr() {
 }
 
 // 7, rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags)
-EcallStatus RevProc::ECALL_fsetxattr() {
+EcallStatus RevCore::ECALL_fsetxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -206,7 +206,7 @@ EcallStatus RevProc::ECALL_fsetxattr() {
 }
 
 // 8, rev_getxattr(const char  *path, const char  *name, void  *value, size_t size)
-EcallStatus RevProc::ECALL_getxattr() {
+EcallStatus RevCore::ECALL_getxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -218,7 +218,7 @@ EcallStatus RevProc::ECALL_getxattr() {
 }
 
 // 9, rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size)
-EcallStatus RevProc::ECALL_lgetxattr() {
+EcallStatus RevCore::ECALL_lgetxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -230,7 +230,7 @@ EcallStatus RevProc::ECALL_lgetxattr() {
 }
 
 // 10, rev_fgetxattr(int fd, const char  *name, void  *value, size_t size)
-EcallStatus RevProc::ECALL_fgetxattr() {
+EcallStatus RevCore::ECALL_fgetxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -242,7 +242,7 @@ EcallStatus RevProc::ECALL_fgetxattr() {
 }
 
 // 11, rev_listxattr(const char  *path, char  *list, size_t size)
-EcallStatus RevProc::ECALL_listxattr() {
+EcallStatus RevCore::ECALL_listxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -254,7 +254,7 @@ EcallStatus RevProc::ECALL_listxattr() {
 }
 
 // 12, rev_llistxattr(const char  *path, char  *list, size_t size)
-EcallStatus RevProc::ECALL_llistxattr() {
+EcallStatus RevCore::ECALL_llistxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -266,7 +266,7 @@ EcallStatus RevProc::ECALL_llistxattr() {
 }
 
 // 13, rev_flistxattr(int fd, char  *list, size_t size)
-EcallStatus RevProc::ECALL_flistxattr() {
+EcallStatus RevCore::ECALL_flistxattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -278,7 +278,7 @@ EcallStatus RevProc::ECALL_flistxattr() {
 }
 
 // 14, rev_removexattr(const char  *path, const char  *name)
-EcallStatus RevProc::ECALL_removexattr() {
+EcallStatus RevCore::ECALL_removexattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -290,7 +290,7 @@ EcallStatus RevProc::ECALL_removexattr() {
 }
 
 // 15, rev_lremovexattr(const char  *path, const char  *name)
-EcallStatus RevProc::ECALL_lremovexattr() {
+EcallStatus RevCore::ECALL_lremovexattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -302,7 +302,7 @@ EcallStatus RevProc::ECALL_lremovexattr() {
 }
 
 // 16, rev_fremovexattr(int fd, const char  *name)
-EcallStatus RevProc::ECALL_fremovexattr() {
+EcallStatus RevCore::ECALL_fremovexattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -314,7 +314,7 @@ EcallStatus RevProc::ECALL_fremovexattr() {
 }
 
 // 17, rev_getcwd(char  *buf, unsigned long size)
-EcallStatus RevProc::ECALL_getcwd() {
+EcallStatus RevCore::ECALL_getcwd() {
   auto BufAddr = RegFile->GetX< uint64_t >( RevReg::a0 );
   auto size    = RegFile->GetX< uint64_t >( RevReg::a1 );
   auto CWD     = std::filesystem::current_path();
@@ -328,7 +328,7 @@ EcallStatus RevProc::ECALL_getcwd() {
 }
 
 // 18, rev_lookup_dcookie(u64 cookie64, char  *buf, size_t len)
-EcallStatus RevProc::ECALL_lookup_dcookie() {
+EcallStatus RevCore::ECALL_lookup_dcookie() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -340,7 +340,7 @@ EcallStatus RevProc::ECALL_lookup_dcookie() {
 }
 
 // 19, rev_eventfd2(unsigned int count, int flags)
-EcallStatus RevProc::ECALL_eventfd2() {
+EcallStatus RevCore::ECALL_eventfd2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -352,7 +352,7 @@ EcallStatus RevProc::ECALL_eventfd2() {
 }
 
 // 20, rev_epoll_create1(int flags)
-EcallStatus RevProc::ECALL_epoll_create1() {
+EcallStatus RevCore::ECALL_epoll_create1() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -364,7 +364,7 @@ EcallStatus RevProc::ECALL_epoll_create1() {
 }
 
 // 21, rev_epoll_ctl(int epfd, int op, int fd, struct epoll_event  *event)
-EcallStatus RevProc::ECALL_epoll_ctl() {
+EcallStatus RevCore::ECALL_epoll_ctl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -376,7 +376,7 @@ EcallStatus RevProc::ECALL_epoll_ctl() {
 }
 
 // 22, rev_epoll_pwait(int epfd, struct epoll_event  *events, int maxevents, int timeout, const sigset_t  *sigmask, size_t sigsetsize)
-EcallStatus RevProc::ECALL_epoll_pwait() {
+EcallStatus RevCore::ECALL_epoll_pwait() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -388,7 +388,7 @@ EcallStatus RevProc::ECALL_epoll_pwait() {
 }
 
 // 23, rev_dup(unsigned int fildes)
-EcallStatus RevProc::ECALL_dup() {
+EcallStatus RevCore::ECALL_dup() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -400,7 +400,7 @@ EcallStatus RevProc::ECALL_dup() {
 }
 
 // 24, rev_dup3(unsigned int oldfd, unsigned int newfd, int flags)
-EcallStatus RevProc::ECALL_dup3() {
+EcallStatus RevCore::ECALL_dup3() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -412,7 +412,7 @@ EcallStatus RevProc::ECALL_dup3() {
 }
 
 // 25, rev_fcntl64(unsigned int fd, unsigned int cmd, unsigned long arg)
-EcallStatus RevProc::ECALL_fcntl64() {
+EcallStatus RevCore::ECALL_fcntl64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -424,7 +424,7 @@ EcallStatus RevProc::ECALL_fcntl64() {
 }
 
 // 26, rev_inotify_init1(int flags)
-EcallStatus RevProc::ECALL_inotify_init1() {
+EcallStatus RevCore::ECALL_inotify_init1() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -436,7 +436,7 @@ EcallStatus RevProc::ECALL_inotify_init1() {
 }
 
 // 27, rev_inotify_add_watch(int fd, const char  *path, u32 mask)
-EcallStatus RevProc::ECALL_inotify_add_watch() {
+EcallStatus RevCore::ECALL_inotify_add_watch() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -448,7 +448,7 @@ EcallStatus RevProc::ECALL_inotify_add_watch() {
 }
 
 // 28, rev_inotify_rm_watch(int fd, __s32 wd)
-EcallStatus RevProc::ECALL_inotify_rm_watch() {
+EcallStatus RevCore::ECALL_inotify_rm_watch() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -460,7 +460,7 @@ EcallStatus RevProc::ECALL_inotify_rm_watch() {
 }
 
 // 29, rev_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
-EcallStatus RevProc::ECALL_ioctl() {
+EcallStatus RevCore::ECALL_ioctl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -472,7 +472,7 @@ EcallStatus RevProc::ECALL_ioctl() {
 }
 
 // 30, rev_ioprio_set(int which, int who, int ioprio)
-EcallStatus RevProc::ECALL_ioprio_set() {
+EcallStatus RevCore::ECALL_ioprio_set() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -484,7 +484,7 @@ EcallStatus RevProc::ECALL_ioprio_set() {
 }
 
 // 31, rev_ioprio_get(int which, int who)
-EcallStatus RevProc::ECALL_ioprio_get() {
+EcallStatus RevCore::ECALL_ioprio_get() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -496,7 +496,7 @@ EcallStatus RevProc::ECALL_ioprio_get() {
 }
 
 // 32, rev_flock(unsigned int fd, unsigned int cmd)
-EcallStatus RevProc::ECALL_flock() {
+EcallStatus RevCore::ECALL_flock() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -508,7 +508,7 @@ EcallStatus RevProc::ECALL_flock() {
 }
 
 // 33, rev_mknodat(int dfd, const char  * filename, umode_t mode, unsigned dev)
-EcallStatus RevProc::ECALL_mknodat() {
+EcallStatus RevCore::ECALL_mknodat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -520,7 +520,7 @@ EcallStatus RevProc::ECALL_mknodat() {
 }
 
 // TODO: 34, rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
-EcallStatus RevProc::ECALL_mkdirat() {
+EcallStatus RevCore::ECALL_mkdirat() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: mkdirat called" );
   EcallState& ECALL  = Harts.at( HartToExecID )->GetEcallState();
   auto        dirfd  = RegFile->GetX< int >( RevReg::a0 );
@@ -536,7 +536,7 @@ EcallStatus RevProc::ECALL_mkdirat() {
 }
 
 // 35, rev_unlinkat(int dfd, const char  * pathname, int flag)
-EcallStatus RevProc::ECALL_unlinkat() {
+EcallStatus RevCore::ECALL_unlinkat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -549,7 +549,7 @@ EcallStatus RevProc::ECALL_unlinkat() {
 }
 
 // 36, rev_symlinkat(const char  * oldname, int newdfd, const char  * newname)
-EcallStatus RevProc::ECALL_symlinkat() {
+EcallStatus RevCore::ECALL_symlinkat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -561,7 +561,7 @@ EcallStatus RevProc::ECALL_symlinkat() {
 }
 
 // 37, rev_unlinkat(int dfd, const char  * pathname, int flag)
-EcallStatus RevProc::ECALL_linkat() {
+EcallStatus RevCore::ECALL_linkat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -573,7 +573,7 @@ EcallStatus RevProc::ECALL_linkat() {
 }
 
 // 38, rev_renameat(int olddfd, const char  * oldname, int newdfd, const char  * newname)
-EcallStatus RevProc::ECALL_renameat() {
+EcallStatus RevCore::ECALL_renameat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -585,7 +585,7 @@ EcallStatus RevProc::ECALL_renameat() {
 }
 
 // 39, rev_umount(char  *name, int flags)
-EcallStatus RevProc::ECALL_umount() {
+EcallStatus RevCore::ECALL_umount() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -597,7 +597,7 @@ EcallStatus RevProc::ECALL_umount() {
 }
 
 // 40, rev_umount(char  *name, int flags)
-EcallStatus RevProc::ECALL_mount() {
+EcallStatus RevCore::ECALL_mount() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -609,7 +609,7 @@ EcallStatus RevProc::ECALL_mount() {
 }
 
 // 41, rev_pivot_root(const char  *new_root, const char  *put_old)
-EcallStatus RevProc::ECALL_pivot_root() {
+EcallStatus RevCore::ECALL_pivot_root() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -621,7 +621,7 @@ EcallStatus RevProc::ECALL_pivot_root() {
 }
 
 // 42, rev_ni_syscall(void)
-EcallStatus RevProc::ECALL_ni_syscall() {
+EcallStatus RevCore::ECALL_ni_syscall() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -633,7 +633,7 @@ EcallStatus RevProc::ECALL_ni_syscall() {
 }
 
 // 43, rev_statfs64(const char  *path, size_t sz, struct statfs64  *buf)
-EcallStatus RevProc::ECALL_statfs64() {
+EcallStatus RevCore::ECALL_statfs64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -645,7 +645,7 @@ EcallStatus RevProc::ECALL_statfs64() {
 }
 
 // 44, rev_fstatfs64(unsigned int fd, size_t sz, struct statfs64  *buf)
-EcallStatus RevProc::ECALL_fstatfs64() {
+EcallStatus RevCore::ECALL_fstatfs64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -657,7 +657,7 @@ EcallStatus RevProc::ECALL_fstatfs64() {
 }
 
 // 45, rev_truncate64(const char  *path, loff_t length)
-EcallStatus RevProc::ECALL_truncate64() {
+EcallStatus RevCore::ECALL_truncate64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -669,7 +669,7 @@ EcallStatus RevProc::ECALL_truncate64() {
 }
 
 // 46, rev_ftruncate64(unsigned int fd, loff_t length)
-EcallStatus RevProc::ECALL_ftruncate64() {
+EcallStatus RevCore::ECALL_ftruncate64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -681,7 +681,7 @@ EcallStatus RevProc::ECALL_ftruncate64() {
 }
 
 // 47, rev_fallocate(int fd, int mode, loff_t offset, loff_t len)
-EcallStatus RevProc::ECALL_fallocate() {
+EcallStatus RevCore::ECALL_fallocate() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -693,7 +693,7 @@ EcallStatus RevProc::ECALL_fallocate() {
 }
 
 // 48, rev_faccessat(int dfd, const char  *filename, int mode)
-EcallStatus RevProc::ECALL_faccessat() {
+EcallStatus RevCore::ECALL_faccessat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -705,7 +705,7 @@ EcallStatus RevProc::ECALL_faccessat() {
 }
 
 // 49, rev_chdir(const char  *filename)
-EcallStatus RevProc::ECALL_chdir() {
+EcallStatus RevCore::ECALL_chdir() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: chdir called\n" );
   auto path   = RegFile->GetX< uint64_t >( RevReg::a0 );
   auto action = [&] {
@@ -716,7 +716,7 @@ EcallStatus RevProc::ECALL_chdir() {
 }
 
 // 50, rev_fchdir(unsigned int fd)
-EcallStatus RevProc::ECALL_fchdir() {
+EcallStatus RevCore::ECALL_fchdir() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -729,7 +729,7 @@ EcallStatus RevProc::ECALL_fchdir() {
 }
 
 // 51, rev_chroot(const char  *filename)
-EcallStatus RevProc::ECALL_chroot() {
+EcallStatus RevCore::ECALL_chroot() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -741,7 +741,7 @@ EcallStatus RevProc::ECALL_chroot() {
 }
 
 // 52, rev_fchmod(unsigned int fd, umode_t mode)
-EcallStatus RevProc::ECALL_fchmod() {
+EcallStatus RevCore::ECALL_fchmod() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -753,7 +753,7 @@ EcallStatus RevProc::ECALL_fchmod() {
 }
 
 // 53, rev_fchmodat(int dfd, const char  * filename, umode_t mode)
-EcallStatus RevProc::ECALL_fchmodat() {
+EcallStatus RevCore::ECALL_fchmodat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -765,7 +765,7 @@ EcallStatus RevProc::ECALL_fchmodat() {
 }
 
 // 54, rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag)
-EcallStatus RevProc::ECALL_fchownat() {
+EcallStatus RevCore::ECALL_fchownat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -777,7 +777,7 @@ EcallStatus RevProc::ECALL_fchownat() {
 }
 
 // 55, rev_fchown(unsigned int fd, uid_t user, gid_t group)
-EcallStatus RevProc::ECALL_fchown() {
+EcallStatus RevCore::ECALL_fchown() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -789,7 +789,7 @@ EcallStatus RevProc::ECALL_fchown() {
 }
 
 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
-EcallStatus RevProc::ECALL_openat() {
+EcallStatus RevCore::ECALL_openat() {
   auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
   if( EcallState.bytesRead == 0 ) {
     output->verbose( CALL_INFO,
@@ -832,7 +832,7 @@ EcallStatus RevProc::ECALL_openat() {
 }
 
 // 57, rev_close(unsigned int fd)
-EcallStatus RevProc::ECALL_close() {
+EcallStatus RevCore::ECALL_close() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -869,7 +869,7 @@ EcallStatus RevProc::ECALL_close() {
 }
 
 // 58, rev_vhangup(void)
-EcallStatus RevProc::ECALL_vhangup() {
+EcallStatus RevCore::ECALL_vhangup() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -881,7 +881,7 @@ EcallStatus RevProc::ECALL_vhangup() {
 }
 
 // 59, rev_pipe2(int  *fildes, int flags)
-EcallStatus RevProc::ECALL_pipe2() {
+EcallStatus RevCore::ECALL_pipe2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -893,7 +893,7 @@ EcallStatus RevProc::ECALL_pipe2() {
 }
 
 // 60, rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr)
-EcallStatus RevProc::ECALL_quotactl() {
+EcallStatus RevCore::ECALL_quotactl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -905,7 +905,7 @@ EcallStatus RevProc::ECALL_quotactl() {
 }
 
 // 61, rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int count)
-EcallStatus RevProc::ECALL_getdents64() {
+EcallStatus RevCore::ECALL_getdents64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -917,7 +917,7 @@ EcallStatus RevProc::ECALL_getdents64() {
 }
 
 // 62, rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence)
-EcallStatus RevProc::ECALL_lseek() {
+EcallStatus RevCore::ECALL_lseek() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -929,7 +929,7 @@ EcallStatus RevProc::ECALL_lseek() {
 }
 
 // 63, rev_read(unsigned int fd
-EcallStatus RevProc::ECALL_read() {
+EcallStatus RevCore::ECALL_read() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -971,7 +971,7 @@ EcallStatus RevProc::ECALL_read() {
   return EcallStatus::SUCCESS;
 }
 
-EcallStatus RevProc::ECALL_write() {
+EcallStatus RevCore::ECALL_write() {
   auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
   if( EcallState.bytesRead == 0 ) {
     output->verbose( CALL_INFO,
@@ -1051,7 +1051,7 @@ EcallStatus RevProc::ECALL_write() {
 }
 
 // 65, rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
-EcallStatus RevProc::ECALL_readv() {
+EcallStatus RevCore::ECALL_readv() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1063,7 +1063,7 @@ EcallStatus RevProc::ECALL_readv() {
 }
 
 // 66, rev_writev(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
-EcallStatus RevProc::ECALL_writev() {
+EcallStatus RevCore::ECALL_writev() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1075,7 +1075,7 @@ EcallStatus RevProc::ECALL_writev() {
 }
 
 // 67, rev_pread64(unsigned int fd, char  *buf, size_t count, loff_t pos)
-EcallStatus RevProc::ECALL_pread64() {
+EcallStatus RevCore::ECALL_pread64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1087,7 +1087,7 @@ EcallStatus RevProc::ECALL_pread64() {
 }
 
 // 68, rev_pwrite64(unsigned int fd, const char  *buf, size_t count, loff_t pos)
-EcallStatus RevProc::ECALL_pwrite64() {
+EcallStatus RevCore::ECALL_pwrite64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1099,7 +1099,7 @@ EcallStatus RevProc::ECALL_pwrite64() {
 }
 
 // 69, rev_preadv(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
-EcallStatus RevProc::ECALL_preadv() {
+EcallStatus RevCore::ECALL_preadv() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1111,7 +1111,7 @@ EcallStatus RevProc::ECALL_preadv() {
 }
 
 // 70, rev_pwritev(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
-EcallStatus RevProc::ECALL_pwritev() {
+EcallStatus RevCore::ECALL_pwritev() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1123,7 +1123,7 @@ EcallStatus RevProc::ECALL_pwritev() {
 }
 
 // 71, rev_sendfile64(int out_fd, int in_fd, loff_t  *offset, size_t count)
-EcallStatus RevProc::ECALL_sendfile64() {
+EcallStatus RevCore::ECALL_sendfile64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1135,7 +1135,7 @@ EcallStatus RevProc::ECALL_sendfile64() {
 }
 
 // 72, rev_pselect6_time32(int, fd_set  *, fd_set  *, fd_set  *, struct old_timespec32  *, void  *)
-EcallStatus RevProc::ECALL_pselect6_time32() {
+EcallStatus RevCore::ECALL_pselect6_time32() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1147,7 +1147,7 @@ EcallStatus RevProc::ECALL_pselect6_time32() {
 }
 
 // 73, rev_ppoll_time32(struct pollfd  *, unsigned int, struct old_timespec32  *, const sigset_t  *, size_t)
-EcallStatus RevProc::ECALL_ppoll_time32() {
+EcallStatus RevCore::ECALL_ppoll_time32() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1159,7 +1159,7 @@ EcallStatus RevProc::ECALL_ppoll_time32() {
 }
 
 // 74, rev_signalfd4(int ufd, sigset_t  *user_mask, size_t sizemask, int flags)
-EcallStatus RevProc::ECALL_signalfd4() {
+EcallStatus RevCore::ECALL_signalfd4() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1171,7 +1171,7 @@ EcallStatus RevProc::ECALL_signalfd4() {
 }
 
 // 75, rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
-EcallStatus RevProc::ECALL_vmsplice() {
+EcallStatus RevCore::ECALL_vmsplice() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1183,7 +1183,7 @@ EcallStatus RevProc::ECALL_vmsplice() {
 }
 
 // 76, rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
-EcallStatus RevProc::ECALL_splice() {
+EcallStatus RevCore::ECALL_splice() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1195,7 +1195,7 @@ EcallStatus RevProc::ECALL_splice() {
 }
 
 // 77, rev_tee(int fdin, int fdout, size_t len, unsigned int flags)
-EcallStatus RevProc::ECALL_tee() {
+EcallStatus RevCore::ECALL_tee() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1207,7 +1207,7 @@ EcallStatus RevProc::ECALL_tee() {
 }
 
 // 78, rev_readlinkat(int dfd, const char  *path, char  *buf, int bufsiz)
-EcallStatus RevProc::ECALL_readlinkat() {
+EcallStatus RevCore::ECALL_readlinkat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1219,7 +1219,7 @@ EcallStatus RevProc::ECALL_readlinkat() {
 }
 
 // 79, rev_newfstatat(int dfd, const char  *filename, struct stat  *statbuf, int flag)
-EcallStatus RevProc::ECALL_newfstatat() {
+EcallStatus RevCore::ECALL_newfstatat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1231,7 +1231,7 @@ EcallStatus RevProc::ECALL_newfstatat() {
 }
 
 // 80, rev_newfstat(unsigned int fd, struct stat  *statbuf)
-EcallStatus RevProc::ECALL_newfstat() {
+EcallStatus RevCore::ECALL_newfstat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1243,7 +1243,7 @@ EcallStatus RevProc::ECALL_newfstat() {
 }
 
 // 81, rev_sync(void)
-EcallStatus RevProc::ECALL_sync() {
+EcallStatus RevCore::ECALL_sync() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1255,7 +1255,7 @@ EcallStatus RevProc::ECALL_sync() {
 }
 
 // 82, rev_fsync(unsigned int fd)
-EcallStatus RevProc::ECALL_fsync() {
+EcallStatus RevCore::ECALL_fsync() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1267,7 +1267,7 @@ EcallStatus RevProc::ECALL_fsync() {
 }
 
 // 83, rev_fdatasync(unsigned int fd)
-EcallStatus RevProc::ECALL_fdatasync() {
+EcallStatus RevCore::ECALL_fdatasync() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1279,7 +1279,7 @@ EcallStatus RevProc::ECALL_fdatasync() {
 }
 
 // 84, rev_sync_file_range2(int fd, unsigned int flags, loff_t offset, loff_t nbytes)
-EcallStatus RevProc::ECALL_sync_file_range2() {
+EcallStatus RevCore::ECALL_sync_file_range2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1291,7 +1291,7 @@ EcallStatus RevProc::ECALL_sync_file_range2() {
 }
 
 // 84, rev_sync_file_range(int fd, loff_t offset, loff_t nbytes, unsigned int flags)
-EcallStatus RevProc::ECALL_sync_file_range() {
+EcallStatus RevCore::ECALL_sync_file_range() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1303,7 +1303,7 @@ EcallStatus RevProc::ECALL_sync_file_range() {
 }
 
 // 85, rev_timerfd_create(int clockid, int flags)
-EcallStatus RevProc::ECALL_timerfd_create() {
+EcallStatus RevCore::ECALL_timerfd_create() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1315,7 +1315,7 @@ EcallStatus RevProc::ECALL_timerfd_create() {
 }
 
 // 86, rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
-EcallStatus RevProc::ECALL_timerfd_settime() {
+EcallStatus RevCore::ECALL_timerfd_settime() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1327,7 +1327,7 @@ EcallStatus RevProc::ECALL_timerfd_settime() {
 }
 
 // 87, rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
-EcallStatus RevProc::ECALL_timerfd_gettime() {
+EcallStatus RevCore::ECALL_timerfd_gettime() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1339,7 +1339,7 @@ EcallStatus RevProc::ECALL_timerfd_gettime() {
 }
 
 // 88, rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
-EcallStatus RevProc::ECALL_utimensat() {
+EcallStatus RevCore::ECALL_utimensat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1351,7 +1351,7 @@ EcallStatus RevProc::ECALL_utimensat() {
 }
 
 // 89, rev_acct(const char  *name)
-EcallStatus RevProc::ECALL_acct() {
+EcallStatus RevCore::ECALL_acct() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1363,7 +1363,7 @@ EcallStatus RevProc::ECALL_acct() {
 }
 
 // 90, rev_capget(cap_user_header_t header, cap_user_data_t dataptr)
-EcallStatus RevProc::ECALL_capget() {
+EcallStatus RevCore::ECALL_capget() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1375,7 +1375,7 @@ EcallStatus RevProc::ECALL_capget() {
 }
 
 // 91, rev_capset(cap_user_header_t header, const cap_user_data_t data)
-EcallStatus RevProc::ECALL_capset() {
+EcallStatus RevCore::ECALL_capset() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1387,7 +1387,7 @@ EcallStatus RevProc::ECALL_capset() {
 }
 
 // 92, rev_personality(unsigned int personality)
-EcallStatus RevProc::ECALL_personality() {
+EcallStatus RevCore::ECALL_personality() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1399,7 +1399,7 @@ EcallStatus RevProc::ECALL_personality() {
 }
 
 // 93, rev_exit(int error_code)
-EcallStatus RevProc::ECALL_exit() {
+EcallStatus RevCore::ECALL_exit() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1422,7 +1422,7 @@ EcallStatus RevProc::ECALL_exit() {
 }
 
 // 94, rev_exit_group(int error_code)
-EcallStatus RevProc::ECALL_exit_group() {
+EcallStatus RevCore::ECALL_exit_group() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1434,7 +1434,7 @@ EcallStatus RevProc::ECALL_exit_group() {
 }
 
 // 95, rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru)
-EcallStatus RevProc::ECALL_waitid() {
+EcallStatus RevCore::ECALL_waitid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1446,7 +1446,7 @@ EcallStatus RevProc::ECALL_waitid() {
 }
 
 // 96, rev_set_tid_address(int  *tidptr)
-EcallStatus RevProc::ECALL_set_tid_address() {
+EcallStatus RevCore::ECALL_set_tid_address() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1458,7 +1458,7 @@ EcallStatus RevProc::ECALL_set_tid_address() {
 }
 
 // 97, rev_unshare(unsigned long unshare_flags)
-EcallStatus RevProc::ECALL_unshare() {
+EcallStatus RevCore::ECALL_unshare() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1470,7 +1470,7 @@ EcallStatus RevProc::ECALL_unshare() {
 }
 
 // 98, rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
-EcallStatus RevProc::ECALL_futex() {
+EcallStatus RevCore::ECALL_futex() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1482,7 +1482,7 @@ EcallStatus RevProc::ECALL_futex() {
 }
 
 // 99, rev_set_robust_list(struct robust_list_head  *head, size_t len)
-EcallStatus RevProc::ECALL_set_robust_list() {
+EcallStatus RevCore::ECALL_set_robust_list() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1494,7 +1494,7 @@ EcallStatus RevProc::ECALL_set_robust_list() {
 }
 
 // 100, rev_get_robust_list(int pid, struct robust_list_head  *  *head_ptr, size_t  *len_ptr)
-EcallStatus RevProc::ECALL_get_robust_list() {
+EcallStatus RevCore::ECALL_get_robust_list() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1506,7 +1506,7 @@ EcallStatus RevProc::ECALL_get_robust_list() {
 }
 
 // 101, rev_nanosleep(struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
-EcallStatus RevProc::ECALL_nanosleep() {
+EcallStatus RevCore::ECALL_nanosleep() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1518,7 +1518,7 @@ EcallStatus RevProc::ECALL_nanosleep() {
 }
 
 // 102, rev_getitimer(int which, struct __kernel_old_itimerval  *value)
-EcallStatus RevProc::ECALL_getitimer() {
+EcallStatus RevCore::ECALL_getitimer() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1530,7 +1530,7 @@ EcallStatus RevProc::ECALL_getitimer() {
 }
 
 // 103, rev_setitimer(int which, struct __kernel_old_itimerval  *value, struct __kernel_old_itimerval  *ovalue)
-EcallStatus RevProc::ECALL_setitimer() {
+EcallStatus RevCore::ECALL_setitimer() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1542,7 +1542,7 @@ EcallStatus RevProc::ECALL_setitimer() {
 }
 
 // 104, rev_kexec_load(unsigned long entry, unsigned long nr_segments, struct kexec_segment  *segments, unsigned long flags)
-EcallStatus RevProc::ECALL_kexec_load() {
+EcallStatus RevCore::ECALL_kexec_load() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1554,7 +1554,7 @@ EcallStatus RevProc::ECALL_kexec_load() {
 }
 
 // 105, rev_init_module(void  *umod, unsigned long len, const char  *uargs)
-EcallStatus RevProc::ECALL_init_module() {
+EcallStatus RevCore::ECALL_init_module() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1566,7 +1566,7 @@ EcallStatus RevProc::ECALL_init_module() {
 }
 
 // 106, rev_delete_module(const char  *name_user, unsigned int flags)
-EcallStatus RevProc::ECALL_delete_module() {
+EcallStatus RevCore::ECALL_delete_module() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1578,7 +1578,7 @@ EcallStatus RevProc::ECALL_delete_module() {
 }
 
 // 107, rev_timer_create(clockid_t which_clock, struct sigevent  *timer_event_spec, timer_t  * created_timer_id)
-EcallStatus RevProc::ECALL_timer_create() {
+EcallStatus RevCore::ECALL_timer_create() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1590,7 +1590,7 @@ EcallStatus RevProc::ECALL_timer_create() {
 }
 
 // 108, rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
-EcallStatus RevProc::ECALL_timer_gettime() {
+EcallStatus RevCore::ECALL_timer_gettime() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1602,7 +1602,7 @@ EcallStatus RevProc::ECALL_timer_gettime() {
 }
 
 // 109, rev_timer_getoverrun(timer_t timer_id)
-EcallStatus RevProc::ECALL_timer_getoverrun() {
+EcallStatus RevCore::ECALL_timer_getoverrun() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1614,7 +1614,7 @@ EcallStatus RevProc::ECALL_timer_getoverrun() {
 }
 
 // 110, rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
-EcallStatus RevProc::ECALL_timer_settime() {
+EcallStatus RevCore::ECALL_timer_settime() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1626,7 +1626,7 @@ EcallStatus RevProc::ECALL_timer_settime() {
 }
 
 // 111, rev_timer_delete(timer_t timer_id)
-EcallStatus RevProc::ECALL_timer_delete() {
+EcallStatus RevCore::ECALL_timer_delete() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1638,7 +1638,7 @@ EcallStatus RevProc::ECALL_timer_delete() {
 }
 
 // 112, rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
-EcallStatus RevProc::ECALL_clock_settime() {
+EcallStatus RevCore::ECALL_clock_settime() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1650,7 +1650,7 @@ EcallStatus RevProc::ECALL_clock_settime() {
 }
 
 // 113, rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
-EcallStatus RevProc::ECALL_clock_gettime() {
+EcallStatus RevCore::ECALL_clock_gettime() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1675,7 +1675,7 @@ EcallStatus RevProc::ECALL_clock_gettime() {
 }
 
 // 114, rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
-EcallStatus RevProc::ECALL_clock_getres() {
+EcallStatus RevCore::ECALL_clock_getres() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1687,7 +1687,7 @@ EcallStatus RevProc::ECALL_clock_getres() {
 }
 
 // 115, rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
-EcallStatus RevProc::ECALL_clock_nanosleep() {
+EcallStatus RevCore::ECALL_clock_nanosleep() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1699,7 +1699,7 @@ EcallStatus RevProc::ECALL_clock_nanosleep() {
 }
 
 // 116, rev_syslog(int type, char  *buf, int len)
-EcallStatus RevProc::ECALL_syslog() {
+EcallStatus RevCore::ECALL_syslog() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1711,7 +1711,7 @@ EcallStatus RevProc::ECALL_syslog() {
 }
 
 // 117, rev_ptrace(long request, long pid, unsigned long addr, unsigned long data)
-EcallStatus RevProc::ECALL_ptrace() {
+EcallStatus RevCore::ECALL_ptrace() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1723,7 +1723,7 @@ EcallStatus RevProc::ECALL_ptrace() {
 }
 
 // 118, rev_sched_setparam(pid_t pid, struct sched_param  *param)
-EcallStatus RevProc::ECALL_sched_setparam() {
+EcallStatus RevCore::ECALL_sched_setparam() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1735,7 +1735,7 @@ EcallStatus RevProc::ECALL_sched_setparam() {
 }
 
 // 119, rev_sched_setscheduler(pid_t pid, int policy, struct sched_param  *param)
-EcallStatus RevProc::ECALL_sched_setscheduler() {
+EcallStatus RevCore::ECALL_sched_setscheduler() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1747,7 +1747,7 @@ EcallStatus RevProc::ECALL_sched_setscheduler() {
 }
 
 // 120, rev_sched_getscheduler(pid_t pid)
-EcallStatus RevProc::ECALL_sched_getscheduler() {
+EcallStatus RevCore::ECALL_sched_getscheduler() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1759,7 +1759,7 @@ EcallStatus RevProc::ECALL_sched_getscheduler() {
 }
 
 // 121, rev_sched_getparam(pid_t pid, struct sched_param  *param)
-EcallStatus RevProc::ECALL_sched_getparam() {
+EcallStatus RevCore::ECALL_sched_getparam() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1771,7 +1771,7 @@ EcallStatus RevProc::ECALL_sched_getparam() {
 }
 
 // 122, rev_sched_setaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
-EcallStatus RevProc::ECALL_sched_setaffinity() {
+EcallStatus RevCore::ECALL_sched_setaffinity() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1783,7 +1783,7 @@ EcallStatus RevProc::ECALL_sched_setaffinity() {
 }
 
 // 123, rev_sched_getaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
-EcallStatus RevProc::ECALL_sched_getaffinity() {
+EcallStatus RevCore::ECALL_sched_getaffinity() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1795,7 +1795,7 @@ EcallStatus RevProc::ECALL_sched_getaffinity() {
 }
 
 // 124, rev_sched_yield(void)
-EcallStatus RevProc::ECALL_sched_yield() {
+EcallStatus RevCore::ECALL_sched_yield() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1807,7 +1807,7 @@ EcallStatus RevProc::ECALL_sched_yield() {
 }
 
 // 125, rev_sched_get_priority_max(int policy)
-EcallStatus RevProc::ECALL_sched_get_priority_max() {
+EcallStatus RevCore::ECALL_sched_get_priority_max() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1819,7 +1819,7 @@ EcallStatus RevProc::ECALL_sched_get_priority_max() {
 }
 
 // 126, rev_sched_get_priority_min(int policy)
-EcallStatus RevProc::ECALL_sched_get_priority_min() {
+EcallStatus RevCore::ECALL_sched_get_priority_min() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1831,7 +1831,7 @@ EcallStatus RevProc::ECALL_sched_get_priority_min() {
 }
 
 // 127, rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
-EcallStatus RevProc::ECALL_sched_rr_get_interval() {
+EcallStatus RevCore::ECALL_sched_rr_get_interval() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1843,7 +1843,7 @@ EcallStatus RevProc::ECALL_sched_rr_get_interval() {
 }
 
 // 128, rev_restart_syscall(void)
-EcallStatus RevProc::ECALL_restart_syscall() {
+EcallStatus RevCore::ECALL_restart_syscall() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1855,7 +1855,7 @@ EcallStatus RevProc::ECALL_restart_syscall() {
 }
 
 // 129, rev_kill(pid_t pid, int sig)
-EcallStatus RevProc::ECALL_kill() {
+EcallStatus RevCore::ECALL_kill() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1867,7 +1867,7 @@ EcallStatus RevProc::ECALL_kill() {
 }
 
 // 130, rev_tkill(pid_t pid, int sig)
-EcallStatus RevProc::ECALL_tkill() {
+EcallStatus RevCore::ECALL_tkill() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1879,7 +1879,7 @@ EcallStatus RevProc::ECALL_tkill() {
 }
 
 // 131, rev_tgkill(pid_t tgid, pid_t pid, int sig)
-EcallStatus RevProc::ECALL_tgkill() {
+EcallStatus RevCore::ECALL_tgkill() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1891,7 +1891,7 @@ EcallStatus RevProc::ECALL_tgkill() {
 }
 
 // 132, rev_sigaltstack(const struct sigaltstack  *uss, struct sigaltstack  *uoss)
-EcallStatus RevProc::ECALL_sigaltstack() {
+EcallStatus RevCore::ECALL_sigaltstack() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1903,7 +1903,7 @@ EcallStatus RevProc::ECALL_sigaltstack() {
 }
 
 // 133, rev_rt_sigsuspend(sigset_t  *unewset, size_t sigsetsize)
-EcallStatus RevProc::ECALL_rt_sigsuspend() {
+EcallStatus RevCore::ECALL_rt_sigsuspend() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1915,7 +1915,7 @@ EcallStatus RevProc::ECALL_rt_sigsuspend() {
 }
 
 // 134, rev_rt_sigaction(int, const struct sigaction  *, struct sigaction  *, size_t)
-EcallStatus RevProc::ECALL_rt_sigaction() {
+EcallStatus RevCore::ECALL_rt_sigaction() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1927,7 +1927,7 @@ EcallStatus RevProc::ECALL_rt_sigaction() {
 }
 
 // 135, rev_rt_sigprocmask(int how, sigset_t  *set, sigset_t  *oset, size_t sigsetsize)
-EcallStatus RevProc::ECALL_rt_sigprocmask() {
+EcallStatus RevCore::ECALL_rt_sigprocmask() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1939,7 +1939,7 @@ EcallStatus RevProc::ECALL_rt_sigprocmask() {
 }
 
 // 136, rev_rt_sigpending(sigset_t  *set, size_t sigsetsize)
-EcallStatus RevProc::ECALL_rt_sigpending() {
+EcallStatus RevCore::ECALL_rt_sigpending() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1951,7 +1951,7 @@ EcallStatus RevProc::ECALL_rt_sigpending() {
 }
 
 // 137, rev_rt_sigtimedwait_time32(const sigset_t  *uthese, siginfo_t  *uinfo, const struct old_timespec32  *uts, size_t sigsetsize)
-EcallStatus RevProc::ECALL_rt_sigtimedwait_time32() {
+EcallStatus RevCore::ECALL_rt_sigtimedwait_time32() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1963,7 +1963,7 @@ EcallStatus RevProc::ECALL_rt_sigtimedwait_time32() {
 }
 
 // 138, rev_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t  *uinfo)
-EcallStatus RevProc::ECALL_rt_sigqueueinfo() {
+EcallStatus RevCore::ECALL_rt_sigqueueinfo() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1975,7 +1975,7 @@ EcallStatus RevProc::ECALL_rt_sigqueueinfo() {
 }
 
 // 140, rev_setpriority(int which, int who, int niceval)
-EcallStatus RevProc::ECALL_setpriority() {
+EcallStatus RevCore::ECALL_setpriority() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1987,7 +1987,7 @@ EcallStatus RevProc::ECALL_setpriority() {
 }
 
 // 141, rev_getpriority(int which, int who)
-EcallStatus RevProc::ECALL_getpriority() {
+EcallStatus RevCore::ECALL_getpriority() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -1999,7 +1999,7 @@ EcallStatus RevProc::ECALL_getpriority() {
 }
 
 // 142, rev_reboot(int magic1, int magic2, unsigned int cmd, void  *arg)
-EcallStatus RevProc::ECALL_reboot() {
+EcallStatus RevCore::ECALL_reboot() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2011,7 +2011,7 @@ EcallStatus RevProc::ECALL_reboot() {
 }
 
 // 143, rev_setregid(gid_t rgid, gid_t egid)
-EcallStatus RevProc::ECALL_setregid() {
+EcallStatus RevCore::ECALL_setregid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2023,7 +2023,7 @@ EcallStatus RevProc::ECALL_setregid() {
 }
 
 // 144, rev_setgid(gid_t gid)
-EcallStatus RevProc::ECALL_setgid() {
+EcallStatus RevCore::ECALL_setgid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2035,7 +2035,7 @@ EcallStatus RevProc::ECALL_setgid() {
 }
 
 // 145, rev_setreuid(uid_t ruid, uid_t euid)
-EcallStatus RevProc::ECALL_setreuid() {
+EcallStatus RevCore::ECALL_setreuid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2047,7 +2047,7 @@ EcallStatus RevProc::ECALL_setreuid() {
 }
 
 // 146, rev_setuid(uid_t uid)
-EcallStatus RevProc::ECALL_setuid() {
+EcallStatus RevCore::ECALL_setuid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2059,7 +2059,7 @@ EcallStatus RevProc::ECALL_setuid() {
 }
 
 // 147, rev_setresuid(uid_t ruid, uid_t euid, uid_t suid)
-EcallStatus RevProc::ECALL_setresuid() {
+EcallStatus RevCore::ECALL_setresuid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2071,7 +2071,7 @@ EcallStatus RevProc::ECALL_setresuid() {
 }
 
 // 148, rev_getresuid(uid_t  *ruid, uid_t  *euid, uid_t  *suid)
-EcallStatus RevProc::ECALL_getresuid() {
+EcallStatus RevCore::ECALL_getresuid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2083,7 +2083,7 @@ EcallStatus RevProc::ECALL_getresuid() {
 }
 
 // 149, rev_setresgid(gid_t rgid, gid_t egid, gid_t sgid)
-EcallStatus RevProc::ECALL_setresgid() {
+EcallStatus RevCore::ECALL_setresgid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2095,7 +2095,7 @@ EcallStatus RevProc::ECALL_setresgid() {
 }
 
 // 150, rev_getresgid(gid_t  *rgid, gid_t  *egid, gid_t  *sgid)
-EcallStatus RevProc::ECALL_getresgid() {
+EcallStatus RevCore::ECALL_getresgid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2107,7 +2107,7 @@ EcallStatus RevProc::ECALL_getresgid() {
 }
 
 // 151, rev_setfsuid(uid_t uid)
-EcallStatus RevProc::ECALL_setfsuid() {
+EcallStatus RevCore::ECALL_setfsuid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2119,7 +2119,7 @@ EcallStatus RevProc::ECALL_setfsuid() {
 }
 
 // 152, rev_setfsgid(gid_t gid)
-EcallStatus RevProc::ECALL_setfsgid() {
+EcallStatus RevCore::ECALL_setfsgid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2131,7 +2131,7 @@ EcallStatus RevProc::ECALL_setfsgid() {
 }
 
 // 153, rev_times(struct tms  *tbuf)
-EcallStatus RevProc::ECALL_times() {
+EcallStatus RevCore::ECALL_times() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2143,7 +2143,7 @@ EcallStatus RevProc::ECALL_times() {
 }
 
 // 154, rev_setpgid(pid_t pid, pid_t pgid)
-EcallStatus RevProc::ECALL_setpgid() {
+EcallStatus RevCore::ECALL_setpgid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2155,7 +2155,7 @@ EcallStatus RevProc::ECALL_setpgid() {
 }
 
 // 155, rev_getpgid(pid_t pid)
-EcallStatus RevProc::ECALL_getpgid() {
+EcallStatus RevCore::ECALL_getpgid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2167,7 +2167,7 @@ EcallStatus RevProc::ECALL_getpgid() {
 }
 
 // 156, rev_getsid(pid_t pid)
-EcallStatus RevProc::ECALL_getsid() {
+EcallStatus RevCore::ECALL_getsid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2179,7 +2179,7 @@ EcallStatus RevProc::ECALL_getsid() {
 }
 
 // 157, rev_setsid(void)
-EcallStatus RevProc::ECALL_setsid() {
+EcallStatus RevCore::ECALL_setsid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2191,7 +2191,7 @@ EcallStatus RevProc::ECALL_setsid() {
 }
 
 // 158, rev_getgroups(int gidsetsize, gid_t  *grouplist)
-EcallStatus RevProc::ECALL_getgroups() {
+EcallStatus RevCore::ECALL_getgroups() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2203,7 +2203,7 @@ EcallStatus RevProc::ECALL_getgroups() {
 }
 
 // 159, rev_setgroups(int gidsetsize, gid_t  *grouplist)
-EcallStatus RevProc::ECALL_setgroups() {
+EcallStatus RevCore::ECALL_setgroups() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2215,7 +2215,7 @@ EcallStatus RevProc::ECALL_setgroups() {
 }
 
 // 160, rev_newuname(struct new_utsname  *name)
-EcallStatus RevProc::ECALL_newuname() {
+EcallStatus RevCore::ECALL_newuname() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2227,7 +2227,7 @@ EcallStatus RevProc::ECALL_newuname() {
 }
 
 // 161, rev_sethostname(char  *name, int len)
-EcallStatus RevProc::ECALL_sethostname() {
+EcallStatus RevCore::ECALL_sethostname() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2239,7 +2239,7 @@ EcallStatus RevProc::ECALL_sethostname() {
 }
 
 // 162, rev_setdomainname(char  *name, int len)
-EcallStatus RevProc::ECALL_setdomainname() {
+EcallStatus RevCore::ECALL_setdomainname() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2251,7 +2251,7 @@ EcallStatus RevProc::ECALL_setdomainname() {
 }
 
 // 163, rev_getrlimit(unsigned int resource, struct rlimit  *rlim)
-EcallStatus RevProc::ECALL_getrlimit() {
+EcallStatus RevCore::ECALL_getrlimit() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2263,7 +2263,7 @@ EcallStatus RevProc::ECALL_getrlimit() {
 }
 
 // 164, rev_setrlimit(unsigned int resource, struct rlimit  *rlim)
-EcallStatus RevProc::ECALL_setrlimit() {
+EcallStatus RevCore::ECALL_setrlimit() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2275,7 +2275,7 @@ EcallStatus RevProc::ECALL_setrlimit() {
 }
 
 // 165, rev_getrusage(int who, struct rusage  *ru)
-EcallStatus RevProc::ECALL_getrusage() {
+EcallStatus RevCore::ECALL_getrusage() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2287,7 +2287,7 @@ EcallStatus RevProc::ECALL_getrusage() {
 }
 
 // 166, rev_umask(int mask)
-EcallStatus RevProc::ECALL_umask() {
+EcallStatus RevCore::ECALL_umask() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2299,7 +2299,7 @@ EcallStatus RevProc::ECALL_umask() {
 }
 
 // 167, rev_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
-EcallStatus RevProc::ECALL_prctl() {
+EcallStatus RevCore::ECALL_prctl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2311,7 +2311,7 @@ EcallStatus RevProc::ECALL_prctl() {
 }
 
 // 168, rev_getcpu(unsigned  *cpu, unsigned  *node, struct getcpu_cache  *cache)
-EcallStatus RevProc::ECALL_getcpu() {
+EcallStatus RevCore::ECALL_getcpu() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2323,7 +2323,7 @@ EcallStatus RevProc::ECALL_getcpu() {
 }
 
 // 169, rev_gettimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
-EcallStatus RevProc::ECALL_gettimeofday() {
+EcallStatus RevCore::ECALL_gettimeofday() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2335,7 +2335,7 @@ EcallStatus RevProc::ECALL_gettimeofday() {
 }
 
 // 170, rev_settimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
-EcallStatus RevProc::ECALL_settimeofday() {
+EcallStatus RevCore::ECALL_settimeofday() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2347,7 +2347,7 @@ EcallStatus RevProc::ECALL_settimeofday() {
 }
 
 // 171, rev_adjtimex(struct __kernel_timex  *txc_p)
-EcallStatus RevProc::ECALL_adjtimex() {
+EcallStatus RevCore::ECALL_adjtimex() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2359,7 +2359,7 @@ EcallStatus RevProc::ECALL_adjtimex() {
 }
 
 // 172, rev_getpid(void)
-EcallStatus RevProc::ECALL_getpid() {
+EcallStatus RevCore::ECALL_getpid() {
   output->verbose(
     CALL_INFO,
     2,
@@ -2369,7 +2369,7 @@ EcallStatus RevProc::ECALL_getpid() {
 }
 
 //  173, rev_getppid(void)
-EcallStatus RevProc::ECALL_getppid() {
+EcallStatus RevCore::ECALL_getppid() {
   output->verbose(
     CALL_INFO,
     2,
@@ -2380,7 +2380,7 @@ EcallStatus RevProc::ECALL_getppid() {
 }
 
 // 174, rev_getuid(void)
-EcallStatus RevProc::ECALL_getuid() {
+EcallStatus RevCore::ECALL_getuid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2393,7 +2393,7 @@ EcallStatus RevProc::ECALL_getuid() {
 }
 
 // 175, rev_geteuid(void)
-EcallStatus RevProc::ECALL_geteuid() {
+EcallStatus RevCore::ECALL_geteuid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2405,7 +2405,7 @@ EcallStatus RevProc::ECALL_geteuid() {
 }
 
 // 176, rev_getgid(void)
-EcallStatus RevProc::ECALL_getgid() {
+EcallStatus RevCore::ECALL_getgid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2417,7 +2417,7 @@ EcallStatus RevProc::ECALL_getgid() {
 }
 
 // 177, rev_getegid(void)
-EcallStatus RevProc::ECALL_getegid() {
+EcallStatus RevCore::ECALL_getegid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2429,7 +2429,7 @@ EcallStatus RevProc::ECALL_getegid() {
 }
 
 // 178, rev_gettid(void)
-EcallStatus RevProc::ECALL_gettid() {
+EcallStatus RevCore::ECALL_gettid() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2444,7 +2444,7 @@ EcallStatus RevProc::ECALL_gettid() {
 }
 
 // 179, rev_sysinfo(struct sysinfo  *info)
-EcallStatus RevProc::ECALL_sysinfo() {
+EcallStatus RevCore::ECALL_sysinfo() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2456,7 +2456,7 @@ EcallStatus RevProc::ECALL_sysinfo() {
 }
 
 // 180, rev_mq_open(const char  *name, int oflag, umode_t mode, struct mq_attr  *attr)
-EcallStatus RevProc::ECALL_mq_open() {
+EcallStatus RevCore::ECALL_mq_open() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2468,7 +2468,7 @@ EcallStatus RevProc::ECALL_mq_open() {
 }
 
 // 181, rev_mq_unlink(const char  *name)
-EcallStatus RevProc::ECALL_mq_unlink() {
+EcallStatus RevCore::ECALL_mq_unlink() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2480,7 +2480,7 @@ EcallStatus RevProc::ECALL_mq_unlink() {
 }
 
 // 182, rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
-EcallStatus RevProc::ECALL_mq_timedsend() {
+EcallStatus RevCore::ECALL_mq_timedsend() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2492,7 +2492,7 @@ EcallStatus RevProc::ECALL_mq_timedsend() {
 }
 
 // 183, rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
-EcallStatus RevProc::ECALL_mq_timedreceive() {
+EcallStatus RevCore::ECALL_mq_timedreceive() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2504,7 +2504,7 @@ EcallStatus RevProc::ECALL_mq_timedreceive() {
 }
 
 // 184, rev_mq_notify(mqd_t mqdes, const struct sigevent  *notification)
-EcallStatus RevProc::ECALL_mq_notify() {
+EcallStatus RevCore::ECALL_mq_notify() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2516,7 +2516,7 @@ EcallStatus RevProc::ECALL_mq_notify() {
 }
 
 // 185, rev_mq_getsetattr(mqd_t mqdes, const struct mq_attr  *mqstat, struct mq_attr  *omqstat)
-EcallStatus RevProc::ECALL_mq_getsetattr() {
+EcallStatus RevCore::ECALL_mq_getsetattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2528,7 +2528,7 @@ EcallStatus RevProc::ECALL_mq_getsetattr() {
 }
 
 // 186, rev_msgget(key_t key, int msgflg)
-EcallStatus RevProc::ECALL_msgget() {
+EcallStatus RevCore::ECALL_msgget() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2540,7 +2540,7 @@ EcallStatus RevProc::ECALL_msgget() {
 }
 
 // 187, rev_old_msgctl(int msqid, int cmd, struct msqid_ds  *buf)
-EcallStatus RevProc::ECALL_msgctl() {
+EcallStatus RevCore::ECALL_msgctl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2552,7 +2552,7 @@ EcallStatus RevProc::ECALL_msgctl() {
 }
 
 // 188, rev_msgrcv(int msqid, struct msgbuf  *msgp, size_t msgsz, long msgtyp, int msgflg)
-EcallStatus RevProc::ECALL_msgrcv() {
+EcallStatus RevCore::ECALL_msgrcv() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2564,7 +2564,7 @@ EcallStatus RevProc::ECALL_msgrcv() {
 }
 
 // 189, rev_msgsnd(int msqid, struct msgbuf  *msgp, size_t msgsz, int msgflg)
-EcallStatus RevProc::ECALL_msgsnd() {
+EcallStatus RevCore::ECALL_msgsnd() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2576,7 +2576,7 @@ EcallStatus RevProc::ECALL_msgsnd() {
 }
 
 // 190, rev_semget(key_t key, int nsems, int semflg)
-EcallStatus RevProc::ECALL_semget() {
+EcallStatus RevCore::ECALL_semget() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2588,7 +2588,7 @@ EcallStatus RevProc::ECALL_semget() {
 }
 
 // 191, rev_semctl(int semid, int semnum, int cmd, unsigned long arg)
-EcallStatus RevProc::ECALL_semctl() {
+EcallStatus RevCore::ECALL_semctl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2600,7 +2600,7 @@ EcallStatus RevProc::ECALL_semctl() {
 }
 
 // 192, rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
-EcallStatus RevProc::ECALL_semtimedop() {
+EcallStatus RevCore::ECALL_semtimedop() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2612,7 +2612,7 @@ EcallStatus RevProc::ECALL_semtimedop() {
 }
 
 // 193, rev_semop(int semid, struct sembuf  *sops, unsigned nsops)
-EcallStatus RevProc::ECALL_semop() {
+EcallStatus RevCore::ECALL_semop() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2624,7 +2624,7 @@ EcallStatus RevProc::ECALL_semop() {
 }
 
 // 194, rev_shmget(key_t key, size_t size, int flag)
-EcallStatus RevProc::ECALL_shmget() {
+EcallStatus RevCore::ECALL_shmget() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2636,7 +2636,7 @@ EcallStatus RevProc::ECALL_shmget() {
 }
 
 // 195, rev_old_shmctl(int shmid, int cmd, struct shmid_ds  *buf)
-EcallStatus RevProc::ECALL_shmctl() {
+EcallStatus RevCore::ECALL_shmctl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2648,7 +2648,7 @@ EcallStatus RevProc::ECALL_shmctl() {
 }
 
 // 196, rev_shmat(int shmid, char  *shmaddr, int shmflg)
-EcallStatus RevProc::ECALL_shmat() {
+EcallStatus RevCore::ECALL_shmat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2660,7 +2660,7 @@ EcallStatus RevProc::ECALL_shmat() {
 }
 
 // 197, rev_shmdt(char  *shmaddr)
-EcallStatus RevProc::ECALL_shmdt() {
+EcallStatus RevCore::ECALL_shmdt() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2672,7 +2672,7 @@ EcallStatus RevProc::ECALL_shmdt() {
 }
 
 // 198, rev_socket(int, int, int)
-EcallStatus RevProc::ECALL_socket() {
+EcallStatus RevCore::ECALL_socket() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2684,7 +2684,7 @@ EcallStatus RevProc::ECALL_socket() {
 }
 
 // 199, rev_socketpair(int, int, int, int  *)
-EcallStatus RevProc::ECALL_socketpair() {
+EcallStatus RevCore::ECALL_socketpair() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2696,7 +2696,7 @@ EcallStatus RevProc::ECALL_socketpair() {
 }
 
 // 200, rev_bind(int, struct sockaddr  *, int)
-EcallStatus RevProc::ECALL_bind() {
+EcallStatus RevCore::ECALL_bind() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2708,7 +2708,7 @@ EcallStatus RevProc::ECALL_bind() {
 }
 
 // 201, rev_listen(int, int)
-EcallStatus RevProc::ECALL_listen() {
+EcallStatus RevCore::ECALL_listen() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2720,7 +2720,7 @@ EcallStatus RevProc::ECALL_listen() {
 }
 
 // 202, rev_accept(int, struct sockaddr  *, int  *)
-EcallStatus RevProc::ECALL_accept() {
+EcallStatus RevCore::ECALL_accept() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2732,7 +2732,7 @@ EcallStatus RevProc::ECALL_accept() {
 }
 
 // 203, rev_connect(int, struct sockaddr  *, int)
-EcallStatus RevProc::ECALL_connect() {
+EcallStatus RevCore::ECALL_connect() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2744,7 +2744,7 @@ EcallStatus RevProc::ECALL_connect() {
 }
 
 // 204, rev_getsockname(int, struct sockaddr  *, int  *)
-EcallStatus RevProc::ECALL_getsockname() {
+EcallStatus RevCore::ECALL_getsockname() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2756,7 +2756,7 @@ EcallStatus RevProc::ECALL_getsockname() {
 }
 
 // 205, rev_getpeername(int, struct sockaddr  *, int  *)
-EcallStatus RevProc::ECALL_getpeername() {
+EcallStatus RevCore::ECALL_getpeername() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2768,7 +2768,7 @@ EcallStatus RevProc::ECALL_getpeername() {
 }
 
 // 206, rev_sendto(int, void  *, size_t, unsigned, struct sockaddr  *, int)
-EcallStatus RevProc::ECALL_sendto() {
+EcallStatus RevCore::ECALL_sendto() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2780,7 +2780,7 @@ EcallStatus RevProc::ECALL_sendto() {
 }
 
 // 207, rev_recvfrom(int, void  *, size_t, unsigned, struct sockaddr  *, int  *)
-EcallStatus RevProc::ECALL_recvfrom() {
+EcallStatus RevCore::ECALL_recvfrom() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2792,7 +2792,7 @@ EcallStatus RevProc::ECALL_recvfrom() {
 }
 
 // 208, rev_setsockopt(int fd, int level, int optname, char  *optval, int optlen)
-EcallStatus RevProc::ECALL_setsockopt() {
+EcallStatus RevCore::ECALL_setsockopt() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2804,7 +2804,7 @@ EcallStatus RevProc::ECALL_setsockopt() {
 }
 
 // 209, rev_getsockopt(int fd, int level, int optname, char  *optval, int  *optlen)
-EcallStatus RevProc::ECALL_getsockopt() {
+EcallStatus RevCore::ECALL_getsockopt() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2816,7 +2816,7 @@ EcallStatus RevProc::ECALL_getsockopt() {
 }
 
 // 210, rev_shutdown(int, int)
-EcallStatus RevProc::ECALL_shutdown() {
+EcallStatus RevCore::ECALL_shutdown() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2828,7 +2828,7 @@ EcallStatus RevProc::ECALL_shutdown() {
 }
 
 // 211, rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags)
-EcallStatus RevProc::ECALL_sendmsg() {
+EcallStatus RevCore::ECALL_sendmsg() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2840,7 +2840,7 @@ EcallStatus RevProc::ECALL_sendmsg() {
 }
 
 // 212, rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags)
-EcallStatus RevProc::ECALL_recvmsg() {
+EcallStatus RevCore::ECALL_recvmsg() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2852,7 +2852,7 @@ EcallStatus RevProc::ECALL_recvmsg() {
 }
 
 // 213, rev_readahead(int fd, loff_t offset, size_t count)
-EcallStatus RevProc::ECALL_readahead() {
+EcallStatus RevCore::ECALL_readahead() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2864,7 +2864,7 @@ EcallStatus RevProc::ECALL_readahead() {
 }
 
 // 214, rev_brk(unsigned long brk)
-EcallStatus RevProc::ECALL_brk() {
+EcallStatus RevCore::ECALL_brk() {
   auto           Addr    = RegFile->GetX< uint64_t >( RevReg::a0 );
 
   const uint64_t heapend = mem->GetHeapEnd();
@@ -2882,7 +2882,7 @@ EcallStatus RevProc::ECALL_brk() {
 }
 
 // 215, rev_munmap(unsigned long addr, size_t len)
-EcallStatus RevProc::ECALL_munmap() {
+EcallStatus RevCore::ECALL_munmap() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: munmap called\n" );
   auto Addr = RegFile->GetX< uint64_t >( RevReg::a0 );
   auto Size = RegFile->GetX< uint64_t >( RevReg::a1 );
@@ -2903,7 +2903,7 @@ EcallStatus RevProc::ECALL_munmap() {
 }
 
 // 216, rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr)
-EcallStatus RevProc::ECALL_mremap() {
+EcallStatus RevCore::ECALL_mremap() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2915,7 +2915,7 @@ EcallStatus RevProc::ECALL_mremap() {
 }
 
 // 217, rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid)
-EcallStatus RevProc::ECALL_add_key() {
+EcallStatus RevCore::ECALL_add_key() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2927,7 +2927,7 @@ EcallStatus RevProc::ECALL_add_key() {
 }
 
 // 218, rev_request_key(const char  *_type, const char  *_description, const char  *_callout_info, key_serial_t destringid)
-EcallStatus RevProc::ECALL_request_key() {
+EcallStatus RevCore::ECALL_request_key() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2939,7 +2939,7 @@ EcallStatus RevProc::ECALL_request_key() {
 }
 
 // 219, rev_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
-EcallStatus RevProc::ECALL_keyctl() {
+EcallStatus RevCore::ECALL_keyctl() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -2951,7 +2951,7 @@ EcallStatus RevProc::ECALL_keyctl() {
 }
 
 // 220, rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *)
-EcallStatus RevProc::ECALL_clone() {
+EcallStatus RevCore::ECALL_clone() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3080,7 +3080,7 @@ EcallStatus RevProc::ECALL_clone() {
   //    *
   //    *         In this case, the value of pid is the value thats returned to a0
   //    *         It follows that
-  //    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
+  //    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevCore)
   //    *         - The Parent's a0 register MUST have its PID in it
   //    * ===========================================================================================
   //    */
@@ -3106,7 +3106,7 @@ EcallStatus RevProc::ECALL_clone() {
 }
 
 // 221, rev_execve(const char  *filename, const char  *const  *argv, const char  *const  *envp)
-EcallStatus RevProc::ECALL_execve() {
+EcallStatus RevCore::ECALL_execve() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3118,7 +3118,7 @@ EcallStatus RevProc::ECALL_execve() {
 }
 
 // 222, rev_old_mmap(struct mmap_arg_struct  *arg)
-EcallStatus RevProc::ECALL_mmap() {
+EcallStatus RevCore::ECALL_mmap() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: mmap called\n" );
 
   auto addr = RegFile->GetX< uint64_t >( RevReg::a0 );
@@ -3146,7 +3146,7 @@ EcallStatus RevProc::ECALL_mmap() {
 }
 
 // 223, rev_fadvise64_64(int fd, loff_t offset, loff_t len, int advice)
-EcallStatus RevProc::ECALL_fadvise64_64() {
+EcallStatus RevCore::ECALL_fadvise64_64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3158,7 +3158,7 @@ EcallStatus RevProc::ECALL_fadvise64_64() {
 }
 
 // 224, rev_swapon(const char  *specialfile, int swap_flags)
-EcallStatus RevProc::ECALL_swapon() {
+EcallStatus RevCore::ECALL_swapon() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3170,7 +3170,7 @@ EcallStatus RevProc::ECALL_swapon() {
 }
 
 // 225, rev_swapoff(const char  *specialfile)
-EcallStatus RevProc::ECALL_swapoff() {
+EcallStatus RevCore::ECALL_swapoff() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3182,7 +3182,7 @@ EcallStatus RevProc::ECALL_swapoff() {
 }
 
 // 226, rev_mprotect(unsigned long start, size_t len, unsigned long prot)
-EcallStatus RevProc::ECALL_mprotect() {
+EcallStatus RevCore::ECALL_mprotect() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3194,7 +3194,7 @@ EcallStatus RevProc::ECALL_mprotect() {
 }
 
 // 227, rev_msync(unsigned long start, size_t len, int flags)
-EcallStatus RevProc::ECALL_msync() {
+EcallStatus RevCore::ECALL_msync() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3206,7 +3206,7 @@ EcallStatus RevProc::ECALL_msync() {
 }
 
 // 228, rev_mlock(unsigned long start, size_t len)
-EcallStatus RevProc::ECALL_mlock() {
+EcallStatus RevCore::ECALL_mlock() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3218,7 +3218,7 @@ EcallStatus RevProc::ECALL_mlock() {
 }
 
 // 229, rev_munlock(unsigned long start, size_t len)
-EcallStatus RevProc::ECALL_munlock() {
+EcallStatus RevCore::ECALL_munlock() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3230,7 +3230,7 @@ EcallStatus RevProc::ECALL_munlock() {
 }
 
 // 230, rev_mlockall(int flags)
-EcallStatus RevProc::ECALL_mlockall() {
+EcallStatus RevCore::ECALL_mlockall() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3242,7 +3242,7 @@ EcallStatus RevProc::ECALL_mlockall() {
 }
 
 // 231, rev_munlockall(void)
-EcallStatus RevProc::ECALL_munlockall() {
+EcallStatus RevCore::ECALL_munlockall() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3254,7 +3254,7 @@ EcallStatus RevProc::ECALL_munlockall() {
 }
 
 // 232, rev_mincore(unsigned long start, size_t len, unsigned char  * vec)
-EcallStatus RevProc::ECALL_mincore() {
+EcallStatus RevCore::ECALL_mincore() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3266,7 +3266,7 @@ EcallStatus RevProc::ECALL_mincore() {
 }
 
 // 233, rev_madvise(unsigned long start, size_t len, int behavior)
-EcallStatus RevProc::ECALL_madvise() {
+EcallStatus RevCore::ECALL_madvise() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3278,7 +3278,7 @@ EcallStatus RevProc::ECALL_madvise() {
 }
 
 // 234, rev_remap_file_pages(unsigned long start, unsigned long size, unsigned long prot, unsigned long pgoff, unsigned long flags)
-EcallStatus RevProc::ECALL_remap_file_pages() {
+EcallStatus RevCore::ECALL_remap_file_pages() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3290,7 +3290,7 @@ EcallStatus RevProc::ECALL_remap_file_pages() {
 }
 
 // 235, rev_mbind(unsigned long start, unsigned long len, unsigned long mode, const unsigned long  *nmask, unsigned long maxnode, unsigned flags)
-EcallStatus RevProc::ECALL_mbind() {
+EcallStatus RevCore::ECALL_mbind() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3302,7 +3302,7 @@ EcallStatus RevProc::ECALL_mbind() {
 }
 
 // 236, rev_get_mempolicy(int  *policy, unsigned long  *nmask, unsigned long maxnode, unsigned long addr, unsigned long flags)
-EcallStatus RevProc::ECALL_get_mempolicy() {
+EcallStatus RevCore::ECALL_get_mempolicy() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3314,7 +3314,7 @@ EcallStatus RevProc::ECALL_get_mempolicy() {
 }
 
 // 237, rev_set_mempolicy(int mode, const unsigned long  *nmask, unsigned long maxnode)
-EcallStatus RevProc::ECALL_set_mempolicy() {
+EcallStatus RevCore::ECALL_set_mempolicy() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3326,7 +3326,7 @@ EcallStatus RevProc::ECALL_set_mempolicy() {
 }
 
 // 238, rev_migrate_pages(pid_t pid, unsigned long maxnode, const unsigned long  *from, const unsigned long  *to)
-EcallStatus RevProc::ECALL_migrate_pages() {
+EcallStatus RevCore::ECALL_migrate_pages() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3338,7 +3338,7 @@ EcallStatus RevProc::ECALL_migrate_pages() {
 }
 
 // 239, rev_move_pages(pid_t pid, unsigned long nr_pages, const void  *  *pages, const int  *nodes, int  *status, int flags)
-EcallStatus RevProc::ECALL_move_pages() {
+EcallStatus RevCore::ECALL_move_pages() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3350,7 +3350,7 @@ EcallStatus RevProc::ECALL_move_pages() {
 }
 
 // 240, rev_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig, siginfo_t  *uinfo)
-EcallStatus RevProc::ECALL_rt_tgsigqueueinfo() {
+EcallStatus RevCore::ECALL_rt_tgsigqueueinfo() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3362,7 +3362,7 @@ EcallStatus RevProc::ECALL_rt_tgsigqueueinfo() {
 }
 
 // 241, rev_perf_event_open(")
-EcallStatus RevProc::ECALL_perf_event_open() {
+EcallStatus RevCore::ECALL_perf_event_open() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3374,7 +3374,7 @@ EcallStatus RevProc::ECALL_perf_event_open() {
 }
 
 // 242, rev_accept4(int, struct sockaddr  *, int  *, int)
-EcallStatus RevProc::ECALL_accept4() {
+EcallStatus RevCore::ECALL_accept4() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3386,7 +3386,7 @@ EcallStatus RevProc::ECALL_accept4() {
 }
 
 // 243, rev_recvmmsg_time32(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags, struct old_timespec32  *timeout)
-EcallStatus RevProc::ECALL_recvmmsg_time32() {
+EcallStatus RevCore::ECALL_recvmmsg_time32() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3398,7 +3398,7 @@ EcallStatus RevProc::ECALL_recvmmsg_time32() {
 }
 
 // 260, rev_wait4(pid_t pid, int  *stat_addr, int options, struct rusage  *ru)
-EcallStatus RevProc::ECALL_wait4() {
+EcallStatus RevCore::ECALL_wait4() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3410,7 +3410,7 @@ EcallStatus RevProc::ECALL_wait4() {
 }
 
 // 261, rev_prlimit64(pid_t pid, unsigned int resource, const struct rlimit64  *new_rlim, struct rlimit64  *old_rlim)
-EcallStatus RevProc::ECALL_prlimit64() {
+EcallStatus RevCore::ECALL_prlimit64() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3422,7 +3422,7 @@ EcallStatus RevProc::ECALL_prlimit64() {
 }
 
 // 262, rev_fanotify_init(unsigned int flags, unsigned int event_f_flags)
-EcallStatus RevProc::ECALL_fanotify_init() {
+EcallStatus RevCore::ECALL_fanotify_init() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3434,7 +3434,7 @@ EcallStatus RevProc::ECALL_fanotify_init() {
 }
 
 // 263, rev_fanotify_mark(int fanotify_fd, unsigned int flags, u64 mask, int fd, const char  *pathname)
-EcallStatus RevProc::ECALL_fanotify_mark() {
+EcallStatus RevCore::ECALL_fanotify_mark() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3446,7 +3446,7 @@ EcallStatus RevProc::ECALL_fanotify_mark() {
 }
 
 // 264, rev_name_to_handle_at(int dfd, const char  *name, struct file_handle  *handle, int  *mnt_id, int flag)
-EcallStatus RevProc::ECALL_name_to_handle_at() {
+EcallStatus RevCore::ECALL_name_to_handle_at() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3458,7 +3458,7 @@ EcallStatus RevProc::ECALL_name_to_handle_at() {
 }
 
 // 265, rev_open_by_handle_at(int mountdirfd, struct file_handle  *handle, int flags)
-EcallStatus RevProc::ECALL_open_by_handle_at() {
+EcallStatus RevCore::ECALL_open_by_handle_at() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3470,7 +3470,7 @@ EcallStatus RevProc::ECALL_open_by_handle_at() {
 }
 
 // 266, rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
-EcallStatus RevProc::ECALL_clock_adjtime() {
+EcallStatus RevCore::ECALL_clock_adjtime() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3482,7 +3482,7 @@ EcallStatus RevProc::ECALL_clock_adjtime() {
 }
 
 // 267, rev_syncfs(int fd)
-EcallStatus RevProc::ECALL_syncfs() {
+EcallStatus RevCore::ECALL_syncfs() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3494,7 +3494,7 @@ EcallStatus RevProc::ECALL_syncfs() {
 }
 
 // 268, rev_setns(int fd, int nstype)
-EcallStatus RevProc::ECALL_setns() {
+EcallStatus RevCore::ECALL_setns() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3506,7 +3506,7 @@ EcallStatus RevProc::ECALL_setns() {
 }
 
 // 269, rev_sendmmsg(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags)
-EcallStatus RevProc::ECALL_sendmmsg() {
+EcallStatus RevCore::ECALL_sendmmsg() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3518,7 +3518,7 @@ EcallStatus RevProc::ECALL_sendmmsg() {
 }
 
 // 270, rev_process_vm_readv(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
-EcallStatus RevProc::ECALL_process_vm_readv() {
+EcallStatus RevCore::ECALL_process_vm_readv() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3530,7 +3530,7 @@ EcallStatus RevProc::ECALL_process_vm_readv() {
 }
 
 // 271, rev_process_vm_writev(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
-EcallStatus RevProc::ECALL_process_vm_writev() {
+EcallStatus RevCore::ECALL_process_vm_writev() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3543,7 +3543,7 @@ EcallStatus RevProc::ECALL_process_vm_writev() {
 }
 
 // 272, rev_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long idx2)
-EcallStatus RevProc::ECALL_kcmp() {
+EcallStatus RevCore::ECALL_kcmp() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3555,7 +3555,7 @@ EcallStatus RevProc::ECALL_kcmp() {
 }
 
 // 273, rev_finit_module(int fd, const char  *uargs, int flags)
-EcallStatus RevProc::ECALL_finit_module() {
+EcallStatus RevCore::ECALL_finit_module() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3567,7 +3567,7 @@ EcallStatus RevProc::ECALL_finit_module() {
 }
 
 // 274, rev_sched_setattr(pid_t pid, struct sched_attr  *attr, unsigned int flags)
-EcallStatus RevProc::ECALL_sched_setattr() {
+EcallStatus RevCore::ECALL_sched_setattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3579,7 +3579,7 @@ EcallStatus RevProc::ECALL_sched_setattr() {
 }
 
 // 275, rev_sched_getattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags)
-EcallStatus RevProc::ECALL_sched_getattr() {
+EcallStatus RevCore::ECALL_sched_getattr() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3591,7 +3591,7 @@ EcallStatus RevProc::ECALL_sched_getattr() {
 }
 
 // 276, rev_renameat2(int olddfd, const char  *oldname, int newdfd, const char  *newname, unsigned int flags)
-EcallStatus RevProc::ECALL_renameat2() {
+EcallStatus RevCore::ECALL_renameat2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3603,7 +3603,7 @@ EcallStatus RevProc::ECALL_renameat2() {
 }
 
 // 277, rev_seccomp(unsigned int op, unsigned int flags, void  *uargs)
-EcallStatus RevProc::ECALL_seccomp() {
+EcallStatus RevCore::ECALL_seccomp() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3615,7 +3615,7 @@ EcallStatus RevProc::ECALL_seccomp() {
 }
 
 // 278, rev_getrandom(char  *buf, size_t count, unsigned int flags)
-EcallStatus RevProc::ECALL_getrandom() {
+EcallStatus RevCore::ECALL_getrandom() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3627,7 +3627,7 @@ EcallStatus RevProc::ECALL_getrandom() {
 }
 
 // 279, rev_memfd_create(const char  *uname_ptr, unsigned int flags)
-EcallStatus RevProc::ECALL_memfd_create() {
+EcallStatus RevCore::ECALL_memfd_create() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3639,7 +3639,7 @@ EcallStatus RevProc::ECALL_memfd_create() {
 }
 
 // 280, rev_bpf(int cmd, union bpf_attr *attr, unsigned int size)
-EcallStatus RevProc::ECALL_bpf() {
+EcallStatus RevCore::ECALL_bpf() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3651,7 +3651,7 @@ EcallStatus RevProc::ECALL_bpf() {
 }
 
 // 281, rev_execveat(int dfd, const char  *filename, const char  *const  *argv, const char  *const  *envp, int flags)
-EcallStatus RevProc::ECALL_execveat() {
+EcallStatus RevCore::ECALL_execveat() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3663,7 +3663,7 @@ EcallStatus RevProc::ECALL_execveat() {
 }
 
 // 282, rev_userfaultfd(int flags)
-EcallStatus RevProc::ECALL_userfaultfd() {
+EcallStatus RevCore::ECALL_userfaultfd() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3675,7 +3675,7 @@ EcallStatus RevProc::ECALL_userfaultfd() {
 }
 
 // 283, rev_membarrier(int cmd, unsigned int flags, int cpu_id)
-EcallStatus RevProc::ECALL_membarrier() {
+EcallStatus RevCore::ECALL_membarrier() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3687,7 +3687,7 @@ EcallStatus RevProc::ECALL_membarrier() {
 }
 
 // 284, rev_mlock2(unsigned long start, size_t len, int flags)
-EcallStatus RevProc::ECALL_mlock2() {
+EcallStatus RevCore::ECALL_mlock2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3699,7 +3699,7 @@ EcallStatus RevProc::ECALL_mlock2() {
 }
 
 // 285, rev_copy_file_range(int fd_in, loff_t  *off_in, int fd_out, loff_t  *off_out, size_t len, unsigned int flags)
-EcallStatus RevProc::ECALL_copy_file_range() {
+EcallStatus RevCore::ECALL_copy_file_range() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3711,7 +3711,7 @@ EcallStatus RevProc::ECALL_copy_file_range() {
 }
 
 // 286, rev_preadv2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
-EcallStatus RevProc::ECALL_preadv2() {
+EcallStatus RevCore::ECALL_preadv2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3723,7 +3723,7 @@ EcallStatus RevProc::ECALL_preadv2() {
 }
 
 // 287, rev_pwritev2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
-EcallStatus RevProc::ECALL_pwritev2() {
+EcallStatus RevCore::ECALL_pwritev2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3735,7 +3735,7 @@ EcallStatus RevProc::ECALL_pwritev2() {
 }
 
 // 288, rev_pkey_mprotect(unsigned long start, size_t len, unsigned long prot, int pkey)
-EcallStatus RevProc::ECALL_pkey_mprotect() {
+EcallStatus RevCore::ECALL_pkey_mprotect() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3747,7 +3747,7 @@ EcallStatus RevProc::ECALL_pkey_mprotect() {
 }
 
 // 289, rev_pkey_alloc(unsigned long flags, unsigned long init_val)
-EcallStatus RevProc::ECALL_pkey_alloc() {
+EcallStatus RevCore::ECALL_pkey_alloc() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3759,7 +3759,7 @@ EcallStatus RevProc::ECALL_pkey_alloc() {
 }
 
 // 290, rev_pkey_free(int pkey)
-EcallStatus RevProc::ECALL_pkey_free() {
+EcallStatus RevCore::ECALL_pkey_free() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3771,7 +3771,7 @@ EcallStatus RevProc::ECALL_pkey_free() {
 }
 
 // 291, rev_statx(int dfd, const char  *path, unsigned flags, unsigned mask, struct statx  *buffer)
-EcallStatus RevProc::ECALL_statx() {
+EcallStatus RevCore::ECALL_statx() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3783,7 +3783,7 @@ EcallStatus RevProc::ECALL_statx() {
 }
 
 // 292, rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
-EcallStatus RevProc::ECALL_io_pgetevents() {
+EcallStatus RevCore::ECALL_io_pgetevents() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3795,7 +3795,7 @@ EcallStatus RevProc::ECALL_io_pgetevents() {
 }
 
 // 293, rev_rseq(struct rseq  *rseq, uint32_t rseq_len, int flags, uint32_t sig)
-EcallStatus RevProc::ECALL_rseq() {
+EcallStatus RevCore::ECALL_rseq() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3807,7 +3807,7 @@ EcallStatus RevProc::ECALL_rseq() {
 }
 
 // 294, rev_kexec_file_load(int kernel_fd, int initrd_fd, unsigned long cmdline_len, const char  *cmdline_ptr, unsigned long flags)
-EcallStatus RevProc::ECALL_kexec_file_load() {
+EcallStatus RevCore::ECALL_kexec_file_load() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3819,7 +3819,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 }
 
 // // 403, rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
-// EcallStatus RevProc::ECALL_clock_gettime(){
+// EcallStatus RevCore::ECALL_clock_gettime(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: clock_gettime called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3827,7 +3827,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 404, rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
-// EcallStatus RevProc::ECALL_clock_settime(){
+// EcallStatus RevCore::ECALL_clock_settime(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: clock_settime called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3835,7 +3835,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 405, rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
-// EcallStatus RevProc::ECALL_clock_adjtime(){
+// EcallStatus RevCore::ECALL_clock_adjtime(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: clock_adjtime called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3843,7 +3843,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 406, rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
-// EcallStatus RevProc::ECALL_clock_getres(){
+// EcallStatus RevCore::ECALL_clock_getres(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: clock_getres called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3851,7 +3851,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 407, rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
-// EcallStatus RevProc::ECALL_clock_nanosleep(){
+// EcallStatus RevCore::ECALL_clock_nanosleep(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: clock_nanosleep called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3859,7 +3859,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 408, rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
-// EcallStatus RevProc::ECALL_timer_gettime(){
+// EcallStatus RevCore::ECALL_timer_gettime(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: timer_gettime called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3867,7 +3867,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 409, rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
-// EcallStatus RevProc::ECALL_timer_settime(){
+// EcallStatus RevCore::ECALL_timer_settime(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: timer_settime called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3875,7 +3875,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 410, rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
-// EcallStatus RevProc::ECALL_timerfd_gettime(){
+// EcallStatus RevCore::ECALL_timerfd_gettime(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: timerfd_gettime called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3883,7 +3883,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 411, rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
-// EcallStatus RevProc::ECALL_timerfd_settime(){
+// EcallStatus RevCore::ECALL_timerfd_settime(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: timerfd_settime called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3891,7 +3891,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 412, rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
-// EcallStatus RevProc::ECALL_utimensat(){
+// EcallStatus RevCore::ECALL_utimensat(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: utimensat called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3899,7 +3899,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 416, rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
-// EcallStatus RevProc::ECALL_io_pgetevents(){
+// EcallStatus RevCore::ECALL_io_pgetevents(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: io_pgetevents called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3907,7 +3907,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 418, rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
-// EcallStatus RevProc::ECALL_mq_timedsend(){
+// EcallStatus RevCore::ECALL_mq_timedsend(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: mq_timedsend called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3915,7 +3915,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 419, rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
-// EcallStatus RevProc::ECALL_mq_timedreceive(){
+// EcallStatus RevCore::ECALL_mq_timedreceive(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: mq_timedreceive called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3923,7 +3923,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 420, rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
-// EcallStatus RevProc::ECALL_semtimedop(){
+// EcallStatus RevCore::ECALL_semtimedop(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: semtimedop called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3931,7 +3931,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 422, rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
-// EcallStatus RevProc::ECALL_futex(){
+// EcallStatus RevCore::ECALL_futex(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: futex called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3939,7 +3939,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 // }
 
 // // 423, rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
-// EcallStatus RevProc::ECALL_sched_rr_get_interval(){
+// EcallStatus RevCore::ECALL_sched_rr_get_interval(){
 //   output->verbose(CALL_INFO, 2, 0,
 //   "ECALL: sched_rr_get_interval called by thread %" PRIu32
 //   " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
@@ -3948,7 +3948,7 @@ EcallStatus RevProc::ECALL_kexec_file_load() {
 //
 
 // 424, rev_pidfd_send_signal(int pidfd, int sig, siginfo_t  *info, unsigned int flags)
-EcallStatus RevProc::ECALL_pidfd_send_signal() {
+EcallStatus RevCore::ECALL_pidfd_send_signal() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3960,7 +3960,7 @@ EcallStatus RevProc::ECALL_pidfd_send_signal() {
 }
 
 // 425, rev_io_uring_setup(u32 entries, struct io_uring_params  *p)
-EcallStatus RevProc::ECALL_io_uring_setup() {
+EcallStatus RevCore::ECALL_io_uring_setup() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3972,7 +3972,7 @@ EcallStatus RevProc::ECALL_io_uring_setup() {
 }
 
 // 426, rev_io_uring_enter(unsigned int fd, u32 to_submit, u32 min_complete, u32 flags, const sigset_t  *sig, size_t sigsz)
-EcallStatus RevProc::ECALL_io_uring_enter() {
+EcallStatus RevCore::ECALL_io_uring_enter() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3984,7 +3984,7 @@ EcallStatus RevProc::ECALL_io_uring_enter() {
 }
 
 // 427, rev_io_uring_register(unsigned int fd, unsigned int op, void  *arg, unsigned int nr_args)
-EcallStatus RevProc::ECALL_io_uring_register() {
+EcallStatus RevCore::ECALL_io_uring_register() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -3996,7 +3996,7 @@ EcallStatus RevProc::ECALL_io_uring_register() {
 }
 
 // 428, rev_open_tree(int dfd, const char  *path, unsigned flags)
-EcallStatus RevProc::ECALL_open_tree() {
+EcallStatus RevCore::ECALL_open_tree() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4008,7 +4008,7 @@ EcallStatus RevProc::ECALL_open_tree() {
 }
 
 // 429, rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags)
-EcallStatus RevProc::ECALL_move_mount() {
+EcallStatus RevCore::ECALL_move_mount() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4020,7 +4020,7 @@ EcallStatus RevProc::ECALL_move_mount() {
 }
 
 // 430, rev_fsopen(const char  *fs_name, unsigned int flags)
-EcallStatus RevProc::ECALL_fsopen() {
+EcallStatus RevCore::ECALL_fsopen() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4032,7 +4032,7 @@ EcallStatus RevProc::ECALL_fsopen() {
 }
 
 // 431, rev_fsconfig(int fs_fd, unsigned int cmd, const char  *key, const void  *value, int aux)
-EcallStatus RevProc::ECALL_fsconfig() {
+EcallStatus RevCore::ECALL_fsconfig() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4044,7 +4044,7 @@ EcallStatus RevProc::ECALL_fsconfig() {
 }
 
 // 432, rev_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags)
-EcallStatus RevProc::ECALL_fsmount() {
+EcallStatus RevCore::ECALL_fsmount() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4056,7 +4056,7 @@ EcallStatus RevProc::ECALL_fsmount() {
 }
 
 // 433, rev_fspick(int dfd, const char  *path, unsigned int flags)
-EcallStatus RevProc::ECALL_fspick() {
+EcallStatus RevCore::ECALL_fspick() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4068,7 +4068,7 @@ EcallStatus RevProc::ECALL_fspick() {
 }
 
 // 434, rev_pidfd_open(pid_t pid, unsigned int flags)
-EcallStatus RevProc::ECALL_pidfd_open() {
+EcallStatus RevCore::ECALL_pidfd_open() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4080,7 +4080,7 @@ EcallStatus RevProc::ECALL_pidfd_open() {
 }
 
 // 435, rev_clone3(struct clone_args  *uargs, size_t size)
-EcallStatus RevProc::ECALL_clone3() {
+EcallStatus RevCore::ECALL_clone3() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4209,7 +4209,7 @@ EcallStatus RevProc::ECALL_clone3() {
   //    *
   //    *         In this case, the value of pid is the value thats returned to a0
   //    *         It follows that
-  //    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevProc)
+  //    *         - The child's regfile MUST have 0 in its a0 (despite its pid != 0 to the RevCore)
   //    *         - The Parent's a0 register MUST have its PID in it
   //    * ===========================================================================================
   //    */
@@ -4235,7 +4235,7 @@ EcallStatus RevProc::ECALL_clone3() {
 }
 
 // 436, rev_close_range(unsigned int fd, unsigned int max_fd, unsigned int flags)
-EcallStatus RevProc::ECALL_close_range() {
+EcallStatus RevCore::ECALL_close_range() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4247,7 +4247,7 @@ EcallStatus RevProc::ECALL_close_range() {
 }
 
 // 437, rev_openat2(int dfd, const char  *filename, struct open_how *how, size_t size)
-EcallStatus RevProc::ECALL_openat2() {
+EcallStatus RevCore::ECALL_openat2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4259,7 +4259,7 @@ EcallStatus RevProc::ECALL_openat2() {
 }
 
 // 438, rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
-EcallStatus RevProc::ECALL_pidfd_getfd() {
+EcallStatus RevCore::ECALL_pidfd_getfd() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4271,7 +4271,7 @@ EcallStatus RevProc::ECALL_pidfd_getfd() {
 }
 
 // 439, rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
-EcallStatus RevProc::ECALL_faccessat2() {
+EcallStatus RevCore::ECALL_faccessat2() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4283,7 +4283,7 @@ EcallStatus RevProc::ECALL_faccessat2() {
 }
 
 // 440, rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
-EcallStatus RevProc::ECALL_process_madvise() {
+EcallStatus RevCore::ECALL_process_madvise() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4295,7 +4295,7 @@ EcallStatus RevProc::ECALL_process_madvise() {
 }
 
 // 500, rev_cpuinfo(struct rev_cpuinfo *info)
-EcallStatus RevProc::ECALL_cpuinfo() {
+EcallStatus RevCore::ECALL_cpuinfo() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4311,7 +4311,7 @@ EcallStatus RevProc::ECALL_cpuinfo() {
 }
 
 // 501, rev_perf_stats(struct rev_perf_stats *stats)
-EcallStatus RevProc::ECALL_perf_stats() {
+EcallStatus RevCore::ECALL_perf_stats() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4332,7 +4332,7 @@ EcallStatus RevProc::ECALL_perf_stats() {
 //                          const pthread_attr_t *restrict attr,
 //                          void *(*start_routine)(void *),
 //                          void *restrict arg);
-EcallStatus RevProc::ECALL_pthread_create() {
+EcallStatus RevCore::ECALL_pthread_create() {
   output->verbose( CALL_INFO,
                    2,
                    0,
@@ -4353,7 +4353,7 @@ EcallStatus RevProc::ECALL_pthread_create() {
 }
 
 // 1001, int rev_pthread_join(pthread_t thread, void **retval);
-EcallStatus RevProc::ECALL_pthread_join() {
+EcallStatus RevCore::ECALL_pthread_join() {
   EcallStatus rtval = EcallStatus::CONTINUE;
   output->verbose( CALL_INFO,
                    2,
@@ -4397,323 +4397,323 @@ EcallStatus RevProc::ECALL_pthread_join() {
 /* System Call (ecall) Implementations Below */
 /* ========================================= */
 // clang-format off
-const std::unordered_map<uint32_t, EcallStatus(RevProc::*)()> RevProc::Ecalls = {
-    { 0,   &RevProc::ECALL_io_setup },               //  rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
-    { 1,   &RevProc::ECALL_io_destroy },             //  rev_io_destroy(aio_context_t ctx)
-    { 2,   &RevProc::ECALL_io_submit },              //  rev_io_submit(aio_context_t, long, struct iocb  *  *)
-    { 3,   &RevProc::ECALL_io_cancel },              //  rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result)
-    { 4,   &RevProc::ECALL_io_getevents },           //  rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout)
-    { 5,   &RevProc::ECALL_setxattr },               //  rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
-    { 6,   &RevProc::ECALL_lsetxattr },              //  rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
-    { 7,   &RevProc::ECALL_fsetxattr },              //  rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags)
-    { 8,   &RevProc::ECALL_getxattr },               //  rev_getxattr(const char  *path, const char  *name, void  *value, size_t size)
-    { 9,   &RevProc::ECALL_lgetxattr },              //  rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size)
-    { 10,  &RevProc::ECALL_fgetxattr },              //  rev_fgetxattr(int fd, const char  *name, void  *value, size_t size)
-    { 11,  &RevProc::ECALL_listxattr },              //  rev_listxattr(const char  *path, char  *list, size_t size)
-    { 12,  &RevProc::ECALL_llistxattr },             //  rev_llistxattr(const char  *path, char  *list, size_t size)
-    { 13,  &RevProc::ECALL_flistxattr },             //  rev_flistxattr(int fd, char  *list, size_t size)
-    { 14,  &RevProc::ECALL_removexattr },            //  rev_removexattr(const char  *path, const char  *name)
-    { 15,  &RevProc::ECALL_lremovexattr },           //  rev_lremovexattr(const char  *path, const char  *name)
-    { 16,  &RevProc::ECALL_fremovexattr },           //  rev_fremovexattr(int fd, const char  *name)
-    { 17,  &RevProc::ECALL_getcwd },                 //  rev_getcwd(char  *buf, unsigned long size)
-    { 18,  &RevProc::ECALL_lookup_dcookie },         //  rev_lookup_dcookie(u64 cookie64, char  *buf, size_t len)
-    { 19,  &RevProc::ECALL_eventfd2 },               //  rev_eventfd2(unsigned int count, int flags)
-    { 20,  &RevProc::ECALL_epoll_create1 },          //  rev_epoll_create1(int flags)
-    { 21,  &RevProc::ECALL_epoll_ctl },              //  rev_epoll_ctl(int epfd, int op, int fd, struct epoll_event  *event)
-    { 22,  &RevProc::ECALL_epoll_pwait },            //  rev_epoll_pwait(int epfd, struct epoll_event  *events, int maxevents, int timeout, const sigset_t  *sigmask, size_t sigsetsize)
-    { 23,  &RevProc::ECALL_dup },                    //  rev_dup(unsigned int fildes)
-    { 24,  &RevProc::ECALL_dup3 },                   //  rev_dup3(unsigned int oldfd, unsigned int newfd, int flags)
-    { 25,  &RevProc::ECALL_fcntl64 },                //  rev_fcntl64(unsigned int fd, unsigned int cmd, unsigned long arg)
-    { 26,  &RevProc::ECALL_inotify_init1 },          //  rev_inotify_init1(int flags)
-    { 27,  &RevProc::ECALL_inotify_add_watch },      //  rev_inotify_add_watch(int fd, const char  *path, u32 mask)
-    { 28,  &RevProc::ECALL_inotify_rm_watch },       //  rev_inotify_rm_watch(int fd, __s32 wd)
-    { 29,  &RevProc::ECALL_ioctl },                  //  rev_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
-    { 30,  &RevProc::ECALL_ioprio_set },             //  rev_ioprio_set(int which, int who, int ioprio)
-    { 31,  &RevProc::ECALL_ioprio_get },             //  rev_ioprio_get(int which, int who)
-    { 32,  &RevProc::ECALL_flock },                  //  rev_flock(unsigned int fd, unsigned int cmd)
-    { 33,  &RevProc::ECALL_mknodat },                //  rev_mknodat(int dfd, const char  * filename, umode_t mode, unsigned dev)
-    { 34,  &RevProc::ECALL_mkdirat },                //  rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
-    { 35,  &RevProc::ECALL_unlinkat },               //  rev_unlinkat(int dfd, const char  * pathname, int flag)
-    { 36,  &RevProc::ECALL_symlinkat },              //  rev_symlinkat(const char  * oldname, int newdfd, const char  * newname)
-    { 37,  &RevProc::ECALL_linkat },                 //  rev_unlinkat(int dfd, const char  * pathname, int flag)
-    { 38,  &RevProc::ECALL_renameat },               //  rev_renameat(int olddfd, const char  * oldname, int newdfd, const char  * newname)
-    { 39,  &RevProc::ECALL_umount },                 //  rev_umount(char  *name, int flags)
-    { 40,  &RevProc::ECALL_mount },                  //  rev_umount(char  *name, int flags)
-    { 41,  &RevProc::ECALL_pivot_root },             //  rev_pivot_root(const char  *new_root, const char  *put_old)
-    { 42,  &RevProc::ECALL_ni_syscall },             //  rev_ni_syscall(void)
-    { 43,  &RevProc::ECALL_statfs64 },               //  rev_statfs64(const char  *path, size_t sz, struct statfs64  *buf)
-    { 44,  &RevProc::ECALL_fstatfs64 },              //  rev_fstatfs64(unsigned int fd, size_t sz, struct statfs64  *buf)
-    { 45,  &RevProc::ECALL_truncate64 },             //  rev_truncate64(const char  *path, loff_t length)
-    { 46,  &RevProc::ECALL_ftruncate64 },            //  rev_ftruncate64(unsigned int fd, loff_t length)
-    { 47,  &RevProc::ECALL_fallocate },              //  rev_fallocate(int fd, int mode, loff_t offset, loff_t len)
-    { 48,  &RevProc::ECALL_faccessat },              //  rev_faccessat(int dfd, const char  *filename, int mode)
-    { 49,  &RevProc::ECALL_chdir },                  //  rev_chdir(const char  *filename)
-    { 50,  &RevProc::ECALL_fchdir },                 //  rev_fchdir(unsigned int fd)
-    { 51,  &RevProc::ECALL_chroot },                 //  rev_chroot(const char  *filename)
-    { 52,  &RevProc::ECALL_fchmod },                 //  rev_fchmod(unsigned int fd, umode_t mode)
-    { 53,  &RevProc::ECALL_fchmodat },               //  rev_fchmodat(int dfd, const char  * filename, umode_t mode)
-    { 54,  &RevProc::ECALL_fchownat },               //  rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag)
-    { 55,  &RevProc::ECALL_fchown },                 //  rev_fchown(unsigned int fd, uid_t user, gid_t group)
-    { 56,  &RevProc::ECALL_openat },                 //  rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
-    { 57,  &RevProc::ECALL_close },                  //  rev_close(unsigned int fd)
-    { 58,  &RevProc::ECALL_vhangup },                //  rev_vhangup(void)
-    { 59,  &RevProc::ECALL_pipe2 },                  //  rev_pipe2(int  *fildes, int flags)
-    { 60,  &RevProc::ECALL_quotactl },               //  rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr)
-    { 61,  &RevProc::ECALL_getdents64 },             //  rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int count)
-    { 62,  &RevProc::ECALL_lseek },                  //  rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence)
-    { 63,  &RevProc::ECALL_read },                   //  rev_read(unsigned int fd, char  *buf, size_t count)
-    { 64,  &RevProc::ECALL_write },                  //  rev_write(unsigned int fd, const char  *buf, size_t count)
-    { 65,  &RevProc::ECALL_readv },                  //  rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
-    { 66,  &RevProc::ECALL_writev },                 //  rev_writev(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
-    { 67,  &RevProc::ECALL_pread64 },                //  rev_pread64(unsigned int fd, char  *buf, size_t count, loff_t pos)
-    { 68,  &RevProc::ECALL_pwrite64 },               //  rev_pwrite64(unsigned int fd, const char  *buf, size_t count, loff_t pos)
-    { 69,  &RevProc::ECALL_preadv },                 //  rev_preadv(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
-    { 70,  &RevProc::ECALL_pwritev },                //  rev_pwritev(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
-    { 71,  &RevProc::ECALL_sendfile64 },             //  rev_sendfile64(int out_fd, int in_fd, loff_t  *offset, size_t count)
-    { 72,  &RevProc::ECALL_pselect6_time32 },        //  rev_pselect6_time32(int, fd_set  *, fd_set  *, fd_set  *, struct old_timespec32  *, void  *)
-    { 73,  &RevProc::ECALL_ppoll_time32 },           //  rev_ppoll_time32(struct pollfd  *, unsigned int, struct old_timespec32  *, const sigset_t  *, size_t)
-    { 74,  &RevProc::ECALL_signalfd4 },              //  rev_signalfd4(int ufd, sigset_t  *user_mask, size_t sizemask, int flags)
-    { 75,  &RevProc::ECALL_vmsplice },               //  rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
-    { 76,  &RevProc::ECALL_splice },                 //  rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
-    { 77,  &RevProc::ECALL_tee },                    //  rev_tee(int fdin, int fdout, size_t len, unsigned int flags)
-    { 78,  &RevProc::ECALL_readlinkat },             //  rev_readlinkat(int dfd, const char  *path, char  *buf, int bufsiz)
-    { 79,  &RevProc::ECALL_newfstatat },             //  rev_newfstatat(int dfd, const char  *filename, struct stat  *statbuf, int flag)
-    { 80,  &RevProc::ECALL_newfstat },               //  rev_newfstat(unsigned int fd, struct stat  *statbuf)
-    { 81,  &RevProc::ECALL_sync },                   //  rev_sync(void)
-    { 82,  &RevProc::ECALL_fsync },                  //  rev_fsync(unsigned int fd)
-    { 83,  &RevProc::ECALL_fdatasync },              //  rev_fdatasync(unsigned int fd)
-    { 84,  &RevProc::ECALL_sync_file_range2 },       //  rev_sync_file_range2(int fd, unsigned int flags, loff_t offset, loff_t nbytes)
-    { 84,  &RevProc::ECALL_sync_file_range },        //  rev_sync_file_range(int fd, loff_t offset, loff_t nbytes, unsigned int flags)
-    { 85,  &RevProc::ECALL_timerfd_create },         //  rev_timerfd_create(int clockid, int flags)
-    { 86,  &RevProc::ECALL_timerfd_settime },        //  rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
-    { 87,  &RevProc::ECALL_timerfd_gettime },        //  rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
-    { 88,  &RevProc::ECALL_utimensat },              //  rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
-    { 89,  &RevProc::ECALL_acct },                   //  rev_acct(const char  *name)
-    { 90,  &RevProc::ECALL_capget },                 //  rev_capget(cap_user_header_t header, cap_user_data_t dataptr)
-    { 91,  &RevProc::ECALL_capset },                 //  rev_capset(cap_user_header_t header, const cap_user_data_t data)
-    { 92,  &RevProc::ECALL_personality },            //  rev_personality(unsigned int personality)
-    { 93,  &RevProc::ECALL_exit },                   //  rev_exit(int error_code)
-    { 94,  &RevProc::ECALL_exit_group },             //  rev_exit_group(int error_code)
-    { 95,  &RevProc::ECALL_waitid },                 //  rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru)
-    { 96,  &RevProc::ECALL_set_tid_address },        //  rev_set_tid_address(int  *tidptr)
-    { 97,  &RevProc::ECALL_unshare },                //  rev_unshare(unsigned long unshare_flags)
-    { 98,  &RevProc::ECALL_futex },                  //  rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
-    { 99,  &RevProc::ECALL_set_robust_list },        //  rev_set_robust_list(struct robust_list_head  *head, size_t len)
-    { 100, &RevProc::ECALL_get_robust_list },        //  rev_get_robust_list(int pid, struct robust_list_head  *  *head_ptr, size_t  *len_ptr)
-    { 101, &RevProc::ECALL_nanosleep },              //  rev_nanosleep(struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
-    { 102, &RevProc::ECALL_getitimer },              //  rev_getitimer(int which, struct __kernel_old_itimerval  *value)
-    { 103, &RevProc::ECALL_setitimer },              //  rev_setitimer(int which, struct __kernel_old_itimerval  *value, struct __kernel_old_itimerval  *ovalue)
-    { 104, &RevProc::ECALL_kexec_load },             //  rev_kexec_load(unsigned long entry, unsigned long nr_segments, struct kexec_segment  *segments, unsigned long flags)
-    { 105, &RevProc::ECALL_init_module },            //  rev_init_module(void  *umod, unsigned long len, const char  *uargs)
-    { 106, &RevProc::ECALL_delete_module },          //  rev_delete_module(const char  *name_user, unsigned int flags)
-    { 107, &RevProc::ECALL_timer_create },           //  rev_timer_create(clockid_t which_clock, struct sigevent  *timer_event_spec, timer_t  * created_timer_id)
-    { 108, &RevProc::ECALL_timer_gettime },          //  rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
-    { 109, &RevProc::ECALL_timer_getoverrun },       //  rev_timer_getoverrun(timer_t timer_id)
-    { 110, &RevProc::ECALL_timer_settime },          //  rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
-    { 111, &RevProc::ECALL_timer_delete },           //  rev_timer_delete(timer_t timer_id)
-    { 112, &RevProc::ECALL_clock_settime },          //  rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
-    { 113, &RevProc::ECALL_clock_gettime },          //  rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
-    { 114, &RevProc::ECALL_clock_getres },           //  rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
-    { 115, &RevProc::ECALL_clock_nanosleep },        //  rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
-    { 116, &RevProc::ECALL_syslog },                 //  rev_syslog(int type, char  *buf, int len)
-    { 117, &RevProc::ECALL_ptrace },                 //  rev_ptrace(long request, long pid, unsigned long addr, unsigned long data)
-    { 118, &RevProc::ECALL_sched_setparam },         //  rev_sched_setparam(pid_t pid, struct sched_param  *param)
-    { 119, &RevProc::ECALL_sched_setscheduler },     //  rev_sched_setscheduler(pid_t pid, int policy, struct sched_param  *param)
-    { 120, &RevProc::ECALL_sched_getscheduler },     //  rev_sched_getscheduler(pid_t pid)
-    { 121, &RevProc::ECALL_sched_getparam },         //  rev_sched_getparam(pid_t pid, struct sched_param  *param)
-    { 122, &RevProc::ECALL_sched_setaffinity },      //  rev_sched_setaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
-    { 123, &RevProc::ECALL_sched_getaffinity },      //  rev_sched_getaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
-    { 124, &RevProc::ECALL_sched_yield },            //  rev_sched_yield(void)
-    { 125, &RevProc::ECALL_sched_get_priority_max }, //  rev_sched_get_priority_max(int policy)
-    { 126, &RevProc::ECALL_sched_get_priority_min }, //  rev_sched_get_priority_min(int policy)
-    { 127, &RevProc::ECALL_sched_rr_get_interval },  //  rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
-    { 128, &RevProc::ECALL_restart_syscall },        //  rev_restart_syscall(void)
-    { 129, &RevProc::ECALL_kill },                   //  rev_kill(pid_t pid, int sig)
-    { 130, &RevProc::ECALL_tkill },                  //  rev_tkill(pid_t pid, int sig)
-    { 131, &RevProc::ECALL_tgkill },                 //  rev_tgkill(pid_t tgid, pid_t pid, int sig)
-    { 132, &RevProc::ECALL_sigaltstack },            //  rev_sigaltstack(const struct sigaltstack  *uss, struct sigaltstack  *uoss)
-    { 133, &RevProc::ECALL_rt_sigsuspend },          //  rev_rt_sigsuspend(sigset_t  *unewset, size_t sigsetsize)
-    { 134, &RevProc::ECALL_rt_sigaction },           //  rev_rt_sigaction(int, const struct sigaction  *, struct sigaction  *, size_t)
-    { 135, &RevProc::ECALL_rt_sigprocmask },         //  rev_rt_sigprocmask(int how, sigset_t  *set, sigset_t  *oset, size_t sigsetsize)
-    { 136, &RevProc::ECALL_rt_sigpending },          //  rev_rt_sigpending(sigset_t  *set, size_t sigsetsize)
-    { 137, &RevProc::ECALL_rt_sigtimedwait_time32 }, //  rev_rt_sigtimedwait_time32(const sigset_t  *uthese, siginfo_t  *uinfo, const struct old_timespec32  *uts, size_t sigsetsize)
-    { 138, &RevProc::ECALL_rt_sigqueueinfo },        //  rev_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t  *uinfo)
-    { 140, &RevProc::ECALL_setpriority },            //  rev_setpriority(int which, int who, int niceval)
-    { 141, &RevProc::ECALL_getpriority },            //  rev_getpriority(int which, int who)
-    { 142, &RevProc::ECALL_reboot },                 //  rev_reboot(int magic1, int magic2, unsigned int cmd, void  *arg)
-    { 143, &RevProc::ECALL_setregid },               //  rev_setregid(gid_t rgid, gid_t egid)
-    { 144, &RevProc::ECALL_setgid },                 //  rev_setgid(gid_t gid)
-    { 145, &RevProc::ECALL_setreuid },               //  rev_setreuid(uid_t ruid, uid_t euid)
-    { 146, &RevProc::ECALL_setuid },                 //  rev_setuid(uid_t uid)
-    { 147, &RevProc::ECALL_setresuid },              //  rev_setresuid(uid_t ruid, uid_t euid, uid_t suid)
-    { 148, &RevProc::ECALL_getresuid },              //  rev_getresuid(uid_t  *ruid, uid_t  *euid, uid_t  *suid)
-    { 149, &RevProc::ECALL_setresgid },              //  rev_setresgid(gid_t rgid, gid_t egid, gid_t sgid)
-    { 150, &RevProc::ECALL_getresgid },              //  rev_getresgid(gid_t  *rgid, gid_t  *egid, gid_t  *sgid)
-    { 151, &RevProc::ECALL_setfsuid },               //  rev_setfsuid(uid_t uid)
-    { 152, &RevProc::ECALL_setfsgid },               //  rev_setfsgid(gid_t gid)
-    { 153, &RevProc::ECALL_times },                  //  rev_times(struct tms  *tbuf)
-    { 154, &RevProc::ECALL_setpgid },                //  rev_setpgid(pid_t pid, pid_t pgid)
-    { 155, &RevProc::ECALL_getpgid },                //  rev_getpgid(pid_t pid)
-    { 156, &RevProc::ECALL_getsid },                 //  rev_getsid(pid_t pid)
-    { 157, &RevProc::ECALL_setsid },                 //  rev_setsid(void)
-    { 158, &RevProc::ECALL_getgroups },              //  rev_getgroups(int gidsetsize, gid_t  *grouplist)
-    { 159, &RevProc::ECALL_setgroups },              //  rev_setgroups(int gidsetsize, gid_t  *grouplist)
-    { 160, &RevProc::ECALL_newuname },               //  rev_newuname(struct new_utsname  *name)
-    { 161, &RevProc::ECALL_sethostname },            //  rev_sethostname(char  *name, int len)
-    { 162, &RevProc::ECALL_setdomainname },          //  rev_setdomainname(char  *name, int len)
-    { 163, &RevProc::ECALL_getrlimit },              //  rev_getrlimit(unsigned int resource, struct rlimit  *rlim)
-    { 164, &RevProc::ECALL_setrlimit },              //  rev_setrlimit(unsigned int resource, struct rlimit  *rlim)
-    { 165, &RevProc::ECALL_getrusage },              //  rev_getrusage(int who, struct rusage  *ru)
-    { 166, &RevProc::ECALL_umask },                  //  rev_umask(int mask)
-    { 167, &RevProc::ECALL_prctl },                  //  rev_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
-    { 168, &RevProc::ECALL_getcpu },                 //  rev_getcpu(unsigned  *cpu, unsigned  *node, struct getcpu_cache  *cache)
-    { 169, &RevProc::ECALL_gettimeofday },           //  rev_gettimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
-    { 170, &RevProc::ECALL_settimeofday },           //  rev_settimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
-    { 171, &RevProc::ECALL_adjtimex },               //  rev_adjtimex(struct __kernel_timex  *txc_p)
-    { 172, &RevProc::ECALL_getpid },                 //  rev_getpid(void)
-    { 173, &RevProc::ECALL_getppid },                //  rev_getppid(void)
-    { 174, &RevProc::ECALL_getuid },                 //  rev_getuid(void)
-    { 175, &RevProc::ECALL_geteuid },                //  rev_geteuid(void)
-    { 176, &RevProc::ECALL_getgid },                 //  rev_getgid(void)
-    { 177, &RevProc::ECALL_getegid },                //  rev_getegid(void)
-    { 178, &RevProc::ECALL_gettid },                 //  rev_gettid(void)
-    { 179, &RevProc::ECALL_sysinfo },                //  rev_sysinfo(struct sysinfo  *info)
-    { 180, &RevProc::ECALL_mq_open },                //  rev_mq_open(const char  *name, int oflag, umode_t mode, struct mq_attr  *attr)
-    { 181, &RevProc::ECALL_mq_unlink },              //  rev_mq_unlink(const char  *name)
-    { 182, &RevProc::ECALL_mq_timedsend },           //  rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
-    { 183, &RevProc::ECALL_mq_timedreceive },        //  rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
-    { 184, &RevProc::ECALL_mq_notify },              //  rev_mq_notify(mqd_t mqdes, const struct sigevent  *notification)
-    { 185, &RevProc::ECALL_mq_getsetattr },          //  rev_mq_getsetattr(mqd_t mqdes, const struct mq_attr  *mqstat, struct mq_attr  *omqstat)
-    { 186, &RevProc::ECALL_msgget },                 //  rev_msgget(key_t key, int msgflg)
-    { 187, &RevProc::ECALL_msgctl },                 //  rev_old_msgctl(int msqid, int cmd, struct msqid_ds  *buf)
-    { 188, &RevProc::ECALL_msgrcv },                 //  rev_msgrcv(int msqid, struct msgbuf  *msgp, size_t msgsz, long msgtyp, int msgflg)
-    { 189, &RevProc::ECALL_msgsnd },                 //  rev_msgsnd(int msqid, struct msgbuf  *msgp, size_t msgsz, int msgflg)
-    { 190, &RevProc::ECALL_semget },                 //  rev_semget(key_t key, int nsems, int semflg)
-    { 191, &RevProc::ECALL_semctl },                 //  rev_semctl(int semid, int semnum, int cmd, unsigned long arg)
-    { 192, &RevProc::ECALL_semtimedop },             //  rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
-    { 193, &RevProc::ECALL_semop },                  //  rev_semop(int semid, struct sembuf  *sops, unsigned nsops)
-    { 194, &RevProc::ECALL_shmget },                 //  rev_shmget(key_t key, size_t size, int flag)
-    { 195, &RevProc::ECALL_shmctl },                 //  rev_old_shmctl(int shmid, int cmd, struct shmid_ds  *buf)
-    { 196, &RevProc::ECALL_shmat },                  //  rev_shmat(int shmid, char  *shmaddr, int shmflg)
-    { 197, &RevProc::ECALL_shmdt },                  //  rev_shmdt(char  *shmaddr)
-    { 198, &RevProc::ECALL_socket },                 //  rev_socket(int, int, int)
-    { 199, &RevProc::ECALL_socketpair },             //  rev_socketpair(int, int, int, int  *)
-    { 200, &RevProc::ECALL_bind },                   //  rev_bind(int, struct sockaddr  *, int)
-    { 201, &RevProc::ECALL_listen },                 //  rev_listen(int, int)
-    { 202, &RevProc::ECALL_accept },                 //  rev_accept(int, struct sockaddr  *, int  *)
-    { 203, &RevProc::ECALL_connect },                //  rev_connect(int, struct sockaddr  *, int)
-    { 204, &RevProc::ECALL_getsockname },            //  rev_getsockname(int, struct sockaddr  *, int  *)
-    { 205, &RevProc::ECALL_getpeername },            //  rev_getpeername(int, struct sockaddr  *, int  *)
-    { 206, &RevProc::ECALL_sendto },                 //  rev_sendto(int, void  *, size_t, unsigned, struct sockaddr  *, int)
-    { 207, &RevProc::ECALL_recvfrom },               //  rev_recvfrom(int, void  *, size_t, unsigned, struct sockaddr  *, int  *)
-    { 208, &RevProc::ECALL_setsockopt },             //  rev_setsockopt(int fd, int level, int optname, char  *optval, int optlen)
-    { 209, &RevProc::ECALL_getsockopt },             //  rev_getsockopt(int fd, int level, int optname, char  *optval, int  *optlen)
-    { 210, &RevProc::ECALL_shutdown },               //  rev_shutdown(int, int)
-    { 211, &RevProc::ECALL_sendmsg },                //  rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags)
-    { 212, &RevProc::ECALL_recvmsg },                //  rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags)
-    { 213, &RevProc::ECALL_readahead },              //  rev_readahead(int fd, loff_t offset, size_t count)
-    { 214, &RevProc::ECALL_brk },                    //  rev_brk(unsigned long brk)
-    { 215, &RevProc::ECALL_munmap },                 //  rev_munmap(unsigned long addr, size_t len)
-    { 216, &RevProc::ECALL_mremap },                 //  rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr)
-    { 217, &RevProc::ECALL_add_key },                //  rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid)
-    { 218, &RevProc::ECALL_request_key },            //  rev_request_key(const char  *_type, const char  *_description, const char  *_callout_info, key_serial_t destringid)
-    { 219, &RevProc::ECALL_keyctl },                 //  rev_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
-    { 220, &RevProc::ECALL_clone },                  //  rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *)
-    { 221, &RevProc::ECALL_execve },                 //  rev_execve(const char  *filename, const char  *const  *argv, const char  *const  *envp)
-    { 222, &RevProc::ECALL_mmap },                   //  rev_old_mmap(struct mmap_arg_struct  *arg)
-    { 223, &RevProc::ECALL_fadvise64_64 },           //  rev_fadvise64_64(int fd, loff_t offset, loff_t len, int advice)
-    { 224, &RevProc::ECALL_swapon },                 //  rev_swapon(const char  *specialfile, int swap_flags)
-    { 225, &RevProc::ECALL_swapoff },                //  rev_swapoff(const char  *specialfile)
-    { 226, &RevProc::ECALL_mprotect },               //  rev_mprotect(unsigned long start, size_t len, unsigned long prot)
-    { 227, &RevProc::ECALL_msync },                  //  rev_msync(unsigned long start, size_t len, int flags)
-    { 228, &RevProc::ECALL_mlock },                  //  rev_mlock(unsigned long start, size_t len)
-    { 229, &RevProc::ECALL_munlock },                //  rev_munlock(unsigned long start, size_t len)
-    { 230, &RevProc::ECALL_mlockall },               //  rev_mlockall(int flags)
-    { 231, &RevProc::ECALL_munlockall },             //  rev_munlockall(void)
-    { 232, &RevProc::ECALL_mincore },                //  rev_mincore(unsigned long start, size_t len, unsigned char  * vec)
-    { 233, &RevProc::ECALL_madvise },                //  rev_madvise(unsigned long start, size_t len, int behavior)
-    { 234, &RevProc::ECALL_remap_file_pages },       //  rev_remap_file_pages(unsigned long start, unsigned long size, unsigned long prot, unsigned long pgoff, unsigned long flags)
-    { 235, &RevProc::ECALL_mbind },                  //  rev_mbind(unsigned long start, unsigned long len, unsigned long mode, const unsigned long  *nmask, unsigned long maxnode, unsigned flags)
-    { 236, &RevProc::ECALL_get_mempolicy },          //  rev_get_mempolicy(int  *policy, unsigned long  *nmask, unsigned long maxnode, unsigned long addr, unsigned long flags)
-    { 237, &RevProc::ECALL_set_mempolicy },          //  rev_set_mempolicy(int mode, const unsigned long  *nmask, unsigned long maxnode)
-    { 238, &RevProc::ECALL_migrate_pages },          //  rev_migrate_pages(pid_t pid, unsigned long maxnode, const unsigned long  *from, const unsigned long  *to)
-    { 239, &RevProc::ECALL_move_pages },             //  rev_move_pages(pid_t pid, unsigned long nr_pages, const void  *  *pages, const int  *nodes, int  *status, int flags)
-    { 240, &RevProc::ECALL_rt_tgsigqueueinfo },      //  rev_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig, siginfo_t  *uinfo)
-    { 241, &RevProc::ECALL_perf_event_open },        //  rev_perf_event_open(")
-    { 242, &RevProc::ECALL_accept4 },                //  rev_accept4(int, struct sockaddr  *, int  *, int)
-    { 243, &RevProc::ECALL_recvmmsg_time32 },        //  rev_recvmmsg_time32(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags, struct old_timespec32  *timeout)
-    { 260, &RevProc::ECALL_wait4 },                  //  rev_wait4(pid_t pid, int  *stat_addr, int options, struct rusage  *ru)
-    { 261, &RevProc::ECALL_prlimit64 },              //  rev_prlimit64(pid_t pid, unsigned int resource, const struct rlimit64  *new_rlim, struct rlimit64  *old_rlim)
-    { 262, &RevProc::ECALL_fanotify_init },          //  rev_fanotify_init(unsigned int flags, unsigned int event_f_flags)
-    { 263, &RevProc::ECALL_fanotify_mark },          //  rev_fanotify_mark(int fanotify_fd, unsigned int flags, u64 mask, int fd, const char  *pathname)
-    { 264, &RevProc::ECALL_name_to_handle_at },      //  rev_name_to_handle_at(int dfd, const char  *name, struct file_handle  *handle, int  *mnt_id, int flag)
-    { 265, &RevProc::ECALL_open_by_handle_at },      //  rev_open_by_handle_at(int mountdirfd, struct file_handle  *handle, int flags)
-    { 266, &RevProc::ECALL_clock_adjtime },          //  rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
-    { 267, &RevProc::ECALL_syncfs },                 //  rev_syncfs(int fd)
-    { 268, &RevProc::ECALL_setns },                  //  rev_setns(int fd, int nstype)
-    { 269, &RevProc::ECALL_sendmmsg },               //  rev_sendmmsg(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags)
-    { 270, &RevProc::ECALL_process_vm_readv },       //  rev_process_vm_readv(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
-    { 271, &RevProc::ECALL_process_vm_writev },      //  rev_process_vm_writev(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
-    { 272, &RevProc::ECALL_kcmp },                   //  rev_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long idx2)
-    { 273, &RevProc::ECALL_finit_module },           //  rev_finit_module(int fd, const char  *uargs, int flags)
-    { 274, &RevProc::ECALL_sched_setattr },          //  rev_sched_setattr(pid_t pid, struct sched_attr  *attr, unsigned int flags)
-    { 275, &RevProc::ECALL_sched_getattr },          //  rev_sched_getattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags)
-    { 276, &RevProc::ECALL_renameat2 },              //  rev_renameat2(int olddfd, const char  *oldname, int newdfd, const char  *newname, unsigned int flags)
-    { 277, &RevProc::ECALL_seccomp },                //  rev_seccomp(unsigned int op, unsigned int flags, void  *uargs)
-    { 278, &RevProc::ECALL_getrandom },              //  rev_getrandom(char  *buf, size_t count, unsigned int flags)
-    { 279, &RevProc::ECALL_memfd_create },           //  rev_memfd_create(const char  *uname_ptr, unsigned int flags)
-    { 280, &RevProc::ECALL_bpf },                    //  rev_bpf(int cmd, union bpf_attr *attr, unsigned int size)
-    { 281, &RevProc::ECALL_execveat },               //  rev_execveat(int dfd, const char  *filename, const char  *const  *argv, const char  *const  *envp, int flags)
-    { 282, &RevProc::ECALL_userfaultfd },            //  rev_userfaultfd(int flags)
-    { 283, &RevProc::ECALL_membarrier },             //  rev_membarrier(int cmd, unsigned int flags, int cpu_id)
-    { 284, &RevProc::ECALL_mlock2 },                 //  rev_mlock2(unsigned long start, size_t len, int flags)
-    { 285, &RevProc::ECALL_copy_file_range },        //  rev_copy_file_range(int fd_in, loff_t  *off_in, int fd_out, loff_t  *off_out, size_t len, unsigned int flags)
-    { 286, &RevProc::ECALL_preadv2 },                //  rev_preadv2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
-    { 287, &RevProc::ECALL_pwritev2 },               //  rev_pwritev2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
-    { 288, &RevProc::ECALL_pkey_mprotect },          //  rev_pkey_mprotect(unsigned long start, size_t len, unsigned long prot, int pkey)
-    { 289, &RevProc::ECALL_pkey_alloc },             //  rev_pkey_alloc(unsigned long flags, unsigned long init_val)
-    { 290, &RevProc::ECALL_pkey_free },              //  rev_pkey_free(int pkey)
-    { 291, &RevProc::ECALL_statx },                  //  rev_statx(int dfd, const char  *path, unsigned flags, unsigned mask, struct statx  *buffer)
-    { 292, &RevProc::ECALL_io_pgetevents },          //  rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
-    { 293, &RevProc::ECALL_rseq },                   //  rev_rseq(struct rseq  *rseq, uint32_t rseq_len, int flags, uint32_t sig)
-    { 294, &RevProc::ECALL_kexec_file_load },        //  rev_kexec_file_load(int kernel_fd, int initrd_fd, unsigned long cmdline_len, const char  *cmdline_ptr, unsigned long flags)
-    { 403, &RevProc::ECALL_clock_gettime },          //  rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
-    { 404, &RevProc::ECALL_clock_settime },          //  rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
-    { 405, &RevProc::ECALL_clock_adjtime },          //  rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
-    { 406, &RevProc::ECALL_clock_getres },           //  rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
-    { 407, &RevProc::ECALL_clock_nanosleep },        //  rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
-    { 408, &RevProc::ECALL_timer_gettime },          //  rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
-    { 409, &RevProc::ECALL_timer_settime },          //  rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
-    { 410, &RevProc::ECALL_timerfd_gettime },        //  rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
-    { 411, &RevProc::ECALL_timerfd_settime },        //  rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
-    { 412, &RevProc::ECALL_utimensat },              //  rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
-    { 416, &RevProc::ECALL_io_pgetevents },          //  rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
-    { 418, &RevProc::ECALL_mq_timedsend },           //  rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
-    { 419, &RevProc::ECALL_mq_timedreceive },        //  rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
-    { 420, &RevProc::ECALL_semtimedop },             //  rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
-    { 422, &RevProc::ECALL_futex },                  //  rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
-    { 423, &RevProc::ECALL_sched_rr_get_interval },  //  rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
-    { 424, &RevProc::ECALL_pidfd_send_signal },      //  rev_pidfd_send_signal(int pidfd, int sig, siginfo_t  *info, unsigned int flags)
-    { 425, &RevProc::ECALL_io_uring_setup },         //  rev_io_uring_setup(u32 entries, struct io_uring_params  *p)
-    { 426, &RevProc::ECALL_io_uring_enter },         //  rev_io_uring_enter(unsigned int fd, u32 to_submit, u32 min_complete, u32 flags, const sigset_t  *sig, size_t sigsz)
-    { 427, &RevProc::ECALL_io_uring_register },      //  rev_io_uring_register(unsigned int fd, unsigned int op, void  *arg, unsigned int nr_args)
-    { 428, &RevProc::ECALL_open_tree },              //  rev_open_tree(int dfd, const char  *path, unsigned flags)
-    { 429, &RevProc::ECALL_move_mount },             //  rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags)
-    { 430, &RevProc::ECALL_fsopen },                 //  rev_fsopen(const char  *fs_name, unsigned int flags)
-    { 431, &RevProc::ECALL_fsconfig },               //  rev_fsconfig(int fs_fd, unsigned int cmd, const char  *key, const void  *value, int aux)
-    { 432, &RevProc::ECALL_fsmount },                //  rev_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags)
-    { 433, &RevProc::ECALL_fspick },                 //  rev_fspick(int dfd, const char  *path, unsigned int flags)
-    { 434, &RevProc::ECALL_pidfd_open },             //  rev_pidfd_open(pid_t pid, unsigned int flags)
-    { 435, &RevProc::ECALL_clone3 },                 //  rev_clone3(struct clone_args  *uargs, size_t size)
-    { 436, &RevProc::ECALL_close_range },            //  rev_close_range(unsigned int fd, unsigned int max_fd, unsigned int flags)
-    { 437, &RevProc::ECALL_openat2 },                //  rev_openat2(int dfd, const char  *filename, struct open_how *how, size_t size)
-    { 438, &RevProc::ECALL_pidfd_getfd },            //  rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
-    { 439, &RevProc::ECALL_faccessat2 },             //  rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
-    { 440, &RevProc::ECALL_process_madvise },        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
-    { 500, &RevProc::ECALL_cpuinfo },                //  rev_cpuinfo(struct rev_cpuinfo *info)
-    { 501, &RevProc::ECALL_perf_stats },             //  rev_cpuinfo(struct rev_perf_stats *stats)
-    { 1000, &RevProc::ECALL_pthread_create },        //
-    { 1001, &RevProc::ECALL_pthread_join },          //
+const std::unordered_map<uint32_t, EcallStatus(RevCore::*)()> RevCore::Ecalls = {
+    { 0,   &RevCore::ECALL_io_setup },               //  rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
+    { 1,   &RevCore::ECALL_io_destroy },             //  rev_io_destroy(aio_context_t ctx)
+    { 2,   &RevCore::ECALL_io_submit },              //  rev_io_submit(aio_context_t, long, struct iocb  *  *)
+    { 3,   &RevCore::ECALL_io_cancel },              //  rev_io_cancel(aio_context_t ctx_id, struct iocb  *iocb, struct io_event  *result)
+    { 4,   &RevCore::ECALL_io_getevents },           //  rev_io_getevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout)
+    { 5,   &RevCore::ECALL_setxattr },               //  rev_setxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
+    { 6,   &RevCore::ECALL_lsetxattr },              //  rev_lsetxattr(const char  *path, const char  *name, const void  *value, size_t size, int flags)
+    { 7,   &RevCore::ECALL_fsetxattr },              //  rev_fsetxattr(int fd, const char  *name, const void  *value, size_t size, int flags)
+    { 8,   &RevCore::ECALL_getxattr },               //  rev_getxattr(const char  *path, const char  *name, void  *value, size_t size)
+    { 9,   &RevCore::ECALL_lgetxattr },              //  rev_lgetxattr(const char  *path, const char  *name, void  *value, size_t size)
+    { 10,  &RevCore::ECALL_fgetxattr },              //  rev_fgetxattr(int fd, const char  *name, void  *value, size_t size)
+    { 11,  &RevCore::ECALL_listxattr },              //  rev_listxattr(const char  *path, char  *list, size_t size)
+    { 12,  &RevCore::ECALL_llistxattr },             //  rev_llistxattr(const char  *path, char  *list, size_t size)
+    { 13,  &RevCore::ECALL_flistxattr },             //  rev_flistxattr(int fd, char  *list, size_t size)
+    { 14,  &RevCore::ECALL_removexattr },            //  rev_removexattr(const char  *path, const char  *name)
+    { 15,  &RevCore::ECALL_lremovexattr },           //  rev_lremovexattr(const char  *path, const char  *name)
+    { 16,  &RevCore::ECALL_fremovexattr },           //  rev_fremovexattr(int fd, const char  *name)
+    { 17,  &RevCore::ECALL_getcwd },                 //  rev_getcwd(char  *buf, unsigned long size)
+    { 18,  &RevCore::ECALL_lookup_dcookie },         //  rev_lookup_dcookie(u64 cookie64, char  *buf, size_t len)
+    { 19,  &RevCore::ECALL_eventfd2 },               //  rev_eventfd2(unsigned int count, int flags)
+    { 20,  &RevCore::ECALL_epoll_create1 },          //  rev_epoll_create1(int flags)
+    { 21,  &RevCore::ECALL_epoll_ctl },              //  rev_epoll_ctl(int epfd, int op, int fd, struct epoll_event  *event)
+    { 22,  &RevCore::ECALL_epoll_pwait },            //  rev_epoll_pwait(int epfd, struct epoll_event  *events, int maxevents, int timeout, const sigset_t  *sigmask, size_t sigsetsize)
+    { 23,  &RevCore::ECALL_dup },                    //  rev_dup(unsigned int fildes)
+    { 24,  &RevCore::ECALL_dup3 },                   //  rev_dup3(unsigned int oldfd, unsigned int newfd, int flags)
+    { 25,  &RevCore::ECALL_fcntl64 },                //  rev_fcntl64(unsigned int fd, unsigned int cmd, unsigned long arg)
+    { 26,  &RevCore::ECALL_inotify_init1 },          //  rev_inotify_init1(int flags)
+    { 27,  &RevCore::ECALL_inotify_add_watch },      //  rev_inotify_add_watch(int fd, const char  *path, u32 mask)
+    { 28,  &RevCore::ECALL_inotify_rm_watch },       //  rev_inotify_rm_watch(int fd, __s32 wd)
+    { 29,  &RevCore::ECALL_ioctl },                  //  rev_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
+    { 30,  &RevCore::ECALL_ioprio_set },             //  rev_ioprio_set(int which, int who, int ioprio)
+    { 31,  &RevCore::ECALL_ioprio_get },             //  rev_ioprio_get(int which, int who)
+    { 32,  &RevCore::ECALL_flock },                  //  rev_flock(unsigned int fd, unsigned int cmd)
+    { 33,  &RevCore::ECALL_mknodat },                //  rev_mknodat(int dfd, const char  * filename, umode_t mode, unsigned dev)
+    { 34,  &RevCore::ECALL_mkdirat },                //  rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
+    { 35,  &RevCore::ECALL_unlinkat },               //  rev_unlinkat(int dfd, const char  * pathname, int flag)
+    { 36,  &RevCore::ECALL_symlinkat },              //  rev_symlinkat(const char  * oldname, int newdfd, const char  * newname)
+    { 37,  &RevCore::ECALL_linkat },                 //  rev_unlinkat(int dfd, const char  * pathname, int flag)
+    { 38,  &RevCore::ECALL_renameat },               //  rev_renameat(int olddfd, const char  * oldname, int newdfd, const char  * newname)
+    { 39,  &RevCore::ECALL_umount },                 //  rev_umount(char  *name, int flags)
+    { 40,  &RevCore::ECALL_mount },                  //  rev_umount(char  *name, int flags)
+    { 41,  &RevCore::ECALL_pivot_root },             //  rev_pivot_root(const char  *new_root, const char  *put_old)
+    { 42,  &RevCore::ECALL_ni_syscall },             //  rev_ni_syscall(void)
+    { 43,  &RevCore::ECALL_statfs64 },               //  rev_statfs64(const char  *path, size_t sz, struct statfs64  *buf)
+    { 44,  &RevCore::ECALL_fstatfs64 },              //  rev_fstatfs64(unsigned int fd, size_t sz, struct statfs64  *buf)
+    { 45,  &RevCore::ECALL_truncate64 },             //  rev_truncate64(const char  *path, loff_t length)
+    { 46,  &RevCore::ECALL_ftruncate64 },            //  rev_ftruncate64(unsigned int fd, loff_t length)
+    { 47,  &RevCore::ECALL_fallocate },              //  rev_fallocate(int fd, int mode, loff_t offset, loff_t len)
+    { 48,  &RevCore::ECALL_faccessat },              //  rev_faccessat(int dfd, const char  *filename, int mode)
+    { 49,  &RevCore::ECALL_chdir },                  //  rev_chdir(const char  *filename)
+    { 50,  &RevCore::ECALL_fchdir },                 //  rev_fchdir(unsigned int fd)
+    { 51,  &RevCore::ECALL_chroot },                 //  rev_chroot(const char  *filename)
+    { 52,  &RevCore::ECALL_fchmod },                 //  rev_fchmod(unsigned int fd, umode_t mode)
+    { 53,  &RevCore::ECALL_fchmodat },               //  rev_fchmodat(int dfd, const char  * filename, umode_t mode)
+    { 54,  &RevCore::ECALL_fchownat },               //  rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag)
+    { 55,  &RevCore::ECALL_fchown },                 //  rev_fchown(unsigned int fd, uid_t user, gid_t group)
+    { 56,  &RevCore::ECALL_openat },                 //  rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
+    { 57,  &RevCore::ECALL_close },                  //  rev_close(unsigned int fd)
+    { 58,  &RevCore::ECALL_vhangup },                //  rev_vhangup(void)
+    { 59,  &RevCore::ECALL_pipe2 },                  //  rev_pipe2(int  *fildes, int flags)
+    { 60,  &RevCore::ECALL_quotactl },               //  rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr)
+    { 61,  &RevCore::ECALL_getdents64 },             //  rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int count)
+    { 62,  &RevCore::ECALL_lseek },                  //  rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence)
+    { 63,  &RevCore::ECALL_read },                   //  rev_read(unsigned int fd, char  *buf, size_t count)
+    { 64,  &RevCore::ECALL_write },                  //  rev_write(unsigned int fd, const char  *buf, size_t count)
+    { 65,  &RevCore::ECALL_readv },                  //  rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
+    { 66,  &RevCore::ECALL_writev },                 //  rev_writev(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
+    { 67,  &RevCore::ECALL_pread64 },                //  rev_pread64(unsigned int fd, char  *buf, size_t count, loff_t pos)
+    { 68,  &RevCore::ECALL_pwrite64 },               //  rev_pwrite64(unsigned int fd, const char  *buf, size_t count, loff_t pos)
+    { 69,  &RevCore::ECALL_preadv },                 //  rev_preadv(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
+    { 70,  &RevCore::ECALL_pwritev },                //  rev_pwritev(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h)
+    { 71,  &RevCore::ECALL_sendfile64 },             //  rev_sendfile64(int out_fd, int in_fd, loff_t  *offset, size_t count)
+    { 72,  &RevCore::ECALL_pselect6_time32 },        //  rev_pselect6_time32(int, fd_set  *, fd_set  *, fd_set  *, struct old_timespec32  *, void  *)
+    { 73,  &RevCore::ECALL_ppoll_time32 },           //  rev_ppoll_time32(struct pollfd  *, unsigned int, struct old_timespec32  *, const sigset_t  *, size_t)
+    { 74,  &RevCore::ECALL_signalfd4 },              //  rev_signalfd4(int ufd, sigset_t  *user_mask, size_t sizemask, int flags)
+    { 75,  &RevCore::ECALL_vmsplice },               //  rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
+    { 76,  &RevCore::ECALL_splice },                 //  rev_vmsplice(int fd, const struct iovec  *iov, unsigned long nr_segs, unsigned int flags)
+    { 77,  &RevCore::ECALL_tee },                    //  rev_tee(int fdin, int fdout, size_t len, unsigned int flags)
+    { 78,  &RevCore::ECALL_readlinkat },             //  rev_readlinkat(int dfd, const char  *path, char  *buf, int bufsiz)
+    { 79,  &RevCore::ECALL_newfstatat },             //  rev_newfstatat(int dfd, const char  *filename, struct stat  *statbuf, int flag)
+    { 80,  &RevCore::ECALL_newfstat },               //  rev_newfstat(unsigned int fd, struct stat  *statbuf)
+    { 81,  &RevCore::ECALL_sync },                   //  rev_sync(void)
+    { 82,  &RevCore::ECALL_fsync },                  //  rev_fsync(unsigned int fd)
+    { 83,  &RevCore::ECALL_fdatasync },              //  rev_fdatasync(unsigned int fd)
+    { 84,  &RevCore::ECALL_sync_file_range2 },       //  rev_sync_file_range2(int fd, unsigned int flags, loff_t offset, loff_t nbytes)
+    { 84,  &RevCore::ECALL_sync_file_range },        //  rev_sync_file_range(int fd, loff_t offset, loff_t nbytes, unsigned int flags)
+    { 85,  &RevCore::ECALL_timerfd_create },         //  rev_timerfd_create(int clockid, int flags)
+    { 86,  &RevCore::ECALL_timerfd_settime },        //  rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
+    { 87,  &RevCore::ECALL_timerfd_gettime },        //  rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
+    { 88,  &RevCore::ECALL_utimensat },              //  rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
+    { 89,  &RevCore::ECALL_acct },                   //  rev_acct(const char  *name)
+    { 90,  &RevCore::ECALL_capget },                 //  rev_capget(cap_user_header_t header, cap_user_data_t dataptr)
+    { 91,  &RevCore::ECALL_capset },                 //  rev_capset(cap_user_header_t header, const cap_user_data_t data)
+    { 92,  &RevCore::ECALL_personality },            //  rev_personality(unsigned int personality)
+    { 93,  &RevCore::ECALL_exit },                   //  rev_exit(int error_code)
+    { 94,  &RevCore::ECALL_exit_group },             //  rev_exit_group(int error_code)
+    { 95,  &RevCore::ECALL_waitid },                 //  rev_waitid(int which, pid_t pid, struct siginfo  *infop, int options, struct rusage  *ru)
+    { 96,  &RevCore::ECALL_set_tid_address },        //  rev_set_tid_address(int  *tidptr)
+    { 97,  &RevCore::ECALL_unshare },                //  rev_unshare(unsigned long unshare_flags)
+    { 98,  &RevCore::ECALL_futex },                  //  rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
+    { 99,  &RevCore::ECALL_set_robust_list },        //  rev_set_robust_list(struct robust_list_head  *head, size_t len)
+    { 100, &RevCore::ECALL_get_robust_list },        //  rev_get_robust_list(int pid, struct robust_list_head  *  *head_ptr, size_t  *len_ptr)
+    { 101, &RevCore::ECALL_nanosleep },              //  rev_nanosleep(struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
+    { 102, &RevCore::ECALL_getitimer },              //  rev_getitimer(int which, struct __kernel_old_itimerval  *value)
+    { 103, &RevCore::ECALL_setitimer },              //  rev_setitimer(int which, struct __kernel_old_itimerval  *value, struct __kernel_old_itimerval  *ovalue)
+    { 104, &RevCore::ECALL_kexec_load },             //  rev_kexec_load(unsigned long entry, unsigned long nr_segments, struct kexec_segment  *segments, unsigned long flags)
+    { 105, &RevCore::ECALL_init_module },            //  rev_init_module(void  *umod, unsigned long len, const char  *uargs)
+    { 106, &RevCore::ECALL_delete_module },          //  rev_delete_module(const char  *name_user, unsigned int flags)
+    { 107, &RevCore::ECALL_timer_create },           //  rev_timer_create(clockid_t which_clock, struct sigevent  *timer_event_spec, timer_t  * created_timer_id)
+    { 108, &RevCore::ECALL_timer_gettime },          //  rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
+    { 109, &RevCore::ECALL_timer_getoverrun },       //  rev_timer_getoverrun(timer_t timer_id)
+    { 110, &RevCore::ECALL_timer_settime },          //  rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
+    { 111, &RevCore::ECALL_timer_delete },           //  rev_timer_delete(timer_t timer_id)
+    { 112, &RevCore::ECALL_clock_settime },          //  rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
+    { 113, &RevCore::ECALL_clock_gettime },          //  rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 114, &RevCore::ECALL_clock_getres },           //  rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 115, &RevCore::ECALL_clock_nanosleep },        //  rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
+    { 116, &RevCore::ECALL_syslog },                 //  rev_syslog(int type, char  *buf, int len)
+    { 117, &RevCore::ECALL_ptrace },                 //  rev_ptrace(long request, long pid, unsigned long addr, unsigned long data)
+    { 118, &RevCore::ECALL_sched_setparam },         //  rev_sched_setparam(pid_t pid, struct sched_param  *param)
+    { 119, &RevCore::ECALL_sched_setscheduler },     //  rev_sched_setscheduler(pid_t pid, int policy, struct sched_param  *param)
+    { 120, &RevCore::ECALL_sched_getscheduler },     //  rev_sched_getscheduler(pid_t pid)
+    { 121, &RevCore::ECALL_sched_getparam },         //  rev_sched_getparam(pid_t pid, struct sched_param  *param)
+    { 122, &RevCore::ECALL_sched_setaffinity },      //  rev_sched_setaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
+    { 123, &RevCore::ECALL_sched_getaffinity },      //  rev_sched_getaffinity(pid_t pid, unsigned int len, unsigned long  *user_mask_ptr)
+    { 124, &RevCore::ECALL_sched_yield },            //  rev_sched_yield(void)
+    { 125, &RevCore::ECALL_sched_get_priority_max }, //  rev_sched_get_priority_max(int policy)
+    { 126, &RevCore::ECALL_sched_get_priority_min }, //  rev_sched_get_priority_min(int policy)
+    { 127, &RevCore::ECALL_sched_rr_get_interval },  //  rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
+    { 128, &RevCore::ECALL_restart_syscall },        //  rev_restart_syscall(void)
+    { 129, &RevCore::ECALL_kill },                   //  rev_kill(pid_t pid, int sig)
+    { 130, &RevCore::ECALL_tkill },                  //  rev_tkill(pid_t pid, int sig)
+    { 131, &RevCore::ECALL_tgkill },                 //  rev_tgkill(pid_t tgid, pid_t pid, int sig)
+    { 132, &RevCore::ECALL_sigaltstack },            //  rev_sigaltstack(const struct sigaltstack  *uss, struct sigaltstack  *uoss)
+    { 133, &RevCore::ECALL_rt_sigsuspend },          //  rev_rt_sigsuspend(sigset_t  *unewset, size_t sigsetsize)
+    { 134, &RevCore::ECALL_rt_sigaction },           //  rev_rt_sigaction(int, const struct sigaction  *, struct sigaction  *, size_t)
+    { 135, &RevCore::ECALL_rt_sigprocmask },         //  rev_rt_sigprocmask(int how, sigset_t  *set, sigset_t  *oset, size_t sigsetsize)
+    { 136, &RevCore::ECALL_rt_sigpending },          //  rev_rt_sigpending(sigset_t  *set, size_t sigsetsize)
+    { 137, &RevCore::ECALL_rt_sigtimedwait_time32 }, //  rev_rt_sigtimedwait_time32(const sigset_t  *uthese, siginfo_t  *uinfo, const struct old_timespec32  *uts, size_t sigsetsize)
+    { 138, &RevCore::ECALL_rt_sigqueueinfo },        //  rev_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t  *uinfo)
+    { 140, &RevCore::ECALL_setpriority },            //  rev_setpriority(int which, int who, int niceval)
+    { 141, &RevCore::ECALL_getpriority },            //  rev_getpriority(int which, int who)
+    { 142, &RevCore::ECALL_reboot },                 //  rev_reboot(int magic1, int magic2, unsigned int cmd, void  *arg)
+    { 143, &RevCore::ECALL_setregid },               //  rev_setregid(gid_t rgid, gid_t egid)
+    { 144, &RevCore::ECALL_setgid },                 //  rev_setgid(gid_t gid)
+    { 145, &RevCore::ECALL_setreuid },               //  rev_setreuid(uid_t ruid, uid_t euid)
+    { 146, &RevCore::ECALL_setuid },                 //  rev_setuid(uid_t uid)
+    { 147, &RevCore::ECALL_setresuid },              //  rev_setresuid(uid_t ruid, uid_t euid, uid_t suid)
+    { 148, &RevCore::ECALL_getresuid },              //  rev_getresuid(uid_t  *ruid, uid_t  *euid, uid_t  *suid)
+    { 149, &RevCore::ECALL_setresgid },              //  rev_setresgid(gid_t rgid, gid_t egid, gid_t sgid)
+    { 150, &RevCore::ECALL_getresgid },              //  rev_getresgid(gid_t  *rgid, gid_t  *egid, gid_t  *sgid)
+    { 151, &RevCore::ECALL_setfsuid },               //  rev_setfsuid(uid_t uid)
+    { 152, &RevCore::ECALL_setfsgid },               //  rev_setfsgid(gid_t gid)
+    { 153, &RevCore::ECALL_times },                  //  rev_times(struct tms  *tbuf)
+    { 154, &RevCore::ECALL_setpgid },                //  rev_setpgid(pid_t pid, pid_t pgid)
+    { 155, &RevCore::ECALL_getpgid },                //  rev_getpgid(pid_t pid)
+    { 156, &RevCore::ECALL_getsid },                 //  rev_getsid(pid_t pid)
+    { 157, &RevCore::ECALL_setsid },                 //  rev_setsid(void)
+    { 158, &RevCore::ECALL_getgroups },              //  rev_getgroups(int gidsetsize, gid_t  *grouplist)
+    { 159, &RevCore::ECALL_setgroups },              //  rev_setgroups(int gidsetsize, gid_t  *grouplist)
+    { 160, &RevCore::ECALL_newuname },               //  rev_newuname(struct new_utsname  *name)
+    { 161, &RevCore::ECALL_sethostname },            //  rev_sethostname(char  *name, int len)
+    { 162, &RevCore::ECALL_setdomainname },          //  rev_setdomainname(char  *name, int len)
+    { 163, &RevCore::ECALL_getrlimit },              //  rev_getrlimit(unsigned int resource, struct rlimit  *rlim)
+    { 164, &RevCore::ECALL_setrlimit },              //  rev_setrlimit(unsigned int resource, struct rlimit  *rlim)
+    { 165, &RevCore::ECALL_getrusage },              //  rev_getrusage(int who, struct rusage  *ru)
+    { 166, &RevCore::ECALL_umask },                  //  rev_umask(int mask)
+    { 167, &RevCore::ECALL_prctl },                  //  rev_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
+    { 168, &RevCore::ECALL_getcpu },                 //  rev_getcpu(unsigned  *cpu, unsigned  *node, struct getcpu_cache  *cache)
+    { 169, &RevCore::ECALL_gettimeofday },           //  rev_gettimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
+    { 170, &RevCore::ECALL_settimeofday },           //  rev_settimeofday(struct __kernel_old_timeval  *tv, struct timezone  *tz)
+    { 171, &RevCore::ECALL_adjtimex },               //  rev_adjtimex(struct __kernel_timex  *txc_p)
+    { 172, &RevCore::ECALL_getpid },                 //  rev_getpid(void)
+    { 173, &RevCore::ECALL_getppid },                //  rev_getppid(void)
+    { 174, &RevCore::ECALL_getuid },                 //  rev_getuid(void)
+    { 175, &RevCore::ECALL_geteuid },                //  rev_geteuid(void)
+    { 176, &RevCore::ECALL_getgid },                 //  rev_getgid(void)
+    { 177, &RevCore::ECALL_getegid },                //  rev_getegid(void)
+    { 178, &RevCore::ECALL_gettid },                 //  rev_gettid(void)
+    { 179, &RevCore::ECALL_sysinfo },                //  rev_sysinfo(struct sysinfo  *info)
+    { 180, &RevCore::ECALL_mq_open },                //  rev_mq_open(const char  *name, int oflag, umode_t mode, struct mq_attr  *attr)
+    { 181, &RevCore::ECALL_mq_unlink },              //  rev_mq_unlink(const char  *name)
+    { 182, &RevCore::ECALL_mq_timedsend },           //  rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 183, &RevCore::ECALL_mq_timedreceive },        //  rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 184, &RevCore::ECALL_mq_notify },              //  rev_mq_notify(mqd_t mqdes, const struct sigevent  *notification)
+    { 185, &RevCore::ECALL_mq_getsetattr },          //  rev_mq_getsetattr(mqd_t mqdes, const struct mq_attr  *mqstat, struct mq_attr  *omqstat)
+    { 186, &RevCore::ECALL_msgget },                 //  rev_msgget(key_t key, int msgflg)
+    { 187, &RevCore::ECALL_msgctl },                 //  rev_old_msgctl(int msqid, int cmd, struct msqid_ds  *buf)
+    { 188, &RevCore::ECALL_msgrcv },                 //  rev_msgrcv(int msqid, struct msgbuf  *msgp, size_t msgsz, long msgtyp, int msgflg)
+    { 189, &RevCore::ECALL_msgsnd },                 //  rev_msgsnd(int msqid, struct msgbuf  *msgp, size_t msgsz, int msgflg)
+    { 190, &RevCore::ECALL_semget },                 //  rev_semget(key_t key, int nsems, int semflg)
+    { 191, &RevCore::ECALL_semctl },                 //  rev_semctl(int semid, int semnum, int cmd, unsigned long arg)
+    { 192, &RevCore::ECALL_semtimedop },             //  rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
+    { 193, &RevCore::ECALL_semop },                  //  rev_semop(int semid, struct sembuf  *sops, unsigned nsops)
+    { 194, &RevCore::ECALL_shmget },                 //  rev_shmget(key_t key, size_t size, int flag)
+    { 195, &RevCore::ECALL_shmctl },                 //  rev_old_shmctl(int shmid, int cmd, struct shmid_ds  *buf)
+    { 196, &RevCore::ECALL_shmat },                  //  rev_shmat(int shmid, char  *shmaddr, int shmflg)
+    { 197, &RevCore::ECALL_shmdt },                  //  rev_shmdt(char  *shmaddr)
+    { 198, &RevCore::ECALL_socket },                 //  rev_socket(int, int, int)
+    { 199, &RevCore::ECALL_socketpair },             //  rev_socketpair(int, int, int, int  *)
+    { 200, &RevCore::ECALL_bind },                   //  rev_bind(int, struct sockaddr  *, int)
+    { 201, &RevCore::ECALL_listen },                 //  rev_listen(int, int)
+    { 202, &RevCore::ECALL_accept },                 //  rev_accept(int, struct sockaddr  *, int  *)
+    { 203, &RevCore::ECALL_connect },                //  rev_connect(int, struct sockaddr  *, int)
+    { 204, &RevCore::ECALL_getsockname },            //  rev_getsockname(int, struct sockaddr  *, int  *)
+    { 205, &RevCore::ECALL_getpeername },            //  rev_getpeername(int, struct sockaddr  *, int  *)
+    { 206, &RevCore::ECALL_sendto },                 //  rev_sendto(int, void  *, size_t, unsigned, struct sockaddr  *, int)
+    { 207, &RevCore::ECALL_recvfrom },               //  rev_recvfrom(int, void  *, size_t, unsigned, struct sockaddr  *, int  *)
+    { 208, &RevCore::ECALL_setsockopt },             //  rev_setsockopt(int fd, int level, int optname, char  *optval, int optlen)
+    { 209, &RevCore::ECALL_getsockopt },             //  rev_getsockopt(int fd, int level, int optname, char  *optval, int  *optlen)
+    { 210, &RevCore::ECALL_shutdown },               //  rev_shutdown(int, int)
+    { 211, &RevCore::ECALL_sendmsg },                //  rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags)
+    { 212, &RevCore::ECALL_recvmsg },                //  rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags)
+    { 213, &RevCore::ECALL_readahead },              //  rev_readahead(int fd, loff_t offset, size_t count)
+    { 214, &RevCore::ECALL_brk },                    //  rev_brk(unsigned long brk)
+    { 215, &RevCore::ECALL_munmap },                 //  rev_munmap(unsigned long addr, size_t len)
+    { 216, &RevCore::ECALL_mremap },                 //  rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr)
+    { 217, &RevCore::ECALL_add_key },                //  rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid)
+    { 218, &RevCore::ECALL_request_key },            //  rev_request_key(const char  *_type, const char  *_description, const char  *_callout_info, key_serial_t destringid)
+    { 219, &RevCore::ECALL_keyctl },                 //  rev_keyctl(int cmd, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
+    { 220, &RevCore::ECALL_clone },                  //  rev_clone(unsigned long, unsigned long, int  *, unsigned long, int  *)
+    { 221, &RevCore::ECALL_execve },                 //  rev_execve(const char  *filename, const char  *const  *argv, const char  *const  *envp)
+    { 222, &RevCore::ECALL_mmap },                   //  rev_old_mmap(struct mmap_arg_struct  *arg)
+    { 223, &RevCore::ECALL_fadvise64_64 },           //  rev_fadvise64_64(int fd, loff_t offset, loff_t len, int advice)
+    { 224, &RevCore::ECALL_swapon },                 //  rev_swapon(const char  *specialfile, int swap_flags)
+    { 225, &RevCore::ECALL_swapoff },                //  rev_swapoff(const char  *specialfile)
+    { 226, &RevCore::ECALL_mprotect },               //  rev_mprotect(unsigned long start, size_t len, unsigned long prot)
+    { 227, &RevCore::ECALL_msync },                  //  rev_msync(unsigned long start, size_t len, int flags)
+    { 228, &RevCore::ECALL_mlock },                  //  rev_mlock(unsigned long start, size_t len)
+    { 229, &RevCore::ECALL_munlock },                //  rev_munlock(unsigned long start, size_t len)
+    { 230, &RevCore::ECALL_mlockall },               //  rev_mlockall(int flags)
+    { 231, &RevCore::ECALL_munlockall },             //  rev_munlockall(void)
+    { 232, &RevCore::ECALL_mincore },                //  rev_mincore(unsigned long start, size_t len, unsigned char  * vec)
+    { 233, &RevCore::ECALL_madvise },                //  rev_madvise(unsigned long start, size_t len, int behavior)
+    { 234, &RevCore::ECALL_remap_file_pages },       //  rev_remap_file_pages(unsigned long start, unsigned long size, unsigned long prot, unsigned long pgoff, unsigned long flags)
+    { 235, &RevCore::ECALL_mbind },                  //  rev_mbind(unsigned long start, unsigned long len, unsigned long mode, const unsigned long  *nmask, unsigned long maxnode, unsigned flags)
+    { 236, &RevCore::ECALL_get_mempolicy },          //  rev_get_mempolicy(int  *policy, unsigned long  *nmask, unsigned long maxnode, unsigned long addr, unsigned long flags)
+    { 237, &RevCore::ECALL_set_mempolicy },          //  rev_set_mempolicy(int mode, const unsigned long  *nmask, unsigned long maxnode)
+    { 238, &RevCore::ECALL_migrate_pages },          //  rev_migrate_pages(pid_t pid, unsigned long maxnode, const unsigned long  *from, const unsigned long  *to)
+    { 239, &RevCore::ECALL_move_pages },             //  rev_move_pages(pid_t pid, unsigned long nr_pages, const void  *  *pages, const int  *nodes, int  *status, int flags)
+    { 240, &RevCore::ECALL_rt_tgsigqueueinfo },      //  rev_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig, siginfo_t  *uinfo)
+    { 241, &RevCore::ECALL_perf_event_open },        //  rev_perf_event_open(")
+    { 242, &RevCore::ECALL_accept4 },                //  rev_accept4(int, struct sockaddr  *, int  *, int)
+    { 243, &RevCore::ECALL_recvmmsg_time32 },        //  rev_recvmmsg_time32(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags, struct old_timespec32  *timeout)
+    { 260, &RevCore::ECALL_wait4 },                  //  rev_wait4(pid_t pid, int  *stat_addr, int options, struct rusage  *ru)
+    { 261, &RevCore::ECALL_prlimit64 },              //  rev_prlimit64(pid_t pid, unsigned int resource, const struct rlimit64  *new_rlim, struct rlimit64  *old_rlim)
+    { 262, &RevCore::ECALL_fanotify_init },          //  rev_fanotify_init(unsigned int flags, unsigned int event_f_flags)
+    { 263, &RevCore::ECALL_fanotify_mark },          //  rev_fanotify_mark(int fanotify_fd, unsigned int flags, u64 mask, int fd, const char  *pathname)
+    { 264, &RevCore::ECALL_name_to_handle_at },      //  rev_name_to_handle_at(int dfd, const char  *name, struct file_handle  *handle, int  *mnt_id, int flag)
+    { 265, &RevCore::ECALL_open_by_handle_at },      //  rev_open_by_handle_at(int mountdirfd, struct file_handle  *handle, int flags)
+    { 266, &RevCore::ECALL_clock_adjtime },          //  rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
+    { 267, &RevCore::ECALL_syncfs },                 //  rev_syncfs(int fd)
+    { 268, &RevCore::ECALL_setns },                  //  rev_setns(int fd, int nstype)
+    { 269, &RevCore::ECALL_sendmmsg },               //  rev_sendmmsg(int fd, struct mmsghdr  *msg, unsigned int vlen, unsigned flags)
+    { 270, &RevCore::ECALL_process_vm_readv },       //  rev_process_vm_readv(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
+    { 271, &RevCore::ECALL_process_vm_writev },      //  rev_process_vm_writev(pid_t pid, const struct iovec  *lvec, unsigned long liovcnt, const struct iovec  *rvec, unsigned long riovcnt, unsigned long flags)
+    { 272, &RevCore::ECALL_kcmp },                   //  rev_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, unsigned long idx2)
+    { 273, &RevCore::ECALL_finit_module },           //  rev_finit_module(int fd, const char  *uargs, int flags)
+    { 274, &RevCore::ECALL_sched_setattr },          //  rev_sched_setattr(pid_t pid, struct sched_attr  *attr, unsigned int flags)
+    { 275, &RevCore::ECALL_sched_getattr },          //  rev_sched_getattr(pid_t pid, struct sched_attr  *attr, unsigned int size, unsigned int flags)
+    { 276, &RevCore::ECALL_renameat2 },              //  rev_renameat2(int olddfd, const char  *oldname, int newdfd, const char  *newname, unsigned int flags)
+    { 277, &RevCore::ECALL_seccomp },                //  rev_seccomp(unsigned int op, unsigned int flags, void  *uargs)
+    { 278, &RevCore::ECALL_getrandom },              //  rev_getrandom(char  *buf, size_t count, unsigned int flags)
+    { 279, &RevCore::ECALL_memfd_create },           //  rev_memfd_create(const char  *uname_ptr, unsigned int flags)
+    { 280, &RevCore::ECALL_bpf },                    //  rev_bpf(int cmd, union bpf_attr *attr, unsigned int size)
+    { 281, &RevCore::ECALL_execveat },               //  rev_execveat(int dfd, const char  *filename, const char  *const  *argv, const char  *const  *envp, int flags)
+    { 282, &RevCore::ECALL_userfaultfd },            //  rev_userfaultfd(int flags)
+    { 283, &RevCore::ECALL_membarrier },             //  rev_membarrier(int cmd, unsigned int flags, int cpu_id)
+    { 284, &RevCore::ECALL_mlock2 },                 //  rev_mlock2(unsigned long start, size_t len, int flags)
+    { 285, &RevCore::ECALL_copy_file_range },        //  rev_copy_file_range(int fd_in, loff_t  *off_in, int fd_out, loff_t  *off_out, size_t len, unsigned int flags)
+    { 286, &RevCore::ECALL_preadv2 },                //  rev_preadv2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
+    { 287, &RevCore::ECALL_pwritev2 },               //  rev_pwritev2(unsigned long fd, const struct iovec  *vec, unsigned long vlen, unsigned long pos_l, unsigned long pos_h, rwf_t flags)
+    { 288, &RevCore::ECALL_pkey_mprotect },          //  rev_pkey_mprotect(unsigned long start, size_t len, unsigned long prot, int pkey)
+    { 289, &RevCore::ECALL_pkey_alloc },             //  rev_pkey_alloc(unsigned long flags, unsigned long init_val)
+    { 290, &RevCore::ECALL_pkey_free },              //  rev_pkey_free(int pkey)
+    { 291, &RevCore::ECALL_statx },                  //  rev_statx(int dfd, const char  *path, unsigned flags, unsigned mask, struct statx  *buffer)
+    { 292, &RevCore::ECALL_io_pgetevents },          //  rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
+    { 293, &RevCore::ECALL_rseq },                   //  rev_rseq(struct rseq  *rseq, uint32_t rseq_len, int flags, uint32_t sig)
+    { 294, &RevCore::ECALL_kexec_file_load },        //  rev_kexec_file_load(int kernel_fd, int initrd_fd, unsigned long cmdline_len, const char  *cmdline_ptr, unsigned long flags)
+    { 403, &RevCore::ECALL_clock_gettime },          //  rev_clock_gettime(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 404, &RevCore::ECALL_clock_settime },          //  rev_clock_settime(clockid_t which_clock, const struct __kernel_timespec  *tp)
+    { 405, &RevCore::ECALL_clock_adjtime },          //  rev_clock_adjtime(clockid_t which_clock, struct __kernel_timex  *tx)
+    { 406, &RevCore::ECALL_clock_getres },           //  rev_clock_getres(clockid_t which_clock, struct __kernel_timespec  *tp)
+    { 407, &RevCore::ECALL_clock_nanosleep },        //  rev_clock_nanosleep(clockid_t which_clock, int flags, const struct __kernel_timespec  *rqtp, struct __kernel_timespec  *rmtp)
+    { 408, &RevCore::ECALL_timer_gettime },          //  rev_timer_gettime(timer_t timer_id, struct __kernel_itimerspec  *setting)
+    { 409, &RevCore::ECALL_timer_settime },          //  rev_timer_settime(timer_t timer_id, int flags, const struct __kernel_itimerspec  *new_setting, struct __kernel_itimerspec  *old_setting)
+    { 410, &RevCore::ECALL_timerfd_gettime },        //  rev_timerfd_gettime(int ufd, struct __kernel_itimerspec  *otmr)
+    { 411, &RevCore::ECALL_timerfd_settime },        //  rev_timerfd_settime(int ufd, int flags, const struct __kernel_itimerspec  *utmr, struct __kernel_itimerspec  *otmr)
+    { 412, &RevCore::ECALL_utimensat },              //  rev_utimensat(int dfd, const char  *filename, struct __kernel_timespec  *utimes, int flags)
+    { 416, &RevCore::ECALL_io_pgetevents },          //  rev_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr, struct io_event  *events, struct __kernel_timespec  *timeout, const struct __aio_sigset *sig)
+    { 418, &RevCore::ECALL_mq_timedsend },           //  rev_mq_timedsend(mqd_t mqdes, const char  *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 419, &RevCore::ECALL_mq_timedreceive },        //  rev_mq_timedreceive(mqd_t mqdes, char  *msg_ptr, size_t msg_len, unsigned int  *msg_prio, const struct __kernel_timespec  *abs_timeout)
+    { 420, &RevCore::ECALL_semtimedop },             //  rev_semtimedop(int semid, struct sembuf  *sops, unsigned nsops, const struct __kernel_timespec  *timeout)
+    { 422, &RevCore::ECALL_futex },                  //  rev_futex(u32  *uaddr, int op, u32 val, struct __kernel_timespec  *utime, u32  *uaddr2, u32 val3)
+    { 423, &RevCore::ECALL_sched_rr_get_interval },  //  rev_sched_rr_get_interval(pid_t pid, struct __kernel_timespec  *interval)
+    { 424, &RevCore::ECALL_pidfd_send_signal },      //  rev_pidfd_send_signal(int pidfd, int sig, siginfo_t  *info, unsigned int flags)
+    { 425, &RevCore::ECALL_io_uring_setup },         //  rev_io_uring_setup(u32 entries, struct io_uring_params  *p)
+    { 426, &RevCore::ECALL_io_uring_enter },         //  rev_io_uring_enter(unsigned int fd, u32 to_submit, u32 min_complete, u32 flags, const sigset_t  *sig, size_t sigsz)
+    { 427, &RevCore::ECALL_io_uring_register },      //  rev_io_uring_register(unsigned int fd, unsigned int op, void  *arg, unsigned int nr_args)
+    { 428, &RevCore::ECALL_open_tree },              //  rev_open_tree(int dfd, const char  *path, unsigned flags)
+    { 429, &RevCore::ECALL_move_mount },             //  rev_move_mount(int from_dfd, const char  *from_path, int to_dfd, const char  *to_path, unsigned int ms_flags)
+    { 430, &RevCore::ECALL_fsopen },                 //  rev_fsopen(const char  *fs_name, unsigned int flags)
+    { 431, &RevCore::ECALL_fsconfig },               //  rev_fsconfig(int fs_fd, unsigned int cmd, const char  *key, const void  *value, int aux)
+    { 432, &RevCore::ECALL_fsmount },                //  rev_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags)
+    { 433, &RevCore::ECALL_fspick },                 //  rev_fspick(int dfd, const char  *path, unsigned int flags)
+    { 434, &RevCore::ECALL_pidfd_open },             //  rev_pidfd_open(pid_t pid, unsigned int flags)
+    { 435, &RevCore::ECALL_clone3 },                 //  rev_clone3(struct clone_args  *uargs, size_t size)
+    { 436, &RevCore::ECALL_close_range },            //  rev_close_range(unsigned int fd, unsigned int max_fd, unsigned int flags)
+    { 437, &RevCore::ECALL_openat2 },                //  rev_openat2(int dfd, const char  *filename, struct open_how *how, size_t size)
+    { 438, &RevCore::ECALL_pidfd_getfd },            //  rev_pidfd_getfd(int pidfd, int fd, unsigned int flags)
+    { 439, &RevCore::ECALL_faccessat2 },             //  rev_faccessat2(int dfd, const char  *filename, int mode, int flags)
+    { 440, &RevCore::ECALL_process_madvise },        //  rev_process_madvise(int pidfd, const struct iovec  *vec, size_t vlen, int behavior, unsigned int flags)
+    { 500, &RevCore::ECALL_cpuinfo },                //  rev_cpuinfo(struct rev_cpuinfo *info)
+    { 501, &RevCore::ECALL_perf_stats },             //  rev_cpuinfo(struct rev_perf_stats *stats)
+    { 1000, &RevCore::ECALL_pthread_create },        //
+    { 1001, &RevCore::ECALL_pthread_join },          //
 };
 // clang-format on
 

@@ -405,7 +405,7 @@ public:
   friend std::ostream& operator<<( std::ostream&     os,
                                    const RevRegFile& regFile );
 
-  friend class RevProc;
+  friend class RevCore;
   friend class RV32A;
   friend class RV64A;
 };  // class RevRegFile

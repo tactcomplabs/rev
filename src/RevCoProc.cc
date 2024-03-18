@@ -16,7 +16,7 @@ using namespace RevCPU;
 // ---------------------------------------------------------------
 // RevCoProc
 // ---------------------------------------------------------------
-RevCoProc::RevCoProc( ComponentId_t id, Params& params, RevProc* parent ) :
+RevCoProc::RevCoProc( ComponentId_t id, Params& params, RevCore* parent ) :
   SubComponent( id ), output( nullptr ), parent( parent ) {
 
   uint32_t verbosity = params.find< uint32_t >( "verbose" );
@@ -33,7 +33,7 @@ RevCoProc::~RevCoProc() {
 // ---------------------------------------------------------------
 RevSimpleCoProc::RevSimpleCoProc( ComponentId_t id,
                                   Params&       params,
-                                  RevProc*      parent ) :
+                                  RevCore*      parent ) :
   RevCoProc( id, params, parent ),
   num_instRetired( 0 ) {
 

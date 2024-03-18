@@ -140,7 +140,7 @@ private:
   unsigned     MinCost;   ///< RevFeature: min memory cost
   unsigned     MaxCost;   ///< RevFeature: max memory cost
   unsigned     ProcID;    ///< RevFeature: RISC-V Proc ID
-  unsigned HartToExecID;  ///< RevFeature: The current executing Hart on RevProc
+  unsigned HartToExecID;  ///< RevFeature: The current executing Hart on RevCore
   RevFeatureType features;  ///< RevFeature: feature elements
   unsigned       xlen;      ///< RevFeature: RISC-V Xlen
 

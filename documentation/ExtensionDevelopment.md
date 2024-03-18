@@ -21,7 +21,7 @@ From the base Rev directory, all the source code resides in `src`.  The instruct
 | `src/RevInstTable.h` | Contains the base strucutures utilized to create each extension as well as functions to assist in instruction implementation. |
 | `src/RevFeature.h` | Contains the feature to extension mappings. |
 | `src/RevMem.h` | Contains all the interfaces for reading/writing memory. |
-| `src/RevProc.cc` | Contains the main simulation driver and instruction table loader. |
+| `src/RevCore.cc` | Contains the main simulation driver and instruction table loader. |
 
 ## Documentation
 
@@ -176,10 +176,10 @@ As an example, we create the `Z` extension and add the `RV32Z.h` header file.
 ### Add the Instruction Table Loader
 In this section, we need to add support for loading the new extension's instructions into the internal Rev instruction table.  Rev utilizes an internal instruction table with compressed encodings in order to permit rapid crack/decode.  Each table entry contains a pointer to the respective implementation function for the target instruction.  In this case, we need to add the necessary logic to 1) detect that our new extension is enabled and 2) add the associated instructions to the internal instruction table.
 
-For this, we need to modify the `RevProc.cc` implementation file.  Specifically, we will be modifying the contents of the `SeedInstTable` function.  Each new instruction implementation object is statically cast to the base `RevExt` type and passed to the `EnableExt` function.  An example of adding the `Z` extension is as follows.  Also note that the newly created `RV32Z` object is given the feature object, a pointer to the register file, the memory object and the SST output object.
+For this, we need to modify the `RevCore.cc` implementation file.  Specifically, we will be modifying the contents of the `SeedInstTable` function.  Each new instruction implementation object is statically cast to the base `RevExt` type and passed to the `EnableExt` function.  An example of adding the `Z` extension is as follows.  Also note that the newly created `RV32Z` object is given the feature object, a pointer to the register file, the memory object and the SST output object.
 
 ```c++
-bool RevProc::SeedInstTable(){
+bool RevCore::SeedInstTable(){
   // Z-Extension
   if( feature->IsModeEnabled(RV_Z) ){
     EnableExt(static_cast<RevExt *>(new RV32Z(feature, &RegFile, mem, output)));

@@ -35,8 +35,8 @@ class RevHart {
   std::unique_ptr< RevThread >           Thread  = nullptr;
   std::unique_ptr< RevRegFile >          RegFile = nullptr;
 
-  ///< RevHart: Make RevProc a friend of this
-  friend class RevProc;
+  ///< RevHart: Make RevCore a friend of this
+  friend class RevCore;
 
 public:
   ///< RevHart: Constructor
