@@ -10,6 +10,10 @@ else
   END=
 fi
 
+if [ "$(id -nu)" = builduser ]; then
+    exit 0
+fi
+
 hooks=$(git config core.hooksPath)
 if [ "${hooks}" != .githooks ]; then
     printf "${RED}\n"
