@@ -20,7 +20,7 @@ namespace SST::RevCPU {
 class RV64P : public RevExt {
 
   static bool
-    future( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    future( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetX( Inst.rd,
              !!M->SetFuture( R->GetX< uint64_t >( Inst.rs1 ) +
                              Inst.ImmSignExt( 12 ) ) );
@@ -29,7 +29,7 @@ class RV64P : public RevExt {
   }
 
   static bool
-    rfuture( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    rfuture( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetX( Inst.rd,
              !!M->RevokeFuture( R->GetX< uint64_t >( Inst.rs1 ) +
                                 Inst.ImmSignExt( 12 ) ) );
@@ -38,7 +38,7 @@ class RV64P : public RevExt {
   }
 
   static bool
-    sfuture( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    sfuture( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetX( Inst.rd,
              !!M->StatusFuture( R->GetX< uint64_t >( Inst.rs1 ) +
                                 Inst.ImmSignExt( 12 ) ) );
@@ -70,7 +70,7 @@ class RV64P : public RevExt {
 
 public:
   /// RV64P: standard constructor
-  RV64P( RevFeature *Feature, RevMem *RevMem, SST::Output *Output ) :
+  RV64P( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
     RevExt( "RV64P", Feature, RevMem, Output ) {
     SetTable( std::move( RV64PTable ) );
   }

@@ -32,7 +32,7 @@ namespace SST::RevCPU {
 struct RevInst;
 
 /// BoxNaN: Store a boxed float inside a double
-inline void BoxNaN( double *dest, const void *value ) {
+inline void BoxNaN( double* dest, const void* value ) {
   uint32_t i32;
   memcpy( &i32, value, sizeof( float ) );                 // The FP32 value
   uint64_t i64 = uint64_t{ i32 } | ~uint64_t{ 0 } << 32;  // Boxed NaN value
@@ -105,7 +105,7 @@ private:
   bool       trigger{};  ///< RevRegFile: Has the instruction been triggered?
   unsigned   Entry{};    ///< RevRegFile: Instruction entry
   uint32_t   cost{};     ///< RevRegFile: Cost of the instruction
-  RevTracer *Tracer = nullptr;  ///< RegRegFile: Tracer object
+  RevTracer* Tracer = nullptr;  ///< RegRegFile: Tracer object
 
   union {              // Anonymous union. We zero-initialize the largest member
     uint32_t RV32_PC;  ///< RevRegFile: RV32 PC
@@ -115,7 +115,7 @@ private:
   FCSR fcsr{};  ///< RevRegFile: FCSR
 
   std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > LSQueue{};
-  std::function< void( const MemReq & ) > MarkLoadCompleteFunc{};
+  std::function< void( const MemReq& ) > MarkLoadCompleteFunc{};
 
   union {  // Anonymous union. We zero-initialize the largest member
     uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
@@ -164,18 +164,18 @@ private:
 
 public:
   // Constructor which takes a RevFeature
-  explicit RevRegFile( const RevFeature *feature ) :
+  explicit RevRegFile( const RevFeature* feature ) :
     IsRV32( feature->IsRV32() ), HasD( feature->HasD() ) {
   }
 
   // Getters/Setters
 
   /// Get cost of the instruction
-  const uint32_t &GetCost() const {
+  const uint32_t& GetCost() const {
     return cost;
   }
 
-  uint32_t &GetCost() {
+  uint32_t& GetCost() {
     return cost;
   }
 
@@ -205,7 +205,7 @@ public:
   }
 
   /// Get the Load/Store Queue
-  const auto &GetLSQueue() const {
+  const auto& GetLSQueue() const {
     return LSQueue;
   }
 
@@ -216,22 +216,22 @@ public:
   }
 
   /// Set the current tracer
-  void SetTracer( RevTracer *t ) {
+  void SetTracer( RevTracer* t ) {
     Tracer = t;
   }
 
   /// Get the MarkLoadComplete function
-  const std::function< void( const MemReq & ) > &GetMarkLoadComplete() const {
+  const std::function< void( const MemReq& ) >& GetMarkLoadComplete() const {
     return MarkLoadCompleteFunc;
   }
 
   /// Set the MarkLoadComplete function
-  void SetMarkLoadComplete( std::function< void( const MemReq & ) > func ) {
+  void SetMarkLoadComplete( std::function< void( const MemReq& ) > func ) {
     MarkLoadCompleteFunc = std::move( func );
   }
 
   /// Invoke the MarkLoadComplete function
-  void MarkLoadComplete( const MemReq &req ) const {
+  void MarkLoadComplete( const MemReq& req ) const {
     MarkLoadCompleteFunc( req );
   }
 
@@ -324,7 +324,7 @@ public:
   // Note: This does not create tracer events like SetPC() does
   template<
     typename T >  // Used to allow RevInst to be incomplete type right now
-  void AdvancePC( const T &Inst ) {
+  void AdvancePC( const T& Inst ) {
     if( IsRV32 ) {
       RV32_PC += Inst.instSize;
     } else {
@@ -376,34 +376,34 @@ public:
   // Friend functions and classes to access internal register state
   template< typename FP, typename INT >
   friend bool
-    CvtFpToInt( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst );
+    CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template< typename T >
   friend bool
-    load( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst );
+    load( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template< typename T >
   friend bool
-    store( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst );
+    store( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template< typename T >
   friend bool
-    fload( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst );
+    fload( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template< typename T >
   friend bool
-    fstore( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst );
+    fstore( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template< typename T, template< class > class OP >
   friend bool
-    foper( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst );
+    foper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template< typename T, template< class > class OP >
   friend bool
-    fcondop( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst );
+    fcondop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  friend std::ostream &operator<<( std::ostream     &os,
-                                   const RevRegFile &regFile );
+  friend std::ostream& operator<<( std::ostream&     os,
+                                   const RevRegFile& regFile );
 
   friend class RevProc;
   friend class RV32A;

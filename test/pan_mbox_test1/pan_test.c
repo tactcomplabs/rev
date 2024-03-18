@@ -25,7 +25,7 @@ Command    get_cmd;
 Command    reserve_cmd;
 Command    revoke_cmd;
 Command    complete_cmd;
-MBoxEntry *Mailbox = (MBoxEntry *) ( _PAN_RDMA_MAILBOX_ );
+MBoxEntry* Mailbox = (MBoxEntry*) ( _PAN_RDMA_MAILBOX_ );
 
 uint32_t   Token   = 0xfeedbeef;
 uint32_t   Tag     = 0x1;
@@ -49,7 +49,7 @@ void send_completion() {
   Mailbox[0].Dest   = 1;
   Mailbox[0].Valid  = _PAN_ENTRY_VALID_;
   cmd_wait();
-  uint64_t *ptr = (uint64_t *) ( _PAN_COMPLETION_ADDR_ );
+  uint64_t* ptr = (uint64_t*) ( _PAN_COMPLETION_ADDR_ );
   *ptr          = 0x001ull;
   Tag++;
 }
@@ -76,8 +76,8 @@ void send_revoke_cmd() {
   cmd_wait();
 }
 
-int main( int argc, char **argv ) {
-  uint64_t         *ptr = (uint64_t *) ( _PAN_COMPLETION_ADDR_ );
+int main( int argc, char** argv ) {
+  uint64_t*         ptr = (uint64_t*) ( _PAN_COMPLETION_ADDR_ );
   volatile uint64_t value;
 
   send_reserve_cmd();

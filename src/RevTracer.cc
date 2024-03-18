@@ -17,7 +17,7 @@
 
 namespace SST::RevCPU {
 
-RevTracer::RevTracer( std::string Name, SST::Output *o ) :
+RevTracer::RevTracer( std::string Name, SST::Output* o ) :
   name( Name ), pOutput( o ) {
 
   enableQ.resize( MAX_ENABLE_Q );
@@ -68,7 +68,7 @@ int RevTracer::SetDisassembler( std::string machine ) {
 }
 
 void RevTracer::SetTraceSymbols(
-  std::map< uint64_t, std::string > *TraceSymbols ) {
+  std::map< uint64_t, std::string >* TraceSymbols ) {
   traceSymbols = TraceSymbols;
 }
 
@@ -166,14 +166,14 @@ void RevTracer::regWrite( size_t r, uint64_t v ) {
   traceRecs.emplace_back( TraceRec_t( RegWrite, r, v ) );
 }
 
-void RevTracer::memWrite( uint64_t adr, size_t len, const void *data ) {
+void RevTracer::memWrite( uint64_t adr, size_t len, const void* data ) {
   // Only tracing the first 8 bytes. Retaining pointer in case we change that.
   uint64_t d = 0;
   memcpy( &d, data, len > sizeof( d ) ? sizeof( d ) : len );
   traceRecs.emplace_back( TraceRec_t( MemStore, adr, len, d ) );
 }
 
-void RevTracer::memRead( uint64_t adr, size_t len, void *data ) {
+void RevTracer::memRead( uint64_t adr, size_t len, void* data ) {
   uint64_t d = 0;
   memcpy( &d, data, len > sizeof( d ) ? sizeof( d ) : len );
   traceRecs.emplace_back( TraceRec_t( MemLoad, adr, len, d ) );
@@ -185,7 +185,7 @@ void SST::RevCPU::RevTracer::memhSendRead( uint64_t adr,
   traceRecs.emplace_back( TraceRec_t( MemhSendLoad, adr, len, reg ) );
 }
 
-void RevTracer::memReadResponse( size_t len, void *data, const MemReq *req ) {
+void RevTracer::memReadResponse( size_t len, void* data, const MemReq* req ) {
   if( req->DestReg == 0 )
     return;
   CompletionRec_t c(
@@ -205,7 +205,7 @@ void RevTracer::Exec( size_t             cycle,
                       unsigned           id,
                       unsigned           hart,
                       unsigned           tid,
-                      const std::string &fallbackMnemonic ) {
+                      const std::string& fallbackMnemonic ) {
   instHeader.set( cycle, id, hart, tid, fallbackMnemonic );
 }
 
@@ -256,7 +256,7 @@ void SST::RevCPU::RevTracer::Reset() {
   completionRecs.clear();
 }
 
-std::string RevTracer::RenderExec( const std::string &fallbackMnemonic ) {
+std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
   // Flow Control Events
   std::stringstream ss_events;
   if( events.v ) {

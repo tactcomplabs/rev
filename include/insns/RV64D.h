@@ -20,11 +20,11 @@
 namespace SST::RevCPU {
 
 class RV64D : public RevExt {
-  static constexpr auto &fcvtld  = CvtFpToInt< double, int64_t >;
-  static constexpr auto &fcvtlud = CvtFpToInt< double, uint64_t >;
+  static constexpr auto& fcvtld  = CvtFpToInt< double, int64_t >;
+  static constexpr auto& fcvtlud = CvtFpToInt< double, uint64_t >;
 
   static bool
-    fcvtdl( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    fcvtdl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetFP( Inst.rd,
               static_cast< double >( R->GetX< int64_t >( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
@@ -32,7 +32,7 @@ class RV64D : public RevExt {
   }
 
   static bool
-    fcvtdlu( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    fcvtdlu( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetFP( Inst.rd,
               static_cast< double >( R->GetX< uint64_t >( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
@@ -40,7 +40,7 @@ class RV64D : public RevExt {
   }
 
   static bool
-    fmvxd( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    fmvxd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     uint64_t u64;
     double   fp = R->GetFP< double, true >( Inst.rs1 );
     memcpy( &u64, &fp, sizeof( u64 ) );
@@ -50,7 +50,7 @@ class RV64D : public RevExt {
   }
 
   static bool
-    fmvdx( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    fmvdx( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     uint64_t u64 = R->GetX< uint64_t >( Inst.rs1 );
     double   fp;
     memcpy( &fp, &u64, sizeof( fp ) );
@@ -85,7 +85,7 @@ class RV64D : public RevExt {
 
 public:
   /// RV364D: standard constructor
-  RV64D( RevFeature *Feature, RevMem *RevMem, SST::Output *Output ) :
+  RV64D( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
     RevExt( "RV64D", Feature, RevMem, Output ) {
     SetTable( std::move( RV64DTable ) );
   }

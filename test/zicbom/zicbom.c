@@ -19,12 +19,12 @@ int A[ARRAY];
 int B[ARRAY];
 int C[ARRAY];
 
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
   int  rtn  = 0;
   int  i    = 0;
-  int *APtr = &( A[0] );
-  int *BPtr = &B[0];
-  int *CPtr = &C[0];
+  int* APtr = &( A[0] );
+  int* BPtr = &B[0];
+  int* CPtr = &C[0];
 
   // init some data
   for( i = 0; i < ARRAY; i++ ) {

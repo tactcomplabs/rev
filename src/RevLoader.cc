@@ -17,8 +17,8 @@ using MemSegment = RevMem::MemSegment;
 
 RevLoader::RevLoader( std::string  Exe,
                       std::string  Args,
-                      RevMem      *Mem,
-                      SST::Output *Output ) :
+                      RevMem*      Mem,
+                      SST::Output* Output ) :
   exe( Exe ),
   args( Args ), mem( Mem ), output( Output ), RV32Entry( 0x00l ),
   RV64Entry( 0x00ull ) {
@@ -63,7 +63,7 @@ bool RevLoader::IsRVBig( const Elf64_Ehdr eh64 ) {
 }
 
 // breaks the write into cache line chunks
-bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void *Data ) {
+bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void* Data ) {
   if( Len == 0 ) {
     // nothing to do here, move along
     return true;
@@ -102,7 +102,7 @@ bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void *Data ) {
   uint64_t TmpData = uint64_t( Data );
   uint64_t TmpAddr = Addr;
   if( !mem->WriteMem(
-        0, TmpAddr, TmpSize, reinterpret_cast< void * >( TmpData ) ) ) {
+        0, TmpAddr, TmpSize, reinterpret_cast< void* >( TmpData ) ) ) {
     output->fatal(
       CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
   }
@@ -122,7 +122,7 @@ bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void *Data ) {
     }
 
     if( !mem->WriteMem(
-          0, TmpAddr, TmpSize, reinterpret_cast< void * >( TmpData ) ) ) {
+          0, TmpAddr, TmpSize, reinterpret_cast< void* >( TmpData ) ) ) {
       output->fatal(
         CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
     }
@@ -138,16 +138,16 @@ bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void *Data ) {
 }
 
 // Elf32_Ehdr, Elf32_Phdr, Elf32_Shdr, Elf32_Sym, from_le
-bool RevLoader::LoadElf32( char *membuf, size_t sz ) {
+bool RevLoader::LoadElf32( char* membuf, size_t sz ) {
   // Parse the ELF header
-  Elf32_Ehdr *eh       = (Elf32_Ehdr *) ( membuf );
+  Elf32_Ehdr* eh       = (Elf32_Ehdr*) ( membuf );
 
   // Parse the program headers
-  Elf32_Phdr *ph       = (Elf32_Phdr *) ( membuf + eh->e_phoff );
+  Elf32_Phdr* ph       = (Elf32_Phdr*) ( membuf + eh->e_phoff );
 
   // Parse the section headers
-  Elf32_Shdr *sh       = (Elf32_Shdr *) ( membuf + eh->e_shoff );
-  char       *shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
+  Elf32_Shdr* sh       = (Elf32_Shdr*) ( membuf + eh->e_shoff );
+  char*       shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
 
   // Store the entry point of the program
   RV32Entry            = eh->e_entry;
@@ -242,7 +242,7 @@ bool RevLoader::LoadElf32( char *membuf, size_t sz ) {
         }
         WriteCacheLine( ph[i].p_paddr,
                         ph[i].p_filesz,
-                        (uint8_t *) ( membuf + ph[i].p_offset ) );
+                        (uint8_t*) ( membuf + ph[i].p_offset ) );
       }
       std::vector< uint8_t > zeros( ph[i].p_memsz - ph[i].p_filesz );
       WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz,
@@ -283,8 +283,8 @@ bool RevLoader::LoadElf32( char *membuf, size_t sz ) {
   if( strtabidx && symtabidx ) {
     // If there is a string table and symbol table, add them as valid memory
     // Parse the string table
-    char      *strtab = membuf + sh[strtabidx].sh_offset;
-    Elf32_Sym *sym    = (Elf32_Sym *) ( membuf + sh[symtabidx].sh_offset );
+    char*      strtab = membuf + sh[strtabidx].sh_offset;
+    Elf32_Sym* sym    = (Elf32_Sym*) ( membuf + sh[symtabidx].sh_offset );
     // Iterate over every symbol in the symbol table
     for( unsigned i = 0; i < sh[symtabidx].sh_size / sizeof( Elf32_Sym );
          i++ ) {
@@ -305,16 +305,16 @@ bool RevLoader::LoadElf32( char *membuf, size_t sz ) {
   return true;
 }
 
-bool RevLoader::LoadElf64( char *membuf, size_t sz ) {
+bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
   // Parse the ELF header
-  Elf64_Ehdr *eh       = (Elf64_Ehdr *) ( membuf );
+  Elf64_Ehdr* eh       = (Elf64_Ehdr*) ( membuf );
 
   // Parse the program headers
-  Elf64_Phdr *ph       = (Elf64_Phdr *) ( membuf + eh->e_phoff );
+  Elf64_Phdr* ph       = (Elf64_Phdr*) ( membuf + eh->e_phoff );
 
   // Parse the section headers
-  Elf64_Shdr *sh       = (Elf64_Shdr *) ( membuf + eh->e_shoff );
-  char       *shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
+  Elf64_Shdr* sh       = (Elf64_Shdr*) ( membuf + eh->e_shoff );
+  char*       shstrtab = membuf + sh[eh->e_shstrndx].sh_offset;
 
   // Store the entry point of the program
   RV64Entry            = eh->e_entry;
@@ -399,7 +399,7 @@ bool RevLoader::LoadElf64( char *membuf, size_t sz ) {
         }
         WriteCacheLine( ph[i].p_paddr,
                         ph[i].p_filesz,
-                        (uint8_t *) ( membuf + ph[i].p_offset ) );
+                        (uint8_t*) ( membuf + ph[i].p_offset ) );
       }
       std::vector< uint8_t > zeros( ph[i].p_memsz - ph[i].p_filesz );
       WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz,
@@ -441,8 +441,8 @@ bool RevLoader::LoadElf64( char *membuf, size_t sz ) {
   // If the string table index and symbol table index are valid (NonZero)
   if( strtabidx && symtabidx ) {
     // Parse the string table
-    char      *strtab = membuf + sh[strtabidx].sh_offset;
-    Elf64_Sym *sym    = (Elf64_Sym *) ( membuf + sh[symtabidx].sh_offset );
+    char*      strtab = membuf + sh[strtabidx].sh_offset;
+    Elf64_Sym* sym    = (Elf64_Sym*) ( membuf + sh[symtabidx].sh_offset );
     // Iterate over every symbol in the symbol table
     for( unsigned i = 0; i < sh[symtabidx].sh_size / sizeof( Elf64_Sym );
          i++ ) {
@@ -570,9 +570,9 @@ bool RevLoader::LoadProgramArgs() {
   return true;
 }
 
-void RevLoader::splitStr( const std::string          &s,
+void RevLoader::splitStr( const std::string&          s,
                           char                        c,
-                          std::vector< std::string > &v ) {
+                          std::vector< std::string >& v ) {
   std::string::size_type i = 0;
   std::string::size_type j = s.find( c );
 
@@ -603,8 +603,8 @@ bool RevLoader::LoadElf() {
   size_t FileSize = FileStats.st_size;
 
   // map the executable into memory
-  char  *membuf =
-    (char *) ( mmap( NULL, FileSize, PROT_READ, MAP_PRIVATE, fd, 0 ) );
+  char*  membuf =
+    (char*) ( mmap( NULL, FileSize, PROT_READ, MAP_PRIVATE, fd, 0 ) );
   if( membuf == MAP_FAILED )
     output->fatal( CALL_INFO,
                    -1,
@@ -618,7 +618,7 @@ bool RevLoader::LoadElf() {
   if( FileSize < sizeof( Elf64_Ehdr ) )
     output->fatal( CALL_INFO, -1, "Error: Elf header is unrecognizable\n" );
 
-  const Elf64_Ehdr *eh64 = (const Elf64_Ehdr *) ( membuf );
+  const Elf64_Ehdr* eh64 = (const Elf64_Ehdr*) ( membuf );
   if( !IsRVElf32( *eh64 ) && !IsRVElf64( *eh64 ) )
     output->fatal(
       CALL_INFO, -1, "Error: Cannot determine Elf32 or Elf64 from header\n" );
@@ -670,7 +670,7 @@ uint64_t RevLoader::GetSymbolAddr( std::string Symbol ) {
   return tmp;
 }
 
-std::map< uint64_t, std::string > *SST::RevCPU::RevLoader::GetTraceSymbols() {
+std::map< uint64_t, std::string >* SST::RevCPU::RevLoader::GetTraceSymbols() {
   return &tracer_symbols;
 }
 

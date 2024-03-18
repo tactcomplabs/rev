@@ -78,7 +78,7 @@ bool RevPrefetcher::IsAvail( uint64_t Addr ) {
   return false;
 }
 
-void RevPrefetcher::MarkInstructionLoadComplete( const MemReq &req ) {
+void RevPrefetcher::MarkInstructionLoadComplete( const MemReq& req ) {
   auto it = OutstandingFetchQ.begin();
   while( ( it != OutstandingFetchQ.end() ) ) {
     if( it->Addr == req.Addr ) {
@@ -90,8 +90,8 @@ void RevPrefetcher::MarkInstructionLoadComplete( const MemReq &req ) {
 }
 
 bool RevPrefetcher::FetchUpper( uint64_t  Addr,
-                                bool     &Fetched,
-                                uint32_t &UInst ) {
+                                bool&     Fetched,
+                                uint32_t& UInst ) {
   uint64_t lastAddr = 0x00ull;
   for( unsigned i = 0; i < baseAddr.size(); i++ ) {
     lastAddr = baseAddr[i] + ( depth * 4 );
@@ -124,7 +124,7 @@ bool RevPrefetcher::FetchUpper( uint64_t  Addr,
   return true;
 }
 
-bool RevPrefetcher::InstFetch( uint64_t Addr, bool &Fetched, uint32_t &Inst ) {
+bool RevPrefetcher::InstFetch( uint64_t Addr, bool& Fetched, uint32_t& Inst ) {
   // scan the baseAddr vector to see if the address is cached
   uint64_t lastAddr = 0x00ull;
   for( unsigned i = 0; i < baseAddr.size(); i++ ) {

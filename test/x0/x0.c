@@ -20,7 +20,7 @@
     }                             \
   while( 0 )
 
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
 
   asm volatile( " li a0, 6; \
                   li a1, 6; \

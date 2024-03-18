@@ -22,30 +22,30 @@ volatile unsigned thread1_counter = 0;
 volatile unsigned thread2_counter = 0;
 volatile unsigned thread3_counter = 0;
 
-void             *thread1() {
+void*             thread1() {
   for( int i = 0; i < 10; i++ )
     thread1_counter++;
   return 0;
 }
 
-void *thread2() {
+void* thread2() {
   for( int i = 0; i < 10; i++ )
     thread2_counter += 2;
   return 0;
 }
 
-void *thread3() {
+void* thread3() {
   for( int i = 0; i < 10; i++ )
     thread3_counter += 3;
   return 0;
 }
 
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
   TRACE_ON
   rev_pthread_t tid1, tid2, tid3;
-  rev_pthread_create( &tid1, NULL, (void *) thread1, NULL );
-  rev_pthread_create( &tid2, NULL, (void *) thread2, NULL );
-  rev_pthread_create( &tid3, NULL, (void *) thread3, NULL );
+  rev_pthread_create( &tid1, NULL, (void*) thread1, NULL );
+  rev_pthread_create( &tid2, NULL, (void*) thread2, NULL );
+  rev_pthread_create( &tid3, NULL, (void*) thread3, NULL );
 
   rev_pthread_join( tid1 );
   rev_pthread_join( tid2 );

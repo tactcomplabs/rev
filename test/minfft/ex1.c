@@ -93,7 +93,7 @@ int main() {
                              // prepare aux data
                              //a=minfft_mkaux_dft_1d(P);
   minfft_aux   a;
-  minfft_real *e;
+  minfft_real* e;
   a.N      = P;
   int ddd0 = rand();
   int ddd1 = rand();

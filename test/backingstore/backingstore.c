@@ -19,7 +19,7 @@ int A[LOOP];
 int B[LOOP];
 int C[LOOP];
 
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
   int i = 0;
 
   for( i = 0; i < LOOP; i++ ) {

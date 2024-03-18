@@ -8,7 +8,7 @@
     }                             \
   while( 0 )
 
-const char *const text =
+const char* const text =
   "Hello I am a normal text with some pattern hidden inside.";
 
 int main() {

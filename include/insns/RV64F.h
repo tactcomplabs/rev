@@ -20,18 +20,18 @@
 namespace SST::RevCPU {
 
 class RV64F : public RevExt {
-  static constexpr auto &fcvtls  = CvtFpToInt< float, int64_t >;
-  static constexpr auto &fcvtlus = CvtFpToInt< float, uint64_t >;
+  static constexpr auto& fcvtls  = CvtFpToInt< float, int64_t >;
+  static constexpr auto& fcvtlus = CvtFpToInt< float, uint64_t >;
 
   static bool
-    fcvtsl( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    fcvtsl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetFP( Inst.rd, static_cast< float >( R->GetX< int64_t >( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
 
   static bool
-    fcvtslu( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    fcvtslu( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetFP( Inst.rd,
               static_cast< float >( R->GetX< uint64_t >( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
@@ -62,7 +62,7 @@ class RV64F : public RevExt {
 
 public:
   /// RV364F: standard constructor
-  RV64F( RevFeature *Feature, RevMem *RevMem, SST::Output *Output ) :
+  RV64F( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
     RevExt( "RV64F", Feature, RevMem, Output ) {
     SetTable( std::move( RV64FTable ) );
   }

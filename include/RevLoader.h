@@ -280,8 +280,8 @@ public:
   /// RevLoader: standard constructor
   RevLoader( std::string  Exe,
              std::string  Args,
-             RevMem      *Mem,
-             SST::Output *Output );
+             RevMem*      Mem,
+             SST::Output* Output );
 
   /// RevLoader: standard destructor
   ~RevLoader();
@@ -308,15 +308,15 @@ public:
   }
 
   ///  RevLoader: symbol lookup for tracer
-  std::map< uint64_t, std::string > *GetTraceSymbols();
+  std::map< uint64_t, std::string >* GetTraceSymbols();
 
   /// RevLoader: Gets TLS base address
-  const uint64_t                    &GetTLSBaseAddr() {
+  const uint64_t&                    GetTLSBaseAddr() {
     return TLSBaseAddr;
   }
 
   /// RevLoader: Gets TLS size
-  const uint64_t &GetTLSSize() {
+  const uint64_t& GetTLSSize() {
     return TLSSize;
   }
 
@@ -325,8 +325,8 @@ public:
 private:
   std::string  exe;     ///< RevLoader: binary executable
   std::string  args;    ///< RevLoader: program args
-  RevMem      *mem;     ///< RevLoader: memory object
-  SST::Output *output;  ///< RevLoader: output handler
+  RevMem*      mem;     ///< RevLoader: memory object
+  SST::Output* output;  ///< RevLoader: output handler
 
   uint32_t     RV32Entry;  ///< RevLoader: RV32 entry
   uint64_t     RV64Entry;  ///< RevLoader: RV64 entry
@@ -365,16 +365,16 @@ private:
   bool                       IsRVBig( const Elf64_Ehdr eh64 );
 
   /// Loads a 32bit Elf binary
-  bool                       LoadElf32( char *MemBuf, size_t Size );
+  bool                       LoadElf32( char* MemBuf, size_t Size );
 
   /// Loads a 64bit Elf binary
-  bool                       LoadElf64( char *MemBuf, size_t Size );
+  bool                       LoadElf64( char* MemBuf, size_t Size );
 
   ///< Splits a string into tokens
-  void splitStr( const std::string &s, char c, std::vector< std::string > &v );
+  void splitStr( const std::string& s, char c, std::vector< std::string >& v );
 
   ///< Breaks bulk writes into cache lines
-  bool WriteCacheLine( uint64_t Addr, size_t Len, void *Data );
+  bool WriteCacheLine( uint64_t Addr, size_t Len, void* Data );
 
   ///< RevLoader: Replaces first MemSegment (initialized to entire memory space) with the static memory
   void InitStaticMem();
