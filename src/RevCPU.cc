@@ -190,7 +190,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
     // Create the processor objects
     Procs.reserve( Procs.size() + numCores );
     for( unsigned i = 0; i < numCores; i++ ) {
-      Procs.push_back( new RevProc(
+      Procs.push_back( new RevCore(
         i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
     }
     // Create the co-processor objects
@@ -210,7 +210,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
     // Create the processor objects
     Procs.reserve( Procs.size() + numCores );
     for( unsigned i = 0; i < numCores; i++ ) {
-      Procs.push_back( new RevProc(
+      Procs.push_back( new RevCore(
         i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
     }
   }

@@ -510,7 +510,7 @@ bool RevLoader::LoadProgramArgs() {
   // [SP+68] : POINTER TO ARGV[1]
   // [SP+72] : ...
   //
-  // Finally, when the processor comes out of Reset() (see RevProc.cc), we initialize
+  // Finally, when the processor comes out of Reset() (see RevCore.cc), we initialize
   // the x10 register to the value of ARGC and the x11 register to the base pointer to ARGV
   // -------------- END MEMORY LAYOUT NOTES
 
