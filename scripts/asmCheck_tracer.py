@@ -8,15 +8,15 @@ parser.add_argument('-c', '--callStk', dest='callStackClk', type=int, required=F
 args = parser.parse_args()
 
 try:
-  sst_out = open(args.sstOutfile, 'r') 
+  sst_out = open(args.sstOutfile, 'r')
 except:
   print("Cannot open file " + args.sstOutfile)
   exit(1)
 
 sstLines = sst_out.readlines()
- 
+
 try:
-  asm = open(args.asmFilename, 'r') 
+  asm = open(args.asmFilename, 'r')
 except:
   print("Cannot open file " + args.asmFilename)
   exit(1)

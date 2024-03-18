@@ -22,9 +22,9 @@
 // -- RevCPU Headers
 #include "../common/include/RevCommon.h"
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
-enum class EcallStatus{
+enum class EcallStatus {
   SUCCESS,
   CONTINUE,
   ERROR,
@@ -32,18 +32,18 @@ enum class EcallStatus{
 
 // State information for ECALLs
 struct EcallState {
-  std::array<char, 64> buf;
-  std::string string;
-  std::string path_string;
-  size_t bytesRead = 0;
+  std::array< char, 64 > buf;
+  std::string            string;
+  std::string            path_string;
+  size_t                 bytesRead = 0;
 
-  void clear(){
+  void                   clear() {
     string.clear();
     path_string.clear();
     bytesRead = 0;
   }
 
   explicit EcallState() = default;
-}; // struct EcallState
+};  // struct EcallState
 }  // namespace SST::RevCPU
 #endif

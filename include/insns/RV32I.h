@@ -11,100 +11,115 @@
 #ifndef _SST_REVCPU_RV32I_H_
 #define _SST_REVCPU_RV32I_H_
 
-#include "../RevInstHelpers.h"
 #include "../RevExt.h"
+#include "../RevInstHelpers.h"
 
-#include <vector>
 #include <functional>
 #include <type_traits>
+#include <vector>
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
 class RV32I : public RevExt {
   // Standard instructions
-  static bool nop(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    R->AdvancePC(Inst);
+  static bool
+    nop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->AdvancePC( Inst );
     return true;
   }
 
-  static bool lui(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    R->SetX(Inst.rd, static_cast<int32_t>(Inst.imm << 12));
-    R->AdvancePC(Inst);
+  static bool
+    lui( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetX( Inst.rd, static_cast< int32_t >( Inst.imm << 12 ) );
+    R->AdvancePC( Inst );
     return true;
   }
 
-  static bool auipc(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    auto ui = static_cast<int32_t>(Inst.imm << 12);
-    R->SetX(Inst.rd, ui + R->GetPC());
-    R->AdvancePC(Inst);
+  static bool
+    auipc( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    auto ui = static_cast< int32_t >( Inst.imm << 12 );
+    R->SetX( Inst.rd, ui + R->GetPC() );
+    R->AdvancePC( Inst );
     return true;
   }
 
-  static bool jal(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    R->SetX(Inst.rd, R->GetPC() + Inst.instSize);
-    R->SetPC(R->GetPC() + Inst.ImmSignExt(21));
+  static bool
+    jal( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetX( Inst.rd, R->GetPC() + Inst.instSize );
+    R->SetPC( R->GetPC() + Inst.ImmSignExt( 21 ) );
     return true;
   }
 
-  static bool jalr(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+  static bool
+    jalr( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     auto ret = R->GetPC() + Inst.instSize;
-    R->SetPC((R->GetX<uint64_t>(Inst.rs1) + Inst.ImmSignExt(12)) & -2);
-    R->SetX(Inst.rd, ret);
+    R->SetPC( ( R->GetX< uint64_t >( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) &
+              -2 );
+    R->SetX( Inst.rd, ret );
     return true;
   }
 
   // Conditional branches
-  static constexpr auto& beq  = bcond<std::equal_to>;
-  static constexpr auto& bne  = bcond<std::not_equal_to>;
-  static constexpr auto& blt  = bcond<std::less,          std::make_signed_t>;
-  static constexpr auto& bltu = bcond<std::less,          std::make_unsigned_t>;
-  static constexpr auto& bge  = bcond<std::greater_equal, std::make_signed_t>;
-  static constexpr auto& bgeu = bcond<std::greater_equal, std::make_unsigned_t>;
+  static constexpr auto& beq  = bcond< std::equal_to >;
+  static constexpr auto& bne  = bcond< std::not_equal_to >;
+  static constexpr auto& blt  = bcond< std::less, std::make_signed_t >;
+  static constexpr auto& bltu = bcond< std::less, std::make_unsigned_t >;
+  static constexpr auto& bge  = bcond< std::greater_equal, std::make_signed_t >;
+  static constexpr auto& bgeu =
+    bcond< std::greater_equal, std::make_unsigned_t >;
 
   // Loads
-  static constexpr auto& lb  = load<int8_t>;
-  static constexpr auto& lh  = load<int16_t>;
-  static constexpr auto& lw  = load<int32_t>;
-  static constexpr auto& lbu = load<uint8_t>;
-  static constexpr auto& lhu = load<uint16_t>;
+  static constexpr auto& lb    = load< int8_t >;
+  static constexpr auto& lh    = load< int16_t >;
+  static constexpr auto& lw    = load< int32_t >;
+  static constexpr auto& lbu   = load< uint8_t >;
+  static constexpr auto& lhu   = load< uint16_t >;
 
   // Stores
-  static constexpr auto& sb  = store<uint8_t>;
-  static constexpr auto& sh  = store<uint16_t>;
-  static constexpr auto& sw  = store<uint32_t>;
+  static constexpr auto& sb    = store< uint8_t >;
+  static constexpr auto& sh    = store< uint16_t >;
+  static constexpr auto& sw    = store< uint32_t >;
 
   // Arithmetic operators
-  static constexpr auto& add   = oper<std::plus,    OpKind::Reg>;
-  static constexpr auto& addi  = oper<std::plus,    OpKind::Imm>;
-  static constexpr auto& sub   = oper<std::minus,   OpKind::Reg>;
-  static constexpr auto& f_xor = oper<std::bit_xor, OpKind::Reg>;
-  static constexpr auto& xori  = oper<std::bit_xor, OpKind::Imm>;
-  static constexpr auto& f_or  = oper<std::bit_or,  OpKind::Reg>;
-  static constexpr auto& ori   = oper<std::bit_or,  OpKind::Imm>;
-  static constexpr auto& f_and = oper<std::bit_and, OpKind::Reg>;
-  static constexpr auto& andi  = oper<std::bit_and, OpKind::Imm>;
+  static constexpr auto& add   = oper< std::plus, OpKind::Reg >;
+  static constexpr auto& addi  = oper< std::plus, OpKind::Imm >;
+  static constexpr auto& sub   = oper< std::minus, OpKind::Reg >;
+  static constexpr auto& f_xor = oper< std::bit_xor, OpKind::Reg >;
+  static constexpr auto& xori  = oper< std::bit_xor, OpKind::Imm >;
+  static constexpr auto& f_or  = oper< std::bit_or, OpKind::Reg >;
+  static constexpr auto& ori   = oper< std::bit_or, OpKind::Imm >;
+  static constexpr auto& f_and = oper< std::bit_and, OpKind::Reg >;
+  static constexpr auto& andi  = oper< std::bit_and, OpKind::Imm >;
 
   // Boolean test and set operators
-  static constexpr auto& slt   = oper<std::less,    OpKind::Reg>;
-  static constexpr auto& slti  = oper<std::less,    OpKind::Imm>;
-  static constexpr auto& sltu  = oper<std::less,    OpKind::Reg, std::make_unsigned_t>;
-  static constexpr auto& sltiu = oper<std::less,    OpKind::Imm, std::make_unsigned_t>;
+  static constexpr auto& slt   = oper< std::less, OpKind::Reg >;
+  static constexpr auto& slti  = oper< std::less, OpKind::Imm >;
+  static constexpr auto& sltu =
+    oper< std::less, OpKind::Reg, std::make_unsigned_t >;
+  static constexpr auto& sltiu =
+    oper< std::less, OpKind::Imm, std::make_unsigned_t >;
 
   // Shift operators
-  static constexpr auto& slli = oper<ShiftLeft,     OpKind::Imm, std::make_unsigned_t>;
-  static constexpr auto& srli = oper<ShiftRight,    OpKind::Imm, std::make_unsigned_t>;
-  static constexpr auto& srai = oper<ShiftRight,    OpKind::Imm>;
-  static constexpr auto& sll  = oper<ShiftLeft,     OpKind::Reg, std::make_unsigned_t>;
-  static constexpr auto& srl  = oper<ShiftRight,    OpKind::Reg, std::make_unsigned_t>;
-  static constexpr auto& sra  = oper<ShiftRight,    OpKind::Reg>;
+  static constexpr auto& slli =
+    oper< ShiftLeft, OpKind::Imm, std::make_unsigned_t >;
+  static constexpr auto& srli =
+    oper< ShiftRight, OpKind::Imm, std::make_unsigned_t >;
+  static constexpr auto& srai = oper< ShiftRight, OpKind::Imm >;
+  static constexpr auto& sll =
+    oper< ShiftLeft, OpKind::Reg, std::make_unsigned_t >;
+  static constexpr auto& srl =
+    oper< ShiftRight, OpKind::Reg, std::make_unsigned_t >;
+  static constexpr auto& sra = oper< ShiftRight, OpKind::Reg >;
 
-  static bool fence(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    M->FenceMem(F->GetHartToExecID());
-    R->AdvancePC(Inst);
+  static bool
+    fence( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    M->FenceMem( F->GetHartToExecID() );
+    R->AdvancePC( Inst );
     return true;  // temporarily disabled
   }
 
-  static bool ecall(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst){
+  static bool
+    ecall( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     /*
      * In reality this should be getting/setting a LOT of bits inside the
      * CSRs however because we are only concerned with ecall right now it's
@@ -114,16 +129,16 @@ class RV32I : public RevExt {
      *       to worry about machine mode with the ecalls we are supporting
      */
 
-    R->SetSEPC();    // Save PC of instruction that raised exception
-    R->SetSTVAL(0);  // MTVAL/STVAL unused for ecall and is set to 0
-    R->SetSCAUSE(RevExceptionCause::ECALL_USER_MODE);
+    R->SetSEPC();      // Save PC of instruction that raised exception
+    R->SetSTVAL( 0 );  // MTVAL/STVAL unused for ecall and is set to 0
+    R->SetSCAUSE( RevExceptionCause::ECALL_USER_MODE );
 
     /*
      * Trap Handler is not implemented because we only have one exception
      * So we don't have to worry about setting `mtvec` reg
      */
 
-    R->AdvancePC(Inst);
+    R->AdvancePC( Inst );
     return true;
   }
 
@@ -141,23 +156,33 @@ class RV32I : public RevExt {
 
   // c.addi4spn %rd, $imm == addi %rd, x2, $imm
   // if Inst.imm == 0; this is a HINT instruction and is effectively a NOP
-  static bool caddi4spn(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    return (Inst.imm == 0 ? nop : addi)(F, R, M, Inst);
+  static bool
+    caddi4spn( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    return ( Inst.imm == 0 ? nop : addi )( F, R, M, Inst );
   }
 
   // c.mv and c.jr. If c.mv %rd == x0 it is a HINT instruction and is effectively a NOP
-  static bool CRFUNC_1000(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst){
-    return (Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add : jalr)(F, R, M, Inst);
+  static bool CRFUNC_1000( RevFeature*    F,
+                           RevRegFile*    R,
+                           RevMem*        M,
+                           const RevInst& Inst ) {
+    return ( Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add : jalr )( F, R, M, Inst );
   }
 
   // c.add, c.jalr and c.ebreak. If c.add %rd == x0 then it is a HINT instruction
-  static bool CRFUNC_1001(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst){
-    return (Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add : Inst.rs1 != 0 ? jalr : ebreak)(F, R, M, Inst);
+  static bool CRFUNC_1001( RevFeature*    F,
+                           RevRegFile*    R,
+                           RevMem*        M,
+                           const RevInst& Inst ) {
+    return ( Inst.rs2 != 0 ? Inst.rd == 0 ? nop : add :
+             Inst.rs1 != 0 ? jalr :
+                             ebreak )( F, R, M, Inst );
   }
 
   // c.addi16sp and c.lui
-  static bool CIFUNC(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    return (Inst.rd == 2 ? addi : lui)(F, R, M, Inst);
+  static bool
+    CIFUNC( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    return ( Inst.rd == 2 ? addi : lui )( F, R, M, Inst );
   }
 
   static constexpr auto& clwsp = lw;
@@ -270,17 +295,15 @@ class RV32I : public RevExt {
 
 public:
   /// RV32I: standard constructor
-  RV32I( RevFeature *Feature,
-         RevMem *RevMem,
-         SST::Output *Output )
-    : RevExt( "RV32I", Feature, RevMem, Output ) {
-    SetTable(std::move(RV32ITable));
-    SetCTable(std::move(RV32ICTable));
-    SetOTable(std::move(RV32ICOTable));
+  RV32I( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
+    RevExt( "RV32I", Feature, RevMem, Output ) {
+    SetTable( std::move( RV32ITable ) );
+    SetCTable( std::move( RV32ICTable ) );
+    SetOTable( std::move( RV32ICOTable ) );
   }
 
-}; // end class RV32I
+};  // end class RV32I
 
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif

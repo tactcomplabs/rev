@@ -19,19 +19,19 @@ int A[LOOP];
 int B[LOOP];
 int C[LOOP];
 
-int main(int argc, char **argv){
+int main( int argc, char **argv ) {
   int i = 0;
 
-  for( i=0; i<LOOP; i++ ){
+  for( i = 0; i < LOOP; i++ ) {
     A[i] = i;
     B[i] = i + i;
     C[i] = 0;
   }
 
-  for( i=0; i<LOOP; i++ ){
-    if( i%2 == 0 ){
+  for( i = 0; i < LOOP; i++ ) {
+    if( i % 2 == 0 ) {
       C[i] = A[i] + B[i];
-    }else{
+    } else {
       C[i] = A[i] * B[i];
     }
   }
