@@ -11,16 +11,17 @@
 #ifndef _SST_REVCPU_ZIFENCEI_H_
 #define _SST_REVCPU_ZIFENCEI_H_
 
-#include "../RevInstHelpers.h"
 #include "../RevExt.h"
+#include "../RevInstHelpers.h"
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
-class Zifencei : public RevExt{
+class Zifencei : public RevExt {
 
-  static bool fencei(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    M->FenceMem(F->GetHartToExecID());
-    R->AdvancePC(Inst);
+  static bool
+    fencei( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    M->FenceMem( F->GetHartToExecID() );
+    R->AdvancePC( Inst );
     return true;
   }
 
@@ -30,16 +31,14 @@ class Zifencei : public RevExt{
   };
   // clang-format on
 
-  public:
-  Zifencei( RevFeature *Feature,
-            RevMem *RevMem,
-            SST::Output *Output )
-    : RevExt( "Zifencei", Feature, RevMem, Output){
-    SetTable(std::move(ZifenceiTable));
+public:
+  Zifencei( RevFeature *Feature, RevMem *RevMem, SST::Output *Output ) :
+    RevExt( "Zifencei", Feature, RevMem, Output ) {
+    SetTable( std::move( ZifenceiTable ) );
   }
 
 };  // end class Zifencei
 
-}   // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif

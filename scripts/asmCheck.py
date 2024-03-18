@@ -7,15 +7,15 @@ parser.add_argument('-s', '--sstOut', dest='sstOutfile', required=True)
 args = parser.parse_args()
 
 try:
-  sst_out = open(args.sstOutfile, 'r') 
+  sst_out = open(args.sstOutfile, 'r')
 except:
   print("Cannot open file " + args.sstOutfile)
   exit(1)
 
 sstLines = sst_out.readlines()
- 
+
 try:
-  asm = open(args.asmFilename, 'r') 
+  asm = open(args.asmFilename, 'r')
 except:
   print("Cannot open file " + args.asmFilename)
   exit(1)

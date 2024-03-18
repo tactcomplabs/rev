@@ -11,45 +11,51 @@
 #ifndef _SST_REVCPU_RV64D_H_
 #define _SST_REVCPU_RV64D_H_
 
-#include "../RevInstHelpers.h"
 #include "../RevExt.h"
+#include "../RevInstHelpers.h"
 
-#include <vector>
 #include <cstring>
+#include <vector>
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
 class RV64D : public RevExt {
-  static constexpr auto& fcvtld  = CvtFpToInt<double,  int64_t>;
-  static constexpr auto& fcvtlud = CvtFpToInt<double, uint64_t>;
+  static constexpr auto &fcvtld  = CvtFpToInt< double, int64_t >;
+  static constexpr auto &fcvtlud = CvtFpToInt< double, uint64_t >;
 
-  static bool fcvtdl(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    R->SetFP(Inst.rd, static_cast<double>(R->GetX<int64_t>(Inst.rs1)));
-    R->AdvancePC(Inst);
+  static bool
+    fcvtdl( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    R->SetFP( Inst.rd,
+              static_cast< double >( R->GetX< int64_t >( Inst.rs1 ) ) );
+    R->AdvancePC( Inst );
     return true;
   }
 
-  static bool fcvtdlu(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    R->SetFP(Inst.rd, static_cast<double>(R->GetX<uint64_t>(Inst.rs1)));
-    R->AdvancePC(Inst);
+  static bool
+    fcvtdlu( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    R->SetFP( Inst.rd,
+              static_cast< double >( R->GetX< uint64_t >( Inst.rs1 ) ) );
+    R->AdvancePC( Inst );
     return true;
   }
 
-  static bool fmvxd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
+  static bool
+    fmvxd( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
     uint64_t u64;
-    double fp = R->GetFP<double, true>(Inst.rs1);
-    memcpy(&u64, &fp, sizeof(u64));
-    R->SetX(Inst.rd, u64);
-    R->AdvancePC(Inst);
+    double   fp = R->GetFP< double, true >( Inst.rs1 );
+    memcpy( &u64, &fp, sizeof( u64 ) );
+    R->SetX( Inst.rd, u64 );
+    R->AdvancePC( Inst );
     return true;
   }
 
-  static bool fmvdx(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    uint64_t u64 = R->GetX<uint64_t>(Inst.rs1);
-    double fp;
-    memcpy(&fp, &u64, sizeof(fp));
-    R->SetFP(Inst.rd, fp);
-    R->AdvancePC(Inst);
+  static bool
+    fmvdx( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    uint64_t u64 = R->GetX< uint64_t >( Inst.rs1 );
+    double   fp;
+    memcpy( &fp, &u64, sizeof( fp ) );
+    R->SetFP( Inst.rd, fp );
+    R->AdvancePC( Inst );
     return true;
   }
 
@@ -59,10 +65,10 @@ class RV64D : public RevExt {
   //
   // ----------------------------------------------------------------------
   struct Rev64DInstDefaults : RevInstDefaults {
-    Rev64DInstDefaults(){
-      SetOpcode(0b1010011);
-      Setrs2Class(RevRegClass::RegUNKNOWN);
-      SetRaiseFPE(true);
+    Rev64DInstDefaults() {
+      SetOpcode( 0b1010011 );
+      Setrs2Class( RevRegClass::RegUNKNOWN );
+      SetRaiseFPE( true );
     }
   };
 
@@ -79,14 +85,12 @@ class RV64D : public RevExt {
 
 public:
   /// RV364D: standard constructor
-  RV64D( RevFeature *Feature,
-         RevMem *RevMem,
-         SST::Output *Output )
-    : RevExt( "RV64D", Feature, RevMem, Output) {
-    SetTable(std::move(RV64DTable));
+  RV64D( RevFeature *Feature, RevMem *RevMem, SST::Output *Output ) :
+    RevExt( "RV64D", Feature, RevMem, Output ) {
+    SetTable( std::move( RV64DTable ) );
   }
-}; // end class RV32I
+};  // end class RV32I
 
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif

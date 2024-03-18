@@ -11,11 +11,11 @@
  *
  */
 
+#include "isa_test_macros.h"
 #include <stdlib.h>
 #include <unistd.h>
-#include "isa_test_macros.h"
 
-int main(int argc, char **argv){
+int main( int argc, char **argv ) {
 
   // #-------------------------------------------------------------
   // # Arithmetic tests
@@ -27,10 +27,10 @@ int main(int argc, char **argv){
   float q = 0.0f;
   float x = 0.0f;
 
-  a = 2.5f;
-  b = 1.0f;
-  q = a + b;
-  x = 3.5f;
+  a       = 2.5f;
+  b       = 1.0f;
+  q       = a + b;
+  x       = 3.5f;
   assert( x == q );
 
   a = 2.5f;

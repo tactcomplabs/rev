@@ -11,16 +11,15 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdint.h>
 #include "../../common/include/PanAddr.h"
+#include <stdint.h>
+#include <stdlib.h>
 
-
-int main(int argc, char **argv){
-  uint64_t *ptr  = (uint64_t *)(_PAN_COMPLETION_ADDR_);
+int main( int argc, char **argv ) {
+  uint64_t         *ptr   = (uint64_t *) ( _PAN_COMPLETION_ADDR_ );
   volatile uint64_t value = *ptr;
 
-  while( value == 0x00ull){
+  while( value == 0x00ull ) {
     value = *ptr;
   }
 

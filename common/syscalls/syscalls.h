@@ -11,12 +11,11 @@
 #ifndef _SYSCALLS_H_
 #define _SYSCALLS_H_
 
-#include <stdint.h>
+#include <limits.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <limits.h>
-#include <stdarg.h>
 #include <time.h>
 
 // The following is required to build on MacOS
@@ -27,25 +26,25 @@
 // try adding another type from this file to the
 // ifdef
 #ifdef __APPLE__
-    #include <sys/signal.h>
-    #include <sys/unistd.h>
+#include <sys/signal.h>
+#include <sys/unistd.h>
 #else
-    union sigval {
-        int sival_int;
-        void *sival_ptr;
-    };
+union sigval {
+  int   sival_int;
+  void *sival_ptr;
+};
 
-    typedef struct{
-        int si_signo;
-        int si_code;
-        union sigval si_value;
-        int si_errno;
-        pid_t si_pid;
-        uid_t si_uid;
-        void *si_addr;
-        int si_status;
-        int si_band;
-    }siginfo_t;
+typedef struct {
+  int          si_signo;
+  int          si_code;
+  union sigval si_value;
+  int          si_errno;
+  pid_t        si_pid;
+  uid_t        si_uid;
+  void        *si_addr;
+  int          si_status;
+  int          si_band;
+} siginfo_t;
 #endif
 
 // Clone Flags
@@ -252,15 +251,16 @@ struct mount_attr;
 struct landlock_ruleset_attr;
 
 
-typedef uint32_t rwf_t;
+typedef uint32_t      rwf_t;
 typedef unsigned long aio_context_t;
-typedef uint16_t aio_key;
-typedef uint16_t aio_rw_flags;
-typedef int32_t key_serial_t; /* key handle serial number */
-typedef uint32_t key_perm_t; /* key handle permissions mask */
+typedef uint16_t      aio_key;
+typedef uint16_t      aio_rw_flags;
+typedef int32_t       key_serial_t; /* key handle serial number */
+typedef uint32_t      key_perm_t;   /* key handle permissions mask */
+
 typedef struct __user_cap_header_struct {
   uint32_t version;
-  int pid;
+  int      pid;
 } *cap_user_header_t;
 
 #define __kernel_timespec timespec
@@ -272,67 +272,66 @@ typedef struct __user_cap_data_struct {
 } *cap_user_data_t;
 
 /* To optimize the implementation one can use the following struct.  */
-struct aioinit
-  {
-    int aio_threads;            /* Maximum number of threads.  */
-    int aio_num;                /* Number of expected simultaneous requests.  */
-    int aio_locks;              /* Not used.  */
-    int aio_usedba;             /* Not used.  */
-    int aio_debug;              /* Not used.  */
-    int aio_numusers;           /* Not used.  */
-    int aio_idle_time;          /* Number of seconds before idle thread terminates.  */
-    int aio_reserved;
-  };
+struct aioinit {
+  int aio_threads;   /* Maximum number of threads.  */
+  int aio_num;       /* Number of expected simultaneous requests.  */
+  int aio_locks;     /* Not used.  */
+  int aio_usedba;    /* Not used.  */
+  int aio_debug;     /* Not used.  */
+  int aio_numusers;  /* Not used.  */
+  int aio_idle_time; /* Number of seconds before idle thread terminates.  */
+  int aio_reserved;
+};
 
 typedef unsigned short umode_t;
 typedef unsigned short qid_t;
-typedef off_t loff_t;
+typedef off_t          loff_t;
+
 struct clone_args {
-    int flags;        /* Flags bit mask */
-    int pidfd;        /* Where to store PID file descriptor (int *) */
-    int child_tid;    /* Where to store child TID, in child's memory (pid_t *) */
-    int parent_tid;   /* Where to store child TID, in parent's memory (pid_t *) */
-    int exit_signal;  /* Signal to deliver to parent on child termination */
-    int stack;        /* Pointer to lowest byte of stack */
-    int stack_size;   /* Size of stack */
-    int tls;          /* Location of new TLS */
-    int set_tid;      /* Pointer to a pid_t array (since Linux 5.5) */
-    int set_tid_size; /* Number of elements in set_tid (since Linux 5.5) */
-    int cgroup;       /* File descriptor for target cgroup of child (since Linux 5.7) */
+  int flags;        /* Flags bit mask */
+  int pidfd;        /* Where to store PID file descriptor (int *) */
+  int child_tid;    /* Where to store child TID, in child's memory (pid_t *) */
+  int parent_tid;   /* Where to store child TID, in parent's memory (pid_t *) */
+  int exit_signal;  /* Signal to deliver to parent on child termination */
+  int stack;        /* Pointer to lowest byte of stack */
+  int stack_size;   /* Size of stack */
+  int tls;          /* Location of new TLS */
+  int set_tid;      /* Pointer to a pid_t array (since Linux 5.5) */
+  int set_tid_size; /* Number of elements in set_tid (since Linux 5.5) */
+  int cgroup; /* File descriptor for target cgroup of child (since Linux 5.7) */
 };
 
 /* read() from /dev/aio returns these structures. */
 struct io_event {
-        uint64_t        data;           /* the data field from the iocb */
-        uint64_t        obj;            /* what iocb this event came from */
-        int64_t         res;            /* result code for this event */
-        int64_t         res2;           /* secondary result */
+  uint64_t data; /* the data field from the iocb */
+  uint64_t obj;  /* what iocb this event came from */
+  int64_t  res;  /* result code for this event */
+  int64_t  res2; /* secondary result */
 };
 
-
 struct iocb {
-   uint64_t   aio_data;
-   uint16_t   aio_key;
-   uint16_t   aio_rw_flags;
-   uint16_t   aio_lio_opcode;
-   int16_t    aio_reqprio;
-   uint32_t   aio_fildes;
-   uint64_t   aio_buf;
-   uint64_t   aio_nbytes;
-   int64_t    aio_offset;
-   uint64_t   aio_reserved2;
-   uint32_t   aio_flags;
-   uint32_t   aio_resfd;
+  uint64_t aio_data;
+  uint16_t aio_key;
+  uint16_t aio_rw_flags;
+  uint16_t aio_lio_opcode;
+  int16_t  aio_reqprio;
+  uint32_t aio_fildes;
+  uint64_t aio_buf;
+  uint64_t aio_nbytes;
+  int64_t  aio_offset;
+  uint64_t aio_reserved2;
+  uint32_t aio_flags;
+  uint32_t aio_resfd;
 };
 
 struct rev_cpuinfo {
-   uint32_t cores;
-   uint32_t harts_per_core;
+  uint32_t cores;
+  uint32_t harts_per_core;
 };
 
 struct rev_stats {
-   uint64_t cycles;
-   uint64_t instructions;
+  uint64_t cycles;
+  uint64_t instructions;
 };
 
 #ifndef SYSCALL_TYPES_ONLY
@@ -660,6 +659,6 @@ REV_SYSCALL( 1000, int rev_pthread_create( rev_pthread_t* thread, void* attr, vo
 REV_SYSCALL( 1001, int rev_pthread_join( rev_pthread_t thread ) );
 // clang-format on
 
-#endif //SYSCALL_TYPES_ONLY
+#endif  //SYSCALL_TYPES_ONLY
 
 #endif

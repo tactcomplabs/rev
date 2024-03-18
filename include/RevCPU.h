@@ -12,37 +12,36 @@
 #define _SST_REVCPU_H_
 
 // -- Standard Headers
-#include <memory>
-#include <vector>
-#include <queue>
-#include <tuple>
+#include <functional>
 #include <list>
+#include <memory>
+#include <queue>
+#include <random>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <random>
-#include <utility>
 #include <string>
+#include <time.h>
+#include <tuple>
+#include <utility>
 #include <vector>
-#include <functional>
 
 // -- SST Headers
 #include "SST.h"
 
 // -- Rev Headers
-#include "RevOpts.h"
+#include "RevCoProc.h"
+#include "RevLoader.h"
 #include "RevMem.h"
 #include "RevMemCtrl.h"
-#include "RevLoader.h"
-#include "RevProc.h"
-#include "RevThread.h"
 #include "RevNIC.h"
-#include "RevCoProc.h"
+#include "RevOpts.h"
+#include "RevProc.h"
 #include "RevRand.h"
+#include "RevThread.h"
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
-class RevCPU : public SST::Component{
+class RevCPU : public SST::Component {
 
 public:
   /// RevCPU: top-level SST component constructor
@@ -67,14 +66,12 @@ public:
   // RevCPU Component Registration Data
   // -------------------------------------------------------
   /// RevCPU: Register the component with the SST core
-  SST_ELI_REGISTER_COMPONENT(
-    RevCPU,                             // component class
-    "revcpu",                           // component library
-    "RevCPU",                           // component name
-    SST_ELI_ELEMENT_VERSION( 1, 0, 0 ),
-    "RISC-V SST CPU",
-    COMPONENT_CATEGORY_PROCESSOR
-    )
+  SST_ELI_REGISTER_COMPONENT( RevCPU,    // component class
+                              "revcpu",  // component library
+                              "RevCPU",  // component name
+                              SST_ELI_ELEMENT_VERSION( 1, 0, 0 ),
+                              "RISC-V SST CPU",
+                              COMPONENT_CATEGORY_PROCESSOR )
 
   // -------------------------------------------------------
   // RevCPU Component Parameter Data
@@ -224,17 +221,18 @@ private:
   // clang-format on
   // Initializes a RevThread object.
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
-  void InitThread(std::unique_ptr<RevThread>&& ThreadToInit);
+  void InitThread( std::unique_ptr< RevThread >&& ThreadToInit );
 
   // Initializes the main thread
-  void InitMainThread(uint32_t MainThreadID, uint64_t StartAddr);
+  void InitMainThread( uint32_t MainThreadID, uint64_t StartAddr );
 
   // Adds Thread with ThreadID to AssignedThreads vector for ProcID
   // - Handles updating LSQueue & MarkLoadComplete function pointers
-  void AssignThread(std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID);
+  void AssignThread( std::unique_ptr< RevThread >&& ThreadToAssign,
+                     unsigned                       ProcID );
 
   // Sets up arguments for a thread with a given ID and feature set.
-  void SetupArgs(const std::unique_ptr<RevRegFile>& RegFile);
+  void SetupArgs( const std::unique_ptr< RevRegFile >& RegFile );
 
   // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();
@@ -242,71 +240,78 @@ private:
   // Checks core w/ ProcID to see if it has any available harts to assign work to
   // if it does and there is work to assign (ie. ThreadQueue is not empty)
   // assign it and enable the processor if not already enabled.
-  void UpdateThreadAssignments(uint32_t ProcID);
+  void UpdateThreadAssignments( uint32_t ProcID );
 
   // Checks for state changes in the threads of a given processor index 'ProcID'
   // and handle appropriately
-  void HandleThreadStateChangesForProc(uint32_t ProcID);
+  void HandleThreadStateChangesForProc( uint32_t ProcID );
 
   // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
   // it does this by seeing if a given thread's WaitingOnTID has completed
-  bool ThreadCanProceed(const std::unique_ptr<RevThread>& Thread);
+  bool ThreadCanProceed( const std::unique_ptr< RevThread >& Thread );
 
   // vector of Threads which are ready to be scheduled
-  std::vector<std::unique_ptr<RevThread>> ReadyThreads = {};
+  std::vector< std::unique_ptr< RevThread > > ReadyThreads   = {};
 
   // List of Threads that are currently blocked (waiting for their WaitingOnTID to be a key in CompletedThreads).
-  std::list<std::unique_ptr<RevThread>> BlockedThreads = {};
+  std::list< std::unique_ptr< RevThread > >   BlockedThreads = {};
 
   // Set of Thread IDs and their corresponding RevThread that have completed their execution on this RevCPU
-  std::unordered_map<uint32_t, std::unique_ptr<RevThread>> CompletedThreads = {};
+  std::unordered_map< uint32_t, std::unique_ptr< RevThread > >
+           CompletedThreads = {};
 
   // Generates a new Thread ID using the RNG.
-  uint32_t GetNewThreadID() { return RevRand(0, UINT32_MAX); }
+  uint32_t GetNewThreadID() {
+    return RevRand( 0, UINT32_MAX );
+  }
 
-  uint8_t PrivTag;                    ///< RevCPU: private tag locator
-  uint32_t LToken;                    ///< RevCPU: token identifier for PAN Test
+  uint8_t  PrivTag;  ///< RevCPU: private tag locator
+  uint32_t LToken;   ///< RevCPU: token identifier for PAN Test
 
-  int address;                        ///< RevCPU: local network address
+  int      address;  ///< RevCPU: local network address
 
-  unsigned fault_width;               ///< RevCPU: the width (in bits) for target faults
-  int64_t fault_range;                ///< RevCPU: the range of cycles to inject the fault
-  int64_t FaultCntr;                  ///< RevCPU: the fault counter
+  unsigned fault_width;  ///< RevCPU: the width (in bits) for target faults
+  int64_t  fault_range;  ///< RevCPU: the range of cycles to inject the fault
+  int64_t  FaultCntr;    ///< RevCPU: the fault counter
 
-  uint64_t PrevAddr;                  ///< RevCPU: previous address for handling PAN messages
+  uint64_t PrevAddr;  ///< RevCPU: previous address for handling PAN messages
 
-  bool EnableNIC;                     ///< RevCPU: Flag for enabling the NIC
-  bool EnableMemH;                    ///< RevCPU: Enable memHierarchy
-  bool EnableCoProc;                  ///< RevCPU: Enable a co-processor attached to all cores
+  bool     EnableNIC;   ///< RevCPU: Flag for enabling the NIC
+  bool     EnableMemH;  ///< RevCPU: Enable memHierarchy
+  bool EnableCoProc;    ///< RevCPU: Enable a co-processor attached to all cores
 
-  bool EnableFaults;                  ///< RevCPU: Enable fault injection logic
-  bool EnableCrackFaults;             ///< RevCPU: Enable Crack+Decode Faults
-  bool EnableMemFaults;               ///< RevCPU: Enable memory faults (bit flips)
-  bool EnableRegFaults;               ///< RevCPU: Enable register faults
-  bool EnableALUFaults;               ///< RevCPU: Enable ALU faults
+  bool EnableFaults;       ///< RevCPU: Enable fault injection logic
+  bool EnableCrackFaults;  ///< RevCPU: Enable Crack+Decode Faults
+  bool EnableMemFaults;    ///< RevCPU: Enable memory faults (bit flips)
+  bool EnableRegFaults;    ///< RevCPU: Enable register faults
+  bool EnableALUFaults;    ///< RevCPU: Enable ALU faults
 
-  bool DisableCoprocClock;            ///< RevCPU: Disables manual coproc clocking
+  bool DisableCoprocClock;  ///< RevCPU: Disables manual coproc clocking
 
-  TimeConverter* timeConverter;       ///< RevCPU: SST time conversion handler
-  SST::Output output;                 ///< RevCPU: SST output handler
+  TimeConverter* timeConverter;  ///< RevCPU: SST time conversion handler
+  SST::Output    output;         ///< RevCPU: SST output handler
 
-  nicAPI *Nic;                        ///< RevCPU: Network interface controller
-  RevMemCtrl *Ctrl;                   ///< RevCPU: Rev memory controller
+  nicAPI*        Nic;   ///< RevCPU: Network interface controller
+  RevMemCtrl*    Ctrl;  ///< RevCPU: Rev memory controller
 
-  std::vector<RevCoProc*> CoProcs;    ///< RevCPU: CoProcessor attached to Rev
+  std::vector< RevCoProc* > CoProcs;  ///< RevCPU: CoProcessor attached to Rev
 
-  SST::Clock::Handler<RevCPU>* ClockHandler;  ///< RevCPU: Clock Handler
+  SST::Clock::Handler< RevCPU >* ClockHandler;  ///< RevCPU: Clock Handler
 
-  std::queue<std::pair<uint32_t, char *>> ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
-  std::list<std::pair<uint8_t, int>> TrackTags;      ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>
-  std::vector<std::tuple<uint8_t,
-                         uint64_t,
-                         uint32_t>> TrackGets;      ///< RevCPU: tracks the outstanding get messages; tuple<Tag, Addr, Sz>
-  std::vector<std::tuple<uint8_t,
-                         uint32_t,
-                         unsigned,
-                         int,
-                         uint64_t>> ReadQueue;      ///< RevCPU: outgoing memory read queue
+  std::queue< std::pair< uint32_t, char* > >
+    ZeroRqst;  ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
+  std::list< std::pair< uint8_t, int > >
+    TrackTags;  ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>
+  std::vector< std::tuple< uint8_t,
+                           uint64_t,
+                           uint32_t > >
+    TrackGets;  ///< RevCPU: tracks the outstanding get messages; tuple<Tag, Addr, Sz>
+  std::vector< std::tuple< uint8_t,
+                           uint32_t,
+                           unsigned,
+                           int,
+                           uint64_t > >
+                         ReadQueue;  ///< RevCPU: outgoing memory read queue
   ///<         - Tag
   ///<         - Size
   ///<         - Cost
@@ -316,107 +321,107 @@ private:
   //-------------------------------------------------------
   // -- STATISTICS
   //-------------------------------------------------------
-  Statistic<uint64_t>* SyncGetSend;
-  Statistic<uint64_t>* SyncPutSend;
-  Statistic<uint64_t>* AsyncGetSend;
-  Statistic<uint64_t>* AsyncPutSend;
-  Statistic<uint64_t>* SyncStreamGetSend;
-  Statistic<uint64_t>* SyncStreamPutSend;
-  Statistic<uint64_t>* AsyncStreamGetSend;
-  Statistic<uint64_t>* AsyncStreamPutSend;
-  Statistic<uint64_t>* ExecSend;
-  Statistic<uint64_t>* StatusSend;
-  Statistic<uint64_t>* CancelSend;
-  Statistic<uint64_t>* ReserveSend;
-  Statistic<uint64_t>* RevokeSend;
-  Statistic<uint64_t>* HaltSend;
-  Statistic<uint64_t>* ResumeSend;
-  Statistic<uint64_t>* ReadRegSend;
-  Statistic<uint64_t>* WriteRegSend;
-  Statistic<uint64_t>* SingleStepSend;
-  Statistic<uint64_t>* SetFutureSend;
-  Statistic<uint64_t>* RevokeFutureSend;
-  Statistic<uint64_t>* StatusFutureSend;
-  Statistic<uint64_t>* SuccessSend;
-  Statistic<uint64_t>* FailedSend;
-  Statistic<uint64_t>* BOTWSend;
-  Statistic<uint64_t>* SyncGetRecv;
-  Statistic<uint64_t>* SyncPutRecv;
-  Statistic<uint64_t>* AsyncGetRecv;
-  Statistic<uint64_t>* AsyncPutRecv;
-  Statistic<uint64_t>* SyncStreamGetRecv;
-  Statistic<uint64_t>* SyncStreamPutRecv;
-  Statistic<uint64_t>* AsyncStreamGetRecv;
-  Statistic<uint64_t>* AsyncStreamPutRecv;
-  Statistic<uint64_t>* ExecRecv;
-  Statistic<uint64_t>* StatusRecv;
-  Statistic<uint64_t>* CancelRecv;
-  Statistic<uint64_t>* ReserveRecv;
-  Statistic<uint64_t>* RevokeRecv;
-  Statistic<uint64_t>* HaltRecv;
-  Statistic<uint64_t>* ResumeRecv;
-  Statistic<uint64_t>* ReadRegRecv;
-  Statistic<uint64_t>* WriteRegRecv;
-  Statistic<uint64_t>* SingleStepRecv;
-  Statistic<uint64_t>* SetFutureRecv;
-  Statistic<uint64_t>* RevokeFutureRecv;
-  Statistic<uint64_t>* StatusFutureRecv;
-  Statistic<uint64_t>* SuccessRecv;
-  Statistic<uint64_t>* FailedRecv;
-  Statistic<uint64_t>* BOTWRecv;
+  Statistic< uint64_t >* SyncGetSend;
+  Statistic< uint64_t >* SyncPutSend;
+  Statistic< uint64_t >* AsyncGetSend;
+  Statistic< uint64_t >* AsyncPutSend;
+  Statistic< uint64_t >* SyncStreamGetSend;
+  Statistic< uint64_t >* SyncStreamPutSend;
+  Statistic< uint64_t >* AsyncStreamGetSend;
+  Statistic< uint64_t >* AsyncStreamPutSend;
+  Statistic< uint64_t >* ExecSend;
+  Statistic< uint64_t >* StatusSend;
+  Statistic< uint64_t >* CancelSend;
+  Statistic< uint64_t >* ReserveSend;
+  Statistic< uint64_t >* RevokeSend;
+  Statistic< uint64_t >* HaltSend;
+  Statistic< uint64_t >* ResumeSend;
+  Statistic< uint64_t >* ReadRegSend;
+  Statistic< uint64_t >* WriteRegSend;
+  Statistic< uint64_t >* SingleStepSend;
+  Statistic< uint64_t >* SetFutureSend;
+  Statistic< uint64_t >* RevokeFutureSend;
+  Statistic< uint64_t >* StatusFutureSend;
+  Statistic< uint64_t >* SuccessSend;
+  Statistic< uint64_t >* FailedSend;
+  Statistic< uint64_t >* BOTWSend;
+  Statistic< uint64_t >* SyncGetRecv;
+  Statistic< uint64_t >* SyncPutRecv;
+  Statistic< uint64_t >* AsyncGetRecv;
+  Statistic< uint64_t >* AsyncPutRecv;
+  Statistic< uint64_t >* SyncStreamGetRecv;
+  Statistic< uint64_t >* SyncStreamPutRecv;
+  Statistic< uint64_t >* AsyncStreamGetRecv;
+  Statistic< uint64_t >* AsyncStreamPutRecv;
+  Statistic< uint64_t >* ExecRecv;
+  Statistic< uint64_t >* StatusRecv;
+  Statistic< uint64_t >* CancelRecv;
+  Statistic< uint64_t >* ReserveRecv;
+  Statistic< uint64_t >* RevokeRecv;
+  Statistic< uint64_t >* HaltRecv;
+  Statistic< uint64_t >* ResumeRecv;
+  Statistic< uint64_t >* ReadRegRecv;
+  Statistic< uint64_t >* WriteRegRecv;
+  Statistic< uint64_t >* SingleStepRecv;
+  Statistic< uint64_t >* SetFutureRecv;
+  Statistic< uint64_t >* RevokeFutureRecv;
+  Statistic< uint64_t >* StatusFutureRecv;
+  Statistic< uint64_t >* SuccessRecv;
+  Statistic< uint64_t >* FailedRecv;
+  Statistic< uint64_t >* BOTWRecv;
   // ----- Per Core Statistics
-  std::vector<Statistic<uint64_t>*> TotalCycles;
-  std::vector<Statistic<uint64_t>*> CyclesWithIssue;
-  std::vector<Statistic<uint64_t>*> FloatsRead;
-  std::vector<Statistic<uint64_t>*> FloatsWritten;
-  std::vector<Statistic<uint64_t>*> DoublesRead;
-  std::vector<Statistic<uint64_t>*> DoublesWritten;
-  std::vector<Statistic<uint64_t>*> BytesRead;
-  std::vector<Statistic<uint64_t>*> BytesWritten;
-  std::vector<Statistic<uint64_t>*> FloatsExec;
-  std::vector<Statistic<uint64_t>*> TLBMissesPerCore;
-  std::vector<Statistic<uint64_t>*> TLBHitsPerCore;
+  std::vector< Statistic< uint64_t >* > TotalCycles;
+  std::vector< Statistic< uint64_t >* > CyclesWithIssue;
+  std::vector< Statistic< uint64_t >* > FloatsRead;
+  std::vector< Statistic< uint64_t >* > FloatsWritten;
+  std::vector< Statistic< uint64_t >* > DoublesRead;
+  std::vector< Statistic< uint64_t >* > DoublesWritten;
+  std::vector< Statistic< uint64_t >* > BytesRead;
+  std::vector< Statistic< uint64_t >* > BytesWritten;
+  std::vector< Statistic< uint64_t >* > FloatsExec;
+  std::vector< Statistic< uint64_t >* > TLBMissesPerCore;
+  std::vector< Statistic< uint64_t >* > TLBHitsPerCore;
 
   //-------------------------------------------------------
   // -- FUNCTIONS
   //-------------------------------------------------------
 
   /// RevCPU: decode the fault codes
-  void DecodeFaultCodes(const std::vector<std::string>& faults);
+  void    DecodeFaultCodes( const std::vector< std::string >& faults );
 
   /// RevCPU:: decode the fault width
-  void DecodeFaultWidth(const std::string& width);
+  void    DecodeFaultWidth( const std::string& width );
 
   /// RevCPU: RevNIC message handler
-  void handleMessage(SST::Event *ev);
+  void    handleMessage( SST::Event* ev );
 
   /// RevCPU: Creates a unique tag for this message
   uint8_t createTag();
 
   /// RevCPU: Registers all the internal statistics
-  void registerStatistics();
+  void    registerStatistics();
 
   /// RevCPU: handle fault injection
-  void HandleFaultInjection(SST::Cycle_t currentCycle);
+  void    HandleFaultInjection( SST::Cycle_t currentCycle );
 
   /// RevCPU: handle crack+decode fault injection
-  void HandleCrackFault(SST::Cycle_t currentCycle);
+  void    HandleCrackFault( SST::Cycle_t currentCycle );
 
   /// RevCPU: handle memory fault
-  void HandleMemFault(SST::Cycle_t currentCycle);
+  void    HandleMemFault( SST::Cycle_t currentCycle );
 
   /// RevCPU: handle register fault
-  void HandleRegFault(SST::Cycle_t currentCycle);
+  void    HandleRegFault( SST::Cycle_t currentCycle );
 
   /// RevCPU: handle ALU fault
-  void HandleALUFault(SST::Cycle_t currentCycle);
+  void    HandleALUFault( SST::Cycle_t currentCycle );
 
   /// RevCPU: updates sst statistics on a per core basis
-  void UpdateCoreStatistics(unsigned coreNum);
+  void    UpdateCoreStatistics( unsigned coreNum );
 
-}; // class RevCPU
+};  // class RevCPU
 
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif
 

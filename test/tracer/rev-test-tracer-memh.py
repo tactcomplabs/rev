@@ -49,7 +49,7 @@ for i in range(0, sim_nodes):
         "startAddr" : "[CORES:0x00000000]",           # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : rev_exe,                          # Target executable
-        "enable_memH" : 1,                            # Enable memHierarchy support    
+        "enable_memH" : 1,                            # Enable memHierarchy support
         "splash" : 1,                                 # Display the splash message
         # "trcOp": "slli",                            # base command for tracing [default: slli]
         # "trcLimit": 0,                              # Maximum number of trace lines [default: 0]

@@ -11,25 +11,28 @@
 #ifndef _SST_REVCPU_RV64M_H_
 #define _SST_REVCPU_RV64M_H_
 
-#include "../RevInstHelpers.h"
 #include "../RevExt.h"
+#include "../RevInstHelpers.h"
 
-#include <vector>
 #include <limits>
+#include <vector>
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
-class RV64M : public RevExt{
+class RV64M : public RevExt {
   // 32-bit Multiplication
-  static constexpr auto& mulw  = oper<std::multiplies, OpKind::Reg, std::make_unsigned_t, true>;
+  static constexpr auto& mulw =
+    oper< std::multiplies, OpKind::Reg, std::make_unsigned_t, true >;
 
   // 32-bit Division
-  static constexpr auto& divw  = divrem<DivRem::Div, std::make_signed_t,   true>;
-  static constexpr auto& divuw = divrem<DivRem::Div, std::make_unsigned_t, true>;
+  static constexpr auto& divw = divrem< DivRem::Div, std::make_signed_t, true >;
+  static constexpr auto& divuw =
+    divrem< DivRem::Div, std::make_unsigned_t, true >;
 
   // 32-bit Remainder
-  static constexpr auto& remw  = divrem<DivRem::Rem, std::make_signed_t,   true>;
-  static constexpr auto& remuw = divrem<DivRem::Rem, std::make_unsigned_t, true>;
+  static constexpr auto& remw = divrem< DivRem::Rem, std::make_signed_t, true >;
+  static constexpr auto& remuw =
+    divrem< DivRem::Rem, std::make_unsigned_t, true >;
 
   // ----------------------------------------------------------------------
   //
@@ -37,9 +40,9 @@ class RV64M : public RevExt{
   //
   // ----------------------------------------------------------------------
   struct Rev64MInstDefaults : RevInstDefaults {
-    Rev64MInstDefaults(){
-      SetOpcode(0b0111011);
-      SetFunct2or7(0b0000001);
+    Rev64MInstDefaults() {
+      SetOpcode( 0b0111011 );
+      SetFunct2or7( 0b0000001 );
     }
   };
 
@@ -55,14 +58,12 @@ class RV64M : public RevExt{
 
 public:
   /// RV64M: standard constructor
-  RV64M( RevFeature *Feature,
-         RevMem *RevMem,
-         SST::Output *Output )
-    : RevExt( "RV64M", Feature, RevMem, Output) {
-    SetTable(std::move(RV64MTable));
+  RV64M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
+    RevExt( "RV64M", Feature, RevMem, Output ) {
+    SetTable( std::move( RV64MTable ) );
   }
-}; // end class RV32I
+};  // end class RV32I
 
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif
