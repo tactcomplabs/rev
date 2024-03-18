@@ -28,11 +28,11 @@ class RevPrefetcher {
 public:
   /// RevPrefetcher: constructor
   RevPrefetcher(
-    RevMem                                                        *Mem,
-    RevFeature                                                    *Feature,
+    RevMem*                                                        Mem,
+    RevFeature*                                                    Feature,
     unsigned                                                       Depth,
     std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > lsq,
-    std::function< void( const MemReq & ) >                        func ) :
+    std::function< void( const MemReq& ) >                         func ) :
     mem( Mem ),
     feature( Feature ), depth( Depth ), LSQueue( lsq ),
     MarkLoadAsComplete( func ), OutstandingFetchQ() {
@@ -42,34 +42,34 @@ public:
   ~RevPrefetcher() = default;
 
   /// RevPrefetcher: fetch the next instruction
-  bool InstFetch( uint64_t Addr, bool &Fetched, uint32_t &Inst );
+  bool InstFetch( uint64_t Addr, bool& Fetched, uint32_t& Inst );
 
   /// RevPrefetcher: determines in the target instruction is already cached in a stream
   bool IsAvail( uint64_t Addr );
 
   /// RevPrefetcher: Mark Instruction fill as complete
-  void MarkInstructionLoadComplete( const MemReq &req );
+  void MarkInstructionLoadComplete( const MemReq& req );
 
 private:
-  RevMem     *mem;      ///< RevMem object
-  RevFeature *feature;  ///< RevFeature object
+  RevMem*     mem;      ///< RevMem object
+  RevFeature* feature;  ///< RevFeature object
   unsigned    depth;    ///< Depth of each prefetcher stream
   std::vector< uint64_t >
     baseAddr;  ///< Vector of base addresses for each stream
   std::vector< std::vector< uint32_t > >
     iStack;  ///< Vector of instruction vectors
   std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > LSQueue;
-  std::function< void( const MemReq & ) > MarkLoadAsComplete;
-  std::vector< MemReq >                   OutstandingFetchQ;
+  std::function< void( const MemReq& ) > MarkLoadAsComplete;
+  std::vector< MemReq >                  OutstandingFetchQ;
 
   /// fills a missed stream cache instruction
-  void                                    Fill( uint64_t Addr );
+  void                                   Fill( uint64_t Addr );
 
   /// deletes the target stream buffer
-  void                                    DeleteStream( size_t i );
+  void                                   DeleteStream( size_t i );
 
   /// attempts to fetch the upper half of a 32bit word of an unaligned base address
-  bool FetchUpper( uint64_t Addr, bool &Fetched, uint32_t &UInst );
+  bool FetchUpper( uint64_t Addr, bool& Fetched, uint32_t& UInst );
 };
 
 }  // namespace SST::RevCPU

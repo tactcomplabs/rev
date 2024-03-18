@@ -24,7 +24,7 @@
       asm volatile( " .word 0; .word " #test );                         \
   } while( 0 )
 
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
   asm volatile( "slli x0,x0,1" );  // Enable tracing
 
 #if __riscv_flen >= 32

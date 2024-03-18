@@ -15,7 +15,7 @@
  */
 
 #define hammer( type )                           \
-  int hammer_##type( type *addr, size_t size ) { \
+  int hammer_##type( type* addr, size_t size ) { \
     int  ret = 0;                                \
     type ff  = (type) 0xffffffffffff;            \
     for( size_t i = 2; i < size - 2; i++ ) {     \
@@ -33,7 +33,7 @@
 
 hammer( u16 )
 
-  int test_3( void *addr, size_t size ) {
+  int test_3( void* addr, size_t size ) {
   int ret = 0;
 
   ret |= hammer_u16( addr, size / 2 );

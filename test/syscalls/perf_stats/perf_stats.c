@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 
-void print( const char *prefix, unsigned long x ) {
+void print( const char* prefix, unsigned long x ) {
   char buf[256];
   sprintf( buf, "%s%lu\n", prefix, x );
   rev_write( STDOUT_FILENO, buf, strlen( buf ) );
 }
 
-int main( int argc, char *argv[] ) {
+int main( int argc, char* argv[] ) {
   int              ret = 0;
   struct rev_stats rs1, rs2;
   rev_perf_stats( &rs1 );

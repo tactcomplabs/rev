@@ -13,7 +13,7 @@
 
 #include <stdlib.h>
 
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
   int i = 9;
   i     = i + argc;
   return i;

@@ -18,7 +18,7 @@
     }                             \
   while( 0 )
 
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
   int a = argc;
   assert( a == 2 );
   assert( argv[0][0] == 'a' );

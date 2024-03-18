@@ -25,7 +25,7 @@ namespace SST::RevCPU {
 class Zicbom : public RevExt {
 
   static bool
-    cmo( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    cmo( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     switch( Inst.imm ) {
     case CBO_INVAL_IMM:
       // CBO.INVAL
@@ -66,7 +66,7 @@ class Zicbom : public RevExt {
   // clang-format on
 
 public:
-  Zicbom( RevFeature *Feature, RevMem *RevMem, SST::Output *Output ) :
+  Zicbom( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
     RevExt( "Zicbom", Feature, RevMem, Output ) {
     SetTable( std::move( ZicbomTable ) );
   }

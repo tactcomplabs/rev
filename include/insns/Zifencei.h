@@ -19,7 +19,7 @@ namespace SST::RevCPU {
 class Zifencei : public RevExt {
 
   static bool
-    fencei( RevFeature *F, RevRegFile *R, RevMem *M, const RevInst &Inst ) {
+    fencei( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     M->FenceMem( F->GetHartToExecID() );
     R->AdvancePC( Inst );
     return true;
@@ -32,7 +32,7 @@ class Zifencei : public RevExt {
   // clang-format on
 
 public:
-  Zifencei( RevFeature *Feature, RevMem *RevMem, SST::Output *Output ) :
+  Zifencei( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
     RevExt( "Zifencei", Feature, RevMem, Output ) {
     SetTable( std::move( ZifenceiTable ) );
   }

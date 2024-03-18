@@ -22,9 +22,9 @@ namespace SST::RevCPU {
 using MemSegment = RevMem::MemSegment;
 
 RevMem::RevMem( uint64_t     MemSize,
-                RevOpts     *Opts,
-                RevMemCtrl  *Ctrl,
-                SST::Output *Output ) :
+                RevOpts*     Opts,
+                RevMemCtrl*  Ctrl,
+                SST::Output* Output ) :
   memSize( MemSize ),
   opts( Opts ), ctrl( Ctrl ), output( Output ) {
   // Note: this constructor assumes the use of the memHierarchy backend
@@ -41,7 +41,7 @@ RevMem::RevMem( uint64_t     MemSize,
   AddMemSegAt( stacktop, 1024 );
 }
 
-RevMem::RevMem( uint64_t MemSize, RevOpts *Opts, SST::Output *Output ) :
+RevMem::RevMem( uint64_t MemSize, RevOpts* Opts, SST::Output* Output ) :
   memSize( MemSize ), opts( Opts ), ctrl( nullptr ), output( Output ) {
 
   // allocate the backing memory, zeroing it
@@ -76,7 +76,7 @@ void RevMem::HandleMemFault( unsigned width ) {
 
   // find an address to fault
   unsigned  NBytes = RevRand( 0, memSize - 8 );
-  uint64_t *Addr   = (uint64_t *) ( &physMem[0] + NBytes );
+  uint64_t* Addr   = (uint64_t*) ( &physMem[0] + NBytes );
 
   // write the fault (read-modify-write)
   *Addr |= rval;
@@ -119,33 +119,33 @@ bool RevMem::StatusFuture( uint64_t Addr ) {
 bool RevMem::LRBase( unsigned      Hart,
                      uint64_t      Addr,
                      size_t        Len,
-                     void         *Target,
+                     void*         Target,
                      uint8_t       aq,
                      uint8_t       rl,
-                     const MemReq &req,
+                     const MemReq& req,
                      RevFlag       flags ) {
   for( auto it = LRSC.begin(); it != LRSC.end(); ++it ) {
     if( ( Hart == std::get< LRSC_HART >( *it ) ) &&
         ( Addr == std::get< LRSC_ADDR >( *it ) ) ) {
       // existing reservation; return w/ error
-      uint32_t *Tmp = reinterpret_cast< uint32_t * >( Target );
+      uint32_t* Tmp = reinterpret_cast< uint32_t* >( Target );
       Tmp[0]        = 0x01ul;
       return false;
     } else if( ( Hart != std::get< LRSC_HART >( *it ) ) &&
                ( Addr == std::get< LRSC_ADDR >( *it ) ) ) {
       // existing reservation; return w/ error
-      uint32_t *Tmp = reinterpret_cast< uint32_t * >( Target );
+      uint32_t* Tmp = reinterpret_cast< uint32_t* >( Target );
       Tmp[0]        = 0x01ul;
       return false;
     }
   }
 
   // didn't find a colliding object; add it
-  LRSC.push_back( std::tuple< unsigned, uint64_t, unsigned, uint64_t * >(
+  LRSC.push_back( std::tuple< unsigned, uint64_t, unsigned, uint64_t* >(
     Hart,
     Addr,
     (unsigned) ( aq | ( rl << 1 ) ),
-    reinterpret_cast< uint64_t * >( Target ) ) );
+    reinterpret_cast< uint64_t* >( Target ) ) );
 
   // now handle the memory operation
   uint64_t pageNum  = Addr >> addrShift;
@@ -154,8 +154,8 @@ bool RevMem::LRBase( unsigned      Hart,
   // uint32_t adjPageNum = 0;
   // uint64_t adjPhysAddr = 0;
   // uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  char    *BaseMem  = &physMem[physAddr];
-  char    *DataMem  = (char *) ( Target );
+  char*    BaseMem  = &physMem[physAddr];
+  char*    DataMem  = (char*) ( Target );
 
   if( ctrl ) {
     ctrl->sendREADLOCKRequest(
@@ -172,20 +172,20 @@ bool RevMem::LRBase( unsigned      Hart,
 bool RevMem::SCBase( unsigned Hart,
                      uint64_t Addr,
                      size_t   Len,
-                     void    *Data,
-                     void    *Target,
+                     void*    Data,
+                     void*    Target,
                      uint8_t  aq,
                      uint8_t  rl,
                      RevFlag  flags ) {
-  std::vector<
-    std::tuple< unsigned, uint64_t, unsigned, uint64_t * > >::iterator it;
+  std::vector< std::tuple< unsigned, uint64_t, unsigned, uint64_t* > >::iterator
+    it;
 
   for( it = LRSC.begin(); it != LRSC.end(); ++it ) {
     if( ( Hart == std::get< LRSC_HART >( *it ) ) &&
         ( Addr == std::get< LRSC_ADDR >( *it ) ) ) {
       // existing reservation; test to see if the value matches
-      uint64_t *TmpTarget = std::get< LRSC_VAL >( *it );
-      uint64_t *TmpData   = static_cast< uint64_t   *>( Data );
+      uint64_t* TmpTarget = std::get< LRSC_VAL >( *it );
+      uint64_t* TmpData   = static_cast< uint64_t* >( Data );
 
       if( Len == 32 ) {
         uint32_t A = 0;
@@ -195,7 +195,7 @@ bool RevMem::SCBase( unsigned Hart,
           B |= uint32_t( TmpData[i] ) << i;
         }
         if( ( A & B ) == 0 ) {
-          static_cast< uint32_t * >( Target )[0] = 1;
+          static_cast< uint32_t* >( Target )[0] = 1;
           return false;
         }
       } else {
@@ -206,7 +206,7 @@ bool RevMem::SCBase( unsigned Hart,
           B |= TmpData[i] << i;
         }
         if( ( A & B ) == 0 ) {
-          static_cast< uint64_t * >( Target )[0] = 1;
+          static_cast< uint64_t* >( Target )[0] = 1;
           return false;
         }
       }
@@ -217,7 +217,7 @@ bool RevMem::SCBase( unsigned Hart,
 
       // write zeros to target
       for( unsigned i = 0; i < Len; i++ ) {
-        uint64_t *Tmp = reinterpret_cast< uint64_t * >( Target );
+        uint64_t* Tmp = reinterpret_cast< uint64_t* >( Target );
         Tmp[i]        = 0x0;
       }
 
@@ -228,7 +228,7 @@ bool RevMem::SCBase( unsigned Hart,
   }
 
   // failed, write a nonzero value to target
-  uint32_t *Tmp = reinterpret_cast< uint32_t * >( Target );
+  uint32_t* Tmp = reinterpret_cast< uint32_t* >( Target );
   Tmp[0]        = 0x1;
 
   return false;
@@ -346,13 +346,13 @@ uint64_t RevMem::CalcPhysAddr( uint64_t pageNum, uint64_t vAddr ) {
 
 // This function will change a decent amount in an upcoming PR
 bool RevMem::isValidVirtAddr( const uint64_t vAddr ) {
-  for( const auto &Seg : MemSegs ) {
+  for( const auto& Seg : MemSegs ) {
     if( Seg->contains( vAddr ) ) {
       return true;
     }
   }
 
-  for( const auto &Seg : ThreadMemSegs ) {
+  for( const auto& Seg : ThreadMemSegs ) {
     if( Seg->contains( vAddr ) ) {
       return true;
     }
@@ -360,8 +360,8 @@ bool RevMem::isValidVirtAddr( const uint64_t vAddr ) {
   return false;
 }
 
-uint64_t RevMem::AddMemSegAt( const uint64_t &BaseAddr,
-                              const uint64_t &SegSize ) {
+uint64_t RevMem::AddMemSegAt( const uint64_t& BaseAddr,
+                              const uint64_t& SegSize ) {
   MemSegs.emplace_back( std::make_shared< MemSegment >( BaseAddr, SegSize ) );
   return BaseAddr;
 }
@@ -372,7 +372,7 @@ uint64_t RevMem::AddMemSegAt( const uint64_t &BaseAddr,
 //
 // AllocMem is the only way that a user can allocate & deallocate memory
 uint64_t RevMem::AddRoundedMemSeg( uint64_t        BaseAddr,
-                                   const uint64_t &SegSize,
+                                   const uint64_t& SegSize,
                                    size_t          RoundUpSize ) {
   size_t RoundedSegSize = 0;
 
@@ -447,7 +447,7 @@ std::shared_ptr< MemSegment > RevMem::AddThreadMem() {
   return ThreadMemSegs.back();
 }
 
-void RevMem::SetTLSInfo( const uint64_t &BaseAddr, const uint64_t &Size ) {
+void RevMem::SetTLSInfo( const uint64_t& BaseAddr, const uint64_t& Size ) {
   TLSBaseAddr = BaseAddr;
   TLSSize += Size;
   ThreadMemSize = _STACK_SIZE_ + TLSSize;
@@ -457,7 +457,7 @@ void RevMem::SetTLSInfo( const uint64_t &BaseAddr, const uint64_t &Size ) {
 // AllocMem differs from AddMemSeg because it first searches the FreeMemSegs
 // vector to see if there is a free segment that will fit the new data
 // If there is not a free segment, it will allocate a new segment at the end of the heap
-uint64_t RevMem::AllocMem( const uint64_t &SegSize ) {
+uint64_t RevMem::AllocMem( const uint64_t& SegSize ) {
   output->verbose( CALL_INFO,
                    10,
                    99,
@@ -511,8 +511,8 @@ uint64_t RevMem::AllocMem( const uint64_t &SegSize ) {
 // AllocMemAt differs from AddMemSegAt because it first searches the FreeMemSegs
 // vector to see if there is a free segment that will fit the new data
 // If its unable to allocate at the location requested it will error. This may change in the future.
-uint64_t RevMem::AllocMemAt( const uint64_t &BaseAddr,
-                             const uint64_t &SegSize ) {
+uint64_t RevMem::AllocMemAt( const uint64_t& BaseAddr,
+                             const uint64_t& SegSize ) {
   int ret = 0;
   output->verbose( CALL_INFO,
                    10,
@@ -608,9 +608,9 @@ bool RevMem::FenceMem( unsigned Hart ) {
 bool RevMem::AMOMem( unsigned      Hart,
                      uint64_t      Addr,
                      size_t        Len,
-                     void         *Data,
-                     void         *Target,
-                     const MemReq &req,
+                     void*         Data,
+                     void*         Target,
+                     const MemReq& req,
                      RevFlag       flags ) {
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr
@@ -621,13 +621,13 @@ bool RevMem::AMOMem( unsigned      Hart,
     // sending to the RevMemCtrl
     uint64_t pageNum  = Addr >> addrShift;
     uint64_t physAddr = CalcPhysAddr( pageNum, Addr );
-    char    *BaseMem  = &physMem[physAddr];
+    char*    BaseMem  = &physMem[physAddr];
 
     ctrl->sendAMORequest( Hart,
                           Addr,
                           (uint64_t) ( BaseMem ),
                           Len,
-                          static_cast< char * >( Data ),
+                          static_cast< char* >( Data ),
                           Target,
                           req,
                           flags );
@@ -670,14 +670,14 @@ bool RevMem::AMOMem( unsigned      Hart,
 }
 
 bool RevMem::WriteMem(
-  unsigned Hart, uint64_t Addr, size_t Len, const void *Data, RevFlag flags ) {
+  unsigned Hart, uint64_t Addr, size_t Len, const void* Data, RevFlag flags ) {
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr
             << std::dec << std::endl;
 #endif
 
   if( Addr == 0xDEADBEEF ) {
-    std::cout << "Found special write. Val = " << std::hex << *(int *) ( Data )
+    std::cout << "Found special write. Val = " << std::hex << *(int*) ( Data )
               << std::dec << std::endl;
   }
   RevokeFuture(
@@ -689,8 +689,8 @@ bool RevMem::WriteMem(
   uint32_t adjPageNum  = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage   = ( pageMap[pageNum].first << addrShift ) + pageSize;
-  char    *BaseMem     = &physMem[physAddr];
-  char    *DataMem     = (char *) ( Data );
+  char*    BaseMem     = &physMem[physAddr];
+  char*    DataMem     = (char*) ( Data );
   if( ( physAddr + Len ) > endOfPage ) {
     uint32_t span = ( physAddr + Len ) - endOfPage;
     adjPageNum    = ( ( Addr + Len ) - span ) >> addrShift;
@@ -739,7 +739,7 @@ bool RevMem::WriteMem(
 bool RevMem::WriteMem( unsigned    Hart,
                        uint64_t    Addr,
                        size_t      Len,
-                       const void *Data ) {
+                       const void* Data ) {
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr
             << std::dec << std::endl;
@@ -748,7 +748,7 @@ bool RevMem::WriteMem( unsigned    Hart,
   TRACE_MEM_WRITE( Addr, Len, Data );
 
   if( Addr == 0xDEADBEEF ) {
-    std::cout << "Found special write. Val = " << std::hex << *(int *) ( Data )
+    std::cout << "Found special write. Val = " << std::hex << *(int*) ( Data )
               << std::dec << std::endl;
   }
   RevokeFuture(
@@ -760,8 +760,8 @@ bool RevMem::WriteMem( unsigned    Hart,
   uint32_t adjPageNum  = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage   = ( pageMap[pageNum].first << addrShift ) + pageSize;
-  char    *BaseMem     = &physMem[physAddr];
-  char    *DataMem     = (char *) ( Data );
+  char*    BaseMem     = &physMem[physAddr];
+  char*    DataMem     = (char*) ( Data );
   if( ( physAddr + Len ) > endOfPage ) {
     uint32_t span = ( physAddr + Len ) - endOfPage;
     adjPageNum    = ( ( Addr + Len ) - span ) >> addrShift;
@@ -840,7 +840,7 @@ bool RevMem::WriteMem( unsigned    Hart,
   return true;
 }
 
-bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ) {
+bool RevMem::ReadMem( uint64_t Addr, size_t Len, void* Data ) {
 #ifdef _REV_DEBUG_
   std::cout << "OLD READMEM: Reading " << Len << " Bytes Starting at 0x"
             << std::hex << Addr << std::dec << std::endl;
@@ -852,8 +852,8 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ) {
   uint32_t adjPageNum  = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage   = ( pageMap[pageNum].first << addrShift ) + pageSize;
-  char    *BaseMem     = &physMem[physAddr];
-  char    *DataMem     = (char *) ( Data );
+  char*    BaseMem     = &physMem[physAddr];
+  char*    DataMem     = (char*) ( Data );
   if( ( physAddr + Len ) > endOfPage ) {
     uint32_t span = ( physAddr + Len ) - endOfPage;
     adjPageNum    = ( ( Addr + Len ) - span ) >> addrShift;
@@ -882,8 +882,8 @@ bool RevMem::ReadMem( uint64_t Addr, size_t Len, void *Data ) {
 bool RevMem::ReadMem( unsigned      Hart,
                       uint64_t      Addr,
                       size_t        Len,
-                      void         *Target,
-                      const MemReq &req,
+                      void*         Target,
+                      const MemReq& req,
                       RevFlag       flags ) {
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x"
@@ -895,8 +895,8 @@ bool RevMem::ReadMem( unsigned      Hart,
   uint32_t adjPageNum  = 0;
   uint64_t adjPhysAddr = 0;
   uint64_t endOfPage   = ( pageMap[pageNum].first << addrShift ) + pageSize;
-  char    *BaseMem     = &physMem[physAddr];
-  char    *DataMem     = static_cast< char        *>( Target );
+  char*    BaseMem     = &physMem[physAddr];
+  char*    DataMem     = static_cast< char* >( Target );
 
   if( ( physAddr + Len ) > endOfPage ) {
     uint32_t span = ( physAddr + Len ) - endOfPage;
@@ -1101,7 +1101,7 @@ uint64_t RevMem::DeallocMem( uint64_t BaseAddr, uint64_t Size ) {
 
 /// @brief This function is called from the loader to initialize the heap
 /// @param EndOfStaticData: The address of the end of the static data section (ie. end of .bss section)
-void RevMem::InitHeap( const uint64_t &EndOfStaticData ) {
+void RevMem::InitHeap( const uint64_t& EndOfStaticData ) {
   if( EndOfStaticData == 0x00ull ) {
     // Program didn't contain .text, .data, or .bss sections
     output->fatal( CALL_INFO,

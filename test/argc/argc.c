@@ -19,7 +19,7 @@
   while( 0 )
 
 // called with "argc.exe one two three; so argc == 4"
-int main( int argc, char **argv ) {
+int main( int argc, char** argv ) {
   int a = argc;
   assert( a == 4 );
   assert( argv[0][0] == 'a' );

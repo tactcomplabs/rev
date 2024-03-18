@@ -18,7 +18,7 @@ uint64_t A[1024];
 uint64_t B[1024];
 uint64_t R[1024];
 
-int      main( int argc, char **argv ) {
+int      main( int argc, char** argv ) {
   uint64_t i = 0;
   uint64_t j = 0;
   int      r = 0;

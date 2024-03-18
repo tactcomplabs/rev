@@ -9,11 +9,11 @@
   while( 0 )
 
 int main() {
-  uint64_t *addr;
+  uint64_t* addr;
 #define N 237
 
   // Create an anonymous memory mapping
-  addr = (uint64_t *) rev_mmap(
+  addr = (uint64_t*) rev_mmap(
     0,  // Let rev choose the address
     N * sizeof( uint64_t ),
     PROT_READ | PROT_WRITE | PROT_EXEC,  // RWX permissions

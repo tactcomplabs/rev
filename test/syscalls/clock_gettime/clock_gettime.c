@@ -6,7 +6,7 @@
     }                             \
   while( 0 )
 
-int main( int argc, char *argv[] ) {
+int main( int argc, char* argv[] ) {
   int                      sum = 0;
   struct __kernel_timespec s, e;
 

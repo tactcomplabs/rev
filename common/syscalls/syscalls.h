@@ -31,7 +31,7 @@
 #else
 union sigval {
   int   sival_int;
-  void *sival_ptr;
+  void* sival_ptr;
 };
 
 typedef struct {
@@ -41,7 +41,7 @@ typedef struct {
   int          si_errno;
   pid_t        si_pid;
   uid_t        si_uid;
-  void        *si_addr;
+  void*        si_addr;
   int          si_status;
   int          si_band;
 } siginfo_t;
@@ -261,7 +261,7 @@ typedef uint32_t      key_perm_t;   /* key handle permissions mask */
 typedef struct __user_cap_header_struct {
   uint32_t version;
   int      pid;
-} *cap_user_header_t;
+}* cap_user_header_t;
 
 #define __kernel_timespec timespec
 
@@ -269,7 +269,7 @@ typedef struct __user_cap_data_struct {
   uint32_t effective;
   uint32_t permitted;
   uint32_t inheritable;
-} *cap_user_data_t;
+}* cap_user_data_t;
 
 /* To optimize the implementation one can use the following struct.  */
 struct aioinit {
