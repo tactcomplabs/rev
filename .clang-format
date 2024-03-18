@@ -32,7 +32,6 @@ BraceWrapping:
 ConstructorInitializerIndentWidth: 2
 BreakConstructorInitializers: AfterColon
 ContinuationIndentWidth: 2
-DerivePointerAlignment: true
 FixNamespaceComments: true
 IndentWrappedFunctionNames: true
 MaxEmptyLinesToKeep: 2
@@ -54,6 +53,7 @@ SpaceAfterLogicalNot: false
 SpaceAfterCStyleCast: true
 SpaceAroundPointerQualifiers: Default
 PointerAlignment: Left
+DerivePointerAlignment: false
 InsertTrailingCommas: Wrapped
 AlignTrailingComments: true
 SpacesBeforeTrailingComments: 2
