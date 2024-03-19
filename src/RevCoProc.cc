@@ -10,8 +10,7 @@
 
 #include "RevCoProc.h"
 
-using namespace SST;
-using namespace RevCPU;
+namespace SST::RevCPU {
 
 // ---------------------------------------------------------------
 // RevCoProc
@@ -89,3 +88,5 @@ bool RevSimpleCoProc::ClockTick( SST::Cycle_t cycle ) {
   }
   return true;
 }
+
+}  // namespace SST::RevCPU
