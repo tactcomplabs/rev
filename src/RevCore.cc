@@ -12,7 +12,8 @@
 #include "RevSysCalls.cc"
 #include "sst/core/output.h"
 
-using namespace SST::RevCPU;
+namespace SST::RevCPU {
+
 using MemSegment = RevMem::MemSegment;
 
 RevCore::RevCore( unsigned                    Id,
@@ -2259,5 +2260,7 @@ void RevCore::UpdateStatusOfHarts() {
   }
   return;
 }
+
+}  // namespace SST::RevCPU
 
 // EOF

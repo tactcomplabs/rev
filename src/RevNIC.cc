@@ -10,8 +10,7 @@
 
 #include "RevNIC.h"
 
-using namespace SST;
-using namespace RevCPU;
+namespace SST::RevCPU {
 
 RevNIC::RevNIC( ComponentId_t id, Params& params ) : nicAPI( id, params ) {
   // setup the initial logging functions
@@ -141,5 +140,7 @@ bool RevNIC::clockTick( Cycle_t cycle ) {
 
   return false;
 }
+
+}  // namespace SST::RevCPU
 
 // EOF
