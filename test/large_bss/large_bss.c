@@ -13,4 +13,8 @@
 
 #include <stdlib.h>
 
-char t[1024*1024*12]; int main() { return 0; }
+char t[1024 * 1024 * 12];
+
+int  main() {
+  return 0;
+}

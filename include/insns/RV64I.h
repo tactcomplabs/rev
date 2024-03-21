@@ -15,35 +15,44 @@
 
 #include <vector>
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
-class RV64I : public RevExt{
+class RV64I : public RevExt {
   // Standard instructions
-  static constexpr auto& ld    = load<int64_t>;
-  static constexpr auto& lwu   = load<uint32_t>;
-  static constexpr auto& sd    = store<uint64_t>;
+  static constexpr auto& ld  = load< int64_t >;
+  static constexpr auto& lwu = load< uint32_t >;
+  static constexpr auto& sd  = store< uint64_t >;
 
   // 32-bit arithmetic operators
-  static constexpr auto& addw  = oper<std::plus,   OpKind::Reg, std::make_signed_t,   true>;
-  static constexpr auto& subw  = oper<std::minus,  OpKind::Reg, std::make_signed_t,   true>;
-  static constexpr auto& addiw = oper<std::plus,   OpKind::Imm, std::make_signed_t,   true>;
+  static constexpr auto& addw =
+    oper< std::plus, OpKind::Reg, std::make_signed_t, true >;
+  static constexpr auto& subw =
+    oper< std::minus, OpKind::Reg, std::make_signed_t, true >;
+  static constexpr auto& addiw =
+    oper< std::plus, OpKind::Imm, std::make_signed_t, true >;
 
   // Shift operators
-  static constexpr auto& slliw = oper<ShiftLeft,  OpKind::Imm, std::make_unsigned_t, true>;
-  static constexpr auto& srliw = oper<ShiftRight, OpKind::Imm, std::make_unsigned_t, true>;
-  static constexpr auto& sraiw = oper<ShiftRight, OpKind::Imm, std::make_signed_t,   true>;
-  static constexpr auto& sllw  = oper<ShiftLeft,  OpKind::Reg, std::make_unsigned_t, true>;
-  static constexpr auto& srlw  = oper<ShiftRight, OpKind::Reg, std::make_unsigned_t, true>;
-  static constexpr auto& sraw  = oper<ShiftRight, OpKind::Reg, std::make_signed_t,   true>;
+  static constexpr auto& slliw =
+    oper< ShiftLeft, OpKind::Imm, std::make_unsigned_t, true >;
+  static constexpr auto& srliw =
+    oper< ShiftRight, OpKind::Imm, std::make_unsigned_t, true >;
+  static constexpr auto& sraiw =
+    oper< ShiftRight, OpKind::Imm, std::make_signed_t, true >;
+  static constexpr auto& sllw =
+    oper< ShiftLeft, OpKind::Reg, std::make_unsigned_t, true >;
+  static constexpr auto& srlw =
+    oper< ShiftRight, OpKind::Reg, std::make_unsigned_t, true >;
+  static constexpr auto& sraw =
+    oper< ShiftRight, OpKind::Reg, std::make_signed_t, true >;
 
   // Compressed instructions
-  static constexpr auto& cldsp = ld;
-  static constexpr auto& csdsp = sd;
-  static constexpr auto& cld   = ld;
-  static constexpr auto& csd   = sd;
-  static constexpr auto& caddiw= addiw;
-  static constexpr auto& caddw = addw;
-  static constexpr auto& csubw = subw;
+  static constexpr auto& cldsp  = ld;
+  static constexpr auto& csdsp  = sd;
+  static constexpr auto& cld    = ld;
+  static constexpr auto& csd    = sd;
+  static constexpr auto& caddiw = addiw;
+  static constexpr auto& caddw  = addw;
+  static constexpr auto& csubw  = subw;
 
   // ----------------------------------------------------------------------
   //
@@ -52,11 +61,12 @@ class RV64I : public RevExt{
   // ----------------------------------------------------------------------
 
   struct Rev64InstDefaults : RevInstDefaults {
-    Rev64InstDefaults(){
-      SetOpcode(0b0111011);
+    Rev64InstDefaults() {
+      SetOpcode( 0b0111011 );
     }
   };
 
+  // clang-format off
   std::vector<RevInstEntry> RV64ITable = {
     { Rev64InstDefaults().SetMnemonic("lwu %rd, $imm(%rs1)"   ).SetFunct3(0b110).SetImplFunc(lwu   ).Setimm(FImm).SetFormat(RVTypeI).SetOpcode(0b0000011).Setrs2Class(RevRegClass::RegUNKNOWN) },
     { Rev64InstDefaults().SetMnemonic("ld %rd, $imm(%rs1)"    ).SetFunct3(0b011).SetImplFunc(ld    ).Setimm(FImm).SetFormat(RVTypeI).SetOpcode(0b0000011).Setrs2Class(RevRegClass::RegUNKNOWN) },
@@ -81,17 +91,16 @@ class RV64I : public RevExt{
     { RevCInstDefaults().SetMnemonic("c.addw %rd, %rs1"       ).SetFunct2( 0b01).SetImplFunc(caddw )             .SetFormat(RVCTypeCA ).SetOpcode(0b01).SetFunct6(0b100111) },
     { RevCInstDefaults().SetMnemonic("c.subw %rd, %rs1"       ).SetFunct2( 0b00).SetImplFunc(csubw )             .SetFormat(RVCTypeCA ).SetOpcode(0b01).SetFunct6(0b100111) },
   };
+  // clang-format on
 
 public:
   /// RV64I: standard constructor
-  RV64I( RevFeature *Feature,
-         RevMem *RevMem,
-         SST::Output *Output )
-    : RevExt( "RV64I", Feature, RevMem, Output ) {
-    SetTable(std::move(RV64ITable));
-    SetCTable(std::move(RV64ICTable));
+  RV64I( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
+    RevExt( "RV64I", Feature, RevMem, Output ) {
+    SetTable( std::move( RV64ITable ) );
+    SetCTable( std::move( RV64ICTable ) );
   }
-}; // end class RV64I
-} // namespace SST::RevCPU
+};  // end class RV64I
+}  // namespace SST::RevCPU
 
 #endif

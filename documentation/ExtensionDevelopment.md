@@ -1,12 +1,12 @@
 # Extension Development
 
 ## Overview
-The Rev SST component permits users to create unique extensions that are not defined as a standard extension by the RISC-V standards body.  This allows users to experiment with features that may be advanced or override default extension behavior.  Further, this also allows users to experiment with accelerators that may be orthogonal to the base RISC-V ISA.  Each RISC-V extension is implemented in Rev using a single header file.  The header file contains the instruction encoding table and an implementation function for each individual instruction contained within the extension.  
+The Rev SST component permits users to create unique extensions that are not defined as a standard extension by the RISC-V standards body.  This allows users to experiment with features that may be advanced or override default extension behavior.  Further, this also allows users to experiment with accelerators that may be orthogonal to the base RISC-V ISA.  Each RISC-V extension is implemented in Rev using a single header file.  The header file contains the instruction encoding table and an implementation function for each individual instruction contained within the extension.
 
 There are also several limitations of the current extension functionality.  These limitations can be overcome, but will require additional source code modifications.  These limitations are noted as follows:
 
 1. The Rev crack/decode functions currently only support the standard set of RISC-V instruction formats.  Additional formats can be supported, but will require additional source code modifications to the crack/decode engine.
-2. The Rev model supports the ability for users to override default extensions (for example, the D-extension) with new functionality.  However, you cannot load two extensions with conflicting encodings.  This will break the Rev crack/decode engine.  
+2. The Rev model supports the ability for users to override default extensions (for example, the D-extension) with new functionality.  However, you cannot load two extensions with conflicting encodings.  This will break the Rev crack/decode engine.
 3. The naming convention for the new extension cannot conflict with the standard set of the extensions if they are utilized in the same core.  Eg, an RV64IMAFD device cannot have a second "F" extension.  You must utilize a different naming convention.
 4. The Rev model utilizes a standard ELF loader.  If the extension breaks the base RISC-V (RV32, RV64) relocation, then the device may not function as expected.
 5. The Rev model supports the standard set of RV32/RV64-G registers for integer and floating point.  Any extension-specific register state will require additional source code modifications.
@@ -21,7 +21,7 @@ From the base Rev directory, all the source code resides in `src`.  The instruct
 | `src/RevInstTable.h` | Contains the base strucutures utilized to create each extension as well as functions to assist in instruction implementation. |
 | `src/RevFeature.h` | Contains the feature to extension mappings. |
 | `src/RevMem.h` | Contains all the interfaces for reading/writing memory. |
-| `src/RevProc.cc` | Contains the main simulation driver and instruction table loader. |
+| `src/RevCore.cc` | Contains the main simulation driver and instruction table loader. |
 
 ## Documentation
 
@@ -31,7 +31,7 @@ The Rev source tree utilizes Doxygen style comments for documentaton.  This incl
 
 ### Choose an Extension Mnemonic
 
-Each extension requires a notional mnemonic that can be parsed by the Rev infrastructure and recognized as a supported extension.  It is generally good practice to choose an unused or unsupport letter for your extension.  In this case, we choose the letter `Z` to represent our sample extension.  
+Each extension requires a notional mnemonic that can be parsed by the Rev infrastructure and recognized as a supported extension.  It is generally good practice to choose an unused or unsupport letter for your extension.  In this case, we choose the letter `Z` to represent our sample extension.
 
 ### Add the Mnemonic to the RevFeature Handlers
 
@@ -70,7 +70,7 @@ Now we need to add support in the extension parser.  This resides in the `ParseM
 This function a loop over the device string and adds the necessary support for the specific extension(s).
 
 Adding support for new features is as simple as adding a new entry into the machine model table as folows.
-Notice how we utilize the `SetMachineEntry` function with the appropriate enumerated type defined above.  
+Notice how we utilize the `SetMachineEntry` function with the appropriate enumerated type defined above.
 
 ```c++
   ///< List of architecture extensions. These must listed in canonical order
@@ -128,8 +128,8 @@ Notice how we utilize the `SetMachineEntry` function with the appropriate enumer
 ```
 ### Add the Extension Header to the RevInstTables Header
 
-Now that you've defined your new extension mnemonic, you need to add an entry in the `RevInstTables.h` header 
-file such that the remainder of the Rev infrastructure can find the new implementation details.  The header 
+Now that you've defined your new extension mnemonic, you need to add an entry in the `RevInstTables.h` header
+file such that the remainder of the Rev infrastructure can find the new implementation details.  The header
 name that you choose here must also be utilized in the next step.
 
 As an example, we create the `Z` extension and add the `RV32Z.h` header file.
@@ -176,10 +176,10 @@ As an example, we create the `Z` extension and add the `RV32Z.h` header file.
 ### Add the Instruction Table Loader
 In this section, we need to add support for loading the new extension's instructions into the internal Rev instruction table.  Rev utilizes an internal instruction table with compressed encodings in order to permit rapid crack/decode.  Each table entry contains a pointer to the respective implementation function for the target instruction.  In this case, we need to add the necessary logic to 1) detect that our new extension is enabled and 2) add the associated instructions to the internal instruction table.
 
-For this, we need to modify the `RevProc.cc` implementation file.  Specifically, we will be modifying the contents of the `SeedInstTable` function.  Each new instruction implementation object is statically cast to the base `RevExt` type and passed to the `EnableExt` function.  An example of adding the `Z` extension is as follows.  Also note that the newly created `RV32Z` object is given the feature object, a pointer to the register file, the memory object and the SST output object.  
+For this, we need to modify the `RevCore.cc` implementation file.  Specifically, we will be modifying the contents of the `SeedInstTable` function.  Each new instruction implementation object is statically cast to the base `RevExt` type and passed to the `EnableExt` function.  An example of adding the `Z` extension is as follows.  Also note that the newly created `RV32Z` object is given the feature object, a pointer to the register file, the memory object and the SST output object.
 
 ```c++
-bool RevProc::SeedInstTable(){
+bool RevCore::SeedInstTable(){
   // Z-Extension
   if( feature->IsModeEnabled(RV_Z) ){
     EnableExt(static_cast<RevExt *>(new RV32Z(feature, &RegFile, mem, output)));
@@ -196,9 +196,9 @@ bool RevProc::SeedInstTable(){
 ```
 
 ### Create the Extension Header
-The final series of steps to create a new extension is where the bulk of the code will reside.  As we stated above, each implementation includes a unique header file that provides the instruction implementations and encoding tables for the target extension.  In this section, we will create the header file and add several basic instructions.  This will elicit how we 1) construct the instruction tables, 2) create instruction implementations and 3) utilize the provided functions to perform basic memory and arithmetic operations.  
+The final series of steps to create a new extension is where the bulk of the code will reside.  As we stated above, each implementation includes a unique header file that provides the instruction implementations and encoding tables for the target extension.  In this section, we will create the header file and add several basic instructions.  This will elicit how we 1) construct the instruction tables, 2) create instruction implementations and 3) utilize the provided functions to perform basic memory and arithmetic operations.
 
-The first thing we need to do is create the basic header file at `src/insns/RV32Z.h`.  The basic skeleton of this header will resemble the following: 
+The first thing we need to do is create the basic header file at `src/insns/RV32Z.h`.  The basic skeleton of this header will resemble the following:
 
 ```c++
 //
@@ -278,7 +278,7 @@ std::vector<RevInstEntry> RV32ZTable = {
 };
 ```
 
-For this, we've created four instructions: `zadd`, `zsub`, `zlb` and `zsb` to represent two arithmetic instructions a load instruction and a store instruction.  Each field in the entry have specific values associated with them.  The field entries are outlined (in order) as follows.  Please be careful with entering data into the tables as the data contained therein drives the crack/decode and execution of the core simulation.  
+For this, we've created four instructions: `zadd`, `zsub`, `zlb` and `zsb` to represent two arithmetic instructions a load instruction and a store instruction.  Each field in the entry have specific values associated with them.  The field entries are outlined (in order) as follows.  Please be careful with entering data into the tables as the data contained therein drives the crack/decode and execution of the core simulation.
 
 | Field Num | Field | Description |
 | ----------- | ----------- | ----------- |
@@ -288,9 +288,9 @@ For this, we've created four instructions: `zadd`, `zsub`, `zlb` and `zsb` to re
 | 5 | funct2or7 | This is the funct2or7 encoding field.  If the respective instruction does not utilize the field, set this value to `0b0000000` |
 | 6 | func | This contains a function pointer to the implementation function of the target instruction |
 | 7 | rdClass | If the instruction has an `rd` register slot, this denotes the register class utilized.  Values for this can be one of `RevRegClass::RegGPR` for the general purpose register file, `RegCSR` for the CSR register file, `RegFloat` for the floating point register file, `RegIMM` (treat the reg class like an immediate, only utilized in the S-format) or `RevRegClass::RegUNKNOWN` if the field is not utilized. |
-| 8 | rs1Class | Defines the register class for the `rs1` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
-| 9 | rs2Class | Defines the register class for the `rs2` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
-| 10 | rs3Class | Defines the register class for the `rs3` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized | 
+| 8 | rs1Class | Defines the register class for the `rs1` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized |
+| 9 | rs2Class | Defines the register class for the `rs2` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized |
+| 10 | rs3Class | Defines the register class for the `rs3` slot.  Use `RevRegClass::RegUNKNOWN` if this slot is not utilized |
 | 11 | format | Defines the instruction format.  This is one of: `RVTypeUNKNOWN`, `RVTypeR`, `RVTypeI`, `RVTypeS`, `RVTypeU`, `RVTypeB`, `RVTypeJ` or `RVTypeR4` |
 | 12 | opcode | This is the seven bit opcode of the instruction. |
 | 13 | imm12 | Defines the value of the `imm12` slot if the immediate is hardwired to a single value. |
@@ -537,36 +537,36 @@ Or, with the helper functions:
 
 As we can see from the source code above, each function must be formatted as: `static bool FUNC(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst)`.  All instructions carry the same arguments.  The first thing to note is the ability to use the `RevFeature` object to query the device architecture.  The Rev model stores register state in different logical storage for RV32 and RV64.  As a result, if your extension supports both variations of *XLEN*, then its often useful to query the loaded features to see which register file to manipulate, but the `R->GetX<T>(reg)` and `R->SetX(reg, value) functions can automate this.
 
-The second and third arguments represent the register file object and the memory object, respectively.  These objects permit the user to access internal register state and read/write memory.  Finally, the `RevInst` structure contains all the decoded state from the instruction.  This includes all the opcode and function codes as well as each of the encoded register values.  This structure also contains the floating point rounding mode information.  For more information on the exacting contents and their respective data types, see the `RevInstTable.h` header file.  
+The second and third arguments represent the register file object and the memory object, respectively.  These objects permit the user to access internal register state and read/write memory.  Finally, the `RevInst` structure contains all the decoded state from the instruction.  This includes all the opcode and function codes as well as each of the encoded register values.  This structure also contains the floating point rounding mode information.  For more information on the exacting contents and their respective data types, see the `RevInstTable.h` header file.
 
 Now that we've decoded the necessary state and the simulation execution engine launches the function, we can start executing the target arithmetic.  For example, in the `zadd` function, we seek to add two unsigned integers of *XLEN* size. We use `R->GetX<uint32_t>(Inst.rs1)` and `R->GetX<uint32_t>(Inst.rs2)` to read registers as `uint32_t` values, add two values, and then use `R->SetX(Inst.rd, val)` to write the result into the destination register.
 
 The final step in the basic arithmetic functions is incrementing the PC.  The PC can be manually manipulated (eg, for branch operations) with `R->SetPC(PC)`, but this is normally done by incrementing the PC by the size of the instruction payload (in bytes) with `R->AdvancePC(Inst)`.
 
-In the next functions, `zlb` and `zsb` we seek to load and store data to memory. We utilize the `RevMem` object to write the desired number of bytes or read the desired number of bytes via the `Read` and `Write` methods.  The `RevMem` object provides a number of standard interfaces for writing common data types, arbitrary data and performing load reserve/store conditional operations.  Also note the use of the `SignExt()` function.  This performs sign extension on the incoming load value.  The infrastructure also provides a `ZeroExt()` function for zero extension.  
+In the next functions, `zlb` and `zsb` we seek to load and store data to memory. We utilize the `RevMem` object to write the desired number of bytes or read the desired number of bytes via the `Read` and `Write` methods.  The `RevMem` object provides a number of standard interfaces for writing common data types, arbitrary data and performing load reserve/store conditional operations.  Also note the use of the `SignExt()` function.  This performs sign extension on the incoming load value.  The infrastructure also provides a `ZeroExt()` function for zero extension.
 
-Finally, it is important to note the use of the `M->RandCost()` function.  Typically, RISC-V processor implementations do not hazard on memory store operations given the inherent weak memory ordering (or TSO).  However, for load operations, the processor is required to flag a hazard in order to ensure that the data returns before it is utilized in subsquent operations.  The `RandCost()` function provides the simulator the ability to add an arbitrary cost to load operations that is randomly generated in the range of `F->GetMinCost()` and `F->GetMaxCost()`.  These values are set at runtime by the user in the SST Python script.  In this manner, each load operation will generate a random *cost* and set its respective cost (in cycles).  
+Finally, it is important to note the use of the `M->RandCost()` function.  Typically, RISC-V processor implementations do not hazard on memory store operations given the inherent weak memory ordering (or TSO).  However, for load operations, the processor is required to flag a hazard in order to ensure that the data returns before it is utilized in subsquent operations.  The `RandCost()` function provides the simulator the ability to add an arbitrary cost to load operations that is randomly generated in the range of `F->GetMinCost()` and `F->GetMaxCost()`.  These values are set at runtime by the user in the SST Python script.  In this manner, each load operation will generate a random *cost* and set its respective cost (in cycles).
 
 ## Contributions
-We welcome outside contributions from corporate, acaddemic and individual developers.  However, 
-there are a number of fundamental ground rules that you must adhere to in order to participate.  These 
+We welcome outside contributions from corporate, acaddemic and individual developers.  However,
+there are a number of fundamental ground rules that you must adhere to in order to participate.  These
 rules are outlined as follows:
 
-* All code must adhere to the existing C++ coding style.  While we are somewhat flexible in basic style, you will 
-adhere to what is currently in place.  This includes camel case C++ methods and inline comments.  Uncommented, 
+* All code must adhere to the existing C++ coding style.  While we are somewhat flexible in basic style, you will
+adhere to what is currently in place.  This includes camel case C++ methods and inline comments.  Uncommented,
 complicated algorithmic constructs will be rejected.
 * We support compilaton and adherence to C++17 methods.
-* All new methods and variables contained within public, private and protected class methods must be commented 
-using the existing Doxygen-style formatting.  All new classes must also include Doxygen blocks in the new header 
+* All new methods and variables contained within public, private and protected class methods must be commented
+using the existing Doxygen-style formatting.  All new classes must also include Doxygen blocks in the new header
 files.  Any pull requests that lack these features will be rejected.
 * All changes to functionality and/or the API infrastructure must be accompanied by complementary tests
-* All external pull requests **must** target the *devel* branch.  No external pull requests will be accepted 
+* All external pull requests **must** target the *devel* branch.  No external pull requests will be accepted
 to the master or main branches.
-* All external pull requests must contain sufficient documentation in the pull request comments in order to 
+* All external pull requests must contain sufficient documentation in the pull request comments in order to
 be accepted.
 * All pull requests will be reviewed by the core development staff.  Any necessary changes will be marked
-in the respective pull request comments.  All pull requests will be tested against in the Tactical 
-Computing Laboratories development infrastructure.  This includes tests against all supported platforms.  
+in the respective pull request comments.  All pull requests will be tested against in the Tactical
+Computing Laboratories development infrastructure.  This includes tests against all supported platforms.
 Any failures in the test infrastructure will be noted in the pull request comments.
 
 ## Authors

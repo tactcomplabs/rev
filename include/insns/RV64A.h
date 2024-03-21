@@ -11,82 +11,94 @@
 #ifndef _SST_REVCPU_RV64A_H_
 #define _SST_REVCPU_RV64A_H_
 
-#include "../RevInstHelpers.h"
 #include "../RevExt.h"
+#include "../RevInstHelpers.h"
 
 #include <vector>
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
 class RV64A : public RevExt {
 
-  static bool lrd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    MemReq req(R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete() );
+  static bool
+    lrd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    MemReq req( R->RV64[Inst.rs1],
+                Inst.rd,
+                RevRegClass::RegGPR,
+                F->GetHartToExecID(),
+                MemOp::MemOpAMO,
+                true,
+                R->GetMarkLoadComplete() );
     R->LSQueue->insert( req.LSQHashPair() );
-    M->LR(F->GetHartToExecID(),
-          R->RV64[Inst.rs1],
-          &R->RV64[Inst.rd],
-          Inst.aq, Inst.rl, req,
-          RevFlag::F_SEXT64);
-    R->AdvancePC(Inst);
+    M->LR( F->GetHartToExecID(),
+           R->RV64[Inst.rs1],
+           &R->RV64[Inst.rd],
+           Inst.aq,
+           Inst.rl,
+           req,
+           RevFlag::F_SEXT64 );
+    R->AdvancePC( Inst );
     return true;
   }
 
-  static bool scd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    M->SC(F->GetHartToExecID(),
-          R->RV64[Inst.rs1],
-          &R->RV64[Inst.rs2],
-          &R->RV64[Inst.rd],
-          Inst.aq, Inst.rl,
-          RevFlag::F_SEXT64);
-    R->AdvancePC(Inst);
+  static bool
+    scd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    M->SC( F->GetHartToExecID(),
+           R->RV64[Inst.rs1],
+           &R->RV64[Inst.rs2],
+           &R->RV64[Inst.rd],
+           Inst.aq,
+           Inst.rl,
+           RevFlag::F_SEXT64 );
+    R->AdvancePC( Inst );
     return true;
   }
 
   /// Atomic Memory Operations
-  template<RevFlag F_AMO>
-  static bool amooperd(RevFeature *F, RevRegFile *R, RevMem *M, const RevInst& Inst) {
-    uint32_t flags = static_cast<uint32_t>(F_AMO);
+  template< RevFlag F_AMO >
+  static bool
+    amooperd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    uint32_t flags = static_cast< uint32_t >( F_AMO );
 
-    if( Inst.aq && Inst.rl ){
-      flags |= uint32_t(RevFlag::F_AQ) | uint32_t(RevFlag::F_RL);
-    }else if( Inst.aq ){
-      flags |= uint32_t(RevFlag::F_AQ);
-    }else if( Inst.rl ){
-      flags |= uint32_t(RevFlag::F_RL);
+    if( Inst.aq && Inst.rl ) {
+      flags |= uint32_t( RevFlag::F_AQ ) | uint32_t( RevFlag::F_RL );
+    } else if( Inst.aq ) {
+      flags |= uint32_t( RevFlag::F_AQ );
+    } else if( Inst.rl ) {
+      flags |= uint32_t( RevFlag::F_RL );
     }
 
-    MemReq req(R->RV64[Inst.rs1],
-               Inst.rd,
-               RevRegClass::RegGPR,
-               F->GetHartToExecID(),
-               MemOp::MemOpAMO,
-               true,
-               R->GetMarkLoadComplete());
+    MemReq req( R->RV64[Inst.rs1],
+                Inst.rd,
+                RevRegClass::RegGPR,
+                F->GetHartToExecID(),
+                MemOp::MemOpAMO,
+                true,
+                R->GetMarkLoadComplete() );
     R->LSQueue->insert( req.LSQHashPair() );
-    M->AMOVal(F->GetHartToExecID(),
-              R->RV64[Inst.rs1],
-              &R->RV64[Inst.rs2],
-              &R->RV64[Inst.rd],
-              req,
-              RevFlag{flags});
+    M->AMOVal( F->GetHartToExecID(),
+               R->RV64[Inst.rs1],
+               &R->RV64[Inst.rs2],
+               &R->RV64[Inst.rd],
+               req,
+               RevFlag{ flags } );
 
-    R->AdvancePC(Inst);
+    R->AdvancePC( Inst );
 
     // update the cost
-    R->cost += M->RandCost(F->GetMinCost(), F->GetMaxCost());
+    R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
     return true;
   }
 
-  static constexpr auto& amoaddd  = amooperd<RevFlag::F_AMOADD>;
-  static constexpr auto& amoswapd = amooperd<RevFlag::F_AMOSWAP>;
-  static constexpr auto& amoxord  = amooperd<RevFlag::F_AMOXOR>;
-  static constexpr auto& amoandd  = amooperd<RevFlag::F_AMOAND>;
-  static constexpr auto& amoord   = amooperd<RevFlag::F_AMOOR>;
-  static constexpr auto& amomind  = amooperd<RevFlag::F_AMOMIN>;
-  static constexpr auto& amomaxd  = amooperd<RevFlag::F_AMOMAX>;
-  static constexpr auto& amominud = amooperd<RevFlag::F_AMOMINU>;
-  static constexpr auto& amomaxud = amooperd<RevFlag::F_AMOMAXU>;
+  static constexpr auto& amoaddd  = amooperd< RevFlag::F_AMOADD >;
+  static constexpr auto& amoswapd = amooperd< RevFlag::F_AMOSWAP >;
+  static constexpr auto& amoxord  = amooperd< RevFlag::F_AMOXOR >;
+  static constexpr auto& amoandd  = amooperd< RevFlag::F_AMOAND >;
+  static constexpr auto& amoord   = amooperd< RevFlag::F_AMOOR >;
+  static constexpr auto& amomind  = amooperd< RevFlag::F_AMOMIN >;
+  static constexpr auto& amomaxd  = amooperd< RevFlag::F_AMOMAX >;
+  static constexpr auto& amominud = amooperd< RevFlag::F_AMOMINU >;
+  static constexpr auto& amomaxud = amooperd< RevFlag::F_AMOMAXU >;
 
   // ----------------------------------------------------------------------
   //
@@ -95,12 +107,13 @@ class RV64A : public RevExt {
   // ----------------------------------------------------------------------
 
   struct Rev64AInstDefaults : RevInstDefaults {
-    Rev64AInstDefaults(){
-      SetOpcode(0b0101111);
-      SetFunct3(0b011);
+    Rev64AInstDefaults() {
+      SetOpcode( 0b0101111 );
+      SetFunct3( 0b011 );
     }
   };
 
+  // clang-format off
   std::vector<RevInstEntry> RV64ATable = {
     { Rev64AInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrd     ).Setrs2Class(RevRegClass::RegUNKNOWN) },
     { Rev64AInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scd     ) },
@@ -114,17 +127,16 @@ class RV64A : public RevExt {
     { Rev64AInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011000).SetImplFunc(amominud) },
     { Rev64AInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011100).SetImplFunc(amomaxud) },
   };
+  // clang-format on
 
 public:
   /// RV64A: standard constructor
-  RV64A( RevFeature *Feature,
-         RevMem *RevMem,
-         SST::Output *Output )
-    : RevExt( "RV64A", Feature, RevMem, Output) {
-    SetTable(std::move(RV64ATable));
+  RV64A( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
+    RevExt( "RV64A", Feature, RevMem, Output ) {
+    SetTable( std::move( RV64ATable ) );
   }
-}; // end class RV64A
+};  // end class RV64A
 
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif
