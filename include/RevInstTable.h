@@ -161,6 +161,9 @@ struct RevInstEntry {
   /// Instruction implementation function
   bool ( *func )( RevFeature*, RevRegFile*, RevMem*, const RevInst& ) = nullptr;
 
+  /// Predicate for enabling table entries for only certain encodings
+  bool ( *predicate )( uint32_t Inst ) = []( uint32_t ) { return true; };
+
   // Begin Set() functions to allow call chaining - all Set() must return *this
   // clang-format off
   auto& SetMnemonic(std::string m)   { this->mnemonic   = std::move(m); return *this; }
@@ -183,8 +186,10 @@ struct RevInstEntry {
   auto& SetCompressed(bool c)        { this->compressed = c;     return *this; }
   auto& SetfpcvtOp(uint8_t op)       { this->fpcvtOp    = op;    return *this; }
   auto& SetRaiseFPE(bool c)          { this->raisefpe   = c;     return *this; }
-  auto& SetImplFunc(bool func(RevFeature *, RevRegFile *, RevMem *, const RevInst&))
-                                     { this->func = func;        return *this; }
+  auto& SetImplFunc( bool func( RevFeature *, RevRegFile *, RevMem *, const RevInst& ) )
+                                     { this->func       = func;  return *this; }
+  auto& SetPredicate( bool pred( uint32_t ) )
+                                     { this->predicate  = pred;  return *this; }
 
   // clang-format on
 };  // RevInstEntry

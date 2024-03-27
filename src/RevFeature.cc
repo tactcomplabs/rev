@@ -56,31 +56,28 @@ bool RevFeature::ParseMachineModel() {
     CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", ProcID, mac );
 
   ///< List of architecture extensions. These must listed in canonical order
-  ///< as shown in Table 27.11, Chapter 27, of the RISC-V Unprivileged Spec.
+  ///< as shown in Table 27.11, Chapter 27, of the RISC-V Unprivileged Spec
+  ///< (Table 74 of Chapter 36 in the 2024 version).
+  ///<
   ///< By using a canonical ordering, the extensions' presence can be tested
   ///< in linear time complexity of the table and the string. Some of the
   ///< extensions imply other extensions, so the extension flags are ORed.
   // clang-format off
   static constexpr std::pair<std::string_view, uint32_t> table[] = {
-    { "E",          RV_E                                                      },
     { "I",          RV_I                                                      },
+    { "E",          RV_E                                                      },
     { "M",          RV_M                                                      },
     { "A",          RV_A                                                      },
     { "F",          RV_F | RV_ZICSR                                           },
     { "D",          RV_D | RV_F | RV_ZICSR                                    },
     { "G",          RV_I | RV_M | RV_A | RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI },
     { "Q",          RV_Q | RV_D | RV_F | RV_ZICSR                             },
-    { "L",          RV_L                                                      },
     { "C",          RV_C                                                      },
-    { "B",          RV_B                                                      },
-    { "J",          RV_J                                                      },
-    { "T",          RV_T                                                      },
     { "P",          RV_P                                                      },
     { "V",          RV_V | RV_D | RV_F | RV_ZICSR                             },
-    { "N",          RV_N                                                      },
+    { "H",          RV_H                                                      },
     { "Zicsr",      RV_ZICSR                                                  },
     { "Zifencei",   RV_ZIFENCEI                                               },
-    { "Zam",        RV_ZAM | RV_A                                             },
     { "Ztso",       RV_ZTSO                                                   },
     { "Zfa",        RV_ZFA | RV_F | RV_ZICSR                                  },
     { "Zicbom",     RV_ZICBOM                                                 },
