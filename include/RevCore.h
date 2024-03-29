@@ -720,17 +720,23 @@ private:
   //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevCore: pipeline of instructions
   std::deque< std::pair< uint16_t, RevInst > >
     Pipeline;  ///< RevCore: pipeline of instructions
-  std::map< std::string, unsigned >
+  std::unordered_map< std::string, unsigned >
     NameToEntry;  ///< RevCore: instruction mnemonic to table entry mapping
-  std::map< uint32_t, unsigned >
+  std::unordered_multimap< uint32_t, unsigned >
     EncToEntry;  ///< RevCore: instruction encoding to table entry mapping
-  std::map< uint32_t, unsigned >
+  std::unordered_multimap< uint32_t, unsigned >
     CEncToEntry;  ///< RevCore: compressed instruction encoding to table entry mapping
 
-  std::map< unsigned, std::pair< unsigned, unsigned > >
+  std::unordered_map< unsigned, std::pair< unsigned, unsigned > >
        EntryToExt;  ///< RevCore: instruction entry to extension object mapping
   ///           first = Master table entry number
   ///           second = pair<Extension Index, Extension Entry>
+
+  /// RevCore: finds an entry which matches an encoding whose predicate is true
+  auto matchInst( const std::unordered_multimap< uint32_t, unsigned >& map,
+                  uint32_t                                             encoding,
+                  const std::vector< RevInstEntry >& InstTable,
+                  uint32_t                           Inst ) const;
 
   /// RevCore: splits a string into tokens
   void splitStr( const std::string& s, char c, std::vector< std::string >& v );
