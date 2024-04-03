@@ -9,7 +9,7 @@
 
 set_shell_options() {
     set -eEu -o pipefail
-    shopt -s nocasematch
+    shopt -s nocasematch lastpipe
     export PATH=$PATH:/usr/bin:/bin
     exec >&2
 }
