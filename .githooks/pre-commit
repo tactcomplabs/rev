@@ -5,11 +5,11 @@
 # Based on https://github.com/rocm/rocBLAS
 #
 # shellcheck enable=all
-# shellcheck disable=2034,2059,2250,2310
+# shellcheck disable=2034,2059,2250,2310,2312
 
 set_shell_options() {
     set -eEu -o pipefail
-    shopt -s nocasematch lastpipe
+    shopt -s nocasematch
     export PATH=$PATH:/usr/bin:/bin
     exec >&2
 }
@@ -67,6 +67,7 @@ parse_options() {
     done
     if [[ ${#FILES[@]} -ne 0 ]]; then
         EXPLICIT_FILES=1
+        NOSTAGE=1
     fi
 }
 
@@ -113,12 +114,18 @@ detect_change() {
 # Generate list of modified files
 # If --reformat is used, all files are reformatted
 get_files() {
-    if [[ -z $EXPLICIT_FILES ]]; then
+    if [[ -n $EXPLICIT_FILES ]]; then
+        # cd to this script's directory before running clang-format
+        # so that the .clang-format from this script's repo is used
+        REPO=$(dirname "$0")
+    else
         # Do everything from top level
-        top=$(git rev-parse --show-toplevel)
-        cd "$top"
+        REPO=$(git rev-parse --show-toplevel)
+        cd "$REPO"
         if [[ -n $REFORMAT ]]; then
-            git ls-files -z --exclude-standard | readarray -d '' FILES
+            while IFS= read -r -d $'\0' FILE; do
+                FILES+=("$FILE")
+            done < <(git ls-files -z --exclude-standard)
         else
             if git rev-parse --verify HEAD >/dev/null 2>&1; then
                 against=HEAD
@@ -126,12 +133,14 @@ get_files() {
                 # Initial commit: diff against initial commit
                 against=$(git log --reverse --pretty=format:%H | head -1)
             fi
-            git diff-index -z --cached --name-only "$against" | readarray -d '' FILES
+            while IFS= read -r -d $'\0' FILE; do
+                FILES+=("$FILE")
+            done < <(git diff-index -z --cached --name-only "$against")
         fi
     fi
 }
 
-# Test if argument is a text regular file
+# Test if argument is a text file
 # git grep tests whether Git considers it a text file
 # If files were explicitly specified, they are assumed to be text files
 is_text_file() {
@@ -169,7 +178,7 @@ reformat_files() {
             # Run clang-format on C/C++ files
             if is_cxx_file "$file"; then
                 check_clang_format
-                clang-format --assume-filename="$0" -- "$file" > "$temp"
+                (cd "$REPO" && clang-format) < "$file" > "$temp"
                 detect_change "$file" "$temp" "%s: Reformatting with clang-format according to coding guidelines"
             fi
 
