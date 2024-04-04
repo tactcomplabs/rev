@@ -5,7 +5,7 @@
 # Based on https://github.com/rocm/rocBLAS
 #
 # shellcheck enable=all
-# shellcheck disable=2034,2059,2250,2310
+# shellcheck disable=2034,2059,2250,2310,2312
 
 set_shell_options() {
     set -eEu -o pipefail
@@ -31,28 +31,44 @@ set_colors() {
 
 usage() {
     cat<<EOF
-Usage: pre-commit [ --reformat] [ --nostage ]
+Usage: pre-commit [ --reformat] [ --nostage ] [ file1 ] [ file2 ] [ file3 ] ...
 
 Format files prior to commit so that they match style guidelines
 
+Normally called before commit, but if files are explicitly specified, reformats
+them in-place without respect to commits.
+
 Options:
-    --reformat   Reformat all files in the source tree, rather than staged files
-    --nostage    Do not add files modified by pre-commit to the staging area
+   --reformat   Reformat all files in the source tree, rather than staged files
+   --nostage    Do not add files modified by pre-commit to the staging area
 EOF
     exit 1
 }
 
 # Parse command-line options
 parse_options() {
+    FILES=()
     REFORMAT=
     NOSTAGE=
+    EXPLICIT_FILES=
+    local endopts=
     for opt in "$@"; do
-        case $opt in
-            --reformat) REFORMAT=1 ;;
-            --nostage)  NOSTAGE=1  ;;
-            *) usage
-        esac
+        if [[ -n $endopts ]]; then
+            FILES+=("$opt")
+        else
+            case $opt in
+                --)         endopts=1  ;;
+                --reformat) REFORMAT=1 ;;
+                --nostage)  NOSTAGE=1  ;;
+                -*)         usage      ;;
+                *)          FILES+=("$opt")
+            esac
+        fi
     done
+    if [[ ${#FILES[@]} -ne 0 ]]; then
+        EXPLICIT_FILES=1
+        NOSTAGE=1
+    fi
 }
 
 # Check for existence of clang-format or print error message on how to install
@@ -89,7 +105,7 @@ detect_change() {
     if ! cmp -s "$1" "$2"; then
         printf "${YELLOW}$3${END}\n" "$1"
         cp -f "$2" "$1"
-        if [[ -z $NOSTAGE ]]; then
+        if [[ -z $EXPLICIT_FILES && -z $NOSTAGE ]]; then
             git add -u "$1"
         fi
     fi
@@ -98,23 +114,37 @@ detect_change() {
 # Generate list of modified files
 # If --reformat is used, all files are reformatted
 get_files() {
-    if [[ -n $REFORMAT ]]; then
-        git ls-files --exclude-standard
+    if [[ -n $EXPLICIT_FILES ]]; then
+        # cd to this script's directory before running clang-format
+        # so that the .clang-format from this script's repo is used
+        REPO=$(dirname "$0")
     else
-        if git rev-parse --verify HEAD >/dev/null 2>&1; then
-            against=HEAD
+        # Do everything from top level
+        REPO=$(git rev-parse --show-toplevel)
+        cd "$REPO"
+        if [[ -n $REFORMAT ]]; then
+            while IFS= read -r -d $'\0' FILE; do
+                FILES+=("$FILE")
+            done < <(git ls-files -z --exclude-standard)
         else
-            # Initial commit: diff against initial commit
-            against=$(git log --reverse --pretty=format:%H | head -1)
+            if git rev-parse --verify HEAD >/dev/null 2>&1; then
+                against=HEAD
+            else
+                # Initial commit: diff against initial commit
+                against=$(git log --reverse --pretty=format:%H | head -1)
+            fi
+            while IFS= read -r -d $'\0' FILE; do
+                FILES+=("$FILE")
+            done < <(git diff-index -z --cached --name-only "$against")
         fi
-        git diff-index --cached --name-only "$against"
     fi
 }
 
-# Test if argument is a text regular file
+# Test if argument is a text file
 # git grep tests whether Git considers it a text file
+# If files were explicitly specified, they are assumed to be text files
 is_text_file() {
-    [[ -f $1 ]] && git grep -Iqe . -- "$1"
+    [[ -n $EXPLICIT_FILES ]] || git grep -Iqe . -- "$1"
 }
 
 # Test if argument is a C/C++ file
@@ -130,13 +160,12 @@ reformat_files() {
     temp=$(mktemp)
     trap 'rm -f "$temp"' EXIT
 
-    # Do everything from top level
-    top=$(git rev-parse --show-toplevel)
-    cd "$top"
+    # Get the list of files into FILES
+    get_files
 
     # Fix formatting on text files
-    for file in $(get_files); do
-        if is_text_file "$file"; then
+    for file in "${FILES[@]}"; do
+        if [[ -f $file ]] && is_text_file "$file"; then
             # Replace non-ASCII characters with ASCII equivalents
             iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"
             detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
@@ -149,7 +178,7 @@ reformat_files() {
             # Run clang-format on C/C++ files
             if is_cxx_file "$file"; then
                 check_clang_format
-                clang-format -- "$file" > "$temp"
+                (cd "$REPO" && clang-format) < "$file" > "$temp"
                 detect_change "$file" "$temp" "%s: Reformatting with clang-format according to coding guidelines"
             fi
 
