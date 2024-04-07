@@ -1,0 +1,9 @@
+*#
+*~
+*.log
+*.tmplog
+*.exe
+*.csv
+*.trc
+*.dis
+*.bin
