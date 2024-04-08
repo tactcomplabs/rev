@@ -13,7 +13,7 @@
 #define TRACE_POP      asm volatile("slli x0,x0,4");
 #define TRACE_ASSERT(x) { TRACE_PUSH_ON; \
   if (!(x)) { asm volatile(".word 0x0"); }; \
-  TRACE_PUSH_OFF }
+  TRACE_POP }
 #else
 #define TRACE_OFF
 #define TRACE_ON
