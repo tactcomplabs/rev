@@ -1,5 +1,5 @@
 /*
- * fenv.cc
+ * fenv_gentests.cc
  *
  * RISC-V ISA: RV32F, RV32D, RV64F, RV64D
  *
