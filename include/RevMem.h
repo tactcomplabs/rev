@@ -445,6 +445,11 @@ public:
     return memStatsTotal;
   }
 
+  /// RevMem: Dump the memory contents
+  void DumpMem( const uint64_t startAddr,
+                const uint64_t numBytes,
+                const uint64_t bytesPerRow = 16 );
+
 protected:
   char* physMem = nullptr;  ///< RevMem: memory container
 

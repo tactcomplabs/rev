@@ -25,8 +25,7 @@ RevMem::RevMem( uint64_t     MemSize,
                 RevOpts*     Opts,
                 RevMemCtrl*  Ctrl,
                 SST::Output* Output ) :
-  memSize( MemSize ),
-  opts( Opts ), ctrl( Ctrl ), output( Output ) {
+  memSize( MemSize ), opts( Opts ), ctrl( Ctrl ), output( Output ) {
   // Note: this constructor assumes the use of the memHierarchy backend
   pageSize  = 262144;  //Page Size (in Bytes)
   addrShift = lg( pageSize );
@@ -280,7 +279,7 @@ void RevMem::AddToTLB( uint64_t vAddr, uint64_t physAddr ) {
     // Insert the vAddr and physAddr into the TLB and LRU list
     LRUQueue.push_front( vAddr );
     TLB.insert( {
-      vAddr, {physAddr, LRUQueue.begin()}
+      vAddr, { physAddr, LRUQueue.begin() }
     } );
   }
 }
@@ -1141,6 +1140,39 @@ uint64_t RevMem::ExpandHeap( uint64_t Size ) {
   heapend = NewHeapEnd;
 
   return heapend;
+}
+
+void RevMem::DumpMem( const uint64_t startAddr,
+                      const uint64_t numBytes,
+                      const uint64_t bytesPerRow ) {
+  const uint64_t endAddr = startAddr + numBytes;
+
+  for( uint64_t addr = startAddr; addr < endAddr; addr += bytesPerRow ) {
+    std::cout << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex
+              << addr << ": ";
+    for( uint64_t i = 0; i < bytesPerRow; ++i ) {
+      if( addr + i < endAddr ) {
+        uint8_t byte = physMem[addr + i];
+        std::cout << std::setw( 2 ) << std::setfill( '0' ) << std::hex
+                  << static_cast< uint32_t >( byte ) << " ";
+      } else {
+        std::cout << "   ";
+      }
+    }
+    std::cout << " ";
+
+    for( uint64_t i = 0; i < bytesPerRow; ++i ) {
+      if( addr + i < endAddr ) {
+        uint8_t byte = physMem[addr + i];
+        if( std::isprint( byte ) ) {
+          std::cout << static_cast< char >( byte );
+        } else {
+          std::cout << ".";
+        }
+      }
+    }
+    std::cout << std::endl;
+  }
 }
 
 }  // namespace SST::RevCPU
