@@ -448,7 +448,8 @@ public:
   /// RevMem: Dump the memory contents
   void DumpMem( const uint64_t startAddr,
                 const uint64_t numBytes,
-                const uint64_t bytesPerRow = 16 );
+                const uint64_t bytesPerRow  = 16,
+                std::ostream&  outputStream = std::cout );
 
 protected:
   char* physMem = nullptr;  ///< RevMem: memory container

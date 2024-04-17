@@ -1144,34 +1144,37 @@ uint64_t RevMem::ExpandHeap( uint64_t Size ) {
 
 void RevMem::DumpMem( const uint64_t startAddr,
                       const uint64_t numBytes,
-                      const uint64_t bytesPerRow ) {
+                      const uint64_t bytesPerRow,
+                      std::ostream&  outputStream ) {
   const uint64_t endAddr = startAddr + numBytes;
 
   for( uint64_t addr = startAddr; addr < endAddr; addr += bytesPerRow ) {
-    std::cout << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex
-              << addr << ": ";
+    outputStream << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex
+                 << addr << ": ";
+
     for( uint64_t i = 0; i < bytesPerRow; ++i ) {
       if( addr + i < endAddr ) {
         uint8_t byte = physMem[addr + i];
-        std::cout << std::setw( 2 ) << std::setfill( '0' ) << std::hex
-                  << static_cast< uint32_t >( byte ) << " ";
+        outputStream << std::setw( 2 ) << std::setfill( '0' ) << std::hex
+                     << static_cast< uint32_t >( byte ) << " ";
       } else {
-        std::cout << "   ";
+        outputStream << "   ";
       }
     }
-    std::cout << " ";
+
+    outputStream << " ";
 
     for( uint64_t i = 0; i < bytesPerRow; ++i ) {
       if( addr + i < endAddr ) {
         uint8_t byte = physMem[addr + i];
         if( std::isprint( byte ) ) {
-          std::cout << static_cast< char >( byte );
+          outputStream << static_cast< char >( byte );
         } else {
-          std::cout << ".";
+          outputStream << ".";
         }
       }
     }
-    std::cout << std::endl;
+    outputStream << std::endl;
   }
 }
 
