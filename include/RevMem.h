@@ -451,6 +451,9 @@ public:
                 const uint64_t bytesPerRow  = 16,
                 std::ostream&  outputStream = std::cout );
 
+  void DumpValidMem( const uint64_t bytesPerRow  = 16,
+                     std::ostream&  outputStream = std::cout );
+
 protected:
   char* physMem = nullptr;  ///< RevMem: memory container
 

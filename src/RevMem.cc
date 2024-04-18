@@ -1146,9 +1146,12 @@ void RevMem::DumpMem( const uint64_t startAddr,
                       const uint64_t numBytes,
                       const uint64_t bytesPerRow,
                       std::ostream&  outputStream ) {
-  const uint64_t endAddr = startAddr + numBytes;
 
-  for( uint64_t addr = startAddr; addr < endAddr; addr += bytesPerRow ) {
+  uint64_t       translatedStartAddr = CalcPhysAddr( 0, startAddr );
+  const uint64_t endAddr             = translatedStartAddr + numBytes;
+
+  for( uint64_t addr = translatedStartAddr; addr < endAddr;
+       addr += bytesPerRow ) {
     outputStream << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex
                  << addr << ": ";
 
@@ -1178,6 +1181,23 @@ void RevMem::DumpMem( const uint64_t startAddr,
   }
 }
 
+void RevMem::DumpValidMem( const uint64_t bytesPerRow,
+                           std::ostream&  outputStream ) {
+
+  outputStream << "Memory Segments:" << std::endl;
+  for( const auto& MemSeg : MemSegs ) {
+    outputStream << *MemSeg << std::endl;
+    DumpMem(
+      MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  }
+
+  outputStream << "Thread Memory Segments:" << std::endl;
+  for( const auto& MemSeg : ThreadMemSegs ) {
+    outputStream << *MemSeg << std::endl;
+    DumpMem(
+      MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  }
+}
 }  // namespace SST::RevCPU
 
 // EOF

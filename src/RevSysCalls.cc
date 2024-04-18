@@ -4446,8 +4446,11 @@ EcallStatus RevCore::ECALL_dump_mem_range_to_file() {
 EcallStatus RevCore::ECALL_dump_stack() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: dump_stack called" );
   // TODO: Factor in TLS
-  mem->DumpMem(
-    RegFile->GetX< uint64_t >( RevReg::tp ) - _STACK_SIZE_, _STACK_SIZE_, 16 );
+  // Check if sp + _STACK_SIZE_ is in the valid memory range
+  // if not, dump the memory that is valid
+  mem->DumpMem( RegFile->GetX< uint64_t >( RevReg::sp ),
+                RegFile->GetX< uint64_t >( RevReg::tp ) -
+                  RegFile->GetX< uint64_t >( RevReg::sp ) );
   return EcallStatus::SUCCESS;
 }
 
@@ -4472,10 +4475,49 @@ EcallStatus RevCore::ECALL_dump_stack_to_file() {
     std::ofstream outputFile( EcallState.string,
                               std::ios::out | std::ios::binary );
     // TODO: Factor in TLS
-    mem->DumpMem( RegFile->GetX< uint64_t >( RevReg::tp ) - _STACK_SIZE_,
-                  _STACK_SIZE_,
-                  16,
-                  outputFile );
+    mem->DumpMem(
+      RegFile->GetX< uint64_t >( RevReg::sp ), _STACK_SIZE_, 16, outputFile );
+  };
+
+  return EcallLoadAndParseString( pathname, action );
+}
+
+EcallStatus RevCore::ECALL_dump_valid_mem() {
+  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  if( EcallState.bytesRead == 0 ) {
+    output->verbose( CALL_INFO,
+                     2,
+                     0,
+                     "ECALL: dump_valid_mem called by thread %" PRIu32
+                     " on hart %" PRIu32 "\n",
+                     ActiveThreadID,
+                     HartToExecID );
+  }
+
+  mem->DumpValidMem();
+  return EcallStatus::SUCCESS;
+}
+
+EcallStatus RevCore::ECALL_dump_valid_mem_to_file() {
+  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  if( EcallState.bytesRead == 0 ) {
+    output->verbose( CALL_INFO,
+                     2,
+                     0,
+                     "ECALL: dump_valid_mem_to_file called by thread %" PRIu32
+                     " on hart %" PRIu32 "\n",
+                     ActiveThreadID,
+                     HartToExecID );
+  }
+  auto pathname = RegFile->GetX< uint64_t >( RevReg::a0 );
+
+  /* Read the filename from memory one character at a time until we find '\0' */
+  auto action   = [&] {
+    // open the current directory and the file
+    // open the file in write mode
+    std::ofstream outputFile( EcallState.string,
+                              std::ios::out | std::ios::binary );
+    mem->DumpValidMem( 16, outputFile );
   };
 
   return EcallLoadAndParseString( pathname, action );
@@ -4802,10 +4844,12 @@ const std::unordered_map<uint32_t, EcallStatus(RevCore::*)()> RevCore::Ecalls = 
     { 501, &RevCore::ECALL_perf_stats },             //  rev_cpuinfo(struct rev_perf_stats *stats)
     { 1000, &RevCore::ECALL_pthread_create },        //
     { 1001, &RevCore::ECALL_pthread_join },          //
-    { 9000, &RevCore::ECALL_dump_mem_range },        // 9000, rev_mem_dump_range(uint64_t addr, uint64_t size)
-    { 9001, &RevCore::ECALL_dump_mem_range_to_file }, // 9001, rev_mem_dump_range_to_file(const char* outputFile, uint64_t addr, uint64_t size)
-    { 9002, &RevCore::ECALL_dump_stack },        // 9002, rev_mem_dump_stack()
-    { 9003, &RevCore::ECALL_dump_stack_to_file },  // 9003, rev_mem_dump_stack(const char* outputFile)
+    { 9000, &RevCore::ECALL_dump_mem_range },        // 9000, rev_dump_mem_range(uint64_t addr, uint64_t size)
+    { 9001, &RevCore::ECALL_dump_mem_range_to_file },// 9001, rev_dump_mem_range_to_file(const char* outputFile, uint64_t addr, uint64_t size)
+    { 9002, &RevCore::ECALL_dump_stack },            // 9002, rev_dump_stack()
+    { 9003, &RevCore::ECALL_dump_stack_to_file },    // 9003, rev_dump_stack(const char* outputFile)
+    { 9004, &RevCore::ECALL_dump_valid_mem },        // 9004, rev_dump_valid_mem()
+    { 9005, &RevCore::ECALL_dump_valid_mem_to_file },// 9005, rev_dump_valid_mem_to_file()
 };
 // clang-format on
 

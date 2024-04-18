@@ -706,6 +706,9 @@ private:
   EcallStatus ECALL_dump_stack();         // 9002, rev_mem_dump_stack()
   EcallStatus ECALL_dump_stack_to_file(); // 9003, rev_mem_dump_stack(const char* outputFile)
 
+  EcallStatus ECALL_dump_valid_mem();         // 9004, rev_mem_dump_valid_mem()
+  EcallStatus ECALL_dump_valid_mem_to_file(); // 9005, rev_mem_dump_valid_mem_to_file()
+
   // clang-format on
 
   /// RevCore: Table of ecall codes w/ corresponding function pointer implementations

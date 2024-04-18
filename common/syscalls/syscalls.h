@@ -661,6 +661,8 @@ REV_SYSCALL( 9000, void dump_mem_range( uint64_t addr, uint64_t size ) );
 REV_SYSCALL( 9001, void dump_mem_range_to_file( const char* outputFile, uint64_t addr, uint64_t size ) );
 REV_SYSCALL( 9002, void dump_stack( ) );
 REV_SYSCALL( 9003, void dump_stack_to_file( const char* outputFile ) );
+REV_SYSCALL( 9004, void dump_valid_mem( ) );
+REV_SYSCALL( 9005, void dump_valid_mem_to_file( ) );
 // clang-format on
 
 #endif  //SYSCALL_TYPES_ONLY
