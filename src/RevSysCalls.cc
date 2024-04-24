@@ -2864,39 +2864,52 @@ EcallStatus RevCore::ECALL_readahead() {
 }
 
 // 214, rev_sbrk(unsigned long brk)
-EcallStatus RevProc::ECALL_sbrk(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0,
-                  "ECALL: sbrk called by thread %" PRIu32
-                  " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
-  auto increment = RegFile->GetX<uint64_t>(RevReg::a0);
-  auto& EcallState = Harts.at(HartToExecID)->GetEcallState();
-  auto lsq_hash = LSQHash(RevReg::a0, RevRegClass::RegGPR, HartToExecID); // Cached hash value
+EcallStatus RevCore::ECALL_sbrk() {
+  output->verbose( CALL_INFO,
+                   2,
+                   0,
+                   "ECALL: sbrk called by thread %" PRIu32 " on hart %" PRIu32
+                   "\n",
+                   ActiveThreadID,
+                   HartToExecID );
+  auto  increment  = RegFile->GetX< uint64_t >( RevReg::a0 );
+  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto  lsq_hash   = LSQHash(
+    RevReg::a0, RevRegClass::RegGPR, HartToExecID );  // Cached hash value
   auto rtval = EcallStatus::CONTINUE;
 
   // Read the BRK value from the backing store
-  if( LSQueue->count(lsq_hash) == 0 && EcallState.bytesRead == 0 ){
-    MemReq req (mem->GetBRKValueAddr(), RevReg::a0,
-                RevRegClass::RegGPR, HartToExecID,
-                MemOp::MemOpREAD, true, RegFile->GetMarkLoadComplete());
-    LSQueue->insert(req.LSQHashPair());
+  if( LSQueue->count( lsq_hash ) == 0 && EcallState.bytesRead == 0 ) {
+    MemReq req( mem->GetBRKValueAddr(),
+                RevReg::a0,
+                RevRegClass::RegGPR,
+                HartToExecID,
+                MemOp::MemOpREAD,
+                true,
+                RegFile->GetMarkLoadComplete() );
+    LSQueue->insert( req.LSQHashPair() );
 
-    mem->ReadVal(HartToExecID, mem->GetBRKValueAddr(),
-                 reinterpret_cast<uint64_t*>(EcallState.buf.data()),
-                 req, RevFlag::F_NONE);
+    mem->ReadVal( HartToExecID,
+                  mem->GetBRKValueAddr(),
+                  reinterpret_cast< uint64_t* >( EcallState.buf.data() ),
+                  req,
+                  RevFlag::F_NONE );
 
-    EcallState.bytesRead = sizeof(uint64_t);
+    EcallState.bytesRead = sizeof( uint64_t );
   } else {
-    uint64_t brk = *reinterpret_cast<uint64_t*>(EcallState.buf.data());
+    uint64_t brk = *reinterpret_cast< uint64_t* >( EcallState.buf.data() );
     // Store the current brk value as the return value
-    RegFile->SetX(RevReg::a0, brk);
+    RegFile->SetX( RevReg::a0, brk );
 
     uint64_t NewBrk = brk + increment;
 
-    mem->sbrk(NewBrk);
+    mem->sbrk( NewBrk );
 
     // Write the updated value back to the backing store
-    mem->WriteMem(HartToExecID, mem->GetBRKValueAddr(),
-                  sizeof(uint64_t), reinterpret_cast<uint64_t*>(&NewBrk));
+    mem->WriteMem( HartToExecID,
+                   mem->GetBRKValueAddr(),
+                   sizeof( uint64_t ),
+                   reinterpret_cast< uint64_t* >( &NewBrk ) );
 
     rtval = EcallStatus::SUCCESS;
   }
@@ -2904,9 +2917,8 @@ EcallStatus RevProc::ECALL_sbrk(RevInst& inst){
 }
 
 // 215, rev_munmap(unsigned long addr, size_t len)
-EcallStatus RevProc::ECALL_munmap(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0,
-                  "ECALL: munmap called\n");
+EcallStatus RevCore::ECALL_munmap() {
+  output->verbose( CALL_INFO, 2, 0, "ECALL: munmap called\n" );
   // FIXME:
   //auto Addr = RegFile->GetX<uint64_t>(RevReg::a0);
   //auto Size = RegFile->GetX<uint64_t>(RevReg::a1);
@@ -3139,9 +3151,14 @@ EcallStatus RevCore::ECALL_execve() {
 }
 
 // 222, rev_old_mmap(struct mmap_arg_struct  *arg)
-EcallStatus RevProc::ECALL_mmap(RevInst& inst){
-  output->verbose(CALL_INFO, 2, 0,
-                  "ECALL: mmap called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID);
+EcallStatus RevCore::ECALL_mmap() {
+  output->verbose( CALL_INFO,
+                   2,
+                   0,
+                   "ECALL: mmap called by thread %" PRIu32 " on hart %" PRIu32
+                   "\n",
+                   ActiveThreadID,
+                   HartToExecID );
 
   auto addr = RegFile->GetX< uint64_t >( RevReg::a0 );
   auto size = RegFile->GetX< uint64_t >( RevReg::a1 );
@@ -3150,19 +3167,21 @@ EcallStatus RevProc::ECALL_mmap(RevInst& inst){
   // auto fd = RegFile->GetX<int>(RevReg::a4);
   // auto offset = RegFile->GetX<off_t>(RevReg::a5);
 
-  if( !addr ){
+  if( !addr ) {
     // TODO: Update If address is NULL... We add it to MMapMemSegs.end()->getTopAddr()+1
     // addr = mem->AllocMem(size);
-    output->fatal(CALL_INFO, -1, "MMAP now requires you to specify an address in Rev."
-                                 "If this was from a library call or something similar "
-                                 "please open an issue.\n");
+    output->fatal( CALL_INFO,
+                   -1,
+                   "MMAP now requires you to specify an address in Rev. "
+                   "If this was from a library call or something similar "
+                   "please open an issue.\n" );
   }
   // We were passed an address... try to put a segment there.
   // Currently there is no handling of getting it 'close' to the
   // suggested address... instead if it can't allocate a new segment
   // there it fails.
-  mem->AddMMapMemSeg(addr, size);
-  RegFile->SetX(RevReg::a0, addr);
+  mem->AddMMapMemSeg( addr, size );
+  RegFile->SetX( RevReg::a0, addr );
   return EcallStatus::SUCCESS;
 }
 
@@ -4633,7 +4652,7 @@ const std::unordered_map<uint32_t, EcallStatus(RevCore::*)()> RevCore::Ecalls = 
     { 211, &RevCore::ECALL_sendmsg },                //  rev_sendmsg(int fd, struct user_msghdr  *msg, unsigned flags)
     { 212, &RevCore::ECALL_recvmsg },                //  rev_recvmsg(int fd, struct user_msghdr  *msg, unsigned flags)
     { 213, &RevCore::ECALL_readahead },              //  rev_readahead(int fd, loff_t offset, size_t count)
-    { 214, &RevCore::ECALL_brk },                    //  rev_brk(unsigned long brk)
+    { 214, &RevCore::ECALL_sbrk },                    //  rev_brk(unsigned long brk)
     { 215, &RevCore::ECALL_munmap },                 //  rev_munmap(unsigned long addr, size_t len)
     { 216, &RevCore::ECALL_mremap },                 //  rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr)
     { 217, &RevCore::ECALL_add_key },                //  rev_add_key(const char  *_type, const char  *_description, const void  *_payload, size_t plen, key_serial_t destringid)

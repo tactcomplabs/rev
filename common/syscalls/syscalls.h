@@ -561,7 +561,7 @@ REV_SYSCALL(  210, int rev_shutdown(int sockfd, int how) );
 REV_SYSCALL(  211, ssize_t rev_sendmsg(int sockfd, struct user_msghdr *msg, unsigned flags) );
 REV_SYSCALL(  212, ssize_t rev_recvmsg(int sockfd, struct user_msghdr *msg, unsigned flags) );
 REV_SYSCALL(  213, ssize_t rev_readahead(int sockfd, loff_t offset, size_t count) );
-REV_SYSCALL(  214, int rev_brk(unsigned long brk) );
+REV_SYSCALL(  214, int rev_sbrk(unsigned long brk) );
 REV_SYSCALL(  215, int rev_munmap(unsigned long addr, size_t len) );
 REV_SYSCALL(  216, int rev_mremap(unsigned long addr, unsigned long old_len, unsigned long new_len, unsigned long flags, unsigned long new_addr) );
 REV_SYSCALL(  217, int rev_add_key(const char *_type, const char *_description, const void *_payload, size_t plen, key_serial_t destringid) );
