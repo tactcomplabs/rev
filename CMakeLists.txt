@@ -77,10 +77,10 @@ endif()
 # Compiler Options
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set(WERROR_FLAG "")
-  set(FP_MODE_FLAG "-ffp-model=strict")
+  set(FP_MODE_FLAG "-ffp-model=strict -frounding-math -ftrapping-math")
 else()
   set(WERROR_FLAG "-Werror")
-  set(FP_MODE_FLAG "-frounding-math")
+  set(FP_MODE_FLAG "-frounding-math -ftrapping-math")
 endif()
 
 set(CMAKE_CXX_FLAGS "-std=c++17 ${FP_MODE_FLAG} -O2 -Wall -Wextra ${WERROR_FLAG} -Wvla -Wuninitialized -Wdouble-promotion -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")

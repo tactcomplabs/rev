@@ -421,6 +421,12 @@ bool bcond( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   return true;
 }
 
+/// Negation function which flips sign bit, even of NaN
+template< typename T >
+inline auto negate( T x ) {
+  return std::copysign( x, std::signbit( x ) ? T{ 1 } : T{ -1 } );
+}
+
 /// Rev FMA template which handles 0.0 * NAN and NAN * 0.0 correctly
 // RISC-V requires INVALID exception when x * y is INVALID even when z = qNaN
 template< typename T >
@@ -448,7 +454,7 @@ bool fmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   R->SetFP( Inst.rd,
             revFMA( R->GetFP< T >( Inst.rs1 ),
                     R->GetFP< T >( Inst.rs2 ),
-                    -R->GetFP< T >( Inst.rs3 ) ) );
+                    negate( R->GetFP< T >( Inst.rs3 ) ) ) );
   R->AdvancePC( Inst );
   return true;
 }
@@ -457,7 +463,7 @@ bool fmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 template< typename T >
 bool fnmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   R->SetFP( Inst.rd,
-            revFMA( -R->GetFP< T >( Inst.rs1 ),
+            revFMA( negate( R->GetFP< T >( Inst.rs1 ) ),
                     R->GetFP< T >( Inst.rs2 ),
                     R->GetFP< T >( Inst.rs3 ) ) );
   R->AdvancePC( Inst );
@@ -468,9 +474,9 @@ bool fnmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 template< typename T >
 bool fnmadd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   R->SetFP( Inst.rd,
-            -revFMA( R->GetFP< T >( Inst.rs1 ),
-                     R->GetFP< T >( Inst.rs2 ),
-                     R->GetFP< T >( Inst.rs3 ) ) );
+            negate( revFMA( R->GetFP< T >( Inst.rs1 ),
+                            R->GetFP< T >( Inst.rs2 ),
+                            R->GetFP< T >( Inst.rs3 ) ) ) );
   R->AdvancePC( Inst );
   return true;
 }

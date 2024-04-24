@@ -1,3 +1,6 @@
+#ifndef __FENV_TEST_H
+#define __FENV_TEST_H
+
 #include <cfenv>
 #include <cinttypes>
 #include <cmath>
@@ -117,7 +120,7 @@ bool test_exceptions( unsigned         test,
                       int              exceptions_expected,
                       bool             result_passed,
                       Ts... args ) {
-  if( exceptions != exceptions_expected ) {
+  if( ( exceptions ^ exceptions_expected ) & FE_ALL_EXCEPT ) {
     if( result_passed ) {
       std::cerr << "\nError in fenv Test " << test << ":\n";
       std::cerr << test_src << "\n  ( " << args_string( args... ) << " )\n";
@@ -130,3 +133,5 @@ bool test_exceptions( unsigned         test,
   }
   return true;
 }
+
+#endif

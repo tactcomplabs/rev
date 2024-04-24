@@ -14,19 +14,27 @@ CC=${RVCC}
 ARCH=rv64imafdc
 ABI=lp64d
 
-CC_OPTS = -ftrapping-math -fno-signaling-nans -fno-associative-math -fno-tree-loop-distribute-patterns -Werror=double-promotion -Werror=conversion
+CC_OPTS = -xc++ -O2
 
-
-ifeq "$(RVCC)" "riscv64-unknown-elf-gcc"
-	CC_OPTS += -frounding-math
-else
+ifneq (,$(findstring clang,$(RVCC)))
 	CC_OPTS += -ffp-model=strict
+else
+	CC_OPTS += -fsignaling-nans
 endif
 
-all: fenv.exe
+CC_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
 
-fenv.exe: fenv.c
-	$(CC) $(CC_OPTS) -O2 -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) -o fenv.exe fenv.c
+all: fenv_test.exe
+
+fenv_test.exe: fenv_test.cc
+	$(CC) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc -lm -o $@
+
+fenv_test.cc: fenv_gentests.exe
+	./fenv_gentests.exe FE_TONEAREST > $@
+
+# build test generator on local host
+fenv_gentests.exe: fenv_test.h fenv_gentests.cc
+	g++ $(CC_OPTS) fenv_gentests.cc -o $@
 
 clean:
 	rm -Rf *.exe
