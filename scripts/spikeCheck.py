@@ -9,15 +9,15 @@ parser.add_argument('-v', '--verbose', dest='verbose', required=False)
 args = parser.parse_args()
 
 try:
-  sst_out = open(args.sstOutfile, 'r') 
+  sst_out = open(args.sstOutfile, 'r')
 except:
   print("Cannot open file " + args.sstOutfile)
   exit(1)
 
 sstLines = sst_out.readlines()
- 
+
 try:
-  asm = open(args.asmFilename, 'r') 
+  asm = open(args.asmFilename, 'r')
 except:
   print("Cannot open file " + args.asmFilename)
   exit(1)
@@ -25,7 +25,7 @@ except:
 asmLines = asm.readlines()
 
 try:
-  spike = open(args.spikeOutfile, 'r') 
+  spike = open(args.spikeOutfile, 'r')
 except:
   print("Cannot open file " + args.spikeOutfile)
   exit(1)
@@ -86,7 +86,7 @@ for line in sstLines:
         spikeList.pop(0)
         while int(PC,16) != int(spikeList[0].split()[2],16):
             spikeList.pop(0)
-        
+
     if PC in asmHash:
         if int(PC,16) == int(spikeList[0].split()[2],16):
             match = '+'

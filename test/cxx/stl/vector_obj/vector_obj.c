@@ -1,23 +1,24 @@
-// #include "revalloc.hpp"
 #include "rev-macros.h"
+#include "revalloc.hpp"
 #include <vector>
 
-#define assert(x)                                                              \
-  if (!(x)) {                                                                  \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
-    asm(".byte 0x00");                                                         \
+#define assert( x )      \
+  if( !( x ) ) {         \
+    asm( ".byte 0x00" ); \
+    asm( ".byte 0x00" ); \
+    asm( ".byte 0x00" ); \
+    asm( ".byte 0x00" ); \
   }
 
 int main() {
 
   class TestObj {
   public:
-    TestObj(int m1, int m2) {
+    TestObj( int m1, int m2 ) {
       mem1 = m1;
       mem2 = m2;
     }
+
     TestObj() {
       mem1 = 0;
       mem2 = 0;
@@ -34,13 +35,12 @@ int main() {
     int mem2;
   };
 
-  // std::vector<TestObj, Allocator<TestObj> > v;
-  std::vector<TestObj> v;
+  std::vector< TestObj, Allocator< TestObj > > v;
 
-  TestObj c;
-  v.push_back(c);
-  v[0].SetM1(0xbeef);
-  assert(v[0].GetM1() == 0xbeef)
+  TestObj                                      c;
+  v.push_back( c );
+  v[0].SetM1( 0xbeef );
+  assert( v[0].GetM1() == 0xbeef )
 
-      return 0;
+    return 0;
 }

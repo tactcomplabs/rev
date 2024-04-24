@@ -30,7 +30,7 @@ comp_cpu.addParams({
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
         "program" : os.getenv("REV_EXE", "dram_tests.exe"),  # Target executable
-        "args"    : "64 4 2",                         # Target command line arguments
+        "args"    : "64 4 2 3",                       # Target command line arguments
         "trcStartCycle" : "1",                        # Trace all instructions
         "splash" : 1                                  # Display the splash message
 })
