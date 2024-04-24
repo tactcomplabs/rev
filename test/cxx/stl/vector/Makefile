@@ -20,7 +20,7 @@ ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CC) -march=$(ARCH) -O0 -I../../../../common/syscalls -I../../../include -I.. -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+	$(CC) -march=$(ARCH) -O0 -I../../../../common/include -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 
