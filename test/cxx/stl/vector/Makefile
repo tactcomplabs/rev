@@ -19,8 +19,8 @@ CC=riscv64-unknown-elf-g++
 ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).c -static
+$(EXAMPLE).exe: $(EXAMPLE).cc
+	$(CC) -march=$(ARCH) -O0 -I../../../../common/syscalls -I../../../include -I.. -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

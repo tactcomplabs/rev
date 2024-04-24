@@ -219,5 +219,6 @@ add_subdirectory(amo)
 add_subdirectory(benchmarks)
 add_subdirectory(syscalls)
 add_subdirectory(threading)
+add_subdirectory(cxx)
 
 # EOF

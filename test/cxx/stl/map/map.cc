@@ -1,5 +1,5 @@
 #include "rev-macros.h"
-#include "revalloc.hpp"
+#include "revalloc.h"
 #include <map>
 #include <string>
 
