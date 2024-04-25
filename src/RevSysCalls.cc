@@ -3160,14 +3160,21 @@ EcallStatus RevCore::ECALL_mmap() {
                    ActiveThreadID,
                    HartToExecID );
 
-  auto addr = RegFile->GetX< uint64_t >( RevReg::a0 );
-  auto size = RegFile->GetX< uint64_t >( RevReg::a1 );
+  auto        addr     = RegFile->GetX< uint64_t >( RevReg::a0 );
+  auto        size     = RegFile->GetX< uint64_t >( RevReg::a1 );
   // auto prot = RegFile->GetX<int>(RevReg::a2);
   // auto Flags = RegFile->GetX<int>(RevReg::a3);
   // auto fd = RegFile->GetX<int>(RevReg::a4);
   // auto offset = RegFile->GetX<off_t>(RevReg::a5);
 
+  const auto& MMapSegs = mem->GetMmapMemSegs();
   if( !addr ) {
+    if( !MMapSegs.empty() ) {
+      addr = ( *MMapSegs.end() )->getTopAddr() + 1;
+    } else {
+      addr = ( mem->GetHeapEnd() + mem->GetMemSize() ) / 2;
+      addr = ( addr + 0xFFF ) & ~0xFFF;
+    }
     // TODO: Update If address is NULL... We add it to MMapMemSegs.end()->getTopAddr()+1
     // addr = mem->AllocMem(size);
     output->fatal( CALL_INFO,

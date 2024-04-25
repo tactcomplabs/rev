@@ -25,8 +25,7 @@ RevMem::RevMem( uint64_t     MemSize,
                 RevOpts*     Opts,
                 RevMemCtrl*  Ctrl,
                 SST::Output* Output ) :
-  memSize( MemSize ),
-  opts( Opts ), ctrl( Ctrl ), output( Output ) {
+  memSize( MemSize ), opts( Opts ), ctrl( Ctrl ), output( Output ) {
   // Note: this constructor assumes the use of the memHierarchy backend
   pageSize  = 262144;  //Page Size (in Bytes)
   addrShift = lg( pageSize );
@@ -38,8 +37,7 @@ RevMem::RevMem( uint64_t     MemSize,
   stacktop  = ( _REVMEM_BASE_ + memSize ) - 1024;
 
   // Add the 1024 bytes for the program header information
-  AddStaticMemSeg(stacktop, 1024);
-
+  AddStaticMemSeg( stacktop, 1024 );
 }
 
 RevMem::RevMem( uint64_t MemSize, RevOpts* Opts, SST::Output* Output ) :
@@ -58,8 +56,8 @@ RevMem::RevMem( uint64_t MemSize, RevOpts* Opts, SST::Output* Output ) :
   // We initialize StackTop to the size of memory minus 1024 bytes
   // This allocates 1024 bytes for program header information to contain
   // the ARGC and ARGV information
-  stacktop = (_REVMEM_BASE_ + memSize) - 1024;
-  AddStaticMemSeg(stacktop, 1024);
+  stacktop = ( _REVMEM_BASE_ + memSize ) - 1024;
+  AddStaticMemSeg( stacktop, 1024 );
 }
 
 bool RevMem::outstandingRqsts() {
@@ -281,7 +279,7 @@ void RevMem::AddToTLB( uint64_t vAddr, uint64_t physAddr ) {
     // Insert the vAddr and physAddr into the TLB and LRU list
     LRUQueue.push_front( vAddr );
     TLB.insert( {
-      vAddr, {physAddr, LRUQueue.begin()}
+      vAddr, { physAddr, LRUQueue.begin() }
     } );
   }
 }
@@ -323,7 +321,7 @@ uint64_t RevMem::CalcPhysAddr( uint64_t pageNum, uint64_t vAddr ) {
     } else {
       /* vAddr not a valid address */
 
-      for( auto Seg : StaticMemSegs ){
+      for( auto Seg : StaticMemSegs ) {
         std::cout << *Seg << std::endl;
       }
 
@@ -331,18 +329,20 @@ uint64_t RevMem::CalcPhysAddr( uint64_t pageNum, uint64_t vAddr ) {
         std::cout << *Seg << std::endl;
       }
 
-      output->fatal(CALL_INFO, 11,
-                    "Segmentation Fault: Virtual address 0x%" PRIx64 " was not found in any mem segments\n",
-                    vAddr);
+      output->fatal( CALL_INFO,
+                     11,
+                     "Segmentation Fault: Virtual address 0x%" PRIx64
+                     " was not found in any mem segments\n",
+                     vAddr );
     }
   }
   return physAddr;
 }
 
 // This function will change a decent amount in an upcoming PR
-bool RevMem::isValidVirtAddr(const uint64_t vAddr){
-  for(const auto& Seg : StaticMemSegs ){
-    if( Seg->contains(vAddr) ){
+bool RevMem::isValidVirtAddr( const uint64_t vAddr ) {
+  for( const auto& Seg : StaticMemSegs ) {
+    if( Seg->contains( vAddr ) ) {
       return true;
     }
   }
@@ -354,17 +354,17 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   }
 
   // Check the heap
-  if( Heap && Heap->isValidVirtAddr(vAddr) ){
+  if( Heap && Heap->isValidVirtAddr( vAddr ) ) {
     return true;
   } else {
     // FIXME:
-    if( vAddr == BRKValueAddr ){
+    if( vAddr == BRKValueAddr ) {
       return true;
     }
   }
 
-  for( const auto& Seg : MMapSegs ){
-    if( Seg->contains(vAddr) ){
+  for( const auto& Seg : MMapSegs ) {
+    if( Seg->contains( vAddr ) ) {
       return true;
     }
   }
@@ -372,13 +372,14 @@ bool RevMem::isValidVirtAddr(const uint64_t vAddr){
   return false;
 }
 
-
-uint64_t RevMem::AddStaticMemSeg(const uint64_t BaseAddr, const uint64_t SegSize){
-  uint64_t RoundedUpSegSize = AlignUp(SegSize, pageSize);
+uint64_t RevMem::AddStaticMemSeg( const uint64_t BaseAddr,
+                                  const uint64_t SegSize ) {
+  uint64_t RoundedUpSegSize = AlignUp( SegSize, pageSize );
   // TODO: Maybe add checking to make sure the segment doesn't overlap with another segment?
   // It really shouldn't matter unless the segment goes into the Heap region which it shouldn't
   // TODO: Figure out if rounding is what I want
-  StaticMemSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, RoundedUpSegSize));
+  StaticMemSegs.emplace_back(
+    std::make_shared< MemSegment >( BaseAddr, RoundedUpSegSize ) );
   return BaseAddr;
 }
 
@@ -454,7 +455,7 @@ std::shared_ptr< MemSegment > RevMem::AddThreadMem() {
   return ThreadMemSegs.back();
 }
 
-void RevMem::SetTLSInfo( const uint64_t& BaseAddr, const uint64_t& Size ) {
+void RevMem::SetTLSInfo( const uint64_t BaseAddr, const uint64_t Size ) {
   TLSBaseAddr = BaseAddr;
   TLSSize += Size;
   ThreadMemSize = _STACK_SIZE_ + TLSSize;
@@ -511,7 +512,8 @@ void RevMem::SetTLSInfo( const uint64_t& BaseAddr, const uint64_t& Size ) {
 // AllocMemAt differs from AddMemSegAt because it first searches the FreeMemSegs
 // vector to see if there is a free segment that will fit the new data
 // If its unable to allocate at the location requested it will error. This may change in the future.
-uint64_t RevMem::AddMMapMemSeg(const uint64_t BaseAddr, const uint64_t SegSize){
+uint64_t RevMem::AddMMapMemSeg( const uint64_t BaseAddr,
+                                const uint64_t SegSize ) {
   int ret = 0;
   output->verbose( CALL_INFO,
                    10,
@@ -519,70 +521,25 @@ uint64_t RevMem::AddMMapMemSeg(const uint64_t BaseAddr, const uint64_t SegSize){
                    "Attempting to allocate %" PRIu64 " bytes on the heap",
                    SegSize );
 
-  //// Check if this range exists in the FreeMemSegs vector
-  //for( unsigned i=0; i < FreeMemSegs.size(); i++ ){
-  //  auto FreeSeg = FreeMemSegs[i];
-  //  if( FreeSeg->contains(BaseAddr, SegSize) ){
-  //    // Check if were allocating on a boundary of FreeSeg
-  //    // if not, were allocating in the middle
-  //    if( FreeSeg->getBaseAddr() != BaseAddr && FreeSeg->getTopAddr() != (BaseAddr + SegSize) ){
-  //      // Before: |-------------------- FreeSeg --------------------|
-  //      // After:  |--- FreeSeg ---|- AllocedSeg -|--- NewFreeSeg ---|
-
-  //      size_t OldFreeSegTop = FreeSeg->getTopAddr();
-
-  //      // Shrink FreeSeg so it's size goes up to the new AllocedSeg's BaseAddr
-  //      FreeSeg->setSize(BaseAddr - FreeSeg->getBaseAddr());
-
-  //      // Create New AllocedSeg; this is done later on before returning
-
-  //      // Create New FreeSeg that fills the upper part of the old FreeSeg
-  //      uint64_t NewFreeSegBaseAddr = BaseAddr + SegSize;
-  //      size_t NewFreeSegSize = OldFreeSegTop - NewFreeSegBaseAddr;
-  //      FreeMemSegs.emplace_back(std::make_shared<MemSegment>(NewFreeSegBaseAddr, NewFreeSegSize));
-  //    }
-
-  //    // If were allocating at the beginning of a FreeSeg (That doesn't take up the whole segment)
-  //    else if( FreeSeg->getBaseAddr() == BaseAddr && FreeSeg->getTopAddr() != (BaseAddr + SegSize) ){
-  //      // - Before: |--------------- FreeSeg --------------|
-  //      // - After:  |---- AllocedSeg ----|---- FreeSeg ----|
-  //      FreeSeg->setBaseAddr(BaseAddr + SegSize);
-  //    }
-
-  //    // If were allocating at the end of a FreeSeg (ie. TopAddr is last allocated address)
-  //    else if( FreeSeg->getBaseAddr() != BaseAddr && FreeSeg->getTopAddr() == (BaseAddr + SegSize) ) {
-  //      // - Before: |--------------- FreeSeg --------------|
-  //      // - After:  |---- FreeSeg ----|---- AllocedSeg ----|
-  //      FreeSeg->setSize(FreeSeg->getSize() - SegSize);
-  //    }
-
-  //    // Entire segment is being occupied
-  //    else {
-  //      // - Before: |-------- FreeSeg -------|
-  //      // - After:  |------ AllocedSeg ------|
-  //      FreeMemSegs.erase(FreeMemSegs.begin()+i);
-  //    }
-  //    // Segment was allocated so return the BaseAddr
-  //    ret = BaseAddr;
-  //    break;
-  //  }
-  //}
-
-  // if (ret) { // Found a place
-    // Check if any addresses in the segment are already
-  for( auto Seg : MMapSegs ){
+  for( auto Seg : MMapSegs ) {
     // Check if either the baseAddr or topAddr of the potential new segment exists inside of an already allocated segment
-    if( Seg->contains(BaseAddr) || Seg->contains(BaseAddr + SegSize) ){
-      output->fatal(CALL_INFO, 11,
-                    "Error: Attempting to allocate memory at address 0x%" PRIx64 " of "
-                    "size %" PRIu64 " which contains memory that is already allocated in the segment with "
-                    "BaseAddr = 0x%" PRIx64 " and Size = %" PRIu64 "\n",
-                    BaseAddr, SegSize, Seg->getBaseAddr(), Seg->getSize());
+    if( Seg->contains( BaseAddr ) || Seg->contains( BaseAddr + SegSize ) ) {
+      output->fatal(
+        CALL_INFO,
+        11,
+        "Error: Attempting to allocate memory at address 0x%" PRIx64 " of "
+        "size %" PRIu64
+        " which contains memory that is already allocated in the segment with "
+        "BaseAddr = 0x%" PRIx64 " and Size = %" PRIu64 "\n",
+        BaseAddr,
+        SegSize,
+        Seg->getBaseAddr(),
+        Seg->getSize() );
     } else {
       continue;
     }
   }
-  MMapSegs.emplace_back(std::make_shared<MemSegment>(BaseAddr, SegSize));
+  MMapSegs.emplace_back( std::make_shared< MemSegment >( BaseAddr, SegSize ) );
 
   return ret;
 }
@@ -1076,46 +1033,50 @@ bool RevMem::CleanLine( unsigned Hart, uint64_t Addr ) {
 
 /// @brief This function is called from the loader to initialize the heap
 /// @param EndOfStaticData: The address of the end of the static data section (ie. end of .bss section)
-void RevMem::InitHeap(const uint64_t EndOfStaticData){
-  if( EndOfStaticData == 0x00ull ){
+void RevMem::InitHeap( const uint64_t EndOfStaticData ) {
+  if( EndOfStaticData == 0x00ull ) {
     // Program didn't contain .text, .data, or .bss sections
-    output->fatal(CALL_INFO, 7,
-                  "The loader was unable"
-                  "to find a .text section in your executable. This is a bug."
-                  "EndOfStaticData = 0x%" PRIx64 " which is less than or equal to 0",
-                  EndOfStaticData);
+    output->fatal( CALL_INFO,
+                   7,
+                   "The loader was unable"
+                   "to find a .text section in your executable. This is a bug."
+                   "EndOfStaticData = 0x%" PRIx64
+                   " which is less than or equal to 0",
+                   EndOfStaticData );
   } else {
     // Mark heap as free
     // FreeMemSegs.emplace_back(std::make_shared<MemSegment>(EndOfStaticData+1, maxHeapSize));
     // Find the first page aligned address after the end of the static data
-    uint64_t AlignedEndOfStaticData = AlignUp(EndOfStaticData, pageSize);
-    BRKValueAddr = AlignedEndOfStaticData;
+    uint64_t AlignedEndOfStaticData = AlignUp( EndOfStaticData, pageSize );
+    BRKValueAddr                    = AlignedEndOfStaticData;
 
     // We write the brk value just before the heap... this is an implicit
-    BRK = AlignedEndOfStaticData + sizeof(uint64_t);
+    BRK = AlignedEndOfStaticData + sizeof( uint64_t );
 
     // Every Rev will write the BRK value to the same address in the physical memory space
     // This *shouldnt* be a problem but it's also not ideal
-    std::cout << "Writing BRK value to physical address 0x" << std::hex << BRKValueAddr << std::dec << std::endl;
-    WriteMem(0, AlignedEndOfStaticData, sizeof(uint64_t), &BRK);
+    std::cout << "Writing BRK value to physical address 0x" << std::hex
+              << BRKValueAddr << std::dec << std::endl;
+    WriteMem( 0, AlignedEndOfStaticData, sizeof( uint64_t ), &BRK );
 
-    Heap = std::make_shared<RevHeap>(this, maxHeapSize, AlignedEndOfStaticData, output);
+    Heap = std::make_shared< RevHeap >(
+      this, maxHeapSize, AlignedEndOfStaticData, output );
   }
   return;
 }
 
-uint64_t RevMem::AlignUp(const uint64_t Addr, const uint64_t Align){
+uint64_t RevMem::AlignUp( const uint64_t Addr, const uint64_t Align ) {
   uint64_t Remainder = Addr % Align;
-  if( Remainder == 0 ){
+  if( Remainder == 0 ) {
     return Addr;
   } else {
     return Addr + Align - Remainder;
   }
 }
 
-uint64_t RevMem::AlignDown(const uint64_t Addr, const uint64_t Align){
+uint64_t RevMem::AlignDown( const uint64_t Addr, const uint64_t Align ) {
   uint64_t Remainder = Addr % Align;
-  if( Remainder == 0 ){
+  if( Remainder == 0 ) {
     return Addr;
   } else {
     return Addr - Remainder;
@@ -1139,5 +1100,6 @@ uint64_t RevMem::AlignDown(const uint64_t Addr, const uint64_t Align){
 //  return heapend;
 //}
 
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
+
 // EOF
