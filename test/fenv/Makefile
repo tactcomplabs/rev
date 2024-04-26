@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: ex1
+# makefile: fenv_test
 #
 # Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -15,7 +15,7 @@ CXX=${RVCXX}
 ARCH=rv64imafdc
 ABI=lp64d
 
-CC_OPTS = -xc++ -O2
+CC_OPTS = -O2
 
 ifneq (,$(findstring clang,$(RVCC)))
 	CC_OPTS += -ffp-model=strict
@@ -27,10 +27,10 @@ CC_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conv
 
 all: fenv_test.exe
 
-fenv_test.exe: fenv_test.cc
-	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc -lm -o $@
+fenv_test.exe: fenv_test.h fenv_test.cc fenv_test_1.cc
+	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_1.cc -lm -o $@
 
-fenv_test.cc: fenv_gentests.exe
+fenv_test_1.cc: fenv_gentests.exe
 	./fenv_gentests.exe FE_TONEAREST > $@
 
 # build test generator on local host
