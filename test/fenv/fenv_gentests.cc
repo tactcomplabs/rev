@@ -13,31 +13,11 @@
 
 #include "fenv_test.h"
 
-template< typename T >
-auto& print_float( T x ) {
-  const char* type = std::is_same_v< T, float > ? "float" : "double";
-  if( std::isnan( x ) ) {
-    std::cout << "std::numeric_limits<" << type << ">::";
-    std::conditional_t< std::is_same_v< T, float >, uint32_t, uint64_t > ix;
-    std::memcpy( &ix, &x, sizeof( ix ) );
-    if( ix & decltype( ix ){ 1 } << ( std::is_same_v< T, float > ? 22 : 51 ) ) {
-      return std::cout << "quiet_NaN()";
-    } else {
-      return std::cout << "signaling_NaN()";
-    }
-  } else if( std::isinf( x ) ) {
-    return std::cout << ( x < 0 ? "-" : "" ) << "std::numeric_limits<" << type
-                     << ">::infinity()";
-  } else {
-    return std::cout << x << ( std::is_same_v< T, float > ? "f" : "" );
-  }
-}
-
 static unsigned testno;
 static int      rounding;
 
 template< typename T, typename... Ts >
-void generate_test(
+static void generate_test(
   const std::pair< T ( * )( Ts... ), std::string_view >& oper_pair,
   Ts... ops ) {
   auto& [func, func_src] = oper_pair;
@@ -62,7 +42,7 @@ void generate_test(
   case FE_DOWNWARD: std::cout << "    fesetround( FE_DOWNWARD );\n"; break;
   }
 
-  std::cout << "    feholdexcept( &env );\n";
+  std::cout << "    feholdexcept( &fenv );\n";
   std::cout << "    auto result = func( " << args_string( ops... ) << " );\n";
   std::cout << "    int exceptions = fetestexcept( FE_ALL_EXCEPT );\n";
   std::cout << "    auto result_expected = " << float_string( result ) << ";\n";
@@ -106,7 +86,7 @@ constexpr FP special_values[] = {
   { lambda, #lambda }
 
 template< typename FP, typename INT >
-void generate_tests() {
+static void generate_tests() {
   using FUNC1 = std::pair< FP ( * )( FP ), std::string_view >[];
   for( auto oper_pair : FUNC1{
          OPER_PAIR( [] [[gnu::noinline]] ( auto x ) { return -x; } ),
@@ -151,9 +131,16 @@ void generate_tests() {
   }
 }
 
+[[noreturn]] static void usage( const char* prog ) {
+  std::cerr << prog
+            << "{ FE_TONEAREST | FE_UPWARD | FE_DOWNWARD | FE_TOWARDZERO }"
+            << std::endl;
+  exit( 1 );
+}
+
 int main( int argc, char** argv ) {
-  if( argc != 2 )
-    return 1;
+  if( argc < 2 )
+    usage( *argv );
   else if( !strcmp( argv[1], "FE_TONEAREST" ) )
     rounding = FE_TONEAREST;
   else if( !strcmp( argv[1], "FE_UPWARD" ) )
@@ -163,26 +150,19 @@ int main( int argc, char** argv ) {
   else if( !strcmp( argv[1], "FE_TOWARDZERO" ) )
     rounding = FE_TOWARDZERO;
   else
-    return 1;
+    usage( *argv );
 
-  std::cout << "#include \"fenv_test.h\"\n"
-               "static unsigned failures;\n"
-               "//clang-format off\n"
-               "void (*fenv_tests[])() = {\n";
+  std::cout << R"(
+#include "fenv_test.h"
+extern unsigned failures;
+//clang-format off
+std::vector<void (*)()> fenv_tests = {
+)";
 
   generate_tests< float, int32_t >();
   generate_tests< double, int32_t >();
 
   std::cout << "};\n";
-  std::cout << "//clang-format on\n";
 
-  std::cout << "\nint main( int argc, char** argv ) {\n";
-  std::cout << "  for( auto test: fenv_tests ) test();\n";
-  std::cout << "  if(failures){\n";
-  std::cout << "    std::cerr << failures << \" failures\\n\";\n";
-  std::cout << "    return 1;\n";
-  std::cout << "  }else{\n";
-  std::cout << "    std::cout << \"All tests passed\\n\";\n";
-  std::cout << "  }\n";
-  std::cout << "}\n";
+  return 0;
 }

@@ -11,6 +11,7 @@
 #
 
 CC=${RVCC}
+CXX=${RVCXX}
 ARCH=rv64imafdc
 ABI=lp64d
 
@@ -27,7 +28,7 @@ CC_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conv
 all: fenv_test.exe
 
 fenv_test.exe: fenv_test.cc
-	$(CC) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc -lm -o $@
+	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc -lm -o $@
 
 fenv_test.cc: fenv_gentests.exe
 	./fenv_gentests.exe FE_TONEAREST > $@

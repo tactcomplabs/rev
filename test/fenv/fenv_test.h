@@ -13,10 +13,11 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 //#pragma STDC FENV_ACCESS ON
 
-#define FP_SNAN 100
+#define FP_SNAN 100  // A random value not returned by fpclassify()
 
 template< typename T >
 int float_class( T x ) {
@@ -37,7 +38,7 @@ int float_class( T x ) {
 /// Prints a floating-point value as a portable C++ exact constant
 /// Handles +/- 0, +/- Inf, qNaN, sNaN
 template< typename T >
-auto float_string( T x ) {
+std::string float_string( T x ) {
   std::ostringstream s;
   const char*        type = std::is_same_v< T, float > ? "float" : "double";
 
@@ -58,7 +59,7 @@ auto float_string( T x ) {
 
 /// Prints a comma-separated list of floating-point values
 template< typename... Ts >
-auto args_string( Ts... args ) {
+std::string args_string( Ts... args ) {
   std::ostringstream s;
   const char*        sep = "";
   ( ..., ( ( s << sep << float_string( args ), sep = ", " ) ) );
@@ -103,6 +104,7 @@ bool test_result( unsigned         test,
     }
   }
 
+  // Compare for exact bit representation equality
   if( memcmp( &result, &result_expected, sizeof( T ) ) ) {
     std::cerr << "\nError in fenv Test " << test << ":\n";
     std::cerr << test_src << "\n  ( " << args_string( args... ) << " )\n";
