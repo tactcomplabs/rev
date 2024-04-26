@@ -131,14 +131,14 @@ struct RevInstEntry {
   uint32_t    cost     = 1;      ///< RevInstEntry: instruction code in cycles
 
   // storage
-  uint8_t     opcode   = 0;  ///< RevInstEntry: opcode
-  uint8_t     funct2   = 0;  ///< RevInstentry: compressed funct2 value
-  uint8_t     funct3   = 0;  ///< RevInstEntry: funct3 value
-  uint8_t     funct4   = 0;  ///< RevInstentry: compressed funct4 value
-  uint8_t     funct6   = 0;  ///< RevInstentry: compressed funct6 value
+  uint8_t opcode       = 0;  ///< RevInstEntry: opcode
+  uint8_t funct2       = 0;  ///< RevInstentry: compressed funct2 value
+  uint8_t funct3       = 0;  ///< RevInstEntry: funct3 value
+  uint8_t funct4       = 0;  ///< RevInstentry: compressed funct4 value
+  uint8_t funct6       = 0;  ///< RevInstentry: compressed funct6 value
   uint8_t funct2or7 = 0;  ///< RevInstEntry: uncompressed funct2 or funct7 value
-  uint16_t    offset     = 0;  ///< RevInstEntry: compressed offset value
-  uint16_t    jumpTarget = 0;  ///< RevInstEntry: compressed jump target value
+  uint16_t offset   = 0;  ///< RevInstEntry: compressed offset value
+  uint16_t jumpTarget = 0;  ///< RevInstEntry: compressed jump target value
 
   // register encodings
   RevRegClass rdClass =
@@ -148,13 +148,13 @@ struct RevInstEntry {
   RevRegClass rs2Class =
     RevRegClass::RegGPR;  ///< RevInstEntry: Rs2 register class
   RevRegClass rs3Class =
-    RevRegClass::RegUNKNOWN;     ///< RevInstEntry: Rs3 register class
-  uint16_t   imm12      = 0;     ///< RevInstEntry: imm12 value
-  RevImmFunc imm        = FUnk;  ///< RevInstEntry: does the imm12 exist?
+    RevRegClass::RegUNKNOWN;   ///< RevInstEntry: Rs3 register class
+  uint16_t   imm12    = 0;     ///< RevInstEntry: imm12 value
+  RevImmFunc imm      = FUnk;  ///< RevInstEntry: does the imm12 exist?
 
   // formatting
-  RevInstF   format     = RVTypeR;  ///< RevInstEntry: instruction format
-  bool       compressed = false;    ///< RevInstEntry: compressed instruction
+  RevInstF format     = RVTypeR;  ///< RevInstEntry: instruction format
+  bool     compressed = false;    ///< RevInstEntry: compressed instruction
   uint8_t fpcvtOp = 0;  ///<RevInstEntry: Stores the rs2 field in R-instructions
   bool    raisefpe = false;  ///<RevInstEntry: Whether FP exceptions are raised
 

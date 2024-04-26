@@ -889,14 +889,14 @@ RevInst RevCore::DecodeCJInst( uint16_t Inst, unsigned Entry ) const {
   RevInst CompInst;
 
   // cost
-  CompInst.cost            = InstTable[Entry].cost;
+  CompInst.cost   = InstTable[Entry].cost;
 
   // encodings
-  CompInst.opcode          = InstTable[Entry].opcode;
-  CompInst.funct3          = InstTable[Entry].funct3;
+  CompInst.opcode = InstTable[Entry].opcode;
+  CompInst.funct3 = InstTable[Entry].funct3;
 
   // registers
-  uint16_t          offset = ( ( Inst & 0b1111111111100 ) >> 2 );
+  uint16_t offset = ( ( Inst & 0b1111111111100 ) >> 2 );
 
   //swizzle bits offset[11|4|9:8|10|6|7|3:1|5]
   std::bitset< 16 > offsetBits( offset ), target;
@@ -1608,7 +1608,7 @@ void RevCore::HandleRegFault( unsigned width ) {
   RevRegFile* regFile = GetRegFile( HartToExecID );
 
   // select a register
-  unsigned    RegIdx  = RevRand( 0, _REV_NUM_REGS_ - 1 );
+  unsigned RegIdx     = RevRand( 0, _REV_NUM_REGS_ - 1 );
 
   if( !feature->HasF() || RevRand( 0, 1 ) ) {
     // X registers
@@ -2060,11 +2060,11 @@ std::unique_ptr< RevThread > RevCore::PopThreadFromHart( unsigned HartID ) {
 }
 
 void RevCore::PrintStatSummary() {
-  auto   memStatsTotal = mem->GetMemStatsTotal();
+  auto memStatsTotal = mem->GetMemStatsTotal();
 
-  double eff           = StatsTotal.totalCycles ?
-                           double( StatsTotal.cyclesBusy ) / StatsTotal.totalCycles :
-                           0;
+  double eff         = StatsTotal.totalCycles ?
+                         double( StatsTotal.cyclesBusy ) / StatsTotal.totalCycles :
+                         0;
   output->verbose( CALL_INFO,
                    2,
                    0,

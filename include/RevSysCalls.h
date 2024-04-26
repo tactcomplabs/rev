@@ -37,7 +37,7 @@ struct EcallState {
   std::string            path_string;
   size_t                 bytesRead = 0;
 
-  void                   clear() {
+  void clear() {
     string.clear();
     path_string.clear();
     bytesRead = 0;

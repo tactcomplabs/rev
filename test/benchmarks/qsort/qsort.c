@@ -101,7 +101,7 @@ void sort( size_t n, type arr[] ) {
       type* j = ir;
 
       // Partitioning element.
-      type  a = l[0];
+      type a  = l[0];
 
       for( ;; ) {  // Beginning of innermost loop.
         while( *i++ < a )

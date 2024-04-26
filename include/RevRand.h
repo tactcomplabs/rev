@@ -28,7 +28,7 @@ class RevRNG {
 
   // Hardware random seed is different from run to run but fixed during run
   // so that distribution of HWSeed ^ ThreadSeed is uniform
-  static uint32_t       HWSeed() {
+  static uint32_t HWSeed() {
     static const uint32_t RevHWRNG = std::random_device{}();
     return RevHWRNG;
   }

@@ -127,12 +127,12 @@ struct MemReq {
     return std::make_pair( LSQHash(), *this );
   }
 
-  uint64_t                               Addr    = _INVALID_ADDR_;
-  uint16_t                               DestReg = 0;
-  RevRegClass                            RegType = RevRegClass::RegUNKNOWN;
-  unsigned                               Hart    = _REV_INVALID_HART_ID_;
-  MemOp                                  ReqType = MemOp::MemOpCUSTOM;
-  bool                                   isOutstanding        = false;
+  uint64_t    Addr          = _INVALID_ADDR_;
+  uint16_t    DestReg       = 0;
+  RevRegClass RegType       = RevRegClass::RegUNKNOWN;
+  unsigned    Hart          = _REV_INVALID_HART_ID_;
+  MemOp       ReqType       = MemOp::MemOpCUSTOM;
+  bool        isOutstanding = false;
 
   std::function< void( const MemReq& ) > MarkLoadCompleteFunc = nullptr;
 

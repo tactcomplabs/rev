@@ -63,10 +63,10 @@ private:
   std::vector< MemReq >                  OutstandingFetchQ;
 
   /// fills a missed stream cache instruction
-  void                                   Fill( uint64_t Addr );
+  void Fill( uint64_t Addr );
 
   /// deletes the target stream buffer
-  void                                   DeleteStream( size_t i );
+  void DeleteStream( size_t i );
 
   /// attempts to fetch the upper half of a 32bit word of an unaligned base address
   bool FetchUpper( uint64_t Addr, bool& Fetched, uint32_t& UInst );

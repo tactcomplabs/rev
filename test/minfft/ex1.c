@@ -45,7 +45,7 @@ static const minfft_real pi_l = 3.141592653589793238462643383279502884L;
 static minfft_real       nsin_l( int, int );
 
 // cos(2*pi*n/N)
-static minfft_real       ncos_l( int n, int N ) {
+static minfft_real ncos_l( int n, int N ) {
   // reduce n to 0..N/8
   if( n < 0 )
     return ncos_l( -n, N );
@@ -87,11 +87,11 @@ static minfft_real nsin_l( int n, int N ) {
 }
 
 int main() {
-  minfft_cmpl  x[P], y[P];   // input and output buffers
-  minfft_cmpl  t[P], e2[P];  // input and output buffers
-                             //minfft_aux *a; // aux data
-                             // prepare aux data
-                             //a=minfft_mkaux_dft_1d(P);
+  minfft_cmpl x[P], y[P];   // input and output buffers
+  minfft_cmpl t[P], e2[P];  // input and output buffers
+                            //minfft_aux *a; // aux data
+                            // prepare aux data
+                            //a=minfft_mkaux_dft_1d(P);
   minfft_aux   a;
   minfft_real* e;
   a.N      = P;
