@@ -150,7 +150,7 @@ public:
   /// RevSimpleCoProc: clock tick function - currently not registeres with SST, called by RevCPU
   virtual bool ClockTick( SST::Cycle_t cycle );
 
-  void         registerStats();
+  void registerStats();
 
   /// RevSimpleCoProc: Enqueue Inst into the InstQ and return
   virtual bool
@@ -188,12 +188,12 @@ private:
   };
 
   /// RevSimpleCoProc: Total number of instructions retired
-  Statistic< uint64_t >*      num_instRetired;
+  Statistic< uint64_t >* num_instRetired;
 
   /// Queue of instructions sent from attached RevCore
   std::queue< RevCoProcInst > InstQ;
 
-  SST::Cycle_t                cycleCount;
+  SST::Cycle_t cycleCount;
 
 };  //class RevSimpleCoProc
 

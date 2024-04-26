@@ -22,7 +22,7 @@ volatile unsigned thread1_counter = 0;
 volatile unsigned thread2_counter = 0;
 volatile unsigned thread3_counter = 0;
 
-void*             thread1() {
+void* thread1() {
   for( int i = 0; i < 10; i++ )
     thread1_counter++;
   return 0;

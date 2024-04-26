@@ -139,7 +139,7 @@ public:
   friend std::ostream& operator<<( std::ostream& os, const RevThread& Thread );
 
   ///< RevThread: Overload the to_string method
-  std::string          to_string() const {
+  std::string to_string() const {
     std::ostringstream oss;
     oss << *this;      // << operator is overloaded above
     return oss.str();  // Return the string
@@ -159,7 +159,7 @@ private:
   std::unordered_set< int > fildes = { 0, 1, 2 };  // Default file descriptors
 
   ///< RevThread: ID of the thread this thread is waiting to join
-  uint32_t                  WaitingToJoinTID = _INVALID_TID_;
+  uint32_t WaitingToJoinTID        = _INVALID_TID_;
 
 };  // class RevThread
 

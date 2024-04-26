@@ -312,7 +312,7 @@ std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
   // Until this is resolved, the trace supresses the extra register write when
   // we encounter a memhSendRead event.
   // TODO remove this if/when extra register write is removed.
-  bool              squashNextSetX = false;
+  bool squashNextSetX = false;
 
   std::stringstream ss_rw;
   for( TraceRec_t r : traceRecs ) {

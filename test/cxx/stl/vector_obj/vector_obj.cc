@@ -49,7 +49,7 @@ int main() {
 
   std::vector< TestObj, Allocator< TestObj > > v;
 
-  TestObj                                      c;
+  TestObj c;
   v.push_back( c );
   v[0].SetM1( 0xbeef );
   assert( v[0].GetM1() == 0xbeef )

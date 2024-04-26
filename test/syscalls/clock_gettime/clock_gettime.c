@@ -10,7 +10,7 @@ int main( int argc, char* argv[] ) {
   int                      sum = 0;
   struct __kernel_timespec s, e;
 
-  int                      ret = rev_clock_gettime( 0, &s );
+  int ret = rev_clock_gettime( 0, &s );
   assert( ret == 0 );
 
   /*

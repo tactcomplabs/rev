@@ -13,19 +13,19 @@
   while( 0 )
 
 int main() {
-  char       buffer[BUF_SIZE];
+  char buffer[BUF_SIZE];
 
-  const char path[12]  = "test.txt";
+  const char path[12] = "test.txt";
 
   // Open the file "test.txt" under the current directory
   // rev_write(STDOUT_FILENO, OpenMsg, sizeof(OpenMsg));
-  int        fd        = rev_openat( AT_FDCWD, path, 0, O_RDONLY );
+  int fd              = rev_openat( AT_FDCWD, path, 0, O_RDONLY );
 
   // Read from the file
-  uint64_t   bytesRead = rev_read( fd, buffer, 29 );
+  uint64_t bytesRead  = rev_read( fd, buffer, 29 );
 
   // Null-terminate the buffer so we can use it as a string
-  buffer[bytesRead]    = '\0';
+  buffer[bytesRead]   = '\0';
 
   // Write to STDOUT
   rev_write( STDOUT_FILENO, buffer, bytesRead );

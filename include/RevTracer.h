@@ -139,9 +139,9 @@ enum TraceKeyword_t {
 struct TraceRec_t {
   TraceKeyword_t key;
   // register        memory                  memh
-  uint64_t       a;  // reg             adr                     adr
-  uint64_t       b;  // value           len                     len
-  uint64_t       c;  // origin(TODO)    data (limited 8 bytes)  reg
+  uint64_t a;  // reg             adr                     adr
+  uint64_t b;  // value           len                     len
+  uint64_t c;  // origin(TODO)    data (limited 8 bytes)  reg
   TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) :
     key( Key ), a( A ), b( B ), c( C ){};
 };
@@ -155,11 +155,11 @@ struct InstHeader_t {
   std::string& fallbackMnemonic = defaultMnem;
   bool         valid            = false;
 
-  void         set( size_t             _cycle,
-                    unsigned           _id,
-                    unsigned           _hart,
-                    unsigned           _tid,
-                    const std::string& _fallback ) {
+  void set( size_t             _cycle,
+            unsigned           _id,
+            unsigned           _hart,
+            unsigned           _tid,
+            const std::string& _fallback ) {
     cycle            = _cycle;
     id               = _id;
     hart             = _hart;
@@ -206,7 +206,7 @@ public:
   ~RevTracer();
 
   /// RevTracer: assign disassembler. Returns 0 if successful
-  int  SetDisassembler( std::string machine );
+  int SetDisassembler( std::string machine );
   /// RevTracer: assign trace symbol lookup map
   void SetTraceSymbols( std::map< uint64_t, std::string >* TraceSymbols );
   /// RevTracer: assign cycle where trace will start (user param)
@@ -252,62 +252,62 @@ public:
 
 private:
   /// RevTracer: clear instruction trace capture buffer and reset trace state
-  void        InstTraceReset();
+  void InstTraceReset();
 
   /// RevTracer: instance name
   std::string name;
 #ifdef REV_USE_SPIKE
   /// RevTracer: instruction parser used by disassembler
-  isa_parser_t*   isaParser;
+  isa_parser_t* isaParser;
   /// RevTracer: disassembler
   disassembler_t* diasm;
 #endif
   /// RevTracer: pointer to output stream
-  SST::Output*                       pOutput;
+  SST::Output* pOutput;
   /// RevTracer: control whether output is printed or not ( sampling continues )
-  bool                               outputEnabled = false;
+  bool outputEnabled = false;
   /// RevTracer: Instruction header captured at execution phase.
-  InstHeader_t                       instHeader;
+  InstHeader_t instHeader;
   /// RevTracer: Special affecting trace output
-  TraceEvents_t                      events;
+  TraceEvents_t events;
   /// RevTracer: buffer for captured states
-  std::vector< TraceRec_t >          traceRecs;
+  std::vector< TraceRec_t > traceRecs;
   /// RevTracer: Completion records
-  std::vector< CompletionRec_t >     completionRecs;
+  std::vector< CompletionRec_t > completionRecs;
   /// RevTracer: saved program counter
-  uint64_t                           pc           = 0;
+  uint64_t pc                                     = 0;
   /// RevTracer: previous program counter for branch determination
-  uint64_t                           lastPC       = 0;
+  uint64_t lastPC                                 = 0;
   /// RevTracer: saved instruction
-  uint32_t                           insn         = 0;
+  uint32_t insn                                   = 0;
   /// RevTracer: map of instruction addresses to symbols
   std::map< uint64_t, std::string >* traceSymbols = nullptr;
   /// RevTracer: Array of supported "NOP" instructions avaible for trace controls
-  uint32_t                           nops[NOP_COUNT];
+  uint32_t nops[NOP_COUNT];
   /// RevTracer: Check current state against user settings and update state
-  void                               CheckUserControls( uint64_t cycle );
+  void CheckUserControls( uint64_t cycle );
   /// RevTracer: determine if this buffer should be rendered
-  bool                               OutputOK();
+  bool OutputOK();
   /// RevTracer: format register address for rendering
-  std::string                        fmt_reg( uint8_t r );
+  std::string fmt_reg( uint8_t r );
   /// RevTracer: Format data associated with memory access
-  std::string                        fmt_data( unsigned len, uint64_t data );
+  std::string fmt_data( unsigned len, uint64_t data );
   /// RevTracer: Generate string from captured state
-  std::string         RenderExec( const std::string& fallbackMnemonic );
+  std::string RenderExec( const std::string& fallbackMnemonic );
   /// RevTracer: User setting: starting cycle of trace (overrides programmtic control)
-  uint64_t            startCycle = 0;
+  uint64_t startCycle = 0;
   /// RevTracer: User setting: maximum number of lines to print
-  uint64_t            cycleLimit = 0;
+  uint64_t cycleLimit = 0;
   /// RevTracer: support for trace control push/pop
   std::vector< bool > enableQ;
   /// RevTracer: current pointer into trace controls queue
-  unsigned            enableQindex;
+  unsigned enableQindex;
   /// RevTracer: wraparound limit for trace controls queue
-  const unsigned      MAX_ENABLE_Q = 100;
+  const unsigned MAX_ENABLE_Q = 100;
   /// RevTracer: count of lines rendered
-  uint64_t            traceCycles  = 0;
+  uint64_t traceCycles        = 0;
   /// RevTracer: Hard disable for output
-  bool                disabled     = 0;
+  bool disabled               = 0;
 
 };  // class RevTracer
 

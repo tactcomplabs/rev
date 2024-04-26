@@ -15,6 +15,6 @@
 
 char t[1024 * 1024 * 12];
 
-int  main() {
+int main() {
   return 0;
 }

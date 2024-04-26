@@ -12,7 +12,7 @@
   }
 
 typedef std::basic_string< char, std::char_traits< char >, Allocator< char > >
-    revString;
+  revString;
 
 int main() {
 

@@ -72,7 +72,7 @@ bool RevMem::outstandingRqsts() {
 
 void RevMem::HandleMemFault( unsigned width ) {
   // build up the fault payload
-  uint64_t  rval   = RevRand( 0, ( uint32_t{ 1 } << width ) - 1 );
+  uint64_t rval    = RevRand( 0, ( uint32_t{ 1 } << width ) - 1 );
 
   // find an address to fault
   unsigned  NBytes = RevRand( 0, memSize - 8 );
@@ -154,8 +154,8 @@ bool RevMem::LRBase( unsigned      Hart,
   // uint32_t adjPageNum = 0;
   // uint64_t adjPhysAddr = 0;
   // uint64_t endOfPage = (pageMap[pageNum].first << addrShift) + pageSize;
-  char*    BaseMem  = &physMem[physAddr];
-  char*    DataMem  = (char*) ( Target );
+  char* BaseMem     = &physMem[physAddr];
+  char* DataMem     = (char*) ( Target );
 
   if( ctrl ) {
     ctrl->sendREADLOCKRequest(
@@ -467,7 +467,7 @@ uint64_t RevMem::AllocMem( const uint64_t& SegSize ) {
   uint64_t NewSegBaseAddr = 0;
   // Check if there is a free segment that can fit the new data
   for( size_t i = 0; i < FreeMemSegs.size(); i++ ) {
-    auto     FreeSeg        = FreeMemSegs[i];
+    auto FreeSeg            = FreeMemSegs[i];
     // if the FreeSeg is bigger than the new data, we can shrink it so it starts
     // after the new segment (SegSize)
     uint64_t oldFreeSegSize = FreeSeg->getSize();
