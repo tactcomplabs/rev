@@ -11,9 +11,9 @@
 make clean && make
 
 # Check that the exec was built...
-if [[ -x simple_struct.exe ]]; then
-	sst --add-lib-path=../../../build/src/ ./rev-test-simple-struct.py
+if [[ -x array.exe ]]; then
+  sst --add-lib-path=../../../../build/src/ ./rev-test.py
 else
-	echo "Test SIMPLE_STRUCT: simple_struct.exe not Found - likely build failed"
-	exit 1
+  echo "Test STL CXX array.c: array.exe not Found - likely build failed"
+  exit 1
 fi

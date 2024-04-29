@@ -1,3 +1,11 @@
+//
+// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// All Rights Reserved
+// contact@tactcomplabs.com
+//
+// See LICENSE in the top level directory for licensing details
+//
+
 #include "syscalls.h"
 #include <memory>
 #define assert( x )               \
@@ -42,7 +50,7 @@ public:
 };
 
 int main() {
-  rec testrec( 1, 2 );
+  static rec testrec( 1, 2 );
   assert( testrec.c == 3 );
 
 #if 1

@@ -11,9 +11,9 @@
 make clean && make
 
 # Check that the exec was built...
-if [[ -x simple_struct.exe ]]; then
-	sst --add-lib-path=../../../build/src/ ./rev-test-simple-struct.py
+if [[ -x vector_pair.exe ]]; then
+  sst --add-lib-path=../../../../build/src/ ./rev-test.py
 else
-	echo "Test SIMPLE_STRUCT: simple_struct.exe not Found - likely build failed"
-	exit 1
+  echo "Test STL CXX vector_pair: vector_pair.exe not Found - likely build failed"
+  exit 1
 fi
