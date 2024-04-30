@@ -12,7 +12,7 @@
 
 .PHONY: src
 
-EXAMPLE=vector
+EXAMPLE=multimap
 CC=riscv64-unknown-elf-g++
 #CC="${RVCC}"
 #ARCH=rv64g
@@ -20,7 +20,7 @@ ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CC) -march=$(ARCH) -O0 -I../../../../common/include -I../../../../common/include -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+	$(CC) -march=$(ARCH) -O0 -I../../../../common/include -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

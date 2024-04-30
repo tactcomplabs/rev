@@ -15,7 +15,7 @@
 EXAMPLE=simple_struct
 CC=riscv64-unknown-elf-g++
 #ARCH=rv64g
-ARCH=rv64imafd
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc

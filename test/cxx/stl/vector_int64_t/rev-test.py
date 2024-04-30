@@ -29,7 +29,7 @@ comp_cpu.addParams({
         "machine" : "[0:RV64GC]",                     # Core:Config; RV64I for core 0
         "startAddr" : "[0:0x00000000]",               # Starting address for core 0
         "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : "vector.exe",  # Target executable
+        "program" : "vector_int64_t.exe",  # Target executable
         "splash" : 1                                  # Display the splash message
 })
 
