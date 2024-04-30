@@ -1379,7 +1379,7 @@ void RevBasicMemCtrl::performAMO(
   if( Tmp == nullptr ) {
     output->fatal( CALL_INFO, -1, "Error : AMOTable entry is null\n" );
   }
-  void*                  Target = Tmp->getTarget();
+  void* Target                  = Tmp->getTarget();
 
   RevFlag                flags  = Tmp->getFlags();
   std::vector< uint8_t > buffer = Tmp->getBuf();

@@ -65,8 +65,8 @@ void RevNIC::init( unsigned int phase ) {
 
   if( iFace->isNetworkInitialized() ) {
     if( !initBroadcastSent ) {
-      initBroadcastSent                           = true;
-      nicEvent*                                ev = new nicEvent( getName() );
+      initBroadcastSent = true;
+      nicEvent* ev      = new nicEvent( getName() );
 
       SST::Interfaces::SimpleNetwork::Request* req =
         new SST::Interfaces::SimpleNetwork::Request();

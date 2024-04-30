@@ -171,7 +171,7 @@ reformat_files() {
             detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
 
             # Change the copyright date at the top of any text files
-            if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' < "$file" > "$temp"; then
+            if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" > "$temp"; then
                 detect_change "$file" "$temp" "%s: Changing copyright date"
             fi
 

@@ -50,7 +50,7 @@ struct RevExt {
   /// RevExt: sets the internal instruction table
   // Note: && means the argument should be an rvalue or std::move(lvalue)
   // This avoids deep std::vector copies and uses only one std::vector move.
-  void    SetTable( std::vector< RevInstEntry >&& InstVect ) {
+  void SetTable( std::vector< RevInstEntry >&& InstVect ) {
     table = std::move( InstVect );
   }
 
@@ -70,10 +70,10 @@ struct RevExt {
   }
 
   /// RevExt: baseline execution function
-  bool                               Execute( unsigned       Inst,
-                                              const RevInst& Payload,
-                                              uint16_t       HartID,
-                                              RevRegFile*    regFile );
+  bool Execute( unsigned       Inst,
+                const RevInst& Payload,
+                uint16_t       HartID,
+                RevRegFile*    regFile );
 
   /// RevExt: retrieves the extension's instruction table
   const std::vector< RevInstEntry >& GetInstTable() {
@@ -91,15 +91,15 @@ struct RevExt {
   }
 
 private:
-  std::string_view const      name;     ///< RevExt: extension name
-  RevFeature* const           feature;  ///< RevExt: feature object
-  RevMem* const               mem;      ///< RevExt: memory object
-  SST::Output* const          output;   ///< RevExt: output handler
+  std::string_view const name;     ///< RevExt: extension name
+  RevFeature* const      feature;  ///< RevExt: feature object
+  RevMem* const          mem;      ///< RevExt: memory object
+  SST::Output* const     output;   ///< RevExt: output handler
 
   std::vector< RevInstEntry > table;   ///< RevExt: instruction table
   std::vector< RevInstEntry > ctable;  ///< RevExt: compressed instruction table
   std::vector< RevInstEntry >
-       otable;  ///< RevExt: optional compressed instruction table
+    otable;  ///< RevExt: optional compressed instruction table
 
   /// Set the FP rounding mode
   void SetFPRoundingMode( const RevRegFile*, FRMode );

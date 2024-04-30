@@ -42,7 +42,7 @@ hammer( u16 )
 
 /* Memory to test */
 #define SIZE 1000
-u8  mem[SIZE];
+u8 mem[SIZE];
 
 int main() {
   assert( !test_3( mem, SIZE ) );

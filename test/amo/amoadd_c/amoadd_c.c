@@ -4,7 +4,7 @@
 uint64_t atom64 = 0;
 uint32_t atom32 = 0;
 
-int      main() {
+int main() {
   __atomic_fetch_add( &atom64, 2, __ATOMIC_RELAXED );
   __atomic_fetch_add( &atom64, 2, __ATOMIC_CONSUME );
   __atomic_fetch_add( &atom64, 2, __ATOMIC_ACQUIRE );

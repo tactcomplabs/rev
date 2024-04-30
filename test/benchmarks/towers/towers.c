@@ -37,7 +37,7 @@ struct List {
 struct List g_nodeFreeList;
 struct Node g_nodePool[NUM_DISCS];
 
-int         list_getSize( struct List* list ) {
+int list_getSize( struct List* list ) {
   return list->size;
 }
 

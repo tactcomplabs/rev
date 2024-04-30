@@ -130,7 +130,7 @@ public:
   }
 
   /// RevMem: handle memory injection
-  void     HandleMemFault( unsigned width );
+  void HandleMemFault( unsigned width );
 
   /// RevMem: get the stack_top address
   uint64_t GetStackTop() {
@@ -146,7 +146,7 @@ public:
   RevTracer* Tracer = nullptr;
 
   /// RevMem: retrieve the address of the top of memory (not stack)
-  uint64_t   GetMemTop() {
+  uint64_t GetMemTop() {
     return ( _REVMEM_BASE_ + memSize );
   }
 
@@ -156,7 +156,7 @@ public:
   }
 
   /// RevMem: initiate a memory fence
-  bool     FenceMem( unsigned Hart );
+  bool FenceMem( unsigned Hart );
 
   /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
   unsigned getLineSize() {
@@ -281,42 +281,42 @@ public:
   // ---- Atomic/Future/LRSC Interfaces
   // ----------------------------------------------------
   /// RevMem: Add a memory reservation for the target address
-  bool     LRBase( unsigned      Hart,
-                   uint64_t      Addr,
-                   size_t        Len,
-                   void*         Data,
-                   uint8_t       aq,
-                   uint8_t       rl,
-                   const MemReq& req,
-                   RevFlag       flags );
+  bool LRBase( unsigned      Hart,
+               uint64_t      Addr,
+               size_t        Len,
+               void*         Data,
+               uint8_t       aq,
+               uint8_t       rl,
+               const MemReq& req,
+               RevFlag       flags );
 
   /// RevMem: Clear a memory reservation for the target address
-  bool     SCBase( unsigned Hart,
-                   uint64_t Addr,
-                   size_t   Len,
-                   void*    Data,
-                   void*    Target,
-                   uint8_t  aq,
-                   uint8_t  rl,
-                   RevFlag  flags );
+  bool SCBase( unsigned Hart,
+               uint64_t Addr,
+               size_t   Len,
+               void*    Data,
+               void*    Target,
+               uint8_t  aq,
+               uint8_t  rl,
+               RevFlag  flags );
 
   /// RevMem: Initiated an AMO request
-  bool     AMOMem( unsigned      Hart,
-                   uint64_t      Addr,
-                   size_t        Len,
-                   void*         Data,
-                   void*         Target,
-                   const MemReq& req,
-                   RevFlag       flags );
+  bool AMOMem( unsigned      Hart,
+               uint64_t      Addr,
+               size_t        Len,
+               void*         Data,
+               void*         Target,
+               const MemReq& req,
+               RevFlag       flags );
 
   /// RevMem: Initiates a future operation [RV64P only]
-  bool     SetFuture( uint64_t Addr );
+  bool SetFuture( uint64_t Addr );
 
   /// RevMem: Revokes a future operation [RV64P only]
-  bool     RevokeFuture( uint64_t Addr );
+  bool RevokeFuture( uint64_t Addr );
 
   /// RevMem: Interrogates the target address and returns 'true' if a future reservation is present [RV64P only]
-  bool     StatusFuture( uint64_t Addr );
+  bool StatusFuture( uint64_t Addr );
 
   /// RevMem: Randomly assign a memory cost
   unsigned RandCost( unsigned Min, unsigned Max ) {
@@ -327,7 +327,7 @@ public:
   uint32_t GetNewThreadPID();
 
   /// RevMem: Used to set the size of the TLBSize
-  void     SetTLBSize( unsigned numEntries ) {
+  void SetTLBSize( unsigned numEntries ) {
     tlbSize = numEntries;
   }
 
@@ -362,7 +362,7 @@ public:
   }
 
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
-  uint64_t                      AddMemSeg( const uint64_t& SegSize );
+  uint64_t AddMemSeg( const uint64_t& SegSize );
 
   /// RevMem: Add new thread mem (starting at TopAddr [growing down])
   std::shared_ptr< MemSegment > AddThreadMem();
@@ -385,9 +385,9 @@ public:
   uint64_t AllocMemAt( const uint64_t& BaseAddr, const uint64_t& Size );
 
   /// RevMem: Sets the HeapStart & HeapEnd to EndOfStaticData
-  void     InitHeap( const uint64_t& EndOfStaticData );
+  void InitHeap( const uint64_t& EndOfStaticData );
 
-  void     SetHeapStart( const uint64_t& HeapStart ) {
+  void SetHeapStart( const uint64_t& HeapStart ) {
     heapstart = HeapStart;
   }
 
@@ -399,9 +399,9 @@ public:
     return heapend;
   }
 
-  uint64_t        ExpandHeap( uint64_t Size );
+  uint64_t ExpandHeap( uint64_t Size );
 
-  void            SetTLSInfo( const uint64_t& BaseAddr, const uint64_t& Size );
+  void SetTLSInfo( const uint64_t& BaseAddr, const uint64_t& Size );
 
   // RevMem: Used to get the TLS BaseAddr & Size
   const uint64_t& GetTLSBaseAddr() {
@@ -449,8 +449,8 @@ protected:
   char* physMem = nullptr;  ///< RevMem: memory container
 
 private:
-  RevMemStats   memStats      = {};
-  RevMemStats   memStatsTotal = {};
+  RevMemStats memStats      = {};
+  RevMemStats memStatsTotal = {};
 
   unsigned long memSize;      ///< RevMem: size of the target memory
   unsigned      tlbSize;      ///< RevMem: number of entries in the TLB
@@ -503,9 +503,9 @@ private:
     nextPage;  ///< RevMem: next physical page to be allocated. Will result in index
   /// nextPage * pageSize into physMem
 
-  uint64_t                heapend;       ///< RevMem: top of the stack
-  uint64_t                heapstart;     ///< RevMem: top of the stack
-  uint64_t                stacktop = 0;  ///< RevMem: top of the stack
+  uint64_t heapend;       ///< RevMem: top of the stack
+  uint64_t heapstart;     ///< RevMem: top of the stack
+  uint64_t stacktop = 0;  ///< RevMem: top of the stack
 
   std::vector< uint64_t > FutureRes;  ///< RevMem: future operation reservations
 
