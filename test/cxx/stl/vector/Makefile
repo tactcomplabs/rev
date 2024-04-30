@@ -16,7 +16,7 @@ EXAMPLE=vector
 CC=riscv64-unknown-elf-g++
 #CC="${RVCC}"
 #ARCH=rv64g
-ARCH=rv64imafdc
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
