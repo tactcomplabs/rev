@@ -52,12 +52,8 @@ void printhex( uint64_t x ) {
   printstr( str );
 }
 
-static inline void printnum( void ( *putch )( int, void** ),
-                             void**             putdat,
-                             unsigned long long num,
-                             unsigned           base,
-                             int                width,
-                             int                padc ) {
+static inline void
+  printnum( void ( *putch )( int, void** ), void** putdat, unsigned long long num, unsigned base, int width, int padc ) {
   unsigned digs[sizeof( num ) * CHAR_BIT];
   int      pos = 0;
 
@@ -93,10 +89,7 @@ static long long getint( va_list* ap, int lflag ) {
     return va_arg( *ap, int );
 }
 
-static void vprintfmt( void ( *putch )( int, void** ),
-                       void**      putdat,
-                       const char* fmt,
-                       va_list     ap ) {
+static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char* fmt, va_list ap ) {
   register const char* p;
   const char*          last_fmt;
   register int         ch, err;
@@ -176,8 +169,7 @@ static void vprintfmt( void ( *putch )( int, void** ),
       if( width > 0 && padc != '-' )
         for( width -= strnlen( p, precision ); width > 0; width-- )
           putch( padc, putdat );
-      for( ; ( ch = *p ) != '\0' && ( precision < 0 || --precision >= 0 );
-           width-- ) {
+      for( ; ( ch = *p ) != '\0' && ( precision < 0 || --precision >= 0 ); width-- ) {
         putch( ch, putdat );
         p++;
       }

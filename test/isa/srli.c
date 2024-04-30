@@ -22,13 +22,7 @@ int main( int argc, char** argv ) {
   //  # Arithmetic tests
   //  #-------------------------------------------------------------
 
-#define TEST_SRLI( n, v, a )                                             \
-  TEST_IMM_OP( n,                                                        \
-               srli,                                                     \
-               ( ( v ) & ( ( 1 << ( __riscv_xlen - 1 ) << 1 ) - 1 ) ) >> \
-                 ( a ),                                                  \
-               v,                                                        \
-               a )
+#define TEST_SRLI( n, v, a ) TEST_IMM_OP( n, srli, ( ( v ) & ( ( 1 << ( __riscv_xlen - 1 ) << 1 ) - 1 ) ) >> ( a ), v, a )
 
   TEST_SRLI( 2, 0xffffffff80000000, 0 );
   TEST_SRLI( 3, 0xffffffff80000000, 1 );
@@ -51,7 +45,6 @@ int main( int argc, char** argv ) {
   // #-------------------------------------------------------------
   //  # Source/Destination tests
   // #-------------------------------------------------------------
-
 
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );

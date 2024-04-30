@@ -21,83 +21,71 @@ namespace SST::RevCPU {
 
 class RV32D : public RevExt {
   // Standard instructions
-  static constexpr auto& fld     = fload< double >;
-  static constexpr auto& fsd     = fstore< double >;
+  static constexpr auto& fld     = fload<double>;
+  static constexpr auto& fsd     = fstore<double>;
 
   // FMA instructions
-  static constexpr auto& fmaddd  = fmadd< double >;
-  static constexpr auto& fmsubd  = fmsub< double >;
-  static constexpr auto& fnmsubd = fnmsub< double >;
-  static constexpr auto& fnmaddd = fnmadd< double >;
+  static constexpr auto& fmaddd  = fmadd<double>;
+  static constexpr auto& fmsubd  = fmsub<double>;
+  static constexpr auto& fnmsubd = fnmsub<double>;
+  static constexpr auto& fnmaddd = fnmadd<double>;
 
   // Binary FP instructions
-  static constexpr auto& faddd   = foper< double, std::plus >;
-  static constexpr auto& fsubd   = foper< double, std::minus >;
-  static constexpr auto& fmuld   = foper< double, std::multiplies >;
-  static constexpr auto& fdivd   = foper< double, std::divides >;
-  static constexpr auto& fmind   = foper< double, FMin >;
-  static constexpr auto& fmaxd   = foper< double, FMax >;
+  static constexpr auto& faddd   = foper<double, std::plus>;
+  static constexpr auto& fsubd   = foper<double, std::minus>;
+  static constexpr auto& fmuld   = foper<double, std::multiplies>;
+  static constexpr auto& fdivd   = foper<double, std::divides>;
+  static constexpr auto& fmind   = foper<double, FMin>;
+  static constexpr auto& fmaxd   = foper<double, FMax>;
 
   // FP Comparison instructions
-  static constexpr auto& feqd    = fcondop< double, std::equal_to >;
-  static constexpr auto& fltd    = fcondop< double, std::less >;
-  static constexpr auto& fled    = fcondop< double, std::less_equal >;
+  static constexpr auto& feqd    = fcondop<double, std::equal_to>;
+  static constexpr auto& fltd    = fcondop<double, std::less>;
+  static constexpr auto& fled    = fcondop<double, std::less_equal>;
 
   // FP to Integer Conversion instructions
-  static constexpr auto& fcvtwd  = CvtFpToInt< double, int32_t >;
-  static constexpr auto& fcvtwud = CvtFpToInt< double, uint32_t >;
+  static constexpr auto& fcvtwd  = CvtFpToInt<double, int32_t>;
+  static constexpr auto& fcvtwud = CvtFpToInt<double, uint32_t>;
 
-  static bool
-    fsqrtd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, std::sqrt( R->GetFP< double >( Inst.rs1 ) ) );
+  static bool fsqrtd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, std::sqrt( R->GetFP<double>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    fsgnjd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd,
-              std::copysign( R->GetFP< double >( Inst.rs1 ),
-                             R->GetFP< double >( Inst.rs2 ) ) );
+  static bool fsgnjd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, std::copysign( R->GetFP<double>( Inst.rs1 ), R->GetFP<double>( Inst.rs2 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    fsgnjnd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd,
-              std::copysign( R->GetFP< double >( Inst.rs1 ),
-                             -R->GetFP< double >( Inst.rs2 ) ) );
+  static bool fsgnjnd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, std::copysign( R->GetFP<double>( Inst.rs1 ), -R->GetFP<double>( Inst.rs2 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    fsgnjxd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    double rs1 = R->GetFP< double >( Inst.rs1 ),
-           rs2 = R->GetFP< double >( Inst.rs2 );
+  static bool fsgnjxd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    double rs1 = R->GetFP<double>( Inst.rs1 ), rs2 = R->GetFP<double>( Inst.rs2 );
     R->SetFP( Inst.rd, std::copysign( rs1, std::signbit( rs1 ) ? -rs2 : rs2 ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    fcvtsd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast< float >( R->GetFP< double >( Inst.rs1 ) ) );
+  static bool fcvtsd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, static_cast<float>( R->GetFP<double>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    fcvtds( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast< double >( R->GetFP< float >( Inst.rs1 ) ) );
+  static bool fcvtds( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, static_cast<double>( R->GetFP<float>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    fclassd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    double   fp64 = R->GetFP< double >( Inst.rs1 );
+  static bool fclassd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    double   fp64 = R->GetFP<double>( Inst.rs1 );
     uint64_t i64;
     memcpy( &i64, &fp64, sizeof( i64 ) );
     bool quietNaN = ( i64 & uint64_t{ 1 } << 51 ) != 0;
@@ -106,18 +94,14 @@ class RV32D : public RevExt {
     return true;
   }
 
-  static bool
-    fcvtdw( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd,
-              static_cast< double >( R->GetX< int32_t >( Inst.rs1 ) ) );
+  static bool fcvtdw( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, static_cast<double>( R->GetX<int32_t>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    fcvtdwu( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd,
-              static_cast< double >( R->GetX< uint32_t >( Inst.rs1 ) ) );
+  static bool fcvtdwu( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, static_cast<double>( R->GetX<uint32_t>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
@@ -188,8 +172,7 @@ class RV32D : public RevExt {
 
 public:
   /// RV32D: standard constructor
-  RV32D( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
-    RevExt( "RV32D", Feature, RevMem, Output ) {
+  RV32D( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32D", Feature, RevMem, Output ) {
     SetTable( std::move( RV32DTable ) );
     SetCTable( std::move( RV32DCTable ) );
   }

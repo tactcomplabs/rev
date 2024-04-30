@@ -36,26 +36,22 @@ public:
   int src;
   int dst;
 
-  Edge() {
-  }
+  Edge() {}
 
-  Edge( int src, int dst ) : src( src ), dst( dst ) {
-  }
+  Edge( int src, int dst ) : src( src ), dst( dst ) {}
 
-  Edge( const Edge& e ) : src( e.src ), dst( e.dst ) {
-  }
+  Edge( const Edge& e ) : src( e.src ), dst( e.dst ) {}
 };
 
 void test_struct_edge_push_back() {
-  std::vector< edge_t, Allocator< edge_t > > v;
+  std::vector<edge_t, Allocator<edge_t>> v;
   v.push_back( { 1, 1 } );
   v.push_back( { 2, 2 } );
-  assert( v.size() == 2 && v[0].src == 1 && v[0].dst == 1 && v[1].src == 2 &&
-          v[1].dst == 2 );
+  assert( v.size() == 2 && v[0].src == 1 && v[0].dst == 1 && v[1].src == 2 && v[1].dst == 2 );
 }
 
 void test_struct_edge_reserve() {
-  std::vector< edge_t, Allocator< edge_t > > v;
+  std::vector<edge_t, Allocator<edge_t>> v;
   v.reserve( N );
 
   auto initial_address = v.data();
@@ -75,7 +71,7 @@ void test_struct_edge_reserve() {
 
 void test_struct_edge_resize() {
   // assert(false);
-  std::vector< edge_t, Allocator< edge_t > > v;
+  std::vector<edge_t, Allocator<edge_t>> v;
   v.resize( N );
   assert( v.size() == N );
 
@@ -84,12 +80,11 @@ void test_struct_edge_resize() {
     v[i] = { i, i };
   }
 
-  assert( v.size() == N && v[0].src == 0 && v[0].dst == 0 &&
-          ( v[N / 2].src = N / 2 ) && ( v[N / 2].dst = N / 2 ) );
+  assert( v.size() == N && v[0].src == 0 && v[0].dst == 0 && ( v[N / 2].src = N / 2 ) && ( v[N / 2].dst = N / 2 ) );
 }
 
 void test_struct_edge_begin_and_end() {
-  std::vector< edge_t, Allocator< edge_t > > v;
+  std::vector<edge_t, Allocator<edge_t>> v;
   for( int i = 0; i < N; i++ ) {
     v.push_back( { i, i } );
   }
@@ -102,7 +97,7 @@ void test_struct_edge_begin_and_end() {
 }
 
 void test_struct_edge_at() {
-  std::vector< edge_t, Allocator< edge_t > > v;
+  std::vector<edge_t, Allocator<edge_t>> v;
   for( int i = 0; i < N; i++ ) {
     v.push_back( { i, i } );
   }
@@ -119,7 +114,7 @@ void test_struct_edge_at() {
 }
 
 void test_class_edge_reserve() {
-  std::vector< Edge, Allocator< Edge > > v;
+  std::vector<Edge, Allocator<Edge>> v;
   v.reserve( N );
 
   auto initial_address = v.data();
@@ -138,7 +133,7 @@ void test_class_edge_reserve() {
 }
 
 void test_class_edge_resize() {
-  std::vector< Edge, Allocator< Edge > > v;
+  std::vector<Edge, Allocator<Edge>> v;
   v.resize( N );
   assert( v.size() == N );
 
@@ -147,12 +142,11 @@ void test_class_edge_resize() {
     v[i] = Edge( i, i );
   }
 
-  assert( v.size() == N && v[0].src == 0 && v[0].dst == 0 &&
-          ( v[N / 2].src = N / 2 ) && ( v[N / 2].dst = N / 2 ) );
+  assert( v.size() == N && v[0].src == 0 && v[0].dst == 0 && ( v[N / 2].src = N / 2 ) && ( v[N / 2].dst = N / 2 ) );
 }
 
 void test_class_edge_begin_and_end() {
-  std::vector< Edge, Allocator< Edge > > v;
+  std::vector<Edge, Allocator<Edge>> v;
   for( int i = 0; i < N; i++ ) {
     v.push_back( Edge( i, i ) );
   }
@@ -165,7 +159,7 @@ void test_class_edge_begin_and_end() {
 }
 
 void test_class_edge_at() {
-  std::vector< Edge, Allocator< Edge > > v;
+  std::vector<Edge, Allocator<Edge>> v;
   for( int i = 0; i < N; i++ ) {
     v.push_back( Edge( i, i ) );
   }

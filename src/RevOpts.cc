@@ -12,10 +12,10 @@
 
 namespace SST::RevCPU {
 
-RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity ) :
-  numCores( NumCores ), numHarts( NumHarts ), verbosity( Verbosity ) {
+RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )
+  : numCores( NumCores ), numHarts( NumHarts ), verbosity( Verbosity ) {
 
-  std::pair< unsigned, unsigned > InitialPair;
+  std::pair<unsigned, unsigned> InitialPair;
   InitialPair.first  = 0;
   InitialPair.second = 10;
 
@@ -27,20 +27,17 @@ RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity ) :
   // -- memCosts[core] = 0:10
   // -- prefetch depth = 16
   for( unsigned i = 0; i < numCores; i++ ) {
-    startAddr.insert( std::pair< unsigned, uint64_t >( i, 0 ) );
-    machine.insert( std::pair< unsigned, std::string >( i, "G" ) );
-    table.insert( std::pair< unsigned, std::string >( i, "_REV_INTERNAL_" ) );
+    startAddr.insert( std::pair<unsigned, uint64_t>( i, 0 ) );
+    machine.insert( std::pair<unsigned, std::string>( i, "G" ) );
+    table.insert( std::pair<unsigned, std::string>( i, "_REV_INTERNAL_" ) );
     memCosts.push_back( InitialPair );
-    prefetchDepth.insert( std::pair< unsigned, unsigned >( i, 16 ) );
+    prefetchDepth.insert( std::pair<unsigned, unsigned>( i, 16 ) );
   }
 }
 
-RevOpts::~RevOpts() {
-}
+RevOpts::~RevOpts() {}
 
-void RevOpts::splitStr( const std::string&          s,
-                        char                        c,
-                        std::vector< std::string >& v ) {
+void RevOpts::splitStr( const std::string& s, char c, std::vector<std::string>& v ) {
   std::string::size_type i = 0;
   std::string::size_type j = s.find( c );
   v.clear();
@@ -59,8 +56,8 @@ void RevOpts::splitStr( const std::string&          s,
   }
 }
 
-bool RevOpts::InitPrefetchDepth( const std::vector< std::string >& Depths ) {
-  std::vector< std::string > vstr;
+bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ) {
+  std::vector<std::string> vstr;
   for( unsigned i = 0; i < Depths.size(); i++ ) {
     std::string s = Depths[i];
     splitStr( s, ':', vstr );
@@ -80,8 +77,8 @@ bool RevOpts::InitPrefetchDepth( const std::vector< std::string >& Depths ) {
   return true;
 }
 
-bool RevOpts::InitStartAddrs( const std::vector< std::string >& StartAddrs ) {
-  std::vector< std::string > vstr;
+bool RevOpts::InitStartAddrs( const std::vector<std::string>& StartAddrs ) {
+  std::vector<std::string> vstr;
 
   // check to see if we expand into multiple cores
   if( StartAddrs.size() == 1 ) {
@@ -120,9 +117,8 @@ bool RevOpts::InitStartAddrs( const std::vector< std::string >& StartAddrs ) {
   return true;
 }
 
-bool RevOpts::InitStartSymbols(
-  const std::vector< std::string >& StartSymbols ) {
-  std::vector< std::string > vstr;
+bool RevOpts::InitStartSymbols( const std::vector<std::string>& StartSymbols ) {
+  std::vector<std::string> vstr;
   for( unsigned i = 0; i < StartSymbols.size(); i++ ) {
     std::string s = StartSymbols[i];
     splitStr( s, ':', vstr );
@@ -133,14 +129,14 @@ bool RevOpts::InitStartSymbols(
     if( Core > numCores )
       return false;
 
-    startSym.insert( std::pair< unsigned, std::string >( Core, vstr[1] ) );
+    startSym.insert( std::pair<unsigned, std::string>( Core, vstr[1] ) );
     vstr.clear();
   }
   return true;
 }
 
-bool RevOpts::InitMachineModels( const std::vector< std::string >& Machines ) {
-  std::vector< std::string > vstr;
+bool RevOpts::InitMachineModels( const std::vector<std::string>& Machines ) {
+  std::vector<std::string> vstr;
 
   // check to see if we expand into multiple cores
   if( Machines.size() == 1 ) {
@@ -175,8 +171,8 @@ bool RevOpts::InitMachineModels( const std::vector< std::string >& Machines ) {
   return true;
 }
 
-bool RevOpts::InitInstTables( const std::vector< std::string >& InstTables ) {
-  std::vector< std::string > vstr;
+bool RevOpts::InitInstTables( const std::vector<std::string>& InstTables ) {
+  std::vector<std::string> vstr;
   for( unsigned i = 0; i < InstTables.size(); i++ ) {
     std::string s = InstTables[i];
     splitStr( s, ':', vstr );
@@ -193,8 +189,8 @@ bool RevOpts::InitInstTables( const std::vector< std::string >& InstTables ) {
   return true;
 }
 
-bool RevOpts::InitMemCosts( const std::vector< std::string >& MemCosts ) {
-  std::vector< std::string > vstr;
+bool RevOpts::InitMemCosts( const std::vector<std::string>& MemCosts ) {
+  std::vector<std::string> vstr;
 
   for( unsigned i = 0; i < MemCosts.size(); i++ ) {
     std::string s = MemCosts[i];

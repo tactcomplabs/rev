@@ -124,11 +124,7 @@ void towers_clear( struct Towers* this ) {
   towers_init( this, this->numDiscs );
 }
 
-void towers_solve_h( struct Towers* this,
-                     int          n,
-                     struct List* startPeg,
-                     struct List* tempPeg,
-                     struct List* destPeg ) {
+void towers_solve_h( struct Towers* this, int n, struct List* startPeg, struct List* tempPeg, struct List* destPeg ) {
   int val;
 
   if( n == 1 ) {
@@ -143,8 +139,7 @@ void towers_solve_h( struct Towers* this,
 }
 
 void towers_solve( struct Towers* this ) {
-  towers_solve_h(
-    this, this->numDiscs, &( this->pegA ), &( this->pegB ), &( this->pegC ) );
+  towers_solve_h( this, this->numDiscs, &( this->pegA ), &( this->pegB ), &( this->pegC ) );
 }
 
 int towers_verify( struct Towers* this ) {

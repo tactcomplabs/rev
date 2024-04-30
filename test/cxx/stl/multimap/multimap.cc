@@ -19,16 +19,13 @@
     asm( ".byte 0x00" ); \
   }
 
-typedef std::basic_string< char, std::char_traits< char >, Allocator< char > >
-  revString;
+typedef std::basic_string<char, std::char_traits<char>, Allocator<char>> revString;
 
-using TestMultiMap =
-  std::multimap< uint64_t,                      // key
-                 std::pair< uint64_t, float >,  // value
-                 std::less< uint64_t >,         // sorting method
-                 Allocator< std::pair<
-                   const uint64_t,
-                   std::pair< uint64_t, float > > > >;  // revalloc Allocator
+using TestMultiMap = std::multimap<
+  uint64_t,                                                           // key
+  std::pair<uint64_t, float>,                                         // value
+  std::less<uint64_t>,                                                // sorting method
+  Allocator<std::pair<const uint64_t, std::pair<uint64_t, float>>>>;  // revalloc Allocator
 
 void testInsertion() {
   TestMultiMap m;

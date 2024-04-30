@@ -39,23 +39,17 @@ int main( int argc, char** argv ) {
   TEST_ST_OP( 12, lh, sh, 0x0000000000000aa0, -2, tdat8 );
   TEST_ST_OP( 13, lh, sh, 0xffffffffffffa00a, 0, tdat8 );
 
-
   //# Test with a negative base
 
-  TEST_CASE( 14, x5, 0x5678, ASM_GEN( la x6, tdat9 );
-             ASM_GEN( li x7, 0x12345678 );
-             ASM_GEN( addi x10, x6, -32 );
+  TEST_CASE( 14, x5, 0x5678, ASM_GEN( la x6, tdat9 ); ASM_GEN( li x7, 0x12345678 ); ASM_GEN( addi x10, x6, -32 );
              ASM_GEN( sh x7, 32( x10 ) );
              ASM_GEN( lh x5, 0( x6 ) ); )
 
   //# Test with unaligned base
-  TEST_CASE( 15, x5, 0x3098, ASM_GEN( la x6, tdat9 );
-             ASM_GEN( li x7, 0x00003098 );
-             ASM_GEN( addi x6, x6, -5 );
+  TEST_CASE( 15, x5, 0x3098, ASM_GEN( la x6, tdat9 ); ASM_GEN( li x7, 0x00003098 ); ASM_GEN( addi x6, x6, -5 );
              ASM_GEN( sh x7, 7( x6 ) );
              ASM_GEN( la x10, tdat10 );
              ASM_GEN( lh x5, 0( x10 ) ); )
-
 
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );

@@ -42,16 +42,11 @@ int main( int argc, char** argv ) {
 
   // # Verify that shifts only use bottom six(rv64) or five(rv32) bits
 
-  TEST_RR_OP(
-    17, sra, 0xffffffff81818181, 0xffffffff81818181, 0xffffffffffffffc0 );
-  TEST_RR_OP(
-    18, sra, 0xffffffffc0c0c0c0, 0xffffffff81818181, 0xffffffffffffffc1 );
-  TEST_RR_OP(
-    19, sra, 0xffffffffff030303, 0xffffffff81818181, 0xffffffffffffffc7 );
-  TEST_RR_OP(
-    20, sra, 0xfffffffffffe0606, 0xffffffff81818181, 0xffffffffffffffce );
-  TEST_RR_OP(
-    21, sra, 0xffffffffffffffff, 0xffffffff81818181, 0xffffffffffffffff );
+  TEST_RR_OP( 17, sra, 0xffffffff81818181, 0xffffffff81818181, 0xffffffffffffffc0 );
+  TEST_RR_OP( 18, sra, 0xffffffffc0c0c0c0, 0xffffffff81818181, 0xffffffffffffffc1 );
+  TEST_RR_OP( 19, sra, 0xffffffffff030303, 0xffffffff81818181, 0xffffffffffffffc7 );
+  TEST_RR_OP( 20, sra, 0xfffffffffffe0606, 0xffffffff81818181, 0xffffffffffffffce );
+  TEST_RR_OP( 21, sra, 0xffffffffffffffff, 0xffffffff81818181, 0xffffffffffffffff );
 
   //  #-------------------------------------------------------------
   //  # Source/Destination tests

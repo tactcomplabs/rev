@@ -15,8 +15,7 @@
 extern volatile uint64_t tohost;
 extern volatile uint64_t fromhost;
 
-static uintptr_t
-  syscall( uintptr_t which, uint64_t arg0, uint64_t arg1, uint64_t arg2 ) {
+static uintptr_t syscall( uintptr_t which, uint64_t arg0, uint64_t arg1, uint64_t arg2 ) {
   volatile uint64_t magic_mem[8] __attribute__( ( aligned( 64 ) ) );
   magic_mem[0] = which;
   magic_mem[1] = arg0;
@@ -63,8 +62,7 @@ void __attribute__( ( noreturn ) ) tohost_exit( uintptr_t code ) {
     ;
 }
 
-uintptr_t __attribute__( ( weak ) )
-handle_trap( uintptr_t cause, uintptr_t epc, uintptr_t regs[32] ) {
+uintptr_t __attribute__( ( weak ) ) handle_trap( uintptr_t cause, uintptr_t epc, uintptr_t regs[32] ) {
   tohost_exit( 1337 );
 }
 
@@ -148,12 +146,8 @@ void printhex( uint64_t x ) {
   printstr( str );
 }
 
-static inline void printnum( void ( *putch )( int, void** ),
-                             void**             putdat,
-                             unsigned long long num,
-                             unsigned           base,
-                             int                width,
-                             int                padc ) {
+static inline void
+  printnum( void ( *putch )( int, void** ), void** putdat, unsigned long long num, unsigned base, int width, int padc ) {
   unsigned digs[sizeof( num ) * CHAR_BIT];
   int      pos = 0;
 
@@ -189,10 +183,7 @@ static long long getint( va_list* ap, int lflag ) {
     return va_arg( *ap, int );
 }
 
-static void vprintfmt( void ( *putch )( int, void** ),
-                       void**      putdat,
-                       const char* fmt,
-                       va_list     ap ) {
+static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char* fmt, va_list ap ) {
   register const char* p;
   const char*          last_fmt;
   register int         ch, err;
@@ -272,8 +263,7 @@ static void vprintfmt( void ( *putch )( int, void** ),
       if( width > 0 && padc != '-' )
         for( width -= strnlen( p, precision ); width > 0; width-- )
           putch( padc, putdat );
-      for( ; ( ch = *p ) != '\0' && ( precision < 0 || --precision >= 0 );
-           width-- ) {
+      for( ; ( ch = *p ) != '\0' && ( precision < 0 || --precision >= 0 ); width-- ) {
         putch( ch, putdat );
         p++;
       }
@@ -358,8 +348,7 @@ int sprintf( char* str, const char* fmt, ... ) {
 }
 
 void* memcpy( void* dest, const void* src, size_t len ) {
-  if( ( ( (uintptr_t) dest | (uintptr_t) src | len ) &
-        ( sizeof( uintptr_t ) - 1 ) ) == 0 ) {
+  if( ( ( (uintptr_t) dest | (uintptr_t) src | len ) & ( sizeof( uintptr_t ) - 1 ) ) == 0 ) {
     const uintptr_t* s   = src;
     uintptr_t*       d   = dest;
     uintptr_t*       end = dest + len;

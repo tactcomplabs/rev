@@ -34,34 +34,21 @@ class RevRNG {
   }
 
   // Thread seed is based on thread ID of host
-  static uint32_t ThreadSeed() {
-    return uint32_t(
-      std::hash< std::thread::id >{}( std::this_thread::get_id() ) );
-  }
+  static uint32_t ThreadSeed() { return uint32_t( std::hash<std::thread::id>{}( std::this_thread::get_id() ) ); }
 
 public:
   using result_type = uint64_t;
 
-  static constexpr result_type min() {
-    return std::numeric_limits< result_type >::min();
-  }
+  static constexpr result_type min() { return std::numeric_limits<result_type>::min(); }
 
-  static constexpr result_type max() {
-    return std::numeric_limits< result_type >::max();
-  }
+  static constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
 
-  result_type operator()() {
-    return SSTRNG.generateNextUInt64();
-  }
+  result_type operator()() { return SSTRNG.generateNextUInt64(); }
 
-  void seed( result_type seed ) {
-    *this = RevRNG( seed );
-  }
+  void seed( result_type seed ) { *this = RevRNG( seed ); }
 
   // Default seed is combination of HWSeed and ThreadSeed
-  explicit RevRNG( result_type seed = HWSeed() ^ ThreadSeed() ) :
-    SSTRNG( uint32_t( seed ) ) {
-  }
+  explicit RevRNG( result_type seed = HWSeed() ^ ThreadSeed() ) : SSTRNG( uint32_t( seed ) ) {}
 
   // Not implemented:
   // discard()
@@ -73,15 +60,15 @@ public:
 
 /// Random Number Generator
 // Returns a value in [min, max] (integer) or [min, max) (floating-point)
-template< typename T, typename U >
+template<typename T, typename U>
 inline auto RevRand( T min, U max ) {
   // Thread-local RNG which is seeded differently for each thread
   thread_local RevRNG RNG;
-  using TU = std::common_type_t< T, U >;
-  if constexpr( std::is_floating_point_v< TU > ) {
-    return std::uniform_real_distribution< TU >( min, max )( RNG );
+  using TU = std::common_type_t<T, U>;
+  if constexpr( std::is_floating_point_v<TU> ) {
+    return std::uniform_real_distribution<TU>( min, max )( RNG );
   } else {
-    return std::uniform_int_distribution< TU >( min, max )( RNG );
+    return std::uniform_int_distribution<TU>( min, max )( RNG );
   }
 }
 

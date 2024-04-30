@@ -48,9 +48,7 @@ public:
   }
 
   /// Destructor restores Fenv state
-  ~RevFenv() {
-    SetRound( saved_round );
-  }
+  ~RevFenv() { SetRound( saved_round ); }
 
   // We allow moving, but not copying RevFenv
   // This is to ensure that there is only a single copy
@@ -63,9 +61,7 @@ public:
   RevFenv& operator=( RevFenv&& )      = delete;
 
   // Get the current FP rounding state
-  static int GetRound() {
-    return round();
-  }
+  static int GetRound() { return round(); }
 
   // Set the FP rounding state if it differs from current
   static int SetRound( int mode ) {

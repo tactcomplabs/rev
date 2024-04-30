@@ -19,7 +19,7 @@
   }
 
 int main() {
-  std::vector< int, Allocator< int > > v;
+  std::vector<int, Allocator<int>> v;
   v.push_back( 0xbeef );
   int a = v.back();
   assert( a == 0xbeef );

@@ -50,7 +50,6 @@ int main( int argc, char** argv ) {
   TEST_RR_SRC2_EQ_DEST( 18, sltu, 1, 11, 13 );
   TEST_RR_SRC12_EQ_DEST( 19, sltu, 0, 13 );
 
-
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );
   asm volatile( "j continue" );

@@ -34,7 +34,6 @@ int main( int argc, char** argv ) {
   TEST_RR_OP( 9, div, -1, 1, 0 );
   TEST_RR_OP( 10, div, -1, 0, 0 );
 
-
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );
   asm volatile( "j continue" );

@@ -301,7 +301,7 @@ struct clone_args {
   int tls;          /* Location of new TLS */
   int set_tid;      /* Pointer to a pid_t array (since Linux 5.5) */
   int set_tid_size; /* Number of elements in set_tid (since Linux 5.5) */
-  int cgroup; /* File descriptor for target cgroup of child (since Linux 5.7) */
+  int cgroup;       /* File descriptor for target cgroup of child (since Linux 5.7) */
 };
 
 /* read() from /dev/aio returns these structures. */

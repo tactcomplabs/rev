@@ -16,7 +16,6 @@
 int main( int argc, char** argv ) {
   int o;
 
-
   /* The assembly sequence below should produce a
  * cascade of dependent instructions
  * The cost of "add" in the RV32I instruction

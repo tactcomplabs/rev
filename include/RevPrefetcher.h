@@ -28,15 +28,13 @@ class RevPrefetcher {
 public:
   /// RevPrefetcher: constructor
   RevPrefetcher(
-    RevMem*                                                        Mem,
-    RevFeature*                                                    Feature,
-    unsigned                                                       Depth,
-    std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > lsq,
-    std::function< void( const MemReq& ) >                         func ) :
-    mem( Mem ),
-    feature( Feature ), depth( Depth ), LSQueue( lsq ),
-    MarkLoadAsComplete( func ), OutstandingFetchQ() {
-  }
+    RevMem*                                                    Mem,
+    RevFeature*                                                Feature,
+    unsigned                                                   Depth,
+    std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> lsq,
+    std::function<void( const MemReq& )>                       func
+  )
+    : mem( Mem ), feature( Feature ), depth( Depth ), LSQueue( lsq ), MarkLoadAsComplete( func ), OutstandingFetchQ() {}
 
   /// RevPrefetcher: destructor
   ~RevPrefetcher() = default;
@@ -51,16 +49,14 @@ public:
   void MarkInstructionLoadComplete( const MemReq& req );
 
 private:
-  RevMem*     mem;      ///< RevMem object
-  RevFeature* feature;  ///< RevFeature object
-  unsigned    depth;    ///< Depth of each prefetcher stream
-  std::vector< uint64_t >
-    baseAddr;  ///< Vector of base addresses for each stream
-  std::vector< std::vector< uint32_t > >
-    iStack;  ///< Vector of instruction vectors
-  std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > LSQueue;
-  std::function< void( const MemReq& ) > MarkLoadAsComplete;
-  std::vector< MemReq >                  OutstandingFetchQ;
+  RevMem*                                                    mem;       ///< RevMem object
+  RevFeature*                                                feature;   ///< RevFeature object
+  unsigned                                                   depth;     ///< Depth of each prefetcher stream
+  std::vector<uint64_t>                                      baseAddr;  ///< Vector of base addresses for each stream
+  std::vector<std::vector<uint32_t>>                         iStack;    ///< Vector of instruction vectors
+  std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> LSQueue;
+  std::function<void( const MemReq& )>                       MarkLoadAsComplete;
+  std::vector<MemReq>                                        OutstandingFetchQ;
 
   /// fills a missed stream cache instruction
   void Fill( uint64_t Addr );

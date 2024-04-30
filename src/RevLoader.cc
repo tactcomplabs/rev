@@ -15,24 +15,16 @@ namespace SST::RevCPU {
 
 using MemSegment = RevMem::MemSegment;
 
-RevLoader::RevLoader( std::string  Exe,
-                      std::string  Args,
-                      RevMem*      Mem,
-                      SST::Output* Output ) :
-  exe( Exe ),
-  args( Args ), mem( Mem ), output( Output ), RV32Entry( 0x00l ),
-  RV64Entry( 0x00ull ) {
+RevLoader::RevLoader( std::string Exe, std::string Args, RevMem* Mem, SST::Output* Output )
+  : exe( Exe ), args( Args ), mem( Mem ), output( Output ), RV32Entry( 0x00l ), RV64Entry( 0x00ull ) {
   if( !LoadElf() )
-    output->fatal(
-      CALL_INFO, -1, "Error: failed to load executable into memory\n" );
+    output->fatal( CALL_INFO, -1, "Error: failed to load executable into memory\n" );
 }
 
-RevLoader::~RevLoader() {
-}
+RevLoader::~RevLoader() {}
 
 bool RevLoader::IsElf( const Elf64_Ehdr eh64 ) {
-  if( ( eh64 ).e_ident[0] == 0x7f && ( eh64 ).e_ident[1] == 'E' &&
-      ( eh64 ).e_ident[2] == 'L' && ( eh64 ).e_ident[3] == 'F' )
+  if( ( eh64 ).e_ident[0] == 0x7f && ( eh64 ).e_ident[1] == 'E' && ( eh64 ).e_ident[2] == 'L' && ( eh64 ).e_ident[3] == 'F' )
     return true;
 
   return false;
@@ -101,10 +93,8 @@ bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void* Data ) {
   size_t   TmpSize = BaseCacheAddr + lineSize - Addr;
   uint64_t TmpData = uint64_t( Data );
   uint64_t TmpAddr = Addr;
-  if( !mem->WriteMem(
-        0, TmpAddr, TmpSize, reinterpret_cast< void* >( TmpData ) ) ) {
-    output->fatal(
-      CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
+  if( !mem->WriteMem( 0, TmpAddr, TmpSize, reinterpret_cast<void*>( TmpData ) ) ) {
+    output->fatal( CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
   }
 
   TmpAddr += TmpSize;
@@ -121,10 +111,8 @@ bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void* Data ) {
       TmpSize = ( Len - Total );
     }
 
-    if( !mem->WriteMem(
-          0, TmpAddr, TmpSize, reinterpret_cast< void* >( TmpData ) ) ) {
-      output->fatal(
-        CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
+    if( !mem->WriteMem( 0, TmpAddr, TmpSize, reinterpret_cast<void*>( TmpData ) ) ) {
+      output->fatal( CALL_INFO, -1, "Error: Failed to perform cache line write\n" );
     }
 
     // incrememnt the temp counters
@@ -211,10 +199,12 @@ bool RevLoader::LoadElf32( char* membuf, size_t sz ) {
     StaticDataEnd = TextEnd;
   } else {
     // Can't find any (Text, BSS, or Data) sections
-    output->fatal( CALL_INFO,
-                   -1,
-                   "Error: No text, data, or bss sections --- RV64 Elf is "
-                   "unrecognizable\n" );
+    output->fatal(
+      CALL_INFO,
+      -1,
+      "Error: No text, data, or bss sections --- RV64 Elf is "
+      "unrecognizable\n"
+    );
   }
 
   // Check that the ELF file is valid
@@ -240,14 +230,10 @@ bool RevLoader::LoadElf32( char* membuf, size_t sz ) {
         if( sz < ph[i].p_offset + ph[i].p_filesz ) {
           output->fatal( CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
         }
-        WriteCacheLine( ph[i].p_paddr,
-                        ph[i].p_filesz,
-                        (uint8_t*) ( membuf + ph[i].p_offset ) );
+        WriteCacheLine( ph[i].p_paddr, ph[i].p_filesz, (uint8_t*) ( membuf + ph[i].p_offset ) );
       }
-      std::vector< uint8_t > zeros( ph[i].p_memsz - ph[i].p_filesz );
-      WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz,
-                      ph[i].p_memsz - ph[i].p_filesz,
-                      &zeros[0] );
+      std::vector<uint8_t> zeros( ph[i].p_memsz - ph[i].p_filesz );
+      WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz, ph[i].p_memsz - ph[i].p_filesz, &zeros[0] );
     }
   }
 
@@ -286,8 +272,7 @@ bool RevLoader::LoadElf32( char* membuf, size_t sz ) {
     char*      strtab = membuf + sh[strtabidx].sh_offset;
     Elf32_Sym* sym    = (Elf32_Sym*) ( membuf + sh[symtabidx].sh_offset );
     // Iterate over every symbol in the symbol table
-    for( unsigned i = 0; i < sh[symtabidx].sh_size / sizeof( Elf32_Sym );
-         i++ ) {
+    for( unsigned i = 0; i < sh[symtabidx].sh_size / sizeof( Elf32_Sym ); i++ ) {
       // Calculate the maximum length of the symbol
       unsigned maxlen = sh[strtabidx].sh_size - sym[i].st_name;
       if( sym[i].st_name >= sh[strtabidx].sh_size )
@@ -368,10 +353,12 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
     StaticDataEnd = TextEnd;
   } else {
     // Can't find any (Text, BSS, or Data) sections
-    output->fatal( CALL_INFO,
-                   -1,
-                   "Error: No text, data, or bss sections --- RV64 Elf is "
-                   "unrecognizable\n" );
+    output->fatal(
+      CALL_INFO,
+      -1,
+      "Error: No text, data, or bss sections --- RV64 Elf is "
+      "unrecognizable\n"
+    );
   }
 
   // Check that the ELF file is valid
@@ -397,14 +384,10 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
         if( sz < ph[i].p_offset + ph[i].p_filesz ) {
           output->fatal( CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
         }
-        WriteCacheLine( ph[i].p_paddr,
-                        ph[i].p_filesz,
-                        (uint8_t*) ( membuf + ph[i].p_offset ) );
+        WriteCacheLine( ph[i].p_paddr, ph[i].p_filesz, (uint8_t*) ( membuf + ph[i].p_offset ) );
       }
-      std::vector< uint8_t > zeros( ph[i].p_memsz - ph[i].p_filesz );
-      WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz,
-                      ph[i].p_memsz - ph[i].p_filesz,
-                      &zeros[0] );
+      std::vector<uint8_t> zeros( ph[i].p_memsz - ph[i].p_filesz );
+      WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz, ph[i].p_memsz - ph[i].p_filesz, &zeros[0] );
     }
   }
 
@@ -444,8 +427,7 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
     char*      strtab = membuf + sh[strtabidx].sh_offset;
     Elf64_Sym* sym    = (Elf64_Sym*) ( membuf + sh[symtabidx].sh_offset );
     // Iterate over every symbol in the symbol table
-    for( unsigned i = 0; i < sh[symtabidx].sh_size / sizeof( Elf64_Sym );
-         i++ ) {
+    for( unsigned i = 0; i < sh[symtabidx].sh_size / sizeof( Elf64_Sym ); i++ ) {
       // Calculate the maximum length of the symbol
       unsigned maxlen = sh[strtabidx].sh_size - sym[i].st_name;
       if( sym[i].st_name >= sh[strtabidx].sh_size )
@@ -514,7 +496,6 @@ bool RevLoader::LoadProgramArgs() {
   // the x10 register to the value of ARGC and the x11 register to the base pointer to ARGV
   // -------------- END MEMORY LAYOUT NOTES
 
-
   // argv[0] = program name
   argv.push_back( exe );
 
@@ -522,8 +503,7 @@ bool RevLoader::LoadProgramArgs() {
   splitStr( args, ' ', argv );
 
   if( argv.size() == 0 ) {
-    output->fatal(
-      CALL_INFO, -1, "Error: failed to initialize the program arguments\n" );
+    output->fatal( CALL_INFO, -1, "Error: failed to initialize the program arguments\n" );
     return false;
   }
 
@@ -537,11 +517,10 @@ bool RevLoader::LoadProgramArgs() {
 
   // write the argument values
   for( int i = ( argv.size() - 1 ); i >= 0; i-- ) {
-    output->verbose(
-      CALL_INFO, 6, 0, "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
+    output->verbose( CALL_INFO, 6, 0, "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
 
     // retrieve the current stack pointer
-    std::vector< char > tmpc( argv[i].size() + 1 );
+    std::vector<char> tmpc( argv[i].size() + 1 );
     argv[i].copy( &tmpc[0], argv[i].size() + 1 );
     tmpc[argv[i].size()] = '\0';
     size_t len           = argv[i].size() + 1;
@@ -565,14 +544,11 @@ bool RevLoader::LoadProgramArgs() {
     ArgArray += 8;
   }
 
-  mem->SetNextThreadMemAddr( OldStackTop - _STACK_SIZE_ - mem->GetTLSSize() -
-                             __PAGE_SIZE__ );
+  mem->SetNextThreadMemAddr( OldStackTop - _STACK_SIZE_ - mem->GetTLSSize() - __PAGE_SIZE__ );
   return true;
 }
 
-void RevLoader::splitStr( const std::string&          s,
-                          char                        c,
-                          std::vector< std::string >& v ) {
+void RevLoader::splitStr( const std::string& s, char c, std::vector<std::string>& v ) {
   std::string::size_type i = 0;
   std::string::size_type j = s.find( c );
 
@@ -595,21 +571,14 @@ bool RevLoader::LoadElf() {
   int         fd = open( exe.c_str(), O_RDONLY );
   struct stat FileStats;
   if( fstat( fd, &FileStats ) < 0 )
-    output->fatal( CALL_INFO,
-                   -1,
-                   "Error: failed to stat executable file: %s\n",
-                   exe.c_str() );
+    output->fatal( CALL_INFO, -1, "Error: failed to stat executable file: %s\n", exe.c_str() );
 
   size_t FileSize = FileStats.st_size;
 
   // map the executable into memory
-  char* membuf =
-    (char*) ( mmap( NULL, FileSize, PROT_READ, MAP_PRIVATE, fd, 0 ) );
+  char* membuf    = (char*) ( mmap( NULL, FileSize, PROT_READ, MAP_PRIVATE, fd, 0 ) );
   if( membuf == MAP_FAILED )
-    output->fatal( CALL_INFO,
-                   -1,
-                   "Error: failed to map executable file: %s\n",
-                   exe.c_str() );
+    output->fatal( CALL_INFO, -1, "Error: failed to map executable file: %s\n", exe.c_str() );
 
   // close the target file
   close( fd );
@@ -620,8 +589,7 @@ bool RevLoader::LoadElf() {
 
   const Elf64_Ehdr* eh64 = (const Elf64_Ehdr*) ( membuf );
   if( !IsRVElf32( *eh64 ) && !IsRVElf64( *eh64 ) )
-    output->fatal(
-      CALL_INFO, -1, "Error: Cannot determine Elf32 or Elf64 from header\n" );
+    output->fatal( CALL_INFO, -1, "Error: Cannot determine Elf32 or Elf64 from header\n" );
 
   if( !IsRVLittle( *eh64 ) )
     output->fatal( CALL_INFO, -1, "Error: Not in little endian format\n" );
@@ -638,16 +606,11 @@ bool RevLoader::LoadElf() {
   munmap( membuf, FileSize );
 
   // print the symbol table entries
-  std::map< std::string, uint64_t >::iterator it = symtable.begin();
+  std::map<std::string, uint64_t>::iterator it = symtable.begin();
   while( it != symtable.end() ) {
     // create inverse map to allow tracer to lookup symbols
     tracer_symbols.emplace( it->second, it->first );
-    output->verbose( CALL_INFO,
-                     6,
-                     0,
-                     "Symbol Table Entry [%s:0x%" PRIx64 "]\n",
-                     it->first.c_str(),
-                     it->second );
+    output->verbose( CALL_INFO, 6, 0, "Symbol Table Entry [%s:0x%" PRIx64 "]\n", it->first.c_str(), it->second );
     it++;
   }
 
@@ -670,7 +633,7 @@ uint64_t RevLoader::GetSymbolAddr( std::string Symbol ) {
   return tmp;
 }
 
-std::map< uint64_t, std::string >* SST::RevCPU::RevLoader::GetTraceSymbols() {
+std::map<uint64_t, std::string>* SST::RevCPU::RevLoader::GetTraceSymbols() {
   return &tracer_symbols;
 }
 
