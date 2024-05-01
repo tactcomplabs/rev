@@ -219,13 +219,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
   std::vector< std::string > memDumpRanges;
   params.find_array( "memDumpRanges", memDumpRanges );
   if( !memDumpRanges.empty() ) {
-    for( auto& range : memDumpRanges ) {
-      MemSegment seg;
-      if( !Mem->ParseMemDumpRange( range, seg ) ) {
-        output.fatal(
-          CALL_INFO, -1, "Error: failed to parse memory dump range\n" );
-      }
-      Mem->AddMemDumpRange( seg );
+    for( auto& segName : memDumpRanges ) {
+      // segName is a string... Look for scoped params for this segment
+      const auto& scopedParams = params.get_scoped_params( segName );
+      scopedParams.print_all_params( output );
+      //
+      //      if( !Mem->ParseMemDumpRange( range ) ) {
+      //        // TODO: Make error better
+      //        output.fatal( CALL_INFO, -1, "Error: failed to parse memory dump range\n" ); }
+      //      Mem->AddMemDumpRange( range );
     }
   }
 

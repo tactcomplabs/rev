@@ -109,6 +109,10 @@ public:
       return ( this->contains( vBaseAddr ) && this->contains( vTopAddr ) );
     };
 
+    void dump() {
+      DumpMemSeg( std::make_shared< MemSegment >( *this ), 16, std::cout );
+    }
+
     /// MemSegment: Override for easy std::cout << *Seg << std::endl;
     friend std::ostream& operator<<( std::ostream& os, const MemSegment& Seg ) {
       os << "| 0x" << std::hex << std::setw( 16 ) << std::setfill( '0' )
@@ -460,20 +464,20 @@ public:
   }
 
   /// RevMem: Dump the memory contents
-  void DumpMem( const uint64_t startAddr,
-                const uint64_t numBytes,
-                const uint64_t bytesPerRow  = 16,
-                std::ostream&  outputStream = std::cout );
+  void        DumpMem( const uint64_t startAddr,
+                       const uint64_t numBytes,
+                       const uint64_t bytesPerRow  = 16,
+                       std::ostream&  outputStream = std::cout );
 
-  void DumpValidMem( const uint64_t bytesPerRow  = 16,
-                     std::ostream&  outputStream = std::cout );
+  void        DumpValidMem( const uint64_t bytesPerRow  = 16,
+                            std::ostream&  outputStream = std::cout );
 
-  void DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
-                   const uint64_t                bytesPerRow  = 16,
-                   std::ostream&                 outputStream = std::cout );
+  static void DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
+                          const uint64_t                bytesPerRow = 16,
+                          std::ostream& outputStream = std::cout );
 
-  void DumpThreadMem( const uint64_t bytesPerRow  = 16,
-                      std::ostream&  outputStream = std::cout );
+  void        DumpThreadMem( const uint64_t bytesPerRow  = 16,
+                             std::ostream&  outputStream = std::cout );
 
 protected:
   char* physMem = nullptr;  ///< RevMem: memory container

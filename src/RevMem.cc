@@ -1187,8 +1187,7 @@ void RevMem::DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
                          std::ostream&                 outputStream ) {
 
   outputStream << "// " << *MemSeg << std::endl;
-  DumpMem(
-    MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  // DumpMem( MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
 }
 
 void RevMem::DumpValidMem( const uint64_t bytesPerRow,
