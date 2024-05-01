@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
+#include <iomanip>
 #include <memory>
 #include <mutex>
 #include <utility>
@@ -1181,19 +1182,44 @@ void RevMem::DumpMem( const uint64_t startAddr,
   }
 }
 
+void RevMem::DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
+                         const uint64_t                bytesPerRow,
+                         std::ostream&                 outputStream ) {
+
+  outputStream << "// " << *MemSeg << std::endl;
+  DumpMem(
+    MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+}
+
 void RevMem::DumpValidMem( const uint64_t bytesPerRow,
                            std::ostream&  outputStream ) {
 
+  std::sort( MemSegs.begin(), MemSegs.end() );
   outputStream << "Memory Segments:" << std::endl;
+  for( unsigned i = 0; i < MemSegs.size(); i++ ) {
+    outputStream << "// SEGMENT #" << i << *MemSegs[i] << std::endl;
+    DumpMemSeg( MemSegs[i], bytesPerRow, outputStream );
+  }
   for( const auto& MemSeg : MemSegs ) {
-    outputStream << *MemSeg << std::endl;
     DumpMem(
       MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
   }
 
-  outputStream << "Thread Memory Segments:" << std::endl;
+  std::sort( ThreadMemSegs.begin(), ThreadMemSegs.end() );
   for( const auto& MemSeg : ThreadMemSegs ) {
-    outputStream << *MemSeg << std::endl;
+    outputStream << "// " << *MemSeg << std::endl;
+    DumpMem(
+      MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  }
+}
+
+void RevMem::DumpThreadMem( const uint64_t bytesPerRow,
+                            std::ostream&  outputStream ) {
+
+  outputStream << "Thread Memory Segments:" << std::endl;
+  std::sort( ThreadMemSegs.begin(), ThreadMemSegs.end() );
+  for( const auto& MemSeg : ThreadMemSegs ) {
+    outputStream << "// " << *MemSeg << std::endl;
     DumpMem(
       MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
   }

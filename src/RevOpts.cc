@@ -275,6 +275,11 @@ bool RevOpts::GetMemCost( unsigned Core, unsigned& Min, unsigned& Max ) {
   return true;
 }
 
+bool RevOpts::GetMemDumpRanges() {
+
+  return true;
+}
+
 }  // namespace SST::RevCPU
 
 // EOF

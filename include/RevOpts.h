@@ -79,6 +79,9 @@ public:
   /// RevOpts: retrieve the memory cost range for the target core
   bool GetMemCost( unsigned Core, unsigned& Min, unsigned& Max );
 
+  /// RevOpts: retrieve the memory ranges to dump
+  bool GetMemDumpRanges( unsigned& Min, unsigned& Max );
+
   /// RevOpts: retrieve the prefetch depth for the target core
   bool GetPrefetchDepth( unsigned Core, unsigned& Depth );
 
@@ -112,6 +115,9 @@ private:
     memCosts;  ///< RevOpts: vector of memory cost ranges
 
   std::vector< std::string > Argv;  ///< RevOpts: vector of function arguments
+
+  std::vector< std::string >
+       MemDumpRanges;  ///< RevOpts: vector of function arguments
 
   /// RevOpts: splits a string into tokens
   void splitStr( const std::string& s, char c, std::vector< std::string >& v );

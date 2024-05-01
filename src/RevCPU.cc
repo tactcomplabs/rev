@@ -215,6 +215,20 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
     }
   }
 
+  // Memory dumping option(s)
+  std::vector< std::string > memDumpRanges;
+  params.find_array( "memDumpRanges", memDumpRanges );
+  if( !memDumpRanges.empty() ) {
+    for( auto& range : memDumpRanges ) {
+      MemSegment seg;
+      if( !Mem->ParseMemDumpRange( range, seg ) ) {
+        output.fatal(
+          CALL_INFO, -1, "Error: failed to parse memory dump range\n" );
+      }
+      Mem->AddMemDumpRange( seg );
+    }
+  }
+
 #ifndef NO_REV_TRACER
   // Configure tracer and assign to each core
   if( output.getVerboseLevel() >= 5 ) {

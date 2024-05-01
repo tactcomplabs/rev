@@ -109,11 +109,25 @@ public:
       return ( this->contains( vBaseAddr ) && this->contains( vTopAddr ) );
     };
 
-    // Override for easy std::cout << *Seg << std::endl;
+    /// MemSegment: Override for easy std::cout << *Seg << std::endl;
     friend std::ostream& operator<<( std::ostream& os, const MemSegment& Seg ) {
-      return os << " | BaseAddr:  0x" << std::hex << Seg.getBaseAddr()
-                << " | TopAddr: 0x" << std::hex << Seg.getTopAddr()
-                << " | Size: " << std::dec << Seg.getSize() << " Bytes";
+      os << "| 0x" << std::hex << std::setw( 16 ) << std::setfill( '0' )
+         << Seg.getBaseAddr() << " | 0x" << std::hex << std::setw( 16 )
+         << std::setfill( '0' ) << Seg.getTopAddr() << " | " << std::dec
+         << std::setw( 10 ) << std::setfill( ' ' ) << Seg.getSize()
+         << " Bytes |";
+
+      return os;
+    }
+
+    /// MemSegment: Override the less than operator
+    bool operator<( const MemSegment& other ) const {
+      return BaseAddr < other.BaseAddr;
+    }
+
+    /// MemSegment: Override the greater than operator
+    bool operator>( const MemSegment& other ) const {
+      return BaseAddr > other.BaseAddr;
     }
 
   private:
@@ -453,6 +467,13 @@ public:
 
   void DumpValidMem( const uint64_t bytesPerRow  = 16,
                      std::ostream&  outputStream = std::cout );
+
+  void DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
+                   const uint64_t                bytesPerRow  = 16,
+                   std::ostream&                 outputStream = std::cout );
+
+  void DumpThreadMem( const uint64_t bytesPerRow  = 16,
+                      std::ostream&  outputStream = std::cout );
 
 protected:
   char* physMem = nullptr;  ///< RevMem: memory container
