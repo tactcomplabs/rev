@@ -223,11 +223,46 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
       // segName is a string... Look for scoped params for this segment
       const auto& scopedParams = params.get_scoped_params( segName );
       scopedParams.print_all_params( output );
-      //
-      //      if( !Mem->ParseMemDumpRange( range ) ) {
-      //        // TODO: Make error better
-      //        output.fatal( CALL_INFO, -1, "Error: failed to parse memory dump range\n" ); }
-      //      Mem->AddMemDumpRange( range );
+      // Check scopedParams for the following:
+      // - startAddr (hex)
+      // - size (bytes)
+      // - init (bool)
+      // - end (bool)
+      if( !scopedParams.contains( "startAddr" ) ) {
+        output.fatal(
+          CALL_INFO,
+          -1,
+          "Error: memDumpRanges requires startAddr. Please specify this scoped "
+          "param as %s.startAddr in the configuration file\n",
+          segName.c_str() );
+      } else if( !scopedParams.contains( "size" ) ) {
+        output.fatal( CALL_INFO,
+                      -1,
+                      "Error: memDumpRanges requires size. Please specify this "
+                      "scoped param as %s.size in the configuration file\n",
+                      segName.c_str() );
+      } else if( !scopedParams.contains( "dumpInit" ) ) {
+        // TODO: Potentially make optional
+        output.fatal(
+          CALL_INFO,
+          -1,
+          "Error: memDumpRanges requires dumpInit. Please specify this scoped "
+          "param as %s.dumpInit in the configuration file\n",
+          segName.c_str() );
+      } else if( !scopedParams.contains( "dumpEnd" ) ) {
+        // TODO: Potentially make optional
+        output.fatal(
+          CALL_INFO,
+          -1,
+          "Error: memDumpRanges requires dumpEnd. Please specify this scoped "
+          "param as %s.dumpEnd in the configuration file\n",
+          segName.c_str() );
+      }
+      const uint64_t startAddr = scopedParams.find< uint64_t >( "startAddr" );
+      const uint64_t size      = scopedParams.find< uint64_t >( "size" );
+      bool           dumpInit  = scopedParams.find< bool >( "dumpInit" );
+      bool           dumpEnd   = scopedParams.find< bool >( "dumpEnd" );
+      Mem->AddDumpRange( startAddr, size );
     }
   }
 
@@ -377,6 +412,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
 
   // Done with initialization
   output.verbose( CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n" );
+
+  for( const auto& Seg : Mem->GetDumpRanges() ) {
+    Mem->DumpMemSeg( Seg );
+  }
 }
 
 RevCPU::~RevCPU() {
@@ -732,6 +771,10 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
     for( unsigned i = 0; i < numCores; i++ ) {
       UpdateCoreStatistics( i );
       Procs[i]->PrintStatSummary();
+    }
+    // Dump MemRanges if there are any
+    for( const auto& Seg : Mem->GetDumpRanges() ) {
+      Mem->DumpMemSeg( Seg );
     }
     primaryComponentOKToEndSim();
     output.verbose( CALL_INFO,
