@@ -22,26 +22,19 @@
   }
 #define DIM 450
 
-typedef std::basic_string< char, std::char_traits< char >, Allocator< char > >
-  revString;
+typedef std::basic_string<char, std::char_traits<char>, Allocator<char>> revString;
 
 class EntityEmbedding {
 public:
-  uint64_t                 id;
-  std::array< float, DIM > vals;
+  uint64_t               id;
+  std::array<float, DIM> vals;
 
-  EntityEmbedding( uint64_t id ) : id( id ) {
-  }
+  EntityEmbedding( uint64_t id ) : id( id ) {}
 
-  EntityEmbedding() {
-  }
+  EntityEmbedding() {}
 };
 
-using TestMap =
-  std::map< uint64_t,
-            EntityEmbedding,
-            std::less< uint64_t >,
-            Allocator< std::pair< const uint64_t, EntityEmbedding > > >;
+using TestMap = std::map<uint64_t, EntityEmbedding, std::less<uint64_t>, Allocator<std::pair<const uint64_t, EntityEmbedding>>>;
 
 void testInsertion() {
   TestMap m;

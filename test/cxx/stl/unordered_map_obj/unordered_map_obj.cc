@@ -22,8 +22,7 @@
   }
 #define DIM 450
 
-typedef std::basic_string< char, std::char_traits< char >, Allocator< char > >
-  revString;
+typedef std::basic_string<char, std::char_traits<char>, Allocator<char>> revString;
 
 class ContigSet {
 public:
@@ -32,23 +31,15 @@ public:
   uint64_t val2;
   int      val3;
 
-  ContigSet() {
-  }
+  ContigSet() {}
 
-  ContigSet( uint64_t id ) : id( id ) {
-  }
+  ContigSet( uint64_t id ) : id( id ) {}
 
-  ContigSet( uint64_t id, uint8_t v1, uint64_t v2, uint64_t v3 ) :
-    id( id ), val1( v1 ), val2( v2 ), val3( v3 ) {
-  }
+  ContigSet( uint64_t id, uint8_t v1, uint64_t v2, uint64_t v3 ) : id( id ), val1( v1 ), val2( v2 ), val3( v3 ) {}
 };
 
-using TestMap =
-  std::unordered_map< uint64_t,
-                      ContigSet,
-                      std::hash< uint64_t >,
-                      std::equal_to< uint64_t >,
-                      Allocator< std::pair< const uint64_t, ContigSet > > >;
+using TestMap = std::
+  unordered_map<uint64_t, ContigSet, std::hash<uint64_t>, std::equal_to<uint64_t>, Allocator<std::pair<const uint64_t, ContigSet>>>;
 
 void testInsertion() {
   TestMap m;
@@ -96,8 +87,7 @@ void testIteration() {
 
   // ensure all objects are iterated over with range check on expected values
   for( auto it = m.begin(); it != m.end(); it++ ) {
-    assert( it->first >= 1 && it->first <= 4 && it->second.id >= 0 &&
-            it->second.id <= 3 );
+    assert( it->first >= 1 && it->first <= 4 && it->second.id >= 0 && it->second.id <= 3 );
     count++;
   }
 

@@ -36,21 +36,17 @@ int main( int argc, char** argv ) {
 
   //# Test with a negative base
 
-  TEST_CASE( 10, x5, 0x1234567812345678, ASM_GEN( la x6, tdat9 );
-             ASM_GEN( li x7, 0x1234567812345678 );
+  TEST_CASE( 10, x5, 0x1234567812345678, ASM_GEN( la x6, tdat9 ); ASM_GEN( li x7, 0x1234567812345678 );
              ASM_GEN( addi x10, x6, -32 );
              ASM_GEN( sd x7, 32( x10 ) );
              ASM_GEN( ld x5, 0( x6 ) ); )
 
   //# Test with unaligned base
 
-  TEST_CASE( 11, x5, 0x5821309858213098, ASM_GEN( la x6, tdat9 );
-             ASM_GEN( li x7, 0x5821309858213098 );
-             ASM_GEN( addi x6, x6, -3 );
+  TEST_CASE( 11, x5, 0x5821309858213098, ASM_GEN( la x6, tdat9 ); ASM_GEN( li x7, 0x5821309858213098 ); ASM_GEN( addi x6, x6, -3 );
              ASM_GEN( sd x7, 11( x6 ) );
              ASM_GEN( la x10, tdat10 );
              ASM_GEN( ld x5, 0( x10 ) ); )
-
 
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );

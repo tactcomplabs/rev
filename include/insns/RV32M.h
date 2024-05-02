@@ -23,20 +23,20 @@ namespace SST::RevCPU {
 
 class RV32M : public RevExt {
   // Multiplication High instructions based on signedness of arguments
-  static constexpr auto& mulh   = uppermul< true, true >;
-  static constexpr auto& mulhu  = uppermul< false, false >;
-  static constexpr auto& mulhsu = uppermul< true, false >;
+  static constexpr auto& mulh   = uppermul<true, true>;
+  static constexpr auto& mulhu  = uppermul<false, false>;
+  static constexpr auto& mulhsu = uppermul<true, false>;
 
   /// Computes the LOWER half of multiplication, which does not depend on signedness
-  static constexpr auto& mul    = oper< std::multiplies, OpKind::Reg >;
+  static constexpr auto& mul    = oper<std::multiplies, OpKind::Reg>;
 
   // Division
-  static constexpr auto& div    = divrem< DivRem::Div, std::make_signed_t >;
-  static constexpr auto& divu   = divrem< DivRem::Div, std::make_unsigned_t >;
+  static constexpr auto& div    = divrem<DivRem::Div, std::make_signed_t>;
+  static constexpr auto& divu   = divrem<DivRem::Div, std::make_unsigned_t>;
 
   // Remainder
-  static constexpr auto& rem    = divrem< DivRem::Rem, std::make_signed_t >;
-  static constexpr auto& remu   = divrem< DivRem::Rem, std::make_unsigned_t >;
+  static constexpr auto& rem    = divrem<DivRem::Rem, std::make_signed_t>;
+  static constexpr auto& remu   = divrem<DivRem::Rem, std::make_unsigned_t>;
 
   // ----------------------------------------------------------------------
   //
@@ -65,8 +65,7 @@ class RV32M : public RevExt {
 
 public:
   /// RV32M: standard constructor
-  RV32M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
-    RevExt( "RV32M", Feature, RevMem, Output ) {
+  RV32M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32M", Feature, RevMem, Output ) {
     SetTable( std::move( RV32MTable ) );
   }
 };  // end class RV32I

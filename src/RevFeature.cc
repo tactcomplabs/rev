@@ -15,26 +15,12 @@
 
 namespace SST::RevCPU {
 
-RevFeature::RevFeature( std::string  Machine,
-                        SST::Output* Output,
-                        unsigned     Min,
-                        unsigned     Max,
-                        unsigned     Id ) :
-  machine( std::move( Machine ) ),
-  output( Output ), MinCost( Min ), MaxCost( Max ), ProcID( Id ),
-  HartToExecID( 0 ), features( RV_UNKNOWN ), xlen( 0 ) {
-  output->verbose(
-    CALL_INFO,
-    6,
-    0,
-    "Core %u ; Initializing feature set from machine string=%s\n",
-    ProcID,
-    machine.c_str() );
+RevFeature::RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id )
+  : machine( std::move( Machine ) ), output( Output ), MinCost( Min ), MaxCost( Max ), ProcID( Id ), HartToExecID( 0 ),
+    features( RV_UNKNOWN ), xlen( 0 ) {
+  output->verbose( CALL_INFO, 6, 0, "Core %u ; Initializing feature set from machine string=%s\n", ProcID, machine.c_str() );
   if( !ParseMachineModel() )
-    output->fatal( CALL_INFO,
-                   -1,
-                   "Error: failed to parse the machine model: %s\n",
-                   machine.c_str() );
+    output->fatal( CALL_INFO, -1, "Error: failed to parse the machine model: %s\n", machine.c_str() );
 }
 
 bool RevFeature::ParseMachineModel() {
@@ -50,10 +36,8 @@ bool RevFeature::ParseMachineModel() {
     return false;
   mac += 4;
 
-  output->verbose(
-    CALL_INFO, 6, 0, "Core %u ; Setting XLEN to %u\n", ProcID, xlen );
-  output->verbose(
-    CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", ProcID, mac );
+  output->verbose( CALL_INFO, 6, 0, "Core %u ; Setting XLEN to %u\n", ProcID, xlen );
+  output->verbose( CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", ProcID, mac );
 
   ///< List of architecture extensions. These must listed in canonical order
   ///< as shown in Table 27.11, Chapter 27, of the RISC-V Unprivileged Spec

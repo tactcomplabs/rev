@@ -36,7 +36,7 @@ inline void BoxNaN( double* dest, const void* value ) {
   uint32_t i32;
   memcpy( &i32, value, sizeof( float ) );                 // The FP32 value
   uint64_t i64 = uint64_t{ i32 } | ~uint64_t{ 0 } << 32;  // Boxed NaN value
-  memcpy( dest, &i64, sizeof( double ) );  // Store in FP64 register
+  memcpy( dest, &i64, sizeof( double ) );                 // Store in FP64 register
 }
 
 /// RISC-V Register Mneumonics
@@ -102,35 +102,33 @@ public:
   const bool HasD;    ///< RevRegFile: Cached copy of Features->HasD()
 
 private:
-  bool       trigger{};  ///< RevRegFile: Has the instruction been triggered?
-  unsigned   Entry{};    ///< RevRegFile: Instruction entry
-  uint32_t   cost{};     ///< RevRegFile: Cost of the instruction
+  bool       trigger{};         ///< RevRegFile: Has the instruction been triggered?
+  unsigned   Entry{};           ///< RevRegFile: Instruction entry
+  uint32_t   cost{};            ///< RevRegFile: Cost of the instruction
   RevTracer* Tracer = nullptr;  ///< RegRegFile: Tracer object
 
-  union {              // Anonymous union. We zero-initialize the largest member
-    uint32_t RV32_PC;  ///< RevRegFile: RV32 PC
+  union {                // Anonymous union. We zero-initialize the largest member
+    uint32_t RV32_PC;    ///< RevRegFile: RV32 PC
     uint64_t RV64_PC{};  ///< RevRegFile: RV64 PC
   };
 
   FCSR fcsr{};  ///< RevRegFile: FCSR
 
-  std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > LSQueue{};
-  std::function< void( const MemReq& ) > MarkLoadCompleteFunc{};
+  std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> LSQueue{};
+  std::function<void( const MemReq& )>                       MarkLoadCompleteFunc{};
 
-  union {  // Anonymous union. We zero-initialize the largest member
+  union {                             // Anonymous union. We zero-initialize the largest member
     uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
     uint64_t RV64[_REV_NUM_REGS_]{};  ///< RevRegFile: RV64I register file
   };
 
-  union {  // Anonymous union. We zero-initialize the largest member
+  union {                          // Anonymous union. We zero-initialize the largest member
     float  SPF[_REV_NUM_REGS_];    ///< RevRegFile: RVxxF register file
     double DPF[_REV_NUM_REGS_]{};  ///< RevRegFile: RVxxD register file
   };
 
-  std::bitset< _REV_NUM_REGS_ >
-    RV_Scoreboard{};  ///< RevRegFile: Scoreboard for RV32/RV64 RF to manage pipeline hazard
-  std::bitset< _REV_NUM_REGS_ >
-    FP_Scoreboard{};  ///< RevRegFile: Scoreboard for SPF/DPF RF to manage pipeline hazard
+  std::bitset<_REV_NUM_REGS_> RV_Scoreboard{};  ///< RevRegFile: Scoreboard for RV32/RV64 RF to manage pipeline hazard
+  std::bitset<_REV_NUM_REGS_> FP_Scoreboard{};  ///< RevRegFile: Scoreboard for SPF/DPF RF to manage pipeline hazard
 
   // Supervisor Mode CSRs
 #if 0  // not used
@@ -140,18 +138,15 @@ private:
   };
 #endif
 
-  union {  // Anonymous union. We zero-initialize the largest member
-    uint64_t
-      RV64_SEPC{};  // Holds address of instruction that caused the exception (ie. ECALL)
+  union {                  // Anonymous union. We zero-initialize the largest member
+    uint64_t RV64_SEPC{};  // Holds address of instruction that caused the exception (ie. ECALL)
     uint32_t RV32_SEPC;
   };
 
-  RevExceptionCause SCAUSE = RevExceptionCause::
-    NONE;  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
+  RevExceptionCause SCAUSE = RevExceptionCause::NONE;  // Used to store cause of exception (ie. ECALL_USER_EXCEPTION)
 
-  union {  // Anonymous union. We zero-initialize the largest member
-    uint64_t
-      RV64_STVAL{};  // Used to store additional info about exception (ECALL does not use this and sets value to 0)
+  union {                   // Anonymous union. We zero-initialize the largest member
+    uint64_t RV64_STVAL{};  // Used to store additional info about exception (ECALL does not use this and sets value to 0)
     uint32_t RV32_STVAL;
   };
 
@@ -164,81 +159,50 @@ private:
 
 public:
   // Constructor which takes a RevFeature
-  explicit RevRegFile( const RevFeature* feature ) :
-    IsRV32( feature->IsRV32() ), HasD( feature->HasD() ) {
-  }
+  explicit RevRegFile( const RevFeature* feature ) : IsRV32( feature->IsRV32() ), HasD( feature->HasD() ) {}
 
   // Getters/Setters
 
   /// Get cost of the instruction
-  const uint32_t& GetCost() const {
-    return cost;
-  }
+  const uint32_t& GetCost() const { return cost; }
 
-  uint32_t& GetCost() {
-    return cost;
-  }
+  uint32_t& GetCost() { return cost; }
 
   /// Set cost of the instruction
-  void SetCost( uint32_t c ) {
-    cost = c;
-  }
+  void SetCost( uint32_t c ) { cost = c; }
 
   /// Get whether the instruction has been triggered
-  bool GetTrigger() const {
-    return trigger;
-  }
+  bool GetTrigger() const { return trigger; }
 
   /// Set whether the instruction has been triggered
-  void SetTrigger( bool t ) {
-    trigger = t;
-  }
+  void SetTrigger( bool t ) { trigger = t; }
 
   /// Get the instruction entry
-  unsigned GetEntry() const {
-    return Entry;
-  }
+  unsigned GetEntry() const { return Entry; }
 
   /// Set the instruction entry
-  void SetEntry( unsigned e ) {
-    Entry = e;
-  }
+  void SetEntry( unsigned e ) { Entry = e; }
 
   /// Get the Load/Store Queue
-  const auto& GetLSQueue() const {
-    return LSQueue;
-  }
+  const auto& GetLSQueue() const { return LSQueue; }
 
   /// Set the Load/Store Queue
-  void SetLSQueue(
-    std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > lsq ) {
-    LSQueue = std::move( lsq );
-  }
+  void SetLSQueue( std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> lsq ) { LSQueue = std::move( lsq ); }
 
   /// Set the current tracer
-  void SetTracer( RevTracer* t ) {
-    Tracer = t;
-  }
+  void SetTracer( RevTracer* t ) { Tracer = t; }
 
   /// Get the MarkLoadComplete function
-  const std::function< void( const MemReq& ) >& GetMarkLoadComplete() const {
-    return MarkLoadCompleteFunc;
-  }
+  const std::function<void( const MemReq& )>& GetMarkLoadComplete() const { return MarkLoadCompleteFunc; }
 
   /// Set the MarkLoadComplete function
-  void SetMarkLoadComplete( std::function< void( const MemReq& ) > func ) {
-    MarkLoadCompleteFunc = std::move( func );
-  }
+  void SetMarkLoadComplete( std::function<void( const MemReq& )> func ) { MarkLoadCompleteFunc = std::move( func ); }
 
   /// Invoke the MarkLoadComplete function
-  void MarkLoadComplete( const MemReq& req ) const {
-    MarkLoadCompleteFunc( req );
-  }
+  void MarkLoadComplete( const MemReq& req ) const { MarkLoadCompleteFunc( req ); }
 
   /// Return the Floating-Point Rounding Mode
-  FRMode GetFPRound() const {
-    return static_cast< FRMode >( fcsr.frm );
-  }
+  FRMode GetFPRound() const { return static_cast<FRMode>( fcsr.frm ); }
 
   /// Capture the PC of current instruction which raised exception
   void SetSEPC() {
@@ -251,7 +215,7 @@ public:
 
   ///Set the value for extra information about exception
   /// (ECALL doesn't use it and sets it to 0)
-  template< typename T >
+  template<typename T>
   void SetSTVAL( T val ) {
     if( IsRV32 ) {
       RV32_STVAL = val;
@@ -261,17 +225,13 @@ public:
   }
 
   /// Set the exception cause
-  void SetSCAUSE( RevExceptionCause val ) {
-    SCAUSE = val;
-  }
+  void SetSCAUSE( RevExceptionCause val ) { SCAUSE = val; }
 
   /// Get the exception cause
-  RevExceptionCause GetSCAUSE() const {
-    return SCAUSE;
-  }
+  RevExceptionCause GetSCAUSE() const { return SCAUSE; }
 
   /// GetX: Get the specifed X register cast to a specific integral type
-  template< typename T, typename U >
+  template<typename T, typename U>
   T GetX( U rs ) const {
     T res;
     if( IsRV32 ) {
@@ -285,7 +245,7 @@ public:
   }
 
   /// SetX: Set the specifed X register to a specific value
-  template< typename T, typename U >
+  template<typename T, typename U>
   void SetX( U rd, T val ) {
     T res;
     if( IsRV32 ) {
@@ -309,21 +269,20 @@ public:
   }
 
   /// SetPC: Set the Program Counter to a specific value
-  template< typename T >
+  template<typename T>
   void SetPC( T val ) {
     if( IsRV32 ) {
-      RV32_PC = static_cast< uint32_t >( val );
+      RV32_PC = static_cast<uint32_t>( val );
       TRACE_PC_WRITE( RV32_PC );
     } else {
-      RV64_PC = static_cast< uint64_t >( val );
+      RV64_PC = static_cast<uint64_t>( val );
       TRACE_PC_WRITE( RV64_PC );
     }
   }
 
   /// AdvancePC: Advance the program counter to the next instruction
   // Note: This does not create tracer events like SetPC() does
-  template<
-    typename T >  // Used to allow RevInst to be incomplete type right now
+  template<typename T>  // Used to allow RevInst to be incomplete type right now
   void AdvancePC( const T& Inst ) {
     if( IsRV32 ) {
       RV32_PC += Inst.instSize;
@@ -335,9 +294,9 @@ public:
   /// GetFP: Get the specified FP register cast to a specific FP type
   // The second argument indicates whether it is a FMV/FS move/store
   // instruction which just transfers bits and not care about NaN-Boxing.
-  template< typename T, bool FMV_FS = false, typename U >
+  template<typename T, bool FMV_FS = false, typename U>
   T GetFP( U rs ) const {
-    if constexpr( std::is_same_v< T, double > ) {
+    if constexpr( std::is_same_v<T, double> ) {
       return DPF[size_t( rs )];  // The FP64 register's value
     } else {
       float fp32;
@@ -345,15 +304,13 @@ public:
         fp32 = SPF[size_t( rs )];  // The FP32 register's value
       } else {
         uint64_t i64;
-        memcpy( &i64,
-                &DPF[size_t( rs )],
+        memcpy( &i64, &DPF[size_t( rs )],
                 sizeof( i64 ) );       // The FP64 register's value
         if( !FMV_FS && ~i64 >> 32 ) {  // Check for boxed NaN unless FMV/FS
           fp32 = NAN;                  // Return NaN if it's not boxed
         } else {
-          auto i32 =
-            static_cast< uint32_t >( i64 );  // For endian independence on host
-          memcpy( &fp32, &i32, sizeof( fp32 ) );  // The bottom half of FP64
+          auto i32 = static_cast<uint32_t>( i64 );  // For endian independence on host
+          memcpy( &fp32, &i32, sizeof( fp32 ) );    // The bottom half of FP64
         }
       }
       return fp32;  // Reinterpreted as FP32
@@ -361,9 +318,9 @@ public:
   }
 
   /// SetFP: Set a specific FP register to a floating-point value
-  template< typename T, typename U >
+  template<typename T, typename U>
   void SetFP( U rd, T value ) {
-    if constexpr( std::is_same_v< T, double > ) {
+    if constexpr( std::is_same_v<T, double> ) {
       DPF[size_t( rd )] = value;  // Store in FP64 register
     } else if( HasD ) {
       BoxNaN( &DPF[size_t( rd )],
@@ -374,36 +331,28 @@ public:
   }
 
   // Friend functions and classes to access internal register state
-  template< typename FP, typename INT >
-  friend bool
-    CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename FP, typename INT>
+  friend bool CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  template< typename T >
-  friend bool
-    load( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename T>
+  friend bool load( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  template< typename T >
-  friend bool
-    store( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename T>
+  friend bool store( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  template< typename T >
-  friend bool
-    fload( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename T>
+  friend bool fload( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  template< typename T >
-  friend bool
-    fstore( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename T>
+  friend bool fstore( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  template< typename T, template< class > class OP >
-  friend bool
-    foper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename T, template<class> class OP>
+  friend bool foper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  template< typename T, template< class > class OP >
-  friend bool
-    fcondop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename T, template<class> class OP>
+  friend bool fcondop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
-  friend std::ostream& operator<<( std::ostream&     os,
-                                   const RevRegFile& regFile );
+  friend std::ostream& operator<<( std::ostream& os, const RevRegFile& regFile );
 
   friend class RevCore;
   friend class RV32A;

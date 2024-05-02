@@ -13,10 +13,7 @@
 namespace SST::RevCPU {
 
 /// Change the FP environment
-auto RevExt::SetFPEnv( unsigned       Inst,
-                       const RevInst& payload,
-                       uint16_t       HartID,
-                       RevRegFile*    regFile ) {
+auto RevExt::SetFPEnv( unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile ) {
   // Save a copy of the current FP environment
   RevFenv saved_fenv;
 
@@ -35,28 +32,18 @@ auto RevExt::SetFPEnv( unsigned       Inst,
     break;
   case FRMode::RMM:  // Round to Nearest, ties to Max Magnitude
     output->fatal(
-      CALL_INFO,
-      -1,
-      "Error: Round to nearest Max Magnitude not implemented at PC = 0x%" PRIx64
-      "\n",
-      regFile->GetPC() );
+      CALL_INFO, -1, "Error: Round to nearest Max Magnitude not implemented at PC = 0x%" PRIx64 "\n", regFile->GetPC()
+    );
     break;
   default:
-    output->fatal(
-      CALL_INFO,
-      -1,
-      "Illegal instruction: Bad FP rounding mode at PC = 0x%" PRIx64 "\n",
-      regFile->GetPC() );
+    output->fatal( CALL_INFO, -1, "Illegal instruction: Bad FP rounding mode at PC = 0x%" PRIx64 "\n", regFile->GetPC() );
     break;
   }
 
   return saved_fenv;  // Return saved FP environment state
 }
 
-bool RevExt::Execute( unsigned       Inst,
-                      const RevInst& payload,
-                      uint16_t       HartID,
-                      RevRegFile*    regFile ) {
+bool RevExt::Execute( unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile ) {
   bool ( *func )( RevFeature*, RevRegFile*, RevMem*, const RevInst& );
 
   if( payload.compressed ) {
@@ -68,12 +55,7 @@ bool RevExt::Execute( unsigned       Inst,
   }
 
   if( !func ) {
-    output->fatal(
-      CALL_INFO,
-      -1,
-      "Error: instruction at index=%u does not exist in extension=%s",
-      Inst,
-      name.data() );
+    output->fatal( CALL_INFO, -1, "Error: instruction at index=%u does not exist in extension=%s", Inst, name.data() );
     return false;
   }
 

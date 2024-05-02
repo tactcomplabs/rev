@@ -52,7 +52,6 @@ int main( int argc, char** argv ) {
 
   //TEST_IMM_SRC1_EQ_DEST( 17, sltiu, 1, 11, 13 );
 
-
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );
   asm volatile( "j continue" );

@@ -22,7 +22,6 @@ int main( int argc, char** argv ) {
   // # Arithmetic tests
   // #-------------------------------------------------------------
 
-
   float a = 0.0;
   float b = 0.0;
   float q = 0.0;

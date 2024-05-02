@@ -22,39 +22,24 @@ int main( int argc, char** argv ) {
   // # Arithmetic tests
   // #-------------------------------------------------------------
 
+  TEST_RR_OP( 2, subw, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000 );
+  TEST_RR_OP( 3, subw, 0x0000000000000000, 0x0000000000000001, 0x0000000000000001 );
+  TEST_RR_OP( 4, subw, 0xfffffffffffffffc, 0x0000000000000003, 0x0000000000000007 );
 
-  TEST_RR_OP(
-    2, subw, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000 );
-  TEST_RR_OP(
-    3, subw, 0x0000000000000000, 0x0000000000000001, 0x0000000000000001 );
-  TEST_RR_OP(
-    4, subw, 0xfffffffffffffffc, 0x0000000000000003, 0x0000000000000007 );
+  TEST_RR_OP( 5, subw, 0x0000000000008000, 0x0000000000000000, 0xffffffffffff8000 );
+  TEST_RR_OP( 6, subw, 0xffffffff80000000, 0xffffffff80000000, 0x0000000000000000 );
+  TEST_RR_OP( 7, subw, 0xffffffff80008000, 0xffffffff80000000, 0xffffffffffff8000 );
 
-  TEST_RR_OP(
-    5, subw, 0x0000000000008000, 0x0000000000000000, 0xffffffffffff8000 );
-  TEST_RR_OP(
-    6, subw, 0xffffffff80000000, 0xffffffff80000000, 0x0000000000000000 );
-  TEST_RR_OP(
-    7, subw, 0xffffffff80008000, 0xffffffff80000000, 0xffffffffffff8000 );
+  TEST_RR_OP( 8, subw, 0xffffffffffff8001, 0x0000000000000000, 0x0000000000007fff );
+  TEST_RR_OP( 9, subw, 0x000000007fffffff, 0x000000007fffffff, 0x0000000000000000 );
+  TEST_RR_OP( 10, subw, 0x000000007fff8000, 0x000000007fffffff, 0x0000000000007fff );
 
-  TEST_RR_OP(
-    8, subw, 0xffffffffffff8001, 0x0000000000000000, 0x0000000000007fff );
-  TEST_RR_OP(
-    9, subw, 0x000000007fffffff, 0x000000007fffffff, 0x0000000000000000 );
-  TEST_RR_OP(
-    10, subw, 0x000000007fff8000, 0x000000007fffffff, 0x0000000000007fff );
+  TEST_RR_OP( 11, subw, 0x000000007fff8001, 0xffffffff80000000, 0x0000000000007fff );
+  TEST_RR_OP( 12, subw, 0xffffffff80007fff, 0x000000007fffffff, 0xffffffffffff8000 );
 
-  TEST_RR_OP(
-    11, subw, 0x000000007fff8001, 0xffffffff80000000, 0x0000000000007fff );
-  TEST_RR_OP(
-    12, subw, 0xffffffff80007fff, 0x000000007fffffff, 0xffffffffffff8000 );
-
-  TEST_RR_OP(
-    13, subw, 0x0000000000000001, 0x0000000000000000, 0xffffffffffffffff );
-  TEST_RR_OP(
-    14, subw, 0xfffffffffffffffe, 0xffffffffffffffff, 0x0000000000000001 );
-  TEST_RR_OP(
-    15, subw, 0x0000000000000000, 0xffffffffffffffff, 0xffffffffffffffff );
+  TEST_RR_OP( 13, subw, 0x0000000000000001, 0x0000000000000000, 0xffffffffffffffff );
+  TEST_RR_OP( 14, subw, 0xfffffffffffffffe, 0xffffffffffffffff, 0x0000000000000001 );
+  TEST_RR_OP( 15, subw, 0x0000000000000000, 0xffffffffffffffff, 0xffffffffffffffff );
 
   // #-------------------------------------------------------------
   // # Source/Destination tests

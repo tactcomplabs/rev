@@ -48,14 +48,12 @@ int main( int argc, char** argv ) {
 
   //TEST_IMM_SRC1_EQ_DEST( 17, addiw, 24, 13, 11 );
 
-
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );
   asm volatile( "j continue" );
 
   asm volatile( "fail:" );
   assert( false );
-
 
   asm volatile( "continue:" );
   asm volatile( "li ra, 0x0" );

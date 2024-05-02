@@ -19,31 +19,22 @@ namespace SST::RevCPU {
 
 class RV64I : public RevExt {
   // Standard instructions
-  static constexpr auto& ld  = load< int64_t >;
-  static constexpr auto& lwu = load< uint32_t >;
-  static constexpr auto& sd  = store< uint64_t >;
+  static constexpr auto& ld     = load<int64_t>;
+  static constexpr auto& lwu    = load<uint32_t>;
+  static constexpr auto& sd     = store<uint64_t>;
 
   // 32-bit arithmetic operators
-  static constexpr auto& addw =
-    oper< std::plus, OpKind::Reg, std::make_signed_t, true >;
-  static constexpr auto& subw =
-    oper< std::minus, OpKind::Reg, std::make_signed_t, true >;
-  static constexpr auto& addiw =
-    oper< std::plus, OpKind::Imm, std::make_signed_t, true >;
+  static constexpr auto& addw   = oper<std::plus, OpKind::Reg, std::make_signed_t, true>;
+  static constexpr auto& subw   = oper<std::minus, OpKind::Reg, std::make_signed_t, true>;
+  static constexpr auto& addiw  = oper<std::plus, OpKind::Imm, std::make_signed_t, true>;
 
   // Shift operators
-  static constexpr auto& slliw =
-    oper< ShiftLeft, OpKind::Imm, std::make_unsigned_t, true >;
-  static constexpr auto& srliw =
-    oper< ShiftRight, OpKind::Imm, std::make_unsigned_t, true >;
-  static constexpr auto& sraiw =
-    oper< ShiftRight, OpKind::Imm, std::make_signed_t, true >;
-  static constexpr auto& sllw =
-    oper< ShiftLeft, OpKind::Reg, std::make_unsigned_t, true >;
-  static constexpr auto& srlw =
-    oper< ShiftRight, OpKind::Reg, std::make_unsigned_t, true >;
-  static constexpr auto& sraw =
-    oper< ShiftRight, OpKind::Reg, std::make_signed_t, true >;
+  static constexpr auto& slliw  = oper<ShiftLeft, OpKind::Imm, std::make_unsigned_t, true>;
+  static constexpr auto& srliw  = oper<ShiftRight, OpKind::Imm, std::make_unsigned_t, true>;
+  static constexpr auto& sraiw  = oper<ShiftRight, OpKind::Imm, std::make_signed_t, true>;
+  static constexpr auto& sllw   = oper<ShiftLeft, OpKind::Reg, std::make_unsigned_t, true>;
+  static constexpr auto& srlw   = oper<ShiftRight, OpKind::Reg, std::make_unsigned_t, true>;
+  static constexpr auto& sraw   = oper<ShiftRight, OpKind::Reg, std::make_signed_t, true>;
 
   // Compressed instructions
   static constexpr auto& cldsp  = ld;
@@ -61,9 +52,7 @@ class RV64I : public RevExt {
   // ----------------------------------------------------------------------
 
   struct Rev64InstDefaults : RevInstDefaults {
-    Rev64InstDefaults() {
-      SetOpcode( 0b0111011 );
-    }
+    Rev64InstDefaults() { SetOpcode( 0b0111011 ); }
   };
 
   // clang-format off
@@ -96,8 +85,7 @@ class RV64I : public RevExt {
 
 public:
   /// RV64I: standard constructor
-  RV64I( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
-    RevExt( "RV64I", Feature, RevMem, Output ) {
+  RV64I( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV64I", Feature, RevMem, Output ) {
     SetTable( std::move( RV64ITable ) );
     SetCTable( std::move( RV64ICTable ) );
   }

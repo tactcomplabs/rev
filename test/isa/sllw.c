@@ -41,16 +41,11 @@ int main( int argc, char** argv ) {
 
   //       # Verify that shifts only use bottom five bits
 
-  TEST_RR_OP(
-    17, sllw, 0x0000000021212121, 0x0000000021212121, 0xffffffffffffffe0 );
-  TEST_RR_OP(
-    18, sllw, 0x0000000042424242, 0x0000000021212121, 0xffffffffffffffe1 );
-  TEST_RR_OP(
-    19, sllw, 0xffffffff90909080, 0x0000000021212121, 0xffffffffffffffe7 );
-  TEST_RR_OP(
-    20, sllw, 0x0000000048484000, 0x0000000021212121, 0xffffffffffffffee );
-  TEST_RR_OP(
-    21, sllw, 0xffffffff80000000, 0x0000000021212121, 0xffffffffffffffff );
+  TEST_RR_OP( 17, sllw, 0x0000000021212121, 0x0000000021212121, 0xffffffffffffffe0 );
+  TEST_RR_OP( 18, sllw, 0x0000000042424242, 0x0000000021212121, 0xffffffffffffffe1 );
+  TEST_RR_OP( 19, sllw, 0xffffffff90909080, 0x0000000021212121, 0xffffffffffffffe7 );
+  TEST_RR_OP( 20, sllw, 0x0000000048484000, 0x0000000021212121, 0xffffffffffffffee );
+  TEST_RR_OP( 21, sllw, 0xffffffff80000000, 0x0000000021212121, 0xffffffffffffffff );
 
   //# Verify that shifts ignore top 32 (using true 64-bit values)
 
@@ -66,7 +61,6 @@ int main( int argc, char** argv ) {
   TEST_RR_SRC1_EQ_DEST( 22, sllw, 0x00000080, 0x00000001, 7 );
   TEST_RR_SRC2_EQ_DEST( 23, sllw, 0x00004000, 0x00000001, 14 );
   TEST_RR_SRC12_EQ_DEST( 24, sllw, 24, 3 );
-
 
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );
