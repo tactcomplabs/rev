@@ -79,9 +79,6 @@ public:
   /// RevOpts: retrieve the memory cost range for the target core
   bool GetMemCost( unsigned Core, unsigned& Min, unsigned& Max );
 
-  /// RevOpts: retrieve the memory ranges to dump
-  // bool GetMemDumpRanges( unsigned& Min, unsigned& Max );
-
   /// RevOpts: retrieve the prefetch depth for the target core
   bool GetPrefetchDepth( unsigned Core, unsigned& Depth );
 
