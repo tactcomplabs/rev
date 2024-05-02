@@ -1148,8 +1148,12 @@ void RevMem::DumpMem( const uint64_t startAddr,
                       const uint64_t bytesPerRow,
                       std::ostream&  outputStream ) {
 
-  uint64_t       translatedStartAddr = CalcPhysAddr( 0, startAddr );
-  const uint64_t endAddr             = translatedStartAddr + numBytes;
+  // @KEN Confirm this is okay... If you would prefer to have the address come after the result of CalcPhysAddr
+  // you risk getting a segfault if the address has not been allocated yet
+  // FIXME:
+  uint64_t translatedStartAddr = startAddr;  //CalcPhysAddr( 0, startAddr );
+  const uint64_t endAddr =
+    startAddr + numBytes;  //translatedStartAddr + numBytes;
 
   for( uint64_t addr = translatedStartAddr; addr < endAddr;
        addr += bytesPerRow ) {
@@ -1187,7 +1191,8 @@ void RevMem::DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
                          std::ostream&                 outputStream ) {
 
   outputStream << "// " << *MemSeg << std::endl;
-  // DumpMem( MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  DumpMem(
+    MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
 }
 
 void RevMem::DumpValidMem( const uint64_t bytesPerRow,
@@ -1222,6 +1227,10 @@ void RevMem::DumpThreadMem( const uint64_t bytesPerRow,
     DumpMem(
       MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
   }
+}
+
+void RevMem::AddDumpRange( const uint64_t BaseAddr, const uint64_t Size ) {
+  DumpRanges.emplace_back( std::make_shared< MemSegment >( BaseAddr, Size ) );
 }
 }  // namespace SST::RevCPU
 
