@@ -109,10 +109,6 @@ public:
       return ( this->contains( vBaseAddr ) && this->contains( vTopAddr ) );
     };
 
-    void dump() {
-      DumpMemSeg( std::make_shared< MemSegment >( *this ), 16, std::cout );
-    }
-
     /// MemSegment: Override for easy std::cout << *Seg << std::endl;
     friend std::ostream& operator<<( std::ostream& os, const MemSegment& Seg ) {
       os << "| 0x" << std::hex << std::setw( 16 ) << std::setfill( '0' )
@@ -379,6 +375,11 @@ public:
     return FreeMemSegs;
   }
 
+  ///< RevMem: Get DumpRanges vector
+  std::vector< std::shared_ptr< MemSegment > >& GetDumpRanges() {
+    return DumpRanges;
+  }
+
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
   uint64_t                      AddMemSeg( const uint64_t& SegSize );
 
@@ -392,6 +393,9 @@ public:
   uint64_t AddRoundedMemSeg( uint64_t        BaseAddr,
                              const uint64_t& SegSize,
                              size_t          RoundUpSize );
+
+  /// RevMem: Add new MemSegment that will be dumped at the dump points specified in the configuration
+  void     AddDumpRange( const uint64_t BaseAddr, const uint64_t SegSize );
 
   /// RevMem: Removes or shrinks segment
   uint64_t DeallocMem( uint64_t BaseAddr, uint64_t Size );
@@ -464,20 +468,20 @@ public:
   }
 
   /// RevMem: Dump the memory contents
-  void        DumpMem( const uint64_t startAddr,
-                       const uint64_t numBytes,
-                       const uint64_t bytesPerRow  = 16,
-                       std::ostream&  outputStream = std::cout );
+  void DumpMem( const uint64_t startAddr,
+                const uint64_t numBytes,
+                const uint64_t bytesPerRow  = 16,
+                std::ostream&  outputStream = std::cout );
 
-  void        DumpValidMem( const uint64_t bytesPerRow  = 16,
-                            std::ostream&  outputStream = std::cout );
+  void DumpValidMem( const uint64_t bytesPerRow  = 16,
+                     std::ostream&  outputStream = std::cout );
 
-  static void DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
-                          const uint64_t                bytesPerRow = 16,
-                          std::ostream& outputStream = std::cout );
+  void DumpMemSeg( std::shared_ptr< MemSegment > MemSeg,
+                   const uint64_t                bytesPerRow  = 16,
+                   std::ostream&                 outputStream = std::cout );
 
-  void        DumpThreadMem( const uint64_t bytesPerRow  = 16,
-                             std::ostream&  outputStream = std::cout );
+  void DumpThreadMem( const uint64_t bytesPerRow  = 16,
+                      std::ostream&  outputStream = std::cout );
 
 protected:
   char* physMem = nullptr;  ///< RevMem: memory container
@@ -505,6 +509,8 @@ private:
     FreeMemSegs;  // MemSegs that have been unallocated
   std::vector< std::shared_ptr< MemSegment > >
     ThreadMemSegs;  // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
+  std::vector< std::shared_ptr< MemSegment > >
+    DumpRanges;  // Mem ranges to dump at points specified in the configuration
 
   uint64_t TLSBaseAddr;  ///< RevMem: TLS Base Address
   uint64_t TLSSize = sizeof(
