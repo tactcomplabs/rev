@@ -12,6 +12,7 @@
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
+#include <fstream>
 #include <memory>
 
 namespace SST::RevCPU {
@@ -220,14 +221,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
   params.find_array( "memDumpRanges", memDumpRanges );
   if( !memDumpRanges.empty() ) {
     for( auto& segName : memDumpRanges ) {
+      // FIXME: Figure out how to parse units (GB, MB, KB, etc.)
       // segName is a string... Look for scoped params for this segment
       const auto& scopedParams = params.get_scoped_params( segName );
       scopedParams.print_all_params( output );
       // Check scopedParams for the following:
       // - startAddr (hex)
       // - size (bytes)
-      // - init (bool)
-      // - end (bool)
       if( !scopedParams.contains( "startAddr" ) ) {
         output.fatal(
           CALL_INFO,
@@ -241,28 +241,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
                       "Error: memDumpRanges requires size. Please specify this "
                       "scoped param as %s.size in the configuration file\n",
                       segName.c_str() );
-      } else if( !scopedParams.contains( "dumpInit" ) ) {
-        // TODO: Potentially make optional
-        output.fatal(
-          CALL_INFO,
-          -1,
-          "Error: memDumpRanges requires dumpInit. Please specify this scoped "
-          "param as %s.dumpInit in the configuration file\n",
-          segName.c_str() );
-      } else if( !scopedParams.contains( "dumpEnd" ) ) {
-        // TODO: Potentially make optional
-        output.fatal(
-          CALL_INFO,
-          -1,
-          "Error: memDumpRanges requires dumpEnd. Please specify this scoped "
-          "param as %s.dumpEnd in the configuration file\n",
-          segName.c_str() );
       }
       const uint64_t startAddr = scopedParams.find< uint64_t >( "startAddr" );
       const uint64_t size      = scopedParams.find< uint64_t >( "size" );
-      bool           dumpInit  = scopedParams.find< bool >( "dumpInit" );
-      bool           dumpEnd   = scopedParams.find< bool >( "dumpEnd" );
-      Mem->AddDumpRange( startAddr, size );
+      // FIXME: @Ken I don't think we need these
+      Mem->AddDumpRange( segName, startAddr, size );
     }
   }
 
@@ -413,8 +396,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
   // Done with initialization
   output.verbose( CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n" );
 
-  for( const auto& Seg : Mem->GetDumpRanges() ) {
-    Mem->DumpMemSeg( Seg );
+  for( const auto& [Name, Seg] : Mem->GetDumpRanges() ) {
+    // Open a file called '{Name}.init.dump'
+    std::ofstream dumpFile( Name + ".dump.init", std::ios::binary );
+    Mem->DumpMemSeg( Seg, 16, dumpFile );
   }
 }
 
@@ -772,9 +757,11 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
       UpdateCoreStatistics( i );
       Procs[i]->PrintStatSummary();
     }
-    // Dump MemRanges if there are any
-    for( const auto& Seg : Mem->GetDumpRanges() ) {
-      Mem->DumpMemSeg( Seg );
+
+    for( const auto& [Name, Seg] : Mem->GetDumpRanges() ) {
+      // Open a file called '{Name}.init.dump'
+      std::ofstream dumpFile( Name + ".dump.final", std::ios::binary );
+      Mem->DumpMemSeg( Seg, 16, dumpFile );
     }
     primaryComponentOKToEndSim();
     output.verbose( CALL_INFO,

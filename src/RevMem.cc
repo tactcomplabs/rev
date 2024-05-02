@@ -1229,8 +1229,10 @@ void RevMem::DumpThreadMem( const uint64_t bytesPerRow,
   }
 }
 
-void RevMem::AddDumpRange( const uint64_t BaseAddr, const uint64_t Size ) {
-  DumpRanges.emplace_back( std::make_shared< MemSegment >( BaseAddr, Size ) );
+void RevMem::AddDumpRange( const std::string& Name,
+                           const uint64_t     BaseAddr,
+                           const uint64_t     Size ) {
+  DumpRanges[Name] = std::make_shared< MemSegment >( BaseAddr, Size );
 }
 }  // namespace SST::RevCPU
 

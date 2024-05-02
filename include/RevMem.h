@@ -131,9 +131,9 @@ public:
     }
 
   private:
-    uint64_t BaseAddr;
-    uint64_t Size;
-    uint64_t TopAddr;
+    uint64_t BaseAddr;  ///< MemSegment: Base address of the memory segment
+    uint64_t Size;      ///< MemSegment: Size of the memory segment
+    uint64_t TopAddr;   ///< MemSegment: Top address of the memory segment
   };
 
   /// RevMem: determine if there are any outstanding requests
@@ -376,7 +376,7 @@ public:
   }
 
   ///< RevMem: Get DumpRanges vector
-  std::vector< std::shared_ptr< MemSegment > >& GetDumpRanges() {
+  std::map< std::string, std::shared_ptr< MemSegment > >& GetDumpRanges() {
     return DumpRanges;
   }
 
@@ -395,7 +395,9 @@ public:
                              size_t          RoundUpSize );
 
   /// RevMem: Add new MemSegment that will be dumped at the dump points specified in the configuration
-  void     AddDumpRange( const uint64_t BaseAddr, const uint64_t SegSize );
+  void     AddDumpRange( const std::string& Name,
+                         const uint64_t     BaseAddr,
+                         const uint64_t     SegSize );
 
   /// RevMem: Removes or shrinks segment
   uint64_t DeallocMem( uint64_t BaseAddr, uint64_t Size );
@@ -509,7 +511,7 @@ private:
     FreeMemSegs;  // MemSegs that have been unallocated
   std::vector< std::shared_ptr< MemSegment > >
     ThreadMemSegs;  // For each RevThread there is a corresponding MemSeg that contains TLS & Stack
-  std::vector< std::shared_ptr< MemSegment > >
+  std::map< std::string, std::shared_ptr< MemSegment > >
     DumpRanges;  // Mem ranges to dump at points specified in the configuration
 
   uint64_t TLSBaseAddr;  ///< RevMem: TLS Base Address
