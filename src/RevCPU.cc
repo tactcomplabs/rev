@@ -224,7 +224,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
       // FIXME: Figure out how to parse units (GB, MB, KB, etc.)
       // segName is a string... Look for scoped params for this segment
       const auto& scopedParams = params.get_scoped_params( segName );
-      scopedParams.print_all_params( output );
       // Check scopedParams for the following:
       // - startAddr (hex)
       // - size (bytes)
