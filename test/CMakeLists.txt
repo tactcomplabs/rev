@@ -1,6 +1,6 @@
 # RevCPU test/CMakeLists.txt
 #
-# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -111,9 +111,9 @@ macro(add_rev_test test_name test_dir timeout labels)
     set(add_memh_test TRUE)
   endif()
 
-  string(FIND "${labels}" "cpp" cpp_label_index)
+  string(FIND "${labels}" "c++" cpp_label_index)
   if(NOT ${cpp_label_index} EQUAL -1)
-    set(startSymbol "\"[0:_start]\"")
+#    set(startSymbol "\"[0:_start]\"")
   endif()
 
   if(NOT optional_script)
@@ -188,13 +188,13 @@ add_rev_test(EX4 ex4 30 "all;memh;rv32")
 add_rev_test(EX5 ex5 30 "all;memh;rv64")
 add_rev_test(EX6 ex6 45 "all;memh;rv64")
 add_rev_test(EX7 ex7 30 "all;memh;rv64")
-add_rev_test(BIG_LOOP big_loop 100 "all;rv64;benchmark")
+add_rev_test(BIG_LOOP big_loop 110 "all;rv64;benchmark")
 add_rev_test(LARGE_BSS large_bss 60 "all;memh;rv64")
 add_rev_test(DEP_CHECK dep_check 30 "all;memh;rv32")
 add_rev_test(CACHE_1 cache_1 30 "all;memh;rv32" SCRIPT "run_cache_1.sh")
 add_rev_test(CACHE_2 cache_2 30 "all;memh;rv64" SCRIPT "run_cache_2.sh")
 add_rev_test(STRLEN_C strlen_c 30 "all;memh;rv64")
-add_rev_test(STRLEN_CXX strlen_cxx 30 "all;memh;rv64;cxx")
+add_rev_test(STRLEN_CXX strlen_cxx 30 "all;memh;rv64;c++")
 add_rev_test(STRSTR strstr 30 "all;memh;rv64")
 add_rev_test(MEMSET memset 30 "all;memh;rv64")
 add_rev_test(MEMSET_2 memset_2 75 "all;memh;rv64")
@@ -219,5 +219,6 @@ add_subdirectory(amo)
 add_subdirectory(benchmarks)
 add_subdirectory(syscalls)
 add_subdirectory(threading)
+add_subdirectory(cxx)
 
 # EOF

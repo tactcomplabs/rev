@@ -20,10 +20,10 @@ namespace SST::RevCPU {
 
 class RevHart {
   ///< RevHart: Id for the Hart (0,1,2,3,etc)
-  unsigned                                                              ID;
+  unsigned ID;
 
   ///< RevHart: State management object when a Hart is executing a system call
-  EcallState                                                            Ecall{};
+  EcallState Ecall{};
 
   ///< RevHart: Pointer to the Proc's LSQueue
   const std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > >& LSQueue;
@@ -32,8 +32,8 @@ class RevHart {
   std::function< void( const MemReq& ) > MarkLoadCompleteFunc;
 
   ///< RevHart: Thread currently executing on this Hart
-  std::unique_ptr< RevThread >           Thread  = nullptr;
-  std::unique_ptr< RevRegFile >          RegFile = nullptr;
+  std::unique_ptr< RevThread >  Thread  = nullptr;
+  std::unique_ptr< RevRegFile > RegFile = nullptr;
 
   ///< RevHart: Make RevCore a friend of this
   friend class RevCore;

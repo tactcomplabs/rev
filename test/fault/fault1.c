@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV64I
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -20,7 +20,7 @@ uint64_t VECT_A[WIDTH];
 uint64_t VECT_B[WIDTH];
 uint64_t RESULT[WIDTH];
 
-int      run_this() {
+int run_this() {
   uint64_t i = 0x00ull;
   uint64_t r = 0x00ull;
 

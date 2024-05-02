@@ -59,7 +59,7 @@ AlignTrailingComments: true
 SpacesBeforeTrailingComments: 2
 AlignArrayOfStructures: Right
 AlignConsecutiveAssignments: AcrossEmptyLinesAndComments
-AlignConsecutiveDeclarations: AcrossEmptyLinesAndComments
+AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveMacros: AcrossEmptyLinesAndComments
 AlignConsecutiveBitFields: AcrossEmptyLinesAndComments
 AlwaysBreakTemplateDeclarations: Yes

@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV64I
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -27,11 +27,11 @@ Command    revoke_cmd;
 Command    complete_cmd;
 MBoxEntry* Mailbox = (MBoxEntry*) ( _PAN_RDMA_MAILBOX_ );
 
-uint32_t   Token   = 0xfeedbeef;
-uint32_t   Tag     = 0x1;
-uint64_t   Input   = 0x1;
+uint32_t Token     = 0xfeedbeef;
+uint32_t Tag       = 0x1;
+uint64_t Input     = 0x1;
 
-void       cmd_wait() {
+void cmd_wait() {
   // this function blocks until the command is cleared from the mailbox
   volatile uint64_t value = Mailbox[0].Valid;
   while( value != _PAN_ENTRY_INJECTED_ ) {

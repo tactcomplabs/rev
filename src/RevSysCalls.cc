@@ -522,12 +522,12 @@ EcallStatus RevCore::ECALL_mknodat() {
 // TODO: 34, rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
 EcallStatus RevCore::ECALL_mkdirat() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: mkdirat called" );
-  EcallState& ECALL  = Harts.at( HartToExecID )->GetEcallState();
-  auto        dirfd  = RegFile->GetX< int >( RevReg::a0 );
-  auto        path   = RegFile->GetX< uint64_t >( RevReg::a1 );
-  auto        mode   = RegFile->GetX< unsigned short >( RevReg::a2 );
+  EcallState& ECALL = Harts.at( HartToExecID )->GetEcallState();
+  auto        dirfd = RegFile->GetX< int >( RevReg::a0 );
+  auto        path  = RegFile->GetX< uint64_t >( RevReg::a1 );
+  auto        mode  = RegFile->GetX< unsigned short >( RevReg::a2 );
 
-  auto        action = [&] {
+  auto action       = [&] {
     // Do the mkdirat on the host
     int rc = mkdirat( dirfd, ECALL.string.c_str(), mode );
     RegFile->SetX( RevReg::a0, rc );
@@ -937,9 +937,9 @@ EcallStatus RevCore::ECALL_read() {
                    "\n",
                    ActiveThreadID,
                    HartToExecID );
-  auto  fd           = RegFile->GetX< int >( RevReg::a0 );
-  auto  BufAddr      = RegFile->GetX< uint64_t >( RevReg::a1 );
-  auto  BufSize      = RegFile->GetX< uint64_t >( RevReg::a2 );
+  auto fd            = RegFile->GetX< int >( RevReg::a0 );
+  auto BufAddr       = RegFile->GetX< uint64_t >( RevReg::a1 );
+  auto BufSize       = RegFile->GetX< uint64_t >( RevReg::a2 );
 
   // Check if Current Ctx has access to the fd
   auto& ActiveThread = Harts.at( HartToExecID )->Thread;
@@ -962,7 +962,7 @@ EcallStatus RevCore::ECALL_read() {
   std::vector< char > TmpBuf( BufSize );
 
   // Do the read on the host
-  int                 rc = read( fd, &TmpBuf[0], BufSize );
+  int rc = read( fd, &TmpBuf[0], BufSize );
 
   // Write that data to the buffer inside of Rev
   mem->WriteMem( HartToExecID, BufAddr, BufSize, &TmpBuf[0] );
@@ -2865,7 +2865,7 @@ EcallStatus RevCore::ECALL_readahead() {
 
 // 214, rev_brk(unsigned long brk)
 EcallStatus RevCore::ECALL_brk() {
-  auto           Addr    = RegFile->GetX< uint64_t >( RevReg::a0 );
+  auto Addr              = RegFile->GetX< uint64_t >( RevReg::a0 );
 
   const uint64_t heapend = mem->GetHeapEnd();
   if( Addr > 0 && Addr > heapend ) {
@@ -2887,7 +2887,7 @@ EcallStatus RevCore::ECALL_munmap() {
   auto Addr = RegFile->GetX< uint64_t >( RevReg::a0 );
   auto Size = RegFile->GetX< uint64_t >( RevReg::a1 );
 
-  int  rc   = mem->DeallocMem( Addr, Size ) == uint64_t( -1 );
+  int rc    = mem->DeallocMem( Addr, Size ) == uint64_t( -1 );
   if( rc == -1 ) {
     output->fatal( CALL_INFO,
                    11,
@@ -4340,7 +4340,7 @@ EcallStatus RevCore::ECALL_pthread_create() {
                    " on hart %" PRIu32 "\n",
                    ActiveThreadID,
                    HartToExecID );
-  uint64_t          tidAddr     = RegFile->GetX< uint64_t >( RevReg::a0 );
+  uint64_t tidAddr              = RegFile->GetX< uint64_t >( RevReg::a0 );
   //uint64_t AttrPtr     = RegFile->GetX<uint64_t>(RevReg::a1);
   uint64_t          NewThreadPC = RegFile->GetX< uint64_t >( RevReg::a2 );
   uint64_t          ArgPtr      = RegFile->GetX< uint64_t >( RevReg::a3 );

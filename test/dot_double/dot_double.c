@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV64IMAFDC
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -17,7 +17,7 @@
 double x[1024];
 double y[1024];
 
-int    main( int argc, char** argv ) {
+int main( int argc, char** argv ) {
   float result;
   int   inc_x = 1;
   int   inc_y = 1;

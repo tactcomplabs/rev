@@ -603,7 +603,7 @@ bool RevLoader::LoadElf() {
   size_t FileSize = FileStats.st_size;
 
   // map the executable into memory
-  char*  membuf =
+  char* membuf =
     (char*) ( mmap( NULL, FileSize, PROT_READ, MAP_PRIVATE, fd, 0 ) );
   if( membuf == MAP_FAILED )
     output->fatal( CALL_INFO,

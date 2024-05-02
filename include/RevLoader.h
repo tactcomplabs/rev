@@ -290,12 +290,12 @@ public:
   uint64_t GetSymbolAddr( std::string Symbol );
 
   /// RevLoader: retrieves the value for 'argc'
-  auto     GetArgc() {
+  auto GetArgc() {
     return argv.size();
   }
 
   /// RevLoader: retrieves the target value within the argv array
-  std::string                GetArgv( unsigned entry );
+  std::string GetArgv( unsigned entry );
 
   /// RevLoader: retrieve the entire argv vector
   std::vector< std::string > GetArgv() {
@@ -311,7 +311,7 @@ public:
   std::map< uint64_t, std::string >* GetTraceSymbols();
 
   /// RevLoader: Gets TLS base address
-  const uint64_t&                    GetTLSBaseAddr() {
+  const uint64_t& GetTLSBaseAddr() {
     return TLSBaseAddr;
   }
 
@@ -328,13 +328,13 @@ private:
   RevMem*      mem;     ///< RevLoader: memory object
   SST::Output* output;  ///< RevLoader: output handler
 
-  uint32_t     RV32Entry;  ///< RevLoader: RV32 entry
-  uint64_t     RV64Entry;  ///< RevLoader: RV64 entry
+  uint32_t RV32Entry;  ///< RevLoader: RV32 entry
+  uint64_t RV64Entry;  ///< RevLoader: RV64 entry
 
-  uint64_t     TLSBaseAddr = 0;
-  uint64_t     TLSSize     = 0;
+  uint64_t TLSBaseAddr = 0;
+  uint64_t TLSSize     = 0;
 
-  ElfInfo      elfinfo;  ///< RevLoader: elf info from the loaded program
+  ElfInfo elfinfo;  ///< RevLoader: elf info from the loaded program
 
   std::map< std::string, uint64_t >
     symtable;  ///< RevLoader: loaded symbol table
@@ -344,31 +344,31 @@ private:
   std::vector< std::string > argv;  ///< RevLoader: The actual argv table
 
   /// Loads the target executable into memory
-  bool                       LoadElf();
+  bool LoadElf();
 
   /// Loads the target program arguments
-  bool                       LoadProgramArgs();
+  bool LoadProgramArgs();
 
   /// Determines if the target header is an Elf header
-  bool                       IsElf( const Elf64_Ehdr eh64 );
+  bool IsElf( const Elf64_Ehdr eh64 );
 
   /// Determines if the target header is an Elf32 header
-  bool                       IsRVElf32( const Elf64_Ehdr eh64 );
+  bool IsRVElf32( const Elf64_Ehdr eh64 );
 
   /// Determines if the target header is an Elf64 header
-  bool                       IsRVElf64( const Elf64_Ehdr eh64 );
+  bool IsRVElf64( const Elf64_Ehdr eh64 );
 
   /// Determines if the target header is little endian
-  bool                       IsRVLittle( const Elf64_Ehdr eh64 );
+  bool IsRVLittle( const Elf64_Ehdr eh64 );
 
   /// Determines if the target header is big endian
-  bool                       IsRVBig( const Elf64_Ehdr eh64 );
+  bool IsRVBig( const Elf64_Ehdr eh64 );
 
   /// Loads a 32bit Elf binary
-  bool                       LoadElf32( char* MemBuf, size_t Size );
+  bool LoadElf32( char* MemBuf, size_t Size );
 
   /// Loads a 64bit Elf binary
-  bool                       LoadElf64( char* MemBuf, size_t Size );
+  bool LoadElf64( char* MemBuf, size_t Size );
 
   ///< Splits a string into tokens
   void splitStr( const std::string& s, char c, std::vector< std::string >& v );

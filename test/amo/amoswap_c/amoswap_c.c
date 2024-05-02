@@ -17,7 +17,7 @@ uint32_t swap_dest32 = 0xfee1dead;
 uint32_t swap_src32  = ( ( (uint32_t) 0xdeadbeef ) << 16 );
 uint32_t swap_prev32 = 0;
 
-void     test_single_thread32() {
+void test_single_thread32() {
   // swap_prev should become swap_dest
   // swap_dest should become swap_src
   __atomic_exchange(

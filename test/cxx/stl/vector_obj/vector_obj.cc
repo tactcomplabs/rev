@@ -1,5 +1,13 @@
+//
+// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// All Rights Reserved
+// contact@tactcomplabs.com
+//
+// See LICENSE in the top level directory for licensing details
+//
+
 #include "rev-macros.h"
-#include "revalloc.hpp"
+#include "revalloc.h"
 #include <vector>
 
 #define assert( x )      \
@@ -49,7 +57,7 @@ int main() {
 
   std::vector< TestObj, Allocator< TestObj > > v;
 
-  TestObj                                      c;
+  TestObj c;
   v.push_back( c );
   v[0].SetM1( 0xbeef );
   assert( v[0].GetM1() == 0xbeef )

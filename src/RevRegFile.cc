@@ -53,10 +53,10 @@ std::ostream& operator<<( std::ostream& os, const RevRegFile& regFile ) {
 
   // Loop over the registers
   for( size_t i = 0; i < _REV_NUM_REGS_; ++i ) {
-    uint64_t value    = regFile.GetX< uint64_t >( i );
+    uint64_t value = regFile.GetX< uint64_t >( i );
 
     // if scoreboard is not 0, there is a dependency
-    char     depValue = regFile.RV_Scoreboard[i] ? 'T' : 'F';
+    char depValue  = regFile.RV_Scoreboard[i] ? 'T' : 'F';
     os << "| " << std::setw( 4 ) << ( "x" + std::to_string( i ) );
     os << " | " << std::setw( 5 ) << aliases[i];
     std::ostringstream hs;

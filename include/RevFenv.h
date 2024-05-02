@@ -30,7 +30,7 @@ namespace SST::RevCPU {
 // TODO: Right now we only need to save/restore rounding mode.
 // Later, we may need to save and restore the entire fenv_t state
 class RevFenv {
-  int         saved_round;  ///< Saved Floating-Point Rounding Mode
+  int saved_round;  ///< Saved Floating-Point Rounding Mode
 
   // We use Meyers singleton to avoid initialization order fiasco
   static int& round() {
@@ -55,12 +55,12 @@ public:
   // We allow moving, but not copying RevFenv
   // This is to ensure that there is only a single copy
   // of the saved state at a time, similar to std::unique_ptr
-  RevFenv( RevFenv&& )                   = default;
-  RevFenv( const RevFenv& )              = delete;
+  RevFenv( RevFenv&& )                 = default;
+  RevFenv( const RevFenv& )            = delete;
 
   // We disallow assigning
-  RevFenv&   operator=( const RevFenv& ) = delete;
-  RevFenv&   operator=( RevFenv&& )      = delete;
+  RevFenv& operator=( const RevFenv& ) = delete;
+  RevFenv& operator=( RevFenv&& )      = delete;
 
   // Get the current FP rounding state
   static int GetRound() {

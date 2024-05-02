@@ -60,7 +60,7 @@ public:
   RevFeature& operator=( const RevFeature& ) = delete;
 
   /// IsModeEnabled: determines if the target mode is enabled
-  bool        IsModeEnabled( RevFeatureType Type ) const {
+  bool IsModeEnabled( RevFeatureType Type ) const {
     return ( features & Type ) == Type;
   }
 
@@ -140,7 +140,7 @@ private:
   unsigned       xlen;      ///< RevFeature: RISC-V Xlen
 
   /// ParseMachineModel: parse the machine model string
-  bool           ParseMachineModel();
+  bool ParseMachineModel();
 };  // class RevFeature
 
 }  // namespace SST::RevCPU

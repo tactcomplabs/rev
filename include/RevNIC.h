@@ -103,7 +103,7 @@ public:
   virtual void send( nicEvent* ev, int dest )                = 0;
 
   /// nicEvent: retrieve the number of potential destinations
-  virtual int  getNumDestinations()                          = 0;
+  virtual int getNumDestinations()                           = 0;
 
   /// nicEvent: returns the NIC's network address
   virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
@@ -159,27 +159,27 @@ public:
   virtual void send( nicEvent* ev, int dest );
 
   /// RevNIC: retrieve the number of destinations
-  virtual int  getNumDestinations();
+  virtual int getNumDestinations();
 
   /// RevNIC: get the endpoint's network address
   virtual SST::Interfaces::SimpleNetwork::nid_t getAddress();
 
   /// RevNIC: callback function for the SimpleNetwork interface
-  bool                                          msgNotify( int virtualNetwork );
+  bool msgNotify( int virtualNetwork );
 
   /// RevNIC: clock function
-  virtual bool                                  clockTick( Cycle_t cycle );
+  virtual bool clockTick( Cycle_t cycle );
 
 protected:
-  SST::Output*                    output;  ///< RevNIC: SST output object
+  SST::Output* output;  ///< RevNIC: SST output object
 
   SST::Interfaces::SimpleNetwork* iFace;  ///< RevNIC: SST network interface
 
-  SST::Event::HandlerBase*        msgHandler;  ///< RevNIC: SST message handler
+  SST::Event::HandlerBase* msgHandler;  ///< RevNIC: SST message handler
 
   bool initBroadcastSent;  ///< RevNIC: has the init bcast been sent?
 
-  int  numDest;  ///< RevNIC: number of SST destinations
+  int numDest;  ///< RevNIC: number of SST destinations
 
   std::queue< SST::Interfaces::SimpleNetwork::Request* >
     sendQ;  ///< RevNIC: buffered send queue

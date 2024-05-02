@@ -240,7 +240,7 @@ inline static void rs_dft_1d( int                N,
               *er = (minfft_real*) e;
   minfft_real *xi = xr + 1, *ti = tr + 1, *ei = er + 1;
   // prepare sub-transform inputs
-  int          loopCount = N / 4;
+  int loopCount = N / 4;
   for( n = 0; n < loopCount; n++ ) {
     // *rev = n + N;
     register minfft_real t0r, t1r, t2r, t3r;

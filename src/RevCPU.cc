@@ -294,8 +294,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) :
   uint64_t    StartAddr = 0x00ull;
   std::string StartSymbol;
 
-  bool        IsStartSymbolProvided = Opts->GetStartSymbol( id, StartSymbol );
-  bool        IsStartAddrProvided =
+  bool IsStartSymbolProvided = Opts->GetStartSymbol( id, StartSymbol );
+  bool IsStartAddrProvided =
     Opts->GetStartAddr( id, StartAddr ) && StartAddr != 0x00ull;
   uint64_t ResolvedStartSymbolAddr =
     ( IsStartSymbolProvided ) ? Loader->GetSymbolAddr( StartSymbol ) : 0x00ull;
@@ -818,7 +818,7 @@ void RevCPU::AssignThread( std::unique_ptr< RevThread >&& ThreadToAssign,
 // Checks if a thread with a given Thread ID can proceed (used for pthread_join).
 // it does this by seeing if a given thread's WaitingOnTID has completed
 bool RevCPU::ThreadCanProceed( const std::unique_ptr< RevThread >& Thread ) {
-  bool     rtn          = false;
+  bool rtn              = false;
 
   // Get the thread's waiting to join TID
   uint32_t WaitingOnTID = Thread->GetWaitingToJoinTID();

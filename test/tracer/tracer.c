@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV32I
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -47,7 +47,7 @@ volatile int check_push_off( int r, int s ) {
 volatile unsigned thread1_counter = 0;
 volatile unsigned thread2_counter = 0;
 
-void*             thread1() {
+void* thread1() {
   TRACE_PUSH_ON
   for( int i = 0; i < 10; i++ )
     thread1_counter++;

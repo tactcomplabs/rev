@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV64G
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -18,7 +18,7 @@
 
 unsigned slow_accumulate( unsigned count, unsigned initial_value );
 
-int      main( int argc, char** argv ) {
+int main( int argc, char** argv ) {
 
   assert( argc == 5 );
   assert( argv[1][0] == '6' );

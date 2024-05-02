@@ -20,7 +20,7 @@ extern volatile uint64_t fromhost;
 static uintptr_t counters[NUM_COUNTERS];
 static char*     counter_names[NUM_COUNTERS];
 
-void             printstr( const char* s ) {
+void printstr( const char* s ) {
   ssize_t bytes_written2 = rev_write( STDOUT_FILENO, s, strlen( s ) );
 }
 

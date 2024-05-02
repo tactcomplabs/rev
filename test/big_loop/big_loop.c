@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV64I
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -18,7 +18,7 @@ uint64_t A[1024];
 uint64_t B[1024];
 uint64_t R[1024];
 
-int      main( int argc, char** argv ) {
+int main( int argc, char** argv ) {
   uint64_t i = 0;
   uint64_t j = 0;
   int      r = 0;
