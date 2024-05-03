@@ -253,6 +253,7 @@ struct old_timespec32;
 struct __kernel_itimerspec;
 struct sigevent;
 struct sigaction;
+struct siginfo;
 
 typedef uint32_t      rwf_t;
 typedef unsigned long aio_context_t;
