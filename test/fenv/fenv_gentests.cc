@@ -107,14 +107,15 @@ static void generate_tests() {
 
   using FUNC3 = std::pair<FP ( * )( FP, FP, FP ), std::string_view>[];
   for( auto oper_pair : FUNC3{
-         OPER_PAIR( [] [[gnu::noinline]] ( auto x, auto y, auto z ) {
+         OPER_PAIR( ( [] [[gnu::noinline]] ( auto x, auto y, auto z ) {
            using namespace std;
-           if constexpr( is_same_v<decltype( x ), float> ) {
-             return fmaf( x, y, z );
+           using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
+           if constexpr( is_same_v<T, float> ) {
+             return fmaf( T( x ), T( y ), T( z ) );
            } else {
-             return fma( x, y, z );
+             return fma( T( x ), T( y ), T( z ) );
            }
-         } ),
+         } ) ),
        } ) {
     for( auto x : special_values<FP, INT> ) {
       for( auto y : special_values<FP, INT> ) {
