@@ -47,9 +47,8 @@ class RV32F : public RevExt {
   static constexpr auto& fcvtws  = CvtFpToInt<float, int32_t>;
   static constexpr auto& fcvtwus = CvtFpToInt<float, uint32_t>;
 
-  static bool
-    fsqrts( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, std::sqrt( R->GetFP< float >( Inst.rs1 ) ) );
+  static bool fsqrts( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetFP( Inst.rd, std::sqrt( R->GetFP<float>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }

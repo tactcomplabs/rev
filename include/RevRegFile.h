@@ -114,8 +114,8 @@ private:
     uint64_t RV64_PC{};  ///< RevRegFile: RV64 PC
   };
 
-  std::shared_ptr< std::unordered_multimap< uint64_t, MemReq > > LSQueue{};
-  std::function< void( const MemReq& ) > MarkLoadCompleteFunc{};
+  std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> LSQueue{};
+  std::function<void( const MemReq& )>                       MarkLoadCompleteFunc{};
 
   union {                             // Anonymous union. We zero-initialize the largest member
     uint32_t RV32[_REV_NUM_REGS_];    ///< RevRegFile: RV32I register file
@@ -134,7 +134,7 @@ private:
   uint64_t CSR[CSR_LIMIT];
 
   // Floating-point CSR
-  FCSR     fcsr{};
+  FCSR fcsr{};
 
   union {                  // Anonymous union. We zero-initialize the largest member
     uint64_t RV64_SEPC{};  // Holds address of instruction that caused the exception (ie. ECALL)
@@ -329,7 +329,7 @@ public:
   }
 
   /// Get a CSR register
-  template< typename T >
+  template<typename T>
   T GetCSR( size_t i ) const {
     T old;
     if( i <= 3 ) {
@@ -342,13 +342,13 @@ public:
       if( !( i & 2 ) )
         old &= ~T{ 0xe0 };
     } else {
-      old = static_cast< T >( CSR[i] );
+      old = static_cast<T>( CSR[i] );
     }
     return old;
   }
 
   /// Set a CSR register
-  template< typename T >
+  template<typename T>
   void SetCSR( size_t i, T val ) {
     if( i <= 3 ) {
       // We store fcsr separately from the global CSR
@@ -364,19 +364,13 @@ public:
   }
 
   /// Get the Floating-Point Rounding Mode
-  FRMode GetFRM() const {
-    return static_cast< FRMode >( fcsr.frm );
-  }
+  FRMode GetFRM() const { return static_cast<FRMode>( fcsr.frm ); }
 
   /// Set the Floating-Point Rounding Mode
-  void SetFRM( FRMode rm ) {
-    fcsr.frm = static_cast< uint8_t >( rm );
-  }
+  void SetFRM( FRMode rm ) { fcsr.frm = static_cast<uint8_t>( rm ); }
 
   /// Return the Floating-Point Status Register
-  FCSR& GetFCSR() {
-    return fcsr;
-  }
+  FCSR& GetFCSR() { return fcsr; }
 
   // Friend functions and classes to access internal register state
   template<typename FP, typename INT>

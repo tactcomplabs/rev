@@ -34,8 +34,7 @@ class RevFenv {
 
 public:
   /// Constructor saves Fenv state to be restored at destruction
-  RevFenv( RevRegFile* R, FRMode rm, SST::Output* output ) :
-    fcsr( R->GetFCSR() ) {
+  RevFenv( RevRegFile* R, FRMode rm, SST::Output* output ) : fcsr( R->GetFCSR() ) {
 
     // Save host's FP environment and set flags to default, non-trapping
     if( std::feholdexcept( &saved_env ) ) {
@@ -64,31 +63,27 @@ public:
       ret = std::fesetround( FE_UPWARD );
       break;
     case FRMode::RMM:  // Round to Nearest, ties to Max Magnitude
-      output->fatal( CALL_INFO,
-                     -1,
-                     "Error: Round to nearest Max Magnitude not implemented"
-                     " at PC = 0x%" PRIx64 "\n",
-                     R->GetPC() );
+      output->fatal(
+        CALL_INFO,
+        -1,
+        "Error: Round to nearest Max Magnitude not implemented"
+        " at PC = 0x%" PRIx64 "\n",
+        R->GetPC()
+      );
       break;
     case FRMode::DYN:
-      output->fatal( CALL_INFO,
-                     -1,
-                     "Illegal FCSR Rounding Mode of"
-                     " DYN at PC = 0x%" PRIx64 "\n",
-                     R->GetPC() );
+      output->fatal(
+        CALL_INFO,
+        -1,
+        "Illegal FCSR Rounding Mode of"
+        " DYN at PC = 0x%" PRIx64 "\n",
+        R->GetPC()
+      );
       break;
-    default:
-      output->fatal( CALL_INFO,
-                     -1,
-                     "Unknown Rounding Mode at PC = 0x%" PRIx64 "\n",
-                     R->GetPC() );
-      break;
+    default: output->fatal( CALL_INFO, -1, "Unknown Rounding Mode at PC = 0x%" PRIx64 "\n", R->GetPC() ); break;
     }
     if( ret != 0 ) {
-      output->fatal( CALL_INFO,
-                     -1,
-                     "Could not set FP rounding mode at PC = 0x%" PRIx64 "\n",
-                     R->GetPC() );
+      output->fatal( CALL_INFO, -1, "Could not set FP rounding mode at PC = 0x%" PRIx64 "\n", R->GetPC() );
     }
   }
 

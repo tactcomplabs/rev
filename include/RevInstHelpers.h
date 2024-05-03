@@ -25,68 +25,65 @@
 namespace SST::RevCPU {
 
 // Limits when converting from floating-point to integer
-template< typename FP, typename INT >
+template<typename FP, typename INT>
 constexpr FP fpmax = 0;
-template< typename FP, typename INT >
+template<typename FP, typename INT>
 constexpr FP fpmin = 0;
 template<>
-constexpr float fpmax< float, int32_t > = 0x1.fffffep+30f;
+constexpr float fpmax<float, int32_t> = 0x1.fffffep+30f;
 template<>
-constexpr float fpmin< float, int32_t > = -0x1p+31f;
+constexpr float fpmin<float, int32_t> = -0x1p+31f;
 template<>
-constexpr float fpmax< float, uint32_t > = 0x1.fffffep+31f;
+constexpr float fpmax<float, uint32_t> = 0x1.fffffep+31f;
 template<>
-constexpr float fpmin< float, uint32_t > = 0x0p+0f;
+constexpr float fpmin<float, uint32_t> = 0x0p+0f;
 template<>
-constexpr float fpmax< float, int64_t > = 0x1.fffffep+62f;
+constexpr float fpmax<float, int64_t> = 0x1.fffffep+62f;
 template<>
-constexpr float fpmin< float, int64_t > = -0x1p+63f;
+constexpr float fpmin<float, int64_t> = -0x1p+63f;
 template<>
-constexpr float fpmax< float, uint64_t > = 0x1.fffffep+63f;
+constexpr float fpmax<float, uint64_t> = 0x1.fffffep+63f;
 template<>
-constexpr float fpmin< float, uint64_t > = 0x0p+0f;
+constexpr float fpmin<float, uint64_t> = 0x0p+0f;
 template<>
-constexpr double fpmax< double, int32_t > = 0x1.fffffffcp+30;
+constexpr double fpmax<double, int32_t> = 0x1.fffffffcp+30;
 template<>
-constexpr double fpmin< double, int32_t > = -0x1p+31;
+constexpr double fpmin<double, int32_t> = -0x1p+31;
 template<>
-constexpr double fpmax< double, uint32_t > = 0x1.fffffffep+31;
+constexpr double fpmax<double, uint32_t> = 0x1.fffffffep+31;
 template<>
-constexpr double fpmin< double, uint32_t > = 0x0p+0;
+constexpr double fpmin<double, uint32_t> = 0x0p+0;
 template<>
-constexpr double fpmax< double, int64_t > = 0x1.fffffffffffffp+62;
+constexpr double fpmax<double, int64_t> = 0x1.fffffffffffffp+62;
 template<>
-constexpr double fpmin< double, int64_t > = -0x1p+63;
+constexpr double fpmin<double, int64_t> = -0x1p+63;
 template<>
-constexpr double fpmax< double, uint64_t > = 0x1.fffffffffffffp+63;
+constexpr double fpmax<double, uint64_t> = 0x1.fffffffffffffp+63;
 template<>
-constexpr double fpmin< double, uint64_t > = 0x0p+0;
+constexpr double fpmin<double, uint64_t> = 0x0p+0;
 
 /// General template for converting between Floating Point and Integer.
 /// FP values outside the range of the target integer type are clipped
 /// at the integer type's numerical limits, whether signed or unsigned.
-template< typename FP, typename INT >
-bool CvtFpToInt( RevFeature*    F,
-                 RevRegFile*    R,
-                 RevMem*        M,
-                 const RevInst& Inst ) {
+template<typename FP, typename INT>
+bool CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   // Read the FP register. Round to integer according to current rounding mode.
-  FP  fp = std::nearbyint( R->GetFP< FP >( Inst.rs1 ) );
+  FP fp = std::nearbyint( R->GetFP<FP>( Inst.rs1 ) );
 
   // Convert to integer type
   INT res;
-  if( std::isnan( fp ) || fp > fpmax< FP, INT > ) {
+  if( std::isnan( fp ) || fp > fpmax<FP, INT> ) {
     std::feraiseexcept( FE_INVALID );
-    res = std::numeric_limits< INT >::max();
-  } else if( fp < fpmin< FP, INT > ) {
+    res = std::numeric_limits<INT>::max();
+  } else if( fp < fpmin<FP, INT> ) {
     std::feraiseexcept( FE_INVALID );
-    res = std::numeric_limits< INT >::min();
+    res = std::numeric_limits<INT>::min();
   } else {
-    res = static_cast< INT >( fp );
+    res = static_cast<INT>( fp );
   }
 
   // Make final result signed so sign extension occurs when sizeof(INT) < XLEN
-  R->SetX( Inst.rd, std::make_signed_t< INT >( res ) );
+  R->SetX( Inst.rd, std::make_signed_t<INT>( res ) );
 
   R->AdvancePC( Inst );
   return true;
@@ -392,14 +389,14 @@ bool bcond( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 }
 
 /// Negation function which flips sign bit, even of NaN
-template< typename T >
+template<typename T>
 inline auto negate( T x ) {
   return std::copysign( x, std::signbit( x ) ? T{ 1 } : T{ -1 } );
 }
 
 /// Rev FMA template which handles 0.0 * NAN and NAN * 0.0 correctly
 // RISC-V requires INVALID exception when x * y is INVALID even when z = qNaN
-template< typename T >
+template<typename T>
 inline auto revFMA( T x, T y, T z ) {
   if( ( !y && std::isinf( x ) ) || ( !x && std::isinf( y ) ) ) {
     feraiseexcept( FE_INVALID );
@@ -408,12 +405,9 @@ inline auto revFMA( T x, T y, T z ) {
 }
 
 /// Fused Multiply+Add
-template< typename T >
+template<typename T>
 bool fmadd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  R->SetFP( Inst.rd,
-            revFMA( R->GetFP< T >( Inst.rs1 ),
-                    R->GetFP< T >( Inst.rs2 ),
-                    R->GetFP< T >( Inst.rs3 ) ) );
+  R->SetFP( Inst.rd, revFMA( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ), R->GetFP<T>( Inst.rs3 ) ) );
   R->AdvancePC( Inst );
   return true;
 }
@@ -421,10 +415,7 @@ bool fmadd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 /// Fused Multiply-Subtract
 template<typename T>
 bool fmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  R->SetFP( Inst.rd,
-            revFMA( R->GetFP< T >( Inst.rs1 ),
-                    R->GetFP< T >( Inst.rs2 ),
-                    negate( R->GetFP< T >( Inst.rs3 ) ) ) );
+  R->SetFP( Inst.rd, revFMA( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ), negate( R->GetFP<T>( Inst.rs3 ) ) ) );
   R->AdvancePC( Inst );
   return true;
 }
@@ -432,21 +423,15 @@ bool fmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 /// Fused Negated (Multiply-Subtract)
 template<typename T>
 bool fnmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  R->SetFP( Inst.rd,
-            revFMA( negate( R->GetFP< T >( Inst.rs1 ) ),
-                    R->GetFP< T >( Inst.rs2 ),
-                    R->GetFP< T >( Inst.rs3 ) ) );
+  R->SetFP( Inst.rd, revFMA( negate( R->GetFP<T>( Inst.rs1 ) ), R->GetFP<T>( Inst.rs2 ), R->GetFP<T>( Inst.rs3 ) ) );
   R->AdvancePC( Inst );
   return true;
 }
 
 /// Fused Negated (Multiply+Add)
-template< typename T >
+template<typename T>
 bool fnmadd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  R->SetFP( Inst.rd,
-            negate( revFMA( R->GetFP< T >( Inst.rs1 ),
-                            R->GetFP< T >( Inst.rs2 ),
-                            R->GetFP< T >( Inst.rs3 ) ) ) );
+  R->SetFP( Inst.rd, negate( revFMA( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ), R->GetFP<T>( Inst.rs3 ) ) ) );
   R->AdvancePC( Inst );
   return true;
 }

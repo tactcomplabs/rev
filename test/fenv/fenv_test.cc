@@ -1,7 +1,7 @@
 #include "fenv_test.h"
 
-extern std::vector< void ( * )() > fenv_tests;
-unsigned                           failures;
+extern std::vector<void ( * )()> fenv_tests;
+unsigned                         failures;
 
 int main() {
   for( auto* test : fenv_tests )
