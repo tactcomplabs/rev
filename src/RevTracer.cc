@@ -264,13 +264,18 @@ std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
             ss_disasm << "?" << "\n";
 #else
     // show mnemonic and field format strings.
-    ss_disasm << fallbackMnemonic << "\t";
+    ss_disasm << std::left << std::setw( 20 ) << fallbackMnemonic << std::right << "\t";
 #endif
   }
 
   // Initial rendering
   std::stringstream os;
-  os << "0x" << std::hex << pc << ":" << std::setfill( '0' ) << std::setw( 8 ) << insn;
+  os << "0x" << std::hex << pc << ":" << std::setfill( '0' );
+  if( ~insn & 3 ) {
+    os << std::setw( 4 ) << ( insn & 0xffff ) << "    ";
+  } else {
+    os << std::setw( 8 ) << insn;
+  }
   os << " " << std::setfill( ' ' ) << std::setw( 2 ) << ss_events.str() << " " << ss_disasm.str();
 
   // register and memory read/write events preserving code ordering
