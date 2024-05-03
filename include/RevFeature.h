@@ -44,11 +44,7 @@ enum RevFeatureType : uint32_t {
 class RevFeature {
 public:
   /// RevFeature: standard constructor
-  RevFeature( std::string  Machine,
-              SST::Output* Output,
-              unsigned     Min,
-              unsigned     Max,
-              unsigned     Id );
+  RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id );
 
   /// RevFeature: standard destructor
   ~RevFeature()                              = default;
@@ -60,84 +56,56 @@ public:
   RevFeature& operator=( const RevFeature& ) = delete;
 
   /// IsModeEnabled: determines if the target mode is enabled
-  bool IsModeEnabled( RevFeatureType Type ) const {
-    return ( features & Type ) == Type;
-  }
+  bool IsModeEnabled( RevFeatureType Type ) const { return ( features & Type ) == Type; }
 
   /// SetMachineEntry: set the machine model item
-  void SetMachineEntry( RevFeatureType Type ) {
-    features = RevFeatureType{ features | Type };
-  }
+  void SetMachineEntry( RevFeatureType Type ) { features = RevFeatureType{ features | Type }; }
 
   /// GetMachineModel: retrieve the feature string
-  auto GetMachineModel() const {
-    return machine;
-  }
+  auto GetMachineModel() const { return machine; }
 
   /// GetFeatures: retrieve the feature encoding
-  auto GetFeatures() const {
-    return features;
-  }
+  auto GetFeatures() const { return features; }
 
   /// GetMinCost: get the minimum cost
-  auto GetMinCost() const {
-    return MinCost;
-  }
+  auto GetMinCost() const { return MinCost; }
 
   /// GetMaxCost: get the maximum cost
-  auto GetMaxCost() const {
-    return MaxCost;
-  }
+  auto GetMaxCost() const { return MaxCost; }
 
   /// IsRV32: Is the device an RV32
-  bool IsRV32() const {
-    return xlen == 32;
-  }
+  bool IsRV32() const { return xlen == 32; }
 
   /// IsRV64: Is the device an RV64
-  bool IsRV64() const {
-    return xlen == 64;
-  }
+  bool IsRV64() const { return xlen == 64; }
 
   /// HasF: Does the device support F?
-  bool HasF() const {
-    return IsModeEnabled( RV_F );
-  }
+  bool HasF() const { return IsModeEnabled( RV_F ); }
 
   /// HasD: Does the device support D?
-  bool HasD() const {
-    return IsModeEnabled( RV_D );
-  }
+  bool HasD() const { return IsModeEnabled( RV_D ); }
 
   /// HasCompressed: Returns whether RV32 or RV64 "C" is enabled
-  bool HasCompressed() const {
-    return IsModeEnabled( RV_C );
-  }
+  bool HasCompressed() const { return IsModeEnabled( RV_C ); }
 
   /// GetProcID: Retrieve the ProcID of the target object
-  auto GetProcID() const {
-    return ProcID;
-  }
+  auto GetProcID() const { return ProcID; }
 
   /// GetHartToExecID: Retrieve the current executing Hart
-  uint16_t GetHartToExecID() const {
-    return HartToExecID;
-  }
+  uint16_t GetHartToExecID() const { return HartToExecID; }
 
   /// SetHartToExecID: Set the current executing Hart
-  void SetHartToExecID( unsigned hart ) {
-    HartToExecID = hart;
-  }
+  void SetHartToExecID( unsigned hart ) { HartToExecID = hart; }
 
 private:
-  std::string  machine;   ///< RevFeature: feature string
-  SST::Output* output;    ///< RevFeature: output handler
-  unsigned     MinCost;   ///< RevFeature: min memory cost
-  unsigned     MaxCost;   ///< RevFeature: max memory cost
-  unsigned     ProcID;    ///< RevFeature: RISC-V Proc ID
-  unsigned HartToExecID;  ///< RevFeature: The current executing Hart on RevCore
-  RevFeatureType features;  ///< RevFeature: feature elements
-  unsigned       xlen;      ///< RevFeature: RISC-V Xlen
+  std::string    machine;       ///< RevFeature: feature string
+  SST::Output*   output;        ///< RevFeature: output handler
+  unsigned       MinCost;       ///< RevFeature: min memory cost
+  unsigned       MaxCost;       ///< RevFeature: max memory cost
+  unsigned       ProcID;        ///< RevFeature: RISC-V Proc ID
+  unsigned       HartToExecID;  ///< RevFeature: The current executing Hart on RevCore
+  RevFeatureType features;      ///< RevFeature: feature elements
+  unsigned       xlen;          ///< RevFeature: RISC-V Xlen
 
   /// ParseMachineModel: parse the machine model string
   bool ParseMachineModel();

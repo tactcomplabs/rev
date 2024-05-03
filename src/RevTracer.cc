@@ -17,8 +17,7 @@
 
 namespace SST::RevCPU {
 
-RevTracer::RevTracer( std::string Name, SST::Output* o ) :
-  name( Name ), pOutput( o ) {
+RevTracer::RevTracer( std::string Name, SST::Output* o ) : name( Name ), pOutput( o ) {
 
   enableQ.resize( MAX_ENABLE_Q );
   enableQ.assign( MAX_ENABLE_Q, 0 );
@@ -67,8 +66,7 @@ int RevTracer::SetDisassembler( std::string machine ) {
 #endif
 }
 
-void RevTracer::SetTraceSymbols(
-  std::map< uint64_t, std::string >* TraceSymbols ) {
+void RevTracer::SetTraceSymbols( std::map<uint64_t, std::string>* TraceSymbols ) {
   traceSymbols = TraceSymbols;
 }
 
@@ -86,12 +84,7 @@ void RevTracer::SetCmdTemplate( std::string cmd ) {
     for( auto it = s2op.begin(); it != s2op.end(); it++ ) {
       s << it->first << " ";
     }
-    pOutput->fatal(
-      CALL_INFO,
-      -1,
-      "Unsupported parameter [trcCmd=%s]. Supported values are: %s\n",
-      cmd.c_str(),
-      s.str().c_str() );
+    pOutput->fatal( CALL_INFO, -1, "Unsupported parameter [trcCmd=%s]. Supported values are: %s\n", cmd.c_str(), s.str().c_str() );
   }
 
   unsigned cmd_template = s2op.at( cmd );
@@ -124,21 +117,19 @@ void RevTracer::CheckUserControls( uint64_t cycle ) {
 
   // programatic controls
   bool nextState = outputEnabled;
-  if( insn == nops[static_cast< unsigned >( TRC_CMD_IDX::TRACE_OFF )] ) {
+  if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_OFF )] ) {
     nextState = false;
-  } else if( insn == nops[static_cast< unsigned >( TRC_CMD_IDX::TRACE_ON )] ) {
+  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_ON )] ) {
     nextState = true;
-  } else if( insn ==
-             nops[static_cast< unsigned >( TRC_CMD_IDX::TRACE_PUSH_OFF )] ) {
+  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_PUSH_OFF )] ) {
     enableQ[enableQindex] = outputEnabled;
     enableQindex          = ( enableQindex + 1 ) % MAX_ENABLE_Q;
     nextState             = false;
-  } else if( insn ==
-             nops[static_cast< unsigned >( TRC_CMD_IDX::TRACE_PUSH_ON )] ) {
+  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_PUSH_ON )] ) {
     enableQ[enableQindex] = outputEnabled;
     enableQindex          = ( enableQindex + 1 ) % MAX_ENABLE_Q;
     nextState             = true;
-  } else if( insn == nops[static_cast< unsigned >( TRC_CMD_IDX::TRACE_POP )] ) {
+  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_POP )] ) {
     enableQindex = ( enableQindex - 1 ) % MAX_ENABLE_Q;
     nextState    = enableQ[enableQindex];
   }
@@ -179,17 +170,14 @@ void RevTracer::memRead( uint64_t adr, size_t len, void* data ) {
   traceRecs.emplace_back( TraceRec_t( MemLoad, adr, len, d ) );
 }
 
-void SST::RevCPU::RevTracer::memhSendRead( uint64_t adr,
-                                           size_t   len,
-                                           uint16_t reg ) {
+void SST::RevCPU::RevTracer::memhSendRead( uint64_t adr, size_t len, uint16_t reg ) {
   traceRecs.emplace_back( TraceRec_t( MemhSendLoad, adr, len, reg ) );
 }
 
 void RevTracer::memReadResponse( size_t len, void* data, const MemReq* req ) {
   if( req->DestReg == 0 )
     return;
-  CompletionRec_t c(
-    req->Hart, req->DestReg, len, req->Addr, data, req->RegType );
+  CompletionRec_t c( req->Hart, req->DestReg, len, req->Addr, data, req->RegType );
   completionRecs.emplace_back( c );
 }
 
@@ -201,11 +189,7 @@ void RevTracer::pcWrite( uint64_t newpc ) {
   traceRecs.emplace_back( TraceRec_t( PcWrite, newpc, 0, 0 ) );
 }
 
-void RevTracer::Exec( size_t             cycle,
-                      unsigned           id,
-                      unsigned           hart,
-                      unsigned           tid,
-                      const std::string& fallbackMnemonic ) {
+void RevTracer::Exec( size_t cycle, unsigned id, unsigned hart, unsigned tid, const std::string& fallbackMnemonic ) {
   instHeader.set( cycle, id, hart, tid, fallbackMnemonic );
 }
 
@@ -219,15 +203,9 @@ void RevTracer::Render( size_t cycle ) {
       for( auto r : completionRecs ) {
         std::string       data_str = fmt_data( r.len, r.data );
         std::stringstream s;
-        s << data_str << "<-[0x" << std::hex << r.addr << "," << std::dec
-          << r.len << "] ";
+        s << data_str << "<-[0x" << std::hex << r.addr << "," << std::dec << r.len << "] ";
         s << fmt_reg( r.destReg ) << "<-" << data_str << " ";
-        pOutput->verbose( CALL_INFO,
-                          5,
-                          0,
-                          "Hart %" PRIu32 "; *A %s\n",
-                          r.hart,
-                          s.str().c_str() );
+        pOutput->verbose( CALL_INFO, 5, 0, "Hart %" PRIu32 "; *A %s\n", r.hart, s.str().c_str() );
       }
     }
     // reset completion reqs
@@ -237,15 +215,16 @@ void RevTracer::Render( size_t cycle ) {
   // Instruction Trace
   if( instHeader.valid ) {
     if( OutputOK() ) {
-      pOutput->verbose( CALL_INFO,
-                        5,
-                        0,
-                        "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32
-                        "; *I %s\n",
-                        instHeader.id,
-                        instHeader.hart,
-                        instHeader.tid,
-                        RenderExec( instHeader.fallbackMnemonic ).c_str() );
+      pOutput->verbose(
+        CALL_INFO,
+        5,
+        0,
+        "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; *I %s\n",
+        instHeader.id,
+        instHeader.hart,
+        instHeader.tid,
+        RenderExec( instHeader.fallbackMnemonic ).c_str()
+      );
     }
     InstTraceReset();
   }
@@ -261,8 +240,7 @@ std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
   std::stringstream ss_events;
   if( events.v ) {
     if( events.f.trc_ctl ) {
-      EVENT_SYMBOL e =
-        outputEnabled ? EVENT_SYMBOL::TRACE_ON : EVENT_SYMBOL::TRACE_OFF;
+      EVENT_SYMBOL e = outputEnabled ? EVENT_SYMBOL::TRACE_ON : EVENT_SYMBOL::TRACE_OFF;
       ss_events << event2char.at( e );
     }
   }
@@ -292,10 +270,8 @@ std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
 
   // Initial rendering
   std::stringstream os;
-  os << "0x" << std::hex << pc << ":" << std::setfill( '0' ) << std::setw( 8 )
-     << insn;
-  os << " " << std::setfill( ' ' ) << std::setw( 2 ) << ss_events.str() << " "
-     << ss_disasm.str();
+  os << "0x" << std::hex << pc << ":" << std::setfill( '0' ) << std::setw( 8 ) << insn;
+  os << " " << std::setfill( ' ' ) << std::setw( 2 ) << ss_events.str() << " " << ss_disasm.str();
 
   // register and memory read/write events preserving code ordering
   if( traceRecs.empty() )
@@ -332,23 +308,19 @@ std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
       break;
     case MemStore: {
       // a:adr b:len c:data
-      ss_rw << "[0x" << std::hex << r.a << "," << std::dec << r.b << "]<-"
-            << fmt_data( r.b, r.c ) << " ";
+      ss_rw << "[0x" << std::hex << r.a << "," << std::dec << r.b << "]<-" << fmt_data( r.b, r.c ) << " ";
       break;
     }
     case MemLoad:
       // a:adr b:len c:data
-      ss_rw << fmt_data( r.b, r.c ) << "<-[0x" << std::hex << r.a << ","
-            << std::dec << r.b << "]";
+      ss_rw << fmt_data( r.b, r.c ) << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
       ss_rw << " ";
       break;
     case MemhSendLoad:
       // a:adr b:len c:reg
-      ss_rw << fmt_reg( r.c ) << "<-[0x" << std::hex << r.a << "," << std::dec
-            << r.b << "]";
+      ss_rw << fmt_reg( r.c ) << "<-[0x" << std::hex << r.a << "," << std::dec << r.b << "]";
       ss_rw << " ";
-      squashNextSetX =
-        true;  // register corrupted after ReadVal in RevInstHelpers.h::load
+      squashNextSetX = true;  // register corrupted after ReadVal in RevInstHelpers.h::load
       break;
     case PcWrite:
       // a:pc
@@ -356,8 +328,7 @@ std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
       if( lastPC + 4 != pc ) {
         // only render if non-sequential instruction
         ss_rw << "pc<-0x" << std::hex << pc;
-        if( traceSymbols and
-            ( traceSymbols->find( pc ) != traceSymbols->end() ) )
+        if( traceSymbols and ( traceSymbols->find( pc ) != traceSymbols->end() ) )
           ss_rw << " <" << traceSymbols->at( pc ) << ">";
         ss_rw << " ";
       }

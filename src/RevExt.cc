@@ -28,12 +28,7 @@ bool RevExt::Execute( unsigned       Inst,
   }
 
   if( !func ) {
-    output->fatal(
-      CALL_INFO,
-      -1,
-      "Error: instruction at index=%u does not exist in extension=%s",
-      Inst,
-      name.data() );
+    output->fatal( CALL_INFO, -1, "Error: instruction at index=%u does not exist in extension=%s", Inst, name.data() );
     return false;
   }
 

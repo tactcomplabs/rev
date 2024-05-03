@@ -15,12 +15,11 @@ namespace SST::RevCPU {
 // ---------------------------------------------------------------
 // RevCoProc
 // ---------------------------------------------------------------
-RevCoProc::RevCoProc( ComponentId_t id, Params& params, RevCore* parent ) :
-  SubComponent( id ), output( nullptr ), parent( parent ) {
+RevCoProc::RevCoProc( ComponentId_t id, Params& params, RevCore* parent )
+  : SubComponent( id ), output( nullptr ), parent( parent ) {
 
-  uint32_t verbosity = params.find< uint32_t >( "verbose" );
-  output =
-    new SST::Output( "[RevCoProc @t]: ", verbosity, 0, SST::Output::STDOUT );
+  uint32_t verbosity = params.find<uint32_t>( "verbose" );
+  output             = new SST::Output( "[RevCoProc @t]: ", verbosity, 0, SST::Output::STDOUT );
 }
 
 RevCoProc::~RevCoProc() {
@@ -30,13 +29,10 @@ RevCoProc::~RevCoProc() {
 // ---------------------------------------------------------------
 // RevSimpleCoProc
 // ---------------------------------------------------------------
-RevSimpleCoProc::RevSimpleCoProc( ComponentId_t id,
-                                  Params&       params,
-                                  RevCore*      parent ) :
-  RevCoProc( id, params, parent ),
-  num_instRetired( 0 ) {
+RevSimpleCoProc::RevSimpleCoProc( ComponentId_t id, Params& params, RevCore* parent )
+  : RevCoProc( id, params, parent ), num_instRetired( 0 ) {
 
-  std::string ClockFreq = params.find< std::string >( "clock", "1Ghz" );
+  std::string ClockFreq = params.find<std::string>( "clock", "1Ghz" );
   cycleCount            = 0;
 
   registerStats();
@@ -51,20 +47,16 @@ RevSimpleCoProc::~RevSimpleCoProc(){
 
 };
 
-bool RevSimpleCoProc::IssueInst( RevFeature* F,
-                                 RevRegFile* R,
-                                 RevMem*     M,
-                                 uint32_t    Inst ) {
+bool RevSimpleCoProc::IssueInst( RevFeature* F, RevRegFile* R, RevMem* M, uint32_t Inst ) {
   RevCoProcInst inst = RevCoProcInst( Inst, F, R, M );
-  std::cout << "CoProc instruction issued: " << std::hex << Inst << std::dec
-            << std::endl;
+  std::cout << "CoProc instruction issued: " << std::hex << Inst << std::dec << std::endl;
   //parent->ExternalDepSet(CreatePasskey(), F->GetHartToExecID(), 7, false);
   InstQ.push( inst );
   return true;
 }
 
 void RevSimpleCoProc::registerStats() {
-  num_instRetired = registerStatistic< uint64_t >( "InstRetired" );
+  num_instRetired = registerStatistic<uint64_t>( "InstRetired" );
 }
 
 bool RevSimpleCoProc::Reset() {
@@ -79,8 +71,7 @@ bool RevSimpleCoProc::ClockTick( SST::Cycle_t cycle ) {
     num_instRetired->addData( 1 );
     parent->ExternalStallHart( CreatePasskey(), 0 );
     InstQ.pop();
-    std::cout << "CoProcessor to execute instruction: " << std::hex << inst
-              << std::endl;
+    std::cout << "CoProcessor to execute instruction: " << std::hex << inst << std::endl;
     cycleCount = cycle;
   }
   if( ( cycle - cycleCount ) > 500 ) {

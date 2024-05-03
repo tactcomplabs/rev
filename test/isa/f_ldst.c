@@ -23,14 +23,10 @@ int main( int argc, char** argv ) {
   // #-------------------------------------------------------------
   //
 
-  TEST_CASE( 2, a0, 0x40000000deadbeef, ASM_GEN( la a1, tdat );
-             ASM_GEN( flw f1, 4( a1 ) );
-             ASM_GEN( fsw f1, 20( a1 ) );
+  TEST_CASE( 2, a0, 0x40000000deadbeef, ASM_GEN( la a1, tdat ); ASM_GEN( flw f1, 4( a1 ) ); ASM_GEN( fsw f1, 20( a1 ) );
              ASM_GEN( ld a0, 16( a1 ) ); );
 
-  TEST_CASE( 3, a0, 0x1337d00dbf800000, ASM_GEN( la a1, tdat );
-             ASM_GEN( flw f1, 0( a1 ) );
-             ASM_GEN( fsw f1, 24( a1 ) );
+  TEST_CASE( 3, a0, 0x1337d00dbf800000, ASM_GEN( la a1, tdat ); ASM_GEN( flw f1, 0( a1 ) ); ASM_GEN( fsw f1, 24( a1 ) );
              ASM_GEN( ld a0, 24( a1 ) ) );
 
   asm volatile( " bne x0, gp, pass;" );

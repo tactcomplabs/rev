@@ -17,15 +17,13 @@ std::ostream& operator<<( std::ostream& os, const RevThread& Thread ) {
   os << "\n";
 
   // Calculate total width of the table
-  int tableWidth =
-    6 /*Reg*/ + 7 /*Alias*/ + 16 /*Value*/ + 23 /*Info*/ + 9 /*Separators*/;
+  int tableWidth = 6 /*Reg*/ + 7 /*Alias*/ + 16 /*Value*/ + 23 /*Info*/ + 9 /*Separators*/;
 
   // Print a top border
   os << "|" << std::string( tableWidth - 1, '=' ) << "|" << '\n';
 
   // Print Thread ID
-  os << "| Thread " << Thread.GetID() << std::setw( 6 )
-     << std::string( tableWidth - 10, ' ' ) << "|\n";
+  os << "| Thread " << Thread.GetID() << std::setw( 6 ) << std::string( tableWidth - 10, ' ' ) << "|\n";
 
   // Print the middle border
   os << "|" << std::string( tableWidth - 1, '-' ) << "|" << '\n';

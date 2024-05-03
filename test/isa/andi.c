@@ -32,7 +32,6 @@ int main( int argc, char** argv ) {
 
   TEST_IMM_SRC1_EQ_DEST( 6, andi, 0x00000000, 0xff00ff00, 0x0f0 );
 
-
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );
   asm volatile( "j continue" );

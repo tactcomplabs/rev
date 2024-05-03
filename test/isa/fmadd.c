@@ -38,7 +38,6 @@ int main( int argc, char** argv ) {
   TEST_FP_OP3_S( 12, fnmsub.s, 1, -1234, -1.0, -1235.1, 1.1 );
   TEST_FP_OP3_S( 13, fnmsub.s, 0, 8.0, 2.0, -5.0, -2.0 );
 
-
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );
   asm volatile( "j continue" );
@@ -48,7 +47,6 @@ int main( int argc, char** argv ) {
 
   asm volatile( "continue:" );
   asm volatile( "li ra, 0x0" );
-
 
   return 0;
 }

@@ -24,20 +24,19 @@ namespace SST::RevCPU {
 
 class Zicbom : public RevExt {
 
-  static bool
-    cmo( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool cmo( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     switch( Inst.imm ) {
     case CBO_INVAL_IMM:
       // CBO.INVAL
-      M->InvLine( F->GetHartToExecID(), R->GetX< uint64_t >( Inst.rs1 ) );
+      M->InvLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) );
       break;
     case CBO_FLUSH_IMM:
       // CBO.FLUSH
-      M->FlushLine( F->GetHartToExecID(), R->GetX< uint64_t >( Inst.rs1 ) );
+      M->FlushLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) );
       break;
     case CBO_CLEAN_IMM:
       // CBO.CLEAN
-      M->CleanLine( F->GetHartToExecID(), R->GetX< uint64_t >( Inst.rs1 ) );
+      M->CleanLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) );
       break;
     default: return false;
     }
@@ -66,8 +65,7 @@ class Zicbom : public RevExt {
   // clang-format on
 
 public:
-  Zicbom( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
-    RevExt( "Zicbom", Feature, RevMem, Output ) {
+  Zicbom( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zicbom", Feature, RevMem, Output ) {
     SetTable( std::move( ZicbomTable ) );
   }
 };  // end class Zicbom
