@@ -102,7 +102,7 @@ if(BUILD_DOCUMENTATION)
     message(FATAL_ERROR "Doxygen is required to build the documentation.")
   endif()
 
-  set(doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/RevCPU.conf)
+  set(doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/Rev.conf)
 
   add_custom_target(doc
     COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
