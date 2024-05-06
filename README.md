@@ -49,6 +49,7 @@ Building the Rev SST component from source using CMake (>= 3.19) can be performe
 
 Additional build options include:
     * -DBUILD_ASM_TESTING=ON
+    * -DBUILD_DOCUMENTATION=ON  : enables Doxygen source code generation (use `make doc`)
 
 After a successful build you can test your install with:
 
