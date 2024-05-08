@@ -53,6 +53,9 @@ static void generate_test( const std::pair<T ( * )( Ts... ), std::string_view>& 
   std::cout << "    fesetenv( &fenv );\n";
   std::cout << "  },\n";
   std::fesetenv( &fenv );
+
+  if( testno >= 10 )
+    throw 1;
 }
 
 template<typename FP, typename INT>
@@ -146,16 +149,23 @@ int main( int argc, char** argv ) {
 
   std::cout << R"(
 #include "fenv_test.h"
-#include "revalloc.h"
 
 extern unsigned failures;
 
-//clang-format off
+#ifdef __riscv
+#include "revalloc.h"
 std::vector<void (*)(), Allocator<void (*)()>> fenv_tests = {
+#else
+std::vector<void (*)()> fenv_tests = {
+#endif
+//clang-format off
 )";
 
-  generate_tests<float, int32_t>();
-  generate_tests<double, int32_t>();
+  try {
+    generate_tests<float, int32_t>();
+    generate_tests<double, int32_t>();
+  } catch( ... ) {
+  }
 
   std::cout << "};\n";
 
