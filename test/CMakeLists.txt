@@ -207,7 +207,6 @@ add_rev_test(ARGC_SHORT argc 30 "all;memh;rv64;loader;" SCRIPT "run_argc_short.s
 add_rev_test(COPROC_EX coproc_ex 30 "all;memh;rv64;coproc" SCRIPT "run_coproc_ex.sh")
 add_rev_test(ZICBOM zicbom 45 "all;memh;rv64" SCRIPT "run_zicbom.sh")
 add_rev_test(BACKINGSTORE backingstore 100 "all;rv64" SCRIPT "run_backingstore.sh")
-add_rev_test(FENV fenv 30 "rv64")
 # add_rev_test(TRACER tracer 30 "all;rv64;tracer")
 # add_rev_test(PAN_TEST1 pan_test1 30 "all;rv64;pan")
 # add_rev_test(PAN_TEST2 pan_test2 30 "all;rv64;pan")
@@ -221,5 +220,6 @@ add_subdirectory(benchmarks)
 add_subdirectory(syscalls)
 add_subdirectory(threading)
 add_subdirectory(cxx)
+add_subdirectory(fenv)
 
 # EOF

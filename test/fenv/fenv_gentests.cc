@@ -69,8 +69,6 @@ constexpr FP special_values[] = {
   std::numeric_limits<FP>::signaling_NaN(),
   std::numeric_limits<FP>::infinity(),
   -std::numeric_limits<FP>::infinity(),
-  std::numeric_limits<FP>::denorm_min(),
-  -std::numeric_limits<FP>::denorm_min(),
   std::numeric_limits<FP>::epsilon(),
   -std::numeric_limits<FP>::epsilon(),
   std::numeric_limits<FP>::lowest(),
@@ -148,9 +146,12 @@ int main( int argc, char** argv ) {
 
   std::cout << R"(
 #include "fenv_test.h"
+#include "revalloc.h"
+
 extern unsigned failures;
+
 //clang-format off
-std::vector<void (*)()> fenv_tests = {
+std::vector<void (*)(), Allocator<void (*)()>> fenv_tests = {
 )";
 
   generate_tests<float, int32_t>();

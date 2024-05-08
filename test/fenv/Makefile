@@ -15,7 +15,7 @@ CXX=${RVCXX}
 ARCH=rv64imafdc
 ABI=lp64d
 
-CC_OPTS = -O2
+CC_OPTS = -O2 -I ../../common/include -I ../../common/syscalls
 
 ifneq (,$(findstring clang,$(RVCC)))
 	CC_OPTS += -ffp-model=strict
@@ -25,13 +25,31 @@ endif
 
 CC_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
 
-all: fenv_test.exe
+all: fenv_test_TONEAREST.exe fenv_test_UPWARD.exe fenv_test_DOWNWARD.exe fenv_test_TOWARDZERO.exe
 
-fenv_test.exe: fenv_test.h fenv_test.cc fenv_test_1.cc
-	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_1.cc -lm -o $@
+fenv_test_TONEAREST.exe: fenv_test.h fenv_test.cc fenv_test_TONEAREST.cc
+	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_TONEAREST.cc -lm -o $@
 
-fenv_test_1.cc: fenv_gentests.exe
+fenv_test_UPWARD.exe: fenv_test.h fenv_test.cc fenv_test_UPWARD.cc
+	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_UPWARD.cc -lm -o $@
+
+fenv_test_DOWNWARD.exe: fenv_test.h fenv_test.cc fenv_test_DOWNWARD.cc
+	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_DOWNWARD.cc -lm -o $@
+
+fenv_test_TOWARDZERO.exe: fenv_test.h fenv_test.cc fenv_test_TOWARDZERO.cc
+	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_TOWARDZERO.cc -lm -o $@
+
+fenv_test_TONEAREST.cc: fenv_gentests.exe
 	./fenv_gentests.exe FE_TONEAREST > $@
+
+fenv_test_UPWARD.cc: fenv_gentests.exe
+	./fenv_gentests.exe FE_UPWARD > $@
+
+fenv_test_DOWNWARD.cc: fenv_gentests.exe
+	./fenv_gentests.exe FE_DOWNWARD > $@
+
+fenv_test_TOWARDZERO.cc: fenv_gentests.exe
+	./fenv_gentests.exe FE_TOWARDZERO > $@
 
 # build test generator on local host
 fenv_gentests.exe: fenv_test.h fenv_gentests.cc

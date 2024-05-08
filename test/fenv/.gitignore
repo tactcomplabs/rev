@@ -1,0 +1,4 @@
+fenv_test_DOWNWARD.cc
+fenv_test_TONEAREST.cc
+fenv_test_TOWARDZERO.cc
+fenv_test_UPWARD.cc
