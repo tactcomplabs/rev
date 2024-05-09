@@ -1,24 +1,19 @@
 #include "fenv_test.h"
 
 #ifdef __riscv
-
-#include "revalloc.h"
 #include "syscalls.h"
-extern std::vector<void ( * )(), Allocator<void ( * )()>> fenv_tests;
-
 #else
-
 #include <sys/syscall.h>
 #include <unistd.h>
-extern std::vector<void ( * )()> fenv_tests;
-
 #endif
 
-unsigned failures;
+extern void ( *fenv_tests[] )();
+extern size_t num_fenv_tests;
+unsigned      failures;
 
 int main() {
-  for( auto* test : fenv_tests ) {
-    test();
+  for( size_t i = 0; i < num_fenv_tests; ++i ) {
+    fenv_tests[i]();
 
     // Make a useless syscall to have fencing effects
 #ifdef __riscv
@@ -28,11 +23,5 @@ int main() {
 #endif
   }
 
-  if( failures ) {
-    std::cout << "\n" << failures << " tests failed" << std::endl;
-    return 1;
-  } else {
-    std::cout << "\nAll tests passed" << std::endl;
-    return 0;
-  }
+  return !!failures;
 }

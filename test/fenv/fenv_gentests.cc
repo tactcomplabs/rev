@@ -13,8 +13,9 @@
 
 #include "fenv_test.h"
 
-static unsigned testno;
-static int      rounding;
+static unsigned    testno;
+constexpr unsigned maxtests = -1u;
+static int         rounding;
 
 template<typename T, typename... Ts>
 static void generate_test( const std::pair<T ( * )( Ts... ), std::string_view>& oper_pair, Ts... ops ) {
@@ -54,7 +55,7 @@ static void generate_test( const std::pair<T ( * )( Ts... ), std::string_view>& 
   std::cout << "  },\n";
   std::fesetenv( &fenv );
 
-  if( testno >= 10 )
+  if( testno >= maxtests )
     throw 1;
 }
 
@@ -152,12 +153,7 @@ int main( int argc, char** argv ) {
 
 extern unsigned failures;
 
-#ifdef __riscv
-#include "revalloc.h"
-std::vector<void (*)(), Allocator<void (*)()>> fenv_tests = {
-#else
-std::vector<void (*)()> fenv_tests = {
-#endif
+void (*fenv_tests[])() = {
 //clang-format off
 )";
 
@@ -167,7 +163,11 @@ std::vector<void (*)()> fenv_tests = {
   } catch( ... ) {
   }
 
-  std::cout << "};\n";
+  std::cout << R"(
+};
+//clang-format on
+size_t num_fenv_tests = sizeof( fenv_tests ) / sizeof( *fenv_tests );
+)";
 
   return 0;
 }
