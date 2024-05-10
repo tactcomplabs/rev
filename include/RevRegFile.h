@@ -100,8 +100,9 @@ enum class RevExceptionCause : int32_t {
 
 class RevRegFile {
 public:
-  const bool IsRV32;  ///< RevRegFile: Cached copy of Features->IsRV32()
-  const bool HasD;    ///< RevRegFile: Cached copy of Features->HasD()
+  class RevCore* const core;    ///< RevRegFile: Owning core of this register file's hart
+  const bool           IsRV32;  ///< RevRegFile: Cached copy of Features->IsRV32()
+  const bool           HasD;    ///< RevRegFile: Cached copy of Features->HasD()
 
 private:
   bool       trigger{};         ///< RevRegFile: Has the instruction been triggered?
@@ -136,6 +137,9 @@ private:
   // Floating-point CSR
   FCSR fcsr{};
 
+  // Performance counters
+  uint64_t time{}, instret{};
+
   union {                  // Anonymous union. We zero-initialize the largest member
     uint64_t RV64_SEPC{};  // Holds address of instruction that caused the exception (ie. ECALL)
     uint32_t RV32_SEPC;
@@ -156,8 +160,10 @@ private:
 #endif
 
 public:
-  // Constructor which takes a RevFeature
-  explicit RevRegFile( const RevFeature* feature ) : IsRV32( feature->IsRV32() ), HasD( feature->HasD() ) {}
+  // Constructor which takes a RevCore to indicate its hart's parent core
+  // Template is to prevent circular dependencies by not requiring RevCore to be a complete type now
+  template<typename T, typename = std::enable_if_t<std::is_same_v<T, RevCore>>>
+  explicit RevRegFile( T* core ) : core( core ), IsRV32( core->GetRevFeature()->IsRV32() ), HasD( core->GetRevFeature()->HasD() ) {}
 
   // Getters/Setters
 

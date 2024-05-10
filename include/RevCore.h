@@ -264,6 +264,9 @@ public:
   ///< RevCore: Returns true if there are any IdleHarts
   bool HasIdleHart() const { return IdleHarts.any(); }
 
+  ///< RevCore: Returns the number of cycles executed so far
+  uint64_t GetCycle() const { return cycle; }
+
 private:
   bool     Halted;          ///< RevCore: determines if the core is halted
   bool     Stalled;         ///< RevCore: determines if the core is stalled on instruction fetch
@@ -311,7 +314,10 @@ private:
 
   RevTracer* Tracer          = nullptr;  ///< RevCore: Tracer object
 
+  uint64_t cycle             = 0;  ///< RevCore: The number of cycles executed
+
   std::bitset<_MAX_HARTS_> CoProcStallReq;
+
   ///< RevCore: Utility function for system calls that involve reading a string from memory
   EcallStatus EcallLoadAndParseString( uint64_t straddr, std::function<void()> );
 

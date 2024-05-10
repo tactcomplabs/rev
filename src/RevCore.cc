@@ -1651,7 +1651,8 @@ void RevCore::MarkLoadComplete( const MemReq& req ) {
 bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   RevInst Inst;
   bool    rtn = false;
-  Stats.totalCycles++;
+  ++Stats.totalCycles;
+  ++cycle;
 
   // -- MAIN PROGRAM LOOP --
   //
@@ -1930,7 +1931,7 @@ void RevCore::CreateThread( uint32_t NewTID, uint64_t firstPC, void* arg ) {
   // TODO: Copy TLS into new memory
 
   // Create new register file
-  std::unique_ptr<RevRegFile> NewThreadRegFile = std::make_unique<RevRegFile>( feature );
+  std::unique_ptr<RevRegFile> NewThreadRegFile = std::make_unique<RevRegFile>( this );
 
   // Copy the arg to the new threads a0 register
   NewThreadRegFile->SetX( RevReg::a0, reinterpret_cast<uintptr_t>( arg ) );
