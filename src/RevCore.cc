@@ -17,27 +17,26 @@ namespace SST::RevCPU {
 using MemSegment = RevMem::MemSegment;
 
 RevCore::RevCore(
-  unsigned                  Id,
-  RevOpts*                  Opts,
-  unsigned                  NumHarts,
-  RevMem*                   Mem,
-  RevLoader*                Loader,
+  unsigned                  id,
+  RevOpts*                  opts,
+  unsigned                  numHarts,
+  RevMem*                   mem,
+  RevLoader*                loader,
   std::function<uint32_t()> GetNewTID,
-  SST::Output*              Output
+  SST::Output*              output
 )
-  : Halted( false ), Stalled( false ), SingleStep( false ), CrackFault( false ), ALUFault( false ), fault_width( 0 ), id( Id ),
-    HartToDecodeID( 0 ), HartToExecID( 0 ), numHarts( NumHarts ), opts( Opts ), mem( Mem ), coProc( nullptr ), loader( Loader ),
-    GetNewThreadID( std::move( GetNewTID ) ), output( Output ), feature( nullptr ), sfetch( nullptr ), Tracer( nullptr ) {
+  : id( id ), numHarts( numHarts ), opts( opts ), mem( mem ), loader( loader ), GetNewThreadID( std::move( GetNewTID ) ),
+    output( output ) {
 
   // initialize the machine model for the target core
   std::string Machine;
-  if( !Opts->GetMachineModel( id, Machine ) )
+  if( !opts->GetMachineModel( id, Machine ) )
     output->fatal( CALL_INFO, -1, "Error: failed to retrieve the machine model for core=%" PRIu32 "\n", id );
 
   unsigned MinCost = 0;
   unsigned MaxCost = 0;
 
-  Opts->GetMemCost( Id, MinCost, MaxCost );
+  opts->GetMemCost( id, MinCost, MaxCost );
 
   LSQueue = std::make_shared<std::unordered_multimap<uint64_t, MemReq>>();
   LSQueue->clear();
@@ -48,19 +47,19 @@ RevCore::RevCore(
     ValidHarts.set( i, true );
   }
 
-  featureUP = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, Id );
+  featureUP = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, id );
   feature   = featureUP.get();
   if( !feature )
     output->fatal( CALL_INFO, -1, "Error: failed to create the RevFeature object for core=%" PRIu32 "\n", id );
 
   unsigned Depth = 0;
-  Opts->GetPrefetchDepth( Id, Depth );
+  opts->GetPrefetchDepth( id, Depth );
   if( Depth == 0 ) {
     Depth = 16;
   }
 
   sfetch =
-    std::make_unique<RevPrefetcher>( Mem, feature, Depth, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } );
+    std::make_unique<RevPrefetcher>( mem, feature, Depth, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } );
   if( !sfetch )
     output->fatal( CALL_INFO, -1, "Error: failed to create the RevPrefetcher object for core=%" PRIu32 "\n", id );
 
@@ -1413,10 +1412,10 @@ RevInst RevCore::DecodeInst( uint32_t Inst ) const {
     }
   }
 
-  // Stage 5: Determine if we have an imm12 field
+  // Stage 5: Determine if we have an imm12 field (ECALL and EBREAK)
   uint32_t Imm12 = 0x00ul;
   if( ( inst42 == 0b100 ) && ( inst65 == 0b11 ) && ( Funct3 == 0 ) ) {
-    Imm12 = ( ( Inst >> 19 ) & 0b111111111111 );
+    Imm12 = DECODE_IMM12( Inst );
   }
 
   // Stage 6: Compress the encoding
@@ -1652,7 +1651,8 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   RevInst Inst;
   bool    rtn = false;
   ++Stats.totalCycles;
-  ++cycle;
+  ++cycles;
+  currentSimCycle = currentCycle;
 
   // -- MAIN PROGRAM LOOP --
   //
@@ -1821,7 +1821,8 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
         ExecPC
       );
 #endif
-      Stats.retired++;
+      ++Stats.retired;
+      ++RegFile->InstRet;
 
       // Only clear the dependency if there is no outstanding load
       if( ( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) ) == 0 ) {
@@ -2011,8 +2012,8 @@ void RevCore::AssignThread( std::unique_ptr<RevThread> Thread ) {
       1,
       "Attempted to assign a thread to a hart but no available harts were "
       "found.\n"
-      "We should never have tried to assign a thread to this Proc if it had no "
-      "harts available (ie. Proc->NumIdleHarts() == 0 ).\n"
+      "We should never have tried to assign a thread to this Core if it had no "
+      "harts available (ie. Core->NumIdleHarts() == 0 ).\n"
       "This is a bug\n"
     );
   }

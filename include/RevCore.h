@@ -37,7 +37,6 @@
 #include <vector>
 
 // -- RevCPU Headers
-#include "AllRevInstTables.h"
 #include "RevCoProc.h"
 #include "RevCorePasskey.h"
 #include "RevFeature.h"
@@ -54,20 +53,21 @@
 #include "../common/include/RevCommon.h"
 #include "../common/syscalls/syscalls.h"
 
+#include "AllRevInstTables.h"
+
 namespace SST::RevCPU {
 class RevCoProc;
 
-class RevCore {
-public:
+struct RevCore {
   /// RevCore: standard constructor
   RevCore(
-    unsigned                  Id,
-    RevOpts*                  Opts,
-    unsigned                  NumHarts,
-    RevMem*                   Mem,
-    RevLoader*                Loader,
+    unsigned                  id,
+    RevOpts*                  opts,
+    unsigned                  numHarts,
+    RevMem*                   mem,
+    RevLoader*                loader,
     std::function<uint32_t()> GetNewThreadID,
-    SST::Output*              Output
+    SST::Output*              output
   );
 
   /// RevCore: standard destructor
@@ -153,7 +153,9 @@ public:
 
   RevMem& GetMem() const { return *mem; }
 
-  ///< RevCore: Called by RevCPU to handle the state changes threads may have happened during this Proc's ClockTick
+  uint64_t GetCurrentSimCycle() const { return currentSimCycle; }
+
+  ///< RevCore: Called by RevCPU to handle the state changes threads may have happened during this Core's ClockTick
   auto TransferThreadsThatChangedState() { return std::move( ThreadsThatChangedState ); }
 
   ///< RevCore: Add
@@ -167,7 +169,7 @@ public:
   ///< RevCore: Returns the current HartToExecID active pid
   uint32_t GetActiveThreadID() { return Harts.at( HartToDecodeID )->GetAssignedThreadID(); }
 
-  ///< RevCore: Get this Proc's feature
+  ///< RevCore: Get this Core's feature
   RevFeature* GetRevFeature() const { return feature; }
 
   ///< RevCore: Mark a current request as complete
@@ -253,7 +255,7 @@ public:
   ///< RevCore: Returns the id of an idle hart (or _INVALID_HART_ID_ if none are idle)
   unsigned FindIdleHartID() const;
 
-  ///< RevCore: Returns true if all harts are available (ie. There is nothing executing on this Proc)
+  ///< RevCore: Returns true if all harts are available (ie. There is nothing executing on this Core)
   bool HasNoBusyHarts() const { return IdleHarts == ValidHarts; }
 
   ///< RevCore: Used by RevCPU to determine if it can disable this proc
@@ -265,19 +267,20 @@ public:
   bool HasIdleHart() const { return IdleHarts.any(); }
 
   ///< RevCore: Returns the number of cycles executed so far
-  uint64_t GetCycle() const { return cycle; }
+  uint64_t GetCycles() const { return cycles; }
 
 private:
-  bool     Halted;          ///< RevCore: determines if the core is halted
-  bool     Stalled;         ///< RevCore: determines if the core is stalled on instruction fetch
-  bool     SingleStep;      ///< RevCore: determines if we are in a single step
-  bool     CrackFault;      ///< RevCore: determiens if we need to handle a crack fault
-  bool     ALUFault;        ///< RevCore: determines if we need to handle an ALU fault
-  unsigned fault_width;     ///< RevCore: the width of the target fault
-  unsigned id;              ///< RevCore: processor id
-  uint64_t ExecPC;          ///< RevCore: executing PC
-  unsigned HartToDecodeID;  ///< RevCore: Current executing ThreadID
-  unsigned HartToExecID;    ///< RevCore: Thread to dispatch instruction
+  bool           Halted      = false;  ///< RevCore: determines if the core is halted
+  bool           Stalled     = false;  ///< RevCore: determines if the core is stalled on instruction fetch
+  bool           SingleStep  = false;  ///< RevCore: determines if we are in a single step
+  bool           CrackFault  = false;  ///< RevCore: determines if we need to handle a crack fault
+  bool           ALUFault    = false;  ///< RevCore: determines if we need to handle an ALU fault
+  unsigned       fault_width = 0;      ///< RevCore: the width of the target fault
+  unsigned const id;                   ///< RevCore: processor id
+  uint64_t       ExecPC;               ///< RevCore: executing PC
+  unsigned       HartToDecodeID  = 0;  ///< RevCore: Current executing ThreadID
+  unsigned       HartToExecID    = 0;  ///< RevCore: Thread to dispatch instruction
+  uint64_t       currentSimCycle = 0;  ///< RevCore: Current simulation cycle
 
   std::vector<std::shared_ptr<RevHart>> Harts;                ///< RevCore: vector of Harts without a thread assigned to them
   std::bitset<_MAX_HARTS_>              IdleHarts;            ///< RevCore: bitset of Harts with no thread assigned
@@ -285,22 +288,22 @@ private:
   std::bitset<_MAX_HARTS_>              HartsClearToDecode;   ///< RevCore: Thread is clear to start (proceed with decode)
   std::bitset<_MAX_HARTS_>              HartsClearToExecute;  ///< RevCore: Thread is clear to execute (no register dependencides)
 
-  unsigned   numHarts;  ///< RevCore: Number of Harts for this core
-  RevOpts*   opts;      ///< RevCore: options object
-  RevMem*    mem;       ///< RevCore: memory object
-  RevCoProc* coProc;    ///< RevCore: attached co-processor
-  RevLoader* loader;    ///< RevCore: loader object
+  unsigned const   numHarts;          ///< RevCore: Number of Harts for this core
+  RevOpts* const   opts;              ///< RevCore: options object
+  RevMem* const    mem;               ///< RevCore: memory object
+  RevCoProc*       coProc = nullptr;  ///< RevCore: attached co-processor
+  RevLoader* const loader;            ///< RevCore: loader object
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
-  std::function<uint32_t()> GetNewThreadID;
+  std::function<uint32_t()> const GetNewThreadID;
 
   // If a given assigned thread experiences a change of state, it sets the corresponding bit
   std::vector<std::unique_ptr<RevThread>>
     ThreadsThatChangedState;  ///< RevCore: used to signal to RevCPU that the thread assigned to HART has changed state
 
-  SST::Output*                   output;     ///< RevCore: output handler
+  SST::Output* const             output;     ///< RevCore: output handler
   std::unique_ptr<RevFeature>    featureUP;  ///< RevCore: feature handler
-  RevFeature*                    feature;
+  RevFeature*                    feature = nullptr;
   RevCoreStats                   Stats{};       ///< RevCore: collection of performance stats
   RevCoreStats                   StatsTotal{};  ///< RevCore: collection of total performance stats
   std::unique_ptr<RevPrefetcher> sfetch;        ///< RevCore: stream instruction prefetcher
@@ -314,7 +317,7 @@ private:
 
   RevTracer* Tracer          = nullptr;  ///< RevCore: Tracer object
 
-  uint64_t cycle             = 0;  ///< RevCore: The number of cycles executed
+  uint64_t cycles            = 0;  ///< RevCore: The number of cycles executed
 
   std::bitset<_MAX_HARTS_> CoProcStallReq;
 

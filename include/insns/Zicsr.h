@@ -11,10 +11,6 @@
 #ifndef _SST_REVCPU_ZICSR_H_
 #define _SST_REVCPU_ZICSR_H_
 
-#include <functional>
-#include <type_traits>
-#include <vector>
-
 #include "../RevExt.h"
 #include "../RevInstHelpers.h"
 
@@ -22,16 +18,16 @@ namespace SST::RevCPU {
 
 class ZiCSR : public RevExt {
 
-  enum class CSRKind { Write, Set, Clear };
+  enum CSROper { Write, Set, Clear };
 
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // Because CSR has a 32/64-bit width, this function is templatized
-  template<typename T, CSRKind KIND, OpKind OPKIND>
+  template<typename T, CSROper OPER, OpKind OPKIND>
   static bool ModCSRImpl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     T old = 0;
 
     // CSRRW with rd == zero does not read CSR
-    if( KIND != CSRKind::Write || Inst.rd != 0 ) {
+    if( OPER != Write || Inst.rd != 0 ) {
       old = R->GetCSR<T>( Inst.imm );
     }
 
@@ -43,10 +39,10 @@ class ZiCSR : public RevExt {
       R->SetX( Inst.rd, old );
 
     // Handle CSRRS/CSRRC
-    if( KIND != CSRKind::Write ) {
+    if( OPER != Write ) {
       if( Inst.rs1 == 0 ) {
         return true;  // If CSRRS/CSRRC rs1 == 0, do not modify CSR
-      } else if( KIND == CSRKind::Set ) {
+      } else if( OPER == Set ) {
         val = old | val;
       } else {
         val = old & ~val;
@@ -60,86 +56,69 @@ class ZiCSR : public RevExt {
 
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // This calls the 32/64-bit ModCSR depending on the current XLEN
-  template<CSRKind KIND, OpKind OPKIND>
+  template<OpKind OPKIND, CSROper OPER>
   static bool ModCSR( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     bool ret;
     if( R->IsRV32 ) {
-      ret = ModCSRImpl<uint32_t, KIND, OPKIND>( F, R, M, Inst );
+      ret = ModCSRImpl<uint32_t, OPER, OPKIND>( F, R, M, Inst );
     } else {
-      ret = ModCSRImpl<uint64_t, KIND, OPKIND>( F, R, M, Inst );
+      ret = ModCSRImpl<uint64_t, OPER, OPKIND>( F, R, M, Inst );
     }
     R->AdvancePC( Inst );
     return ret;
   }
 
-  // clang-format off
-  static constexpr auto& csrrw  = ModCSR<CSRKind::Write, OpKind::Reg>;
-  static constexpr auto& csrrs  = ModCSR<CSRKind::Set,   OpKind::Reg>;
-  static constexpr auto& csrrc  = ModCSR<CSRKind::Clear, OpKind::Reg>;
-  static constexpr auto& csrrwi = ModCSR<CSRKind::Write, OpKind::Imm>;
-  static constexpr auto& csrrsi = ModCSR<CSRKind::Set,   OpKind::Imm>;
-  static constexpr auto& csrrci = ModCSR<CSRKind::Clear, OpKind::Imm>;
-
-  // clang-format on
+  static constexpr auto& csrrw  = ModCSR<OpKind::Reg, Write>;
+  static constexpr auto& csrrs  = ModCSR<OpKind::Reg, Set>;
+  static constexpr auto& csrrc  = ModCSR<OpKind::Reg, Clear>;
+  static constexpr auto& csrrwi = ModCSR<OpKind::Imm, Write>;
+  static constexpr auto& csrrsi = ModCSR<OpKind::Imm, Set>;
+  static constexpr auto& csrrci = ModCSR<OpKind::Imm, Clear>;
 
   // Performance counters
-  // template is used to avoid circular dependencies and allow for incomplete types now
+  // template is used to break circular dependencies and allow for an incomplete RevCore type now
   template<typename T, typename = std::enable_if_t<std::is_same_v<T, RevRegFile>>>
   static uint64_t rdcycleImpl( RevFeature* F, T* R, RevMem* M, const RevInst& Inst ) {
-    return R->core->GetCycle();
+    return R->Core->GetCycles();
   }
 
   template<typename T, typename = std::enable_if_t<std::is_same_v<T, RevRegFile>>>
   static uint64_t rdtimeImpl( RevFeature* F, T* R, RevMem* M, const RevInst& Inst ) {
-    return 0;
+    return R->Core->GetCurrentSimCycle();
   }
 
-  template<typename T, typename = std::enable_if_t<std::is_same_v<T, RevRegFile>>>
-  static uint64_t rdinstretImpl( RevFeature* F, T* R, RevMem* M, const RevInst& Inst ) {
-    return 0;
-  }
+  static uint64_t rdinstretImpl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) { return R->GetInstRet(); }
+
+  enum Half { Lo, Hi };
 
   /// Performance Counter template
   // Passed a function which gets the 64-bit value of a performance counter
-  template<uint64_t counter( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )>
+  template<Half half, uint64_t counter( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )>
   static bool perfCounter( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    if( R->IsRV32 ) {
-      R->SetX( Inst.rd, static_cast<uint32_t>( counter( F, R, M, Inst ) & 0xffffffff ) );
-    } else {
+    if( R->IsRV32 )
+      if constexpr( half == Lo )
+        R->SetX( Inst.rd, static_cast<uint32_t>( counter( F, R, M, Inst ) & 0xffffffff ) );
+      else
+        R->SetX( Inst.rd, static_cast<uint32_t>( counter( F, R, M, Inst ) >> 32 ) );
+    else if constexpr( half == Lo )
       R->SetX( Inst.rd, counter( F, R, M, Inst ) );
-    }
+    else
+      return false;  // Hi half is not available on RV64
     R->AdvancePC( Inst );
     return true;
   }
 
-  /// Performance Counter High template
-  // Passed a function which gets the 64-bit value of a performance counter
-  template<uint64_t counter( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )>
-  static bool perfCounterH( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    if( !R->IsRV32 )
-      return false;
-    R->SetX( Inst.rd, static_cast<uint32_t>( counter( F, R, M, Inst ) >> 32 ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  // clang-format off
-  static constexpr auto& rdcycle    = perfCounter <rdcycleImpl>;
-  static constexpr auto& rdcycleh   = perfCounterH<rdcycleImpl>;
-  static constexpr auto& rdtime     = perfCounter <rdtimeImpl>;
-  static constexpr auto& rdtimeh    = perfCounterH<rdtimeImpl>;
-  static constexpr auto& rdinstret  = perfCounter <rdinstretImpl>;
-  static constexpr auto& rdinstreth = perfCounterH<rdinstretImpl>;
-
-  // clang-format on
+  static constexpr auto& rdcycle    = perfCounter<Lo, rdcycleImpl>;
+  static constexpr auto& rdcycleh   = perfCounter<Hi, rdcycleImpl>;
+  static constexpr auto& rdtime     = perfCounter<Lo, rdtimeImpl>;
+  static constexpr auto& rdtimeh    = perfCounter<Hi, rdtimeImpl>;
+  static constexpr auto& rdinstret  = perfCounter<Lo, rdinstretImpl>;
+  static constexpr auto& rdinstreth = perfCounter<Hi, rdinstretImpl>;
 
   // ----------------------------------------------------------------------
   //
   // RISC-V CSR Instructions
   //
-  // Format:
-  // <mnemonic> <cost> <opcode> <funct3> <funct7> <rdClass> <rs1Class>
-  //            <rs2Class> <rs3Class> <format> <func> <nullEntry>
   // ----------------------------------------------------------------------
   struct RevZiCSRInstDefaults : RevInstDefaults {
     RevZiCSRInstDefaults() {
@@ -148,7 +127,6 @@ class ZiCSR : public RevExt {
       SetFunct2or7( 0 );
       SetrdClass( RevRegClass::RegGPR );
       Setrs2Class( RevRegClass::RegUNKNOWN );
-      Setimm12( 0b0 );
       Setimm( FVal );
       SetFormat( RVTypeI );
     }
@@ -156,8 +134,11 @@ class ZiCSR : public RevExt {
 
   // clang-format off
   std::vector<RevInstEntry> ZiCSRTable = {
-    { RevZiCSRInstDefaults().SetMnemonic( "csrrw %csr, %rd, %rs1"  ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
+
+
+    { RevZiCSRInstDefaults().SetMnemonic( "csrrw %csr, %rd, %rs1"  ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) != 0x2; } ) },
     { RevZiCSRInstDefaults().SetMnemonic( "csrw %csr, %rd, %rs1"   ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
+    { RevZiCSRInstDefaults().SetMnemonic( "fsrm %rd, %rs"          ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) == 0x2; } ) },
 
     { RevZiCSRInstDefaults().SetMnemonic( "csrrs %rd, %csr, %rs1"  ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) != 0; } ) },
     { RevZiCSRInstDefaults().SetMnemonic( "csrr %rd, %csr"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && [](auto imm){ return imm < 0xc80 || imm > 0xc82; }(DECODE_IMM12( Inst ) | 0x80); } ) },

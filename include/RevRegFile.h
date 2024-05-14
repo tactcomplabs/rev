@@ -98,11 +98,13 @@ enum class RevExceptionCause : int32_t {
 
 // clang-format on
 
+class RevCore;
+
 class RevRegFile {
 public:
-  class RevCore* const core;    ///< RevRegFile: Owning core of this register file's hart
-  const bool           IsRV32;  ///< RevRegFile: Cached copy of Features->IsRV32()
-  const bool           HasD;    ///< RevRegFile: Cached copy of Features->HasD()
+  RevCore* const Core;    ///< RevRegFile: Owning core of this register file's hart
+  const bool     IsRV32;  ///< RevRegFile: Cached copy of Features->IsRV32()
+  const bool     HasD;    ///< RevRegFile: Cached copy of Features->HasD()
 
 private:
   bool       trigger{};         ///< RevRegFile: Has the instruction been triggered?
@@ -132,13 +134,13 @@ private:
   std::bitset<_REV_NUM_REGS_> FP_Scoreboard{};  ///< RevRegFile: Scoreboard for SPF/DPF RF to manage pipeline hazard
 
   // Supervisor Mode CSRs
-  uint64_t CSR[CSR_LIMIT];
+  uint64_t CSR[CSR_LIMIT]{};
 
   // Floating-point CSR
   FCSR fcsr{};
 
-  // Performance counters
-  uint64_t time{}, instret{};
+  // Number of instructions retired
+  uint64_t InstRet{};
 
   union {                  // Anonymous union. We zero-initialize the largest member
     uint64_t RV64_SEPC{};  // Holds address of instruction that caused the exception (ie. ECALL)
@@ -163,7 +165,7 @@ public:
   // Constructor which takes a RevCore to indicate its hart's parent core
   // Template is to prevent circular dependencies by not requiring RevCore to be a complete type now
   template<typename T, typename = std::enable_if_t<std::is_same_v<T, RevCore>>>
-  explicit RevRegFile( T* core ) : core( core ), IsRV32( core->GetRevFeature()->IsRV32() ), HasD( core->GetRevFeature()->HasD() ) {}
+  explicit RevRegFile( T* core ) : Core( core ), IsRV32( core->GetRevFeature()->IsRV32() ), HasD( core->GetRevFeature()->HasD() ) {}
 
   // Getters/Setters
 
@@ -205,8 +207,8 @@ public:
   /// Invoke the MarkLoadComplete function
   void MarkLoadComplete( const MemReq& req ) const { MarkLoadCompleteFunc( req ); }
 
-  /// Return the Floating-Point Rounding Mode
-  FRMode GetFPRound() const { return static_cast<FRMode>( fcsr.frm ); }
+  /// Get the number of instructions retired
+  uint64_t GetInstRet() const { return InstRet; }
 
   /// Capture the PC of current instruction which raised exception
   void SetSEPC() {

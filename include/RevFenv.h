@@ -38,8 +38,7 @@ public:
 
     // Save host's FP environment and set flags to default, non-trapping
     if( std::feholdexcept( &saved_env ) ) {
-      throw std::runtime_error( "Getting floating-point environment "
-                                "with feholdexcept() is not working." );
+      throw std::runtime_error( "Getting floating-point environment with feholdexcept() is not working." );
     }
 
     // If the encoded rounding mode is dynamic, load the frm register
@@ -63,22 +62,10 @@ public:
       ret = std::fesetround( FE_UPWARD );
       break;
     case FRMode::RMM:  // Round to Nearest, ties to Max Magnitude
-      output->fatal(
-        CALL_INFO,
-        -1,
-        "Error: Round to nearest Max Magnitude not implemented"
-        " at PC = 0x%" PRIx64 "\n",
-        R->GetPC()
-      );
+      output->fatal( CALL_INFO, -1, "Error: Round to nearest Max Magnitude not implemented at PC = 0x%" PRIx64 "\n", R->GetPC() );
       break;
     case FRMode::DYN:
-      output->fatal(
-        CALL_INFO,
-        -1,
-        "Illegal FCSR Rounding Mode of"
-        " DYN at PC = 0x%" PRIx64 "\n",
-        R->GetPC()
-      );
+      output->fatal( CALL_INFO, -1, "Illegal FCSR Rounding Mode of DYN at PC = 0x%" PRIx64 "\n", R->GetPC() );
       break;
     default: output->fatal( CALL_INFO, -1, "Unknown Rounding Mode at PC = 0x%" PRIx64 "\n", R->GetPC() ); break;
     }
