@@ -1,5 +1,5 @@
 //
-// _ZiCSR_h_
+// _Zicsr_h_
 //
 // Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -16,7 +16,7 @@
 
 namespace SST::RevCPU {
 
-class ZiCSR : public RevExt {
+class Zicsr : public RevExt {
 
   enum CSROper { Write, Set, Clear };
 
@@ -120,56 +120,54 @@ class ZiCSR : public RevExt {
   // RISC-V CSR Instructions
   //
   // ----------------------------------------------------------------------
-  struct RevZiCSRInstDefaults : RevInstDefaults {
-    RevZiCSRInstDefaults() {
+  struct RevZicsrInstDefaults : RevInstDefaults {
+    RevZicsrInstDefaults() {
       SetOpcode( 0b1110011 );
       SetRaiseFPE( true );
-      SetFunct2or7( 0 );
       SetrdClass( RevRegClass::RegGPR );
       Setrs2Class( RevRegClass::RegUNKNOWN );
-      Setimm( FVal );
+      Setimm( FImm );
       SetFormat( RVTypeI );
     }
   };
 
   // clang-format off
-  std::vector<RevInstEntry> ZiCSRTable = {
+  std::vector<RevInstEntry> ZicsrTable = {
 
+    { RevZicsrInstDefaults().SetMnemonic( "csrrw %csr, %rd, %rs1"  ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) != 0x2; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrw %csr, %rd, %rs1"   ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "fsrm %rd, %rs"          ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) == 0x2; } ) },
 
-    { RevZiCSRInstDefaults().SetMnemonic( "csrrw %csr, %rd, %rs1"  ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) != 0x2; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "csrw %csr, %rd, %rs1"   ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "fsrm %rd, %rs"          ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) == 0x2; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrrs %rd, %csr, %rs1"  ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) != 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrr %rd, %csr"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && [](auto imm){ return imm < 0xc80 || imm > 0xc82; }( DECODE_IMM12( Inst ) | 0x80 ); } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "rdcycle %rd, %csr"      ).SetFunct3( 0b010 ).SetImplFunc( rdcycle    ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc00; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "rdcycleh %rd, %csr"     ).SetFunct3( 0b010 ).SetImplFunc( rdcycleh   ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc80; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "rdtime %rd, %csr"       ).SetFunct3( 0b010 ).SetImplFunc( rdtime     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc01; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "rdtimeh %rd, %csr"      ).SetFunct3( 0b010 ).SetImplFunc( rdtimeh    ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc81; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "rdinstret %rd, %csr"    ).SetFunct3( 0b010 ).SetImplFunc( rdinstret  ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc02; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "rdinstreth %rd, %csr"   ).SetFunct3( 0b010 ).SetImplFunc( rdinstreth ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc82; } ) },
 
-    { RevZiCSRInstDefaults().SetMnemonic( "csrrs %rd, %csr, %rs1"  ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) != 0; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "csrr %rd, %csr"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && [](auto imm){ return imm < 0xc80 || imm > 0xc82; }(DECODE_IMM12( Inst ) | 0x80); } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "rdcycle %rd, %csr"      ).SetFunct3( 0b010 ).SetImplFunc( rdcycle    ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc00; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "rdcycleh %rd, %csr"     ).SetFunct3( 0b010 ).SetImplFunc( rdcycleh   ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc80; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "rdtime %rd, %csr"       ).SetFunct3( 0b010 ).SetImplFunc( rdtime     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc01; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "rdtimeh %rd, %csr"      ).SetFunct3( 0b010 ).SetImplFunc( rdtimeh    ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc81; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "rdinstret %rd, %csr"    ).SetFunct3( 0b010 ).SetImplFunc( rdinstret  ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc02; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "rdinstreth %rd, %csr"   ).SetFunct3( 0b010 ).SetImplFunc( rdinstreth ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc82; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrrc %rd, %csr, %rs1"  ).SetFunct3( 0b011 ).SetImplFunc( csrrc      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrc %csr,%rs1"         ).SetFunct3( 0b011 ).SetImplFunc( csrrc      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
 
-    { RevZiCSRInstDefaults().SetMnemonic( "csrrc %rd, %csr, %rs1"  ).SetFunct3( 0b011 ).SetImplFunc( csrrc      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "csrc %csr,%rs1"         ).SetFunct3( 0b011 ).SetImplFunc( csrrc      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrrwi %rd, %csr, $imm" ).SetFunct3( 0b101 ).SetImplFunc( csrrwi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrwi %csr, $imm"       ).SetFunct3( 0b101 ).SetImplFunc( csrrwi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
 
-    { RevZiCSRInstDefaults().SetMnemonic( "csrrwi %rd, %csr, $imm" ).SetFunct3( 0b101 ).SetImplFunc( csrrwi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "csrwi %csr, $imm"       ).SetFunct3( 0b101 ).SetImplFunc( csrrwi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrrsi %rd, %csr, $imm" ).SetFunct3( 0b110 ).SetImplFunc( csrrsi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrsi %csr, $imm"       ).SetFunct3( 0b110 ).SetImplFunc( csrrsi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
 
-    { RevZiCSRInstDefaults().SetMnemonic( "csrrsi %rd, %csr, $imm" ).SetFunct3( 0b110 ).SetImplFunc( csrrsi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "csrsi %csr, $imm"       ).SetFunct3( 0b110 ).SetImplFunc( csrrsi     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
-
-    { RevZiCSRInstDefaults().SetMnemonic( "csrrci %rd, %csr, $imm" ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
-    { RevZiCSRInstDefaults().SetMnemonic( "csrci %csr, $imm"       ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrrci %rd, %csr, $imm" ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
+    { RevZicsrInstDefaults().SetMnemonic( "csrci %csr, $imm"       ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
   };
   // clang-format on
 
 public:
-  /// ZiCSR: standard constructor
-  ZiCSR( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "ZiCSR", Feature, RevMem, Output ) {
-    SetTable( std::move( ZiCSRTable ) );
+  /// Zicsr: standard constructor
+  Zicsr( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zicsr", Feature, RevMem, Output ) {
+    SetTable( std::move( ZicsrTable ) );
   }
 
-};  // end class ZiCSR
+};  // end class Zicsr
 
 }  // namespace SST::RevCPU
 

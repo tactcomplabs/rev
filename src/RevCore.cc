@@ -174,7 +174,7 @@ bool RevCore::SeedInstTable() {
     CALL_INFO, 6, 0, "Core %" PRIu32 " ; Seeding instruction table for machine model=%s\n", id, feature->GetMachineModel().data()
   );
 
-  // I-Extension
+  // I Extension
   if( feature->IsModeEnabled( RV_I ) ) {
     if( feature->IsRV64() ) {
       // load RV32I & RV64; no optional compressed
@@ -186,7 +186,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // M-Extension
+  // M Extension
   if( feature->IsModeEnabled( RV_M ) ) {
     EnableExt( new RV32M( feature, mem, output ), false );
     if( feature->IsRV64() ) {
@@ -194,7 +194,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // A-Extension
+  // A Extension
   if( feature->IsModeEnabled( RV_A ) ) {
     EnableExt( new RV32A( feature, mem, output ), false );
     if( feature->IsRV64() ) {
@@ -202,7 +202,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // F-Extension
+  // F Extension
   if( feature->IsModeEnabled( RV_F ) ) {
     if( !feature->IsModeEnabled( RV_D ) && feature->IsRV32() ) {
       EnableExt( new RV32F( feature, mem, output ), true );
@@ -212,7 +212,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // D-Extension
+  // D Extension
   if( feature->IsModeEnabled( RV_D ) ) {
     EnableExt( new RV32D( feature, mem, output ), false );
     if( feature->IsRV64() ) {
@@ -220,14 +220,19 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // Zicbom-Extension
-  if( feature->IsModeEnabled( RV_ZICBOM ) ) {
-    EnableExt( new Zicbom( feature, mem, output ), false );
+  // Zicsr Extension
+  if( feature->IsModeEnabled( RV_ZICSR ) ) {
+    EnableExt( new Zicsr( feature, mem, output ), false );
   }
 
-  // Zifencei-Extension
+  // Zifencei Extension
   if( feature->IsModeEnabled( RV_ZIFENCEI ) ) {
     EnableExt( new Zifencei( feature, mem, output ), false );
+  }
+
+  // Zicbom Extension
+  if( feature->IsModeEnabled( RV_ZICBOM ) ) {
+    EnableExt( new Zicbom( feature, mem, output ), false );
   }
 
   return true;
