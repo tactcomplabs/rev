@@ -1412,10 +1412,10 @@ RevInst RevCore::DecodeInst( uint32_t Inst ) const {
     }
   }
 
-  // Stage 5: Determine if we have an imm12 field
+  // Stage 5: Determine if we have an imm12 field (ECALL and EBREAK)
   uint32_t Imm12 = 0x00ul;
   if( ( inst42 == 0b100 ) && ( inst65 == 0b11 ) && ( Funct3 == 0 ) ) {
-    Imm12 = ( ( Inst >> 19 ) & 0b111111111111 );
+    Imm12 = DECODE_IMM12( Inst );
   }
 
   // Stage 6: Compress the encoding
