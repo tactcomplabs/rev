@@ -1303,12 +1303,13 @@ RevInst RevCore::FetchAndDecodeInst() {
       CALL_INFO,
       6,
       0,
-      "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%" PRIx32 "\n",
+      ~Inst & 3 ? "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%04" PRIx32 "\n" :
+                  "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 "; PC:InstPayload = 0x%" PRIx64 ":0x%08" PRIx32 "\n",
       id,
       HartToDecodeID,
       ActiveThreadID,
       PC,
-      Inst
+      ~Inst & 3 ? Inst & 0xffff : Inst
     );
   } else {
     output->fatal(
