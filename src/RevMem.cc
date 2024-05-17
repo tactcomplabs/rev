@@ -1055,8 +1055,11 @@ void RevMem::InitHeap( const uint64_t EndOfStaticData ) {
 
     // Every Rev will write the BRK value to the same address in the physical memory space
     // This *shouldnt* be a problem but it's also not ideal
-    std::cout << "Writing BRK value to physical address 0x" << std::hex
-              << BRKValueAddr << std::dec << std::endl;
+    output->verbose( CALL_INFO,
+                     2,
+                     99,
+                     "Writing BRK value to physical address 0x%" PRIx64 "\n",
+                     BRKValueAddr );
     WriteMem( 0, AlignedEndOfStaticData, sizeof( uint64_t ), &BRK );
 
     Heap = std::make_shared< RevHeap >(
@@ -1065,7 +1068,7 @@ void RevMem::InitHeap( const uint64_t EndOfStaticData ) {
   return;
 }
 
-uint64_t RevMem::AlignUp( const uint64_t Addr, const uint64_t Align ) {
+uint64_t RevMem::AlignUp( const uint64_t Addr, const uint64_t Align ) const {
   uint64_t Remainder = Addr % Align;
   if( Remainder == 0 ) {
     return Addr;
@@ -1074,7 +1077,7 @@ uint64_t RevMem::AlignUp( const uint64_t Addr, const uint64_t Align ) {
   }
 }
 
-uint64_t RevMem::AlignDown( const uint64_t Addr, const uint64_t Align ) {
+uint64_t RevMem::AlignDown( const uint64_t Addr, const uint64_t Align ) const {
   uint64_t Remainder = Addr % Align;
   if( Remainder == 0 ) {
     return Addr;
