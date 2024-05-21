@@ -29,8 +29,8 @@
 namespace SST::RevCPU {
 
 class RevFenv {
-  FCSR&       fcsr;       // Reference to this register file's FCSR
-  std::fenv_t saved_env;  // The saved FP environment which is restored
+  FCSR&       fcsr;         // Reference to this register file's FCSR
+  std::fenv_t saved_env{};  // The saved FP environment which is restored
 
 public:
   /// Constructor saves Fenv state to be restored at destruction
