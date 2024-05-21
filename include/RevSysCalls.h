@@ -32,10 +32,10 @@ enum class EcallStatus {
 
 // State information for ECALLs
 struct EcallState {
-  std::array<char, 64> buf;
-  std::string          string;
-  std::string          path_string;
-  size_t               bytesRead = 0;
+  std::array<char, 64> buf{};
+  std::string          string{};
+  std::string          path_string{};
+  size_t               bytesRead{};
 
   void clear() {
     string.clear();

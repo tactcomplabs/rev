@@ -146,10 +146,10 @@ struct TraceRec_t {
 };
 
 struct InstHeader_t {
-  size_t       cycle;
-  unsigned     id;
-  unsigned     hart;
-  unsigned     tid;
+  size_t       cycle{};
+  unsigned     id{};
+  unsigned     hart{};
+  unsigned     tid{};
   std::string  defaultMnem      = "?";
   std::string& fallbackMnemonic = defaultMnem;
   bool         valid            = false;
@@ -172,7 +172,7 @@ struct CompletionRec_t {
   uint16_t     destReg;
   size_t       len;
   uint64_t     addr;
-  uint64_t     data;  // first 8 bytes max
+  uint64_t     data{};  // first 8 bytes max
   bool         isFloat         = false;
   bool         wait4Completion = false;
 
@@ -246,21 +246,21 @@ private:
   /// RevTracer: control whether output is printed or not ( sampling continues )
   bool outputEnabled = false;
   /// RevTracer: Instruction header captured at execution phase.
-  InstHeader_t instHeader;
+  InstHeader_t instHeader{};
   /// RevTracer: Special affecting trace output
-  TraceEvents_t events;
+  TraceEvents_t events{};
   /// RevTracer: buffer for captured states
-  std::vector<TraceRec_t> traceRecs;
+  std::vector<TraceRec_t> traceRecs{};
   /// RevTracer: Completion records
-  std::vector<CompletionRec_t> completionRecs;
+  std::vector<CompletionRec_t> completionRecs{};
   /// RevTracer: saved program counter
-  uint64_t pc                                   = 0;
+  uint64_t pc{};
   /// RevTracer: previous program counter for branch determination
-  uint64_t lastPC                               = 0;
+  uint64_t lastPC{};
   /// RevTracer: saved instruction
-  uint32_t insn                                 = 0;
+  uint32_t insn{};
   /// RevTracer: map of instruction addresses to symbols
-  std::map<uint64_t, std::string>* traceSymbols = nullptr;
+  std::map<uint64_t, std::string>* traceSymbols{};
   /// RevTracer: Array of supported "NOP" instructions avaible for trace controls
   uint32_t nops[NOP_COUNT];
   /// RevTracer: Check current state against user settings and update state
@@ -278,16 +278,18 @@ private:
   /// RevTracer: User setting: maximum number of lines to print
   uint64_t cycleLimit = 0;
   /// RevTracer: support for trace control push/pop
-  std::vector<bool> enableQ;
+  std::vector<bool> enableQ{};
   /// RevTracer: current pointer into trace controls queue
-  unsigned enableQindex;
+  unsigned enableQindex{};
   /// RevTracer: wraparound limit for trace controls queue
   const unsigned MAX_ENABLE_Q = 100;
   /// RevTracer: count of lines rendered
-  uint64_t traceCycles        = 0;
+  uint64_t traceCycles{};
   /// RevTracer: Hard disable for output
-  bool disabled               = 0;
-
+  bool disabled{};
+  /// RevTracer: Disasllow copying and assignment
+  RevTracer( const RevTracer& )            = delete;
+  RevTracer& operator=( const RevTracer& ) = delete;
 };  // class RevTracer
 
 }  //namespace SST::RevCPU

@@ -50,6 +50,10 @@ public:
   /// RevCPU: top-level SST component destructor
   ~RevCPU();
 
+  /// RevCPU: disallow copying and assignment
+  RevCPU( const RevCPU& )            = delete;
+  RevCPU& operator=( const RevCPU& ) = delete;
+
   /// RevCPU: standard SST component 'setup' function
   void setup();
 
@@ -206,19 +210,19 @@ public:
   }
 
 private:
-  unsigned numCores;                  ///< RevCPU: number of RISC-V cores
-  unsigned numHarts;                  ///< RevCPU: number of RISC-V cores
-  unsigned msgPerCycle;               ///< RevCPU: number of messages to send per cycle
-  unsigned RDMAPerCycle;              ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
-  unsigned testStage;                 ///< RevCPU: controls the PAN Test harness staging
-  unsigned testIters;                 ///< RevCPU: the number of message iters for each PAN Test
-  std::string Exe;                    ///< RevCPU: binary executable
-  std::string Args;                   ///< RevCPU: argument list
-  RevOpts *Opts;                      ///< RevCPU: Simulation options object
-  RevMem *Mem;                        ///< RevCPU: RISC-V main memory object
-  RevLoader *Loader;                  ///< RevCPU: RISC-V loader
-  std::vector<RevCore *> Procs;       ///< RevCPU: RISC-V processor objects
-  bool *Enabled;                      ///< RevCPU: Completion structure
+  unsigned numCores{};                ///< RevCPU: number of RISC-V cores
+  unsigned numHarts{};                ///< RevCPU: number of RISC-V cores
+  unsigned msgPerCycle{};             ///< RevCPU: number of messages to send per cycle
+  unsigned RDMAPerCycle{};            ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
+  unsigned testStage{};               ///< RevCPU: controls the PAN Test harness staging
+  unsigned testIters{};               ///< RevCPU: the number of message iters for each PAN Test
+  std::string Exe{};                  ///< RevCPU: binary executable
+  std::string Args{};                 ///< RevCPU: argument list
+  RevOpts *Opts{};                    ///< RevCPU: Simulation options object
+  RevMem *Mem{};                      ///< RevCPU: RISC-V main memory object
+  RevLoader *Loader{};                ///< RevCPU: RISC-V loader
+  std::vector<RevCore *> Procs{};     ///< RevCPU: RISC-V processor objects
+  bool *Enabled{};                    ///< RevCPU: Completion structure
 
   // clang-format on
   // Initializes a RevThread object.
@@ -263,48 +267,44 @@ private:
   // Generates a new Thread ID using the RNG.
   uint32_t GetNewThreadID() { return RevRand( 0, UINT32_MAX ); }
 
-  uint8_t  PrivTag;  ///< RevCPU: private tag locator
-  uint32_t LToken;   ///< RevCPU: token identifier for PAN Test
+  uint8_t  PrivTag{};  ///< RevCPU: private tag locator
+  uint32_t LToken{};   ///< RevCPU: token identifier for PAN Test
 
-  int address;  ///< RevCPU: local network address
+  int address{};  ///< RevCPU: local network address
 
-  unsigned fault_width;  ///< RevCPU: the width (in bits) for target faults
-  int64_t  fault_range;  ///< RevCPU: the range of cycles to inject the fault
-  int64_t  FaultCntr;    ///< RevCPU: the fault counter
+  unsigned fault_width{};  ///< RevCPU: the width (in bits) for target faults
+  int64_t  fault_range{};  ///< RevCPU: the range of cycles to inject the fault
+  int64_t  FaultCntr{};    ///< RevCPU: the fault counter
 
-  uint64_t PrevAddr;  ///< RevCPU: previous address for handling PAN messages
+  uint64_t PrevAddr{};  ///< RevCPU: previous address for handling PAN messages
 
-  bool EnableNIC;     ///< RevCPU: Flag for enabling the NIC
-  bool EnableMemH;    ///< RevCPU: Enable memHierarchy
-  bool EnableCoProc;  ///< RevCPU: Enable a co-processor attached to all cores
+  bool EnableNIC{};     ///< RevCPU: Flag for enabling the NIC
+  bool EnableMemH{};    ///< RevCPU: Enable memHierarchy
+  bool EnableCoProc{};  ///< RevCPU: Enable a co-processor attached to all cores
 
-  bool EnableFaults;       ///< RevCPU: Enable fault injection logic
-  bool EnableCrackFaults;  ///< RevCPU: Enable Crack+Decode Faults
-  bool EnableMemFaults;    ///< RevCPU: Enable memory faults (bit flips)
-  bool EnableRegFaults;    ///< RevCPU: Enable register faults
-  bool EnableALUFaults;    ///< RevCPU: Enable ALU faults
+  bool EnableFaults{};       ///< RevCPU: Enable fault injection logic
+  bool EnableCrackFaults{};  ///< RevCPU: Enable Crack+Decode Faults
+  bool EnableMemFaults{};    ///< RevCPU: Enable memory faults (bit flips)
+  bool EnableRegFaults{};    ///< RevCPU: Enable register faults
+  bool EnableALUFaults{};    ///< RevCPU: Enable ALU faults
 
-  bool DisableCoprocClock;  ///< RevCPU: Disables manual coproc clocking
+  bool DisableCoprocClock{};  ///< RevCPU: Disables manual coproc clocking
 
-  TimeConverter* timeConverter;  ///< RevCPU: SST time conversion handler
-  SST::Output    output;         ///< RevCPU: SST output handler
+  TimeConverter* timeConverter{};  ///< RevCPU: SST time conversion handler
+  SST::Output    output{};         ///< RevCPU: SST output handler
 
-  nicAPI*     Nic;   ///< RevCPU: Network interface controller
-  RevMemCtrl* Ctrl;  ///< RevCPU: Rev memory controller
+  nicAPI*     Nic{};   ///< RevCPU: Network interface controller
+  RevMemCtrl* Ctrl{};  ///< RevCPU: Rev memory controller
 
-  std::vector<RevCoProc*> CoProcs;  ///< RevCPU: CoProcessor attached to Rev
+  std::vector<RevCoProc*> CoProcs{};  ///< RevCPU: CoProcessor attached to Rev
 
-  SST::Clock::Handler<RevCPU>* ClockHandler;  ///< RevCPU: Clock Handler
+  SST::Clock::Handler<RevCPU>* ClockHandler{};  ///< RevCPU: Clock Handler
 
-  std::queue<std::pair<uint32_t, char*>> ZeroRqst;   ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
-  std::list<std::pair<uint8_t, int>>     TrackTags;  ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>
-  std::vector<std::tuple<
-    uint8_t,
-    uint64_t,
-    uint32_t>>
-                                    TrackGets;  ///< RevCPU: tracks the outstanding get messages; tuple<Tag, Addr, Sz>
-  std::vector<std::tuple<uint8_t, uint32_t, unsigned, int,
-                         uint64_t>> ReadQueue;  ///< RevCPU: outgoing memory read queue
+  std::queue<std::pair<uint32_t, char*>> ZeroRqst{};   ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
+  std::list<std::pair<uint8_t, int>>     TrackTags{};  ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>
+  std::vector<std::tuple<uint8_t, uint64_t, uint32_t>>
+    TrackGets{};  ///< RevCPU: tracks the outstanding get messages; tuple<Tag, Addr, Sz>
+  std::vector<std::tuple<uint8_t, uint32_t, unsigned, int, uint64_t>> ReadQueue{};  ///< RevCPU: outgoing memory read queue
   ///<         - Tag
   ///<         - Size
   ///<         - Cost
@@ -314,66 +314,66 @@ private:
   //-------------------------------------------------------
   // -- STATISTICS
   //-------------------------------------------------------
-  Statistic<uint64_t>* SyncGetSend;
-  Statistic<uint64_t>* SyncPutSend;
-  Statistic<uint64_t>* AsyncGetSend;
-  Statistic<uint64_t>* AsyncPutSend;
-  Statistic<uint64_t>* SyncStreamGetSend;
-  Statistic<uint64_t>* SyncStreamPutSend;
-  Statistic<uint64_t>* AsyncStreamGetSend;
-  Statistic<uint64_t>* AsyncStreamPutSend;
-  Statistic<uint64_t>* ExecSend;
-  Statistic<uint64_t>* StatusSend;
-  Statistic<uint64_t>* CancelSend;
-  Statistic<uint64_t>* ReserveSend;
-  Statistic<uint64_t>* RevokeSend;
-  Statistic<uint64_t>* HaltSend;
-  Statistic<uint64_t>* ResumeSend;
-  Statistic<uint64_t>* ReadRegSend;
-  Statistic<uint64_t>* WriteRegSend;
-  Statistic<uint64_t>* SingleStepSend;
-  Statistic<uint64_t>* SetFutureSend;
-  Statistic<uint64_t>* RevokeFutureSend;
-  Statistic<uint64_t>* StatusFutureSend;
-  Statistic<uint64_t>* SuccessSend;
-  Statistic<uint64_t>* FailedSend;
-  Statistic<uint64_t>* BOTWSend;
-  Statistic<uint64_t>* SyncGetRecv;
-  Statistic<uint64_t>* SyncPutRecv;
-  Statistic<uint64_t>* AsyncGetRecv;
-  Statistic<uint64_t>* AsyncPutRecv;
-  Statistic<uint64_t>* SyncStreamGetRecv;
-  Statistic<uint64_t>* SyncStreamPutRecv;
-  Statistic<uint64_t>* AsyncStreamGetRecv;
-  Statistic<uint64_t>* AsyncStreamPutRecv;
-  Statistic<uint64_t>* ExecRecv;
-  Statistic<uint64_t>* StatusRecv;
-  Statistic<uint64_t>* CancelRecv;
-  Statistic<uint64_t>* ReserveRecv;
-  Statistic<uint64_t>* RevokeRecv;
-  Statistic<uint64_t>* HaltRecv;
-  Statistic<uint64_t>* ResumeRecv;
-  Statistic<uint64_t>* ReadRegRecv;
-  Statistic<uint64_t>* WriteRegRecv;
-  Statistic<uint64_t>* SingleStepRecv;
-  Statistic<uint64_t>* SetFutureRecv;
-  Statistic<uint64_t>* RevokeFutureRecv;
-  Statistic<uint64_t>* StatusFutureRecv;
-  Statistic<uint64_t>* SuccessRecv;
-  Statistic<uint64_t>* FailedRecv;
-  Statistic<uint64_t>* BOTWRecv;
+  Statistic<uint64_t>* SyncGetSend{};
+  Statistic<uint64_t>* SyncPutSend{};
+  Statistic<uint64_t>* AsyncGetSend{};
+  Statistic<uint64_t>* AsyncPutSend{};
+  Statistic<uint64_t>* SyncStreamGetSend{};
+  Statistic<uint64_t>* SyncStreamPutSend{};
+  Statistic<uint64_t>* AsyncStreamGetSend{};
+  Statistic<uint64_t>* AsyncStreamPutSend{};
+  Statistic<uint64_t>* ExecSend{};
+  Statistic<uint64_t>* StatusSend{};
+  Statistic<uint64_t>* CancelSend{};
+  Statistic<uint64_t>* ReserveSend{};
+  Statistic<uint64_t>* RevokeSend{};
+  Statistic<uint64_t>* HaltSend{};
+  Statistic<uint64_t>* ResumeSend{};
+  Statistic<uint64_t>* ReadRegSend{};
+  Statistic<uint64_t>* WriteRegSend{};
+  Statistic<uint64_t>* SingleStepSend{};
+  Statistic<uint64_t>* SetFutureSend{};
+  Statistic<uint64_t>* RevokeFutureSend{};
+  Statistic<uint64_t>* StatusFutureSend{};
+  Statistic<uint64_t>* SuccessSend{};
+  Statistic<uint64_t>* FailedSend{};
+  Statistic<uint64_t>* BOTWSend{};
+  Statistic<uint64_t>* SyncGetRecv{};
+  Statistic<uint64_t>* SyncPutRecv{};
+  Statistic<uint64_t>* AsyncGetRecv{};
+  Statistic<uint64_t>* AsyncPutRecv{};
+  Statistic<uint64_t>* SyncStreamGetRecv{};
+  Statistic<uint64_t>* SyncStreamPutRecv{};
+  Statistic<uint64_t>* AsyncStreamGetRecv{};
+  Statistic<uint64_t>* AsyncStreamPutRecv{};
+  Statistic<uint64_t>* ExecRecv{};
+  Statistic<uint64_t>* StatusRecv{};
+  Statistic<uint64_t>* CancelRecv{};
+  Statistic<uint64_t>* ReserveRecv{};
+  Statistic<uint64_t>* RevokeRecv{};
+  Statistic<uint64_t>* HaltRecv{};
+  Statistic<uint64_t>* ResumeRecv{};
+  Statistic<uint64_t>* ReadRegRecv{};
+  Statistic<uint64_t>* WriteRegRecv{};
+  Statistic<uint64_t>* SingleStepRecv{};
+  Statistic<uint64_t>* SetFutureRecv{};
+  Statistic<uint64_t>* RevokeFutureRecv{};
+  Statistic<uint64_t>* StatusFutureRecv{};
+  Statistic<uint64_t>* SuccessRecv{};
+  Statistic<uint64_t>* FailedRecv{};
+  Statistic<uint64_t>* BOTWRecv{};
   // ----- Per Core Statistics
-  std::vector<Statistic<uint64_t>*> TotalCycles;
-  std::vector<Statistic<uint64_t>*> CyclesWithIssue;
-  std::vector<Statistic<uint64_t>*> FloatsRead;
-  std::vector<Statistic<uint64_t>*> FloatsWritten;
-  std::vector<Statistic<uint64_t>*> DoublesRead;
-  std::vector<Statistic<uint64_t>*> DoublesWritten;
-  std::vector<Statistic<uint64_t>*> BytesRead;
-  std::vector<Statistic<uint64_t>*> BytesWritten;
-  std::vector<Statistic<uint64_t>*> FloatsExec;
-  std::vector<Statistic<uint64_t>*> TLBMissesPerCore;
-  std::vector<Statistic<uint64_t>*> TLBHitsPerCore;
+  std::vector<Statistic<uint64_t>*> TotalCycles{};
+  std::vector<Statistic<uint64_t>*> CyclesWithIssue{};
+  std::vector<Statistic<uint64_t>*> FloatsRead{};
+  std::vector<Statistic<uint64_t>*> FloatsWritten{};
+  std::vector<Statistic<uint64_t>*> DoublesRead{};
+  std::vector<Statistic<uint64_t>*> DoublesWritten{};
+  std::vector<Statistic<uint64_t>*> BytesRead{};
+  std::vector<Statistic<uint64_t>*> BytesWritten{};
+  std::vector<Statistic<uint64_t>*> FloatsExec{};
+  std::vector<Statistic<uint64_t>*> TLBMissesPerCore{};
+  std::vector<Statistic<uint64_t>*> TLBHitsPerCore{};
 
   //-------------------------------------------------------
   // -- FUNCTIONS

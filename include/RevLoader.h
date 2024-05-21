@@ -281,6 +281,10 @@ public:
   /// RevLoader: standard destructor
   ~RevLoader();
 
+  /// RevLoader: disallow copying and assignment
+  RevLoader( const RevLoader& )            = delete;
+  RevLoader& operator=( const RevLoader& ) = delete;
+
   /// RevLoader: retrieves the address for the target symbol; 0x00ull if the symbol doesn't exist
   uint64_t GetSymbolAddr( std::string Symbol );
 
@@ -319,12 +323,10 @@ private:
   uint64_t TLSBaseAddr = 0;
   uint64_t TLSSize     = 0;
 
-  ElfInfo elfinfo;  ///< RevLoader: elf info from the loaded program
-
-  std::map<std::string, uint64_t> symtable;        ///< RevLoader: loaded symbol table
-  std::map<uint64_t, std::string> tracer_symbols;  ///< RevLoader: address to symbol for tracer
-
-  std::vector<std::string> argv;  ///< RevLoader: The actual argv table
+  ElfInfo                         elfinfo{};         ///< RevLoader: elf info from the loaded program
+  std::map<std::string, uint64_t> symtable{};        ///< RevLoader: loaded symbol table
+  std::map<uint64_t, std::string> tracer_symbols{};  ///< RevLoader: address to symbol for tracer
+  std::vector<std::string>        argv{};            ///< RevLoader: The actual argv table
 
   /// Loads the target executable into memory
   bool LoadElf();
