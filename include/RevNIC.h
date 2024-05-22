@@ -48,8 +48,8 @@ public:
   }
 
 private:
-  std::string          SrcName;  ///< nicEvent: Name of the sending device
-  std::vector<uint8_t> Data;     ///< nicEvent: Data payload
+  std::string          SrcName{};  ///< nicEvent: Name of the sending device
+  std::vector<uint8_t> Data{};     ///< nicEvent: Data payload
 
 public:
   /// nicEvent: secondary constructor
@@ -152,18 +152,17 @@ public:
   virtual bool clockTick( Cycle_t cycle );
 
 protected:
-  SST::Output* output;  ///< RevNIC: SST output object
+  SST::Output*                    output{};             ///< RevNIC: SST output object
+  SST::Interfaces::SimpleNetwork* iFace{};              ///< RevNIC: SST network interface
+  SST::Event::HandlerBase*        msgHandler{};         ///< RevNIC: SST message handler
+  bool                            initBroadcastSent{};  ///< RevNIC: has the init bcast been sent?
+  int                             numDest{};            ///< RevNIC: number of SST destinations
 
-  SST::Interfaces::SimpleNetwork* iFace;  ///< RevNIC: SST network interface
+  std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ{};  ///< RevNIC: buffered send queue
 
-  SST::Event::HandlerBase* msgHandler;  ///< RevNIC: SST message handler
-
-  bool initBroadcastSent;  ///< RevNIC: has the init bcast been sent?
-
-  int numDest;  ///< RevNIC: number of SST destinations
-
-  std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ;  ///< RevNIC: buffered send queue
-
+  /// RevNIC: disallow copying and assignment
+  RevNIC( const RevNIC& )            = delete;
+  RevNIC& operator=( const RevNIC& ) = delete;
 };  // end RevNIC
 
 }  // namespace SST::RevCPU

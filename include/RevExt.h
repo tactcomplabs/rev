@@ -75,9 +75,9 @@ private:
   RevMem* const          mem;      ///< RevExt: memory object
   SST::Output* const     output;   ///< RevExt: output handler
 
-  std::vector<RevInstEntry> table;   ///< RevExt: instruction table
-  std::vector<RevInstEntry> ctable;  ///< RevExt: compressed instruction table
-  std::vector<RevInstEntry> otable;  ///< RevExt: optional compressed instruction table
+  std::vector<RevInstEntry> table{};   ///< RevExt: instruction table
+  std::vector<RevInstEntry> ctable{};  ///< RevExt: compressed instruction table
+  std::vector<RevInstEntry> otable{};  ///< RevExt: optional compressed instruction table
 
   /// Set the FP rounding mode
   void SetFPRoundingMode( const RevRegFile*, FRMode );

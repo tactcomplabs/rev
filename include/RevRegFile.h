@@ -167,6 +167,10 @@ public:
   template<typename T, typename = std::enable_if_t<std::is_same_v<T, RevCore>>>
   explicit RevRegFile( T* core ) : Core( core ), IsRV32( core->GetRevFeature()->IsRV32() ), HasD( core->GetRevFeature()->HasD() ) {}
 
+  /// RevRegFile: disallow copying and assignment
+  RevRegFile( const RevRegFile& )            = delete;
+  RevRegFile& operator=( const RevRegFile& ) = delete;
+
   // Getters/Setters
 
   /// Get cost of the instruction
