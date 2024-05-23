@@ -135,8 +135,9 @@ class Zicsr : public RevExt {
   std::vector<RevInstEntry> ZicsrTable = {
 
     { RevZicsrInstDefaults().SetMnemonic( "csrrw %csr, %rd, %rs1"  ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) != 0x2; } ) },
-    { RevZicsrInstDefaults().SetMnemonic( "csrw %csr, %rd, %rs1"   ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
     { RevZicsrInstDefaults().SetMnemonic( "fsrm %rd, %rs"          ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0 && DECODE_IMM12( Inst ) == 0x2; } ) },
+
+    { RevZicsrInstDefaults().SetMnemonic( "csrw %csr, %rd, %rs1"   ).SetFunct3( 0b001 ).SetImplFunc( csrrw      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
 
     { RevZicsrInstDefaults().SetMnemonic( "csrrs %rd, %csr, %rs1"  ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) != 0; } ) },
     { RevZicsrInstDefaults().SetMnemonic( "csrr %rd, %csr"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && [](auto imm){ return imm < 0xc80 || imm > 0xc82; }( DECODE_IMM12( Inst ) | 0x80 ); } ) },

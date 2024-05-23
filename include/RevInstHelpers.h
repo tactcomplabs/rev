@@ -90,15 +90,22 @@ bool CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
 }
 
 /// fclass: Return FP classification like the RISC-V fclass instruction
-// See: https://github.com/riscv/riscv-isa-sim/blob/master/softfloat/f32_classify.c
-// Because quiet and signaling NaNs are not distinguished by the C++ standard,
-// an additional argument has been added to disambiguate between quiet and
-// signaling NaNs.
 template<typename T>
-unsigned fclass( T val, bool quietNaN = true ) {
+unsigned fclass( T val ) {
+  bool quietNaN;
   switch( std::fpclassify( val ) ) {
   case FP_INFINITE: return std::signbit( val ) ? 1u : 1u << 7;
-  case FP_NAN: return quietNaN ? 1u << 9 : 1u << 8;
+  case FP_NAN:
+    if constexpr( std::is_same_v<T, float> ) {
+      uint32_t i32;
+      memcpy( &i32, &val, sizeof( i32 ) );
+      quietNaN = ( i32 & uint32_t{ 1 } << 22 ) != 0;
+    } else {
+      uint64_t i64;
+      memcpy( &i64, &val, sizeof( i64 ) );
+      quietNaN = ( i64 & uint64_t{ 1 } << 51 ) != 0;
+    }
+    return quietNaN ? 1u << 9 : 1u << 8;
   case FP_NORMAL: return std::signbit( val ) ? 1u << 1 : 1u << 6;
   case FP_SUBNORMAL: return std::signbit( val ) ? 1u << 2 : 1u << 5;
   case FP_ZERO: return std::signbit( val ) ? 1u << 3 : 1u << 4;

@@ -5,6 +5,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -14,6 +15,13 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+#ifdef __riscv
+#include "syscalls.h"
+#else
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
 
 //#pragma STDC FENV_ACCESS ON
 
@@ -33,38 +41,58 @@ int float_class( T x ) {
   return c;
 }
 
+template<typename T>
+const char* fenv_hexfloat( T x ) {
+  static char s[64];
+  snprintf( s, sizeof( s ), "%a", (double) x );
+  return s;
+}
+
 /// Prints a floating-point value as a portable C++ exact constant
 /// Handles +/- 0, +/- Inf, qNaN, sNaN
 template<typename T>
-std::string float_string( T x ) {
-  std::ostringstream s;
-  const char*        type = std::is_same_v<T, float> ? "float" : "double";
+const char* float_string( T x ) {
+  static char s[128];
+  const char* type = std::is_same_v<T, float> ? "float" : "double";
+  s[0]             = 0;
 
   switch( float_class( x ) ) {
-  case FP_NAN: s << "std::numeric_limits<" << type << ">::quiet_NaN()"; break;
-  case FP_SNAN: s << "std::numeric_limits<" << type << ">::signaling_NaN()"; break;
+  case FP_NAN:
+    strcat( s, "std::numeric_limits<" );
+    strcat( s, type );
+    strcat( s, ">::quiet_NaN()" );
+    break;
+  case FP_SNAN:
+    strcat( s, "std::numeric_limits<" );
+    strcat( s, type );
+    strcat( s, ">::signaling_NaN()" );
+    break;
   case FP_INFINITE:
     if( std::signbit( x ) )
-      s << "-";
-    s << "std::numeric_limits<" << type << ">::infinity()";
+      strcat( s, "-" );
+    strcat( s, "std::numeric_limits<" );
+    strcat( s, type );
+    strcat( s, ">::infinity()" );
     break;
-  default: s << std::hexfloat << x << ( std::is_same_v<T, float> ? "f" : "" );
+  default: strcat( s, fenv_hexfloat( x ) ); strcat( s, std::is_same_v<T, float> ? "f" : "" );
   }
-  return s.str();
+  return s;
 }
 
 /// Prints a comma-separated list of floating-point values
 template<typename... Ts>
-std::string args_string( Ts... args ) {
-  std::ostringstream s;
-  const char*        sep = "";
-  ( ..., ( ( s << sep << float_string( args ), sep = ", " ) ) );
-  return s.str();
+const char* args_string( Ts... args ) {
+  static char s[256];
+  const char* sep = "";
+  s[0]            = 0;
+  (void) ( ..., ( ( strcat( s, sep ), strcat( s, float_string( args ) ), sep = ", " ) ) );
+  return s;
 }
 
 /// Prints a logical-OR of exception names in an exception value
-inline auto exception_string( int exceptions ) {
-  std::ostringstream s;
+inline const char* exception_string( int exceptions ) {
+  static char s[128];
+  s[0] = 0;
   if( exceptions ) {
     static constexpr std::pair<int, const char*> etable[] = {
       {FE_DIVBYZERO, "FE_DIVBYZERO"},
@@ -76,18 +104,30 @@ inline auto exception_string( int exceptions ) {
     const char* sep = "";
     for( auto& e : etable ) {
       if( exceptions & e.first ) {
-        s << sep << e.second;
+        strcat( s, sep );
+        strcat( s, e.second );
         sep = " | ";
       }
     }
   } else {
-    s << "0";
+    strcat( s, "0" );
   }
-  return s.str();
+  return s;
+}
+
+inline void fenv_write( int fd, const char* str ) {
+  size_t len = 0;
+  while( str[len] )
+    len++;
+#ifdef __riscv
+  rev_write( fd, str, len );
+#else
+  write( fd, str, len );
+#endif
 }
 
 template<typename T, typename... Ts>
-bool test_result( unsigned test, std::string_view test_src, T result, T result_expected, Ts... args ) {
+bool test_result( const char* test, const char* test_src, T result, T result_expected, Ts... args ) {
   // Remove payloads from any NaNs
   for( T& x : { std::ref( result ), std::ref( result_expected ) } ) {
     switch( float_class( x ) ) {
@@ -98,10 +138,19 @@ bool test_result( unsigned test, std::string_view test_src, T result, T result_e
 
   // Compare for exact bit representation equality
   if( memcmp( &result, &result_expected, sizeof( T ) ) ) {
-    std::cerr << "\nError in fenv Test " << test << ":\n";
-    std::cerr << test_src << "\n  ( " << args_string( args... ) << " )\n";
-    std::cerr << "Expected result: " << float_string( result_expected ) << "\n";
-    std::cerr << "Actual   result: " << float_string( result ) << "\n";
+    fenv_write( 2, "\nError in fenv Test " );
+    fenv_write( 2, test );
+    fenv_write( 2, ":\n" );
+    fenv_write( 2, test_src );
+    fenv_write( 2, "\n  ( " );
+    fenv_write( 2, args_string( args... ) );
+    fenv_write( 2, " )\n" );
+    fenv_write( 2, "Expected result: " );
+    fenv_write( 2, float_string( result_expected ) );
+    fenv_write( 2, "\n" );
+    fenv_write( 2, "Actual   result: " );
+    fenv_write( 2, float_string( result ) );
+    fenv_write( 2, "\n" );
     return false;
   }
   return true;
@@ -109,15 +158,24 @@ bool test_result( unsigned test, std::string_view test_src, T result, T result_e
 
 template<typename... Ts>
 bool test_exceptions(
-  unsigned test, std::string_view test_src, int exceptions, int exceptions_expected, bool result_passed, Ts... args
+  const char* test, std::string_view test_src, int exceptions, int exceptions_expected, bool result_passed, Ts... args
 ) {
   if( ( exceptions ^ exceptions_expected ) & FE_ALL_EXCEPT ) {
     if( result_passed ) {
-      std::cerr << "\nError in fenv Test " << test << ":\n";
-      std::cerr << test_src << "\n  ( " << args_string( args... ) << " )\n";
+      fenv_write( 2, "\nError in fenv Test " );
+      fenv_write( 2, test );
+      fenv_write( 2, ":\n" );
+      fenv_write( 2, test_src.data() );
+      fenv_write( 2, "\n  ( " );
+      fenv_write( 2, args_string( args... ) );
+      fenv_write( 2, " )\n" );
     }
-    std::cerr << "Expected exceptions: " << exception_string( exceptions_expected ) << "\n";
-    std::cerr << "Actual   exceptions: " << exception_string( exceptions ) << "\n";
+    fenv_write( 2, "Expected exceptions: " );
+    fenv_write( 2, exception_string( exceptions_expected ) );
+    fenv_write( 2, "\n" );
+    fenv_write( 2, "Actual   exceptions: " );
+    fenv_write( 2, exception_string( exceptions ) );
+    fenv_write( 2, "\n" );
     return false;
   }
   return true;

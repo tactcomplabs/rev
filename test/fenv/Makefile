@@ -25,37 +25,26 @@ endif
 
 CC_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
 
-all: fenv_test_TONEAREST.exe fenv_test_UPWARD.exe fenv_test_DOWNWARD.exe fenv_test_TOWARDZERO.exe
+all: executables
 
-fenv_test_TONEAREST.exe: fenv_test.h fenv_test.cc fenv_test_TONEAREST.cc
-	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_TONEAREST.cc -lm -o $@
+fenv_test.makefile: fenv_gentests.exe
+	printf '%%.exe: %%.cc\n\t$$(CXX) $$(CC_OPTS) -static -mcmodel=medany -march=$$(ARCH) -mabi=$$(ABI) -lm $$< -o $$@\nEXECUTABLES=' > fenv_test.makefile
+	./fenv_gentests.exe FE_TONEAREST  >> fenv_test.makefile
+	./fenv_gentests.exe FE_UPWARD     >> fenv_test.makefile
+	./fenv_gentests.exe FE_DOWNWARD   >> fenv_test.makefile
+	./fenv_gentests.exe FE_TOWARDZERO >> fenv_test.makefile
+	printf '\nall: $$(EXECUTABLES)\n\t$$(foreach exe,$$(EXECUTABLES),./run_fenv_test.sh $$(exe) &&) true' >> fenv_test.makefile
 
-fenv_test_UPWARD.exe: fenv_test.h fenv_test.cc fenv_test_UPWARD.cc
-	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_UPWARD.cc -lm -o $@
-
-fenv_test_DOWNWARD.exe: fenv_test.h fenv_test.cc fenv_test_DOWNWARD.cc
-	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_DOWNWARD.cc -lm -o $@
-
-fenv_test_TOWARDZERO.exe: fenv_test.h fenv_test.cc fenv_test_TOWARDZERO.cc
-	$(CXX) $(CC_OPTS) -static -mcmodel=medany -march=$(ARCH) -mabi=$(ABI) fenv_test.cc fenv_test_TOWARDZERO.cc -lm -o $@
-
-fenv_test_TONEAREST.cc: fenv_gentests.exe
-	./fenv_gentests.exe FE_TONEAREST > $@
-
-fenv_test_UPWARD.cc: fenv_gentests.exe
-	./fenv_gentests.exe FE_UPWARD > $@
-
-fenv_test_DOWNWARD.cc: fenv_gentests.exe
-	./fenv_gentests.exe FE_DOWNWARD > $@
-
-fenv_test_TOWARDZERO.cc: fenv_gentests.exe
-	./fenv_gentests.exe FE_TOWARDZERO > $@
+executables: fenv_test.makefile
+	$(MAKE) -j8 -f fenv_test.makefile all CXX="$(CXX)" CC_OPTS="$(CC_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)"
 
 # build test generator on local host
 fenv_gentests.exe: fenv_test.h fenv_gentests.cc
 	g++ $(CC_OPTS) fenv_gentests.cc -o $@
 
 clean:
-	rm -Rf *.exe
+	rm -Rf *.exe fenv_test.makefile FE_TONEAREST_*.cc FE_UPWARD_*.cc FE_DOWNWARD_*.cc FE_TOWARDZERO_*.cc
+
+.PHONY: all clean executables
 
 #-- EOF
