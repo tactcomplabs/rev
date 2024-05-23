@@ -246,6 +246,8 @@ template<typename = void>
 struct FMin {
   template<typename T>
   auto operator()( T x, T y ) const {
+    if( fclass( x ) == 1u << 8 || fclass( y ) == 1u << 8 )
+      feraiseexcept( FE_INVALID );
     return std::fmin( x, y );
   }
 };
@@ -255,6 +257,8 @@ template<typename = void>
 struct FMax {
   template<typename T>
   auto operator()( T x, T y ) const {
+    if( fclass( x ) == 1u << 8 || fclass( y ) == 1u << 8 )
+      feraiseexcept( FE_INVALID );
     return std::fmax( x, y );
   }
 };
