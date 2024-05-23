@@ -254,6 +254,8 @@ struct __kernel_itimerspec;
 struct sigevent;
 struct sigaction;
 struct siginfo;
+struct sigset_t;
+struct fd_set;
 
 typedef uint32_t      rwf_t;
 typedef unsigned long aio_context_t;
