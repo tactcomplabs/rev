@@ -15,7 +15,8 @@ namespace SST::RevCPU {
 
 char pyrevcpu[] = {
 #include "pyrevcpu.inc"
-  0x00 };
+  0x00
+};
 
 class RevCPUPyModule : public SSTElementPythonModule {
 public:

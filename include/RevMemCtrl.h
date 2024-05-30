@@ -282,7 +282,7 @@ public:
 protected:
   SST::Output* output;            ///< RevMemCtrl: sst output object
   RevTracer*   Tracer = nullptr;  ///< RevMemCtrl: tracer pointer
-};                                // class RevMemCtrl
+};  // class RevMemCtrl
 
 // ----------------------------------------
 // RevBasicMemCtrl
@@ -532,7 +532,7 @@ protected:
 
   private:
     RevBasicMemCtrl* Ctrl;  ///< RevStdMemHandlers: memory controller object
-  };                        // class RevStdMemHandlers
+  };  // class RevStdMemHandlers
 
 private:
   /// RevBasicMemCtrl: process the next memory request

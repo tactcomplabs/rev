@@ -32,7 +32,7 @@ int main() {
       mem2 = 0;
     }
 
-    ~TestObj(){};
+    ~TestObj() {};
 
     int GetM1() { return mem1; }
 

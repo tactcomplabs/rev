@@ -142,7 +142,7 @@ struct TraceRec_t {
   uint64_t a;  // reg             adr                     adr
   uint64_t b;  // value           len                     len
   uint64_t c;  // origin(TODO)    data (limited 8 bytes)  reg
-  TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) : key( Key ), a( A ), b( B ), c( C ){};
+  TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) : key( Key ), a( A ), b( B ), c( C ) {};
 };
 
 struct InstHeader_t {

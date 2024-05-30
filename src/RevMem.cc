@@ -10,11 +10,9 @@
 
 #include "RevMem.h"
 #include "RevRand.h"
-#include <cmath>
 #include <cstring>
-#include <functional>
+#include <iomanip>
 #include <memory>
-#include <mutex>
 #include <utility>
 
 namespace SST::RevCPU {
@@ -251,7 +249,7 @@ void RevMem::AddToTLB( uint64_t vAddr, uint64_t physAddr ) {
     // Insert the vAddr and physAddr into the TLB and LRU list
     LRUQueue.push_front( vAddr );
     TLB.insert( {
-      vAddr, {physAddr, LRUQueue.begin()}
+      vAddr, { physAddr, LRUQueue.begin() }
     } );
   }
 }
@@ -1024,6 +1022,76 @@ uint64_t RevMem::ExpandHeap( uint64_t Size ) {
   return heapend;
 }
 
+void RevMem::DumpMem( const uint64_t startAddr, const uint64_t numBytes, const uint64_t bytesPerRow, std::ostream& outputStream ) {
+  uint64_t       translatedStartAddr = startAddr;             //CalcPhysAddr( 0, startAddr );
+  const uint64_t endAddr             = startAddr + numBytes;  //translatedStartAddr + numBytes;
+
+  for( uint64_t addr = translatedStartAddr; addr < endAddr; addr += bytesPerRow ) {
+    outputStream << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex << addr << ": ";
+
+    for( uint64_t i = 0; i < bytesPerRow; ++i ) {
+      if( addr + i < endAddr ) {
+        uint8_t byte = physMem[addr + i];
+        outputStream << std::setw( 2 ) << std::setfill( '0' ) << std::hex << static_cast<uint32_t>( byte ) << " ";
+      } else {
+        outputStream << "   ";
+      }
+    }
+
+    outputStream << " ";
+
+    for( uint64_t i = 0; i < bytesPerRow; ++i ) {
+      if( addr + i < endAddr ) {
+        uint8_t byte = physMem[addr + i];
+        if( std::isprint( byte ) ) {
+          outputStream << static_cast<char>( byte );
+        } else {
+          outputStream << ".";
+        }
+      }
+    }
+    outputStream << std::endl;
+  }
+}
+
+void RevMem::DumpMemSeg( const std::shared_ptr<MemSegment>& MemSeg, const uint64_t bytesPerRow, std::ostream& outputStream ) {
+
+  outputStream << "// " << *MemSeg << std::endl;
+  DumpMem( MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+}
+
+void RevMem::DumpValidMem( const uint64_t bytesPerRow, std::ostream& outputStream ) {
+
+  std::sort( MemSegs.begin(), MemSegs.end() );
+  outputStream << "Memory Segments:" << std::endl;
+  for( unsigned i = 0; i < MemSegs.size(); i++ ) {
+    outputStream << "// SEGMENT #" << i << *MemSegs[i] << std::endl;
+    DumpMemSeg( MemSegs[i], bytesPerRow, outputStream );
+  }
+  for( const auto& MemSeg : MemSegs ) {
+    DumpMem( MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  }
+
+  std::sort( ThreadMemSegs.begin(), ThreadMemSegs.end() );
+  for( const auto& MemSeg : ThreadMemSegs ) {
+    outputStream << "// " << *MemSeg << std::endl;
+    DumpMem( MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  }
+}
+
+void RevMem::DumpThreadMem( const uint64_t bytesPerRow, std::ostream& outputStream ) {
+
+  outputStream << "Thread Memory Segments:" << std::endl;
+  std::sort( ThreadMemSegs.begin(), ThreadMemSegs.end() );
+  for( const auto& MemSeg : ThreadMemSegs ) {
+    outputStream << "// " << *MemSeg << std::endl;
+    DumpMem( MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
+  }
+}
+
+void RevMem::AddDumpRange( const std::string& Name, const uint64_t BaseAddr, const uint64_t Size ) {
+  DumpRanges[Name] = std::make_shared<MemSegment>( BaseAddr, Size );
+}
 }  // namespace SST::RevCPU
 
 // EOF

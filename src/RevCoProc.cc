@@ -43,7 +43,7 @@ RevSimpleCoProc::RevSimpleCoProc( ComponentId_t id, Params& params, RevCore* par
     output->output("Registering subcomponent RevSimpleCoProc with frequency=%s\n", ClockFreq.c_str());*/
 }
 
-RevSimpleCoProc::~RevSimpleCoProc(){
+RevSimpleCoProc::~RevSimpleCoProc() {
 
 };
 

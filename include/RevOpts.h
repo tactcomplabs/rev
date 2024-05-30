@@ -97,6 +97,8 @@ private:
 
   std::vector<std::string> Argv;  ///< RevOpts: vector of function arguments
 
+  std::vector<std::string> MemDumpRanges;  ///< RevOpts: vector of function arguments
+
   /// RevOpts: splits a string into tokens
   void splitStr( const std::string& s, char c, std::vector<std::string>& v );
 
