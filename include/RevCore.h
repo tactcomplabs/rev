@@ -647,6 +647,17 @@ private:
   EcallStatus ECALL_pthread_create();         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
   EcallStatus ECALL_pthread_join();           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit();           // 1002, rev_pthread_exit(void* retval);
+
+  EcallStatus ECALL_dump_mem_range();         // 9000, dump_mem_range(uint64_t addr, uint64_t size)
+  EcallStatus ECALL_dump_mem_range_to_file(); // 9001, dump_mem_range_to_file(const char* outputFile, uint64_t addr, uint64_t size)
+  EcallStatus ECALL_dump_stack();             // 9002, dump_stack()
+  EcallStatus ECALL_dump_stack_to_file();     // 9003, dump_stack(const char* outputFile)
+
+  EcallStatus ECALL_dump_valid_mem();         // 9004, dump_valid_mem()
+  EcallStatus ECALL_dump_valid_mem_to_file(); // 9005, dump_valid_mem_to_file(const char* outputFile)
+
+  EcallStatus ECALL_dump_thread_mem();         // 9006, dump_thread_mem()
+  EcallStatus ECALL_dump_thread_mem_to_file(); // 9007, dump_thread_mem_to_file(const char* outputFile)
   // clang-format on
 
   /// RevCore: Table of ecall codes w/ corresponding function pointer implementations

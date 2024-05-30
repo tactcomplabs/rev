@@ -97,16 +97,37 @@ public:
       return ( this->contains( vBaseAddr ) && this->contains( vTopAddr ) );
     };
 
-    // Override for easy std::cout << *Seg << std::endl;
+    /// MemSegment: Override for easy std::cout << *Seg << std::endl;
     friend std::ostream& operator<<( std::ostream& os, const MemSegment& Seg ) {
-      return os << " | BaseAddr:  0x" << std::hex << Seg.getBaseAddr() << " | TopAddr: 0x" << std::hex << Seg.getTopAddr()
-                << " | Size: " << std::dec << Seg.getSize() << " Bytes";
+      os << "| 0x" << std::hex << std::setw( 16 ) << std::setfill( '0' ) << Seg.getBaseAddr() << " | 0x" << std::hex
+         << std::setw( 16 ) << std::setfill( '0' ) << Seg.getTopAddr() << " | " << std::dec << std::setw( 10 )
+         << std::setfill( ' ' ) << Seg.getSize() << " Bytes |";
+
+      return os;
     }
 
+    /// MemSegment: Override the less than operator
+    bool operator<( const MemSegment& other ) const { return BaseAddr < other.BaseAddr; }
+
+    /// MemSegment: Override the greater than operator
+    bool operator>( const MemSegment& other ) const { return BaseAddr > other.BaseAddr; }
+
+    /// MemSegment: Override the equality operator
+    bool operator==( const MemSegment& other ) const { return BaseAddr == other.BaseAddr; }
+
+    /// MemSegment: Override the not equal operator
+    bool operator!=( const MemSegment& other ) const { return BaseAddr != other.BaseAddr; }
+
+    /// MemSegment: Override the less than or equal operator
+    bool operator<=( const MemSegment& other ) const { return BaseAddr <= other.BaseAddr; }
+
+    /// MemSegment: Override the greater than or equal operator
+    bool operator>=( const MemSegment& other ) const { return BaseAddr >= other.BaseAddr; }
+
   private:
-    uint64_t BaseAddr;
-    uint64_t Size;
-    uint64_t TopAddr;
+    uint64_t BaseAddr;  ///< MemSegment: Base address of the memory segment
+    uint64_t Size;      ///< MemSegment: Size of the memory segment
+    uint64_t TopAddr;   ///< MemSegment: Top address of the memory segment
   };
 
   /// RevMem: determine if there are any outstanding requests
@@ -270,6 +291,12 @@ public:
   ///< RevMem: Get FreeMemSegs vector
   std::vector<std::shared_ptr<MemSegment>>& GetFreeMemSegs() { return FreeMemSegs; }
 
+  ///< RevMem: Get DumpRanges vector
+  std::map<std::string, std::shared_ptr<MemSegment>>& GetDumpRanges() { return DumpRanges; }
+
+  ///< RevMem: Get DumpRanges vector (const version)
+  const std::map<std::string, std::shared_ptr<MemSegment>>& GetDumpRanges() const { return DumpRanges; }
+
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
   uint64_t AddMemSeg( const uint64_t& SegSize );
 
@@ -281,6 +308,9 @@ public:
 
   /// RevMem: Add new MemSegment (starting at BaseAddr) and round it up to the nearest page
   uint64_t AddRoundedMemSeg( uint64_t BaseAddr, const uint64_t& SegSize, size_t RoundUpSize );
+
+  /// RevMem: Add new MemSegment that will be dumped at the dump points specified in the configuration
+  void AddDumpRange( const std::string& Name, const uint64_t BaseAddr, const uint64_t SegSize );
 
   /// RevMem: Removes or shrinks segment
   uint64_t DeallocMem( uint64_t BaseAddr, uint64_t Size );
@@ -341,6 +371,19 @@ public:
 
   RevMemStats GetMemStatsTotal() const { return memStatsTotal; }
 
+  /// RevMem: Dump the memory contents
+  void DumpMem(
+    const uint64_t startAddr, const uint64_t numBytes, const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout
+  );
+
+  void DumpValidMem( const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout );
+
+  void DumpMemSeg(
+    const std::shared_ptr<MemSegment>& MemSeg, const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout
+  );
+
+  void DumpThreadMem( const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout );
+
 protected:
   char* physMem = nullptr;  ///< RevMem: memory container
 
@@ -360,6 +403,7 @@ private:
   std::vector<std::shared_ptr<MemSegment>> MemSegs{};        // Currently Allocated MemSegs
   std::vector<std::shared_ptr<MemSegment>> FreeMemSegs{};    // MemSegs that have been unallocated
   std::vector<std::shared_ptr<MemSegment>> ThreadMemSegs{};  // For each RevThread there is a corresponding MemSeg (TLS & Stack)
+  std::map<std::string, std::shared_ptr<MemSegment>> DumpRanges{};  // Mem ranges to dump at points specified in the configuration
 
   uint64_t TLSBaseAddr       = 0;                   ///< RevMem: TLS Base Address
   uint64_t TLSSize           = sizeof( uint32_t );  ///< RevMem: TLS Size (minimum size is enough to write the TID)
