@@ -14,36 +14,27 @@ namespace SST::RevCPU {
 
 RevNIC::RevNIC( ComponentId_t id, Params& params ) : nicAPI( id, params ) {
   // setup the initial logging functions
-  int verbosity = params.find< int >( "verbose", 0 );
-  output        = new SST::Output( "", verbosity, 0, SST::Output::STDOUT );
+  int verbosity              = params.find<int>( "verbose", 0 );
+  output                     = new SST::Output( "", verbosity, 0, SST::Output::STDOUT );
 
-  const std::string nicClock = params.find< std::string >( "clock", "1GHz" );
-  registerClock( nicClock,
-                 new Clock::Handler< RevNIC >( this, &RevNIC::clockTick ) );
+  const std::string nicClock = params.find<std::string>( "clock", "1GHz" );
+  registerClock( nicClock, new Clock::Handler<RevNIC>( this, &RevNIC::clockTick ) );
 
   // load the SimpleNetwork interfaces
-  iFace = loadUserSubComponent< SST::Interfaces::SimpleNetwork >(
-    "iface", ComponentInfo::SHARE_NONE, 1 );
+  iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>( "iface", ComponentInfo::SHARE_NONE, 1 );
   if( !iFace ) {
     // load the anonymous nic
     Params netparams;
-    netparams.insert( "port_name",
-                      params.find< std::string >( "port", "network" ) );
+    netparams.insert( "port_name", params.find<std::string>( "port", "network" ) );
     netparams.insert( "in_buf_size", "256B" );
     netparams.insert( "out_buf_size", "256B" );
     netparams.insert( "link_bw", "40GiB/s" );
-    iFace = loadAnonymousSubComponent< SST::Interfaces::SimpleNetwork >(
-      "merlin.linkcontrol",
-      "iface",
-      0,
-      ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
-      netparams,
-      1 );
+    iFace = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>(
+      "merlin.linkcontrol", "iface", 0, ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS, netparams, 1
+    );
   }
 
-  iFace->setNotifyOnReceive(
-    new SST::Interfaces::SimpleNetwork::Handler< RevNIC >(
-      this, &RevNIC::msgNotify ) );
+  iFace->setNotifyOnReceive( new SST::Interfaces::SimpleNetwork::Handler<RevNIC>( this, &RevNIC::msgNotify ) );
 
   initBroadcastSent = false;
 
@@ -65,38 +56,35 @@ void RevNIC::init( unsigned int phase ) {
 
   if( iFace->isNetworkInitialized() ) {
     if( !initBroadcastSent ) {
-      initBroadcastSent = true;
-      nicEvent* ev      = new nicEvent( getName() );
+      initBroadcastSent                            = true;
+      nicEvent* ev                                 = new nicEvent( getName() );
 
-      SST::Interfaces::SimpleNetwork::Request* req =
-        new SST::Interfaces::SimpleNetwork::Request();
-      req->dest = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
-      req->src  = iFace->getEndpointID();
+      SST::Interfaces::SimpleNetwork::Request* req = new SST::Interfaces::SimpleNetwork::Request();
+      req->dest                                    = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
+      req->src                                     = iFace->getEndpointID();
       req->givePayload( ev );
-      iFace->sendInitData( req );
+
+      //iFace->sendInitData( req );  // removed for SST 14.0.0
+      iFace->sendUntimedData( req );
     }
   }
-
-  while( SST::Interfaces::SimpleNetwork::Request* req =
-           iFace->recvInitData() ) {
-    nicEvent* ev = static_cast< nicEvent* >( req->takePayload() );
+  //while( SST::Interfaces::SimpleNetwork::Request* req = iFace->recvInitData() ) {
+  while( SST::Interfaces::SimpleNetwork::Request* req = iFace->recvUntimedData() ) {  // SST 14.0.0
+    nicEvent* ev = static_cast<nicEvent*>( req->takePayload() );
     numDest++;
-    output->verbose( CALL_INFO,
-                     1,
-                     0,
-                     "%s received init message from %s\n",
-                     getName().c_str(),
-                     ev->getSource().c_str() );
+    output->verbose( CALL_INFO, 1, 0, "%s received init message from %s\n", getName().c_str(), ev->getSource().c_str() );
   }
 }
 
 void RevNIC::setup() {
   if( msgHandler == nullptr ) {
-    output->fatal( CALL_INFO,
-                   -1,
-                   "%s, Error: RevNIC implements a callback-based notification "
-                   "and parent has not registerd a callback function\n",
-                   getName().c_str() );
+    output->fatal(
+      CALL_INFO,
+      -1,
+      "%s, Error: RevNIC implements a callback-based notification "
+      "and parent has not registerd a callback function\n",
+      getName().c_str()
+    );
   }
 }
 
@@ -104,7 +92,7 @@ bool RevNIC::msgNotify( int vn ) {
   SST::Interfaces::SimpleNetwork::Request* req = iFace->recv( 0 );
   if( req != nullptr ) {
     if( req != nullptr ) {
-      nicEvent* ev = static_cast< nicEvent* >( req->takePayload() );
+      nicEvent* ev = static_cast<nicEvent*>( req->takePayload() );
       delete req;
       ( *msgHandler )( ev );
     }
@@ -113,10 +101,9 @@ bool RevNIC::msgNotify( int vn ) {
 }
 
 void RevNIC::send( nicEvent* event, int destination ) {
-  SST::Interfaces::SimpleNetwork::Request* req =
-    new SST::Interfaces::SimpleNetwork::Request();
-  req->dest = destination;
-  req->src  = iFace->getEndpointID();
+  SST::Interfaces::SimpleNetwork::Request* req = new SST::Interfaces::SimpleNetwork::Request();
+  req->dest                                    = destination;
+  req->src                                     = iFace->getEndpointID();
   req->givePayload( event );
   sendQ.push( req );
 }

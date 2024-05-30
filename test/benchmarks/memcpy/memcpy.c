@@ -30,8 +30,7 @@ int main( int argc, char* argv[] ) {
 
   // Do the riscv-linux memcpy
   //setStats(1);
-  memcpy( results_data,
-          input_data,
+  memcpy( results_data, input_data,
           sizeof( int ) * DATA_SIZE );  //, DATA_SIZE * sizeof(int));
   //setStats(0);
 

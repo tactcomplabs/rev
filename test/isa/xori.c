@@ -31,8 +31,7 @@ int main( int argc, char** argv ) {
   //# Source/Destination tests
   //#-------------------------------------------------------------
 
-  TEST_IMM_SRC1_EQ_DEST(
-    6, xori, 0xffffffffff00f00f, 0xffffffffff00f700, 0x70f );
+  TEST_IMM_SRC1_EQ_DEST( 6, xori, 0xffffffffff00f00f, 0xffffffffff00f700, 0x70f );
 
   asm volatile( " bne x0, gp, pass;" );
   asm volatile( "pass:" );

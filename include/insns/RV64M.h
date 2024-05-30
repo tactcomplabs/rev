@@ -21,18 +21,15 @@ namespace SST::RevCPU {
 
 class RV64M : public RevExt {
   // 32-bit Multiplication
-  static constexpr auto& mulw =
-    oper< std::multiplies, OpKind::Reg, std::make_unsigned_t, true >;
+  static constexpr auto& mulw  = oper<std::multiplies, OpKind::Reg, std::make_unsigned_t, true>;
 
   // 32-bit Division
-  static constexpr auto& divw = divrem< DivRem::Div, std::make_signed_t, true >;
-  static constexpr auto& divuw =
-    divrem< DivRem::Div, std::make_unsigned_t, true >;
+  static constexpr auto& divw  = divrem<DivRem::Div, std::make_signed_t, true>;
+  static constexpr auto& divuw = divrem<DivRem::Div, std::make_unsigned_t, true>;
 
   // 32-bit Remainder
-  static constexpr auto& remw = divrem< DivRem::Rem, std::make_signed_t, true >;
-  static constexpr auto& remuw =
-    divrem< DivRem::Rem, std::make_unsigned_t, true >;
+  static constexpr auto& remw  = divrem<DivRem::Rem, std::make_signed_t, true>;
+  static constexpr auto& remuw = divrem<DivRem::Rem, std::make_unsigned_t, true>;
 
   // ----------------------------------------------------------------------
   //
@@ -58,8 +55,7 @@ class RV64M : public RevExt {
 
 public:
   /// RV64M: standard constructor
-  RV64M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
-    RevExt( "RV64M", Feature, RevMem, Output ) {
+  RV64M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV64M", Feature, RevMem, Output ) {
     SetTable( std::move( RV64MTable ) );
   }
 };  // end class RV32I

@@ -19,18 +19,12 @@
     asm( ".byte 0x00" ); \
   }
 
-typedef std::basic_string< char, std::char_traits< char >, Allocator< char > >
-  revString;
+typedef std::basic_string<char, std::char_traits<char>, Allocator<char>> revString;
 
 using TestMap =
-  std::unordered_map< uint64_t,
-                      long,
-                      std::hash< uint64_t >,
-                      std::equal_to< uint64_t >,
-                      Allocator< std::pair< const uint64_t, long > > >;
+  std::unordered_map<uint64_t, long, std::hash<uint64_t>, std::equal_to<uint64_t>, Allocator<std::pair<const uint64_t, long>>>;
 
 // using TestMap = std::unordered_map<uint64_t, long, std::less<uint64_t>, Allocator<std::pair<const uint64_t, long>> >;
-
 
 void testInsertion() {
   TestMap m;
@@ -79,8 +73,7 @@ void testIteration() {
   // assert( m.begin()->first == 0 );
 
   for( auto it = m.begin(); it != m.end(); it++ ) {
-    assert( it->first >= 0 && it->first <= 2 && it->second >= 1 &&
-            it->second <= 3 );
+    assert( it->first >= 0 && it->first <= 2 && it->second >= 1 && it->second <= 3 );
   }
 }
 

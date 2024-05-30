@@ -23,11 +23,10 @@
 #define DIM 450  // Large array test
 #define N   10
 
-typedef std::basic_string< char, std::char_traits< char >, Allocator< char > >
-  revString;
+typedef std::basic_string<char, std::char_traits<char>, Allocator<char>> revString;
 
 void testAlloc() {
-  std::array< int, DIM > arr;
+  std::array<int, DIM> arr;
 
   for( int i = 0; i < DIM; i++ ) {
     arr[i] = i;
@@ -43,7 +42,7 @@ void testAlloc() {
 }
 
 void testBoundsCheck() {
-  std::array< int, DIM > arr;
+  std::array<int, DIM> arr;
 
   try {
     arr.at( DIM ) = DIM;  // accessing DIM using at should throw an exception
@@ -57,7 +56,7 @@ int main() {
 
   //When constructing the map the correct method is to use the default constructor and then
   //  insert each element as shown (using std::pair
-  std::array< float, DIM > arr;
+  std::array<float, DIM> arr;
 
   testAlloc();
   testBoundsCheck();

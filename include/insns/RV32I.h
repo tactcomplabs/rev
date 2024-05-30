@@ -22,104 +22,89 @@ namespace SST::RevCPU {
 
 class RV32I : public RevExt {
   // Standard instructions
-  static bool
-    nop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool nop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    lui( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetX( Inst.rd, static_cast< int32_t >( Inst.imm << 12 ) );
+  static bool lui( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    R->SetX( Inst.rd, static_cast<int32_t>( Inst.imm << 12 ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    auipc( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    auto ui = static_cast< int32_t >( Inst.imm << 12 );
+  static bool auipc( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+    auto ui = static_cast<int32_t>( Inst.imm << 12 );
     R->SetX( Inst.rd, ui + R->GetPC() );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool
-    jal( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool jal( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetX( Inst.rd, R->GetPC() + Inst.instSize );
     R->SetPC( R->GetPC() + Inst.ImmSignExt( 21 ) );
     return true;
   }
 
-  static bool
-    jalr( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool jalr( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     auto ret = R->GetPC() + Inst.instSize;
-    R->SetPC( ( R->GetX< uint64_t >( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) &
-              -2 );
+    R->SetPC( ( R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) & -2 );
     R->SetX( Inst.rd, ret );
     return true;
   }
 
   // Conditional branches
-  static constexpr auto& beq  = bcond< std::equal_to >;
-  static constexpr auto& bne  = bcond< std::not_equal_to >;
-  static constexpr auto& blt  = bcond< std::less, std::make_signed_t >;
-  static constexpr auto& bltu = bcond< std::less, std::make_unsigned_t >;
-  static constexpr auto& bge  = bcond< std::greater_equal, std::make_signed_t >;
-  static constexpr auto& bgeu =
-    bcond< std::greater_equal, std::make_unsigned_t >;
+  static constexpr auto& beq   = bcond<std::equal_to>;
+  static constexpr auto& bne   = bcond<std::not_equal_to>;
+  static constexpr auto& blt   = bcond<std::less, std::make_signed_t>;
+  static constexpr auto& bltu  = bcond<std::less, std::make_unsigned_t>;
+  static constexpr auto& bge   = bcond<std::greater_equal, std::make_signed_t>;
+  static constexpr auto& bgeu  = bcond<std::greater_equal, std::make_unsigned_t>;
 
   // Loads
-  static constexpr auto& lb    = load< int8_t >;
-  static constexpr auto& lh    = load< int16_t >;
-  static constexpr auto& lw    = load< int32_t >;
-  static constexpr auto& lbu   = load< uint8_t >;
-  static constexpr auto& lhu   = load< uint16_t >;
+  static constexpr auto& lb    = load<int8_t>;
+  static constexpr auto& lh    = load<int16_t>;
+  static constexpr auto& lw    = load<int32_t>;
+  static constexpr auto& lbu   = load<uint8_t>;
+  static constexpr auto& lhu   = load<uint16_t>;
 
   // Stores
-  static constexpr auto& sb    = store< uint8_t >;
-  static constexpr auto& sh    = store< uint16_t >;
-  static constexpr auto& sw    = store< uint32_t >;
+  static constexpr auto& sb    = store<uint8_t>;
+  static constexpr auto& sh    = store<uint16_t>;
+  static constexpr auto& sw    = store<uint32_t>;
 
   // Arithmetic operators
-  static constexpr auto& add   = oper< std::plus, OpKind::Reg >;
-  static constexpr auto& addi  = oper< std::plus, OpKind::Imm >;
-  static constexpr auto& sub   = oper< std::minus, OpKind::Reg >;
-  static constexpr auto& f_xor = oper< std::bit_xor, OpKind::Reg >;
-  static constexpr auto& xori  = oper< std::bit_xor, OpKind::Imm >;
-  static constexpr auto& f_or  = oper< std::bit_or, OpKind::Reg >;
-  static constexpr auto& ori   = oper< std::bit_or, OpKind::Imm >;
-  static constexpr auto& f_and = oper< std::bit_and, OpKind::Reg >;
-  static constexpr auto& andi  = oper< std::bit_and, OpKind::Imm >;
+  static constexpr auto& add   = oper<std::plus, OpKind::Reg>;
+  static constexpr auto& addi  = oper<std::plus, OpKind::Imm>;
+  static constexpr auto& sub   = oper<std::minus, OpKind::Reg>;
+  static constexpr auto& f_xor = oper<std::bit_xor, OpKind::Reg>;
+  static constexpr auto& xori  = oper<std::bit_xor, OpKind::Imm>;
+  static constexpr auto& f_or  = oper<std::bit_or, OpKind::Reg>;
+  static constexpr auto& ori   = oper<std::bit_or, OpKind::Imm>;
+  static constexpr auto& f_and = oper<std::bit_and, OpKind::Reg>;
+  static constexpr auto& andi  = oper<std::bit_and, OpKind::Imm>;
 
   // Boolean test and set operators
-  static constexpr auto& slt   = oper< std::less, OpKind::Reg >;
-  static constexpr auto& slti  = oper< std::less, OpKind::Imm >;
-  static constexpr auto& sltu =
-    oper< std::less, OpKind::Reg, std::make_unsigned_t >;
-  static constexpr auto& sltiu =
-    oper< std::less, OpKind::Imm, std::make_unsigned_t >;
+  static constexpr auto& slt   = oper<std::less, OpKind::Reg>;
+  static constexpr auto& slti  = oper<std::less, OpKind::Imm>;
+  static constexpr auto& sltu  = oper<std::less, OpKind::Reg, std::make_unsigned_t>;
+  static constexpr auto& sltiu = oper<std::less, OpKind::Imm, std::make_unsigned_t>;
 
   // Shift operators
-  static constexpr auto& slli =
-    oper< ShiftLeft, OpKind::Imm, std::make_unsigned_t >;
-  static constexpr auto& srli =
-    oper< ShiftRight, OpKind::Imm, std::make_unsigned_t >;
-  static constexpr auto& srai = oper< ShiftRight, OpKind::Imm >;
-  static constexpr auto& sll =
-    oper< ShiftLeft, OpKind::Reg, std::make_unsigned_t >;
-  static constexpr auto& srl =
-    oper< ShiftRight, OpKind::Reg, std::make_unsigned_t >;
-  static constexpr auto& sra = oper< ShiftRight, OpKind::Reg >;
+  static constexpr auto& slli  = oper<ShiftLeft, OpKind::Imm, std::make_unsigned_t>;
+  static constexpr auto& srli  = oper<ShiftRight, OpKind::Imm, std::make_unsigned_t>;
+  static constexpr auto& srai  = oper<ShiftRight, OpKind::Imm>;
+  static constexpr auto& sll   = oper<ShiftLeft, OpKind::Reg, std::make_unsigned_t>;
+  static constexpr auto& srl   = oper<ShiftRight, OpKind::Reg, std::make_unsigned_t>;
+  static constexpr auto& sra   = oper<ShiftRight, OpKind::Reg>;
 
-  static bool
-    fence( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fence( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     M->FenceMem( F->GetHartToExecID() );
     R->AdvancePC( Inst );
     return true;  // temporarily disabled
   }
 
-  static bool
-    ecall( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool ecall( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     /*
      * In reality this should be getting/setting a LOT of bits inside the
      * CSRs however because we are only concerned with ecall right now it's
@@ -201,8 +186,10 @@ class RV32I : public RevExt {
     { RevInstDefaults().SetMnemonic("auipc %rd, $imm"      ).SetFunct3(   0b000).SetImplFunc(auipc ).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeU).SetOpcode(0b0010111) },
     { RevInstDefaults().SetMnemonic("jal %rd, $imm"        ).SetFunct3(   0b000).SetImplFunc(jal   ).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeJ).SetOpcode(0b1101111).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
     { RevInstDefaults().SetMnemonic("j $imm"               ).SetFunct3(   0b000).SetImplFunc(jal   ).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetFormat(RVTypeJ).SetOpcode(0b1101111).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
-    { RevInstDefaults().SetMnemonic("jalr %rd, %rs1, $imm" ).SetFunct3(   0b000).SetImplFunc(jalr  ).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm(FImm)                        .SetFormat(RVTypeI).SetOpcode(0b1100111) },
-
+    { RevInstDefaults().SetMnemonic("jalr %rd, %rs1, $imm" ).SetFunct3(   0b000).SetImplFunc(jalr  ).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm(FImm)                        .SetFormat(RVTypeI).SetOpcode(0b1100111).SetPredicate( []( uint32_t Inst ){ return DECODE_IMM12( Inst ) != 0 || DECODE_RD( Inst )  > 1; } ) },
+    { RevInstDefaults().SetMnemonic("jalr %rs1"            ).SetFunct3(   0b000).SetImplFunc(jalr  ).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm(FImm)                        .SetFormat(RVTypeI).SetOpcode(0b1100111).SetPredicate( []( uint32_t Inst ){ return DECODE_IMM12( Inst ) == 0 && DECODE_RD( Inst ) == 1; } ) },
+    { RevInstDefaults().SetMnemonic("jr %rs1"              ).SetFunct3(   0b000).SetImplFunc(jalr  ).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm(FImm)                        .SetFormat(RVTypeI).SetOpcode(0b1100111).SetPredicate( []( uint32_t Inst ){ return DECODE_IMM12( Inst ) == 0 && DECODE_RD( Inst ) == 0 && DECODE_RS1( Inst ) != 1; } ) },
+    { RevInstDefaults().SetMnemonic("ret"                  ).SetFunct3(   0b000).SetImplFunc(jalr  ).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm(FImm)                        .SetFormat(RVTypeI).SetOpcode(0b1100111).SetPredicate( []( uint32_t Inst ){ return DECODE_IMM12( Inst ) == 0 && DECODE_RD( Inst ) == 0 && DECODE_RS1( Inst ) == 1; } ) },
     { RevInstDefaults().SetMnemonic("beq %rs1, %rs2, $imm" ).SetFunct3(   0b000).SetImplFunc(beq   ).SetrdClass(RevRegClass::RegIMM)                                          .SetFormat(RVTypeB).SetOpcode(0b1100011) },
     { RevInstDefaults().SetMnemonic("bne %rs1, %rs2, $imm" ).SetFunct3(   0b001).SetImplFunc(bne   ).SetrdClass(RevRegClass::RegIMM)                                          .SetFormat(RVTypeB).SetOpcode(0b1100011) },
     { RevInstDefaults().SetMnemonic("blt %rs1, %rs2, $imm" ).SetFunct3(   0b100).SetImplFunc(blt   ).SetrdClass(RevRegClass::RegIMM)                                          .SetFormat(RVTypeB).SetOpcode(0b1100011) },
@@ -256,23 +243,24 @@ class RV32I : public RevExt {
   // RV32C table
   std::vector<RevInstEntry> RV32ICTable = {
     { RevCInstDefaults().SetMnemonic("c.addi4spn %rd, $imm" ).SetFunct3(   0b000).SetImplFunc(caddi4spn  ).Setimm(FVal).SetFormat(RVCTypeCIW).SetOpcode(0b00).SetPredicate( []( uint32_t Inst ){ return ( ( Inst >> 5 ) & 0xff ) != 0; } ) },
-    { RevCInstDefaults().SetMnemonic("c.lwsp %rd, $imm"     ).SetFunct3(   0b010).SetImplFunc(clwsp      ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_RD(Inst) != 0; } ) },
+    { RevCInstDefaults().SetMnemonic("c.lwsp %rd, $imm"     ).SetFunct3(   0b010).SetImplFunc(clwsp      ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
     { RevCInstDefaults().SetMnemonic("c.swsp %rs2, $imm"    ).SetFunct3(   0b110).SetImplFunc(cswsp      ).Setimm(FVal).SetFormat(RVCTypeCSS).SetOpcode(0b10) },
     { RevCInstDefaults().SetMnemonic("c.lw %rd, $rs1, $imm" ).SetFunct3(   0b010).SetImplFunc(clw        ).Setimm(FVal).SetFormat(RVCTypeCL ).SetOpcode(0b00) },
     { RevCInstDefaults().SetMnemonic("c.sw %rs2, %rs1, $imm").SetFunct3(   0b110).SetImplFunc(csw        ).Setimm(FVal).SetFormat(RVCTypeCS ).SetOpcode(0b00) },
     { RevCInstDefaults().SetMnemonic("c.j $imm"             ).SetFunct3(   0b101).SetImplFunc(cj         ).Setimm(FVal).SetFormat(RVCTypeCJ ).SetOpcode(0b01) },
-    { RevCInstDefaults().SetMnemonic("c.jr %rs1"            ).SetFunct4(  0b1000).SetImplFunc(cjr        )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2(Inst) == 0 && DECODE_RD(Inst) != 0; } ) },
-    { RevCInstDefaults().SetMnemonic("c.mv %rd, %rs2"       ).SetFunct4(  0b1000).SetImplFunc(cmv        )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2(Inst) != 0; } ) },
-    { RevCInstDefaults().SetMnemonic("c.add %rd, %rs1"      ).SetFunct4(  0b1001).SetImplFunc(cadd       )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2(Inst) != 0; } ) },
-    { RevCInstDefaults().SetMnemonic("c.jalr %rs1"          ).SetFunct4(  0b1001).SetImplFunc(cjalr      )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2(Inst) == 0 && DECODE_RD(Inst) != 0; } ) },
-    { RevCInstDefaults().SetMnemonic("c.ebreak"             ).SetFunct4(  0b1001).SetImplFunc(cebreak    )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2(Inst) == 0 && DECODE_RD(Inst) == 0; } ) },
+    { RevCInstDefaults().SetMnemonic("c.jr %rs1"            ).SetFunct4(  0b1000).SetImplFunc(cjr        )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2( Inst ) == 0 && DECODE_RD( Inst ) != 0 && DECODE_RD( Inst ) != 1; } ) },
+    { RevCInstDefaults().SetMnemonic("ret"                  ).SetFunct4(  0b1000).SetImplFunc(cjr        )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2( Inst ) == 0 && DECODE_RD( Inst ) == 1; } ) },
+    { RevCInstDefaults().SetMnemonic("c.mv %rd, %rs2"       ).SetFunct4(  0b1000).SetImplFunc(cmv        )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2( Inst ) != 0; } ) },
+    { RevCInstDefaults().SetMnemonic("c.add %rd, %rs1"      ).SetFunct4(  0b1001).SetImplFunc(cadd       )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2( Inst ) != 0; } ) },
+    { RevCInstDefaults().SetMnemonic("c.jalr %rs1"          ).SetFunct4(  0b1001).SetImplFunc(cjalr      )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2( Inst ) == 0 && DECODE_RD(Inst) != 0; } ) },
+    { RevCInstDefaults().SetMnemonic("c.ebreak"             ).SetFunct4(  0b1001).SetImplFunc(cebreak    )             .SetFormat(RVCTypeCR ).SetOpcode(0b10).SetPredicate( []( uint32_t Inst ){ return DECODE_LOWER_CRS2( Inst ) == 0 && DECODE_RD(Inst) == 0; } ) },
     { RevCInstDefaults().SetMnemonic("c.beqz %rs1, $imm"    ).SetFunct3(   0b110).SetImplFunc(cbeqz      ).Setimm(FVal).SetFormat(RVCTypeCB ).SetOpcode(0b01) },
     { RevCInstDefaults().SetMnemonic("c.bnez %rs1, $imm"    ).SetFunct3(   0b111).SetImplFunc(cbnez      ).Setimm(FVal).SetFormat(RVCTypeCB ).SetOpcode(0b01) },
     { RevCInstDefaults().SetMnemonic("c.li %rd, $imm"       ).SetFunct3(   0b010).SetImplFunc(cli        ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01) },
-    { RevCInstDefaults().SetMnemonic("c.lui %rd, $imm"      ).SetFunct3(   0b011).SetImplFunc(clui       ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD(Inst) != 2; } ) },
-    { RevCInstDefaults().SetMnemonic("c.addi16sp $imm"      ).SetFunct3(   0b011).SetImplFunc(caddi16sp  ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD(Inst) == 2; } ) },
-    { RevCInstDefaults().SetMnemonic("c.addi %rd, $imm"     ).SetFunct3(   0b000).SetImplFunc(caddi      ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD(Inst) != 0; } ) },
-    { RevCInstDefaults().SetMnemonic("c.nop"                ).SetFunct3(   0b000).SetImplFunc(nop        ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD(Inst) == 0; } ) },
+    { RevCInstDefaults().SetMnemonic("c.lui %rd, $imm"      ).SetFunct3(   0b011).SetImplFunc(clui       ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 2; } ) },
+    { RevCInstDefaults().SetMnemonic("c.addi16sp $imm"      ).SetFunct3(   0b011).SetImplFunc(caddi16sp  ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 2; } ) },
+    { RevCInstDefaults().SetMnemonic("c.addi %rd, $imm"     ).SetFunct3(   0b000).SetImplFunc(caddi      ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ) },
+    { RevCInstDefaults().SetMnemonic("c.nop"                ).SetFunct3(   0b000).SetImplFunc(nop        ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b01).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ) },
     { RevCInstDefaults().SetMnemonic("c.slli %rd, $imm"     ).SetFunct3(   0b000).SetImplFunc(cslli      ).Setimm(FVal).SetFormat(RVCTypeCI ).SetOpcode(0b10) },
     { RevCInstDefaults().SetMnemonic("c.srli %rd, $imm"     ).SetFunct3(   0b100).SetImplFunc(csrli      ).Setimm(FVal).SetFormat(RVCTypeCB ).SetOpcode(0b01).SetFunct2(0b00) },
     { RevCInstDefaults().SetMnemonic("c.srai %rd, $imm"     ).SetFunct3(   0b100).SetImplFunc(csrai      ).Setimm(FVal).SetFormat(RVCTypeCB ).SetOpcode(0b01).SetFunct2(0b01) },
@@ -291,8 +279,7 @@ class RV32I : public RevExt {
 
 public:
   /// RV32I: standard constructor
-  RV32I( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) :
-    RevExt( "RV32I", Feature, RevMem, Output ) {
+  RV32I( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32I", Feature, RevMem, Output ) {
     SetTable( std::move( RV32ITable ) );
     SetCTable( std::move( RV32ICTable ) );
     SetOTable( std::move( RV32ICOTable ) );

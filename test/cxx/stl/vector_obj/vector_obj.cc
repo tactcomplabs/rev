@@ -32,30 +32,22 @@ int main() {
       mem2 = 0;
     }
 
-    ~TestObj(){};
+    ~TestObj() {};
 
-    int GetM1() {
-      return mem1;
-    }
+    int GetM1() { return mem1; }
 
-    int GetM2() {
-      return mem2;
-    }
+    int GetM2() { return mem2; }
 
-    void SetM1( int m ) {
-      mem1 = m;
-    }
+    void SetM1( int m ) { mem1 = m; }
 
-    void SetM2( int m ) {
-      mem2 = m;
-    }
+    void SetM2( int m ) { mem2 = m; }
 
   private:
     int mem1;
     int mem2;
   };
 
-  std::vector< TestObj, Allocator< TestObj > > v;
+  std::vector<TestObj, Allocator<TestObj>> v;
 
   TestObj c;
   v.push_back( c );

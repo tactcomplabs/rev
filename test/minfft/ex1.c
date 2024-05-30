@@ -4,7 +4,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-
 #define P 16
 /*minfft_aux*
 minfft_mkaux_dft_1d_local (int N) {

@@ -19,20 +19,14 @@
     asm( ".byte 0x00" ); \
   }
 
-typedef std::basic_string< char, std::char_traits< char >, Allocator< char > >
-  revString;
+typedef std::basic_string<char, std::char_traits<char>, Allocator<char>> revString;
 
 int main() {
 
   //When constructing the map the correct method is to use the default constructor and then
   //  insert each element as shown (using std::pair)
 
-  std::map< revString,
-            int,
-            std::less< revString >,
-            Allocator< std::pair< const revString, int > > >
-    m;
-
+  std::map<revString, int, std::less<revString>, Allocator<std::pair<const revString, int>>> m;
 
   m.insert( std::pair{ "CPU", 10 } );
   m.insert( std::pair{ "GPU", 11 } );

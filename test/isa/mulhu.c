@@ -25,16 +25,12 @@ int main( int argc, char** argv ) {
   TEST_RR_OP( 3, mulhu, 0x00000000, 0x00000001, 0x00000001 );
   TEST_RR_OP( 4, mulhu, 0x00000000, 0x00000003, 0x00000007 );
 
-  TEST_RR_OP(
-    5, mulhu, 0x0000000000000000, 0x0000000000000000, 0xffffffffffff8000 );
+  TEST_RR_OP( 5, mulhu, 0x0000000000000000, 0x0000000000000000, 0xffffffffffff8000 );
   TEST_RR_OP( 6, mulhu, 0x0000000000000000, 0xffffffff80000000, 0x00000000 );
-  TEST_RR_OP(
-    7, mulhu, 0xffffffff7fff8000, 0xffffffff80000000, 0xffffffffffff8000 );
+  TEST_RR_OP( 7, mulhu, 0xffffffff7fff8000, 0xffffffff80000000, 0xffffffffffff8000 );
 
-  TEST_RR_OP(
-    30, mulhu, 0x000000000001fefe, 0xaaaaaaaaaaaaaaab, 0x000000000002fe7d );
-  TEST_RR_OP(
-    31, mulhu, 0x000000000001fefe, 0x000000000002fe7d, 0xaaaaaaaaaaaaaaab );
+  TEST_RR_OP( 30, mulhu, 0x000000000001fefe, 0xaaaaaaaaaaaaaaab, 0x000000000002fe7d );
+  TEST_RR_OP( 31, mulhu, 0x000000000001fefe, 0x000000000002fe7d, 0xaaaaaaaaaaaaaaab );
 
   //  #-------------------------------------------------------------
   //  # Source/Destination tests

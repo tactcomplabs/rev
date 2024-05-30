@@ -71,7 +71,7 @@ namespace SST::RevCPU {
 // SRAI   rd=x0 2^10   srai  x0, x0, ?    0x40?05013  //
 // SLT    rd=x0 2^10   slt   x0, x0, x?   0x00?02033  // Not supported
 // SLTU   rd=x0 2^10   sltu  x0, x0, x?   0x00?03033  // Not supported
-const std::map< std::string, uint32_t > s2op{
+const std::map<std::string, uint32_t> s2op{
   { "slti", 0x00002013},
   {"sltiu", 0x00003013},
   { "slli", 0x00001013},
@@ -100,7 +100,7 @@ enum class EVENT_SYMBOL : unsigned {
   TRACE_OFF = 0x102,
 };
 
-const std::map< EVENT_SYMBOL, char > event2char{
+const std::map<EVENT_SYMBOL, char> event2char{
   {       EVENT_SYMBOL::OK, ' '},
   {    EVENT_SYMBOL::STALL, '#'},
   {    EVENT_SYMBOL::FLUSH, '!'},
@@ -142,8 +142,7 @@ struct TraceRec_t {
   uint64_t a;  // reg             adr                     adr
   uint64_t b;  // value           len                     len
   uint64_t c;  // origin(TODO)    data (limited 8 bytes)  reg
-  TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) :
-    key( Key ), a( A ), b( B ), c( C ){};
+  TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) : key( Key ), a( A ), b( B ), c( C ) {};
 };
 
 struct InstHeader_t {
@@ -155,11 +154,7 @@ struct InstHeader_t {
   std::string& fallbackMnemonic = defaultMnem;
   bool         valid            = false;
 
-  void set( size_t             _cycle,
-            unsigned           _id,
-            unsigned           _hart,
-            unsigned           _tid,
-            const std::string& _fallback ) {
+  void set( size_t _cycle, unsigned _id, unsigned _hart, unsigned _tid, const std::string& _fallback ) {
     cycle            = _cycle;
     id               = _id;
     hart             = _hart;
@@ -168,9 +163,7 @@ struct InstHeader_t {
     valid            = true;
   };
 
-  void clear() {
-    valid = false;
-  }
+  void clear() { valid = false; }
 };
 
 // aggregate read completion (memh)
@@ -183,18 +176,10 @@ struct CompletionRec_t {
   bool         isFloat         = false;
   bool         wait4Completion = false;
 
-  CompletionRec_t( unsigned int hart,
-                   uint16_t     destReg,
-                   size_t       len,
-                   uint64_t     addr,
-                   void*        data,
-                   RevRegClass  regClass ) :
-    hart( hart ),
-    destReg( destReg ), len( len ), addr( addr ),
-    isFloat( regClass == RevRegClass::RegFLOAT ), wait4Completion( true ) {
-    memcpy( &this->data,
-            data,
-            len > sizeof( this->data ) ? sizeof( this->data ) : len );
+  CompletionRec_t( unsigned int hart, uint16_t destReg, size_t len, uint64_t addr, void* data, RevRegClass regClass )
+    : hart( hart ), destReg( destReg ), len( len ), addr( addr ), isFloat( regClass == RevRegClass::RegFLOAT ),
+      wait4Completion( true ) {
+    memcpy( &this->data, data, len > sizeof( this->data ) ? sizeof( this->data ) : len );
   }
 };
 
@@ -208,7 +193,7 @@ public:
   /// RevTracer: assign disassembler. Returns 0 if successful
   int SetDisassembler( std::string machine );
   /// RevTracer: assign trace symbol lookup map
-  void SetTraceSymbols( std::map< uint64_t, std::string >* TraceSymbols );
+  void SetTraceSymbols( std::map<uint64_t, std::string>* TraceSymbols );
   /// RevTracer: assign cycle where trace will start (user param)
   void SetStartCycle( uint64_t c );
   /// RevTracer: assign maximum output lines (user param)
@@ -234,18 +219,12 @@ public:
   /// RevTracer: capture 64-bit program counter
   void pcWrite( uint64_t newpc );
   /// RevTracer: render instruction execution trace to output stream and update tracer state
-  void Exec( size_t             cycle,
-             unsigned           id,
-             unsigned           hart,
-             unsigned           tid,
-             const std::string& fallbackMnemonic );
+  void Exec( size_t cycle, unsigned id, unsigned hart, unsigned tid, const std::string& fallbackMnemonic );
   /// RevTracer: Render captured states
   void Render( size_t cycle );
 
   /// RevTracer: control whether to render captured states
-  void SetOutputEnable( bool e ) {
-    outputEnabled = e;
-  }
+  void SetOutputEnable( bool e ) { outputEnabled = e; }
 
   /// Reset trace state
   void Reset();
@@ -271,17 +250,17 @@ private:
   /// RevTracer: Special affecting trace output
   TraceEvents_t events;
   /// RevTracer: buffer for captured states
-  std::vector< TraceRec_t > traceRecs;
+  std::vector<TraceRec_t> traceRecs;
   /// RevTracer: Completion records
-  std::vector< CompletionRec_t > completionRecs;
+  std::vector<CompletionRec_t> completionRecs;
   /// RevTracer: saved program counter
-  uint64_t pc                                     = 0;
+  uint64_t pc                                   = 0;
   /// RevTracer: previous program counter for branch determination
-  uint64_t lastPC                                 = 0;
+  uint64_t lastPC                               = 0;
   /// RevTracer: saved instruction
-  uint32_t insn                                   = 0;
+  uint32_t insn                                 = 0;
   /// RevTracer: map of instruction addresses to symbols
-  std::map< uint64_t, std::string >* traceSymbols = nullptr;
+  std::map<uint64_t, std::string>* traceSymbols = nullptr;
   /// RevTracer: Array of supported "NOP" instructions avaible for trace controls
   uint32_t nops[NOP_COUNT];
   /// RevTracer: Check current state against user settings and update state
@@ -299,7 +278,7 @@ private:
   /// RevTracer: User setting: maximum number of lines to print
   uint64_t cycleLimit = 0;
   /// RevTracer: support for trace control push/pop
-  std::vector< bool > enableQ;
+  std::vector<bool> enableQ;
   /// RevTracer: current pointer into trace controls queue
   unsigned enableQindex;
   /// RevTracer: wraparound limit for trace controls queue

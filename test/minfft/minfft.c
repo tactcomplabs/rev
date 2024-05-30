@@ -11,22 +11,14 @@ static const minfft_real pi       = 3.141592653589793238462643383279502884L;
 static const minfft_real sqrt2    = 1.414213562373095048801688724209698079L;
 static const minfft_real invsqrt2 = 0.707106781186547524400844362104849039L;
 
-
 // *** higher-order functions ***
 
 // a pointer to a strided 1d complex transform routine
-typedef void ( *s_cx_1d_t )( minfft_cmpl*,
-                             minfft_cmpl*,
-                             int,
-                             const minfft_aux* );
+typedef void ( *s_cx_1d_t )( minfft_cmpl*, minfft_cmpl*, int, const minfft_aux* );
 
 // make a strided any-dimensional complex transform
 // by repeated application of its strided one-dimensional routine
-inline static void mkcx( minfft_cmpl*      x,
-                         minfft_cmpl*      y,
-                         int               sy,
-                         const minfft_aux* a,
-                         s_cx_1d_t         s_1d ) {
+inline static void mkcx( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a, s_cx_1d_t s_1d ) {
   // volatile int* rev = 0xDEADBEEF;
   //  *rev = 0x0BBB0004;
   if( a->sub2 == NULL )
@@ -46,18 +38,11 @@ inline static void mkcx( minfft_cmpl*      x,
 }
 
 // a pointer to a strided 1d real transform routine
-typedef void ( *s_rx_1d_t )( minfft_real*,
-                             minfft_real*,
-                             int,
-                             const minfft_aux* );
+typedef void ( *s_rx_1d_t )( minfft_real*, minfft_real*, int, const minfft_aux* );
 
 // make a strided any-dimensional real transform
 // by repeated application of its strided one-dimensional routine
-inline static void mkrx( minfft_real*      x,
-                         minfft_real*      y,
-                         int               sy,
-                         const minfft_aux* a,
-                         s_rx_1d_t         s_1d ) {
+inline static void mkrx( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a, s_rx_1d_t s_1d ) {
   if( a->sub2 == NULL )
     ( *s_1d )( x, y, sy, a );
   else {
@@ -76,12 +61,7 @@ inline static void mkrx( minfft_real*      x,
 // *** complex transforms ***
 
 // recursive strided one-dimensional DFT
-inline static void rs_dft_1d( int                N,
-                              minfft_cmpl*       x,
-                              minfft_cmpl*       t,
-                              minfft_cmpl*       y,
-                              int                sy,
-                              const minfft_cmpl* e ) {
+inline static void rs_dft_1d( int N, minfft_cmpl* x, minfft_cmpl* t, minfft_cmpl* y, int sy, const minfft_cmpl* e ) {
   int n;  // counter
   // split-radix DIF
   // volatile int* rev = 0xDEADBEEF;
@@ -236,8 +216,7 @@ inline static void rs_dft_1d( int                N,
     return;
   }
   // recursion
-  minfft_real *xr = (minfft_real*) x, *tr = (minfft_real*) t,
-              *er = (minfft_real*) e;
+  minfft_real *xr = (minfft_real*) x, *tr = (minfft_real*) t, *er = (minfft_real*) e;
   minfft_real *xi = xr + 1, *ti = tr + 1, *ei = er + 1;
   // prepare sub-transform inputs
   int loopCount = N / 4;
@@ -277,19 +256,16 @@ inline static void rs_dft_1d( int                N,
   // call sub-transforms
   rs_dft_1d( N / 2, t, t, y, 2 * sy, e + N / 2 );
   rs_dft_1d( N / 4, t + N / 2, t + N / 2, y + sy, 4 * sy, e + 3 * N / 4 );
-  rs_dft_1d(
-    N / 4, t + 3 * N / 4, t + 3 * N / 4, y + 3 * sy, 4 * sy, e + 3 * N / 4 );
+  rs_dft_1d( N / 4, t + 3 * N / 4, t + 3 * N / 4, y + 3 * sy, 4 * sy, e + 3 * N / 4 );
 }
 
 // strided one-dimensional DFT
-inline static void
-  s_dft_1d( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
+inline static void s_dft_1d( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
   rs_dft_1d( a->N, x, a->t, y, sy, a->e );
 }
 
 // strided DFT of arbitrary dimension
-inline static void
-  s_dft( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
+inline static void s_dft( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
   // volatile int* rev = 0xDEADBEEF;
   // *rev = 0x0CCC0003;
   mkcx( x, y, sy, a, s_dft_1d );
@@ -303,12 +279,7 @@ void minfft_dft( minfft_cmpl* x, minfft_cmpl* y, const minfft_aux* a ) {
 }
 
 // recursive strided one-dimensional inverse DFT
-inline static void rs_invdft_1d( int                N,
-                                 minfft_cmpl*       x,
-                                 minfft_cmpl*       t,
-                                 minfft_cmpl*       y,
-                                 int                sy,
-                                 const minfft_cmpl* e ) {
+inline static void rs_invdft_1d( int N, minfft_cmpl* x, minfft_cmpl* t, minfft_cmpl* y, int sy, const minfft_cmpl* e ) {
   int n;  // counter
   // split-radix DIF
   if( N == 1 ) {
@@ -462,8 +433,7 @@ inline static void rs_invdft_1d( int                N,
     return;
   }
   // recursion
-  minfft_real *xr = (minfft_real*) x, *tr = (minfft_real*) t,
-              *er = (minfft_real*) e;
+  minfft_real *xr = (minfft_real*) x, *tr = (minfft_real*) t, *er = (minfft_real*) e;
   minfft_real *xi = xr + 1, *ti = tr + 1, *ei = er + 1;
   // prepare sub-transform inputs
   for( n = 0; n < N / 4; ++n ) {
@@ -501,19 +471,16 @@ inline static void rs_invdft_1d( int                N,
   // call sub-transforms
   rs_invdft_1d( N / 2, t, t, y, 2 * sy, e + N / 2 );
   rs_invdft_1d( N / 4, t + N / 2, t + N / 2, y + sy, 4 * sy, e + 3 * N / 4 );
-  rs_invdft_1d(
-    N / 4, t + 3 * N / 4, t + 3 * N / 4, y + 3 * sy, 4 * sy, e + 3 * N / 4 );
+  rs_invdft_1d( N / 4, t + 3 * N / 4, t + 3 * N / 4, y + 3 * sy, 4 * sy, e + 3 * N / 4 );
 }
 
 // strided one-dimensional inverse DFT
-inline static void
-  s_invdft_1d( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
+inline static void s_invdft_1d( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
   rs_invdft_1d( a->N, x, a->t, y, sy, a->e );
 }
 
 // strided inverse DFT of arbitrary dimension
-inline static void
-  s_invdft( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
+inline static void s_invdft( minfft_cmpl* x, minfft_cmpl* y, int sy, const minfft_aux* a ) {
   mkcx( x, y, sy, a, s_invdft_1d );
 }
 
@@ -525,8 +492,7 @@ void minfft_invdft( minfft_cmpl* x, minfft_cmpl* y, const minfft_aux* a ) {
 // *** real transforms ***
 
 // strided one-dimensional real DFT
-inline static void
-  s_realdft_1d( minfft_real* x, minfft_cmpl* z, int sz, const minfft_aux* a ) {
+inline static void s_realdft_1d( minfft_real* x, minfft_cmpl* z, int sz, const minfft_aux* a ) {
   int          n;                      // counter
   int          N  = a->N;              // transform length
   minfft_cmpl* e  = a->e;              // exponent vector
@@ -613,8 +579,7 @@ void minfft_realdft( minfft_real* x, minfft_cmpl* z, const minfft_aux* a ) {
 }
 
 // one-dimensional inverse real DFT
-inline static void
-  invrealdft_1d( minfft_cmpl* z, minfft_real* y, const minfft_aux* a ) {
+inline static void invrealdft_1d( minfft_cmpl* z, minfft_real* y, const minfft_aux* a ) {
   int          n;                      // counter
   int          N  = a->N;              // transform length
   minfft_cmpl* e  = a->e;              // exponent vector
@@ -702,8 +667,7 @@ void minfft_invrealdft( minfft_cmpl* z, minfft_real* y, const minfft_aux* a ) {
 // *** real symmetric transforms ***
 
 // strided one-dimensional DCT-2
-inline static void
-  s_dct2_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dct2_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   int          n;                     // counter
   int          N = a->N;              // transform length
   minfft_real* t = a->t;              // temporary buffer
@@ -729,18 +693,16 @@ inline static void
   y[0]            = 2 * t[0];
   for( n = 1; n < N / 2; ++n ) {
     // y[sy*n]=2*creal(z[n]*e[n]);
-    y[sy * n] = 2 * ( t[2 * n] * er[2 * n] - t[2 * n + 1] * ei[2 * n] );
+    y[sy * n]         = 2 * ( t[2 * n] * er[2 * n] - t[2 * n + 1] * ei[2 * n] );
     // y[sy*(N-n)]=-2*cimag(z[n]*e[n]);
-    y[sy * ( N - n )] =
-      -2 * ( t[2 * n] * ei[2 * n] + t[2 * n + 1] * er[2 * n] );
+    y[sy * ( N - n )] = -2 * ( t[2 * n] * ei[2 * n] + t[2 * n + 1] * er[2 * n] );
   }
   // y[sy*N/2]=sqrt2*creal(z[N/2]);
   y[sy * N / 2] = sqrt2 * t[N];
 }
 
 // strided DCT-2 of arbitrary dimension
-inline static void
-  s_dct2( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dct2( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   mkrx( x, y, sy, a, s_dct2_1d );
 }
 
@@ -750,8 +712,7 @@ void minfft_dct2( minfft_real* x, minfft_real* y, const minfft_aux* a ) {
 }
 
 // strided one-dimensional DST-2
-inline static void
-  s_dst2_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dst2_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   int          n;                     // counter
   int          N = a->N;              // transform length
   minfft_real* t = a->t;              // temporary buffer
@@ -777,19 +738,16 @@ inline static void
   y[sy * ( N - 1 )] = 2 * t[0];
   for( n = 1; n < N / 2; ++n ) {
     // y[sy*(n-1)]=-2*cimag(z[n]*e[n]);
-    y[sy * ( n - 1 )] =
-      -2 * ( t[2 * n] * ei[2 * n] + t[2 * n + 1] * er[2 * n] );
+    y[sy * ( n - 1 )]     = -2 * ( t[2 * n] * ei[2 * n] + t[2 * n + 1] * er[2 * n] );
     // y[sy*(N-n-1)]=2*creal(z[n]*e[n]);
-    y[sy * ( N - n - 1 )] =
-      2 * ( t[2 * n] * er[2 * n] - t[2 * n + 1] * ei[2 * n] );
+    y[sy * ( N - n - 1 )] = 2 * ( t[2 * n] * er[2 * n] - t[2 * n + 1] * ei[2 * n] );
   }
   // y[sy*(N/2-1)]=sqrt2*creal(z[N/2]);
   y[sy * ( N / 2 - 1 )] = sqrt2 * t[N];
 }
 
 // strided DST-2 of arbitrary dimension
-inline static void
-  s_dst2( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dst2( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   mkrx( x, y, sy, a, s_dst2_1d );
 }
 
@@ -799,8 +757,7 @@ void minfft_dst2( minfft_real* x, minfft_real* y, const minfft_aux* a ) {
 }
 
 // strided one-dimensional DCT-3
-inline static void
-  s_dct3_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dct3_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   int          n;                     // counter
   int          N = a->N;              // transform length
   minfft_cmpl* z = a->t;              // temporary buffer
@@ -836,8 +793,7 @@ inline static void
 }
 
 // strided DCT-3 of arbitrary dimension
-inline static void
-  s_dct3( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dct3( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   mkrx( x, y, sy, a, s_dct3_1d );
 }
 
@@ -847,8 +803,7 @@ void minfft_dct3( minfft_real* x, minfft_real* y, const minfft_aux* a ) {
 }
 
 // strided one-dimensional DST-3
-inline static void
-  s_dst3_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dst3_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   int          n;                     // counter
   int          N = a->N;              // transform length
   minfft_cmpl* z = a->t;              // temporary buffer
@@ -884,8 +839,7 @@ inline static void
 }
 
 // strided DST-3 of arbitrary dimension
-inline static void
-  s_dst3( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dst3( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   mkrx( x, y, sy, a, s_dst3_1d );
 }
 
@@ -895,8 +849,7 @@ void minfft_dst3( minfft_real* x, minfft_real* y, const minfft_aux* a ) {
 }
 
 // strided one-dimensional DCT-4
-inline static void
-  s_dct4_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dct4_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   int          n;         // counter
   int          N = a->N;  // transform length
   minfft_cmpl* t = a->t;  // temporary buffer
@@ -922,16 +875,14 @@ inline static void
   ei += N;
   for( n = 0; n < N / 2; ++n ) {
     // y[sy*2*n]=2*creal(*e++*t[n]);
-    y[sy * 2 * n] = 2 * ( er[4 * n] * tr[2 * n] - ei[4 * n] * ti[2 * n] );
+    y[sy * 2 * n]         = 2 * ( er[4 * n] * tr[2 * n] - ei[4 * n] * ti[2 * n] );
     // y[sy*(2*n+1)]=2*creal(*e++*conj(t[N/2-1-n]));
-    y[sy * ( 2 * n + 1 )] = 2 * ( er[4 * n + 2] * tr[N - 2 - 2 * n] +
-                                  ei[4 * n + 2] * ti[N - 2 - 2 * n] );
+    y[sy * ( 2 * n + 1 )] = 2 * ( er[4 * n + 2] * tr[N - 2 - 2 * n] + ei[4 * n + 2] * ti[N - 2 - 2 * n] );
   }
 }
 
 // strided DCT-4 of arbitrary dimension
-inline static void
-  s_dct4( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dct4( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   mkrx( x, y, sy, a, s_dct4_1d );
 }
 
@@ -941,8 +892,7 @@ void minfft_dct4( minfft_real* x, minfft_real* y, const minfft_aux* a ) {
 }
 
 // strided one-dimensional DST-4
-inline static void
-  s_dst4_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dst4_1d( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   int          n;         // counter
   int          N = a->N;  // transform length
   minfft_cmpl* t = a->t;  // temporary buffer
@@ -968,16 +918,14 @@ inline static void
   ei += N;
   for( n = 0; n < N / 2; ++n ) {
     // y[sy*2*n]=2*cimag(*e++*t[n]);
-    y[sy * 2 * n] = 2 * ( er[4 * n] * ti[2 * n] + ei[4 * n] * tr[2 * n] );
+    y[sy * 2 * n]         = 2 * ( er[4 * n] * ti[2 * n] + ei[4 * n] * tr[2 * n] );
     // y[sy*(2*n+1)]=2*cimag(*e++*conj(t[N/2-1-n]));
-    y[sy * ( 2 * n + 1 )] = 2 * ( -er[4 * n + 2] * ti[N - 2 - 2 * n] +
-                                  ei[4 * n + 2] * tr[N - 2 - 2 * n] );
+    y[sy * ( 2 * n + 1 )] = 2 * ( -er[4 * n + 2] * ti[N - 2 - 2 * n] + ei[4 * n + 2] * tr[N - 2 - 2 * n] );
   }
 }
 
 // strided DST-4 of arbitrary dimension
-inline static void
-  s_dst4( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
+inline static void s_dst4( minfft_real* x, minfft_real* y, int sy, const minfft_aux* a ) {
   mkrx( x, y, sy, a, s_dst4_1d );
 }
 
@@ -1037,8 +985,7 @@ static minfft_real nsin( int n, int N ) {
 
 // make aux data for any transform of arbitrary dimension
 // using its one-dimensional version
-static minfft_aux*
-  make_aux( int d, int* Ns, int datasz, minfft_aux* ( *aux_1d )( int N ) ) {
+static minfft_aux* make_aux( int d, int* Ns, int datasz, minfft_aux* ( *aux_1d )( int N ) ) {
   minfft_aux* a;
   int         p;  // product of all transform lengths
   int         i;  // array index
@@ -1218,8 +1165,7 @@ minfft_aux* minfft_mkaux_t2t3_1d( int N ) {
     goto err;
   a->N = N;
   if( N >= 2 ) {
-    a->t =
-      malloc( ( N + 2 ) * sizeof( minfft_real ) );  // for in-place real DFT
+    a->t = malloc( ( N + 2 ) * sizeof( minfft_real ) );  // for in-place real DFT
     if( a->t == NULL )
       goto err;
     a->e = malloc( ( N / 2 ) * sizeof( minfft_cmpl ) );

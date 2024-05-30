@@ -22,7 +22,6 @@ int main( int argc, char** argv ) {
   // # Arithmetic tests
   // #-------------------------------------------------------------
 
-
   TEST_RR_OP( 2, divuw, 3, 20, 6 );
   TEST_RR_OP( 3, divuw, 715827879, -20 << 32 >> 32, 6 );
   TEST_RR_OP( 4, divuw, 0, 20, -6 );

@@ -18,8 +18,9 @@ int main() {
     N * sizeof( uint64_t ),
     PROT_READ | PROT_WRITE | PROT_EXEC,  // RWX permissions
     MAP_PRIVATE | MAP_ANONYMOUS,         // Not shared, anonymous
-    -1,   // No file descriptor because it's an anonymous mapping
-    0 );  // No offset, irrelevant for anonymous mappings
+    -1,                                  // No file descriptor because it's an anonymous mapping
+    0
+  );  // No offset, irrelevant for anonymous mappings
 
   for( uint64_t i = 0; i < N; i++ ) {
     addr[i] = i;
