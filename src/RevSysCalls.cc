@@ -3304,8 +3304,13 @@ EcallStatus RevCore::ECALL_dump_stack_to_file() {
     // open the current directory and the file
     // open the file in write mode
     std::ofstream outputFile( EcallState.string, std::ios::out | std::ios::binary );
-    // TODO: Factor in TLS
-    mem->DumpMem( RegFile->GetX<uint64_t>( RevReg::sp ), _STACK_SIZE_, 16, outputFile );
+
+    mem->DumpMem(
+      RegFile->GetX<uint64_t>( RevReg::sp ),
+      RegFile->GetX<uint64_t>( RevReg::tp ) - RegFile->GetX<uint64_t>( RevReg::sp ),
+      16,
+      outputFile
+    );
   };
 
   return EcallLoadAndParseString( pathname, action );
