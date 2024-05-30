@@ -292,6 +292,9 @@ public:
   ///< RevMem: Get DumpRanges vector
   std::map<std::string, std::shared_ptr<MemSegment>>& GetDumpRanges() { return DumpRanges; }
 
+  ///< RevMem: Get DumpRanges vector (const version)
+  const std::map<std::string, std::shared_ptr<MemSegment>>& GetDumpRanges() const { return DumpRanges; }
+
   /// RevMem: Add new MemSegment (anywhere) --- Returns BaseAddr of segment
   uint64_t AddMemSeg( const uint64_t& SegSize );
 
@@ -373,7 +376,9 @@ public:
 
   void DumpValidMem( const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout );
 
-  void DumpMemSeg( std::shared_ptr<MemSegment> MemSeg, const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout );
+  void DumpMemSeg(
+    const std::shared_ptr<MemSegment>& MemSeg, const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout
+  );
 
   void DumpThreadMem( const uint64_t bytesPerRow = 16, std::ostream& outputStream = std::cout );
 
