@@ -110,6 +110,18 @@ public:
     /// MemSegment: Override the greater than operator
     bool operator>( const MemSegment& other ) const { return BaseAddr > other.BaseAddr; }
 
+    /// MemSegment: Override the equality operator
+    bool operator==( const MemSegment& other ) const { return BaseAddr == other.BaseAddr; }
+
+    /// MemSegment: Override the not equal operator
+    bool operator!=( const MemSegment& other ) const { return BaseAddr != other.BaseAddr; }
+
+    /// MemSegment: Override the less than or equal operator
+    bool operator<=( const MemSegment& other ) const { return BaseAddr <= other.BaseAddr; }
+
+    /// MemSegment: Override the greater than or equal operator
+    bool operator>=( const MemSegment& other ) const { return BaseAddr >= other.BaseAddr; }
+
   private:
     uint64_t BaseAddr;  ///< MemSegment: Base address of the memory segment
     uint64_t Size;      ///< MemSegment: Size of the memory segment
