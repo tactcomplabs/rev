@@ -5,7 +5,7 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-# rev-basic-config.py
+# mem_dump.py
 #
 
 import os
