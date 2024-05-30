@@ -221,7 +221,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       }
       const uint64_t startAddr = scopedParams.find<uint64_t>( "startAddr" );
       const uint64_t size      = scopedParams.find<uint64_t>( "size" );
-      // FIXME: @Ken I don't think we need these
       Mem->AddDumpRange( segName, startAddr, size );
     }
   }

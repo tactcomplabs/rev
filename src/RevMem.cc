@@ -10,12 +10,9 @@
 
 #include "RevMem.h"
 #include "RevRand.h"
-#include <cmath>
 #include <cstring>
-#include <functional>
 #include <iomanip>
 #include <memory>
-#include <mutex>
 #include <utility>
 
 namespace SST::RevCPU {
@@ -1026,10 +1023,6 @@ uint64_t RevMem::ExpandHeap( uint64_t Size ) {
 }
 
 void RevMem::DumpMem( const uint64_t startAddr, const uint64_t numBytes, const uint64_t bytesPerRow, std::ostream& outputStream ) {
-
-  // @KEN Confirm this is okay... If you would prefer to have the address come after the result of CalcPhysAddr
-  // you risk getting a segfault if the address has not been allocated yet
-  // FIXME:
   uint64_t       translatedStartAddr = startAddr;             //CalcPhysAddr( 0, startAddr );
   const uint64_t endAddr             = startAddr + numBytes;  //translatedStartAddr + numBytes;
 
@@ -1061,7 +1054,7 @@ void RevMem::DumpMem( const uint64_t startAddr, const uint64_t numBytes, const u
   }
 }
 
-void RevMem::DumpMemSeg( std::shared_ptr<MemSegment> MemSeg, const uint64_t bytesPerRow, std::ostream& outputStream ) {
+void RevMem::DumpMemSeg( const std::shared_ptr<MemSegment>& MemSeg, const uint64_t bytesPerRow, std::ostream& outputStream ) {
 
   outputStream << "// " << *MemSeg << std::endl;
   DumpMem( MemSeg->getBaseAddr(), MemSeg->getSize(), bytesPerRow, outputStream );
