@@ -108,11 +108,7 @@ public:
     bool operator<( const MemSegment& other ) const { return BaseAddr < other.BaseAddr; }
 
     /// MemSegment: Override the greater than operator
-    bool operator>( const MemSegment& other ) const {
-      return BaseAddr > other.BaseAddr;
-      return os << " | BaseAddr:  0x" << std::hex << Seg.getBaseAddr() << " | TopAddr: 0x" << std::hex << Seg.getTopAddr()
-                << " | Size: " << std::dec << Seg.getSize() << " Bytes";
-    }
+    bool operator>( const MemSegment& other ) const { return BaseAddr > other.BaseAddr; }
 
   private:
     uint64_t BaseAddr;  ///< MemSegment: Base address of the memory segment
