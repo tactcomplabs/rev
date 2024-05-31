@@ -203,28 +203,29 @@ public:
     {"TLBMisses",           "TLB misses",                                           "count",  1},
     )
 
+  // clang-format on
+
   // Passed as a function pointer to each RevCore for when they encounter a function that
   // results in a new RevThread being spawned
   std::function<uint32_t()> GetNewTID() {
-    return std::function<uint32_t()>([this]() { return GetNewThreadID(); });
+    return std::function<uint32_t()>( [this]() { return GetNewThreadID(); } );
   }
 
 private:
-  unsigned numCores{};                ///< RevCPU: number of RISC-V cores
-  unsigned numHarts{};                ///< RevCPU: number of RISC-V cores
-  unsigned msgPerCycle{};             ///< RevCPU: number of messages to send per cycle
-  unsigned RDMAPerCycle{};            ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
-  unsigned testStage{};               ///< RevCPU: controls the PAN Test harness staging
-  unsigned testIters{};               ///< RevCPU: the number of message iters for each PAN Test
-  std::string Exe{};                  ///< RevCPU: binary executable
-  std::string Args{};                 ///< RevCPU: argument list
-  RevOpts *Opts{};                    ///< RevCPU: Simulation options object
-  RevMem *Mem{};                      ///< RevCPU: RISC-V main memory object
-  RevLoader *Loader{};                ///< RevCPU: RISC-V loader
-  std::vector<RevCore *> Procs{};     ///< RevCPU: RISC-V processor objects
-  bool *Enabled{};                    ///< RevCPU: Completion structure
+  unsigned              numCores{};      ///< RevCPU: number of RISC-V cores
+  unsigned              numHarts{};      ///< RevCPU: number of RISC-V cores
+  unsigned              msgPerCycle{};   ///< RevCPU: number of messages to send per cycle
+  unsigned              RDMAPerCycle{};  ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
+  unsigned              testStage{};     ///< RevCPU: controls the PAN Test harness staging
+  unsigned              testIters{};     ///< RevCPU: the number of message iters for each PAN Test
+  std::string           Exe{};           ///< RevCPU: binary executable
+  std::string           Args{};          ///< RevCPU: argument list
+  RevOpts*              Opts{};          ///< RevCPU: Simulation options object
+  RevMem*               Mem{};           ///< RevCPU: RISC-V main memory object
+  RevLoader*            Loader{};        ///< RevCPU: RISC-V loader
+  std::vector<RevCore*> Procs{};         ///< RevCPU: RISC-V processor objects
+  bool*                 Enabled{};       ///< RevCPU: Completion structure
 
-  // clang-format on
   // Initializes a RevThread object.
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
   void InitThread( std::unique_ptr<RevThread>&& ThreadToInit );
@@ -256,13 +257,13 @@ private:
   bool ThreadCanProceed( const std::unique_ptr<RevThread>& Thread );
 
   // vector of Threads which are ready to be scheduled
-  std::vector<std::unique_ptr<RevThread>> ReadyThreads                      = {};
+  std::vector<std::unique_ptr<RevThread>> ReadyThreads{};
 
   // List of Threads that are currently blocked (waiting for their WaitingOnTID to be a key in CompletedThreads).
-  std::list<std::unique_ptr<RevThread>> BlockedThreads                      = {};
+  std::list<std::unique_ptr<RevThread>> BlockedThreads{};
 
   // Set of Thread IDs and their corresponding RevThread that have completed their execution on this RevCPU
-  std::unordered_map<uint32_t, std::unique_ptr<RevThread>> CompletedThreads = {};
+  std::unordered_map<uint32_t, std::unique_ptr<RevThread>> CompletedThreads{};
 
   // Generates a new Thread ID using the RNG.
   uint32_t GetNewThreadID() { return RevRand( 0, UINT32_MAX ); }

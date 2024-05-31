@@ -137,11 +137,11 @@ enum TraceKeyword_t {
 // b;  // value           len                     len
 // c;  // origin(TODO)    data (limit 8 bytes)    reg
 struct TraceRec_t {
-  TraceKeyword_t key;
+  TraceKeyword_t key{};
   // register        memory                  memh
-  uint64_t a;  // reg             adr                     adr
-  uint64_t b;  // value           len                     len
-  uint64_t c;  // origin(TODO)    data (limited 8 bytes)  reg
+  uint64_t a{};  // reg             adr                     adr
+  uint64_t b{};  // value           len                     len
+  uint64_t c{};  // origin(TODO)    data (limited 8 bytes)  reg
   TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) : key( Key ), a( A ), b( B ), c( C ){};
 };
 
@@ -168,13 +168,13 @@ struct InstHeader_t {
 
 // aggregate read completion (memh)
 struct CompletionRec_t {
-  unsigned int hart;
-  uint16_t     destReg;
-  size_t       len;
-  uint64_t     addr;
+  unsigned int hart{};
+  uint16_t     destReg{};
+  size_t       len{};
+  uint64_t     addr{};
   uint64_t     data{};  // first 8 bytes max
-  bool         isFloat         = false;
-  bool         wait4Completion = false;
+  bool         isFloat{};
+  bool         wait4Completion{};
 
   CompletionRec_t( unsigned int hart, uint16_t destReg, size_t len, uint64_t addr, void* data, RevRegClass regClass )
     : hart( hart ), destReg( destReg ), len( len ), addr( addr ), isFloat( regClass == RevRegClass::RegFLOAT ),
@@ -234,17 +234,17 @@ private:
   void InstTraceReset();
 
   /// RevTracer: instance name
-  std::string name;
+  std::string name{};
 #ifdef REV_USE_SPIKE
   /// RevTracer: instruction parser used by disassembler
-  isa_parser_t* isaParser;
+  isa_parser_t* isaParser{};
   /// RevTracer: disassembler
-  disassembler_t* diasm;
+  disassembler_t* diasm{};
 #endif
   /// RevTracer: pointer to output stream
-  SST::Output* pOutput;
+  SST::Output* pOutput{};
   /// RevTracer: control whether output is printed or not ( sampling continues )
-  bool outputEnabled = false;
+  bool outputEnabled{};
   /// RevTracer: Instruction header captured at execution phase.
   InstHeader_t instHeader{};
   /// RevTracer: Special affecting trace output
@@ -262,7 +262,7 @@ private:
   /// RevTracer: map of instruction addresses to symbols
   std::map<uint64_t, std::string>* traceSymbols{};
   /// RevTracer: Array of supported "NOP" instructions avaible for trace controls
-  uint32_t nops[NOP_COUNT];
+  uint32_t nops[NOP_COUNT]{};
   /// RevTracer: Check current state against user settings and update state
   void CheckUserControls( uint64_t cycle );
   /// RevTracer: determine if this buffer should be rendered

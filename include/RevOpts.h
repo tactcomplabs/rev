@@ -83,9 +83,9 @@ public:
   std::vector<std::string> GetArgv() { return Argv; }
 
 private:
-  unsigned numCores;   ///< RevOpts: number of initialized cores
-  unsigned numHarts;   ///< RevOpts: number of harts per core
-  int      verbosity;  ///< RevOpts: verbosity level
+  unsigned numCores{};   ///< RevOpts: number of initialized cores
+  unsigned numHarts{};   ///< RevOpts: number of harts per core
+  int      verbosity{};  ///< RevOpts: verbosity level
 
   std::map<unsigned, uint64_t>    startAddr{};      ///< RevOpts: map of core id to starting address
   std::map<unsigned, std::string> startSym{};       ///< RevOpts: map of core id to starting symbol
@@ -97,7 +97,7 @@ private:
 
   std::vector<std::string> Argv{};  ///< RevOpts: vector of function arguments
 
-  std::vector<std::string> MemDumpRanges;  ///< RevOpts: vector of function arguments
+  std::vector<std::string> MemDumpRanges{};  ///< RevOpts: vector of function arguments
 
   /// RevOpts: splits a string into tokens
   void splitStr( const std::string& s, char c, std::vector<std::string>& v );
