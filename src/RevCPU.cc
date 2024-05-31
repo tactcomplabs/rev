@@ -12,6 +12,7 @@
 #include "RevMem.h"
 #include "RevThread.h"
 #include <cmath>
+#include <fstream>
 #include <memory>
 
 namespace SST::RevCPU {
@@ -184,6 +185,40 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     }
   }
 
+  // Memory dumping option(s)
+  std::vector<std::string> memDumpRanges;
+  params.find_array( "memDumpRanges", memDumpRanges );
+  if( !memDumpRanges.empty() ) {
+    for( auto& segName : memDumpRanges ) {
+      // FIXME: Figure out how to parse units (GB, MB, KB, etc.)
+      // segName is a string... Look for scoped params for this segment
+      const auto& scopedParams = params.get_scoped_params( segName );
+      // Check scopedParams for the following:
+      // - startAddr (hex)
+      // - size (bytes)
+      if( !scopedParams.contains( "startAddr" ) ) {
+        output.fatal(
+          CALL_INFO,
+          -1,
+          "Error: memDumpRanges requires startAddr. Please specify this scoped "
+          "param as %s.startAddr in the configuration file\n",
+          segName.c_str()
+        );
+      } else if( !scopedParams.contains( "size" ) ) {
+        output.fatal(
+          CALL_INFO,
+          -1,
+          "Error: memDumpRanges requires size. Please specify this "
+          "scoped param as %s.size in the configuration file\n",
+          segName.c_str()
+        );
+      }
+      const uint64_t startAddr = scopedParams.find<uint64_t>( "startAddr" );
+      const uint64_t size      = scopedParams.find<uint64_t>( "size" );
+      Mem->AddDumpRange( segName, startAddr, size );
+    }
+  }
+
 #ifndef NO_REV_TRACER
   // Configure tracer and assign to each core
   if( output.getVerboseLevel() >= 5 ) {
@@ -312,6 +347,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   // Done with initialization
   output.verbose( CALL_INFO, 1, 0, "Initialization of RevCPUs complete.\n" );
+
+  for( const auto& [Name, Seg] : Mem->GetDumpRanges() ) {
+    // Open a file called '{Name}.init.dump'
+    std::ofstream dumpFile( Name + ".dump.init", std::ios::binary );
+    Mem->DumpMemSeg( Seg, 16, dumpFile );
+  }
 }
 
 RevCPU::~RevCPU() {
@@ -634,6 +675,12 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
     for( unsigned i = 0; i < numCores; i++ ) {
       UpdateCoreStatistics( i );
       Procs[i]->PrintStatSummary();
+    }
+
+    for( const auto& [Name, Seg] : Mem->GetDumpRanges() ) {
+      // Open a file called '{Name}.init.dump'
+      std::ofstream dumpFile( Name + ".dump.final", std::ios::binary );
+      Mem->DumpMemSeg( Seg, 16, dumpFile );
     }
     primaryComponentOKToEndSim();
     output.verbose( CALL_INFO, 5, 0, "OK to end sim at cycle: %" PRIu64 "\n", static_cast<uint64_t>( currentCycle ) );
