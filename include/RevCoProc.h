@@ -55,6 +55,10 @@ public:
   /// RevCoProc: default destructor
   virtual ~RevCoProc();
 
+  /// RevCoProc: disallow copying and assignment
+  RevCoProc( const RevCoProc& )            = delete;
+  RevCoProc& operator=( const RevCoProc& ) = delete;
+
   /// RevCoProc: send raw data to the coprocessor
   virtual bool sendRawData( std::vector<uint8_t> Data ) { return true; }
 
@@ -88,8 +92,8 @@ public:
   virtual bool IsDone()                                                            = 0;
 
 protected:
-  SST::Output*   output;  ///< RevCoProc: sst output object
-  RevCore* const parent;  ///< RevCoProc: Pointer to RevCore this CoProc is attached to
+  SST::Output*   output{};  ///< RevCoProc: sst output object
+  RevCore* const parent;    ///< RevCoProc: Pointer to RevCore this CoProc is attached to
 
   ///< RevCoProc: Create the passkey object - this allows access to otherwise private members within RevCore
   RevCorePasskey<RevCoProc> CreatePasskey() { return RevCorePasskey<RevCoProc>(); }
@@ -134,7 +138,11 @@ public:
   RevSimpleCoProc( ComponentId_t id, Params& params, RevCore* parent );
 
   /// RevSimpleCoProc: destructor
-  virtual ~RevSimpleCoProc();
+  virtual ~RevSimpleCoProc()                           = default;
+
+  /// RevSimpleCoProc: disallow copying and assignment
+  RevSimpleCoProc( const RevSimpleCoProc& )            = delete;
+  RevSimpleCoProc& operator=( const RevSimpleCoProc& ) = delete;
 
   /// RevSimpleCoProc: clock tick function - currently not registeres with SST, called by RevCPU
   virtual bool ClockTick( SST::Cycle_t cycle );
@@ -157,25 +165,21 @@ public:
 
 private:
   struct RevCoProcInst {
-    RevCoProcInst() = default;
-
     RevCoProcInst( uint32_t inst, RevFeature* F, RevRegFile* R, RevMem* M ) : Inst( inst ), Feature( F ), RegFile( R ), Mem( M ) {}
 
-    RevCoProcInst( const RevCoProcInst& rhs ) = default;
-
-    uint32_t    Inst                          = 0;
-    RevFeature* Feature                       = nullptr;
-    RevRegFile* RegFile                       = nullptr;
-    RevMem*     Mem                           = nullptr;
+    uint32_t const    Inst;
+    RevFeature* const Feature;
+    RevRegFile* const RegFile;
+    RevMem* const     Mem;
   };
 
   /// RevSimpleCoProc: Total number of instructions retired
-  Statistic<uint64_t>* num_instRetired;
+  Statistic<uint64_t>* num_instRetired{};
 
   /// Queue of instructions sent from attached RevCore
-  std::queue<RevCoProcInst> InstQ;
+  std::queue<RevCoProcInst> InstQ{};
 
-  SST::Cycle_t cycleCount;
+  SST::Cycle_t cycleCount{};
 
 };  //class RevSimpleCoProc
 

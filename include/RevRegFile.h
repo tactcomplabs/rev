@@ -161,6 +161,10 @@ public:
   // Constructor which takes a RevFeature
   explicit RevRegFile( const RevFeature* feature ) : IsRV32( feature->IsRV32() ), HasD( feature->HasD() ) {}
 
+  /// RevRegFile: disallow copying and assignment
+  RevRegFile( const RevRegFile& )            = delete;
+  RevRegFile& operator=( const RevRegFile& ) = delete;
+
   // Getters/Setters
 
   /// Get cost of the instruction

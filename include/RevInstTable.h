@@ -149,10 +149,10 @@ struct RevInstEntry {
   bool     raisefpe    = false;    ///<RevInstEntry: Whether FP exceptions are raised
 
   /// Instruction implementation function
-  bool ( *func )( RevFeature*, RevRegFile*, RevMem*, const RevInst& ) = nullptr;
+  bool ( *func )( RevFeature*, RevRegFile*, RevMem*, const RevInst& ){};
 
   /// Predicate for enabling table entries for only certain encodings
-  bool ( *predicate )( uint32_t Inst )                                = []( uint32_t ) { return true; };
+  bool ( *predicate )( uint32_t Inst ) = []( uint32_t ) { return true; };
 
   // Begin Set() functions to allow call chaining - all Set() must return *this
   // clang-format off

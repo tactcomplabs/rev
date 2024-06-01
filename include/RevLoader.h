@@ -281,6 +281,10 @@ public:
   /// RevLoader: standard destructor
   ~RevLoader();
 
+  /// RevLoader: disallow copying and assignment
+  RevLoader( const RevLoader& )            = delete;
+  RevLoader& operator=( const RevLoader& ) = delete;
+
   /// RevLoader: retrieves the address for the target symbol; 0x00ull if the symbol doesn't exist
   uint64_t GetSymbolAddr( std::string Symbol );
 
@@ -308,23 +312,21 @@ public:
   // friend std::ostream& operator<<(std::ostream &os, const Elf64_Ehdr &header){ };
 
 private:
-  std::string  exe;     ///< RevLoader: binary executable
-  std::string  args;    ///< RevLoader: program args
-  RevMem*      mem;     ///< RevLoader: memory object
-  SST::Output* output;  ///< RevLoader: output handler
+  std::string  exe{};     ///< RevLoader: binary executable
+  std::string  args{};    ///< RevLoader: program args
+  RevMem*      mem{};     ///< RevLoader: memory object
+  SST::Output* output{};  ///< RevLoader: output handler
 
-  uint32_t RV32Entry;  ///< RevLoader: RV32 entry
-  uint64_t RV64Entry;  ///< RevLoader: RV64 entry
+  uint32_t RV32Entry{};  ///< RevLoader: RV32 entry
+  uint64_t RV64Entry{};  ///< RevLoader: RV64 entry
 
-  uint64_t TLSBaseAddr = 0;
-  uint64_t TLSSize     = 0;
+  uint64_t TLSBaseAddr{};
+  uint64_t TLSSize{};
 
-  ElfInfo elfinfo;  ///< RevLoader: elf info from the loaded program
-
-  std::map<std::string, uint64_t> symtable;        ///< RevLoader: loaded symbol table
-  std::map<uint64_t, std::string> tracer_symbols;  ///< RevLoader: address to symbol for tracer
-
-  std::vector<std::string> argv;  ///< RevLoader: The actual argv table
+  ElfInfo                         elfinfo{};         ///< RevLoader: elf info from the loaded program
+  std::map<std::string, uint64_t> symtable{};        ///< RevLoader: loaded symbol table
+  std::map<uint64_t, std::string> tracer_symbols{};  ///< RevLoader: address to symbol for tracer
+  std::vector<std::string>        argv{};            ///< RevLoader: The actual argv table
 
   /// Loads the target executable into memory
   bool LoadElf();

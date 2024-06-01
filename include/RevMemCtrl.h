@@ -101,7 +101,11 @@ public:
   );
 
   /// RevMemOp default destructor
-  ~RevMemOp() = default;
+  ~RevMemOp()                            = default;
+
+  /// Disallow copying and assignment
+  RevMemOp( const RevMemOp& )            = delete;
+  RevMemOp& operator=( const RevMemOp& ) = delete;
 
   /// RevMemOp: retrieve the memory operation type
   MemOp getOp() const { return Op; }
@@ -167,19 +171,19 @@ public:
   bool isCacheable() const { return ( static_cast<uint32_t>( flags ) & 0b10 ) == 0; }
 
 private:
-  unsigned             Hart;       ///< RevMemOp: RISC-V Hart
-  uint64_t             Addr;       ///< RevMemOp: address
-  uint64_t             PAddr;      ///< RevMemOp: physical address (for RevMem I/O)
-  uint32_t             Size;       ///< RevMemOp: size of the memory operation in bytes
-  bool                 Inv;        ///< RevMemOp: flush operation invalidate flag
-  MemOp                Op;         ///< RevMemOp: target memory operation
-  unsigned             CustomOpc;  ///< RevMemOp: custom memory opcode
-  unsigned             SplitRqst;  ///< RevMemOp: number of split cache line requests
-  std::vector<uint8_t> membuf;     ///< RevMemOp: buffer
-  std::vector<uint8_t> tempT;      ///< RevMemOp: temporary target buffer for R-M-W ops
-  RevFlag              flags;      ///< RevMemOp: request flags
-  void*                target;     ///< RevMemOp: target register pointer
-  MemReq               procReq;    ///< RevMemOp: original request from RevCore
+  unsigned             Hart{};       ///< RevMemOp: RISC-V Hart
+  uint64_t             Addr{};       ///< RevMemOp: address
+  uint64_t             PAddr{};      ///< RevMemOp: physical address (for RevMem I/O)
+  uint32_t             Size{};       ///< RevMemOp: size of the memory operation in bytes
+  bool                 Inv{};        ///< RevMemOp: flush operation invalidate flag
+  MemOp                Op{};         ///< RevMemOp: target memory operation
+  unsigned             CustomOpc{};  ///< RevMemOp: custom memory opcode
+  unsigned             SplitRqst{};  ///< RevMemOp: number of split cache line requests
+  std::vector<uint8_t> membuf{};     ///< RevMemOp: buffer
+  std::vector<uint8_t> tempT{};      ///< RevMemOp: temporary target buffer for R-M-W ops
+  RevFlag              flags{};      ///< RevMemOp: request flags
+  void*                target{};     ///< RevMemOp: target register pointer
+  MemReq               procReq{};    ///< RevMemOp: original request from RevCore
 };
 
 // ----------------------------------------
@@ -196,6 +200,10 @@ public:
 
   /// RevMemCtrl: destructor
   virtual ~RevMemCtrl();
+
+  /// RevMemCtrl: disallow copying and assignment
+  RevMemCtrl( const RevMemCtrl& )                                                                                       = delete;
+  RevMemCtrl& operator=( const RevMemCtrl& )                                                                            = delete;
 
   /// RevMemCtrl: initialization function
   virtual void init( unsigned int phase )                                                                               = 0;
@@ -280,9 +288,9 @@ public:
   virtual void setTracer( RevTracer* tracer )                  = 0;
 
 protected:
-  SST::Output* output;            ///< RevMemCtrl: sst output object
-  RevTracer*   Tracer = nullptr;  ///< RevMemCtrl: tracer pointer
-};  // class RevMemCtrl
+  SST::Output* output{};  ///< RevMemCtrl: sst output object
+  RevTracer*   Tracer{};  ///< RevMemCtrl: tracer pointer
+};                        // class RevMemCtrl
 
 // ----------------------------------------
 // RevBasicMemCtrl
@@ -299,16 +307,16 @@ public:
   )
 
   // clang-format off
-  SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the memory controller",    "0" },
+  SST_ELI_DOCUMENT_PARAMS({ "verbose",        "Set the verbosity of output for the memory controller",       "0" },
                           { "clock",          "Sets the clock frequency of the memory conroller",         "1Ghz" },
-                          { "max_loads",      "Sets the maximum number of outstanding loads",             "64"},
-                          { "max_stores",     "Sets the maximum number of outstanding stores",            "64"},
-                          { "max_flush",      "Sets the maxmium number of oustanding flush events",       "64"},
-                          { "max_llsc",       "Sets the maximum number of outstanding LL/SC events",      "64"},
-                          { "max_readlock",   "Sets the maxmium number of outstanding readlock events",   "64"},
-                          { "max_writeunlock", "Sets the maximum number of outstanding writeunlock events", "64"},
-                          { "max_custom",     "Sets the maximum number of outstanding custom events",     "64"},
-                          { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle", "2" },
+                          { "max_loads",      "Sets the maximum number of outstanding loads",               "64" },
+                          { "max_stores",     "Sets the maximum number of outstanding stores",              "64" },
+                          { "max_flush",      "Sets the maxmium number of oustanding flush events",         "64" },
+                          { "max_llsc",       "Sets the maximum number of outstanding LL/SC events",        "64" },
+                          { "max_readlock",   "Sets the maxmium number of outstanding readlock events",     "64" },
+                          { "max_writeunlock","Sets the maximum number of outstanding writeunlock events",  "64" },
+                          { "max_custom",     "Sets the maximum number of outstanding custom events",       "64" },
+                          { "ops_per_cycle",  "Sets the maximum number of operations to issue per cycle",    "2" },
     )
 
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({ "memIface", "Set the interface to memory", "SST::Interfaces::StandardMem" })
@@ -316,45 +324,45 @@ public:
   SST_ELI_DOCUMENT_PORTS()
 
   SST_ELI_DOCUMENT_STATISTICS(
-    {"ReadInFlight",        "Counts the number of reads in flight",             "count", 1},
-    {"ReadPending",         "Counts the number of reads pending",               "count", 1},
-    {"ReadBytes",           "Counts the number of bytes read",                  "bytes", 1},
-    {"WriteInFlight",       "Counts the number of writes in flight",            "count", 1},
-    {"WritePending",        "Counts the number of writes pending",              "count", 1},
-    {"WriteBytes",          "Counts the number of bytes written",               "bytes", 1},
-    {"FlushInFlight",       "Counts the number of flushes in flight",           "count", 1},
-    {"FlushPending",        "Counts the number of flushes pending",             "count", 1},
-    {"ReadLockInFlight",    "Counts the number of readlocks in flight",         "count", 1},
-    {"ReadLockPending",     "Counts the number of readlocks pending",           "count", 1},
-    {"ReadLockBytes",       "Counts the number of readlock bytes read",         "bytes", 1},
-    {"WriteUnlockInFlight", "Counts the number of write unlocks in flight",     "count", 1},
-    {"WriteUnlockPending",  "Counts the number of write unlocks pending",       "count", 1},
-    {"WriteUnlockBytes",    "Counts the number of write unlock bytes written",  "bytes", 1},
-    {"LoadLinkInFlight",    "Counts the number of loadlinks in flight",         "count", 1},
-    {"LoadLinkPending",     "Counts the number of loadlinks pending",           "count", 1},
-    {"StoreCondInFlight",   "Counts the number of storeconds in flight",        "count", 1},
-    {"StoreCondPending",    "Counts the number of storeconds pending",          "count", 1},
-    {"CustomInFlight",      "Counts the number of custom commands in flight",   "count", 1},
-    {"CustomPending",       "Counts the number of custom commands pending",     "count", 1},
+    {"ReadInFlight",        "Counts the number of reads in flight",              "count", 1},
+    {"ReadPending",         "Counts the number of reads pending",                "count", 1},
+    {"ReadBytes",           "Counts the number of bytes read",                   "bytes", 1},
+    {"WriteInFlight",       "Counts the number of writes in flight",             "count", 1},
+    {"WritePending",        "Counts the number of writes pending",               "count", 1},
+    {"WriteBytes",          "Counts the number of bytes written",                "bytes", 1},
+    {"FlushInFlight",       "Counts the number of flushes in flight",            "count", 1},
+    {"FlushPending",        "Counts the number of flushes pending",              "count", 1},
+    {"ReadLockInFlight",    "Counts the number of readlocks in flight",          "count", 1},
+    {"ReadLockPending",     "Counts the number of readlocks pending",            "count", 1},
+    {"ReadLockBytes",       "Counts the number of readlock bytes read",          "bytes", 1},
+    {"WriteUnlockInFlight", "Counts the number of write unlocks in flight",      "count", 1},
+    {"WriteUnlockPending",  "Counts the number of write unlocks pending",        "count", 1},
+    {"WriteUnlockBytes",    "Counts the number of write unlock bytes written",   "bytes", 1},
+    {"LoadLinkInFlight",    "Counts the number of loadlinks in flight",          "count", 1},
+    {"LoadLinkPending",     "Counts the number of loadlinks pending",            "count", 1},
+    {"StoreCondInFlight",   "Counts the number of storeconds in flight",         "count", 1},
+    {"StoreCondPending",    "Counts the number of storeconds pending",           "count", 1},
+    {"CustomInFlight",      "Counts the number of custom commands in flight",    "count", 1},
+    {"CustomPending",       "Counts the number of custom commands pending",      "count", 1},
     {"CustomBytes",         "Counts the number of bytes in custom transactions", "bytes", 1},
-    {"FencePending",        "Counts the number of fence operations pending",    "count", 1},
+    {"FencePending",        "Counts the number of fence operations pending",     "count", 1},
     {"AMOAddBytes",         "Counts the number of bytes in AMOAdd transactions", "bytes", 1},
-    {"AMOAddPending",       "Counts the number of AMOAdd operations pending",   "count", 1},
+    {"AMOAddPending",       "Counts the number of AMOAdd operations pending",    "count", 1},
     {"AMOXorBytes",         "Counts the number of bytes in AMOXor transactions", "bytes", 1},
-    {"AMOXorPending",       "Counts the number of AMOXor operations pending",   "count", 1},
+    {"AMOXorPending",       "Counts the number of AMOXor operations pending",    "count", 1},
     {"AMOAndBytes",         "Counts the number of bytes in AMOAnd transactions", "bytes", 1},
-    {"AMOAndPending",       "Counts the number of AMOAnd operations pending",   "count", 1},
-    {"AMOOrBytes",          "Counts the number of bytes in AMOOr transactions", "bytes", 1},
-    {"AMOOrPending",        "Counts the number of AMOOr operations pending",    "count", 1},
+    {"AMOAndPending",       "Counts the number of AMOAnd operations pending",    "count", 1},
+    {"AMOOrBytes",          "Counts the number of bytes in AMOOr transactions",  "bytes", 1},
+    {"AMOOrPending",        "Counts the number of AMOOr operations pending",     "count", 1},
     {"AMOMinBytes",         "Counts the number of bytes in AMOMin transactions", "bytes", 1},
-    {"AMOMinPending",       "Counts the number of AMOMin operations pending",   "count", 1},
+    {"AMOMinPending",       "Counts the number of AMOMin operations pending",    "count", 1},
     {"AMOMaxBytes",         "Counts the number of bytes in AMOMax transactions", "bytes", 1},
-    {"AMOMaxPending",       "Counts the number of AMOMax operations pending",   "count", 1},
-    {"AMOMinuBytes",        "Counts the number of bytes in AMOMinu transactions", "bytes", 1},
+    {"AMOMaxPending",       "Counts the number of AMOMax operations pending",    "count", 1},
+    {"AMOMinuBytes",        "Counts the number of bytes in AMOMinu transactions","bytes", 1},
     {"AMOMinuPending",      "Counts the number of AMOMinu operations pending",   "count", 1},
-    {"AMOMaxuBytes",        "Counts the number of bytes in AMOMaxu transactions", "bytes", 1},
+    {"AMOMaxuBytes",        "Counts the number of bytes in AMOMaxu transactions","bytes", 1},
     {"AMOMaxuPending",      "Counts the number of AMOMaxu operations pending",   "count", 1},
-    {"AMOSwapBytes",        "Counts the number of bytes in AMOSwap transactions", "bytes", 1},
+    {"AMOSwapBytes",        "Counts the number of bytes in AMOSwap transactions","bytes", 1},
     {"AMOSwapPending",      "Counts the number of AMOSwap operations pending",   "count", 1},
     )
 
@@ -408,6 +416,10 @@ public:
 
   /// RevBasicMemCtrl: destructor
   virtual ~RevBasicMemCtrl();
+
+  /// RevBasicMemCtrl: disallow copying and assignment
+  RevBasicMemCtrl( const RevBasicMemCtrl& )            = delete;
+  RevBasicMemCtrl& operator=( const RevBasicMemCtrl& ) = delete;
 
   /// RevBasicMemCtrl: initialization function
   virtual void init( unsigned int phase ) override;
@@ -515,6 +527,10 @@ protected:
     /// RevStdMemHandlers: destructor
     virtual ~RevStdMemHandlers();
 
+    /// RevStdMemHandlers: disallow copying and assignment
+    RevStdMemHandlers( const RevStdMemHandlers& )            = delete;
+    RevStdMemHandlers& operator=( const RevStdMemHandlers& ) = delete;
+
     /// RevStdMemHandlers: handle read response
     virtual void handle( StandardMem::ReadResp* ev );
 
@@ -531,7 +547,8 @@ protected:
     virtual void handle( StandardMem::InvNotify* ev );
 
   private:
-    RevBasicMemCtrl* Ctrl;  ///< RevStdMemHandlers: memory controller object
+    RevBasicMemCtrl* Ctrl{};  ///< RevStdMemHandlers: memory controller object
+
   };  // class RevStdMemHandlers
 
 private:
@@ -599,31 +616,31 @@ private:
   void performAMO( std::tuple<unsigned, char*, void*, RevFlag, RevMemOp*, bool> Entry );
 
   // -- private data members
-  StandardMem*       memIface;         ///< StandardMem memory interface
-  RevStdMemHandlers* stdMemHandlers;   ///< StandardMem interface response handlers
-  bool               hasCache;         ///< detects whether cache layers are present
-  unsigned           lineSize;         ///< cache line size
-  unsigned           max_loads;        ///< maximum number of outstanding loads
-  unsigned           max_stores;       ///< maximum number of outstanding stores
-  unsigned           max_flush;        ///< maximum number of oustanding flush events
-  unsigned           max_llsc;         ///< maximum number of outstanding llsc events
-  unsigned           max_readlock;     ///< maximum number of oustanding readlock events
-  unsigned           max_writeunlock;  ///< maximum number of oustanding writelock events
-  unsigned           max_custom;       ///< maximum number of oustanding custom events
-  unsigned           max_ops;          ///< maximum number of ops to issue per cycle
+  StandardMem*       memIface{};         ///< StandardMem memory interface
+  RevStdMemHandlers* stdMemHandlers{};   ///< StandardMem interface response handlers
+  bool               hasCache{};         ///< detects whether cache layers are present
+  unsigned           lineSize{};         ///< cache line size
+  unsigned           max_loads{};        ///< maximum number of outstanding loads
+  unsigned           max_stores{};       ///< maximum number of outstanding stores
+  unsigned           max_flush{};        ///< maximum number of oustanding flush events
+  unsigned           max_llsc{};         ///< maximum number of outstanding llsc events
+  unsigned           max_readlock{};     ///< maximum number of oustanding readlock events
+  unsigned           max_writeunlock{};  ///< maximum number of oustanding writelock events
+  unsigned           max_custom{};       ///< maximum number of oustanding custom events
+  unsigned           max_ops{};          ///< maximum number of ops to issue per cycle
 
-  uint64_t num_read;         ///< number of outstanding read requests
-  uint64_t num_write;        ///< number of outstanding write requests
-  uint64_t num_flush;        ///< number of outstanding flush requests
-  uint64_t num_llsc;         ///< number of outstanding LL/SC requests
-  uint64_t num_readlock;     ///< number of oustanding readlock requests
-  uint64_t num_writeunlock;  ///< number of oustanding writelock requests
-  uint64_t num_custom;       ///< number of outstanding custom requests
-  uint64_t num_fence;        ///< number of oustanding fence requests
+  uint64_t num_read{};         ///< number of outstanding read requests
+  uint64_t num_write{};        ///< number of outstanding write requests
+  uint64_t num_flush{};        ///< number of outstanding flush requests
+  uint64_t num_llsc{};         ///< number of outstanding LL/SC requests
+  uint64_t num_readlock{};     ///< number of oustanding readlock requests
+  uint64_t num_writeunlock{};  ///< number of oustanding writelock requests
+  uint64_t num_custom{};       ///< number of outstanding custom requests
+  uint64_t num_fence{};        ///< number of oustanding fence requests
 
-  std::vector<StandardMem::Request::id_t>         requests;     ///< outstanding StandardMem requests
-  std::vector<RevMemOp*>                          rqstQ;        ///< queued memory requests
-  std::map<StandardMem::Request::id_t, RevMemOp*> outstanding;  ///< map of outstanding requests
+  std::vector<StandardMem::Request::id_t>         requests{};     ///< outstanding StandardMem requests
+  std::vector<RevMemOp*>                          rqstQ{};        ///< queued memory requests
+  std::map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
 
 #define AMOTABLE_HART   0
 #define AMOTABLE_BUFFER 1
@@ -631,18 +648,11 @@ private:
 #define AMOTABLE_FLAGS  3
 #define AMOTABLE_MEMOP  4
 #define AMOTABLE_IN     5
-  std::multimap<
-    uint64_t,
-    std::tuple<
-      unsigned,
-      char*,
-      void*,
-      RevFlag,
-      RevMemOp*,
-      bool>>
-    AMOTable;  ///< map of amo operations to memory addresses
 
-  std::vector<Statistic<uint64_t>*> stats;  ///< statistics vector
+  /// RevBasicMemCtrl: map of amo operations to memory addresses
+  std::multimap<uint64_t, std::tuple<unsigned, char*, void*, RevFlag, RevMemOp*, bool>> AMOTable{};
+
+  std::vector<Statistic<uint64_t>*> stats{};  ///< statistics vector
 
 };  // RevBasicMemCtrl
 

@@ -78,8 +78,7 @@ bool testPushBack() {
 
 bool testBeginEnd() {
   std::vector<std::vector<int64_t, Allocator<int64_t>>, Allocator<std::vector<int64_t, Allocator<int64_t>>>> vec = {
-    { 1 }, { 2 }, { 3 }
-  };
+    { 1 }, { 2 }, { 3 } };
   auto it = vec.begin();
   if( it == vec.end() || ( *it )[0] != 1 )
     return false;
@@ -93,8 +92,7 @@ bool testBeginEnd() {
 
 bool testAt() {
   std::vector<std::vector<int64_t, Allocator<int64_t>>, Allocator<std::vector<int64_t, Allocator<int64_t>>>> vec = {
-    { 1 }, { 2 }, { 3 }, { 4 }
-  };
+    { 1 }, { 2 }, { 3 }, { 4 } };
   if( vec.at( 0 )[0] != 1 && vec.at( 3 )[0] != 4 ) {
     return false;
   }

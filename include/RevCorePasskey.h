@@ -17,8 +17,8 @@ template<typename T>
 class RevCorePasskey {
 private:
   friend T;
-  RevCorePasskey() {};
-  RevCorePasskey( const RevCorePasskey& ) {};
+  RevCorePasskey(){};
+  RevCorePasskey( const RevCorePasskey& ){};
   RevCorePasskey& operator=( const RevCorePasskey& ) = delete;
 };
 }  // namespace SST::RevCPU

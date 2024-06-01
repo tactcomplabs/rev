@@ -98,14 +98,14 @@ public:
   void SetHartToExecID( unsigned hart ) { HartToExecID = hart; }
 
 private:
-  std::string    machine;       ///< RevFeature: feature string
-  SST::Output*   output;        ///< RevFeature: output handler
-  unsigned       MinCost;       ///< RevFeature: min memory cost
-  unsigned       MaxCost;       ///< RevFeature: max memory cost
-  unsigned       ProcID;        ///< RevFeature: RISC-V Proc ID
-  unsigned       HartToExecID;  ///< RevFeature: The current executing Hart on RevCore
-  RevFeatureType features;      ///< RevFeature: feature elements
-  unsigned       xlen;          ///< RevFeature: RISC-V Xlen
+  std::string    machine{};       ///< RevFeature: feature string
+  SST::Output*   output{};        ///< RevFeature: output handler
+  unsigned       MinCost{};       ///< RevFeature: min memory cost
+  unsigned       MaxCost{};       ///< RevFeature: max memory cost
+  unsigned       ProcID{};        ///< RevFeature: RISC-V Proc ID
+  unsigned       HartToExecID{};  ///< RevFeature: The current executing Hart on RevCore
+  RevFeatureType features{};      ///< RevFeature: feature elements
+  unsigned       xlen{};          ///< RevFeature: RISC-V Xlen
 
   /// ParseMachineModel: parse the machine model string
   bool ParseMachineModel();

@@ -31,18 +31,18 @@ void testInsertion() {
   TestMultiMap m;
 
   m.insert( {
-    1, { 2, 3.0f }
+    1, {2, 3.0f}
   } );
   m.insert( {
-    2, { 3, 4.0f }
+    2, {3, 4.0f}
   } );
   assert( m.size() == 2 );
 
   m.insert( {
-    1, { 4, 5.0f }
+    1, {4, 5.0f}
   } );
   m.insert( {
-    1, { 6, 7.0f }
+    1, {6, 7.0f}
   } );
   assert( m.size() == 4 );
 }
@@ -50,13 +50,13 @@ void testInsertion() {
 void testDuplicateKeyInsertion() {
   TestMultiMap m;
   m.insert( {
-    1, { 2, 3.0f }
+    1, {2, 3.0f}
   } );
   m.insert( {
-    1, { 4, 5.0f }
+    1, {4, 5.0f}
   } );
   m.insert( {
-    1, { 6, 7.0f }
+    1, {6, 7.0f}
   } );
 
   assert( m.size() == 3 );
@@ -72,13 +72,13 @@ void testDuplicateKeyInsertion() {
 void testOrderPreservation() {
   TestMultiMap m;
   m.insert( {
-    1, { 2, 3.0f }
+    1, {2, 3.0f}
   } );
   m.insert( {
-    1, { 4, 5.0f }
+    1, {4, 5.0f}
   } );
   m.insert( {
-    1, { 6, 7.0f }
+    1, {6, 7.0f}
   } );
 
   auto it = m.begin();
@@ -90,16 +90,16 @@ void testOrderPreservation() {
 void testDeletion() {
   TestMultiMap m;
   m.insert( {
-    1, { 2, 3.0f }
+    1, {2, 3.0f}
   } );
   m.insert( {
-    1, { 4, 5.0f }
+    1, {4, 5.0f}
   } );
   m.insert( {
-    1, { 6, 7.0f }
+    1, {6, 7.0f}
   } );
   m.insert( {
-    2, { 7, 8.0f }
+    2, {7, 8.0f}
   } );
 
   assert( m.size() == 4 );

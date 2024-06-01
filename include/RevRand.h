@@ -24,7 +24,7 @@ namespace SST::RevCPU {
 
 /// Wrapper class to SST::RNG::MersenneRNG
 class RevRNG {
-  SST::RNG::MersenneRNG SSTRNG;
+  SST::RNG::MersenneRNG SSTRNG{};
 
   // Hardware random seed is different from run to run but fixed during run
   // so that distribution of HWSeed ^ ThreadSeed is uniform
