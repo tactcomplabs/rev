@@ -125,9 +125,9 @@ public:
     bool operator>=( const MemSegment& other ) const { return BaseAddr >= other.BaseAddr; }
 
   private:
-    uint64_t BaseAddr;  ///< MemSegment: Base address of the memory segment
-    uint64_t Size;      ///< MemSegment: Size of the memory segment
-    uint64_t TopAddr;   ///< MemSegment: Top address of the memory segment
+    uint64_t BaseAddr{};  ///< MemSegment: Base address of the memory segment
+    uint64_t Size{};      ///< MemSegment: Size of the memory segment
+    uint64_t TopAddr{};   ///< MemSegment: Top address of the memory segment
   };
 
   /// RevMem: determine if there are any outstanding requests

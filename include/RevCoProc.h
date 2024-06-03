@@ -92,8 +92,8 @@ public:
   virtual bool IsDone()                                                            = 0;
 
 protected:
-  SST::Output*   output;  ///< RevCoProc: sst output object
-  RevCore* const parent;  ///< RevCoProc: Pointer to RevCore this CoProc is attached to
+  SST::Output*   output{};  ///< RevCoProc: sst output object
+  RevCore* const parent;    ///< RevCoProc: Pointer to RevCore this CoProc is attached to
 
   ///< RevCoProc: Create the passkey object - this allows access to otherwise private members within RevCore
   RevCorePasskey<RevCoProc> CreatePasskey() { return RevCorePasskey<RevCoProc>(); }

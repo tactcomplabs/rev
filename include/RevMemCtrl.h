@@ -171,19 +171,19 @@ public:
   bool isCacheable() const { return ( static_cast<uint32_t>( flags ) & 0b10 ) == 0; }
 
 private:
-  unsigned             Hart;       ///< RevMemOp: RISC-V Hart
-  uint64_t             Addr;       ///< RevMemOp: address
-  uint64_t             PAddr;      ///< RevMemOp: physical address (for RevMem I/O)
-  uint32_t             Size;       ///< RevMemOp: size of the memory operation in bytes
-  bool                 Inv;        ///< RevMemOp: flush operation invalidate flag
-  MemOp                Op;         ///< RevMemOp: target memory operation
-  unsigned             CustomOpc;  ///< RevMemOp: custom memory opcode
-  unsigned             SplitRqst;  ///< RevMemOp: number of split cache line requests
-  std::vector<uint8_t> membuf{};   ///< RevMemOp: buffer
-  std::vector<uint8_t> tempT{};    ///< RevMemOp: temporary target buffer for R-M-W ops
-  RevFlag              flags;      ///< RevMemOp: request flags
-  void*                target;     ///< RevMemOp: target register pointer
-  MemReq               procReq;    ///< RevMemOp: original request from RevCore
+  unsigned             Hart{};       ///< RevMemOp: RISC-V Hart
+  uint64_t             Addr{};       ///< RevMemOp: address
+  uint64_t             PAddr{};      ///< RevMemOp: physical address (for RevMem I/O)
+  uint32_t             Size{};       ///< RevMemOp: size of the memory operation in bytes
+  bool                 Inv{};        ///< RevMemOp: flush operation invalidate flag
+  MemOp                Op{};         ///< RevMemOp: target memory operation
+  unsigned             CustomOpc{};  ///< RevMemOp: custom memory opcode
+  unsigned             SplitRqst{};  ///< RevMemOp: number of split cache line requests
+  std::vector<uint8_t> membuf{};     ///< RevMemOp: buffer
+  std::vector<uint8_t> tempT{};      ///< RevMemOp: temporary target buffer for R-M-W ops
+  RevFlag              flags{};      ///< RevMemOp: request flags
+  void*                target{};     ///< RevMemOp: target register pointer
+  MemReq               procReq{};    ///< RevMemOp: original request from RevCore
 };
 
 // ----------------------------------------
@@ -288,9 +288,10 @@ public:
   virtual void setTracer( RevTracer* tracer )                  = 0;
 
 protected:
-  SST::Output* output;            ///< RevMemCtrl: sst output object
-  RevTracer*   Tracer = nullptr;  ///< RevMemCtrl: tracer pointer
-};                                // class RevMemCtrl
+  SST::Output* output{};  ///< RevMemCtrl: sst output object
+  RevTracer*   Tracer{};  ///< RevMemCtrl: tracer pointer
+
+};  // class RevMemCtrl
 
 // ----------------------------------------
 // RevBasicMemCtrl
@@ -547,8 +548,9 @@ protected:
     virtual void handle( StandardMem::InvNotify* ev );
 
   private:
-    RevBasicMemCtrl* Ctrl;  ///< RevStdMemHandlers: memory controller object
-  };                        // class RevStdMemHandlers
+    RevBasicMemCtrl* Ctrl{};  ///< RevStdMemHandlers: memory controller object
+
+  };  // class RevStdMemHandlers
 
 private:
   /// RevBasicMemCtrl: process the next memory request
@@ -615,27 +617,27 @@ private:
   void performAMO( std::tuple<unsigned, char*, void*, RevFlag, RevMemOp*, bool> Entry );
 
   // -- private data members
-  StandardMem*       memIface;         ///< StandardMem memory interface
-  RevStdMemHandlers* stdMemHandlers;   ///< StandardMem interface response handlers
-  bool               hasCache;         ///< detects whether cache layers are present
-  unsigned           lineSize;         ///< cache line size
-  unsigned           max_loads;        ///< maximum number of outstanding loads
-  unsigned           max_stores;       ///< maximum number of outstanding stores
-  unsigned           max_flush;        ///< maximum number of oustanding flush events
-  unsigned           max_llsc;         ///< maximum number of outstanding llsc events
-  unsigned           max_readlock;     ///< maximum number of oustanding readlock events
-  unsigned           max_writeunlock;  ///< maximum number of oustanding writelock events
-  unsigned           max_custom;       ///< maximum number of oustanding custom events
-  unsigned           max_ops;          ///< maximum number of ops to issue per cycle
+  StandardMem*       memIface{};         ///< StandardMem memory interface
+  RevStdMemHandlers* stdMemHandlers{};   ///< StandardMem interface response handlers
+  bool               hasCache{};         ///< detects whether cache layers are present
+  unsigned           lineSize{};         ///< cache line size
+  unsigned           max_loads{};        ///< maximum number of outstanding loads
+  unsigned           max_stores{};       ///< maximum number of outstanding stores
+  unsigned           max_flush{};        ///< maximum number of oustanding flush events
+  unsigned           max_llsc{};         ///< maximum number of outstanding llsc events
+  unsigned           max_readlock{};     ///< maximum number of oustanding readlock events
+  unsigned           max_writeunlock{};  ///< maximum number of oustanding writelock events
+  unsigned           max_custom{};       ///< maximum number of oustanding custom events
+  unsigned           max_ops{};          ///< maximum number of ops to issue per cycle
 
-  uint64_t num_read;         ///< number of outstanding read requests
-  uint64_t num_write;        ///< number of outstanding write requests
-  uint64_t num_flush;        ///< number of outstanding flush requests
-  uint64_t num_llsc;         ///< number of outstanding LL/SC requests
-  uint64_t num_readlock;     ///< number of oustanding readlock requests
-  uint64_t num_writeunlock;  ///< number of oustanding writelock requests
-  uint64_t num_custom;       ///< number of outstanding custom requests
-  uint64_t num_fence;        ///< number of oustanding fence requests
+  uint64_t num_read{};         ///< number of outstanding read requests
+  uint64_t num_write{};        ///< number of outstanding write requests
+  uint64_t num_flush{};        ///< number of outstanding flush requests
+  uint64_t num_llsc{};         ///< number of outstanding LL/SC requests
+  uint64_t num_readlock{};     ///< number of oustanding readlock requests
+  uint64_t num_writeunlock{};  ///< number of oustanding writelock requests
+  uint64_t num_custom{};       ///< number of outstanding custom requests
+  uint64_t num_fence{};        ///< number of oustanding fence requests
 
   std::vector<StandardMem::Request::id_t>         requests{};     ///< outstanding StandardMem requests
   std::vector<RevMemOp*>                          rqstQ{};        ///< queued memory requests

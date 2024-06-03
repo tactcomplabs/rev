@@ -112,8 +112,8 @@ public:
   }
 
 private:
-  uint32_t                            ID;                           // Thread ID
-  uint32_t                            ParentID;                     // Parent ID
+  uint32_t                            ID{};                         // Thread ID
+  uint32_t                            ParentID{};                   // Parent ID
   uint64_t                            StackPtr{};                   // Initial stack pointer
   uint64_t                            FirstPC{};                    // Initial PC
   std::shared_ptr<RevMem::MemSegment> ThreadMem{};                  // TLS and Stack memory
