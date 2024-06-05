@@ -1078,25 +1078,72 @@ bool RevBasicMemCtrl::processNextRqst(
   return true;
 }
 
-void RevBasicMemCtrl::handleFlagResp( RevMemOp* op ) {
-  RevFlag  flags = op->getFlags();
-  unsigned bits  = 8 * op->getSize();
-
-  if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
-    uint32_t* target = static_cast<uint32_t*>( op->getTarget() );
-    *target          = SignExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-    uint64_t* target = static_cast<uint64_t*>( op->getTarget() );
-    *target          = SignExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
-    uint32_t* target = static_cast<uint32_t*>( op->getTarget() );
-    *target          = ZeroExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-    uint64_t* target = static_cast<uint64_t*>( op->getTarget() );
-    *target          = ZeroExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_BOXNAN ) ) {
-    double* target = static_cast<double*>( op->getTarget() );
-    BoxNaN( target, target );
+/// RevFlag: Handle flag response
+void RevHandleFlagResp( void* target, size_t size, RevFlag flags ) {
+  if( RevFlagHas( flags, RevFlag::F_BOXNAN ) && size < sizeof( double ) ) {
+    BoxNaN( static_cast<double*>( target ), static_cast<float*>( target ) );
+  } else {
+    switch( size ) {
+    case 1:
+      if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
+        int8_t source;
+        memcpy( &source, target, 1 );
+        int32_t dest{ source };
+        memcpy( target, &dest, 4 );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
+        uint8_t source;
+        memcpy( &source, target, 1 );
+        uint32_t dest{ source };
+        memcpy( target, &dest, 4 );
+      } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
+        int8_t source;
+        memcpy( &source, target, 1 );
+        int64_t dest{ source };
+        memcpy( target, &dest, 8 );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
+        uint8_t source;
+        memcpy( &source, target, 1 );
+        uint64_t dest{ source };
+        memcpy( target, &dest, 8 );
+      }
+      break;
+    case 2:
+      if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
+        int16_t source;
+        memcpy( &source, target, 2 );
+        int32_t dest{ source };
+        memcpy( target, &dest, 4 );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
+        uint16_t source;
+        memcpy( &source, target, 2 );
+        uint32_t dest{ source };
+        memcpy( target, &dest, 4 );
+      } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
+        int16_t source;
+        memcpy( &source, target, 2 );
+        int64_t dest{ source };
+        memcpy( target, &dest, 8 );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
+        uint16_t source;
+        memcpy( &source, target, 2 );
+        uint64_t dest{ source };
+        memcpy( target, &dest, 8 );
+      }
+      break;
+    case 4:
+      if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
+        int32_t source;
+        memcpy( &source, target, 4 );
+        int64_t dest{ source };
+        memcpy( target, &dest, 8 );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
+        uint32_t source;
+        memcpy( &source, target, 4 );
+        uint64_t dest{ source };
+        memcpy( target, &dest, 8 );
+      }
+      break;
+    }
   }
 }
 

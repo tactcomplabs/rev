@@ -32,11 +32,12 @@ namespace SST::RevCPU {
 struct RevInst;
 
 /// BoxNaN: Store a boxed float inside a double
-inline void BoxNaN( double* dest, const void* value ) {
+inline void BoxNaN( double* dest, const float* value ) {
   uint32_t i32;
-  memcpy( &i32, value, sizeof( float ) );                 // The FP32 value
+  memcpy( &i32, value, sizeof( i32 ) );                   // The FP32 value
   uint64_t i64 = uint64_t{ i32 } | ~uint64_t{ 0 } << 32;  // Boxed NaN value
-  memcpy( dest, &i64, sizeof( double ) );                 // Store in FP64 register
+  memcpy( dest, &i64, sizeof( i64 ) );                    // Store in FP64 register
+  static_assert( sizeof( i32 ) == sizeof( float ) && sizeof( i64 ) == sizeof( double ) );
 }
 
 /// RISC-V Register Mneumonics
