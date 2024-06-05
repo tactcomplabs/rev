@@ -1078,6 +1078,15 @@ bool RevBasicMemCtrl::processNextRqst(
   return true;
 }
 
+/// RevFlag: Perform an integer conversion
+template<typename SRC, typename DEST>
+static inline void convert( void* target ) {
+  SRC src;
+  memcpy( &src, target, sizeof( src ) );
+  DEST dest{ src };
+  memcpy( target, &dest, sizeof( dest ) );
+}
+
 /// RevFlag: Handle flag response
 void RevHandleFlagResp( void* target, size_t size, RevFlag flags ) {
   if( RevFlagHas( flags, RevFlag::F_BOXNAN ) && size < sizeof( double ) ) {
@@ -1086,63 +1095,32 @@ void RevHandleFlagResp( void* target, size_t size, RevFlag flags ) {
     switch( size ) {
     case 1:
       if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
-        int8_t source;
-        memcpy( &source, target, 1 );
-        int32_t dest{ source };
-        memcpy( target, &dest, 4 );
+        convert<int8_t, int32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
-        uint8_t source;
-        memcpy( &source, target, 1 );
-        uint32_t dest{ source };
-        memcpy( target, &dest, 4 );
+        convert<uint8_t, uint32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-        int8_t source;
-        memcpy( &source, target, 1 );
-        int64_t dest{ source };
-        memcpy( target, &dest, 8 );
+        convert<int8_t, int64_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-        uint8_t source;
-        memcpy( &source, target, 1 );
-        uint64_t dest{ source };
-        memcpy( target, &dest, 8 );
+        convert<uint8_t, uint64_t>( target );
       }
       break;
     case 2:
       if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
-        int16_t source;
-        memcpy( &source, target, 2 );
-        int32_t dest{ source };
-        memcpy( target, &dest, 4 );
+        convert<int16_t, int32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
-        uint16_t source;
-        memcpy( &source, target, 2 );
-        uint32_t dest{ source };
-        memcpy( target, &dest, 4 );
+        convert<uint16_t, uint32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-        int16_t source;
-        memcpy( &source, target, 2 );
-        int64_t dest{ source };
-        memcpy( target, &dest, 8 );
+        convert<int16_t, int64_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-        uint16_t source;
-        memcpy( &source, target, 2 );
-        uint64_t dest{ source };
-        memcpy( target, &dest, 8 );
+        convert<uint16_t, uint64_t>( target );
       }
       break;
     case 4:
       if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-        int32_t source;
-        memcpy( &source, target, 4 );
-        int64_t dest{ source };
-        memcpy( target, &dest, 8 );
+        convert<int32_t, int64_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-        uint32_t source;
-        memcpy( &source, target, 4 );
-        uint64_t dest{ source };
-        memcpy( target, &dest, 8 );
+        convert<uint32_t, uint64_t>( target );
       }
-      break;
     }
   }
 }
