@@ -13,12 +13,12 @@
 .PHONY: src
 
 EXAMPLE=argv
-CC=${RVCC}
+CXX=${RVCXX}
 ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O3 -static -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CXX) -march=$(ARCH) -O3 -static -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 
