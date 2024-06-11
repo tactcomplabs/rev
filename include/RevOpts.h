@@ -80,14 +80,14 @@ public:
   void SetArgs( const SST::Params& params );
 
   /// RevOpts: retrieve the argv array
-  const std::vector<std::string>& GetArgv() { return Argv; }
+  const std::vector<std::string>& GetArgv() const { return Argv; }
 
   /// RevOpts: splits a string into tokens
   static void splitStr( std::string s, const char* delim, std::vector<std::string>& v ) {
     char* ptr     = s.data();
     char* saveptr = nullptr;
-    for( v.clear(); auto tok = strtok_r( ptr, delim, &saveptr ); ptr = nullptr )
-      v.push_back( tok );
+    for( v.clear(); auto token = strtok_r( ptr, delim, &saveptr ); ptr = nullptr )
+      v.push_back( token );
   }
 
 private:
