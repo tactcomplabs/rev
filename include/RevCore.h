@@ -688,9 +688,6 @@ private:
     uint32_t                                           Inst
   ) const;
 
-  /// RevCore: splits a string into tokens
-  void splitStr( const std::string& s, char c, std::vector<std::string>& v );
-
   /// RevCore: parses the feature string for the target core
   bool ParseFeatureStr( std::string Feature );
 

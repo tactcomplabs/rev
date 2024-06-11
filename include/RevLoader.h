@@ -276,10 +276,14 @@ struct ElfInfo {
 class RevLoader {
 public:
   /// RevLoader: standard constructor
-  RevLoader( std::string Exe, std::string Args, RevMem* Mem, SST::Output* Output );
+  RevLoader( const std::string& exe, const std::vector<std::string>& args, RevMem* mem, SST::Output* output )
+    : mem( mem ), output( output ) {
+    if( !LoadElf( exe, args ) )
+      output->fatal( CALL_INFO, -1, "Error: failed to load executable into memory\n" );
+  }
 
   /// RevLoader: standard destructor
-  ~RevLoader();
+  ~RevLoader()                             = default;
 
   /// RevLoader: disallow copying and assignment
   RevLoader( const RevLoader& )            = delete;
@@ -287,15 +291,6 @@ public:
 
   /// RevLoader: retrieves the address for the target symbol; 0x00ull if the symbol doesn't exist
   uint64_t GetSymbolAddr( std::string Symbol );
-
-  /// RevLoader: retrieves the value for 'argc'
-  auto GetArgc() { return argv.size(); }
-
-  /// RevLoader: retrieves the target value within the argv array
-  std::string GetArgv( unsigned entry );
-
-  /// RevLoader: retrieve the entire argv vector
-  std::vector<std::string> GetArgv() { return argv; }
 
   /// RevLoader: retrieves the elf info structure
   ElfInfo GetInfo() { return elfinfo; }
@@ -312,8 +307,6 @@ public:
   // friend std::ostream& operator<<(std::ostream &os, const Elf64_Ehdr &header){ };
 
 private:
-  std::string  exe{};     ///< RevLoader: binary executable
-  std::string  args{};    ///< RevLoader: program args
   RevMem*      mem{};     ///< RevLoader: memory object
   SST::Output* output{};  ///< RevLoader: output handler
 
@@ -326,13 +319,13 @@ private:
   ElfInfo                         elfinfo{};         ///< RevLoader: elf info from the loaded program
   std::map<std::string, uint64_t> symtable{};        ///< RevLoader: loaded symbol table
   std::map<uint64_t, std::string> tracer_symbols{};  ///< RevLoader: address to symbol for tracer
-  std::vector<std::string>        argv{};            ///< RevLoader: The actual argv table
 
   /// Loads the target executable into memory
-  bool LoadElf();
+  bool LoadElf( const std::string& exe, const std::vector<std::string>& args );
 
   /// Loads the target program arguments
-  bool LoadProgramArgs();
+  template<typename XLEN>
+  bool LoadProgramArgs( const std::string& exe, const std::vector<std::string>& args );
 
   /// Determines if the target header is an Elf header
   bool IsElf( const Elf64_Ehdr eh64 );
@@ -355,11 +348,8 @@ private:
   /// Loads a 64bit Elf binary
   bool LoadElf64( char* MemBuf, size_t Size );
 
-  ///< Splits a string into tokens
-  void splitStr( const std::string& s, char c, std::vector<std::string>& v );
-
   ///< Breaks bulk writes into cache lines
-  bool WriteCacheLine( uint64_t Addr, size_t Len, void* Data );
+  bool WriteCacheLine( uint64_t Addr, size_t Len, const void* Data );
 
   ///< RevLoader: Replaces first MemSegment (initialized to entire memory space) with the static memory
   void InitStaticMem();

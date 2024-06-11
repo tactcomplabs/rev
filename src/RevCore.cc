@@ -260,29 +260,10 @@ uint32_t RevCore::CompressEncoding( RevInstEntry Entry ) {
   return Value;
 }
 
-void RevCore::splitStr( const std::string& s, char c, std::vector<std::string>& v ) {
-  std::string::size_type i = 0;
-  std::string::size_type j = s.find( c );
-
-  // catch strings with no delims
-  if( j == std::string::npos ) {
-    v.push_back( s );
-  }
-
-  // break up the rest of the string
-  while( j != std::string::npos ) {
-    v.push_back( s.substr( i, j - i ) );
-    i = ++j;
-    j = s.find( c, j );
-    if( j == std::string::npos )
-      v.push_back( s.substr( i, s.length() ) );
-  }
-}
-
 std::string RevCore::ExtractMnemonic( RevInstEntry Entry ) {
   std::string              Tmp = Entry.mnemonic;
   std::vector<std::string> vstr;
-  splitStr( Tmp, ' ', vstr );
+  RevOpts::splitStr( Tmp, " ", vstr );
 
   return vstr[0];
 }
@@ -1940,7 +1921,7 @@ void RevCore::CreateThread( uint32_t NewTID, uint64_t firstPC, void* arg ) {
   NewThreadRegFile->SetX( RevReg::tp, NewThreadMem->getTopAddr() );
   NewThreadRegFile->SetX( RevReg::sp, NewThreadMem->getTopAddr() - mem->GetTLSSize() );
   NewThreadRegFile->SetX( RevReg::gp, loader->GetSymbolAddr( "__global_pointer$" ) );
-  NewThreadRegFile->SetX( 8, loader->GetSymbolAddr( "__global_pointer$" ) );
+  NewThreadRegFile->SetX( RevReg::s0, loader->GetSymbolAddr( "__global_pointer$" ) );
   NewThreadRegFile->SetPC( firstPC );
 
   // Create a new RevThread Object
@@ -1949,8 +1930,6 @@ void RevCore::CreateThread( uint32_t NewTID, uint64_t firstPC, void* arg ) {
 
   // Add new thread to this vector so the RevCPU will add and schedule it
   AddThreadsThatChangedState( std::move( NewThread ) );
-
-  return;
 }
 
 //

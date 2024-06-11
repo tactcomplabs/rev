@@ -66,13 +66,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   // read the binary executable name
   Exe  = params.find<std::string>( "program", "a.out" );
 
-  // read the program arguments
-  Args = params.find<std::string>( "args", "" );
-
   // Create the options object
   Opts = new( std::nothrow ) RevOpts( numCores, numHarts, Verbosity );
   if( !Opts )
     output.fatal( CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
+
+  // Program arguments
+  Opts->SetArgs( FindArgs( params ) );
 
   // Initialize the remaining options
   for( auto [ParamName, InitFunc] : {
@@ -158,22 +158,19 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   Mem->SetMaxHeapSize( maxHeapSize );
 
   // Load the binary into memory
-  // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
-  Loader = new RevLoader( Exe, Args, Mem, &output );
+  Loader = new( std::nothrow ) RevLoader( Exe, Opts->GetArgv(), Mem, &output );
   if( !Loader ) {
     output.fatal( CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
   }
 
-  Opts->SetArgs( Loader->GetArgv() );
+  // Create the processor objects
+  Procs.reserve( Procs.size() + numCores );
+  for( unsigned i = 0; i < numCores; i++ ) {
+    Procs.push_back( new RevCore( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
+  }
 
   EnableCoProc = params.find<bool>( "enableCoProc", 0 );
   if( EnableCoProc ) {
-
-    // Create the processor objects
-    Procs.reserve( Procs.size() + numCores );
-    for( unsigned i = 0; i < numCores; i++ ) {
-      Procs.push_back( new RevCore( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
-    }
     // Create the co-processor objects
     for( unsigned i = 0; i < numCores; i++ ) {
       RevCoProc* CoProc = loadUserSubComponent<RevCoProc>( "co_proc", SST::ComponentInfo::SHARE_NONE, Procs[i] );
@@ -182,12 +179,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
       }
       CoProcs.push_back( CoProc );
       Procs[i]->SetCoProc( CoProc );
-    }
-  } else {
-    // Create the processor objects
-    Procs.reserve( Procs.size() + numCores );
-    for( unsigned i = 0; i < numCores; i++ ) {
-      Procs.push_back( new RevCore( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
     }
   }
 
@@ -385,6 +376,22 @@ RevCPU::~RevCPU() {
 
   // delete the options object
   delete Opts;
+}
+
+std::vector<std::string> RevCPU::FindArgs( const SST::Params& params ) {
+  const char               delim[] = " \t\n";
+  std::vector<std::string> arglist;
+
+  // If the "args" param does not start with a left bracket, split it up at whitespace
+  // Otherwise interpet it as an array
+  std::string args     = params.find<std::string>( "args" );
+  auto        nonspace = args.find_first_not_of( delim );
+  if( nonspace == args.npos || args[nonspace] != '[' ) {
+    RevOpts::splitStr( args, delim, arglist );
+  } else {
+    params.find_array( "args", arglist );
+  }
+  return arglist;
 }
 
 void RevCPU::DecodeFaultWidth( const std::string& width ) {
@@ -772,10 +779,8 @@ void RevCPU::CheckBlockedThreads() {
 // ----------------------------------
 void RevCPU::SetupArgs( const std::unique_ptr<RevRegFile>& RegFile ) {
   auto Argv = Opts->GetArgv();
-  // setup argc
-  RegFile->SetX( RevReg::a0, Argv.size() );
-  RegFile->SetX( RevReg::a1, Mem->GetStackTop() + 60 );
-  return;
+  RegFile->SetX( RevReg::a0, Argv.size() + 1 );
+  RegFile->SetX( RevReg::a1, Mem->GetStackTop() );
 }
 
 // Checks core 'i' to see if it has any available harts to assign work to

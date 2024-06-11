@@ -212,19 +212,19 @@ public:
   }
 
 private:
-  unsigned              numCores{};      ///< RevCPU: number of RISC-V cores
-  unsigned              numHarts{};      ///< RevCPU: number of RISC-V cores
-  unsigned              msgPerCycle{};   ///< RevCPU: number of messages to send per cycle
-  unsigned              RDMAPerCycle{};  ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
-  unsigned              testStage{};     ///< RevCPU: controls the PAN Test harness staging
-  unsigned              testIters{};     ///< RevCPU: the number of message iters for each PAN Test
-  std::string           Exe{};           ///< RevCPU: binary executable
-  std::string           Args{};          ///< RevCPU: argument list
-  RevOpts*              Opts{};          ///< RevCPU: Simulation options object
-  RevMem*               Mem{};           ///< RevCPU: RISC-V main memory object
-  RevLoader*            Loader{};        ///< RevCPU: RISC-V loader
-  std::vector<RevCore*> Procs{};         ///< RevCPU: RISC-V processor objects
-  bool*                 Enabled{};       ///< RevCPU: Completion structure
+  unsigned                 numCores{};      ///< RevCPU: number of RISC-V cores
+  unsigned                 numHarts{};      ///< RevCPU: number of RISC-V cores
+  unsigned                 msgPerCycle{};   ///< RevCPU: number of messages to send per cycle
+  unsigned                 RDMAPerCycle{};  ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
+  unsigned                 testStage{};     ///< RevCPU: controls the PAN Test harness staging
+  unsigned                 testIters{};     ///< RevCPU: the number of message iters for each PAN Test
+  std::string              Exe{};           ///< RevCPU: binary executable
+  std::vector<std::string> Args{};          ///< RevCPU: argument list
+  RevOpts*                 Opts{};          ///< RevCPU: Simulation options object
+  RevMem*                  Mem{};           ///< RevCPU: RISC-V main memory object
+  RevLoader*               Loader{};        ///< RevCPU: RISC-V loader
+  std::vector<RevCore*>    Procs{};         ///< RevCPU: RISC-V processor objects
+  bool*                    Enabled{};       ///< RevCPU: Completion structure
 
   // Initializes a RevThread object.
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
@@ -379,6 +379,9 @@ private:
   //-------------------------------------------------------
   // -- FUNCTIONS
   //-------------------------------------------------------
+
+  /// RevCPU: Find the args parameter
+  static std::vector<std::string> FindArgs( const SST::Params& params );
 
   /// RevCPU: decode the fault codes
   void DecodeFaultCodes( const std::vector<std::string>& faults );
