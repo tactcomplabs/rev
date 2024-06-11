@@ -16,5 +16,5 @@
 
 int main( int argc, char** argv ) {
   foo();
-  return argv[0][0];
+  return argv[0][0] != 'a';
 }

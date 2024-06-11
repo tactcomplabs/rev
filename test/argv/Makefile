@@ -18,7 +18,7 @@ ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O3 -flto=auto -static -o $(EXAMPLE).exe $(EXAMPLE).c
+	$(CC) -march=$(ARCH) -O3 -static -o $(EXAMPLE).exe $(EXAMPLE).c
 clean:
 	rm -Rf $(EXAMPLE).exe
 
