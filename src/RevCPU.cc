@@ -64,10 +64,10 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   );
 
   // read the binary executable name
-  Exe  = params.find<std::string>( "program", "a.out" );
+  auto Exe = params.find<std::string>( "program", "a.out" );
 
   // Create the options object
-  Opts = new( std::nothrow ) RevOpts( numCores, numHarts, Verbosity );
+  Opts     = new( std::nothrow ) RevOpts( numCores, numHarts, Verbosity );
   if( !Opts )
     output.fatal( CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
 
@@ -771,15 +771,14 @@ void RevCPU::CheckBlockedThreads() {
 }
 
 // ----------------------------------
-// We need to initialize the x10 register to include the value of ARGC
-// This is >= 1 (the executable name is always included)
+// We need to initialize the x10 register to include the value of
+// ARGC. This is >= 1 (the executable name is always included).
 // We also need to initialize the ARGV pointer to the value
-// of the ARGV base pointer in memory which is currently set to the
-// program header region.  When we come out of reset, this is StackTop+60 bytes
+// of the ARGV base pointer in memory which is currently set to
+// the top of stack.
 // ----------------------------------
 void RevCPU::SetupArgs( const std::unique_ptr<RevRegFile>& RegFile ) {
-  auto Argv = Opts->GetArgv();
-  RegFile->SetX( RevReg::a0, Argv.size() + 1 );
+  RegFile->SetX( RevReg::a0, Opts->GetArgv().size() + 1 );
   RegFile->SetX( RevReg::a1, Mem->GetStackTop() );
 }
 

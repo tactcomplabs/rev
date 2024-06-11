@@ -35,13 +35,6 @@ RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )
   }
 }
 
-void RevOpts::splitStr( std::string s, const char* delim, std::vector<std::string>& v ) {
-  char* ptr     = s.data();
-  char* saveptr = nullptr;
-  for( v.clear(); auto tok = strtok_r( ptr, delim, &saveptr ); ptr = nullptr )
-    v.push_back( tok );
-}
-
 bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ) {
   std::vector<std::string> vstr;
   for( unsigned i = 0; i < Depths.size(); i++ ) {

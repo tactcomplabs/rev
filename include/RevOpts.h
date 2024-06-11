@@ -83,7 +83,12 @@ public:
   const std::vector<std::string>& GetArgv() { return Argv; }
 
   /// RevOpts: splits a string into tokens
-  static void splitStr( std::string s, const char* delim, std::vector<std::string>& v );
+  static void splitStr( std::string s, const char* delim, std::vector<std::string>& v ) {
+    char* ptr     = s.data();
+    char* saveptr = nullptr;
+    for( v.clear(); auto tok = strtok_r( ptr, delim, &saveptr ); ptr = nullptr )
+      v.push_back( tok );
+  }
 
 private:
   unsigned numCores{};   ///< RevOpts: number of initialized cores
