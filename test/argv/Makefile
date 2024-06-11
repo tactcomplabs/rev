@@ -13,7 +13,7 @@
 .PHONY: src
 
 EXAMPLE=argv
-CXX="${RVCXX}"
+CXX=riscv64-unknown-elf-g++
 ARCH=rv64imafdc
 
 all: $(EXAMPLE).exe
