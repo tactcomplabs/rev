@@ -35,24 +35,17 @@ RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )
   }
 }
 
-RevOpts::~RevOpts() {}
+void RevOpts::SetArgs( const SST::Params& params ) {
+  static constexpr char delim[] = " \t\n";
 
-void RevOpts::splitStr( const std::string& s, char c, std::vector<std::string>& v ) {
-  std::string::size_type i = 0;
-  std::string::size_type j = s.find( c );
-  v.clear();
-
-  if( ( j == std::string::npos ) && ( s.length() > 0 ) ) {
-    v.push_back( s );
-    return;
-  }
-
-  while( j != std::string::npos ) {
-    v.push_back( s.substr( i, j - i ) );
-    i = ++j;
-    j = s.find( c, j );
-    if( j == std::string::npos )
-      v.push_back( s.substr( i, s.length() ) );
+  // If the "args" param does not start with a left bracket, split it up at whitespace
+  // Otherwise interpet it as an array
+  std::string args              = params.find<std::string>( "args" );
+  auto        nonspace          = args.find_first_not_of( delim );
+  if( nonspace == args.npos || args[nonspace] != '[' ) {
+    RevOpts::splitStr( args, delim, Argv );
+  } else {
+    params.find_array( "args", Argv );
   }
 }
 
@@ -60,7 +53,7 @@ bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ) {
   std::vector<std::string> vstr;
   for( unsigned i = 0; i < Depths.size(); i++ ) {
     std::string s = Depths[i];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
@@ -83,7 +76,7 @@ bool RevOpts::InitStartAddrs( const std::vector<std::string>& StartAddrs ) {
   // check to see if we expand into multiple cores
   if( StartAddrs.size() == 1 ) {
     std::string s = StartAddrs[0];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
@@ -100,7 +93,7 @@ bool RevOpts::InitStartAddrs( const std::vector<std::string>& StartAddrs ) {
 
   for( unsigned i = 0; i < StartAddrs.size(); i++ ) {
     std::string s = StartAddrs[i];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
@@ -121,7 +114,7 @@ bool RevOpts::InitStartSymbols( const std::vector<std::string>& StartSymbols ) {
   std::vector<std::string> vstr;
   for( unsigned i = 0; i < StartSymbols.size(); i++ ) {
     std::string s = StartSymbols[i];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
@@ -141,7 +134,7 @@ bool RevOpts::InitMachineModels( const std::vector<std::string>& Machines ) {
   // check to see if we expand into multiple cores
   if( Machines.size() == 1 ) {
     std::string s = Machines[0];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
@@ -157,7 +150,7 @@ bool RevOpts::InitMachineModels( const std::vector<std::string>& Machines ) {
   // parse individual core configs
   for( unsigned i = 0; i < Machines.size(); i++ ) {
     std::string s = Machines[i];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
@@ -175,7 +168,7 @@ bool RevOpts::InitInstTables( const std::vector<std::string>& InstTables ) {
   std::vector<std::string> vstr;
   for( unsigned i = 0; i < InstTables.size(); i++ ) {
     std::string s = InstTables[i];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
@@ -194,7 +187,7 @@ bool RevOpts::InitMemCosts( const std::vector<std::string>& MemCosts ) {
 
   for( unsigned i = 0; i < MemCosts.size(); i++ ) {
     std::string s = MemCosts[i];
-    splitStr( s, ':', vstr );
+    splitStr( s, ":", vstr );
     if( vstr.size() != 3 )
       return false;
 
