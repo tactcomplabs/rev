@@ -77,7 +77,7 @@ public:
   bool GetPrefetchDepth( unsigned Core, unsigned& Depth );
 
   /// RevOpts: set the argv array
-  void SetArgs( std::vector<std::string> A ) { Argv = std::move( A ); }
+  void SetArgs( const SST::Params& params );
 
   /// RevOpts: retrieve the argv array
   const std::vector<std::string>& GetArgv() { return Argv; }

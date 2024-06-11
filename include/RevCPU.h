@@ -378,9 +378,6 @@ private:
   // -- FUNCTIONS
   //-------------------------------------------------------
 
-  /// RevCPU: Find the args parameter
-  static std::vector<std::string> FindArgs( const SST::Params& params );
-
   /// RevCPU: decode the fault codes
   void DecodeFaultCodes( const std::vector<std::string>& faults );
 

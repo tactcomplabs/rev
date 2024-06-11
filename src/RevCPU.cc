@@ -72,7 +72,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     output.fatal( CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
 
   // Program arguments
-  Opts->SetArgs( FindArgs( params ) );
+  Opts->SetArgs( params );
 
   // Initialize the remaining options
   for( auto [ParamName, InitFunc] : {
@@ -376,22 +376,6 @@ RevCPU::~RevCPU() {
 
   // delete the options object
   delete Opts;
-}
-
-std::vector<std::string> RevCPU::FindArgs( const SST::Params& params ) {
-  const char               delim[] = " \t\n";
-  std::vector<std::string> arglist;
-
-  // If the "args" param does not start with a left bracket, split it up at whitespace
-  // Otherwise interpet it as an array
-  std::string args     = params.find<std::string>( "args" );
-  auto        nonspace = args.find_first_not_of( delim );
-  if( nonspace == args.npos || args[nonspace] != '[' ) {
-    RevOpts::splitStr( args, delim, arglist );
-  } else {
-    params.find_array( "args", arglist );
-  }
-  return arglist;
 }
 
 void RevCPU::DecodeFaultWidth( const std::string& width ) {

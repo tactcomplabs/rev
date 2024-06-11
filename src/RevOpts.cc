@@ -35,6 +35,20 @@ RevOpts::RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity )
   }
 }
 
+void RevOpts::SetArgs( const SST::Params& params ) {
+  static constexpr char delim[] = " \t\n";
+
+  // If the "args" param does not start with a left bracket, split it up at whitespace
+  // Otherwise interpet it as an array
+  std::string args              = params.find<std::string>( "args" );
+  auto        nonspace          = args.find_first_not_of( delim );
+  if( nonspace == args.npos || args[nonspace] != '[' ) {
+    RevOpts::splitStr( args, delim, Argv );
+  } else {
+    params.find_array( "args", Argv );
+  }
+}
+
 bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ) {
   std::vector<std::string> vstr;
   for( unsigned i = 0; i < Depths.size(); i++ ) {
