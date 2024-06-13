@@ -29,7 +29,7 @@ public:
   RevOpts( unsigned NumCores, unsigned NumHarts, const int Verbosity );
 
   /// RevOpts: options destructor
-  ~RevOpts();
+  ~RevOpts() = default;
 
   /// RevOpts: retrieve the number of configured cores
   unsigned GetNumCores() { return numCores; }
@@ -76,11 +76,19 @@ public:
   /// RevOpts: retrieve the prefetch depth for the target core
   bool GetPrefetchDepth( unsigned Core, unsigned& Depth );
 
-  /// RevOpts: set the argv arrary
-  void SetArgs( std::vector<std::string> A ) { Argv = A; }
+  /// RevOpts: set the argv array
+  void SetArgs( const SST::Params& params );
 
   /// RevOpts: retrieve the argv array
-  std::vector<std::string> GetArgv() { return Argv; }
+  const std::vector<std::string>& GetArgv() const { return Argv; }
+
+  /// RevOpts: splits a string into tokens
+  static void splitStr( std::string s, const char* delim, std::vector<std::string>& v ) {
+    char* ptr     = s.data();
+    char* saveptr = nullptr;
+    for( v.clear(); auto token = strtok_r( ptr, delim, &saveptr ); ptr = nullptr )
+      v.push_back( token );
+  }
 
 private:
   unsigned numCores{};   ///< RevOpts: number of initialized cores
@@ -98,9 +106,6 @@ private:
   std::vector<std::string> Argv{};  ///< RevOpts: vector of function arguments
 
   std::vector<std::string> MemDumpRanges{};  ///< RevOpts: vector of function arguments
-
-  /// RevOpts: splits a string into tokens
-  void splitStr( const std::string& s, char c, std::vector<std::string>& v );
 
 };  // class RevOpts
 

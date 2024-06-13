@@ -1078,25 +1078,50 @@ bool RevBasicMemCtrl::processNextRqst(
   return true;
 }
 
-void RevBasicMemCtrl::handleFlagResp( RevMemOp* op ) {
-  RevFlag  flags = op->getFlags();
-  unsigned bits  = 8 * op->getSize();
+/// RevFlag: Perform an integer conversion
+template<typename SRC, typename DEST>
+static inline void convert( void* target ) {
+  SRC src;
+  memcpy( &src, target, sizeof( src ) );
+  DEST dest{ src };
+  memcpy( target, &dest, sizeof( dest ) );
+}
 
-  if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
-    uint32_t* target = static_cast<uint32_t*>( op->getTarget() );
-    *target          = SignExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-    uint64_t* target = static_cast<uint64_t*>( op->getTarget() );
-    *target          = SignExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
-    uint32_t* target = static_cast<uint32_t*>( op->getTarget() );
-    *target          = ZeroExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-    uint64_t* target = static_cast<uint64_t*>( op->getTarget() );
-    *target          = ZeroExt( *target, bits );
-  } else if( RevFlagHas( flags, RevFlag::F_BOXNAN ) ) {
-    double* target = static_cast<double*>( op->getTarget() );
-    BoxNaN( target, target );
+/// RevFlag: Handle flag response
+void RevHandleFlagResp( void* target, size_t size, RevFlag flags ) {
+  if( RevFlagHas( flags, RevFlag::F_BOXNAN ) && size < sizeof( double ) ) {
+    BoxNaN( static_cast<double*>( target ), static_cast<float*>( target ) );
+  } else {
+    switch( size ) {
+    case 1:
+      if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
+        convert<int8_t, int32_t>( target );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
+        convert<uint8_t, uint32_t>( target );
+      } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
+        convert<int8_t, int64_t>( target );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
+        convert<uint8_t, uint64_t>( target );
+      }
+      break;
+    case 2:
+      if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
+        convert<int16_t, int32_t>( target );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
+        convert<uint16_t, uint32_t>( target );
+      } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
+        convert<int16_t, int64_t>( target );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
+        convert<uint16_t, uint64_t>( target );
+      }
+      break;
+    case 4:
+      if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
+        convert<int32_t, int64_t>( target );
+      } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
+        convert<uint32_t, uint64_t>( target );
+      }
+    }
   }
 }
 

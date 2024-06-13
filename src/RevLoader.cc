@@ -15,14 +15,6 @@ namespace SST::RevCPU {
 
 using MemSegment = RevMem::MemSegment;
 
-RevLoader::RevLoader( std::string Exe, std::string Args, RevMem* Mem, SST::Output* Output )
-  : exe( Exe ), args( Args ), mem( Mem ), output( Output ), RV32Entry( 0x00l ), RV64Entry( 0x00ull ) {
-  if( !LoadElf() )
-    output->fatal( CALL_INFO, -1, "Error: failed to load executable into memory\n" );
-}
-
-RevLoader::~RevLoader() {}
-
 bool RevLoader::IsElf( const Elf64_Ehdr eh64 ) {
   if( ( eh64 ).e_ident[0] == 0x7f && ( eh64 ).e_ident[1] == 'E' && ( eh64 ).e_ident[2] == 'L' && ( eh64 ).e_ident[3] == 'F' )
     return true;
@@ -55,7 +47,7 @@ bool RevLoader::IsRVBig( const Elf64_Ehdr eh64 ) {
 }
 
 // breaks the write into cache line chunks
-bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, void* Data ) {
+bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, const void* Data ) {
   if( Len == 0 ) {
     // nothing to do here, move along
     return true;
@@ -445,128 +437,103 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
   return true;
 }
 
-std::string RevLoader::GetArgv( unsigned entry ) {
-  if( entry > ( argv.size() - 1 ) )
-    return "";
-
-  return argv[entry];
-}
-
-bool RevLoader::LoadProgramArgs() {
+template<typename XLEN>
+bool RevLoader::LoadProgramArgs( const std::string& exe, const std::vector<std::string>& args ) {
   // -------------- BEGIN MEMORY LAYOUT NOTES
-  // At this point in the code, the loader has initialized .text, .bss, .sbss, etc
-  // We seek to utilize the argument array information that is passed in
-  // from the user (see parameter="args") in order to initialize the arguments to 'main'
+  // At this point in the code, the loader has initialized .text, .bss, .sbss, etc.
+  //
+  // We seek to utilize the argument array information that is passed in from the
+  // user (see parameter="args") in order to initialize the arguments to main().
+  //
   // For example, people often implement:
   //        int main( int argc, char **argv)
   //
-  // This function builds the necessary information for the input arguments
-  // and writes this information to memory
+  // This function builds the necessary information for the input arguments and
+  // writes this information to memory.
   //
-  // There are two things we know:
-  // 1) StackTop is the current top of the stack initialized by the loader (not RevMem)
-  // 2) MemTop is the theoretical "top" of memory (eg, the highest possible virtual address) set by RevMem
+  // StackTop is the current top of the stack initialized by the loader (not RevMem).
   //
-  // These data elements are written to the highest 1024 bytes of memory, or:
-  // [MemTop] --> [Memtop-1024]
+  // These data elements are pushed onto the stack, and the new StackTop is used as
+  // the argv pointer passed to main().
   //
-  // This is addressable memory, but exists BEYOND the top of the standard stack
-  // The data is written in two parts.  First, we write the ARGV strings (null terminated)
-  // in reverse order into the most significant addresses as follows:
+  // [Old StackTop]
+  // Pointee of argv[argc-1]
+  // ...
+  // Pointee of argv[2]
+  // Pointee of argv[1]
+  // Pointee of argv[0] (also known as the executable name)
   //
-  // [MemTop]
-  //    ARGV[ARGC-1]
-  //    ARGV[ARGC-2]
-  //    ....
-  //    ARGV[0] (also known as the executable name)
+  // argv[argc-1] pointer
+  // ...
+  // argv[2] pointer
+  // argv[1] pointer
+  // argv[0] pointer
+  // [New StackTop]
   //
-  // Note that the addresses are written contiguously
+  // Note that the argv[i] addresses are written contiguously.
   //
-  // Next, we setup the prologue header just above the base stack pointer
-  // that contains the layout of this array.  This includes our ARGC value
-  // We start this block of memory at SP+48 bytes as follows:
+  // The size of each argv[i] pointer is equal to XLEN.
+  // It is necessary that argv[i] be contiguous in memory across i
+  // and that sizeof(argv[i]) == sizeof(char*) == XLEN.
   //
-  // [SP+48] : ARGC
-  // [SP+52] : POINTER TO A MEMORY LOCATION THAT CONTAINS THE BASE ADDRESS OF *ARGV[0]
-  // [SP+60] : POINTER TO ARGV[0]
-  // [SP+68] : POINTER TO ARGV[1]
-  // [SP+72] : ...
+  // Each string that argv[i] points to starts at an address which is a multiple of XLEN.
   //
-  // Finally, when the processor comes out of Reset() (see RevCore.cc), we initialize
-  // the x10 register to the value of ARGC and the x11 register to the base pointer to ARGV
+  // Finally, in RevCPU::SetupArgs(), we initialize the a0 register to the value of argc
+  // and the a1 register to the base pointer to argv.
   // -------------- END MEMORY LAYOUT NOTES
 
-  // argv[0] = program name
-  argv.push_back( exe );
+  // Allocate sizeof(XLEN) bytes for each of the argv[] pointers
+  // ArgvBase + ArgvOffset is the address where each of the argv strings will start
+  XLEN ArgvOffset   = sizeof( XLEN ) * ( args.size() + 1 );
 
-  // split the rest of the arguments into tokens
-  splitStr( args, ' ', argv );
+  // Compute the total size, rounding each string up to a multiple of sizeof( XLEN )
+  XLEN ArgArraySize = ArgvOffset;
+  for( auto& arg : args )
+    ArgArraySize += ( arg.size() | ( sizeof( XLEN ) - 1 ) ) + 1;
 
-  if( argv.size() == 0 ) {
-    output->fatal( CALL_INFO, -1, "Error: failed to initialize the program arguments\n" );
-    return false;
-  }
+  // OldStackTop is the current StackTop rounded down to a multiple of sizeof(XLEN)
+  const XLEN OldStackTop  = mem->GetStackTop() & ~( sizeof( XLEN ) - 1 );
 
-  uint64_t OldStackTop = mem->GetMemTop();
-  uint64_t ArgArray    = mem->GetStackTop() + 48;
+  // Allocate ArgArraySize elements at ArgArrayBase
+  // Set the new StackTop to ArgArraySize bytes below OldStackTop
+  const XLEN ArgArrayBase = OldStackTop - ArgArraySize;
+  mem->SetStackTop( ArgArrayBase );
 
-  // setup the argc argument values
-  uint32_t Argc        = (uint32_t) ( argv.size() );
-  WriteCacheLine( ArgArray, 4, &Argc );
-  ArgArray += 4;
+  // Start argv[] at ArgArrayBase
+  XLEN ArgArray = ArgArrayBase;
 
-  // write the argument values
-  for( int i = ( argv.size() - 1 ); i >= 0; i-- ) {
-    output->verbose( CALL_INFO, 6, 0, "Loading program argv[%d] = %s\n", i, argv[i].c_str() );
+  // Add a new element to argv
+  auto add_argv = [&]( const std::string& arg ) {
+    // Length of argv[i] string
+    size_t Len  = arg.size() + 1;
 
-    // retrieve the current stack pointer
-    std::vector<char> tmpc( argv[i].size() + 1 );
-    argv[i].copy( &tmpc[0], argv[i].size() + 1 );
-    tmpc[argv[i].size()] = '\0';
-    size_t len           = argv[i].size() + 1;
+    // Address of argv[i][0]
+    XLEN Target = ArgArrayBase + ArgvOffset;
 
-    OldStackTop -= len;
+    // Write the address &argv[i][0] into argv[i]
+    WriteCacheLine( ArgArray, sizeof( XLEN ), &Target );
 
-    WriteCacheLine( OldStackTop, len, &tmpc[0] );
-  }
+    // Advance ArgArray sizeof(XLEN) to the next argv[i]
+    ArgArray += sizeof( XLEN );
 
-  // now reverse engineer the address alignments
-  // -- this is the address of the argv pointers (address + 8) in the stack
-  // -- Note: this is NOT the actual addresses of the argv[n]'s
-  uint64_t ArgBase = ArgArray + 8;
-  WriteCacheLine( ArgArray, 8, &ArgBase );
-  ArgArray += 8;
+    // Write the contents of argv[i] string into &argv[i][0]
+    WriteCacheLine( Target, Len, arg.c_str() );
 
-  // -- these are the addresses of each argv entry
-  for( size_t i = 0; i < argv.size(); i++ ) {
-    WriteCacheLine( ArgArray, 8, &OldStackTop );
-    OldStackTop += ( argv[i].size() + 1 );
-    ArgArray += 8;
-  }
+    // Advance ArgvOffset the string length rounded up to a multiple of sizeof( XLEN )
+    ArgvOffset += ( ( Len - 1 ) | ( sizeof( XLEN ) - 1 ) ) + 1;
+  };
 
-  mem->SetNextThreadMemAddr( OldStackTop - _STACK_SIZE_ - mem->GetTLSSize() - __PAGE_SIZE__ );
+  // argv[0] == name of executable
+  add_argv( exe );
+
+  // Program arguments
+  for( auto& arg : args )
+    add_argv( arg );
+
   return true;
 }
 
-void RevLoader::splitStr( const std::string& s, char c, std::vector<std::string>& v ) {
-  std::string::size_type i = 0;
-  std::string::size_type j = s.find( c );
-
-  if( ( j == std::string::npos ) && ( s.length() > 0 ) ) {
-    v.push_back( s );
-    return;
-  }
-
-  while( j != std::string::npos ) {
-    v.push_back( s.substr( i, j - i ) );
-    i = ++j;
-    j = s.find( c, j );
-    if( j == std::string::npos )
-      v.push_back( s.substr( i, s.length() ) );
-  }
-}
-
-bool RevLoader::LoadElf() {
+bool RevLoader::LoadElf( const std::string& exe, const std::vector<std::string>& args ) {
   // open the target file
   int         fd = open( exe.c_str(), O_RDONLY );
   struct stat FileStats;
@@ -587,14 +554,16 @@ bool RevLoader::LoadElf() {
   if( FileSize < sizeof( Elf64_Ehdr ) )
     output->fatal( CALL_INFO, -1, "Error: Elf header is unrecognizable\n" );
 
-  const Elf64_Ehdr* eh64 = (const Elf64_Ehdr*) ( membuf );
-  if( !IsRVElf32( *eh64 ) && !IsRVElf64( *eh64 ) )
+  Elf64_Ehdr eh64;
+  memcpy( &eh64, membuf, sizeof( eh64 ) );
+
+  if( !IsRVElf32( eh64 ) && !IsRVElf64( eh64 ) )
     output->fatal( CALL_INFO, -1, "Error: Cannot determine Elf32 or Elf64 from header\n" );
 
-  if( !IsRVLittle( *eh64 ) )
+  if( !IsRVLittle( eh64 ) )
     output->fatal( CALL_INFO, -1, "Error: Not in little endian format\n" );
 
-  if( IsRVElf32( *eh64 ) ) {
+  if( IsRVElf32( eh64 ) ) {
     if( !LoadElf32( membuf, FileSize ) )
       output->fatal( CALL_INFO, -1, "Error: could not load Elf32 binary\n" );
   } else {
@@ -615,7 +584,7 @@ bool RevLoader::LoadElf() {
   }
 
   /// load the program arguments
-  if( !LoadProgramArgs() )
+  if( IsRVElf64( eh64 ) ? !LoadProgramArgs<uint64_t>( exe, args ) : !LoadProgramArgs<uint32_t>( exe, args ) )
     return false;
 
   // Initiate a memory fence in order to ensure that the entire ELF

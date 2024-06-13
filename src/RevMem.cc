@@ -738,6 +738,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Dat
   return true;
 }
 
+// Deprecated
 bool RevMem::ReadMem( uint64_t Addr, size_t Len, void* Data ) {
 #ifdef _REV_DEBUG_
   std::cout << "OLD READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -780,6 +781,7 @@ bool RevMem::ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, co
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+
   uint64_t pageNum     = Addr >> addrShift;
   uint64_t physAddr    = CalcPhysAddr( pageNum, Addr );
   //check to see if we're about to walk off the page....
@@ -800,6 +802,7 @@ bool RevMem::ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, co
         DataMem[i] = BaseMem[i];
       }
     }
+
     BaseMem      = &physMem[adjPhysAddr];
     //If we are using memH, this paging scheme is not relevant, we already issued the ReadReq above
     //ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, req, flags);
@@ -808,6 +811,8 @@ bool RevMem::ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, co
       DataMem[Cur] = BaseMem[i];
       Cur++;
     }
+    // Handle flag response
+    RevHandleFlagResp( Target, Len, flags );
     // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
     if( MemOp::MemOpAMO != req.ReqType ) {
       req.MarkLoadComplete();
@@ -823,6 +828,8 @@ bool RevMem::ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, co
       for( unsigned i = 0; i < Len; i++ ) {
         DataMem[i] = BaseMem[i];
       }
+      // Handle flag response
+      RevHandleFlagResp( Target, Len, flags );
       // clear the hazard- if this was an AMO operation then we will clear outside of this function in AMOMem()
       if( MemOp::MemOpAMO != req.ReqType ) {
         TRACE_MEM_READ( Addr, Len, DataMem );

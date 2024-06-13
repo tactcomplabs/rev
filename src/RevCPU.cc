@@ -64,15 +64,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   );
 
   // read the binary executable name
-  Exe  = params.find<std::string>( "program", "a.out" );
-
-  // read the program arguments
-  Args = params.find<std::string>( "args", "" );
+  auto Exe = params.find<std::string>( "program", "a.out" );
 
   // Create the options object
-  Opts = new( std::nothrow ) RevOpts( numCores, numHarts, Verbosity );
+  Opts     = new( std::nothrow ) RevOpts( numCores, numHarts, Verbosity );
   if( !Opts )
     output.fatal( CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
+
+  // Program arguments
+  Opts->SetArgs( params );
 
   // Initialize the remaining options
   for( auto [ParamName, InitFunc] : {
@@ -158,13 +158,16 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   Mem->SetMaxHeapSize( maxHeapSize );
 
   // Load the binary into memory
-  // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
-  Loader = new RevLoader( Exe, Args, Mem, &output );
+  Loader = new( std::nothrow ) RevLoader( Exe, Opts->GetArgv(), Mem, &output );
   if( !Loader ) {
     output.fatal( CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
   }
 
-  Opts->SetArgs( Loader->GetArgv() );
+  // Create the processor objects
+  Procs.reserve( Procs.size() + numCores );
+  for( unsigned i = 0; i < numCores; i++ ) {
+    Procs.push_back( new RevCore( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
+  }
 
   // Create the processor objects
   Procs.reserve( Procs.size() + numCores );
@@ -758,18 +761,15 @@ void RevCPU::CheckBlockedThreads() {
 }
 
 // ----------------------------------
-// We need to initialize the x10 register to include the value of ARGC
-// This is >= 1 (the executable name is always included)
+// We need to initialize the x10 register to include the value of
+// ARGC. This is >= 1 (the executable name is always included).
 // We also need to initialize the ARGV pointer to the value
-// of the ARGV base pointer in memory which is currently set to the
-// program header region.  When we come out of reset, this is StackTop+60 bytes
+// of the ARGV base pointer in memory which is currently set to
+// the top of stack.
 // ----------------------------------
 void RevCPU::SetupArgs( const std::unique_ptr<RevRegFile>& RegFile ) {
-  auto Argv = Opts->GetArgv();
-  // setup argc
-  RegFile->SetX( RevReg::a0, Argv.size() );
-  RegFile->SetX( RevReg::a1, Mem->GetStackTop() + 60 );
-  return;
+  RegFile->SetX( RevReg::a0, Opts->GetArgv().size() + 1 );
+  RegFile->SetX( RevReg::a1, Mem->GetStackTop() );
 }
 
 // Checks core 'i' to see if it has any available harts to assign work to

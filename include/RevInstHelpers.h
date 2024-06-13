@@ -119,48 +119,35 @@ bool load( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   if( sizeof( T ) < sizeof( int64_t ) && R->IsRV32 ) {
     static constexpr RevFlag flags =
       sizeof( T ) < sizeof( int32_t ) ? std::is_signed_v<T> ? RevFlag::F_SEXT32 : RevFlag::F_ZEXT32 : RevFlag::F_NONE;
-    uint64_t rs1 = R->GetX<uint64_t>( Inst.rs1 );  // read once for tracer
-    MemReq   req(
+    auto   rs1 = R->GetX<uint64_t>( Inst.rs1 );  // read once for tracer
+    MemReq req{
       rs1 + Inst.ImmSignExt( 12 ),
       Inst.rd,
       RevRegClass::RegGPR,
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete()
-    );
+      R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
     M->ReadVal(
-      F->GetHartToExecID(),
-      rs1 + Inst.ImmSignExt( 12 ),
-      reinterpret_cast<std::make_unsigned_t<T>*>( &R->RV32[Inst.rd] ),
-      std::move( req ),
-      flags
+      F->GetHartToExecID(), rs1 + Inst.ImmSignExt( 12 ), reinterpret_cast<T*>( &R->RV32[Inst.rd] ), std::move( req ), flags
     );
-    R->SetX( Inst.rd, static_cast<T>( R->RV32[Inst.rd] ) );
-
   } else {
     static constexpr RevFlag flags =
       sizeof( T ) < sizeof( int64_t ) ? std::is_signed_v<T> ? RevFlag::F_SEXT64 : RevFlag::F_ZEXT64 : RevFlag::F_NONE;
-    uint64_t rs1 = R->GetX<uint64_t>( Inst.rs1 );
-    MemReq   req(
+    auto   rs1 = R->GetX<uint64_t>( Inst.rs1 );
+    MemReq req{
       rs1 + Inst.ImmSignExt( 12 ),
       Inst.rd,
       RevRegClass::RegGPR,
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete()
-    );
+      R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
     M->ReadVal(
-      F->GetHartToExecID(),
-      rs1 + Inst.ImmSignExt( 12 ),
-      reinterpret_cast<std::make_unsigned_t<T>*>( &R->RV64[Inst.rd] ),
-      std::move( req ),
-      flags
+      F->GetHartToExecID(), rs1 + Inst.ImmSignExt( 12 ), reinterpret_cast<T*>( &R->RV64[Inst.rd] ), std::move( req ), flags
     );
-    R->SetX( Inst.rd, static_cast<T>( R->RV64[Inst.rd] ) );
   }
 
   // update the cost
@@ -182,39 +169,29 @@ template<typename T>
 bool fload( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   if( std::is_same_v<T, double> || F->HasD() ) {
     static constexpr RevFlag flags = sizeof( T ) < sizeof( double ) ? RevFlag::F_BOXNAN : RevFlag::F_NONE;
-
-    uint64_t rs1                   = R->GetX<uint64_t>( Inst.rs1 );
-    MemReq   req(
+    uint64_t                 rs1   = R->GetX<uint64_t>( Inst.rs1 );
+    MemReq                   req{
       rs1 + Inst.ImmSignExt( 12 ),
       Inst.rd,
       RevRegClass::RegFLOAT,
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete()
-    );
+      R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
     M->ReadVal(
       F->GetHartToExecID(), rs1 + Inst.ImmSignExt( 12 ), reinterpret_cast<T*>( &R->DPF[Inst.rd] ), std::move( req ), flags
     );
-
-    // Box float value into 64-bit FP register
-    if( std::is_same_v<T, float> ) {
-      double fp = R->GetFP<double>( Inst.rd );
-      BoxNaN( &fp, &fp );
-      R->SetFP( Inst.rd, fp );
-    }
   } else {
     uint64_t rs1 = R->GetX<uint64_t>( Inst.rs1 );
-    MemReq   req(
+    MemReq   req{
       rs1 + Inst.ImmSignExt( 12 ),
       Inst.rd,
       RevRegClass::RegFLOAT,
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete()
-    );
+      R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
     M->ReadVal( F->GetHartToExecID(), rs1 + Inst.ImmSignExt( 12 ), &R->SPF[Inst.rd], std::move( req ), RevFlag::F_NONE );
   }

@@ -218,8 +218,6 @@ private:
   unsigned              RDMAPerCycle{};  ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
   unsigned              testStage{};     ///< RevCPU: controls the PAN Test harness staging
   unsigned              testIters{};     ///< RevCPU: the number of message iters for each PAN Test
-  std::string           Exe{};           ///< RevCPU: binary executable
-  std::string           Args{};          ///< RevCPU: argument list
   RevOpts*              Opts{};          ///< RevCPU: Simulation options object
   RevMem*               Mem{};           ///< RevCPU: RISC-V main memory object
   RevLoader*            Loader{};        ///< RevCPU: RISC-V loader
