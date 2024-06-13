@@ -17,27 +17,26 @@ namespace SST::RevCPU {
 using MemSegment = RevMem::MemSegment;
 
 RevCore::RevCore(
-  unsigned                  Id,
-  RevOpts*                  Opts,
-  unsigned                  NumHarts,
-  RevMem*                   Mem,
-  RevLoader*                Loader,
+  unsigned                  id,
+  RevOpts*                  opts,
+  unsigned                  numHarts,
+  RevMem*                   mem,
+  RevLoader*                loader,
   std::function<uint32_t()> GetNewTID,
-  SST::Output*              Output
+  SST::Output*              output
 )
-  : Halted( false ), Stalled( false ), SingleStep( false ), CrackFault( false ), ALUFault( false ), fault_width( 0 ), id( Id ),
-    HartToDecodeID( 0 ), HartToExecID( 0 ), numHarts( NumHarts ), opts( Opts ), mem( Mem ), coProc( nullptr ), loader( Loader ),
-    GetNewThreadID( std::move( GetNewTID ) ), output( Output ), feature( nullptr ), sfetch( nullptr ), Tracer( nullptr ) {
+  : id( id ), numHarts( numHarts ), opts( opts ), mem( mem ), loader( loader ), GetNewThreadID( std::move( GetNewTID ) ),
+    output( output ) {
 
   // initialize the machine model for the target core
   std::string Machine;
-  if( !Opts->GetMachineModel( id, Machine ) )
+  if( !opts->GetMachineModel( id, Machine ) )
     output->fatal( CALL_INFO, -1, "Error: failed to retrieve the machine model for core=%" PRIu32 "\n", id );
 
   unsigned MinCost = 0;
   unsigned MaxCost = 0;
 
-  Opts->GetMemCost( Id, MinCost, MaxCost );
+  opts->GetMemCost( id, MinCost, MaxCost );
 
   LSQueue = std::make_shared<std::unordered_multimap<uint64_t, MemReq>>();
   LSQueue->clear();
@@ -48,19 +47,19 @@ RevCore::RevCore(
     ValidHarts.set( i, true );
   }
 
-  featureUP = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, Id );
+  featureUP = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, id );
   feature   = featureUP.get();
   if( !feature )
     output->fatal( CALL_INFO, -1, "Error: failed to create the RevFeature object for core=%" PRIu32 "\n", id );
 
   unsigned Depth = 0;
-  Opts->GetPrefetchDepth( Id, Depth );
+  opts->GetPrefetchDepth( id, Depth );
   if( Depth == 0 ) {
     Depth = 16;
   }
 
   sfetch =
-    std::make_unique<RevPrefetcher>( Mem, feature, Depth, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } );
+    std::make_unique<RevPrefetcher>( mem, feature, Depth, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } );
   if( !sfetch )
     output->fatal( CALL_INFO, -1, "Error: failed to create the RevPrefetcher object for core=%" PRIu32 "\n", id );
 
@@ -175,7 +174,7 @@ bool RevCore::SeedInstTable() {
     CALL_INFO, 6, 0, "Core %" PRIu32 " ; Seeding instruction table for machine model=%s\n", id, feature->GetMachineModel().data()
   );
 
-  // I-Extension
+  // I Extension
   if( feature->IsModeEnabled( RV_I ) ) {
     if( feature->IsRV64() ) {
       // load RV32I & RV64; no optional compressed
@@ -187,7 +186,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // M-Extension
+  // M Extension
   if( feature->IsModeEnabled( RV_M ) ) {
     EnableExt( new RV32M( feature, mem, output ), false );
     if( feature->IsRV64() ) {
@@ -195,7 +194,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // A-Extension
+  // A Extension
   if( feature->IsModeEnabled( RV_A ) ) {
     EnableExt( new RV32A( feature, mem, output ), false );
     if( feature->IsRV64() ) {
@@ -203,7 +202,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // F-Extension
+  // F Extension
   if( feature->IsModeEnabled( RV_F ) ) {
     if( !feature->IsModeEnabled( RV_D ) && feature->IsRV32() ) {
       EnableExt( new RV32F( feature, mem, output ), true );
@@ -213,7 +212,7 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // D-Extension
+  // D Extension
   if( feature->IsModeEnabled( RV_D ) ) {
     EnableExt( new RV32D( feature, mem, output ), false );
     if( feature->IsRV64() ) {
@@ -221,14 +220,19 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // Zicbom-Extension
-  if( feature->IsModeEnabled( RV_ZICBOM ) ) {
-    EnableExt( new Zicbom( feature, mem, output ), false );
+  // Zicsr Extension
+  if( feature->IsModeEnabled( RV_ZICSR ) ) {
+    EnableExt( new Zicsr( feature, mem, output ), false );
   }
 
-  // Zifencei-Extension
+  // Zifencei Extension
   if( feature->IsModeEnabled( RV_ZIFENCEI ) ) {
     EnableExt( new Zifencei( feature, mem, output ), false );
+  }
+
+  // Zicbom Extension
+  if( feature->IsModeEnabled( RV_ZICBOM ) ) {
+    EnableExt( new Zicbom( feature, mem, output ), false );
   }
 
   return true;
@@ -1632,7 +1636,9 @@ void RevCore::MarkLoadComplete( const MemReq& req ) {
 bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   RevInst Inst;
   bool    rtn = false;
-  Stats.totalCycles++;
+  ++Stats.totalCycles;
+  ++cycles;
+  currentSimCycle = currentCycle;
 
   // -- MAIN PROGRAM LOOP --
   //
@@ -1801,7 +1807,8 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
         ExecPC
       );
 #endif
-      Stats.retired++;
+      ++Stats.retired;
+      ++RegFile->InstRet;
 
       // Only clear the dependency if there is no outstanding load
       if( ( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) ) == 0 ) {
@@ -1911,7 +1918,7 @@ void RevCore::CreateThread( uint32_t NewTID, uint64_t firstPC, void* arg ) {
   // TODO: Copy TLS into new memory
 
   // Create new register file
-  std::unique_ptr<RevRegFile> NewThreadRegFile = std::make_unique<RevRegFile>( feature );
+  std::unique_ptr<RevRegFile> NewThreadRegFile = std::make_unique<RevRegFile>( this );
 
   // Copy the arg to the new threads a0 register
   NewThreadRegFile->SetX( RevReg::a0, reinterpret_cast<uintptr_t>( arg ) );
@@ -1989,8 +1996,8 @@ void RevCore::AssignThread( std::unique_ptr<RevThread> Thread ) {
       1,
       "Attempted to assign a thread to a hart but no available harts were "
       "found.\n"
-      "We should never have tried to assign a thread to this Proc if it had no "
-      "harts available (ie. Proc->NumIdleHarts() == 0 ).\n"
+      "We should never have tried to assign a thread to this Core if it had no "
+      "harts available (ie. Core->NumIdleHarts() == 0 ).\n"
       "This is a bug\n"
     );
   }

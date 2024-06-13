@@ -11,4 +11,5 @@ set(InstructionSrcs
   RV64M.h
   RV64P.h
   Zicbom.h
+  Zicsr.h
 )

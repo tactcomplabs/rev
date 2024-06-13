@@ -129,14 +129,6 @@ class RV32I : public RevExt {
 
   static constexpr auto& ebreak    = nop;
 
-  // Unimplemented Zicsr extension instructions
-  static constexpr auto& csrrw     = nop;
-  static constexpr auto& csrrs     = nop;
-  static constexpr auto& csrrc     = nop;
-  static constexpr auto& csrrwi    = nop;
-  static constexpr auto& csrrsi    = nop;
-  static constexpr auto& csrrci    = nop;
-
   // Compressed instructions
 
   // c.addi4spn %rd, $imm == addi %rd, x2, $imm, $imm != 0
@@ -235,7 +227,6 @@ class RV32I : public RevExt {
     { RevInstDefaults().SetMnemonic("or %rd, %rs1, %rs2"   ).SetFunct3(   0b110).SetImplFunc(f_or  ).SetFunct2or7(0b0000000)                                                  .SetFormat(RVTypeR).SetOpcode(0b0110011) },
     { RevInstDefaults().SetMnemonic("and %rd, %rs1, %rs2"  ).SetFunct3(   0b111).SetImplFunc(f_and ).SetFunct2or7(0b0000000)
                           .SetFormat(RVTypeR).SetOpcode(0b0110011) },
-
     { RevInstDefaults().SetMnemonic("fence"                ).SetFunct3(   0b000).SetImplFunc(fence ).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegUNKNOWN) .SetFormat(RVTypeI).SetOpcode(0b0001111).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm(FVal) },
     { RevInstDefaults().SetMnemonic("ecall"                ).SetFunct3(   0b000).SetImplFunc(ecall ).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegUNKNOWN) .SetFormat(RVTypeI).SetOpcode(0b1110011).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm12(0b000000000000).Setimm(FEnc) },
     { RevInstDefaults().SetMnemonic("ebreak"               ).SetFunct3(   0b000).SetImplFunc(ebreak).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegUNKNOWN) .SetFormat(RVTypeI).SetOpcode(0b1110011).Setrs2Class(RevRegClass::RegUNKNOWN).Setimm12(0b000000000001).Setimm(FEnc) },

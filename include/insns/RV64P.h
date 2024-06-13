@@ -53,7 +53,7 @@ class RV64P : public RevExt {
 
   // clang-format off
   std::vector<RevInstEntry> RV64PTable = {
-    { Rev64PInstDefaults().SetMnemonic("future %rd, $imm(%rs1)" ).SetFunct3(0b111).SetImplFunc( future) },
+    { Rev64PInstDefaults().SetMnemonic( "future %rd, $imm(%rs1)").SetFunct3(0b111).SetImplFunc( future) },
     { Rev64PInstDefaults().SetMnemonic("rfuture %rd, $imm(%rs1)").SetFunct3(0b101).SetImplFunc(rfuture) },
     { Rev64PInstDefaults().SetMnemonic("sfuture %rd, $imm(%rs1)").SetFunct3(0b100).SetImplFunc(sfuture) },
   };
