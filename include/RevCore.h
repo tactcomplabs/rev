@@ -292,11 +292,11 @@ private:
   std::bitset<_MAX_HARTS_>              HartsClearToDecode{};   ///< RevCore: Thread is clear to start (proceed with decode)
   std::bitset<_MAX_HARTS_>              HartsClearToExecute{};  ///< RevCore: Thread is clear to execute (no register dependencides)
 
-  unsigned const   numHarts;  ///< RevCore: Number of Harts for this core
-  RevOpts* const   opts;      ///< RevCore: options object
-  RevMem* const    mem;       ///< RevCore: memory object
-  RevCoProc* const coProc;    ///< RevCore: attached co-processor
-  RevLoader* const loader;    ///< RevCore: loader object
+  unsigned   numHarts{};  ///< RevCore: Number of Harts for this core
+  RevOpts*   opts{};      ///< RevCore: options object
+  RevMem*    mem{};       ///< RevCore: memory object
+  RevCoProc* coProc{};    ///< RevCore: attached co-processor
+  RevLoader* loader{};    ///< RevCore: loader object
 
   // Function pointer to the GetNewThreadID function in RevCPU (monotonically increasing thread ID counter)
   std::function<uint32_t()> const GetNewThreadID;
