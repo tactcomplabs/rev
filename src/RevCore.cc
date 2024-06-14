@@ -998,6 +998,9 @@ RevInst RevCore::DecodeRInst( uint32_t Inst, unsigned Entry ) const {
   DInst.funct3    = InstTable[Entry].funct3;
   DInst.funct2or7 = InstTable[Entry].funct2or7;
 
+  // Whether the instruction raises floating-point exceptions
+  DInst.raisefpe  = InstTable[Entry].raisefpe;
+
   // registers
   DInst.rd        = 0x0;
   DInst.rs1       = 0x0;
@@ -1222,6 +1225,9 @@ RevInst RevCore::DecodeR4Inst( uint32_t Inst, unsigned Entry ) const {
   DInst.funct3     = 0x0;
   DInst.funct2or7  = DECODE_FUNCT2( Inst );
   DInst.rm         = DECODE_RM( Inst );
+
+  // Whether the instruction raises floating-point exceptions
+  DInst.raisefpe   = InstTable[Entry].raisefpe;
 
   // registers
   DInst.rd         = DECODE_RD( Inst );

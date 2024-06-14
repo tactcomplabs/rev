@@ -79,9 +79,8 @@ private:
   std::vector<RevInstEntry> ctable{};  ///< RevExt: compressed instruction table
   std::vector<RevInstEntry> otable{};  ///< RevExt: optional compressed instruction table
 
-  /// Set the FP rounding mode
-  void SetFPRoundingMode( const RevRegFile*, FRMode );
 };  // class RevExt
+
 }  // namespace SST::RevCPU
 
 #endif
