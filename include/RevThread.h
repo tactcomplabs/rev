@@ -112,17 +112,17 @@ public:
   }
 
 private:
-  uint32_t                            ID{};                         // Thread ID
-  uint32_t                            ParentID{};                   // Parent ID
-  uint64_t                            StackPtr{};                   // Initial stack pointer
-  uint64_t                            FirstPC{};                    // Initial PC
-  std::shared_ptr<RevMem::MemSegment> ThreadMem{};                  // TLS and Stack memory
-  RevFeature*                         Feature{};                    // Feature set for this thread
-  uint64_t                            ThreadPtr{};                  // Thread pointer
-  ThreadState                         State{ ThreadState::START };  // Thread state
-  std::unique_ptr<RevVirtRegState>    VirtRegState{};               // Register file
-  std::unordered_set<uint32_t>        ChildrenIDs{};                // Child thread IDs
-  std::unordered_set<int>             fildes{ 0, 1, 2 };            // Default file descriptors
+  uint32_t ID{};        // Thread ID
+  uint32_t ParentID{};  // Parent ID
+  //  uint64_t                        StackPtr{};                   // Initial stack pointer
+  //  uint64_t                        FirstPC{};                    // Initial PC
+  std::shared_ptr<RevMem::MemSegment> ThreadMem{};  // TLS and Stack memory
+  RevFeature*                         Feature{};    // Feature set for this thread
+  //  uint64_t                        ThreadPtr{};                  // Thread pointer
+  ThreadState                      State{ ThreadState::START };  // Thread state
+  std::unique_ptr<RevVirtRegState> VirtRegState{};               // Register file
+  std::unordered_set<uint32_t>     ChildrenIDs{};                // Child thread IDs
+  std::unordered_set<int>          fildes{ 0, 1, 2 };            // Default file descriptors
 
   ///< RevThread: ID of the thread this thread is waiting to join
   uint32_t WaitingToJoinTID = _INVALID_TID_;

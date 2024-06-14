@@ -10,14 +10,14 @@
 # See LICENSE in the top level directory for licensing details
 #
 
-CC=${RVCC}
-CXX=${RVCXX}
+CXX=riscv64-unknown-elf-g++
+#CXX=${RVCXX}
 ARCH=rv64imafdc
 ABI=lp64d
 
-CC_OPTS = -O2 -I ../../common/include -I ../../common/syscalls
+CC_OPTS = -std=gnu++1z -O2 -I ../../common/include -I ../../common/syscalls
 
-ifneq (,$(findstring clang,$(RVCC)))
+ifneq (,$(findstring clang,$(CXX)))
 	CC_OPTS += -ffp-model=strict
 else
 	CC_OPTS += -fsignaling-nans

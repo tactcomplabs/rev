@@ -33,8 +33,8 @@ const char splash_msg[] = "\
 ";
 
 RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
-  : SST::Component( id ), testStage( 0 ), PrivTag( 0 ), address( -1 ), EnableMemH( false ), DisableCoprocClock( false ),
-    Nic( nullptr ), Ctrl( nullptr ), ClockHandler( nullptr ) {
+  : SST::Component( id ), PrivTag( 0 ), address( -1 ), EnableMemH( false ), DisableCoprocClock( false ), Nic( nullptr ),
+    Ctrl( nullptr ), ClockHandler( nullptr ) {
 
   const int Verbosity = params.find<int>( "verbose", 0 );
 

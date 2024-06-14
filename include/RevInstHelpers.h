@@ -26,9 +26,9 @@ namespace SST::RevCPU {
 
 // Limits when converting from floating-point to integer
 template<typename FP, typename INT>
-constexpr FP fpmax = 0;
+static constexpr FP fpmax = 0;
 template<typename FP, typename INT>
-constexpr FP fpmin = 0;
+static constexpr FP fpmin = 0;
 template<>
 constexpr float fpmax<float, int32_t> = 0x1.fffffep+30f;
 template<>

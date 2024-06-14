@@ -212,17 +212,17 @@ public:
   }
 
 private:
-  unsigned              numCores{};      ///< RevCPU: number of RISC-V cores
-  unsigned              numHarts{};      ///< RevCPU: number of RISC-V cores
-  unsigned              msgPerCycle{};   ///< RevCPU: number of messages to send per cycle
-  unsigned              RDMAPerCycle{};  ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
-  unsigned              testStage{};     ///< RevCPU: controls the PAN Test harness staging
-  unsigned              testIters{};     ///< RevCPU: the number of message iters for each PAN Test
-  RevOpts*              Opts{};          ///< RevCPU: Simulation options object
-  RevMem*               Mem{};           ///< RevCPU: RISC-V main memory object
-  RevLoader*            Loader{};        ///< RevCPU: RISC-V loader
-  std::vector<RevCore*> Procs{};         ///< RevCPU: RISC-V processor objects
-  bool*                 Enabled{};       ///< RevCPU: Completion structure
+  unsigned numCores{};     ///< RevCPU: number of RISC-V cores
+  unsigned numHarts{};     ///< RevCPU: number of RISC-V cores
+  unsigned msgPerCycle{};  ///< RevCPU: number of messages to send per cycle
+  //  unsigned          RDMAPerCycle{};  ///< RevCPU: number of RDMA messages per cycle to inject into PAN network
+  //  unsigned          testStage{};     ///< RevCPU: controls the PAN Test harness staging
+  //  unsigned          testIters{};     ///< RevCPU: the number of message iters for each PAN Test
+  RevOpts*              Opts{};     ///< RevCPU: Simulation options object
+  RevMem*               Mem{};      ///< RevCPU: RISC-V main memory object
+  RevLoader*            Loader{};   ///< RevCPU: RISC-V loader
+  std::vector<RevCore*> Procs{};    ///< RevCPU: RISC-V processor objects
+  bool*                 Enabled{};  ///< RevCPU: Completion structure
 
   // Initializes a RevThread object.
   // - Adds it's ThreadID to the ThreadQueue to be scheduled
@@ -266,16 +266,16 @@ private:
   // Generates a new Thread ID using the RNG.
   uint32_t GetNewThreadID() { return RevRand( 0, UINT32_MAX ); }
 
-  uint8_t  PrivTag{};  ///< RevCPU: private tag locator
-  uint32_t LToken{};   ///< RevCPU: token identifier for PAN Test
+  uint8_t PrivTag{};  ///< RevCPU: private tag locator
+  //  uint32_t LToken{};   ///< RevCPU: token identifier for PAN Test
 
   int address{};  ///< RevCPU: local network address
 
   unsigned fault_width{};  ///< RevCPU: the width (in bits) for target faults
-  int64_t  fault_range{};  ///< RevCPU: the range of cycles to inject the fault
-  int64_t  FaultCntr{};    ///< RevCPU: the fault counter
+  // int64_t  fault_range{};  ///< RevCPU: the range of cycles to inject the fault
+  int64_t FaultCntr{};  ///< RevCPU: the fault counter
 
-  uint64_t PrevAddr{};  ///< RevCPU: previous address for handling PAN messages
+  // uint64_t PrevAddr{};  ///< RevCPU: previous address for handling PAN messages
 
   bool EnableNIC{};     ///< RevCPU: Flag for enabling the NIC
   bool EnableMemH{};    ///< RevCPU: Enable memHierarchy

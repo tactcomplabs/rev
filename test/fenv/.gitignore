@@ -1,3 +1,4 @@
+fenv_test.makefile
 FE_TONEAREST_*.cc
 FE_UPWARD_*.cc
 FE_DOWNWARD_*.cc

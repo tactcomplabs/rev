@@ -58,7 +58,8 @@
 namespace SST::RevCPU {
 class RevCoProc;
 
-struct RevCore {
+class RevCore {
+public:
   /// RevCore: standard constructor
   RevCore(
     unsigned                  id,

@@ -11,6 +11,7 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -32,9 +33,9 @@ int float_class( T x ) {
   static_assert( std::numeric_limits<T>::is_iec559, "Environment does not support IEEE 754" );
   int c = std::fpclassify( x );
   if( c == FP_NAN ) {
-    std::conditional_t<std::is_same_v<T, float>, uint32_t, uint64_t> ix;
+    std::conditional_t<std::is_same<T, float>::value, uint32_t, uint64_t> ix;
     std::memcpy( &ix, &x, sizeof( ix ) );
-    if( !( ix & decltype( ix ){ 1 } << ( std::is_same_v<T, float> ? 22 : 51 ) ) ) {
+    if( !( ix & decltype( ix ){ 1 } << ( std::is_same<T, float>::value ? 22 : 51 ) ) ) {
       c = FP_SNAN;
     }
   }
@@ -53,7 +54,7 @@ const char* fenv_hexfloat( T x ) {
 template<typename T>
 const char* float_string( T x ) {
   static char s[128];
-  const char* type = std::is_same_v<T, float> ? "float" : "double";
+  const char* type = std::is_same<T, float>::value ? "float" : "double";
   s[0]             = 0;
 
   switch( float_class( x ) ) {
@@ -74,7 +75,7 @@ const char* float_string( T x ) {
     strcat( s, type );
     strcat( s, ">::infinity()" );
     break;
-  default: strcat( s, fenv_hexfloat( x ) ); strcat( s, std::is_same_v<T, float> ? "f" : "" );
+  default: strcat( s, fenv_hexfloat( x ) ); strcat( s, std::is_same<T, float>::value ? "f" : "" );
   }
   return s;
 }

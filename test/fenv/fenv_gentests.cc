@@ -157,7 +157,7 @@ template<typename FP, typename INT>
 static void generate_tests() {
   using FUNC1 = std::pair<FP ( * )( FP ), std::string_view>[];
   for( auto oper_pair : FUNC1{
-         OPER_PAIR( [] [[gnu::noinline]] ( auto x ) { return -x; } ),
+         OPER_PAIR( []( volatile auto x ) { return -x; } ),
        } ) {
     for( auto x : special_values<FP, INT> ) {
       generate_test( oper_pair, x );
@@ -166,10 +166,10 @@ static void generate_tests() {
 
   using FUNC2 = std::pair<FP ( * )( FP, FP ), std::string_view>[];
   for( auto oper_pair : FUNC2{
-         OPER_PAIR( [] [[gnu::noinline]] ( auto x, auto y ) { return x + y; } ),
-         OPER_PAIR( [] [[gnu::noinline]] ( auto x, auto y ) { return x - y; } ),
-         OPER_PAIR( [] [[gnu::noinline]] ( auto x, auto y ) { return x * y; } ),
-         OPER_PAIR( [] [[gnu::noinline]] ( auto x, auto y ) { return x / y; } ),
+         OPER_PAIR( []( volatile auto x, volatile auto y ) { return x + y; } ),
+         OPER_PAIR( []( volatile auto x, volatile auto y ) { return x - y; } ),
+         OPER_PAIR( []( volatile auto x, volatile auto y ) { return x * y; } ),
+         OPER_PAIR( []( volatile auto x, volatile auto y ) { return x / y; } ),
        } ) {
     for( auto x : special_values<FP, INT> ) {
       for( auto y : special_values<FP, INT> ) {
@@ -180,10 +180,10 @@ static void generate_tests() {
 
   using FUNC3 = std::pair<FP ( * )( FP, FP, FP ), std::string_view>[];
   for( auto oper_pair : FUNC3{
-         OPER_PAIR( ( [] [[gnu::noinline]] ( auto x, auto y, auto z ) {
+         OPER_PAIR( ( []( volatile auto x, volatile auto y, volatile auto z ) {
            using namespace std;
            using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
-           if constexpr( is_same_v<T, float> ) {
+           if constexpr( is_same<T, float>::value ) {
              return fmaf( T( x ), T( y ), T( z ) );
            } else {
              return fma( T( x ), T( y ), T( z ) );
