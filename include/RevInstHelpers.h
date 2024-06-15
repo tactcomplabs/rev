@@ -26,41 +26,41 @@ namespace SST::RevCPU {
 
 // Limits when converting from floating-point to integer
 template<typename FP, typename INT>
-static constexpr FP fpmax = 0;
+inline constexpr FP fpmax = 0;
 template<typename FP, typename INT>
-static constexpr FP fpmin = 0;
+inline constexpr FP fpmin = 0;
 template<>
-constexpr float fpmax<float, int32_t> = 0x1.fffffep+30f;
+inline constexpr float fpmax<float, int32_t> = 0x1.fffffep+30f;
 template<>
-constexpr float fpmin<float, int32_t> = -0x1p+31f;
+inline constexpr float fpmin<float, int32_t> = -0x1p+31f;
 template<>
-constexpr float fpmax<float, uint32_t> = 0x1.fffffep+31f;
+inline constexpr float fpmax<float, uint32_t> = 0x1.fffffep+31f;
 template<>
-constexpr float fpmin<float, uint32_t> = 0x0p+0f;
+inline constexpr float fpmin<float, uint32_t> = 0x0p+0f;
 template<>
-constexpr float fpmax<float, int64_t> = 0x1.fffffep+62f;
+inline constexpr float fpmax<float, int64_t> = 0x1.fffffep+62f;
 template<>
-constexpr float fpmin<float, int64_t> = -0x1p+63f;
+inline constexpr float fpmin<float, int64_t> = -0x1p+63f;
 template<>
-constexpr float fpmax<float, uint64_t> = 0x1.fffffep+63f;
+inline constexpr float fpmax<float, uint64_t> = 0x1.fffffep+63f;
 template<>
-constexpr float fpmin<float, uint64_t> = 0x0p+0f;
+inline constexpr float fpmin<float, uint64_t> = 0x0p+0f;
 template<>
-constexpr double fpmax<double, int32_t> = 0x1.fffffffcp+30;
+inline constexpr double fpmax<double, int32_t> = 0x1.fffffffcp+30;
 template<>
-constexpr double fpmin<double, int32_t> = -0x1p+31;
+inline constexpr double fpmin<double, int32_t> = -0x1p+31;
 template<>
-constexpr double fpmax<double, uint32_t> = 0x1.fffffffep+31;
+inline constexpr double fpmax<double, uint32_t> = 0x1.fffffffep+31;
 template<>
-constexpr double fpmin<double, uint32_t> = 0x0p+0;
+inline constexpr double fpmin<double, uint32_t> = 0x0p+0;
 template<>
-constexpr double fpmax<double, int64_t> = 0x1.fffffffffffffp+62;
+inline constexpr double fpmax<double, int64_t> = 0x1.fffffffffffffp+62;
 template<>
-constexpr double fpmin<double, int64_t> = -0x1p+63;
+inline constexpr double fpmin<double, int64_t> = -0x1p+63;
 template<>
-constexpr double fpmax<double, uint64_t> = 0x1.fffffffffffffp+63;
+inline constexpr double fpmax<double, uint64_t> = 0x1.fffffffffffffp+63;
 template<>
-constexpr double fpmin<double, uint64_t> = 0x0p+0;
+inline constexpr double fpmin<double, uint64_t> = 0x0p+0;
 
 /// General template for converting between Floating Point and Integer.
 /// FP values outside the range of the target integer type are clipped
