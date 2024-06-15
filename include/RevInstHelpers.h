@@ -68,7 +68,7 @@ constexpr double fpmin<double, uint64_t> = 0x0p+0;
 template<typename FP, typename INT>
 bool CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   // Read the FP register. Round to integer according to current rounding mode.
-  FP fp = std::nearbyint( R->GetFP<FP>( Inst.rs1 ) );
+  FP fp = std::rint( R->GetFP<FP>( Inst.rs1 ) );
 
   // Convert to integer type
   INT res;

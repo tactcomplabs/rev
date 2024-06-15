@@ -140,7 +140,7 @@ macro(add_rev_test test_name test_dir timeout labels)
 
         set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
         PROPERTIES
-          ENVIRONMENT "RVCC=${RVCC}"
+          ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
           TIMEOUT ${timeout}
           PASS_REGULAR_EXPRESSION "${passRegex}"
           LABELS "${labels}"
@@ -148,7 +148,7 @@ macro(add_rev_test test_name test_dir timeout labels)
         if(add_memh_test)
           set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
           PROPERTIES
-            ENVIRONMENT "RVCC=${RVCC}"
+            ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
             TIMEOUT ${timeout}
             PASS_REGULAR_EXPRESSION "${passRegex}"
             LABELS "${labels}"
@@ -172,7 +172,7 @@ macro(add_rev_test test_name test_dir timeout labels)
     # Set test properties for the script test
     set_tests_properties(${test_name_lower}_script
       PROPERTIES
-        ENVIRONMENT "RVCC=${RVCC}"
+        ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
         TIMEOUT ${timeout}
         PASS_REGULAR_EXPRESSION "${passRegex}"
         LABELS "${labels}"

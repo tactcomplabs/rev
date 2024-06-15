@@ -10,8 +10,7 @@
 # See LICENSE in the top level directory for licensing details
 #
 
-CXX=riscv64-unknown-elf-g++
-#CXX=${RVCXX}
+CXX=${RVCXX}
 ARCH=rv64imafdc
 ABI=lp64d
 

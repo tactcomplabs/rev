@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: vector
+# makefile: unordered_map
 #
 # Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -13,14 +13,13 @@
 .PHONY: src
 
 EXAMPLE=unordered_map
-CC=riscv64-unknown-elf-g++
-#CC="${RVCC}"
+CXX=${RVCXX}
 #ARCH=rv64g
 ARCH=rv64gc
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CC) -march=$(ARCH) -O0 -I../../../../common/include -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+	$(CXX) -march=$(ARCH) -O0 -I../../../../common/include -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 
