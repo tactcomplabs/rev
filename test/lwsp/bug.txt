@@ -1,0 +1,42 @@
+
+This test case is failing on a c.lwsp instruction which appears to be making an incorrect address calculation.
+
+To run the test case:
+  git checkout lwsp
+  cd test/lwsp
+  make clean && make
+
+
+RevCPU[cpu0:Render:2000]: Core 0; Hart 0; Thread 1; *I 0x11206:7179      + c.addi16sp $imm     	 0x3ffffffc<-x2 x2<-0x3fffffcc
+RevCPU[cpu0:Render:3000]: Core 0; Hart 0; Thread 1; *I 0x11208:f422        c.sdsp %rs2, $imm   	 0x3fffffcc<-x2 0x14028<-x8 [0x3ffffff4,8]<-0x0000000000014028
+RevCPU[cpu0:Render:4000]: Core 0; Hart 0; Thread 1; *I 0x1120a:1800        c.addi4spn %rd, $imm	 0x3fffffcc<-x2 x8<-0x3ffffffc
+RevCPU[cpu0:Render:5000]: Core 0; Hart 0; Thread 1; *I 0x1120c:67c5        c.lui %rd, $imm     	 x15<-0x11000
+RevCPU[cpu0:Render:6000]: Core 0; Hart 0; Thread 1; *I 0x1120e:5387b783    ld %rd, $imm(%rs1)  	 0x11000<-x15 0x80000000000aced1<-[0x11538,8]
+RevCPU[cpu0:Render:7000]: Core 0; Hart 0; Thread 1; *I 0x11212:fef43423    sd %rs2, $imm(%rs1) 	 0x3ffffffc<-x8 0x80000000000aced1<-x15 [0x3fffffe4,8]<-0x80000000000aced1
+RevCPU[cpu0:Render:8000]: Core 0; Hart 0; Thread 1; *I 0x11216:67b1        c.lui %rd, $imm     	 x15<-0xc000
+RevCPU[cpu0:Render:9000]: Core 0; Hart 0; Thread 1; *I 0x11218:ad178793    addi %rd, %rs1, $imm	 0xc000<-x15 x15<-0xbad1
+RevCPU[cpu0:Render:10000]: Core 0; Hart 0; Thread 1; *I 0x1121c:fef43023    sd %rs2, $imm(%rs1) 	 0x3ffffffc<-x8 0xbad1<-x15 [0x3fffffdc,8]<-0x000000000000bad1
+RevCPU[cpu0:Render:11000]: Core 0; Hart 0; Thread 1; *I 0x11220:67b1        c.lui %rd, $imm     	 x15<-0xc000
+RevCPU[cpu0:Render:12000]: Core 0; Hart 0; Thread 1; *I 0x11222:ad078793    addi %rd, %rs1, $imm	 0xc000<-x15 x15<-0xbad0
+RevCPU[cpu0:Render:13000]: Core 0; Hart 0; Thread 1; *I 0x11226:fcf42e23    sw %rs2, $imm(%rs1) 	 0x3ffffffc<-x8 0xbad0<-x15 [0x3fffffd8,4]<-0x0000bad0
+RevCPU[cpu0:Render:14000]: Core 0; Hart 0; Thread 1; *I 0x1122a:fe843783    ld %rd, $imm(%rs1)  	 0x3ffffffc<-x8 0x80000000000aced1<-[0x3fffffe4,8]
+RevCPU[cpu0:Render:15000]: Core 0; Hart 0; Thread 1; *I 0x1122e:7115        c.addi16sp $imm     	 0x3fffffcc<-x2 x2<-0x3ffffeec
+# Here we write to the correct addresses in the stack
+RevCPU[cpu0:Render:16000]: Core 0; Hart 0; Thread 1; *I 0x11230:e93e        c.sdsp %rs2, $imm   	 0x3ffffeec<-x2 0x80000000000aced1<-x15 [0x3fffff7c,8]<-0x80000000000aced1
+RevCPU[cpu0:Render:17000]: Core 0; Hart 0; Thread 1; *I 0x11232:cd02        c.swsp %rs2, $imm   	 0x3ffffeec<-x2 0x0<-x0 [0x3fffff84,4]<-0x00000000
+RevCPU[cpu0:Render:18000]: Core 0; Hart 0; Thread 1; *I 0x11234:00a01013    slli %rd, %rs1, $imm	 0x0<-x0 x0<-0x0
+
+FATAL: RevCPU[cpu0:CalcPhysAddr:19000]: Segmentation Fault: Virtual address 0x40000384 (PhysAddr = 0xffffffffffffffff) was not found in any mem segments
+
+From the disassembly, the crashing instruction the one reading back the previous value written to the stack.
+   11238:	476a                	c.lwsp	a4,152(sp)
+
+The cause of this is in  RevInstHelpers.h:92
+
+M->ReadVal(
+      F->GetHartToExecID(), rs1 + Inst.ImmSignExt( 12 ), reinterpret_cast<T*>( &R->RV64[Inst.rd] ), std::move( req ), flags
+    );
+
+Inst.ImmSignExt(12) is resolving to 0x498. When added to rs1 (0x3ffffeec) we overflow.
+
+
