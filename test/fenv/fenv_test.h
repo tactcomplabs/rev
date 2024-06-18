@@ -33,60 +33,158 @@ int float_class( T x ) {
   static_assert( std::numeric_limits<T>::is_iec559, "Environment does not support IEEE 754" );
   int c = std::fpclassify( x );
   if( c == FP_NAN ) {
-    std::conditional_t<std::is_same<T, float>::value, uint32_t, uint64_t> ix;
+    std::conditional_t<std::is_same_v<T, float>, uint32_t, uint64_t> ix;
     std::memcpy( &ix, &x, sizeof( ix ) );
-    if( !( ix & decltype( ix ){ 1 } << ( std::is_same<T, float>::value ? 22 : 51 ) ) ) {
+    if( !( ix & decltype( ix ){ 1 } << ( std::is_same_v<T, float> ? 22 : 51 ) ) ) {
       c = FP_SNAN;
     }
   }
   return c;
 }
 
-template<typename T>
-const char* fenv_hexfloat( T x ) {
-  static char s[64];
-  snprintf( s, sizeof( s ), "%a", (double) x );
-  return s;
+inline void fenv_write( int fd, const char* str ) {
+  size_t len = 0;
+  while( str[len] )
+    len++;
+#ifdef __riscv
+  rev_write( fd, str, len );
+#else
+  write( fd, str, len );
+#endif
 }
 
-/// Prints a floating-point value as a portable C++ exact constant
+// Limits when converting from floating-point to integer
+template<typename FP, typename INT>
+inline constexpr FP fpmax = 0;
+template<typename FP, typename INT>
+inline constexpr FP fpmin = 0;
+template<>
+inline constexpr float fpmax<float, int32_t> = 0x1.fffffep+30f;
+template<>
+inline constexpr float fpmin<float, int32_t> = -0x1p+31f;
+template<>
+inline constexpr float fpmax<float, uint32_t> = 0x1.fffffep+31f;
+template<>
+inline constexpr float fpmin<float, uint32_t> = 0x0p+0f;
+template<>
+inline constexpr float fpmax<float, int64_t> = 0x1.fffffep+62f;
+template<>
+inline constexpr float fpmin<float, int64_t> = -0x1p+63f;
+template<>
+inline constexpr float fpmax<float, uint64_t> = 0x1.fffffep+63f;
+template<>
+inline constexpr float fpmin<float, uint64_t> = 0x0p+0f;
+template<>
+inline constexpr double fpmax<double, int32_t> = 0x1.fffffffcp+30;
+template<>
+inline constexpr double fpmin<double, int32_t> = -0x1p+31;
+template<>
+inline constexpr double fpmax<double, uint32_t> = 0x1.fffffffep+31;
+template<>
+inline constexpr double fpmin<double, uint32_t> = 0x0p+0;
+template<>
+inline constexpr double fpmax<double, int64_t> = 0x1.fffffffffffffp+62;
+template<>
+inline constexpr double fpmin<double, int64_t> = -0x1p+63;
+template<>
+inline constexpr double fpmax<double, uint64_t> = 0x1.fffffffffffffp+63;
+template<>
+inline constexpr double fpmin<double, uint64_t> = 0x0p+0;
+
+/// Converts FP to Integer
+template<typename INT, typename T>
+INT to_int( T x ) {
+  using namespace std;
+
+  if constexpr( std::is_same_v<T, float> ) {
+    x = rintf( x );
+  } else {
+    x = rint( x );
+  }
+
+  if( isnan( x ) || x > fpmax<T, INT> ) {
+    feraiseexcept( FE_INVALID );
+    return numeric_limits<INT>::max();
+  } else if( x < fpmin<T, INT> ) {
+    feraiseexcept( FE_INVALID );
+    return numeric_limits<INT>::min();
+  } else {
+    return static_cast<INT>( x );
+  }
+}
+
+/// returns a type string
+template<typename T>
+inline constexpr char type[] = "(INVALID)";
+template<>
+inline constexpr char type<float>[] = "float";
+template<>
+inline constexpr char type<double>[] = "double";
+template<>
+inline constexpr char type<int32_t>[] = "int32_t";
+template<>
+inline constexpr char type<uint32_t>[] = "uint32_t";
+template<>
+inline constexpr char type<int64_t>[] = "int64_t";
+template<>
+inline constexpr type<uint64_t>[] = "uint64_t";
+
+/// Prints a value as a portable C++ exact constant
 /// Handles +/- 0, +/- Inf, qNaN, sNaN
 template<typename T>
-const char* float_string( T x ) {
+const char* repr( T x ) {
   static char s[128];
-  const char* type = std::is_same<T, float>::value ? "float" : "double";
-  s[0]             = 0;
-
-  switch( float_class( x ) ) {
-  case FP_NAN:
-    strcat( s, "std::numeric_limits<" );
-    strcat( s, type );
-    strcat( s, ">::quiet_NaN()" );
-    break;
-  case FP_SNAN:
-    strcat( s, "std::numeric_limits<" );
-    strcat( s, type );
-    strcat( s, ">::signaling_NaN()" );
-    break;
-  case FP_INFINITE:
-    if( std::signbit( x ) )
-      strcat( s, "-" );
-    strcat( s, "std::numeric_limits<" );
-    strcat( s, type );
-    strcat( s, ">::infinity()" );
-    break;
-  default: strcat( s, fenv_hexfloat( x ) ); strcat( s, std::is_same<T, float>::value ? "f" : "" );
+  if constexpr( std::is_floating_point_v<T> ) {
+    *s = 0;
+    switch( float_class( x ) ) {
+    case FP_NAN:
+      strcat( s, "std::numeric_limits<" );
+      strcat( s, type<T> );
+      strcat( s, ">::quiet_NaN()" );
+      break;
+    case FP_SNAN:
+      strcat( s, "std::numeric_limits<" );
+      strcat( s, type<T> );
+      strcat( s, ">::signaling_NaN()" );
+      break;
+    case FP_INFINITE:
+      if( std::signbit( x ) )
+        strcat( s, "-" );
+      strcat( s, "std::numeric_limits<" );
+      strcat( s, type<T> );
+      strcat( s, ">::infinity()" );
+      break;
+    default: {
+      static char fps[64];
+      snprintf( fps, sizeof( fps ), "%a", (double) x );
+      strcat( s, fps );
+      strcat( s, std::is_same_v<T, float> ? "f" : "" );
+    }
+    }
+  } else if constexpr( std::is_same_v<T, int32_t> ) {
+    snprintf( s, sizeof( s ), "%" PRIi32, x );
+  } else if constexpr( std::is_same_v<T, uint32_t> ) {
+    snprintf( s, sizeof( s ), "%" PRIu32 "u", x );
+  } else if constexpr( std::is_same_v<T, int64_t> ) {
+    static_assert( sizeof( long long ) == sizeof( int64_t ) );
+    snprintf( s, sizeof( s ), "%" PRIi64 "ll", x );
+  } else if constexpr( std::is_same_v<T, uint64_t> ) {
+    static_assert( sizeof( unsigned long long ) == sizeof( uint64_t ) );
+    snprintf( s, sizeof( s ), "%" PRIu64 "llu", x );
+  } else {
+    static_assert( ( sizeof( T ), false ), "Error: Unknown data type\n" );
   }
+
   return s;
 }
 
-/// Prints a comma-separated list of floating-point values
+/// Formats a comma-separated list of values
 template<typename... Ts>
 const char* args_string( Ts... args ) {
-  static char s[256];
+  static char s[1024];
   const char* sep = "";
   s[0]            = 0;
-  (void) ( ..., ( ( strcat( s, sep ), strcat( s, float_string( args ) ), sep = ", " ) ) );
+  (void) ( ..., ( strcat( strcat( s, sep ), repr( args ) ), sep = ", " ) );
   return s;
 }
 
@@ -116,30 +214,21 @@ inline const char* exception_string( int exceptions ) {
   return s;
 }
 
-inline void fenv_write( int fd, const char* str ) {
-  size_t len = 0;
-  while( str[len] )
-    len++;
-#ifdef __riscv
-  rev_write( fd, str, len );
-#else
-  write( fd, str, len );
-#endif
-}
-
 template<typename T, typename... Ts>
 bool test_result( const char* test, const char* test_src, T result, T result_expected, Ts... args ) {
-  // Remove payloads from any NaNs
-  for( T& x : { std::ref( result ), std::ref( result_expected ) } ) {
-    switch( float_class( x ) ) {
-    case FP_NAN: x = std::numeric_limits<T>::quiet_NaN(); break;
-    case FP_SNAN: x = std::numeric_limits<T>::signaling_NaN(); break;
+  if constexpr( std::is_floating_point_v<T> ) {
+    // Remove payloads from any NaNs
+    for( T& x : { std::ref( result ), std::ref( result_expected ) } ) {
+      switch( float_class( x ) ) {
+      case FP_NAN: x = std::numeric_limits<T>::quiet_NaN(); break;
+      case FP_SNAN: x = std::numeric_limits<T>::signaling_NaN(); break;
+      }
     }
   }
 
   // Compare for exact bit representation equality
   if( memcmp( &result, &result_expected, sizeof( T ) ) ) {
-    fenv_write( 2, "\nError in fenv Test " );
+    fenv_write( 2, "\nResult error in fenv Test " );
     fenv_write( 2, test );
     fenv_write( 2, ":\n" );
     fenv_write( 2, test_src );
@@ -147,10 +236,10 @@ bool test_result( const char* test, const char* test_src, T result, T result_exp
     fenv_write( 2, args_string( args... ) );
     fenv_write( 2, " )\n" );
     fenv_write( 2, "Expected result: " );
-    fenv_write( 2, float_string( result_expected ) );
+    fenv_write( 2, repr( result_expected ) );
     fenv_write( 2, "\n" );
     fenv_write( 2, "Actual   result: " );
-    fenv_write( 2, float_string( result ) );
+    fenv_write( 2, repr( result ) );
     fenv_write( 2, "\n" );
     return false;
   }
@@ -159,14 +248,14 @@ bool test_result( const char* test, const char* test_src, T result, T result_exp
 
 template<typename... Ts>
 bool test_exceptions(
-  const char* test, std::string_view test_src, int exceptions, int exceptions_expected, bool result_passed, Ts... args
+  const char* test, const char* test_src, int exceptions, int exceptions_expected, bool result_passed, Ts... args
 ) {
   if( ( exceptions ^ exceptions_expected ) & FE_ALL_EXCEPT ) {
     if( result_passed ) {
-      fenv_write( 2, "\nError in fenv Test " );
+      fenv_write( 2, "\nExceptions error in fenv Test " );
       fenv_write( 2, test );
       fenv_write( 2, ":\n" );
-      fenv_write( 2, test_src.data() );
+      fenv_write( 2, test_src );
       fenv_write( 2, "\n  ( " );
       fenv_write( 2, args_string( args... ) );
       fenv_write( 2, " )\n" );

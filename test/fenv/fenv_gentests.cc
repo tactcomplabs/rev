@@ -15,14 +15,15 @@
 
 constexpr unsigned maxtests_per_file = 1000;
 
-static std::string   file_prefix;
-static unsigned      testnum;
-static unsigned      testcount;
-static unsigned      filenum;
-static int           rounding;
-static std::ofstream out;
+std::string   file_prefix;
+unsigned      testnum;
+unsigned      testcount;
+unsigned      filenum;
+int           rounding;
+std::ofstream out;
+size_t        failures = 0;
 
-static void openfile() {
+void openfile() {
   ++filenum;
   std::string filename = file_prefix + "_" + std::to_string( filenum );
   out.open( filename + ".cc", std::ios::out | std::ios::trunc );
@@ -35,31 +36,22 @@ static void openfile() {
   out << R"(
 #include "fenv_test.h"
 
-unsigned failures;
+size_t failures = 0;
 
 void (*fenv_tests[])() = {
-//clang-format off
 )";
 }
 
-static void closefile() {
+void closefile() {
   if( out.is_open() ) {
     out << R"(
 };
-//clang-format on
+
 size_t num_fenv_tests = sizeof( fenv_tests ) / sizeof( *fenv_tests );
 
 int main() {
-  for( size_t i = 0; i < num_fenv_tests; ++i ) {
+  for( size_t i = 0; i < num_fenv_tests; ++i )
     fenv_tests[i]();
-
-    // Make a useless syscall to have fencing effects
-#ifdef __riscv
-    rev_getuid();
-#else
-    syscall( SYS_getuid );
-#endif
-  }
 
 #ifdef __riscv
   if(failures)
@@ -73,15 +65,8 @@ int main() {
   }
 }
 
-template<typename T>
-constexpr const char* type = nullptr;
-template<>
-constexpr const char* type<float> = "float";
-template<>
-constexpr const char* type<double> = "double";
-
 template<typename T, typename... Ts>
-static void generate_test( const std::pair<T ( * )( Ts... ), std::string_view>& oper_pair, Ts... ops ) {
+void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, Ts... ops ) {
   if( !out.is_open() ) {
     openfile();
   }
@@ -110,10 +95,9 @@ static void generate_test( const std::pair<T ( * )( Ts... ), std::string_view>& 
   }
 
   out << "    feholdexcept( &fenv );\n";
-  out << "    volatile " << type<T> << " result = func( " << args_string( ops... ) << " );\n";
-  out << "    volatile " << type<T> << " dummy = " << type<T> << "(0) + " << type<T> << "(0);\n";
+  out << "    " << type<T> << " result{ func( " << args_string( ops... ) << " ) };\n";
   out << "    int exceptions = fetestexcept( FE_ALL_EXCEPT );\n";
-  out << "    auto result_expected = " << float_string( result ) << ";\n";
+  out << "    " << type<T> << " result_expected{ " << repr( result ) << " };\n";
   out << "    int exceptions_expected = " << exception_string( excepts ) << ";\n";
   out << "    bool result_passed = test_result( \"" << testnum << "\", func_src, result, result_expected, " << args_string( ops... )
       << " );\n";
@@ -130,8 +114,8 @@ static void generate_test( const std::pair<T ( * )( Ts... ), std::string_view>& 
   }
 }
 
-template<typename FP, typename INT>
-constexpr FP special_values[] = {
+template<typename FP>
+constexpr FP special_fp_values[] = {
   0.0f,
   -0.0f,
   1.0f,
@@ -150,49 +134,91 @@ constexpr FP special_values[] = {
   std::numeric_limits<FP>::max(),
 };
 
+template<typename FP, typename INT>
+constexpr FP special_fcvt_values[] = {
+  FP( std::numeric_limits<INT>::max() ),
+  FP( std::numeric_limits<INT>::max() ) + FP( 0.5 ),
+  FP( std::numeric_limits<INT>::max() ) + FP( 1.0 ),
+  FP( std::numeric_limits<INT>::max() ) - FP( 0.5 ),
+  FP( std::numeric_limits<INT>::max() ) - FP( 1.0 ),
+  FP( std::numeric_limits<INT>::min() ),
+  FP( std::numeric_limits<INT>::min() ) + FP( 0.5 ),
+  FP( std::numeric_limits<INT>::min() ) + FP( 1.0 ),
+  FP( std::numeric_limits<INT>::min() ) - FP( 0.5 ),
+  FP( std::numeric_limits<INT>::min() ) - FP( 1.0 ),
+  FP( 0 ),
+  -FP( 0 ),
+  FP( 0.1 ),
+  FP( -0.1 ),
+  FP( 0.5 ),
+  FP( -0.5 ),
+  FP( 0.9 ),
+  FP( -0.9 ),
+  std::numeric_limits<FP>::quiet_NaN(),
+  std::numeric_limits<FP>::signaling_NaN(),
+  std::numeric_limits<FP>::infinity(),
+  -std::numeric_limits<FP>::infinity(),
+};
+
 #define OPER_PAIR( lambda ) \
   { lambda, #lambda }
 
 template<typename FP, typename INT>
-static void generate_tests() {
-  using FUNC1 = std::pair<FP ( * )( FP ), std::string_view>[];
+void generate_tests() {
+  using FUNC1 = std::pair<FP ( * )( FP ), const char*>[];
   for( auto oper_pair : FUNC1{
          OPER_PAIR( []( volatile auto x ) { return -x; } ),
+         OPER_PAIR( []( volatile auto x ) { return std::fabs( x ); } ),
        } ) {
-    for( auto x : special_values<FP, INT> ) {
+    for( auto x : special_fp_values<FP> ) {
       generate_test( oper_pair, x );
     }
   }
 
-  using FUNC2 = std::pair<FP ( * )( FP, FP ), std::string_view>[];
+  char test_src[256];
+  test_src[0] = 0;
+  strcat( test_src, "[]( volatile auto x ) { return to_int<" );
+  strcat( test_src, type<INT> );
+  strcat( test_src, ">(x); }" );
+
+  using INT_FUNC1 = std::pair<INT ( * )( FP ), const char*>[];
+  for( auto oper_pair : INT_FUNC1{
+         {[]( volatile auto x ) { return to_int<INT>( x ); }, test_src},
+  } ) {
+    for( auto x : special_fcvt_values<FP, INT> ) {
+      generate_test( oper_pair, x );
+    }
+  }
+
+  using FUNC2 = std::pair<FP ( * )( FP, FP ), const char*>[];
   for( auto oper_pair : FUNC2{
          OPER_PAIR( []( volatile auto x, volatile auto y ) { return x + y; } ),
          OPER_PAIR( []( volatile auto x, volatile auto y ) { return x - y; } ),
          OPER_PAIR( []( volatile auto x, volatile auto y ) { return x * y; } ),
          OPER_PAIR( []( volatile auto x, volatile auto y ) { return x / y; } ),
        } ) {
-    for( auto x : special_values<FP, INT> ) {
-      for( auto y : special_values<FP, INT> ) {
+    for( auto x : special_fp_values<FP> ) {
+      for( auto y : special_fp_values<FP> ) {
         generate_test( oper_pair, x, y );
       }
     }
   }
 
-  using FUNC3 = std::pair<FP ( * )( FP, FP, FP ), std::string_view>[];
+  using FUNC3 = std::pair<FP ( * )( FP, FP, FP ), const char*>[];
   for( auto oper_pair : FUNC3{
          OPER_PAIR( ( []( volatile auto x, volatile auto y, volatile auto z ) {
            using namespace std;
            using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
-           if constexpr( is_same<T, float>::value ) {
+           if constexpr( is_same_v<T, float> ) {
              return fmaf( T( x ), T( y ), T( z ) );
            } else {
              return fma( T( x ), T( y ), T( z ) );
            }
          } ) ),
        } ) {
-    for( auto x : special_values<FP, INT> ) {
-      for( auto y : special_values<FP, INT> ) {
-        for( auto z : special_values<FP, INT> ) {
+    for( auto x : special_fp_values<FP> ) {
+      for( auto y : special_fp_values<FP> ) {
+        for( auto z : special_fp_values<FP> ) {
           generate_test( oper_pair, x, y, z );
         }
       }
@@ -200,30 +226,31 @@ static void generate_tests() {
   }
 }
 
-[[noreturn]] static void usage( const char* prog ) {
-  std::cerr << "Usage: " << prog << "{ FE_TONEAREST | FE_UPWARD | FE_DOWNWARD | FE_TOWARDZERO }" << std::endl;
+[[noreturn]] void usage( const char* prog ) {
+  std::cerr << "Usage: " << prog << "{ TONEAREST | UPWARD | DOWNWARD | TOWARDZERO }" << std::endl;
   exit( 1 );
 }
 
 int main( int argc, char** argv ) {
   if( argc < 2 )
     usage( *argv );
-  else if( !strcmp( argv[1], "FE_TONEAREST" ) )
+  else if( !strcmp( argv[1], "TONEAREST" ) )
     rounding = FE_TONEAREST;
-  else if( !strcmp( argv[1], "FE_UPWARD" ) )
+  else if( !strcmp( argv[1], "UPWARD" ) )
     rounding = FE_UPWARD;
-  else if( !strcmp( argv[1], "FE_DOWNWARD" ) )
+  else if( !strcmp( argv[1], "DOWNWARD" ) )
     rounding = FE_DOWNWARD;
-  else if( !strcmp( argv[1], "FE_TOWARDZERO" ) )
+  else if( !strcmp( argv[1], "TOWARDZERO" ) )
     rounding = FE_TOWARDZERO;
   else
     usage( *argv );
 
   file_prefix = argv[1];
 
+  std::cout << file_prefix << ":";
   generate_tests<float, int32_t>();
   generate_tests<double, int32_t>();
-
+  std::cout << "\n\t$(foreach exe,$^,./run_fenv_test.sh $(exe) &&) true\n.PHONY: " << file_prefix << std::endl;
   closefile();
 
   return 0;

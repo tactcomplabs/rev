@@ -14,36 +14,33 @@ CXX=${RVCXX}
 ARCH=rv64imafdc
 ABI=lp64d
 
-CC_OPTS = -std=gnu++1z -O2 -I ../../common/include -I ../../common/syscalls
+CXX_OPTS = -std=gnu++1z -O2 -I ../../common/include -I ../../common/syscalls
 
 ifneq (,$(findstring clang,$(CXX)))
-	CC_OPTS += -ffp-model=strict
+	CXX_OPTS += -ffp-model=strict
 else
-	CC_OPTS += -fsignaling-nans
+	CXX_OPTS += -fsignaling-nans
 endif
 
-CC_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
+CXX_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
 
-all: executables
+TONEAREST UPWARD DOWNWARD TOWARDZERO: fenv_test.makefile
+	make -j16 -f fenv_test.makefile $@ CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)"
 
 fenv_test.makefile: fenv_gentests.exe
-	printf '%%.exe: %%.cc\n\t$$(CXX) $$(CC_OPTS) -static -mcmodel=medany -march=$$(ARCH) -mabi=$$(ABI) -lm $$< -o $$@\nEXECUTABLES=' > fenv_test.makefile
-	./fenv_gentests.exe FE_TONEAREST  >> fenv_test.makefile
-	./fenv_gentests.exe FE_UPWARD     >> fenv_test.makefile
-	./fenv_gentests.exe FE_DOWNWARD   >> fenv_test.makefile
-	./fenv_gentests.exe FE_TOWARDZERO >> fenv_test.makefile
-	printf '\nall: $$(EXECUTABLES)\n\t$$(foreach exe,$$(EXECUTABLES),./run_fenv_test.sh $$(exe) &&) true' >> fenv_test.makefile
-
-executables: fenv_test.makefile
-	$(MAKE) -j8 -f fenv_test.makefile all CXX="$(CXX)" CC_OPTS="$(CC_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)"
+	printf '%%.exe: %%.cc\n\t$$(CXX) $$(CXX_OPTS) -static -mcmodel=medany -march=$$(ARCH) -mabi=$$(ABI) -lm $$< -o $$@\n' > fenv_test.makefile
+	./fenv_gentests.exe TONEAREST  >> fenv_test.makefile
+	./fenv_gentests.exe UPWARD     >> fenv_test.makefile
+	./fenv_gentests.exe DOWNWARD   >> fenv_test.makefile
+	./fenv_gentests.exe TOWARDZERO >> fenv_test.makefile
 
 # build test generator on local host
 fenv_gentests.exe: fenv_test.h fenv_gentests.cc
-	g++ $(CC_OPTS) fenv_gentests.cc -o $@
+	g++ $(CXX_OPTS) fenv_gentests.cc -o $@
 
 clean:
-	rm -Rf *.exe fenv_test.makefile FE_TONEAREST_*.cc FE_UPWARD_*.cc FE_DOWNWARD_*.cc FE_TOWARDZERO_*.cc
+	rm -Rf *.exe *.csv fenv_test.makefile TONEAREST_*.cc UPWARD_*.cc DOWNWARD_*.cc TOWARDZERO_*.cc
 
-.PHONY: all clean executables
+.PHONY: clean TONEAREST UPWARD DOWNWARD TOWARDZERO
 
 #-- EOF
