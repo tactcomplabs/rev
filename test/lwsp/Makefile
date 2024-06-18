@@ -1,5 +1,6 @@
 # Python configuration file
-REVCFG ?= ./rev-memh.py
+# REVCFG ?= ./rev-memh.py
+REVCFG ?= ../rev-model-options-config.py
 
 # Rev toolchain
 CC=riscv64-unknown-elf-g++
@@ -44,8 +45,7 @@ run: $(LOGS)
 # If test fails the log file will be in testname.tmplog
 %.log: %.exe
 	@$(eval tmp = $(basename $@).tmplog)
-	REV_EXE=$<
-	REV_EXE=$< ARCH=$(ARCH) sst --add-lib-path=$(REVLIBPATH) $(REVCFG) > $(tmp)
+	sst --add-lib-path=$(REVLIBPATH) $(REVCFG) -- --program=$< > $(tmp)
 	mv $(tmp) $@
 
 .PHONY: clean run
