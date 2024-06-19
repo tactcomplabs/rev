@@ -12,13 +12,13 @@
 
 .PHONY: src
 EXAMPLE=lwsp
-CC=${RVCC}
+CXX=${RVCXX}
 ARCH=rv64gc
 INCLUDE=-I../../common/syscalls -I../include
 
 all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).cpp
-	$(CC) -march=$(ARCH) -static $(INCLUDE) -o $(EXAMPLE).exe $(EXAMPLE).cpp
+$(EXAMPLE).exe: $(EXAMPLE).cc
+	$(CXX) -march=$(ARCH) -static $(INCLUDE) -o $(EXAMPLE).exe $(EXAMPLE).cc
 clean:
 	rm -Rf $(EXAMPLE).exe
 
