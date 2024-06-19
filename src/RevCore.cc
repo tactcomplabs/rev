@@ -447,7 +447,7 @@ RevInst RevCore::DecodeCIInst( uint16_t Inst, unsigned Entry ) const {
     CompInst.imm = 0;
     CompInst.imm = ( ( Inst & 0b1110000 ) >> 2 );         // [4:2]
     CompInst.imm |= ( ( Inst & 0b1000000000000 ) >> 7 );  // [5]
-    CompInst.imm |= ( ( Inst & 1100 ) << 4 );             // [7:6]
+    CompInst.imm |= ( ( Inst & 0b1100 ) << 4 );           // [7:6]
     CompInst.rs1 = 2;                                     // Force rs1 to be x2 (stack pointer)
   } else if( ( CompInst.opcode == 0b10 ) && ( CompInst.funct3 == 0b011 ) ) {
     CompInst.imm = 0;
@@ -461,7 +461,7 @@ RevInst RevCore::DecodeCIInst( uint16_t Inst, unsigned Entry ) const {
       // c.flwsp
       CompInst.imm = ( ( Inst & 0b1110000 ) >> 2 );         // [4:2]
       CompInst.imm |= ( ( Inst & 0b1000000000000 ) >> 7 );  // [5]
-      CompInst.imm |= ( ( Inst & 1100 ) << 4 );             // [7:6]
+      CompInst.imm |= ( ( Inst & 0b1100 ) << 4 );           // [7:6]
       CompInst.rs1 = 2;                                     // Force rs1 to be x2 (stack pointer)
     }
   } else if( ( CompInst.opcode == 0b01 ) && ( CompInst.funct3 == 0b011 ) && ( CompInst.rd == 2 ) ) {

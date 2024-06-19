@@ -43,9 +43,11 @@ Building the Rev SST component from source using CMake (>= 3.19) can be performe
     git clone
     git config core.hooksPath .githooks
     cd rev/build
-    cmake -DRVCC=/path/to/riscv/compiler/exe ..
+    cmake -DRVCC=/path/to/riscv/c/compiler/exe -DRVCXX=/path/to/riscv/c++/compiler/exe ..
     make -j
     make install
+
+RVCC and RVCXX can be set as environment variables in lieu of passing them to CMake.
 
 Additional build options include:
     * -DBUILD_ASM_TESTING=ON
