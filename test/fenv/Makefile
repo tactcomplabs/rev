@@ -14,7 +14,7 @@ CXX=${RVCXX}
 ARCH=rv64imafdc
 ABI=lp64d
 
-CXX_OPTS = -std=gnu++1z -O2 -I ../../common/include -I ../../common/syscalls
+CXX_OPTS = -std=gnu++1z -I ../../common/include -I ../../common/syscalls
 
 ifneq (,$(findstring clang,$(CXX)))
 	CXX_OPTS += -ffp-model=strict
@@ -25,7 +25,7 @@ endif
 CXX_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
 
 TONEAREST UPWARD DOWNWARD TOWARDZERO: fenv_test.makefile
-	make -j16 -f fenv_test.makefile $@ CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)"
+	make -j16 -f fenv_test.makefile CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)" $@
 
 fenv_test.makefile: fenv_gentests.exe
 	printf '%%.exe: %%.cc\n\t$$(CXX) $$(CXX_OPTS) -static -mcmodel=medany -march=$$(ARCH) -mabi=$$(ABI) -lm $$< -o $$@\n' > fenv_test.makefile

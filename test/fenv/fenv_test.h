@@ -10,8 +10,6 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
-#include <string>
-#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -127,7 +125,7 @@ inline constexpr char type<uint32_t>[] = "uint32_t";
 template<>
 inline constexpr char type<int64_t>[] = "int64_t";
 template<>
-inline constexpr type<uint64_t>[] = "uint64_t";
+inline constexpr char type<uint64_t>[] = "uint64_t";
 
 /// Prints a value as a portable C++ exact constant
 /// Handles +/- 0, +/- Inf, qNaN, sNaN
@@ -215,7 +213,7 @@ inline const char* exception_string( int exceptions ) {
 }
 
 template<typename T, typename... Ts>
-bool test_result( const char* test, const char* test_src, T result, T result_expected, Ts... args ) {
+bool test_result( const char* test, const char* file_prefix, const char* test_src, T result, T result_expected, Ts... args ) {
   if constexpr( std::is_floating_point_v<T> ) {
     // Remove payloads from any NaNs
     for( T& x : { std::ref( result ), std::ref( result_expected ) } ) {
@@ -228,7 +226,9 @@ bool test_result( const char* test, const char* test_src, T result, T result_exp
 
   // Compare for exact bit representation equality
   if( memcmp( &result, &result_expected, sizeof( T ) ) ) {
-    fenv_write( 2, "\nResult error in fenv Test " );
+    fenv_write( 2, "\nResult error in fenv " );
+    fenv_write( 2, file_prefix );
+    fenv_write( 2, " Test " );
     fenv_write( 2, test );
     fenv_write( 2, ":\n" );
     fenv_write( 2, test_src );
@@ -242,17 +242,26 @@ bool test_result( const char* test, const char* test_src, T result, T result_exp
     fenv_write( 2, repr( result ) );
     fenv_write( 2, "\n" );
     return false;
+  } else {
+    return true;
   }
-  return true;
 }
 
 template<typename... Ts>
 bool test_exceptions(
-  const char* test, const char* test_src, int exceptions, int exceptions_expected, bool result_passed, Ts... args
+  const char* test,
+  const char* file_prefix,
+  const char* test_src,
+  int         exceptions,
+  int         exceptions_expected,
+  bool        result_passed,
+  Ts... args
 ) {
   if( ( exceptions ^ exceptions_expected ) & FE_ALL_EXCEPT ) {
     if( result_passed ) {
-      fenv_write( 2, "\nExceptions error in fenv Test " );
+      fenv_write( 2, "\nExceptions error in fenv " );
+      fenv_write( 2, file_prefix );
+      fenv_write( 2, " Test " );
       fenv_write( 2, test );
       fenv_write( 2, ":\n" );
       fenv_write( 2, test_src );
@@ -267,8 +276,31 @@ bool test_exceptions(
     fenv_write( 2, exception_string( exceptions ) );
     fenv_write( 2, "\n" );
     return false;
+  } else {
+    if( result_passed ) {
+      fenv_write( 2, "\nfenv " );
+      fenv_write( 2, file_prefix );
+      fenv_write( 2, " Test " );
+      fenv_write( 2, test );
+      fenv_write( 2, " Passed\n" );
+    }
+    return true;
   }
-  return true;
+}
+
+/// Rev FMA template which handles 0.0 * NAN and NAN * 0.0 correctly
+// RISC-V requires INVALID exception when x * y is INVALID even when z = qNaN
+template<typename T>
+inline auto revFMA( T x, T y, T z ) {
+  using namespace std;
+  if( ( !y && isinf( x ) ) || ( !x && isinf( y ) ) ) {
+    feraiseexcept( FE_INVALID );
+  }
+  if constexpr( is_same_v<T, float> ) {
+    return fmaf( x, y, z );
+  } else {
+    return fma( x, y, z );
+  }
 }
 
 #endif

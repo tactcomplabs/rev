@@ -18,11 +18,11 @@ namespace SST::RevCPU {
 
 class Zicsr : public RevExt {
 
-  enum CSROper { Write, Set, Clear };
+  enum CSROp { Write, Set, Clear };
 
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // Because CSR has a 32/64-bit width, this function is templatized
-  template<typename T, CSROper OPER, OpKind OPKIND>
+  template<typename T, CSROp OPER, OpKind OPKIND>
   static bool ModCSRImpl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     T old = 0;
 
@@ -56,7 +56,7 @@ class Zicsr : public RevExt {
 
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // This calls the 32/64-bit ModCSR depending on the current XLEN
-  template<OpKind OPKIND, CSROper OPER>
+  template<OpKind OPKIND, CSROp OPER>
   static bool ModCSR( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     bool ret;
     if( R->IsRV32 ) {
@@ -95,15 +95,19 @@ class Zicsr : public RevExt {
   // Passed a function which gets the 64-bit value of a performance counter
   template<Half half, uint64_t counter( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )>
   static bool perfCounter( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    if( R->IsRV32 )
-      if constexpr( half == Lo )
+    if( R->IsRV32 ) {
+      if constexpr( half == Lo ) {
         R->SetX( Inst.rd, static_cast<uint32_t>( counter( F, R, M, Inst ) & 0xffffffff ) );
-      else
+      } else {
         R->SetX( Inst.rd, static_cast<uint32_t>( counter( F, R, M, Inst ) >> 32 ) );
-    else if constexpr( half == Lo )
-      R->SetX( Inst.rd, counter( F, R, M, Inst ) );
-    else
-      return false;  // Hi half is not available on RV64
+      }
+    } else {
+      if constexpr( half == Lo ) {
+        R->SetX( Inst.rd, counter( F, R, M, Inst ) );
+      } else {
+        return false;  // Hi half is not available on RV64
+      }
+    }
     R->AdvancePC( Inst );
     return true;
   }

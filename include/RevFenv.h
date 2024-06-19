@@ -52,21 +52,31 @@ public:
     case FRMode::RNE:  // Round to Nearest, ties to Even
       ret = std::fesetround( FE_TONEAREST );
       break;
+
     case FRMode::RTZ:  // Round towards Zero
       ret = std::fesetround( FE_TOWARDZERO );
       break;
+
     case FRMode::RDN:  // Round Down (towards -Inf)
       ret = std::fesetround( FE_DOWNWARD );
       break;
+
     case FRMode::RUP:  // Round Up (towards +Inf)
       ret = std::fesetround( FE_UPWARD );
       break;
+
     case FRMode::RMM:  // Round to Nearest, ties to Max Magnitude
+#ifdef FE_TONEARESTFROMZERO
+      ret = std::fesetround( FE_TONEARESTFROMZERO );
+#else
       output->fatal( CALL_INFO, -1, "Error: Round to nearest Max Magnitude not implemented at PC = 0x%" PRIx64 "\n", R->GetPC() );
+#endif
       break;
+
     case FRMode::DYN:
       output->fatal( CALL_INFO, -1, "Illegal FCSR Rounding Mode of DYN at PC = 0x%" PRIx64 "\n", R->GetPC() );
       break;
+
     default: output->fatal( CALL_INFO, -1, "Unknown Rounding Mode at PC = 0x%" PRIx64 "\n", R->GetPC() ); break;
     }
     if( ret != 0 ) {
@@ -80,15 +90,15 @@ public:
     // Set the accumulated fflags based on exceptions
     int except = std::fetestexcept( FE_ALL_EXCEPT );
     if( except & FE_DIVBYZERO )
-      fcsr.DZ = true;
+      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::DZ ) };
     if( except & FE_INEXACT )
-      fcsr.NX = true;
+      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::NX ) };
     if( except & FE_INVALID )
-      fcsr.NV = true;
+      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::NV ) };
     if( except & FE_OVERFLOW )
-      fcsr.OF = true;
+      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::OF ) };
     if( except & FE_UNDERFLOW )
-      fcsr.UF = true;
+      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::UF ) };
 
     // Restore the host's saved FP Environment
     std::fesetenv( &saved_env );

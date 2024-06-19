@@ -54,7 +54,7 @@ enum class RevReg : uint16_t {
 };
 
 /// Floating-Point Rounding Mode
-enum class FRMode : uint8_t {
+enum class FRMode : uint32_t {
   None = 0xff,
   RNE = 0,   // Round to Nearest, ties to Even
   RTZ = 1,   // Round towards Zero
@@ -66,14 +66,12 @@ enum class FRMode : uint8_t {
 
 /// Floating-point control register
 // fcsr.NX, fcsr.UF, fcsr.OF, fcsr.DZ, fcsr.NV, fcsr.frm
-struct FCSR{
-  uint32_t NX  : 1;
-  uint32_t UF  : 1;
-  uint32_t OF  : 1;
-  uint32_t DZ  : 1;
-  uint32_t NV  : 1;
-  uint32_t frm : 3;
-  uint32_t     : 24;
+enum class FCSR : uint32_t {
+  NX = 1,
+  UF = 2,
+  OF = 4,
+  DZ = 8,
+  NV = 16,
 };
 
 #define CSR_LIMIT 0x1000
@@ -343,44 +341,38 @@ public:
 
   /// Get a CSR register
   template<typename T>
-  T GetCSR( size_t i ) const {
-    T old;
-    if( i <= 3 ) {
-      // We store fcsr separately from the global CSR
-      static_assert( sizeof( fcsr ) <= sizeof( old ) );
-      old = 0;
-      memcpy( &old, &fcsr, sizeof( fcsr ) );
-      if( !( i & 1 ) )
-        old &= ~T{ 0x1f };
-      if( !( i & 2 ) )
-        old &= ~T{ 0xe0 };
-    } else {
-      old = static_cast<T>( CSR[i] );
+  T GetCSR( size_t csr ) const {
+    T val;
+    // We store fcsr separately from the global CSR
+    switch( csr ) {
+    case 1: val = static_cast<uint32_t>( fcsr ) & 0x1fu; break;
+    case 2: val = static_cast<uint32_t>( fcsr ) >> 5 & 0x3u; break;
+    case 3: val = static_cast<uint32_t>( fcsr ) & 0xffu; break;
+    default: val = static_cast<T>( CSR[csr] );
     }
-    return old;
+    return val;
   }
 
   /// Set a CSR register
   template<typename T>
-  void SetCSR( size_t i, T val ) {
-    if( i <= 3 ) {
-      // We store fcsr separately from the global CSR
-      if( !( i & 1 ) )
-        val &= ~T{ 0x1f };
-      if( !( i & 2 ) )
-        val &= ~T{ 0xe0 };
-      static_assert( sizeof( fcsr ) <= sizeof( val ) );
-      memcpy( &fcsr, &val, sizeof( fcsr ) );
-    } else {
-      CSR[i] = val;
+  void SetCSR( size_t csr, T val ) {
+    // We store fcsr separately from the global CSR
+    switch( csr ) {
+    case 1:
+      fcsr = FCSR{ ( static_cast<uint32_t>( fcsr ) & ~uint32_t{ 0b00011111u } ) | static_cast<uint32_t>( val & 0b00011111u ) };
+      break;
+    case 2:
+      fcsr = FCSR{ ( static_cast<uint32_t>( fcsr ) & ~uint32_t{ 0b11100000u } ) | static_cast<uint32_t>( val & 0b00000111u ) << 5 };
+      break;
+    case 3:
+      fcsr = FCSR{ ( static_cast<uint32_t>( fcsr ) & ~uint32_t{ 0b11111111u } ) | static_cast<uint32_t>( val & 0b11111111u ) };
+      break;
+    default: CSR[csr] = val;
     }
   }
 
   /// Get the Floating-Point Rounding Mode
-  FRMode GetFRM() const { return static_cast<FRMode>( fcsr.frm ); }
-
-  /// Set the Floating-Point Rounding Mode
-  void SetFRM( FRMode rm ) { fcsr.frm = static_cast<uint8_t>( rm ); }
+  FRMode GetFRM() const { return FRMode{ ( static_cast<uint32_t>( fcsr ) >> 5 ) & 0x3u }; }
 
   /// Return the Floating-Point Status Register
   FCSR& GetFCSR() { return fcsr; }

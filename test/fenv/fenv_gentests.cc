@@ -15,9 +15,9 @@
 
 constexpr unsigned maxtests_per_file = 1000;
 
-std::string   file_prefix;
-unsigned      testnum;
-unsigned      testcount;
+const char*   file_prefix;
+size_t        testnum;
+size_t        testcount;
 unsigned      filenum;
 int           rounding;
 std::ofstream out;
@@ -25,18 +25,25 @@ size_t        failures = 0;
 
 void openfile() {
   ++filenum;
-  std::string filename = file_prefix + "_" + std::to_string( filenum );
-  out.open( filename + ".cc", std::ios::out | std::ios::trunc );
+  char filename[256];
+  char filenum_s[32];
+  snprintf( filenum_s, sizeof( filenum_s ), "%u", filenum );
+  strcat( strcat( strcpy( filename, file_prefix ), "_" ), filenum_s );
+  std::cout << " " << filename << ".exe";
+  strcat( filename, ".cc" );
+  out.open( filename, std::ios::out | std::ios::trunc );
   if( !out.is_open() ) {
     std::cerr << "Error: Could not open " << filename << std::endl;
     exit( 1 );
   }
-  std::cout << " " << filename + ".exe";
 
   out << R"(
 #include "fenv_test.h"
 
 size_t failures = 0;
+
+constexpr char file_prefix[] = ")"
+      << file_prefix << R"(";
 
 void (*fenv_tests[])() = {
 )";
@@ -52,6 +59,11 @@ size_t num_fenv_tests = sizeof( fenv_tests ) / sizeof( *fenv_tests );
 int main() {
   for( size_t i = 0; i < num_fenv_tests; ++i )
     fenv_tests[i]();
+
+  char fail[64];
+  snprintf( fail, sizeof(fail), "\nfenv %s: %zu / )"
+        << testcount << R"( test failures\n", file_prefix, failures );
+  fenv_write( 2, fail );
 
 #ifdef __riscv
   if(failures)
@@ -84,7 +96,7 @@ void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, T
   out << "    // Test " << testnum << "\n";
   out << "    using namespace std;\n";
   out << "    auto func = " << func_src << ";\n";
-  out << "    auto func_src = \"" << func_src << "\";\n";
+  out << "    auto func_src = R\"(" << func_src << "\n)\";\n";
   out << "    fenv_t fenv;\n";
 
   switch( rounding ) {
@@ -99,18 +111,18 @@ void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, T
   out << "    int exceptions = fetestexcept( FE_ALL_EXCEPT );\n";
   out << "    " << type<T> << " result_expected{ " << repr( result ) << " };\n";
   out << "    int exceptions_expected = " << exception_string( excepts ) << ";\n";
-  out << "    bool result_passed = test_result( \"" << testnum << "\", func_src, result, result_expected, " << args_string( ops... )
-      << " );\n";
+  out << "    bool result_passed = test_result( \"" << testnum << "\", file_prefix, func_src, result, result_expected, "
+      << args_string( ops... ) << " );\n";
   out << "    bool exceptions_passed = test_exceptions( \"" << testnum
-      << "\", func_src, exceptions, exceptions_expected, result_passed, " << args_string( ops... ) << ");\n";
+      << "\", file_prefix, func_src, exceptions, exceptions_expected, result_passed, " << args_string( ops... ) << ");\n";
   out << "    failures += !(result_passed && exceptions_passed);\n";
   out << "    fesetenv( &fenv );\n";
   out << "  },\n";
   std::fesetenv( &fenv );
 
   if( ++testcount >= maxtests_per_file ) {
-    testcount = 0;
     closefile();
+    testcount = 0;
   }
 }
 
@@ -206,24 +218,46 @@ void generate_tests() {
 
   using FUNC3 = std::pair<FP ( * )( FP, FP, FP ), const char*>[];
   for( auto oper_pair : FUNC3{
-         OPER_PAIR( ( []( volatile auto x, volatile auto y, volatile auto z ) {
-           using namespace std;
-           using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
-           if constexpr( is_same_v<T, float> ) {
-             return fmaf( T( x ), T( y ), T( z ) );
-           } else {
-             return fma( T( x ), T( y ), T( z ) );
-           }
-         } ) ),
-       } ) {
-    for( auto x : special_fp_values<FP> ) {
-      for( auto y : special_fp_values<FP> ) {
-        for( auto z : special_fp_values<FP> ) {
-          generate_test( oper_pair, x, y, z );
-        }
+      {
+#if 0
+                      []( volatile auto x, volatile auto y, volatile auto z ) {
+                        using namespace std;
+                        using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
+                        if constexpr( is_same_v<T, float> ) {
+                          return fmaf( T( x ), T( y ), T( z ) );
+                        } else {
+                          return fma( T( x ), T( y ), T( z ) );
+                        }
+                      }
+#else
+           []( volatile auto x, volatile auto y, volatile auto z ) {
+             using namespace std;
+             using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
+             return revFMA( T( x ), T( y ), T( z ) );
+#endif
+                      }
+                        ,
+R"(
+                      []( volatile auto x, volatile auto y, volatile auto z ) {
+                        using namespace std;
+                        using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
+                        if constexpr( is_same_v<T, float> ) {
+                          return fmaf( T( x ), T( y ), T( z ) );
+                        } else {
+                          return fma( T( x ), T( y ), T( z ) );
+                        }
+                      }
+)"
+                        },
+} ) {
+  for( auto x : special_fp_values<FP> ) {
+    for( auto y : special_fp_values<FP> ) {
+      for( auto z : special_fp_values<FP> ) {
+        generate_test( oper_pair, x, y, z );
       }
     }
   }
+}
 }
 
 [[noreturn]] void usage( const char* prog ) {
