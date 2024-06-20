@@ -344,9 +344,9 @@ public:
   T GetCSR( size_t csr ) const {
     // We store fcsr separately from the global CSR
     switch( csr ) {
-    case 1: return static_cast<uint32_t>( fcsr ) & 0x1fu; break;
-    case 2: return static_cast<uint32_t>( fcsr ) >> 5 & 0x3u; break;
-    case 3: return static_cast<uint32_t>( fcsr ) & 0xffu; break;
+    case 1: return static_cast<uint32_t>( fcsr ) >> 0 & 0b00011111u; break;
+    case 2: return static_cast<uint32_t>( fcsr ) >> 5 & 0b00000111u; break;
+    case 3: return static_cast<uint32_t>( fcsr ) >> 0 & 0b11111111u; break;
     default: return static_cast<T>( CSR[csr] );
     }
   }
