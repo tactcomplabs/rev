@@ -13,7 +13,7 @@
 
 #include "fenv_test.h"
 
-constexpr unsigned maxtests_per_file = 1000;
+constexpr unsigned maxtests_per_file = 500;
 
 const char*   file_prefix;
 size_t        testnum;
