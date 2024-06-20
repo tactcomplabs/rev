@@ -342,15 +342,13 @@ public:
   /// Get a CSR register
   template<typename T>
   T GetCSR( size_t csr ) const {
-    T val;
     // We store fcsr separately from the global CSR
     switch( csr ) {
-    case 1: val = static_cast<uint32_t>( fcsr ) & 0x1fu; break;
-    case 2: val = static_cast<uint32_t>( fcsr ) >> 5 & 0x3u; break;
-    case 3: val = static_cast<uint32_t>( fcsr ) & 0xffu; break;
-    default: val = static_cast<T>( CSR[csr] );
+    case 1: return static_cast<uint32_t>( fcsr ) & 0x1fu; break;
+    case 2: return static_cast<uint32_t>( fcsr ) >> 5 & 0x3u; break;
+    case 3: return static_cast<uint32_t>( fcsr ) & 0xffu; break;
+    default: return static_cast<T>( CSR[csr] );
     }
-    return val;
   }
 
   /// Set a CSR register
