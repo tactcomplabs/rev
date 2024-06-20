@@ -65,7 +65,6 @@ enum class FRMode : uint32_t {
 };
 
 /// Floating-point control register
-// fcsr.NX, fcsr.UF, fcsr.OF, fcsr.DZ, fcsr.NV, fcsr.frm
 enum class FCSR : uint32_t {
   NX = 1,
   UF = 2,
