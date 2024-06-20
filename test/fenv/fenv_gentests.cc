@@ -60,7 +60,7 @@ int main() {
   for( size_t i = 0; i < num_fenv_tests; ++i )
     fenv_tests[i]();
 
-#if 0
+#if 0 // TODO: This code causes seg faults
   char fail[64], nfail[64];
   strcpy( fail, "\nfenv " );
   strcat( fail, file_prefix );
