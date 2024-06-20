@@ -24,6 +24,8 @@ endif
 
 CXX_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
 
+all: TONEAREST UPWARD DOWNWARD TOWARDZERO
+
 TONEAREST UPWARD DOWNWARD TOWARDZERO: fenv_test.makefile
 	make -j16 -f fenv_test.makefile CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)" $@
 
@@ -41,6 +43,6 @@ fenv_gentests.exe: fenv_test.h fenv_gentests.cc
 clean:
 	rm -Rf *.exe *.csv fenv_test.makefile TONEAREST_*.cc UPWARD_*.cc DOWNWARD_*.cc TOWARDZERO_*.cc
 
-.PHONY: clean TONEAREST UPWARD DOWNWARD TOWARDZERO
+.PHONY: all clean TONEAREST UPWARD DOWNWARD TOWARDZERO
 
 #-- EOF

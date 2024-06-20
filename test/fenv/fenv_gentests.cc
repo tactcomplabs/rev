@@ -127,7 +127,7 @@ void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, T
 }
 
 template<typename FP>
-constexpr FP special_fp_values[] = {
+static const FP special_fp_values[] = {
   0.0f,
   -0.0f,
   1.0f,
@@ -147,7 +147,7 @@ constexpr FP special_fp_values[] = {
 };
 
 template<typename FP, typename INT>
-constexpr FP special_fcvt_values[] = {
+static const FP special_fcvt_values[] = {
   FP( std::numeric_limits<INT>::max() ),
   FP( std::numeric_limits<INT>::max() ) + FP( 0.5 ),
   FP( std::numeric_limits<INT>::max() ) + FP( 1.0 ),
@@ -218,8 +218,12 @@ void generate_tests() {
 
   using FUNC3 = std::pair<FP ( * )( FP, FP, FP ), const char*>[];
   for( auto oper_pair : FUNC3{
-      {
-#if 0
+         {[]( volatile auto x, volatile auto y, volatile auto z )
+ -> std::common_type_t<decltype( x ), decltype( y ), decltype( z )> {
+ using namespace std;
+ using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
+ return revFMA( T( x ), T( y ), T( z ) );
+ }, R"(
                       []( volatile auto x, volatile auto y, volatile auto z ) {
                         using namespace std;
                         using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
@@ -229,35 +233,16 @@ void generate_tests() {
                           return fma( T( x ), T( y ), T( z ) );
                         }
                       }
-#else
-           []( volatile auto x, volatile auto y, volatile auto z ) {
-             using namespace std;
-             using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
-             return revFMA( T( x ), T( y ), T( z ) );
-#endif
-                      }
-                        ,
-R"(
-                      []( volatile auto x, volatile auto y, volatile auto z ) {
-                        using namespace std;
-                        using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
-                        if constexpr( is_same_v<T, float> ) {
-                          return fmaf( T( x ), T( y ), T( z ) );
-                        } else {
-                          return fma( T( x ), T( y ), T( z ) );
-                        }
-                      }
-)"
-                        },
-} ) {
-  for( auto x : special_fp_values<FP> ) {
-    for( auto y : special_fp_values<FP> ) {
-      for( auto z : special_fp_values<FP> ) {
-        generate_test( oper_pair, x, y, z );
+)"},
+  } ) {
+    for( auto x : special_fp_values<FP> ) {
+      for( auto y : special_fp_values<FP> ) {
+        for( auto z : special_fp_values<FP> ) {
+          generate_test( oper_pair, x, y, z );
+        }
       }
     }
   }
-}
 }
 
 [[noreturn]] void usage( const char* prog ) {
