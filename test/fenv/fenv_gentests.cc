@@ -61,7 +61,7 @@ int main() {
     fenv_tests[i]();
 
 #if 0 // TODO: This code causes seg faults
-  char fail[64], nfail[64];
+  char fail[128], nfail[64];
   strcpy( fail, "\nfenv " );
   strcat( fail, file_prefix );
   snprintf( nfail, sizeof( nfail ), ": %zu / )"

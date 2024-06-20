@@ -27,7 +27,7 @@ CXX_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=con
 all: TONEAREST UPWARD DOWNWARD TOWARDZERO
 
 TONEAREST UPWARD DOWNWARD TOWARDZERO: fenv_test.makefile
-	make -j16 -f fenv_test.makefile CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)" $@
+	make -f fenv_test.makefile CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)" $@
 
 fenv_test.makefile: fenv_gentests.exe
 	printf '%%.exe: %%.cc\n\t$$(CXX) $$(CXX_OPTS) -static -mcmodel=medany -march=$$(ARCH) -mabi=$$(ABI) -lm $$< -o $$@\n' > fenv_test.makefile
