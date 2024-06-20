@@ -60,6 +60,7 @@ int main() {
   for( size_t i = 0; i < num_fenv_tests; ++i )
     fenv_tests[i]();
 
+#if 0
   char fail[64], nfail[64];
   strcpy( fail, "\nfenv " );
   strcat( fail, file_prefix );
@@ -67,6 +68,7 @@ int main() {
         << testcount << R"( test failures\n", failures );
   strcat( fail, nfail );
   fenv_write( 2, fail );
+#endif
 
 #ifdef __riscv
   if(failures)
