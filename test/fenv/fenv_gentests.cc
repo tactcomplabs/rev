@@ -60,7 +60,7 @@ int main() {
   for( size_t i = 0; i < num_fenv_tests; ++i )
     fenv_tests[i]();
 
-  char fail[64];
+  static char fail[64];
   snprintf( fail, sizeof(fail), "\nfenv %s: %zu / )"
         << testcount << R"( test failures\n", file_prefix, failures );
   fenv_write( 2, fail );
