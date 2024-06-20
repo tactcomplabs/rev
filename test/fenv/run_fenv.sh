@@ -1,0 +1,3 @@
+#!/bin/bash
+
+make -j4 TONEAREST UPWARD DOWNWARD TOWARDZERO

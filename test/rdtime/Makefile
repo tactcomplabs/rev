@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: rdcycle
+# makefile: rdtime
 #
 # Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -10,7 +10,7 @@
 # See LICENSE in the top level directory for licensing details
 #
 
-EXAMPLE=rdcycle
+EXAMPLE=rdtime
 CC="${RVCC}"
 ARCH=rv64g
 ABI=lp64d

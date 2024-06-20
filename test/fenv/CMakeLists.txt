@@ -1,4 +1,1 @@
-add_rev_test(fenv_TONEAREST  . 1300 "all;memh;rv64;c++" SCRIPT "run_TONEAREST.sh")
-add_rev_test(fenv_DOWNWARD   . 1300 "all;memh;rv64;c++" SCRIPT "run_DOWNWARD.sh")
-add_rev_test(fenv_UPWARD     . 1300 "all;memh;rv64;c++" SCRIPT "run_UPWARD.sh")
-add_rev_test(fenv_TOWARDZERO . 1300 "all;memh;rv64;c++" SCRIPT "run_TOWARDZERO.sh")
+add_rev_test(fenv . 3600 "all;memh;rv64;c++" SCRIPT "run_fenv.sh")

@@ -41,7 +41,7 @@ fenv_gentests.exe: fenv_test.h fenv_gentests.cc
 	g++ $(CXX_OPTS) fenv_gentests.cc -o $@
 
 clean:
-	rm -Rf *.exe *.csv fenv_test.makefile TONEAREST_*.cc UPWARD_*.cc DOWNWARD_*.cc TOWARDZERO_*.cc
+	rm -Rf *.asm *.exe *.csv fenv_test.makefile TONEAREST_*.cc UPWARD_*.cc DOWNWARD_*.cc TOWARDZERO_*.cc
 
 .PHONY: all clean TONEAREST UPWARD DOWNWARD TOWARDZERO
 

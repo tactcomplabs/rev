@@ -213,6 +213,8 @@ add_rev_test(BACKINGSTORE backingstore 100 "all;rv64" SCRIPT "run_backingstore.s
 add_rev_test(MEM_DUMP mem_dump 10 "all;rv64" SCRIPT "run_mem_dump.sh")
 add_rev_test(LWSP lwsp 30 "all;memh;rv64")
 add_rev_test(RDCYCLE rdcycle 5 "all;rv64")
+add_rev_test(RDTIME rdtime 5 "all;rv64")
+add_rev_test(RDINSTRET rdinstret 5 "all;memh;rv64")
 # add_rev_test(TRACER tracer 30 "all;rv64;tracer")
 # add_rev_test(PAN_TEST1 pan_test1 30 "all;rv64;pan")
 # add_rev_test(PAN_TEST2 pan_test2 30 "all;rv64;pan")
