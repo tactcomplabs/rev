@@ -226,21 +226,25 @@ bool test_result( const char* test, const char* file_prefix, const char* test_sr
 
   // Compare for exact bit representation equality
   if( memcmp( &result, &result_expected, sizeof( T ) ) ) {
-    fenv_write( 2, "\nResult error in fenv " );
-    fenv_write( 2, file_prefix );
-    fenv_write( 2, " Test " );
-    fenv_write( 2, test );
-    fenv_write( 2, ":\n" );
-    fenv_write( 2, test_src );
-    fenv_write( 2, "\n  ( " );
-    fenv_write( 2, args_string( args... ) );
-    fenv_write( 2, " )\n" );
-    fenv_write( 2, "Expected result: " );
-    fenv_write( 2, repr( result_expected ) );
-    fenv_write( 2, "\n" );
-    fenv_write( 2, "Actual   result: " );
-    fenv_write( 2, repr( result ) );
-    fenv_write( 2, "\n" );
+    char s[1024];
+    *s = 0;
+
+    strcat( s, "\nResult error in fenv " );
+    strcat( s, file_prefix );
+    strcat( s, " Test " );
+    strcat( s, test );
+    strcat( s, ":\n" );
+    strcat( s, test_src );
+    strcat( s, "\n  ( " );
+    strcat( s, args_string( args... ) );
+    strcat( s, " )\n" );
+    strcat( s, "Expected result: " );
+    strcat( s, repr( result_expected ) );
+    strcat( s, "\n" );
+    strcat( s, "Actual   result: " );
+    strcat( s, repr( result ) );
+    strcat( s, "\n" );
+    fenv_write( 2, s );
     return false;
   } else {
     return true;
@@ -257,32 +261,36 @@ bool test_exceptions(
   bool        result_passed,
   Ts... args
 ) {
+  char s[1024];
+  *s = 0;
   if( ( exceptions ^ exceptions_expected ) & FE_ALL_EXCEPT ) {
     if( result_passed ) {
-      fenv_write( 2, "\nExceptions error in fenv " );
-      fenv_write( 2, file_prefix );
-      fenv_write( 2, " Test " );
-      fenv_write( 2, test );
-      fenv_write( 2, ":\n" );
-      fenv_write( 2, test_src );
-      fenv_write( 2, "\n  ( " );
-      fenv_write( 2, args_string( args... ) );
-      fenv_write( 2, " )\n" );
+      strcat( s, "\nExceptions error in fenv " );
+      strcat( s, file_prefix );
+      strcat( s, " Test " );
+      strcat( s, test );
+      strcat( s, ":\n" );
+      strcat( s, test_src );
+      strcat( s, "\n  ( " );
+      strcat( s, args_string( args... ) );
+      strcat( s, " )\n" );
     }
-    fenv_write( 2, "Expected exceptions: " );
-    fenv_write( 2, exception_string( exceptions_expected ) );
-    fenv_write( 2, "\n" );
-    fenv_write( 2, "Actual   exceptions: " );
-    fenv_write( 2, exception_string( exceptions ) );
-    fenv_write( 2, "\n" );
+    strcat( s, "Expected exceptions: " );
+    strcat( s, exception_string( exceptions_expected ) );
+    strcat( s, "\n" );
+    strcat( s, "Actual   exceptions: " );
+    strcat( s, exception_string( exceptions ) );
+    strcat( s, "\n" );
+    fenv_write( 2, s );
     return false;
   } else {
     if( result_passed ) {
-      fenv_write( 2, "\nfenv " );
-      fenv_write( 2, file_prefix );
-      fenv_write( 2, " Test " );
-      fenv_write( 2, test );
-      fenv_write( 2, " Passed\n" );
+      strcat( s, "\nfenv " );
+      strcat( s, file_prefix );
+      strcat( s, " Test " );
+      strcat( s, test );
+      strcat( s, " Passed\n" );
+      fenv_write( 2, s );
     }
     return true;
   }

@@ -267,10 +267,13 @@ int main( int argc, char** argv ) {
 
   file_prefix = argv[1];
 
-  std::cout << file_prefix << ":";
+  std::cout << file_prefix << "_EXES =";
   generate_tests<float, int32_t>();
   generate_tests<double, int32_t>();
-  std::cout << "\n\t$(foreach exe,$^,./run_fenv_test.sh $(exe) &&) true\n.PHONY: " << file_prefix << std::endl;
+  std::cout << "\n"
+            << file_prefix << ": $(" << file_prefix << "_EXES)\nRUN_" << file_prefix << ": $(" << file_prefix
+            << "_EXES)\n\t$(foreach exe,$^,./run_fenv_test.sh $(exe) &&) true\n.PHONY: " << file_prefix << " RUN_" << file_prefix
+            << std::endl;
   closefile();
 
   return 0;

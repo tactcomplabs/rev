@@ -24,25 +24,27 @@ endif
 
 CXX_OPTS += -frounding-math -ftrapping-math -Werror=double-promotion -Werror=conversion -ffp-contract=on
 
-all: TONEAREST UPWARD DOWNWARD TOWARDZERO
+buildtests: fenv_test.makefile
+	make -j4 -f fenv_test.makefile CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)" TONEAREST UPWARD DOWNWARD TOWARDZERO
 
-TONEAREST UPWARD DOWNWARD TOWARDZERO: fenv_test.makefile
-	make -f fenv_test.makefile CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)" $@
+runtests: fenv_test.makefile
+	make -j4 -f fenv_test.makefile CXX="$(CXX)" CXX_OPTS="$(CXX_OPTS)" ARCH="$(ARCH)" ABI="$(ABI)" RUN_TONEAREST RUN_UPWARD RUN_DOWNWARD RUN_TOWARDZERO
+	echo "Simulation is complete"
 
-fenv_test.makefile: fenv_gentests.exe
+fenv_test.makefile: fenv_gentests
 	printf '%%.exe: %%.cc\n\t$$(CXX) $$(CXX_OPTS) -static -mcmodel=medany -march=$$(ARCH) -mabi=$$(ABI) -lm $$< -o $$@\n' > fenv_test.makefile
-	./fenv_gentests.exe TONEAREST  >> fenv_test.makefile
-	./fenv_gentests.exe UPWARD     >> fenv_test.makefile
-	./fenv_gentests.exe DOWNWARD   >> fenv_test.makefile
-	./fenv_gentests.exe TOWARDZERO >> fenv_test.makefile
+	./fenv_gentests TONEAREST  >> fenv_test.makefile
+	./fenv_gentests UPWARD     >> fenv_test.makefile
+	./fenv_gentests DOWNWARD   >> fenv_test.makefile
+	./fenv_gentests TOWARDZERO >> fenv_test.makefile
 
 # build test generator on local host
-fenv_gentests.exe: fenv_test.h fenv_gentests.cc
+fenv_gentests: fenv_test.h fenv_gentests.cc
 	g++ $(CXX_OPTS) fenv_gentests.cc -o $@
 
 clean:
-	rm -Rf *.asm *.exe *.csv fenv_test.makefile TONEAREST_*.cc UPWARD_*.cc DOWNWARD_*.cc TOWARDZERO_*.cc
+	rm -Rf *.asm *.exe *.csv fenv_test.makefile TONEAREST_*.cc UPWARD_*.cc DOWNWARD_*.cc TOWARDZERO_*.cc fenv_gentests
 
-.PHONY: all clean TONEAREST UPWARD DOWNWARD TOWARDZERO
+.PHONY: buildtests runtests clean TONEAREST UPWARD DOWNWARD TOWARDZERO
 
 #-- EOF
