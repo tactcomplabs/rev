@@ -101,7 +101,7 @@ void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, T
   out << "    // Test " << testnum << "\n";
   out << "    using namespace std;\n";
   out << "    auto func = " << func_src << ";\n";
-  out << "    auto func_src = R\"(" << func_src << "\n)\";\n";
+  out << "    auto func_src = R\"(" << func_src << ")\";\n";
   out << "    fenv_t fenv;\n";
 
   switch( rounding ) {
@@ -177,12 +177,36 @@ static const FP special_fcvt_values[] = {
   { lambda, #lambda }
 
 template<typename FP, typename INT>
+const char fcvt_instruction[] = "";
+template<>
+const char fcvt_instruction<float, int32_t>[] = "fcvt.w.s";
+template<>
+const char fcvt_instruction<float, uint32_t>[] = "fcvt.wu.s";
+template<>
+const char fcvt_instruction<double, int32_t>[] = "fcvt.w.d";
+template<>
+const char fcvt_instruction<double, uint32_t>[] = "fcvt.wu.d";
+
+#if __riscv_xlen >= 64
+template<>
+const char fcvt_instruction<float, int64_t>[] = "fcvt.l.s";
+template<>
+const char fcvt_instruction<float, uint64_t>[] = "fcvt.lu.s";
+template<>
+const char fcvt_instruction<double, int64_t>[] = "fcvt.l.d";
+template<>
+const char fcvt_instruction<double, uint64_t>[] = "fcvt.lu.d";
+#endif
+
+template<typename FP, typename INT>
 void generate_fcvt_tests() {
   char test_src[256];
   test_src[0] = 0;
-  strcat( test_src, "[]( volatile auto x ) { return to_int<" );
+  strcat( test_src, "[]( volatile auto x ) { " );
   strcat( test_src, type<INT> );
-  strcat( test_src, ">(x); }" );
+  strcat( test_src, " res; asm volatile( \"" );
+  strcat( test_src, fcvt_instruction<FP, INT> );
+  strcat( test_src, R"( %0, %1" : "=r"(res) : "f"(x) ); return res; })" );
 
   using INT_FUNC1 = std::pair<INT ( * )( FP ), const char*>[];
   for( auto oper_pair : INT_FUNC1{
@@ -208,8 +232,11 @@ void generate_tests() {
 
   generate_fcvt_tests<FP, int32_t>();
   generate_fcvt_tests<FP, uint32_t>();
+
+#if __riscv_xlen >= 64
   generate_fcvt_tests<FP, int64_t>();
   generate_fcvt_tests<FP, uint64_t>();
+#endif
 
   using FUNC2 = std::pair<FP ( * )( FP, FP ), const char*>[];
   for( auto oper_pair : FUNC2{
