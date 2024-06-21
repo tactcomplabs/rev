@@ -209,8 +209,8 @@ void CSRTest3() {
     CSRTest2<KIND, CSR, ~size_t{ 31 }, INIT, RD0>();
     CSRTest2<KIND, CSR, +size_t{ 256 }, INIT, RD0>();
     CSRTest2<KIND, CSR, ~size_t{ 256 }, INIT, RD0>();
-    CSRTest2<KIND, CSR, +size_t{ 1 } << sizeof( size_t ) * 8 - 1, INIT, RD0>();
-    CSRTest2<KIND, CSR, ~size_t{ 1 } << sizeof( size_t ) * 8 - 1, INIT, RD0>();
+    CSRTest2<KIND, CSR, +( size_t{ 1 } << sizeof( size_t ) * 8 - 1, INIT ), RD0>();
+    CSRTest2<KIND, CSR, ~( size_t{ 1 } << sizeof( size_t ) * 8 - 1, INIT ), RD0>();
   }
 }
 
@@ -236,8 +236,8 @@ void CSRTest4() {
     CSRTest3<KIND, CSR, ~size_t{ 31 }, RD0>();
     CSRTest3<KIND, CSR, +size_t{ 256 }, RD0>();
     CSRTest3<KIND, CSR, ~size_t{ 256 }, RD0>();
-    CSRTest3<KIND, CSR, +size_t{ 1 } << sizeof( size_t ) * 8 - 1, RD0>();
-    CSRTest3<KIND, CSR, ~size_t{ 1 } << sizeof( size_t ) * 8 - 1, RD0>();
+    CSRTest3<KIND, CSR, +( size_t{ 1 } << sizeof( size_t ) * 8 - 1 ), RD0>();
+    CSRTest3<KIND, CSR, ~( size_t{ 1 } << sizeof( size_t ) * 8 - 1 ), RD0>();
   }
 }
 
