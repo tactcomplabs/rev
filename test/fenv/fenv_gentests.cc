@@ -177,17 +177,7 @@ static const FP special_fcvt_values[] = {
   { lambda, #lambda }
 
 template<typename FP, typename INT>
-void generate_tests() {
-  using FUNC1 = std::pair<FP ( * )( FP ), const char*>[];
-  for( auto oper_pair : FUNC1{
-         OPER_PAIR( []( volatile auto x ) { return -x; } ),
-         OPER_PAIR( []( volatile auto x ) { return std::fabs( x ); } ),
-       } ) {
-    for( auto x : special_fp_values<FP> ) {
-      generate_test( oper_pair, x );
-    }
-  }
-
+void generate_fcvt_tests() {
   char test_src[256];
   test_src[0] = 0;
   strcat( test_src, "[]( volatile auto x ) { return to_int<" );
@@ -202,6 +192,24 @@ void generate_tests() {
       generate_test( oper_pair, x );
     }
   }
+}
+
+template<typename FP>
+void generate_tests() {
+  using FUNC1 = std::pair<FP ( * )( FP ), const char*>[];
+  for( auto oper_pair : FUNC1{
+         OPER_PAIR( []( volatile auto x ) { return -x; } ),
+         OPER_PAIR( []( volatile auto x ) { return std::fabs( x ); } ),
+       } ) {
+    for( auto x : special_fp_values<FP> ) {
+      generate_test( oper_pair, x );
+    }
+  }
+
+  generate_fcvt_tests<FP, int32_t>();
+  generate_fcvt_tests<FP, uint32_t>();
+  generate_fcvt_tests<FP, int64_t>();
+  generate_fcvt_tests<FP, uint64_t>();
 
   using FUNC2 = std::pair<FP ( * )( FP, FP ), const char*>[];
   for( auto oper_pair : FUNC2{
@@ -268,8 +276,8 @@ int main( int argc, char** argv ) {
   file_prefix = argv[1];
 
   std::cout << file_prefix << "_EXES =";
-  generate_tests<float, int32_t>();
-  generate_tests<double, int32_t>();
+  generate_tests<float>();
+  generate_tests<double>();
   std::cout << "\n"
             << file_prefix << ": $(" << file_prefix << "_EXES)\nRUN_" << file_prefix << ": $(" << file_prefix
             << "_EXES)\n\t$(foreach exe,$^,./run_fenv_test.sh $(exe) &&) true\n.PHONY: " << file_prefix << " RUN_" << file_prefix

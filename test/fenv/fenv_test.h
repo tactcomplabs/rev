@@ -160,12 +160,20 @@ const char* repr( T x ) {
     }
     }
   } else if constexpr( std::is_same_v<T, int32_t> ) {
-    snprintf( s, sizeof( s ), "%" PRIi32, x );
-  } else if constexpr( std::is_same_v<T, uint32_t> ) {
-    snprintf( s, sizeof( s ), "%" PRIu32 "u", x );
+    if( x == std::numeric_limits<T>::min() ) {
+      snprintf( s, sizeof( s ), "-%" PRIi32 "-1", std::numeric_limits<T>::max() );
+    } else {
+      snprintf( s, sizeof( s ), "%" PRIi32, x );
+    }
   } else if constexpr( std::is_same_v<T, int64_t> ) {
     static_assert( sizeof( long long ) == sizeof( int64_t ) );
-    snprintf( s, sizeof( s ), "%" PRIi64 "ll", x );
+    if( x == std::numeric_limits<T>::min() ) {
+      snprintf( s, sizeof( s ), "-%" PRIi64 "ll-1", std::numeric_limits<T>::max() );
+    } else {
+      snprintf( s, sizeof( s ), "%" PRIi64 "ll", x );
+    }
+  } else if constexpr( std::is_same_v<T, uint32_t> ) {
+    snprintf( s, sizeof( s ), "%" PRIu32 "u", x );
   } else if constexpr( std::is_same_v<T, uint64_t> ) {
     static_assert( sizeof( unsigned long long ) == sizeof( uint64_t ) );
     snprintf( s, sizeof( s ), "%" PRIu64 "llu", x );
