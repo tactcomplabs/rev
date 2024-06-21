@@ -148,9 +148,13 @@ size_t testnum = 0;
 
 template<CSROp OP, OpKind KIND, uint16_t CSR, size_t ARG, size_t INIT, bool RD0>
 void CSRTest1() {
+  ++testnum;
+
+#if 0
   char test[128];
-  snprintf( test, sizeof( test ), " Test %zu:\n", ++testnum );
+  snprintf( test, sizeof( test ), " Test %zu:\n", testnum );
   rev_write( 1, test, strlen( test ) );
+#endif
 
   // Initialize the CSR register to INIT
   CSRInst<CSROp::Write, KIND, CSR, INIT, true>{}();
