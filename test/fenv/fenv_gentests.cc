@@ -100,7 +100,7 @@ void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, T
   out << "  []{\n";
   out << "    // Test " << testnum << "\n";
   out << "    using namespace std;\n";
-  out << "    auto func = " << func_src << ";\n";
+  out << "    auto func =" << func_src << ";\n";
   out << "    auto func_src = R\"(" << func_src << ")\";\n";
   out << "    fenv_t fenv;\n";
 
