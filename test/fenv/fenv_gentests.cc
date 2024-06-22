@@ -132,7 +132,7 @@ void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, T
 }
 
 template<typename FP>
-static const FP special_fp_values[] = {
+static const FP special_fp_values[]{
   0.0f,
   -0.0f,
   1.0f,
@@ -148,33 +148,33 @@ static const FP special_fp_values[] = {
 };
 
 template<typename FP, typename INT>
-static const FP special_fcvt_values[] = {
+static const FP special_fcvt_values[]{
   FP( std::numeric_limits<INT>::max() ),
-  FP( std::numeric_limits<INT>::max() ) + FP( 0.75 ),
-  FP( std::numeric_limits<INT>::max() ) - FP( 0.75 ),
-  FP( std::numeric_limits<INT>::max() ) + FP( 0.25 ),
-  FP( std::numeric_limits<INT>::max() ) - FP( 0.25 ),
-  FP( std::numeric_limits<INT>::max() ) + FP( 0.5 ),
-  FP( std::numeric_limits<INT>::max() ) - FP( 0.5 ),
-  FP( std::numeric_limits<INT>::max() ) + FP( 1.0 ),
-  FP( std::numeric_limits<INT>::max() ) - FP( 1.0 ),
+  FP( std::numeric_limits<INT>::max() ) + 0.75f,
+  FP( std::numeric_limits<INT>::max() ) - 0.75f,
+  FP( std::numeric_limits<INT>::max() ) + 0.25f,
+  FP( std::numeric_limits<INT>::max() ) - 0.25f,
+  FP( std::numeric_limits<INT>::max() ) + 0.5f,
+  FP( std::numeric_limits<INT>::max() ) - 0.5f,
+  FP( std::numeric_limits<INT>::max() ) + 1.0f,
+  FP( std::numeric_limits<INT>::max() ) - 1.0f,
   FP( std::numeric_limits<INT>::min() ),
-  FP( std::numeric_limits<INT>::min() ) + FP( 0.75 ),
-  FP( std::numeric_limits<INT>::min() ) - FP( 0.75 ),
-  FP( std::numeric_limits<INT>::min() ) + FP( 0.25 ),
-  FP( std::numeric_limits<INT>::min() ) - FP( 0.25 ),
-  FP( std::numeric_limits<INT>::min() ) + FP( 0.5 ),
-  FP( std::numeric_limits<INT>::min() ) - FP( 0.5 ),
-  FP( std::numeric_limits<INT>::min() ) + FP( 1.0 ),
-  FP( std::numeric_limits<INT>::min() ) - FP( 1.0 ),
-  FP( 0 ),
-  -FP( 0 ),
-  FP( 0.25 ),
-  FP( -0.25 ),
-  FP( 0.5 ),
-  FP( -0.5 ),
-  FP( 0.75 ),
-  FP( -0.75 ),
+  FP( std::numeric_limits<INT>::min() ) + 0.75f,
+  FP( std::numeric_limits<INT>::min() ) - 0.75f,
+  FP( std::numeric_limits<INT>::min() ) + 0.25f,
+  FP( std::numeric_limits<INT>::min() ) - 0.25f,
+  FP( std::numeric_limits<INT>::min() ) + 0.5f,
+  FP( std::numeric_limits<INT>::min() ) - 0.5f,
+  FP( std::numeric_limits<INT>::min() ) + 1.0f,
+  FP( std::numeric_limits<INT>::min() ) - 1.0f,
+  0.0f,
+  -0.0f,
+  0.25f,
+  -0.25f,
+  0.5f,
+  -0.5f,
+  0.75f,
+  -0.75f,
   std::numeric_limits<FP>::quiet_NaN(),
   std::numeric_limits<FP>::signaling_NaN(),
   std::numeric_limits<FP>::infinity(),
@@ -226,6 +226,13 @@ void generate_fcvt_tests() {
   }
 }
 
+template<typename>
+const char fma_instruction[] = "";
+template<>
+const char fma_instruction<float>[] = "fmadd.s";
+template<>
+const char fma_instruction<double>[] = "fmadd.d";
+
 template<typename FP>
 void generate_tests() {
   using FUNC1 = std::pair<FP ( * )( FP ), const char*>[];
@@ -261,23 +268,21 @@ void generate_tests() {
   }
 
   using FUNC3 = std::pair<FP ( * )( FP, FP, FP ), const char*>[];
+  char test_src[256];
+  test_src[0] = 0;
+  strcat( test_src, R"( []( volatile auto x, volatile auto y, volatile auto z ) { )" );
+  strcat( test_src, type<FP> );
+  strcat( test_src, R"( res; asm volatile( " )" );
+  strcat( test_src, fma_instruction<FP> );
+  strcat( test_src, R"( %0, %1, %2, %3 " : "=f"(res) : "f"(x), "f"(y), "f"(z) ); return res; } )" );
+
   for( auto oper_pair : FUNC3{
          {[]( volatile auto x, volatile auto y, volatile auto z )
  -> std::common_type_t<decltype( x ), decltype( y ), decltype( z )> {
  using namespace std;
  using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
  return revFMA( T( x ), T( y ), T( z ) );
- }, R"(
-                      []( volatile auto x, volatile auto y, volatile auto z ) {
-                        using namespace std;
-                        using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
-                        if constexpr( is_same_v<T, float> ) {
-                          return fmaf( T( x ), T( y ), T( z ) );
-                        } else {
-                          return fma( T( x ), T( y ), T( z ) );
-                        }
-                      }
-)"},
+ }, test_src},
   } ) {
     for( auto x : special_fp_values<FP> ) {
       for( auto y : special_fp_values<FP> ) {
