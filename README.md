@@ -49,8 +49,12 @@ Building the Rev SST component from source using CMake (>= 3.19) can be performe
 
 RVCC and RVCXX can be set as environment variables in lieu of passing them to CMake.
 
+There are 3 test levels which can be chosen:
+-DTEST_LEVEL=1   A very small number of tests
+-DTEST_LEVEL=2   Most tests, including assembly language ISA tests
+-DTEST_LEVEL=3   All tests (the default)
+
 Additional build options include:
-    * -DBUILD_ASM_TESTING=ON
     * -DBUILD_DOCUMENTATION=ON  : enables Doxygen source code generation (use `make doc`)
 
 After a successful build you can test your install with:
