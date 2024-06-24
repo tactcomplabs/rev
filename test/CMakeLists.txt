@@ -6,9 +6,15 @@
 #
 # See LICENSE in the top level directory for licensing details
 #
-if(NOT DEFINED TEST_LEVEL OR TEST_LEVEL GREATER 3 OR TEST_LEVEL LESS 1)
+if(NOT DEFINED TEST_LEVEL)
+  set(TEST_LEVEL "$ENV{TEST_LEVEL}")
+endif()
+
+if(NOT TEST_LEVEL OR TEST_LEVEL GREATER 3 OR TEST_LEVEL LESS 1)
   set(TEST_LEVEL 3)
 endif()
+
+message("TEST_LEVEL=${TEST_LEVEL}")
 
 set(RISCV_ENV "$ENV{RISCV}")
 if(RISCV_ENV)
@@ -129,7 +135,7 @@ macro(add_rev_test test_name test_dir timeout labels)
     #    set(startSymbol "\"[0:_start]\"")
   endif()
 
-  if(NOT ${test_level} GREATER ${TEST_LEVEL})
+  if(test_level LESS_EQUAL TEST_LEVEL)
 
   if(NOT optional_script)
     foreach(numHarts IN LISTS numHartsList)
@@ -225,7 +231,7 @@ add_rev_test(ARGV_layout argv_layout 30 "test_level=2;memh;rv32;loader;" SCRIPT 
 add_rev_test(ARGV_limit argv_limit 75 "test_level=2;memh;rv32;loader;" SCRIPT "run_argv_limit.sh")
 add_rev_test(COPROC_EX coproc_ex 30 "memh;rv64;coproc" SCRIPT "run_coproc_ex.sh")
 
-if( $(TEST_LEVEL) GREATER_EQUAL 2)
+if(TEST_LEVEL GREATER_EQUAL 2)
   add_rev_test(ZICBOM zicbom 45 "test_level=2;memh;rv64" SCRIPT "run_zicbom.sh")
 endif()
 
@@ -239,7 +245,7 @@ add_rev_test(LWSP lwsp 30 "test_level=2;memh;rv64")
 # add_rev_test(DOT_DOUBLE dot_double 30 "rv64;blas-required")
 # add_rev_test(BGE_BLE bge_ble 30 "rv64")
 
-if($(TEST_LEVEL) GREATER_EQUAL 2)
+if(TEST_LEVEL GREATER_EQUAL 2)
   add_subdirectory(isa)
 endif()
 
