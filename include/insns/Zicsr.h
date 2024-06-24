@@ -26,7 +26,7 @@ class Zicsr : public RevExt {
   static bool ModCSRImpl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 
     // Alternative forms of rdcycle[h], rdtime[h], rdinstret[h] which use an immediate 0 or csrrc
-    // Canonical forms of rdcycle[h], rdtime[h], rdinstret[h] use cssrs with register x0
+    // Canonical forms of rdcycle[h], rdtime[h], rdinstret[h] use csrrs with register x0
     if( Inst.rs1 == 0 && OP != CSROp::Write ) {
       // clang-format off
       switch( Inst.imm ) {
