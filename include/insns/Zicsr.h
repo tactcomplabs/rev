@@ -28,16 +28,14 @@ class Zicsr : public RevExt {
     // Alternative forms of rdcycle[h], rdtime[h], rdinstret[h] which use an immediate 0 or csrrc
     // Canonical forms of rdcycle[h], rdtime[h], rdinstret[h] use csrrs with register x0
     if( OP != CSROp::Write && Inst.rs1 == 0 ) {
-      // clang-format off
       switch( Inst.imm ) {
-        case 0xc00: return rdcycle   ( F, R, M, Inst );
-        case 0xc80: return rdcycleh  ( F, R, M, Inst );
-        case 0xc01: return rdtime    ( F, R, M, Inst );
-        case 0xc81: return rdtimeh   ( F, R, M, Inst );
-        case 0xc02: return rdinstret ( F, R, M, Inst );
-        case 0xc82: return rdinstreth( F, R, M, Inst );
+      case 0xc00: return rdcycle( F, R, M, Inst );
+      case 0xc80: return rdcycleh( F, R, M, Inst );
+      case 0xc01: return rdtime( F, R, M, Inst );
+      case 0xc81: return rdtimeh( F, R, M, Inst );
+      case 0xc02: return rdinstret( F, R, M, Inst );
+      case 0xc82: return rdinstreth( F, R, M, Inst );
       }
-      // clang-format on
     }
 
     XLEN old = 0;
@@ -53,6 +51,9 @@ class Zicsr : public RevExt {
     // Store the old CSR value in rd
     if( Inst.rd != 0 )
       R->SetX( Inst.rd, old );
+
+    // Advance PC
+    R->AdvancePC( Inst );
 
     // Handle CSRRS/CSRRC
     if( OP != CSROp::Write ) {
@@ -84,7 +85,6 @@ class Zicsr : public RevExt {
     } else {
       ret = ModCSRImpl<uint64_t, OPKIND, OP>( F, R, M, Inst );
     }
-    R->AdvancePC( Inst );
     return ret;
   }
 

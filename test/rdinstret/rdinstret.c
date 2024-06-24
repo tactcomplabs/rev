@@ -27,24 +27,83 @@
 #define NOP1024 NOP512 NOP512
 
 int main( int argc, char** argv ) {
-  size_t time1, time2;
+  size_t retired1, retired2;
 
-  asm volatile( " rdinstret %0" : "=r"( time1 ) );
+  {
+    asm volatile( " rdinstret %0" : "=r"( retired1 ) );
 
-  // 1024 nops produces around 1024 times
-  NOP1024;
+    // 1024 nops produces around 1024 retireds
+    NOP1024;
 
-  asm volatile( " rdinstret %0" : "=r"( time2 ) );
+    asm volatile( " rdinstret %0" : "=r"( retired2 ) );
 
-  size_t diff = time2 - time1;
+    size_t diff = retired2 - retired1;
 
-  char retired[64];
-  snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
-  rev_write( 1, retired, strlen( retired ) );
+    char retired[64];
+    snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
+    rev_write( 1, retired, strlen( retired ) );
 
-  // Make sure the time is between 1024 and 1026
-  if( diff < 1024 || diff > 1026 )
-    asm( " .word 0" );
+    // Make sure the instructions retired is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrsi %0, 0xc02, 0" : "=r"( retired1 ) );
+
+    // 1024 nops produces around 1024 retireds
+    NOP1024;
+
+    asm volatile( " csrrsi %0, 0xc02, 0" : "=r"( retired2 ) );
+
+    size_t diff = retired2 - retired1;
+
+    char retired[64];
+    snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
+    rev_write( 1, retired, strlen( retired ) );
+
+    // Make sure the instructions retired is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrci %0, 0xc02, 0" : "=r"( retired1 ) );
+
+    // 1024 nops produces around 1024 retireds
+    NOP1024;
+
+    asm volatile( " csrrci %0, 0xc02, 0" : "=r"( retired2 ) );
+
+    size_t diff = retired2 - retired1;
+
+    char retired[64];
+    snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
+    rev_write( 1, retired, strlen( retired ) );
+
+    // Make sure the instructions retired is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrc %0, 0xc02, zero" : "=r"( retired1 ) );
+
+    // 1024 nops produces around 1024 retireds
+    NOP1024;
+
+    asm volatile( " csrrc %0, 0xc02, zero" : "=r"( retired2 ) );
+
+    size_t diff = retired2 - retired1;
+
+    char retired[64];
+    snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
+    rev_write( 1, retired, strlen( retired ) );
+
+    // Make sure the instructions retired is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
 
   return 0;
 }

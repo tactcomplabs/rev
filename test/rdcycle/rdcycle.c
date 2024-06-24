@@ -29,22 +29,81 @@
 int main( int argc, char** argv ) {
   size_t cycle1, cycle2;
 
-  asm volatile( " rdcycle %0" : "=r"( cycle1 ) );
+  {
+    asm volatile( " rdcycle %0" : "=r"( cycle1 ) );
 
-  // 1024 nops produces around 1024 cycles
-  NOP1024;
+    // 1024 nops produces around 1024 cycles
+    NOP1024;
 
-  asm volatile( " rdcycle %0" : "=r"( cycle2 ) );
+    asm volatile( " rdcycle %0" : "=r"( cycle2 ) );
 
-  size_t diff = cycle2 - cycle1;
+    size_t diff = cycle2 - cycle1;
 
-  char cycles[64];
-  snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
-  rev_write( 1, cycles, strlen( cycles ) );
+    char cycles[64];
+    snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
+    rev_write( 1, cycles, strlen( cycles ) );
 
-  // Make sure the number of cycles is between 1024 and 1026
-  if( diff < 1024 || diff > 1026 )
-    asm( " .word 0" );
+    // Make sure the number of cycles is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrsi %0, 0xc00, 0" : "=r"( cycle1 ) );
+
+    // 1024 nops produces around 1024 cycles
+    NOP1024;
+
+    asm volatile( " csrrsi %0, 0xc00, 0" : "=r"( cycle2 ) );
+
+    size_t diff = cycle2 - cycle1;
+
+    char cycles[64];
+    snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
+    rev_write( 1, cycles, strlen( cycles ) );
+
+    // Make sure the number of cycles is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrci %0, 0xc00, 0" : "=r"( cycle1 ) );
+
+    // 1024 nops produces around 1024 cycles
+    NOP1024;
+
+    asm volatile( " csrrci %0, 0xc00, 0" : "=r"( cycle2 ) );
+
+    size_t diff = cycle2 - cycle1;
+
+    char cycles[64];
+    snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
+    rev_write( 1, cycles, strlen( cycles ) );
+
+    // Make sure the number of cycles is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrc %0, 0xc00, zero" : "=r"( cycle1 ) );
+
+    // 1024 nops produces around 1024 cycles
+    NOP1024;
+
+    asm volatile( " csrrc %0, 0xc00, zero" : "=r"( cycle2 ) );
+
+    size_t diff = cycle2 - cycle1;
+
+    char cycles[64];
+    snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
+    rev_write( 1, cycles, strlen( cycles ) );
+
+    // Make sure the number of cycles is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
 
   return 0;
 }

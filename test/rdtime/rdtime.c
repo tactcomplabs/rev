@@ -29,22 +29,81 @@
 int main( int argc, char** argv ) {
   size_t time1, time2;
 
-  asm volatile( " rdtime %0" : "=r"( time1 ) );
+  {
+    asm volatile( " rdtime %0" : "=r"( time1 ) );
 
-  // 1024 nops produces around 1024 times
-  NOP1024;
+    // 1024 nops produces around 1024 times
+    NOP1024;
 
-  asm volatile( " rdtime %0" : "=r"( time2 ) );
+    asm volatile( " rdtime %0" : "=r"( time2 ) );
 
-  size_t diff = time2 - time1;
+    size_t diff = time2 - time1;
 
-  char time[64];
-  snprintf( time, sizeof( time ), "%zu time\n", diff );
-  rev_write( 1, time, strlen( time ) );
+    char time[64];
+    snprintf( time, sizeof( time ), "%zu time\n", diff );
+    rev_write( 1, time, strlen( time ) );
 
-  // Make sure the time is between 1024 and 1026
-  if( diff < 1024 || diff > 1026 )
-    asm( " .word 0" );
+    // Make sure the time is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrsi %0, 0xc01, 0" : "=r"( time1 ) );
+
+    // 1024 nops produces around 1024 times
+    NOP1024;
+
+    asm volatile( " csrrsi %0, 0xc01, 0" : "=r"( time2 ) );
+
+    size_t diff = time2 - time1;
+
+    char time[64];
+    snprintf( time, sizeof( time ), "%zu time\n", diff );
+    rev_write( 1, time, strlen( time ) );
+
+    // Make sure the time is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrci %0, 0xc01, 0" : "=r"( time1 ) );
+
+    // 1024 nops produces around 1024 times
+    NOP1024;
+
+    asm volatile( " csrrci %0, 0xc01, 0" : "=r"( time2 ) );
+
+    size_t diff = time2 - time1;
+
+    char time[64];
+    snprintf( time, sizeof( time ), "%zu time\n", diff );
+    rev_write( 1, time, strlen( time ) );
+
+    // Make sure the time is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
+
+  {
+    asm volatile( " csrrc %0, 0xc01, zero" : "=r"( time1 ) );
+
+    // 1024 nops produces around 1024 times
+    NOP1024;
+
+    asm volatile( " csrrc %0, 0xc01, zero" : "=r"( time2 ) );
+
+    size_t diff = time2 - time1;
+
+    char time[64];
+    snprintf( time, sizeof( time ), "%zu time\n", diff );
+    rev_write( 1, time, strlen( time ) );
+
+    // Make sure the time is between 1024 and 1026
+    if( diff < 1024 || diff > 1026 )
+      asm( " .word 0" );
+  }
 
   return 0;
 }
