@@ -179,6 +179,10 @@ static const FP special_fcvt_values[]{
   std::numeric_limits<FP>::signaling_NaN(),
   std::numeric_limits<FP>::infinity(),
   -std::numeric_limits<FP>::infinity(),
+  fpmax<FP, INT>,
+  fpmin<FP, INT>,
+  std::nextafter( fpmax<FP, INT>, std::numeric_limits<FP>::infinity() ),
+  std::nextafter( fpmin<FP, INT>, -std::numeric_limits<FP>::infinity() ),
 };
 
 #define OPER_PAIR( lambda ) \
