@@ -89,26 +89,37 @@ bool CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
   return true;
 }
 
+enum RevFClass : uint32_t {
+  InfNeg       = 1u << 0,
+  NormalNeg    = 1u << 1,
+  SubNormalNeg = 1u << 2,
+  ZeroNeg      = 1u << 3,
+  ZeroPos      = 1u << 4,
+  SubNormalPos = 1u << 5,
+  NormalPos    = 1u << 6,
+  InfPos       = 1u << 7,
+  SignalingNaN = 1u << 8,
+  QuietNaN     = 1u << 9,
+};
+
 /// fclass: Return FP classification like the RISC-V fclass instruction
 template<typename T>
-unsigned fclass( T val ) {
-  bool quietNaN;
+uint32_t fclass( T val ) {
   switch( std::fpclassify( val ) ) {
-  case FP_INFINITE: return std::signbit( val ) ? 1u : 1u << 7;
+  case FP_INFINITE: return std::signbit( val ) ? InfNeg : InfPos;
+  case FP_NORMAL: return std::signbit( val ) ? NormalNeg : NormalPos;
+  case FP_SUBNORMAL: return std::signbit( val ) ? SubNormalNeg : SubNormalPos;
+  case FP_ZERO: return std::signbit( val ) ? ZeroNeg : ZeroPos;
   case FP_NAN:
     if constexpr( std::is_same_v<T, float> ) {
       uint32_t i32;
       memcpy( &i32, &val, sizeof( i32 ) );
-      quietNaN = ( i32 & uint32_t{ 1 } << 22 ) != 0;
+      return ( i32 & uint32_t{ 1 } << 22 ) != 0 ? QuietNaN : SignalingNaN;
     } else {
       uint64_t i64;
       memcpy( &i64, &val, sizeof( i64 ) );
-      quietNaN = ( i64 & uint64_t{ 1 } << 51 ) != 0;
+      return ( i64 & uint64_t{ 1 } << 51 ) != 0 ? QuietNaN : SignalingNaN;
     }
-    return quietNaN ? 1u << 9 : 1u << 8;
-  case FP_NORMAL: return std::signbit( val ) ? 1u << 1 : 1u << 6;
-  case FP_SUBNORMAL: return std::signbit( val ) ? 1u << 2 : 1u << 5;
-  case FP_ZERO: return std::signbit( val ) ? 1u << 3 : 1u << 4;
   default: return 0u;
   }
 }
@@ -223,7 +234,7 @@ template<typename = void>
 struct FMin {
   template<typename T>
   auto operator()( T x, T y ) const {
-    if( fclass( x ) == 1u << 8 || fclass( y ) == 1u << 8 )
+    if( fclass( x ) == SignalingNaN || fclass( y ) == SignalingNaN )
       feraiseexcept( FE_INVALID );
     return std::fmin( x, y );
   }
@@ -234,7 +245,7 @@ template<typename = void>
 struct FMax {
   template<typename T>
   auto operator()( T x, T y ) const {
-    if( fclass( x ) == 1u << 8 || fclass( y ) == 1u << 8 )
+    if( fclass( x ) == SignalingNaN || fclass( y ) == SignalingNaN )
       feraiseexcept( FE_INVALID );
     return std::fmax( x, y );
   }
