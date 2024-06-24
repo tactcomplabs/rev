@@ -65,6 +65,10 @@ class Zicsr : public RevExt {
       }
     }
 
+    // Read-only CSRs cannot be written to
+    if( Inst.imm >= 0xc00 && Inst.imm < 0xe00 )
+      return false;
+
     // Write the new CSR value
     R->SetCSR( Inst.imm, val );
     return true;
