@@ -24,6 +24,22 @@ class Zicsr : public RevExt {
   // Because CSR has a 32/64-bit width, this function is templatized
   template<typename XLEN, OpKind OPKIND, CSROp OP>
   static bool ModCSRImpl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+
+    // Alternative forms of rdcycle[h], rdtime[h], rdinstret[h] which use an immediate 0 or csrrc
+    // Canonical forms of rdcycle[h], rdtime[h] use cssrs with register x0
+    if( Inst.rs1 == 0 && OP != CSROp::Write ) {
+      // clang-format off
+      switch( Inst.imm ) {
+        case 0xc00: return rdcycle   ( F, R, M, Inst );
+        case 0xc80: return rdcycleh  ( F, R, M, Inst );
+        case 0xc01: return rdtime    ( F, R, M, Inst );
+        case 0xc81: return rdtimeh   ( F, R, M, Inst );
+        case 0xc02: return rdinstret ( F, R, M, Inst );
+        case 0xc82: return rdinstreth( F, R, M, Inst );
+      }
+      // clang-format on
+    }
+
     XLEN old = 0;
 
     // CSRRW with rd == zero does not read CSR
