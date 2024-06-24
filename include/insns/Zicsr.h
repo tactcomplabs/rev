@@ -27,7 +27,7 @@ class Zicsr : public RevExt {
 
     // Alternative forms of rdcycle[h], rdtime[h], rdinstret[h] which use an immediate 0 or csrrc
     // Canonical forms of rdcycle[h], rdtime[h], rdinstret[h] use csrrs with register x0
-    if( Inst.rs1 == 0 && OP != CSROp::Write ) {
+    if( OP != CSROp::Write && Inst.rs1 == 0 ) {
       // clang-format off
       switch( Inst.imm ) {
         case 0xc00: return rdcycle   ( F, R, M, Inst );
