@@ -52,13 +52,10 @@ class Zicsr : public RevExt {
     if( Inst.rd != 0 )
       R->SetX( Inst.rd, old );
 
-    // Advance PC
-    R->AdvancePC( Inst );
-
     // Handle CSRRS/CSRRC
     if( OP != CSROp::Write ) {
       if( Inst.rs1 == 0 ) {
-        return true;  // If CSRRS/CSRRC rs1 == 0, do not modify CSR
+        goto end;  // If CSRRS/CSRRC rs1 == 0, do not modify CSR
       } else if( OP == CSROp::Set ) {
         val = old | val;
       } else {
@@ -72,6 +69,11 @@ class Zicsr : public RevExt {
 
     // Write the new CSR value
     R->SetCSR( Inst.imm, val );
+
+  end:
+    // Advance PC
+    R->AdvancePC( Inst );
+
     return true;
   }
 
