@@ -48,7 +48,7 @@ class RV32F : public RevExt {
   static constexpr auto& fcvtwus = CvtFpToInt<float, uint32_t>;
 
   static bool fsqrts( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, sqrtf( R->GetFP<float>( Inst.rs1 ) ) );
+    R->SetFP( Inst.rd, std::sqrt( R->GetFP<float>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }
@@ -91,11 +91,7 @@ class RV32F : public RevExt {
   }
 
   static bool fclasss( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    float    fp32 = R->GetFP<float>( Inst.rs1 );
-    uint32_t i32;
-    memcpy( &i32, &fp32, sizeof( i32 ) );
-    bool quietNaN = ( i32 & uint32_t{ 1 } << 22 ) != 0;
-    R->SetX( Inst.rd, fclass( fp32, quietNaN ) );
+    R->SetX( Inst.rd, fclass( R->GetFP<float>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
   }

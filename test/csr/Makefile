@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# makefile: unordered_map_obj
+# makefile: csr
 #
 # Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
@@ -10,15 +10,16 @@
 # See LICENSE in the top level directory for licensing details
 #
 
-.PHONY: src
+EXAMPLE=csr
+CXX="${RVCXX}"
+ARCH=rv64g
+ABI=lp64d
 
-EXAMPLE=unordered_map_obj
-CXX=${RVCXX}
-ARCH=rv64gc
+CFLAGS=-I ../../common/syscalls -O1
 
 all: $(EXAMPLE).exe
 $(EXAMPLE).exe: $(EXAMPLE).cc
-	$(CXX) -march=$(ARCH) -O0 -I../../../../common/include -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).cc -static
+	$(CXX) $(CFLAGS) -march=$(ARCH) -mabi=$(ABI) -static -o $(EXAMPLE).exe $(EXAMPLE).cc
 clean:
 	rm -Rf $(EXAMPLE).exe
 

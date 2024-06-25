@@ -14,9 +14,6 @@
 
 EXAMPLE=unordered_map
 CXX=${RVCXX}
-CXX=riscv64-unknown-elf-g++  # TODO: Remove this line when "frflags" instruction is implemented (for floor function)
-
-#ARCH=rv64g
 ARCH=rv64gc
 
 all: $(EXAMPLE).exe

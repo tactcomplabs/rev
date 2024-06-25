@@ -17,6 +17,7 @@
 // -- Standard Headers
 #include <cmath>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -34,7 +35,13 @@ struct RevExt {
     : name( name ), feature( feature ), mem( mem ), output( output ) {}
 
   /// RevExt: standard destructor. virtual so that Extensions[i] can be deleted
-  virtual ~RevExt() = default;
+  virtual ~RevExt()                  = default;
+
+  // We do not allow copying, moving or assigning
+  RevExt( const RevExt& )            = delete;
+  RevExt( RevExt&& )                 = delete;
+  RevExt& operator=( const RevExt& ) = delete;
+  RevExt& operator=( RevExt&& )      = delete;
 
   /// RevExt: sets the internal instruction table
   // Note: && means the argument should be an rvalue or std::move(lvalue)
@@ -72,8 +79,8 @@ private:
   std::vector<RevInstEntry> ctable{};  ///< RevExt: compressed instruction table
   std::vector<RevInstEntry> otable{};  ///< RevExt: optional compressed instruction table
 
-  auto SetFPEnv( unsigned Inst, const RevInst& Payload, uint16_t threadID, RevRegFile* regFile );
 };  // class RevExt
+
 }  // namespace SST::RevCPU
 
 #endif

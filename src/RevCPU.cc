@@ -33,8 +33,8 @@ const char splash_msg[] = "\
 ";
 
 RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
-  : SST::Component( id ), testStage( 0 ), PrivTag( 0 ), address( -1 ), EnableMemH( false ), DisableCoprocClock( false ),
-    Nic( nullptr ), Ctrl( nullptr ), ClockHandler( nullptr ) {
+  : SST::Component( id ), PrivTag( 0 ), address( -1 ), EnableMemH( false ), DisableCoprocClock( false ), Nic( nullptr ),
+    Ctrl( nullptr ), ClockHandler( nullptr ) {
 
   const int Verbosity = params.find<int>( "verbose", 0 );
 
@@ -861,7 +861,7 @@ void RevCPU::HandleThreadStateChangesForProc( uint32_t ProcID ) {
 
 void RevCPU::InitMainThread( uint32_t MainThreadID, const uint64_t StartAddr ) {
   // @Lee: Is there a better way to get the feature info?
-  std::unique_ptr<RevRegFile> MainThreadRegState = std::make_unique<RevRegFile>( Procs[0]->GetRevFeature() );
+  std::unique_ptr<RevRegFile> MainThreadRegState = std::make_unique<RevRegFile>( Procs[0] );
   MainThreadRegState->SetPC( StartAddr );
   MainThreadRegState->SetX( RevReg::tp, Mem->GetThreadMemSegs().front()->getTopAddr() );
   MainThreadRegState->SetX( RevReg::sp, Mem->GetThreadMemSegs().front()->getTopAddr() - Mem->GetTLSSize() );

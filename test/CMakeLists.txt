@@ -182,7 +182,8 @@ macro(add_rev_test test_name test_dir timeout labels)
     # Custom target for running the specified script
     add_custom_target(run_${test_name_lower}_script
       COMMAND ${CMAKE_COMMAND} -E echo "Executing script ${optional_script}"
-      COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && bash ${optional_script}
+      COMMAND bash ${optional_script}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir_lower}
       DEPENDS build_${test_name_lower}
       COMMENT "Running script for ${test_name_lower} test"
     )
@@ -235,15 +236,19 @@ if(TEST_LEVEL GREATER_EQUAL 2)
   add_rev_test(ZICBOM zicbom 45 "test_level=2;memh;rv64" SCRIPT "run_zicbom.sh")
 endif()
 
-add_rev_test(BACKINGSTORE backingstore 100 "test_level=2;rv64" SCRIPT "run_backingstore.sh")
-add_rev_test(MEM_DUMP mem_dump 10 "rv64" SCRIPT "run_mem_dump.sh")
-add_rev_test(LWSP lwsp 30 "test_level=2;memh;rv64")
-# add_rev_test(TRACER tracer 30 "rv64;tracer")
-# add_rev_test(PAN_TEST1 pan_test1 30 "rv64;pan")
-# add_rev_test(PAN_TEST2 pan_test2 30 "rv64;pan")
-# add_rev_test(DOT_SINGLE dot_single 30 "rv64;blas-required")
-# add_rev_test(DOT_DOUBLE dot_double 30 "rv64;blas-required")
-# add_rev_test(BGE_BLE bge_ble 30 "rv64")
+add_rev_test(BACKINGSTORE backingstore 100 "test_level=2;all;rv64" SCRIPT "run_backingstore.sh")
+add_rev_test(MEM_DUMP mem_dump 10 "all;rv64" SCRIPT "run_mem_dump.sh")
+add_rev_test(LWSP lwsp 30 "test_level=2;all;memh;rv64")
+add_rev_test(CSR csr 30 "all;rv64")
+add_rev_test(RDCYCLE rdcycle 5 "test_level=2;all;rv64")
+add_rev_test(RDTIME rdtime 5 "test_level=2;all;rv64")
+add_rev_test(RDINSTRET rdinstret 5 "test_level=2;all;memh;rv64")
+# add_rev_test(TRACER tracer 30 "all;rv64;tracer")
+# add_rev_test(PAN_TEST1 pan_test1 30 "all;rv64;pan")
+# add_rev_test(PAN_TEST2 pan_test2 30 "all;rv64;pan")
+# add_rev_test(DOT_SINGLE dot_single 30 "all;rv64;blas-required")
+# add_rev_test(DOT_DOUBLE dot_double 30 "all;rv64;blas-required")
+# add_rev_test(BGE_BLE bge_ble 30 "all;rv64")
 
 if(TEST_LEVEL GREATER_EQUAL 2)
   add_subdirectory(isa)
@@ -254,5 +259,6 @@ add_subdirectory(benchmarks)
 add_subdirectory(syscalls)
 add_subdirectory(threading)
 add_subdirectory(cxx)
+add_subdirectory(fenv)
 
 # EOF

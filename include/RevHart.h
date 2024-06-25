@@ -59,7 +59,7 @@ public:
   uint16_t GetID() const { return ID; }
 
   ///< RevHart: Returns the ID of the assigned thread
-  uint32_t GetAssignedThreadID() const { return ( Thread != nullptr ) ? Thread->GetID() : _INVALID_TID_; }
+  uint32_t GetAssignedThreadID() const { return Thread ? Thread->GetID() : _INVALID_TID_; }
 
   ///< RevHart: Load the register file from the RevThread
   void LoadRegFile( std::unique_ptr<RevRegFile> regFile ) {
