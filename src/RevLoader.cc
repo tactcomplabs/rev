@@ -487,12 +487,16 @@ bool RevLoader::LoadProgramArgs( const std::string& exe, const std::vector<std::
   XLEN ArgvOffset   = sizeof( XLEN ) * ( args.size() + 1 );
 
   // Compute the total size, rounding each string up to a multiple of sizeof( XLEN )
+  // The terminating 0 byte is included, so arg.size() is rounded up to next multiple
   XLEN ArgArraySize = ArgvOffset;
   for( auto& arg : args )
     ArgArraySize += ( arg.size() | ( sizeof( XLEN ) - 1 ) ) + 1;
 
-  // OldStackTop is the current StackTop rounded down to a multiple of sizeof(XLEN)
-  const XLEN OldStackTop  = mem->GetStackTop() & ~( sizeof( XLEN ) - 1 );
+  // Round ArgArraySize up to a multiple of 16 bytes
+  ArgArraySize            = ( ( ArgArraySize - 1 ) | XLEN{ 15 } ) + 1;
+
+  // OldStackTop is the current StackTop rounded down to a multiple of 16 bytes
+  const XLEN OldStackTop  = mem->GetStackTop() & ~XLEN{ 15 };
 
   // Allocate ArgArraySize elements at ArgArrayBase
   // Set the new StackTop to ArgArraySize bytes below OldStackTop
