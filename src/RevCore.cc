@@ -1916,25 +1916,30 @@ RevRegFile* RevCore::GetRegFile( unsigned HartID ) const {
 void RevCore::CreateThread( uint32_t NewTID, uint64_t firstPC, void* arg ) {
   // tidAddr is the address we have to write the new thread's id to
   output->verbose( CALL_INFO, 2, 0, "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC );
-  uint32_t ParentThreadID                      = Harts.at( HartToExecID )->GetAssignedThreadID();
+  uint32_t ParentThreadID                  = Harts.at( HartToExecID )->GetAssignedThreadID();
 
   // Create the new thread's memory
-  std::shared_ptr<MemSegment> NewThreadMem     = mem->AddThreadMem();
+  std::shared_ptr<MemSegment> NewThreadMem = mem->AddThreadMem();
 
   // TODO: Copy TLS into new memory
 
   // Create new register file
-  std::unique_ptr<RevRegFile> NewThreadRegFile = std::make_unique<RevRegFile>( this );
+  auto NewThreadRegFile                    = std::make_unique<RevRegFile>( this );
 
   // Copy the arg to the new threads a0 register
   NewThreadRegFile->SetX( RevReg::a0, reinterpret_cast<uintptr_t>( arg ) );
 
+  // Set the stack and thread pointer
+  // The thread local storage is accessed with a nonnegative offset from tp,
+  // and the stack grows down with sp being subtracted from before storing.
+  uint64_t sp = ( NewThreadMem->getTopAddr() - mem->GetTLSSize() ) & ~uint64_t{ 15 };
+  NewThreadRegFile->SetX( RevReg::tp, sp );
+  NewThreadRegFile->SetX( RevReg::sp, sp );
+
   // Set the global pointer
-  // TODO: Cleanup
-  NewThreadRegFile->SetX( RevReg::tp, NewThreadMem->getTopAddr() );
-  NewThreadRegFile->SetX( RevReg::sp, NewThreadMem->getTopAddr() - mem->GetTLSSize() );
-  NewThreadRegFile->SetX( RevReg::gp, loader->GetSymbolAddr( "__global_pointer$" ) );
-  NewThreadRegFile->SetX( RevReg::s0, loader->GetSymbolAddr( "__global_pointer$" ) );
+  auto gp = loader->GetSymbolAddr( "__global_pointer$" );
+  NewThreadRegFile->SetX( RevReg::gp, gp );
+  NewThreadRegFile->SetX( RevReg::fp, gp );  // frame pointer register
   NewThreadRegFile->SetPC( firstPC );
 
   // Create a new RevThread Object

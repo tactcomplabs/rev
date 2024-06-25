@@ -230,6 +230,7 @@ add_rev_test(ARGC_SHORT argc_short 30 "test_level=2;memh;rv64;loader;" SCRIPT "r
 add_rev_test(ARGV argv 30 "test_level=2;memh;rv64;loader;c++" SCRIPT "run_argv.sh")
 add_rev_test(ARGV_layout argv_layout 30 "test_level=2;memh;rv32;loader;" SCRIPT "run_argv_layout.sh")
 add_rev_test(ARGV_limit argv_limit 75 "test_level=2;memh;rv32;loader;" SCRIPT "run_argv_limit.sh")
+add_rev_test(ARGV_stack argv_stack 10 "memh;rv64")
 add_rev_test(COPROC_EX coproc_ex 30 "memh;rv64;coproc" SCRIPT "run_coproc_ex.sh")
 
 if(TEST_LEVEL GREATER_EQUAL 2)

@@ -694,10 +694,12 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
 void RevCPU::InitThread( std::unique_ptr<RevThread>&& ThreadToInit ) {
   // Get a pointer to the register state for this thread
   std::unique_ptr<RevRegFile> RegState = ThreadToInit->TransferVirtRegState();
+
   // Set the global pointer register and the frame pointer register
   auto gp                              = Loader->GetSymbolAddr( "__global_pointer$" );
   RegState->SetX( RevReg::gp, gp );
-  RegState->SetX( RevReg::s0, gp );  // s0 = x8 = frame pointer register
+  RegState->SetX( RevReg::fp, gp );
+
   // Set state to Ready
   ThreadToInit->SetState( ThreadState::READY );
   output.verbose( CALL_INFO, 4, 0, "Initializing Thread %" PRIu32 "\n", ThreadToInit->GetID() );
@@ -752,18 +754,6 @@ void RevCPU::CheckBlockedThreads() {
     }
   }
   return;
-}
-
-// ----------------------------------
-// We need to initialize the x10 register to include the value of
-// ARGC. This is >= 1 (the executable name is always included).
-// We also need to initialize the ARGV pointer to the value
-// of the ARGV base pointer in memory which is currently set to
-// the top of stack.
-// ----------------------------------
-void RevCPU::SetupArgs( const std::unique_ptr<RevRegFile>& RegFile ) {
-  RegFile->SetX( RevReg::a0, Opts->GetArgv().size() + 1 );
-  RegFile->SetX( RevReg::a1, Mem->GetStackTop() );
 }
 
 // Checks core 'i' to see if it has any available harts to assign work to
@@ -860,14 +850,35 @@ void RevCPU::HandleThreadStateChangesForProc( uint32_t ProcID ) {
 }
 
 void RevCPU::InitMainThread( uint32_t MainThreadID, const uint64_t StartAddr ) {
-  // @Lee: Is there a better way to get the feature info?
-  std::unique_ptr<RevRegFile> MainThreadRegState = std::make_unique<RevRegFile>( Procs[0] );
+  auto MainThreadRegState = std::make_unique<RevRegFile>( Procs[0] );
+
+  // The Program Counter gets set to the start address
   MainThreadRegState->SetPC( StartAddr );
-  MainThreadRegState->SetX( RevReg::tp, Mem->GetThreadMemSegs().front()->getTopAddr() );
-  MainThreadRegState->SetX( RevReg::sp, Mem->GetThreadMemSegs().front()->getTopAddr() - Mem->GetTLSSize() );
-  MainThreadRegState->SetX( RevReg::gp, Loader->GetSymbolAddr( "__global_pointer$" ) );
-  MainThreadRegState->SetX( 8, Loader->GetSymbolAddr( "__global_pointer$" ) );
-  SetupArgs( MainThreadRegState );
+
+  // We need to initialize the a0 register to the value of ARGC.
+  // This is >= 1 (the executable name is always included).
+  // We also need to initialize the a1 register to the ARGV pointer
+  // of the ARGV base pointer in memory which is currently set to
+  // the top of stack.
+  uint64_t stackTop = Mem->GetStackTop();
+  MainThreadRegState->SetX( RevReg::a0, Opts->GetArgv().size() + 1 );
+  MainThreadRegState->SetX( RevReg::a1, stackTop );
+
+  // We subtract Mem->GetTLSSize() bytes from the current stack top, and
+  // round down to a multiple of 16 bytes. We set it as the new top of stack.
+  stackTop = ( stackTop - Mem->GetTLSSize() ) & ~uint64_t{ 15 };
+  Mem->SetStackTop( stackTop );
+
+  // We set the stack pointer and the thread pointer to the new stack top
+  // The thread local storage is accessed with a nonnegative offset from tp,
+  // and the stack grows down with sp being subtracted from before storing.
+  MainThreadRegState->SetX( RevReg::sp, stackTop );
+  MainThreadRegState->SetX( RevReg::tp, stackTop );
+
+  auto gp = Loader->GetSymbolAddr( "__global_pointer$" );
+  MainThreadRegState->SetX( RevReg::gp, gp );
+  MainThreadRegState->SetX( RevReg::fp, gp );
+
   std::unique_ptr<RevThread> MainThread = std::make_unique<RevThread>(
     MainThreadID,
     _INVALID_TID_,  // No Parent Thread ID

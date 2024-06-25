@@ -478,8 +478,8 @@ bool RevLoader::LoadProgramArgs( const std::string& exe, const std::vector<std::
   //
   // Each string that argv[i] points to starts at an address which is a multiple of XLEN.
   //
-  // Finally, in RevCPU::SetupArgs(), we initialize the a0 register to the value of argc
-  // and the a1 register to the base pointer to argv.
+  // Finally, in RevCPU::InitMainThread(), we initialize the a0 register to the value of
+  // argc and the a1 register to the base pointer to argv.
   // -------------- END MEMORY LAYOUT NOTES
 
   // Allocate sizeof(XLEN) bytes for each of the argv[] pointers
