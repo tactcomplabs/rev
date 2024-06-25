@@ -209,9 +209,6 @@ public:
   /// Invoke the MarkLoadComplete function
   void MarkLoadComplete( const MemReq& req ) const { MarkLoadCompleteFunc( req ); }
 
-  /// Get the number of instructions retired
-  uint64_t GetInstRet() const { return InstRet; }
-
   /// Capture the PC of current instruction which raised exception
   void SetSEPC() {
     if( IsRV32 ) {
@@ -338,16 +335,70 @@ public:
     }
   }
 
+private:
+  // Performance counters
+
+  // Template is used to break circular dependencies between RevCore and RevRegFile
+  template<typename CORE>
+  uint64_t rdcycle( CORE* core ) const {
+    return core->GetCycles();
+  }
+
+  template<typename CORE>
+  uint64_t rdtime( CORE* core ) const {
+    return core->GetCurrentSimCycle();
+  }
+
+  template<typename CORE>
+  uint64_t rdinstret( CORE* ) const {
+    return InstRet;
+  }
+
+  enum class Half { Lo, Hi };
+
+  /// Performance Counter template
+  // Passed a function which gets the 64-bit value of a performance counter
+  template<typename T, Half HALF, uint64_t ( RevRegFile::*COUNTER )( RevCore* ) const>
+  T GetPerfCounter() const {
+    if constexpr( sizeof( T ) == sizeof( uint32_t ) ) {
+      // clang-format off
+      if constexpr( HALF == Half::Lo ) {
+        return static_cast<T>( ( this->*COUNTER )( Core ) & 0xffffffff );
+      } else {
+        return static_cast<T>( ( this->*COUNTER )( Core ) >> 32 );
+      }
+      // clang-format on
+    } else {
+      if constexpr( HALF == Half::Lo ) {
+        return ( this->*COUNTER )( Core );
+      } else {
+        return 0;  // Hi half is not available on RV64
+      }
+    }
+  }
+
+public:
   /// Get a CSR register
   template<typename T>
   T GetCSR( size_t csr ) const {
-    // We store fcsr separately from the global CSR
+    // clang-format off
     switch( csr ) {
-    case 1: return static_cast<uint32_t>( fcsr ) >> 0 & 0b00011111u; break;
-    case 2: return static_cast<uint32_t>( fcsr ) >> 5 & 0b00000111u; break;
-    case 3: return static_cast<uint32_t>( fcsr ) >> 0 & 0b11111111u; break;
     default: return static_cast<T>( CSR[csr] );
+
+    // We store fcsr separately from the global CSR
+    case 1: return static_cast<uint32_t>( fcsr ) >> 0 & 0b00011111u;
+    case 2: return static_cast<uint32_t>( fcsr ) >> 5 & 0b00000111u;
+    case 3: return static_cast<uint32_t>( fcsr ) >> 0 & 0b11111111u;
+
+      // Performance Counters
+    case 0xc00: return GetPerfCounter<T, Half::Lo, &RevRegFile::rdcycle>();
+    case 0xc80: return GetPerfCounter<T, Half::Hi, &RevRegFile::rdcycle>();
+    case 0xc01: return GetPerfCounter<T, Half::Lo, &RevRegFile::rdtime>();
+    case 0xc81: return GetPerfCounter<T, Half::Hi, &RevRegFile::rdtime>();
+    case 0xc02: return GetPerfCounter<T, Half::Lo, &RevRegFile::rdinstret>();
+    case 0xc82: return GetPerfCounter<T, Half::Hi, &RevRegFile::rdinstret>();
     }
+    // clang-format on
   }
 
   /// Set a CSR register
