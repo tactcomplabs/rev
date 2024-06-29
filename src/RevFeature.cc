@@ -68,12 +68,12 @@ bool RevFeature::ParseMachineModel() {
     { "P",          0, 2, -1, 0, RV_P                                                      }, // Unsupported
     { "V",          1, 0, -1, 0, RV_V | RV_D | RV_F | RV_ZICSR                             },
     { "H",          1, 0, -1, 0, RV_H                                                      }, // Unsupported
+    { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                                                 },
     { "Zicsr",      2, 0,  2, 2, RV_ZICSR                                                  },
     { "Zifencei",   2, 0,  2, 2, RV_ZIFENCEI                                               },
-    { "Zfa",        1, 0,  1, 1, RV_ZFA | RV_F | RV_ZICSR                                  },
-    { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                                                 },
-    { "Zfhmin",     1, 0, -1, 0, RV_ZFHMIN | RV_F | RV_ZICSR                               }, // Unsupported
+    { "Zfa",        1, 0, -1, 0, RV_ZFA | RV_F | RV_ZICSR                                  }, // Unsupported
     { "Zfh",        1, 0, -1, 0, RV_ZFH | RV_ZFHMIN | RV_F | RV_ZICSR                      }, // Unsupported
+    { "Zfhmin",     1, 0, -1, 0, RV_ZFHMIN | RV_F | RV_ZICSR                               }, // Unsupported
     { "Ztso",       1, 0, -1, 0, RV_ZTSO                                                   }, // Unsupported
   };
   // clang-format on

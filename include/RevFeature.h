@@ -35,10 +35,10 @@ enum RevFeatureType : uint32_t {
   RV_P        = 1 << 9,   ///< RevFeatureType: P-Extension
   RV_V        = 1 << 10,  ///< RevFeatureType: V-extension
   RV_H        = 1 << 11,  ///< RevFeatureType: H-extension
-  RV_ZICSR    = 1 << 12,  ///< RevFEatureType: Zicsr-extension
-  RV_ZIFENCEI = 1 << 13,  ///< RevFeatureType: Zifencei-extension
-  RV_ZFA      = 1 << 14,  ///< RevFeatureType: Zfa-extension
-  RV_ZICBOM   = 1 << 15,  ///< RevFeatureType: Zicbom-extension
+  RV_ZICBOM   = 1 << 12,  ///< RevFeatureType: Zicbom-extension
+  RV_ZICSR    = 1 << 13,  ///< RevFEatureType: Zicsr-extension
+  RV_ZIFENCEI = 1 << 14,  ///< RevFeatureType: Zifencei-extension
+  RV_ZFA      = 1 << 15,  ///< RevFeatureType: Zfa-extension
   RV_ZFH      = 1 << 16,  ///< RevFeatureType: H-extension
   RV_ZFHMIN   = 1 << 17,  ///< RevFeatureRtpe: Zfhmin extension
   RV_ZTSO     = 1 << 18,  ///< RevFeatureType: Ztso-extension
