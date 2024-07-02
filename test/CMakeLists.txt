@@ -204,6 +204,7 @@ endif()
 endmacro()
 
 # add_rev_test(test_name test_dir timeout labels)
+add_rev_test(EXT_VERSION ext_version 20 "rv64")
 add_rev_test(EX1 ex1 30 "memh;rv32")
 add_rev_test(EX2 ex2 30 "memh;rv64")
 add_rev_test(EX3 ex3 30 "memh;rv32")

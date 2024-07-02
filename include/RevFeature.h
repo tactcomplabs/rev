@@ -23,22 +23,25 @@ namespace SST::RevCPU {
 /// ORed to indicate multiple extensions being present.
 enum RevFeatureType : uint32_t {
   RV_UNKNOWN  = 0,        ///< RevFeatureType: unknown feature
-  RV_E        = 1 << 0,   ///< RevFeatureType: E-extension
-  RV_I        = 1 << 1,   ///< RevFeatureType: I-extension
+  RV_I        = 1 << 0,   ///< RevFeatureType: I-extension
+  RV_E        = 1 << 1,   ///< RevFeatureType: E-extension
   RV_M        = 1 << 2,   ///< RevFeatureType: M-extension
   RV_A        = 1 << 3,   ///< RevFeatureType: A-extension
   RV_F        = 1 << 4,   ///< RevFeatureType: F-extension
   RV_D        = 1 << 5,   ///< RevFeatureType: D-extension
   RV_Q        = 1 << 6,   ///< RevFeatureType: Q-extension
   RV_C        = 1 << 7,   ///< RevFeatureType: C-extension
-  RV_P        = 1 << 8,   ///< RevFeatureType: P-Extension
-  RV_V        = 1 << 9,   ///< RevFeatureType: V-extension
-  RV_H        = 1 << 10,  ///< RevFeatureType: H-extension
-  RV_ZICSR    = 1 << 11,  ///< RevFEatureType: Zicsr-extension
-  RV_ZIFENCEI = 1 << 12,  ///< RevFeatureType: Zifencei-extension
-  RV_ZTSO     = 1 << 13,  ///< RevFeatureType: Ztso-extension
-  RV_ZFA      = 1 << 14,  ///< RevFeatureType: Zfa-extension
-  RV_ZICBOM   = 1 << 15,  ///< RevFeatureType: Zicbom-extension
+  RV_B        = 1 << 8,   ///< RevFeatureType: C-extension
+  RV_P        = 1 << 9,   ///< RevFeatureType: P-Extension
+  RV_V        = 1 << 10,  ///< RevFeatureType: V-extension
+  RV_H        = 1 << 11,  ///< RevFeatureType: H-extension
+  RV_ZICBOM   = 1 << 12,  ///< RevFeatureType: Zicbom-extension
+  RV_ZICSR    = 1 << 13,  ///< RevFEatureType: Zicsr-extension
+  RV_ZIFENCEI = 1 << 14,  ///< RevFeatureType: Zifencei-extension
+  RV_ZFA      = 1 << 15,  ///< RevFeatureType: Zfa-extension
+  RV_ZFH      = 1 << 16,  ///< RevFeatureType: H-extension
+  RV_ZFHMIN   = 1 << 17,  ///< RevFeatureRtpe: Zfhmin extension
+  RV_ZTSO     = 1 << 18,  ///< RevFeatureType: Ztso-extension
 };
 
 class RevFeature {

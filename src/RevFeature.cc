@@ -9,6 +9,7 @@
 //
 
 #include "RevFeature.h"
+#include <cctype>
 #include <cstring>
 #include <string_view>
 #include <utility>
@@ -39,6 +40,7 @@ bool RevFeature::ParseMachineModel() {
   output->verbose( CALL_INFO, 6, 0, "Core %u ; Setting XLEN to %u\n", ProcID, xlen );
   output->verbose( CALL_INFO, 6, 0, "Core %u ; Architecture string=%s\n", ProcID, mac );
 
+  // clang-format off
   ///< List of architecture extensions. These must listed in canonical order
   ///< as shown in Table 27.11, Chapter 27, of the RISC-V Unprivileged Spec
   ///< (Table 74 of Chapter 36 in the 2024 version).
@@ -46,32 +48,40 @@ bool RevFeature::ParseMachineModel() {
   ///< By using a canonical ordering, the extensions' presence can be tested
   ///< in linear time complexity of the table and the string. Some of the
   ///< extensions imply other extensions, so the extension flags are ORed.
-  // clang-format off
-  static constexpr std::pair<std::string_view, uint32_t> table[] = {
-    { "I",          RV_I                                                      },
-    { "E",          RV_E                                                      },
-    { "M",          RV_M                                                      },
-    { "A",          RV_A                                                      },
-    { "F",          RV_F | RV_ZICSR                                           },
-    { "D",          RV_D | RV_F | RV_ZICSR                                    },
-    { "G",          RV_I | RV_M | RV_A | RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI },
-    { "Q",          RV_Q | RV_D | RV_F | RV_ZICSR                             },
-    { "C",          RV_C                                                      },
-    { "P",          RV_P                                                      },
-    { "V",          RV_V | RV_D | RV_F | RV_ZICSR                             },
-    { "H",          RV_H                                                      },
-    { "Zicsr",      RV_ZICSR                                                  },
-    { "Zifencei",   RV_ZIFENCEI                                               },
-    { "Ztso",       RV_ZTSO                                                   },
-    { "Zfa",        RV_ZFA | RV_F | RV_ZICSR                                  },
-    { "Zicbom",     RV_ZICBOM                                                 },
+  ///<
+  ///< The second and third values are the major and minor default version.
+  ///< The fourth and fifth values are the major version range that Rev supports.
+  ///< Values of -1, 0 for the fourth and fifth values indicates no Rev support yet.
+  ///<
+  ///< ExtensionName DefaultMajor DefaultMinor MinSupportedVersion MaxSupportedVersion Flags
+  static constexpr std::tuple<std::string_view, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t> table[] = {
+    { "I",          2, 1,  2, 2, RV_I                                                      },
+    { "E",          2, 0, -1, 0, RV_E                                                      }, // Unsupported
+    { "M",          2, 0,  2, 2, RV_M                                                      },
+    { "A",          2, 1,  2, 2, RV_A                                                      },
+    { "F",          2, 2,  2, 2, RV_F | RV_ZICSR                                           },
+    { "D",          2, 2,  2, 2, RV_D | RV_F | RV_ZICSR                                    },
+    { "G",          2, 0,  2, 2, RV_I | RV_M | RV_A | RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI },
+    { "Q",          2, 2, -1, 0, RV_Q | RV_D | RV_F | RV_ZICSR                             }, // Unsupported
+    { "C",          2, 0,  2, 2, RV_C                                                      },
+    { "B",          1, 0, -1, 0, RV_B                                                      }, // Unsupported
+    { "P",          0, 2, -1, 0, RV_P                                                      }, // Unsupported
+    { "V",          1, 0, -1, 0, RV_V | RV_D | RV_F | RV_ZICSR                             },
+    { "H",          1, 0, -1, 0, RV_H                                                      }, // Unsupported
+    { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                                                 },
+    { "Zicsr",      2, 0,  2, 2, RV_ZICSR                                                  },
+    { "Zifencei",   2, 0,  2, 2, RV_ZIFENCEI                                               },
+    { "Zfa",        1, 0, -1, 0, RV_ZFA | RV_F | RV_ZICSR                                  }, // Unsupported
+    { "Zfh",        1, 0, -1, 0, RV_ZFH | RV_ZFHMIN | RV_F | RV_ZICSR                      }, // Unsupported
+    { "Zfhmin",     1, 0, -1, 0, RV_ZFHMIN | RV_F | RV_ZICSR                               }, // Unsupported
+    { "Ztso",       1, 0, -1, 0, RV_ZTSO                                                   }, // Unsupported
   };
   // clang-format on
 
   // -- step 2: parse all the features
   // Note: Extension strings, if present, must appear in the order listed in the table above.
   if( *mac ) {
-    for( const auto& [ext, flags] : table ) {
+    for( auto [ext, majorVersion, minorVersion, minimumVersion, maximumVersion, flags] : table ) {
       // Look for an architecture string matching the current extension
       if( !strncasecmp( mac, ext.data(), ext.size() ) ) {
 
@@ -80,6 +90,24 @@ bool RevFeature::ParseMachineModel() {
 
         // Move past the currently matching extension
         mac += ext.size();
+
+        // Optional version string follows extension
+        if( isdigit( *mac ) ) {
+          majorVersion = strtoul( mac, const_cast<char**>( &mac ), 10 );
+          if( tolower( *mac ) == 'p' && isdigit( *++mac ) )
+            minorVersion = strtoul( mac, const_cast<char**>( &mac ), 10 );
+        }
+
+        if( majorVersion < minimumVersion || majorVersion > maximumVersion ) {
+          output->fatal(
+            CALL_INFO,
+            -1,
+            "Error: Version %" PRIu32 ".%" PRIu32 " of %s extension is not supported\n",
+            majorVersion,
+            minorVersion,
+            ext.data()
+          );
+        }
 
         // Skip underscore separators
         while( *mac == '_' )
