@@ -30,6 +30,7 @@
 #include "insns/RV64I.h"
 #include "insns/RV64M.h"
 #include "insns/RV64P.h"
+#include "insns/Zfa.h"
 #include "insns/Zicbom.h"
 #include "insns/Zicsr.h"
 #include "insns/Zifencei.h"

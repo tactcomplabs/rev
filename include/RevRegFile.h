@@ -310,10 +310,9 @@ public:
         fp32 = SPF[size_t( rs )];  // The FP32 register's value
       } else {
         uint64_t i64;
-        memcpy( &i64, &DPF[size_t( rs )],
-                sizeof( i64 ) );       // The FP64 register's value
-        if( !FMV_FS && ~i64 >> 32 ) {  // Check for boxed NaN unless FMV/FS
-          fp32 = NAN;                  // Return NaN if it's not boxed
+        memcpy( &i64, &DPF[size_t( rs )], sizeof( i64 ) );  // The FP64 register's value
+        if( !FMV_FS && ~i64 >> 32 ) {                       // Check for boxed NaN unless FMV/FS
+          fp32 = NAN;                                       // Return NaN if it's not boxed
         } else {
           auto i32 = static_cast<uint32_t>( i64 );  // For endian independence on host
           memcpy( &fp32, &i32, sizeof( fp32 ) );    // The bottom half of FP64
@@ -329,8 +328,7 @@ public:
     if constexpr( std::is_same_v<T, double> ) {
       DPF[size_t( rd )] = value;  // Store in FP64 register
     } else if( HasD ) {
-      BoxNaN( &DPF[size_t( rd )],
-              &value );  // Store NaN-boxed float in FP64 register
+      BoxNaN( &DPF[size_t( rd )], &value );  // Store NaN-boxed float in FP64 register
     } else {
       SPF[size_t( rd )] = value;  // Store in FP32 register
     }
@@ -340,17 +338,17 @@ private:
   // Performance counters
 
   // Template is used to break circular dependencies between RevCore and RevRegFile
-  template<typename CORE>
+  template<typename CORE, typename = std::enable_if_t<std::is_same_v<CORE, RevCore>>>
   uint64_t rdcycle( CORE* core ) const {
     return core->GetCycles();
   }
 
-  template<typename CORE>
+  template<typename CORE, typename = std::enable_if_t<std::is_same_v<CORE, RevCore>>>
   uint64_t rdtime( CORE* core ) const {
     return core->GetCurrentSimCycle();
   }
 
-  template<typename CORE>
+  template<typename CORE, typename = std::enable_if_t<std::is_same_v<CORE, RevCore>>>
   uint64_t rdinstret( CORE* ) const {
     return InstRet;
   }

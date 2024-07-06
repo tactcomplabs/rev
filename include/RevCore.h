@@ -175,7 +175,7 @@ public:
   uint32_t GetActiveThreadID() { return Harts.at( HartToDecodeID )->GetAssignedThreadID(); }
 
   ///< RevCore: Get this Core's feature
-  RevFeature* GetRevFeature() const { return feature; }
+  const RevFeature* GetRevFeature() const { return feature; }
 
   ///< RevCore: Mark a current request as complete
   void MarkLoadComplete( const MemReq& req );
@@ -683,16 +683,16 @@ private:
   //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevCore: pipeline of instructions
   std::deque<std::pair<uint16_t, RevInst>>    Pipeline{};     ///< RevCore: pipeline of instructions
   std::unordered_map<std::string, unsigned>   NameToEntry{};  ///< RevCore: instruction mnemonic to table entry mapping
-  std::unordered_multimap<uint32_t, unsigned> EncToEntry{};   ///< RevCore: instruction encoding to table entry mapping
-  std::unordered_multimap<uint32_t, unsigned> CEncToEntry{};  ///< RevCore: compressed instruction encoding to table entry mapping
+  std::unordered_multimap<uint64_t, unsigned> EncToEntry{};   ///< RevCore: instruction encoding to table entry mapping
+  std::unordered_multimap<uint64_t, unsigned> CEncToEntry{};  ///< RevCore: compressed instruction encoding to table entry mapping
   std::unordered_map<unsigned, std::pair<unsigned, unsigned>> EntryToExt{};  ///< RevCore: instruction entry to extension mapping
   ///           first = Master table entry number
   ///           second = pair<Extension Index, Extension Entry>
 
   /// RevCore: finds an entry which matches an encoding whose predicate is true
   auto matchInst(
-    const std::unordered_multimap<uint32_t, unsigned>& map,
-    uint32_t                                           encoding,
+    const std::unordered_multimap<uint64_t, unsigned>& map,
+    uint64_t                                           encoding,
     const std::vector<RevInstEntry>&                   InstTable,
     uint32_t                                           Inst
   ) const;
@@ -707,7 +707,7 @@ private:
   bool SeedInstTable();
 
   /// RevCore: enable the target extension by merging its instruction table with the master
-  bool EnableExt( RevExt* Ext, bool Opt );
+  bool EnableExt( RevExt* Ext );
 
   /// RevCore: initializes the internal mapping tables
   bool InitTableMapping();
@@ -716,13 +716,13 @@ private:
   bool ReadOverrideTables();
 
   /// RevCore: compresses the encoding structure to a single value
-  uint32_t CompressEncoding( RevInstEntry Entry );
+  uint64_t CompressEncoding( const RevInstEntry& Entry );
 
   /// RevCore: compressed the compressed encoding structure to a single value
-  uint32_t CompressCEncoding( RevInstEntry Entry );
+  uint32_t CompressCEncoding( const RevInstEntry& Entry );
 
   /// RevCore: extracts the instruction mnemonic from the table entry
-  std::string ExtractMnemonic( RevInstEntry Entry );
+  std::string ExtractMnemonic( const RevInstEntry& Entry );
 
   /// RevCore: reset the core and its associated features
   bool Reset();

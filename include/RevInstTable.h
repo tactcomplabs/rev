@@ -145,7 +145,7 @@ struct RevInstEntry {
   // formatting
   RevInstF format      = RVTypeR;  ///< RevInstEntry: instruction format
   bool     compressed  = false;    ///< RevInstEntry: compressed instruction
-  uint8_t  fpcvtOp     = 0;        ///<RevInstEntry: Stores the rs2 field in R-instructions
+  uint8_t  rs2fcvtOp   = 0;        ///<RevInstEntry: Stores the rs2 field in R-instructions
   bool     raisefpe    = false;    ///<RevInstEntry: Whether FP exceptions are raised
 
   /// Instruction implementation function
@@ -174,7 +174,7 @@ struct RevInstEntry {
   auto& Setimm(RevImmFunc imm)       { this->imm        = imm;   return *this; }
   auto& SetFormat(RevInstF format)   { this->format     = format;return *this; }
   auto& SetCompressed(bool c)        { this->compressed = c;     return *this; }
-  auto& SetfpcvtOp(uint8_t op)       { this->fpcvtOp    = op;    return *this; }
+  auto& Setrs2fcvtOp(uint8_t op)     { this->rs2fcvtOp  = op;    return *this; }
   auto& SetRaiseFPE(bool c)          { this->raisefpe   = c;     return *this; }
   auto& SetImplFunc( bool func( RevFeature *, RevRegFile *, RevMem *, const RevInst& ) )
                                      { this->func       = func;  return *this; }

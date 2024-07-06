@@ -45,11 +45,11 @@ class RV64M : public RevExt {
 
   // clang-format off
   std::vector<RevInstEntry> RV64MTable = {
-    { Rev64MInstDefaults().SetMnemonic("mulw %rd, %rs1, %rs2" ).SetFunct3(0b000).SetImplFunc(mulw)  },
-    { Rev64MInstDefaults().SetMnemonic("divw %rd, %rs1, %rs2" ).SetFunct3(0b100).SetImplFunc(divw)  },
-    { Rev64MInstDefaults().SetMnemonic("divuw %rd, %rs1, %rs2").SetFunct3(0b101).SetImplFunc(divuw) },
-    { Rev64MInstDefaults().SetMnemonic("remw %rd, %rs1, %rs2" ).SetFunct3(0b110).SetImplFunc(remw)  },
-    { Rev64MInstDefaults().SetMnemonic("remuw %rd, %rs1, %rs2").SetFunct3(0b111).SetImplFunc(remuw) },
+    Rev64MInstDefaults().SetMnemonic("mulw %rd, %rs1, %rs2" ).SetFunct3(0b000).SetImplFunc(mulw) ,
+    Rev64MInstDefaults().SetMnemonic("divw %rd, %rs1, %rs2" ).SetFunct3(0b100).SetImplFunc(divw) ,
+    Rev64MInstDefaults().SetMnemonic("divuw %rd, %rs1, %rs2").SetFunct3(0b101).SetImplFunc(divuw),
+    Rev64MInstDefaults().SetMnemonic("remw %rd, %rs1, %rs2" ).SetFunct3(0b110).SetImplFunc(remw) ,
+    Rev64MInstDefaults().SetMnemonic("remuw %rd, %rs1, %rs2").SetFunct3(0b111).SetImplFunc(remuw),
   };
   // clang-format on
 

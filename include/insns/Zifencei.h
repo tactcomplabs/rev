@@ -26,7 +26,7 @@ class Zifencei : public RevExt {
 
   // clang-format off
   std::vector<RevInstEntry> ZifenceiTable = {
-    { RevInstDefaults().SetMnemonic("fence.i").SetFormat(RVTypeI).SetOpcode(0b0001111).SetFunct3(0b001).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(fencei) },
+    RevInstDefaults().SetMnemonic("fence.i").SetFormat(RVTypeI).SetOpcode(0b0001111).SetFunct3(0b001).SetrdClass(RevRegClass::RegUNKNOWN).Setrs1Class(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegUNKNOWN).SetImplFunc(fencei),
   };
   // clang-format on
 
