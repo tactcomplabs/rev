@@ -246,6 +246,14 @@ add_rev_test(RDCYCLE rdcycle 5 "test_level=2;rv64")
 add_rev_test(RDTIME rdtime 5 "test_level=2;rv64")
 add_rev_test(RDINSTRET rdinstret 5 "test_level=2;memh;rv64")
 add_rev_test(Zfa zfa 30 "rv64" SCRIPT "run_zfa_tests.sh")
+
+# Not all toolchains have support for Zfa yet, so we test and skip Zfa tests with a warning
+execute_process(COMMAND ${RVCXX} -c -march=rv64gc_zfa zfa.cc WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/zfa ERROR_VARIABLE ZFA_Missing)
+if(ZFA_Missing MATCHES "unknown prefixed ISA extension .zfa")
+  set_tests_properties(zfa_script PROPERTIES DISABLED TRUE)
+  message(WARNING "Zfa tests being skipped because ${RVCXX} does not support Zfa:\n${ZFA_Missing}")
+endif()
+
 # add_rev_test(TRACER tracer 30 "rv64;tracer")
 # add_rev_test(PAN_TEST1 pan_test1 30 "rv64;pan")
 # add_rev_test(PAN_TEST2 pan_test2 30 "rv64;pan")
