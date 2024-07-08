@@ -51,9 +51,6 @@ struct RevExt {
   /// RevExt: sets the internal compressed instruction table
   void SetCTable( std::vector<RevInstEntry>&& InstVect ) { ctable = std::move( InstVect ); }
 
-  /// RevExt: sets the optional table (used for variant-specific compressed encodings)
-  void SetOTable( std::vector<RevInstEntry>&& InstVect ) { otable = std::move( InstVect ); }
-
   /// RevExt: retrieve the extension name
   std::string_view GetName() const { return name; }
 
@@ -61,23 +58,18 @@ struct RevExt {
   bool Execute( unsigned Inst, const RevInst& Payload, uint16_t HartID, RevRegFile* regFile );
 
   /// RevExt: retrieves the extension's instruction table
-  const std::vector<RevInstEntry>& GetInstTable() { return table; }
+  const std::vector<RevInstEntry>& GetTable() { return table; }
 
   /// RevExt: retrieves the extension's compressed instruction table
-  const std::vector<RevInstEntry>& GetCInstTable() { return ctable; }
-
-  /// RevExt: retrieves the extension's optional instruction table
-  const std::vector<RevInstEntry>& GetOInstTable() { return otable; }
+  const std::vector<RevInstEntry>& GetCTable() { return ctable; }
 
 private:
-  std::string_view const name;     ///< RevExt: extension name
-  RevFeature* const      feature;  ///< RevExt: feature object
-  RevMem* const          mem;      ///< RevExt: memory object
-  SST::Output* const     output;   ///< RevExt: output handler
-
+  std::string_view const    name;      ///< RevExt: extension name
+  RevFeature* const         feature;   ///< RevExt: feature object
+  RevMem* const             mem;       ///< RevExt: memory object
+  SST::Output* const        output;    ///< RevExt: output handler
   std::vector<RevInstEntry> table{};   ///< RevExt: instruction table
   std::vector<RevInstEntry> ctable{};  ///< RevExt: compressed instruction table
-  std::vector<RevInstEntry> otable{};  ///< RevExt: optional compressed instruction table
 
 };  // class RevExt
 

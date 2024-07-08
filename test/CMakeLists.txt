@@ -149,6 +149,10 @@ macro(add_rev_test test_name test_dir timeout labels)
       )
         add_test(NAME ${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores)
 
+        if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+          set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores PROPERTIES DISABLED TRUE)
+        endif()
+
         # If 'memh' label found, add a memHierarchy test
         if(add_memh_test)
           add_custom_target(run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
@@ -157,6 +161,10 @@ macro(add_rev_test test_name test_dir timeout labels)
           COMMENT "Running ${test_name_lower} test with memHierarchy enabled, numHarts=${numHarts}, numCores=${numCores}"
         )
           add_test(NAME ${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores)
+          if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+            set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores PROPERTIES DISABLED TRUE)
+          endif()
+
         endif()
 
         set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
@@ -199,9 +207,21 @@ macro(add_rev_test test_name test_dir timeout labels)
         PASS_REGULAR_EXPRESSION "${passRegex}"
         LABELS "${labels}"
     )
+    if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+      set_tests_properties(${test_name_lower}_script PROPERTIES DISABLED TRUE)
+    endif()
   endif()
 endif()
 endmacro()
+
+# Not all toolchains have support RV32, so we test and skip RV32 tests with a warning
+execute_process(COMMAND ${RVCC} -march=rv32i -mabi=ilp32 -o /dev/null ex1.c WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/ex1 ERROR_VARIABLE RV32_Missing ECHO_ERROR_VARIABLE COMMAND_ECHO STDERR)
+if(RV32_Missing MATCHES "Cannot find suitable multilib set for '-march=rv32")
+  set(RV32_DISABLED TRUE)
+  message(WARNING "RV32 tests disabled because ${RVCC} does not support RV32:\n${RV32_Missing}")
+else()
+  message(STATUS "RV32 tests enabled")
+endif()
 
 # add_rev_test(test_name test_dir timeout labels)
 add_rev_test(EXT_VERSION ext_version 20 "rv64")
@@ -245,6 +265,15 @@ add_rev_test(CSR csr 30 "rv64")
 add_rev_test(RDCYCLE rdcycle 5 "test_level=2;rv64")
 add_rev_test(RDTIME rdtime 5 "test_level=2;rv64")
 add_rev_test(RDINSTRET rdinstret 5 "test_level=2;memh;rv64")
+add_rev_test(Zfa zfa 30 "rv64" SCRIPT "run_zfa_tests.sh")
+
+# Not all toolchains have support for Zfa yet, so we test and skip Zfa tests with a warning
+execute_process(COMMAND ${RVCXX} -c -march=rv64gc_zfa zfa.cc WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/zfa ERROR_VARIABLE ZFA_Missing)
+if(ZFA_Missing MATCHES "unknown prefixed ISA extension .zfa")
+  set_tests_properties(zfa_script PROPERTIES DISABLED TRUE)
+  message(WARNING "Zfa tests being skipped because ${RVCXX} does not support Zfa:\n${ZFA_Missing}")
+endif()
+
 # add_rev_test(TRACER tracer 30 "rv64;tracer")
 # add_rev_test(PAN_TEST1 pan_test1 30 "rv64;pan")
 # add_rev_test(PAN_TEST2 pan_test2 30 "rv64;pan")

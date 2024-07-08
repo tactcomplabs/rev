@@ -230,24 +230,32 @@ bool foper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 }
 
 /// Floating-point minimum functor
+/// If one argument is NaN, the result is the other argument
 template<typename = void>
 struct FMin {
   template<typename T>
   auto operator()( T x, T y ) const {
-    if( fclass( x ) == SignalingNaN || fclass( y ) == SignalingNaN )
+    auto xclass = fclass( x );
+    auto yclass = fclass( y );
+    if( xclass == SignalingNaN || yclass == SignalingNaN ) {
       feraiseexcept( FE_INVALID );
-    return std::fmin( x, y );
+    }
+    return ( xclass == ZeroPos && yclass == ZeroNeg ) || ( xclass == ZeroNeg && yclass == ZeroPos ) ? -T{ 0 } : std::fmin( x, y );
   }
 };
 
 /// Floating-point maximum functor
+/// If one argument is NaN, the result is the other argument
 template<typename = void>
 struct FMax {
   template<typename T>
   auto operator()( T x, T y ) const {
-    if( fclass( x ) == SignalingNaN || fclass( y ) == SignalingNaN )
+    auto xclass = fclass( x );
+    auto yclass = fclass( y );
+    if( xclass == SignalingNaN || yclass == SignalingNaN ) {
       feraiseexcept( FE_INVALID );
-    return std::fmax( x, y );
+    }
+    return ( xclass == ZeroPos && yclass == ZeroNeg ) || ( xclass == ZeroNeg && yclass == ZeroPos ) ? T{ 0 } : std::fmax( x, y );
   }
 };
 

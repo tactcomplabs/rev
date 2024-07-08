@@ -26,6 +26,8 @@
 #define NOP512  NOP256 NOP256
 #define NOP1024 NOP512 NOP512
 
+#define VERBOSE 0
+
 int main( int argc, char** argv ) {
   size_t retired1, retired2;
 
@@ -39,9 +41,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = retired2 - retired1;
 
+#if VERBOSE
     char retired[64];
     snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
     rev_write( 1, retired, strlen( retired ) );
+#endif
 
     // Make sure the instructions retired is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -58,9 +62,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = retired2 - retired1;
 
+#if VERBOSE
     char retired[64];
     snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
     rev_write( 1, retired, strlen( retired ) );
+#endif
 
     // Make sure the instructions retired is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -77,9 +83,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = retired2 - retired1;
 
+#if VERBOSE
     char retired[64];
     snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
     rev_write( 1, retired, strlen( retired ) );
+#endif
 
     // Make sure the instructions retired is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -96,9 +104,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = retired2 - retired1;
 
+#if VERBOSE
     char retired[64];
     snprintf( retired, sizeof( retired ), "%zu instructions retired\n", diff );
     rev_write( 1, retired, strlen( retired ) );
+#endif
 
     // Make sure the instructions retired is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )

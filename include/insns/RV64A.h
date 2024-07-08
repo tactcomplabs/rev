@@ -87,17 +87,17 @@ class RV64A : public RevExt {
 
   // clang-format off
   std::vector<RevInstEntry> RV64ATable = {
-    { Rev64AInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrd     ).Setrs2Class(RevRegClass::RegUNKNOWN) },
-    { Rev64AInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scd     ) },
-    { Rev64AInstDefaults().SetMnemonic("amoswap.d %rd, %rs1, %rs2").SetFunct2or7(0b0000001).SetImplFunc(amoswapd) },
-    { Rev64AInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000000).SetImplFunc(amoaddd ) },
-    { Rev64AInstDefaults().SetMnemonic("amoxor.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000100).SetImplFunc(amoxord ) },
-    { Rev64AInstDefaults().SetMnemonic("amoand.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0001100).SetImplFunc(amoandd ) },
-    { Rev64AInstDefaults().SetMnemonic("amoor.w %rd, %rs1, %rs2"  ).SetFunct2or7(0b0001000).SetImplFunc(amoord  ) },
-    { Rev64AInstDefaults().SetMnemonic("amomin.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0010000).SetImplFunc(amomind ) },
-    { Rev64AInstDefaults().SetMnemonic("amomax.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0010100).SetImplFunc(amomaxd ) },
-    { Rev64AInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011000).SetImplFunc(amominud) },
-    { Rev64AInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011100).SetImplFunc(amomaxud) },
+    Rev64AInstDefaults().SetMnemonic("lr.d %rd, (%rs1)"         ).SetFunct2or7(0b0000010).SetImplFunc(lrd     ).Setrs2Class(RevRegClass::RegUNKNOWN),
+    Rev64AInstDefaults().SetMnemonic("sc.d %rd, %rs1, %rs2"     ).SetFunct2or7(0b0000011).SetImplFunc(scd     ),
+    Rev64AInstDefaults().SetMnemonic("amoswap.d %rd, %rs1, %rs2").SetFunct2or7(0b0000001).SetImplFunc(amoswapd),
+    Rev64AInstDefaults().SetMnemonic("amoadd.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000000).SetImplFunc(amoaddd ),
+    Rev64AInstDefaults().SetMnemonic("amoxor.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0000100).SetImplFunc(amoxord ),
+    Rev64AInstDefaults().SetMnemonic("amoand.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0001100).SetImplFunc(amoandd ),
+    Rev64AInstDefaults().SetMnemonic("amoor.w %rd, %rs1, %rs2"  ).SetFunct2or7(0b0001000).SetImplFunc(amoord  ),
+    Rev64AInstDefaults().SetMnemonic("amomin.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0010000).SetImplFunc(amomind ),
+    Rev64AInstDefaults().SetMnemonic("amomax.w %rd, %rs1, %rs2" ).SetFunct2or7(0b0010100).SetImplFunc(amomaxd ),
+    Rev64AInstDefaults().SetMnemonic("amominu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011000).SetImplFunc(amominud),
+    Rev64AInstDefaults().SetMnemonic("amomaxu.w %rd, %rs1, %rs2").SetFunct2or7(0b0011100).SetImplFunc(amomaxud),
   };
   // clang-format on
 

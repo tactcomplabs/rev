@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define VERBOSE 0
+
 void print( const char* prefix, unsigned long x ) {
   char buf[256];
   sprintf( buf, "%s%lu\n", prefix, x );
@@ -16,7 +18,10 @@ int main( int argc, char* argv[] ) {
     ret++;
   rev_perf_stats( &rs2 );
 
+#if VERBOSE
   print( "instructions: ", rs2.instructions - rs1.instructions );
   print( "cycles: ", rs2.cycles - rs1.cycles );
+#endif
+
   return ret;
 }

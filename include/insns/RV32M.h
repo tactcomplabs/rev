@@ -52,14 +52,14 @@ class RV32M : public RevExt {
 
   // clang-format off
   std::vector<RevInstEntry> RV32MTable = {
-    { RevMInstDefaults().SetMnemonic("mul %rd, %rs1, %rs2"   ).SetFunct3(0b000).SetImplFunc(mul   ) },
-    { RevMInstDefaults().SetMnemonic("mulh %rd, %rs1, %rs2"  ).SetFunct3(0b001).SetImplFunc(mulh  ) },
-    { RevMInstDefaults().SetMnemonic("mulhsu %rd, %rs1, %rs2").SetFunct3(0b010).SetImplFunc(mulhsu) },
-    { RevMInstDefaults().SetMnemonic("mulhu %rd, %rs1, %rs2" ).SetFunct3(0b011).SetImplFunc(mulhu ) },
-    { RevMInstDefaults().SetMnemonic("div %rd, %rs1, %rs2"   ).SetFunct3(0b100).SetImplFunc(div   ) },
-    { RevMInstDefaults().SetMnemonic("divu %rd, %rs1, %rs2"  ).SetFunct3(0b101).SetImplFunc(divu  ) },
-    { RevMInstDefaults().SetMnemonic("rem %rd, %rs1, %rs2"   ).SetFunct3(0b110).SetImplFunc(rem   ) },
-    { RevMInstDefaults().SetMnemonic("remu %rd, %rs1, %rs20" ).SetFunct3(0b111).SetImplFunc(remu  ) },
+    RevMInstDefaults().SetMnemonic("mul %rd, %rs1, %rs2"   ).SetFunct3(0b000).SetImplFunc(mul   ),
+    RevMInstDefaults().SetMnemonic("mulh %rd, %rs1, %rs2"  ).SetFunct3(0b001).SetImplFunc(mulh  ),
+    RevMInstDefaults().SetMnemonic("mulhsu %rd, %rs1, %rs2").SetFunct3(0b010).SetImplFunc(mulhsu),
+    RevMInstDefaults().SetMnemonic("mulhu %rd, %rs1, %rs2" ).SetFunct3(0b011).SetImplFunc(mulhu ),
+    RevMInstDefaults().SetMnemonic("div %rd, %rs1, %rs2"   ).SetFunct3(0b100).SetImplFunc(div   ),
+    RevMInstDefaults().SetMnemonic("divu %rd, %rs1, %rs2"  ).SetFunct3(0b101).SetImplFunc(divu  ),
+    RevMInstDefaults().SetMnemonic("rem %rd, %rs1, %rs2"   ).SetFunct3(0b110).SetImplFunc(rem   ),
+    RevMInstDefaults().SetMnemonic("remu %rd, %rs1, %rs20" ).SetFunct3(0b111).SetImplFunc(remu  ),
   };
   // clang-format on
 
