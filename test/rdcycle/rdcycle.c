@@ -26,6 +26,8 @@
 #define NOP512  NOP256 NOP256
 #define NOP1024 NOP512 NOP512
 
+#define VERBOSE 0
+
 int main( int argc, char** argv ) {
   size_t cycle1, cycle2;
 
@@ -39,9 +41,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = cycle2 - cycle1;
 
+#if VERBOSE
     char cycles[64];
     snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
     rev_write( 1, cycles, strlen( cycles ) );
+#endif
 
     // Make sure the number of cycles is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -58,9 +62,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = cycle2 - cycle1;
 
+#if VERBOSE
     char cycles[64];
     snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
     rev_write( 1, cycles, strlen( cycles ) );
+#endif
 
     // Make sure the number of cycles is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -77,9 +83,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = cycle2 - cycle1;
 
+#if VERBOSE
     char cycles[64];
     snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
     rev_write( 1, cycles, strlen( cycles ) );
+#endif
 
     // Make sure the number of cycles is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -96,9 +104,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = cycle2 - cycle1;
 
+#if VERBOSE
     char cycles[64];
     snprintf( cycles, sizeof( cycles ), "%zu cycles\n", diff );
     rev_write( 1, cycles, strlen( cycles ) );
+#endif
 
     // Make sure the number of cycles is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )

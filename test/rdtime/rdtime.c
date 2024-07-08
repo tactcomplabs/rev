@@ -26,6 +26,8 @@
 #define NOP512  NOP256 NOP256
 #define NOP1024 NOP512 NOP512
 
+#define VERBOSE 0
+
 int main( int argc, char** argv ) {
   size_t time1, time2;
 
@@ -39,9 +41,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = time2 - time1;
 
+#if VERBOSE
     char time[64];
     snprintf( time, sizeof( time ), "%zu time\n", diff );
     rev_write( 1, time, strlen( time ) );
+#endif
 
     // Make sure the time is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -58,9 +62,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = time2 - time1;
 
+#if VERBOSE
     char time[64];
     snprintf( time, sizeof( time ), "%zu time\n", diff );
     rev_write( 1, time, strlen( time ) );
+#endif
 
     // Make sure the time is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -77,9 +83,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = time2 - time1;
 
+#if VERBOSE
     char time[64];
     snprintf( time, sizeof( time ), "%zu time\n", diff );
     rev_write( 1, time, strlen( time ) );
+#endif
 
     // Make sure the time is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )
@@ -96,9 +104,11 @@ int main( int argc, char** argv ) {
 
     size_t diff = time2 - time1;
 
+#if VERBOSE
     char time[64];
     snprintf( time, sizeof( time ), "%zu time\n", diff );
     rev_write( 1, time, strlen( time ) );
+#endif
 
     // Make sure the time is between 1024 and 1026
     if( diff < 1024 || diff > 1026 )

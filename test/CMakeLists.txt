@@ -149,6 +149,10 @@ macro(add_rev_test test_name test_dir timeout labels)
       )
         add_test(NAME ${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores)
 
+        if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+          set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores PROPERTIES DISABLED TRUE)
+        endif()
+
         # If 'memh' label found, add a memHierarchy test
         if(add_memh_test)
           add_custom_target(run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
@@ -157,6 +161,10 @@ macro(add_rev_test test_name test_dir timeout labels)
           COMMENT "Running ${test_name_lower} test with memHierarchy enabled, numHarts=${numHarts}, numCores=${numCores}"
         )
           add_test(NAME ${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores)
+          if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+            set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores PROPERTIES DISABLED TRUE)
+          endif()
+
         endif()
 
         set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
@@ -199,9 +207,21 @@ macro(add_rev_test test_name test_dir timeout labels)
         PASS_REGULAR_EXPRESSION "${passRegex}"
         LABELS "${labels}"
     )
+    if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+      set_tests_properties(${test_name_lower}_script PROPERTIES DISABLED TRUE)
+    endif()
   endif()
 endif()
 endmacro()
+
+# Not all toolchains have support RV32, so we test and skip RV32 tests with a warning
+execute_process(COMMAND ${RVCC} -march=rv32i -mabi=ilp32 -o /dev/null ex1.c WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/ex1 ERROR_VARIABLE RV32_Missing ECHO_ERROR_VARIABLE COMMAND_ECHO STDERR)
+if(RV32_Missing MATCHES "Cannot find suitable multilib set for '-march=rv32")
+  set(RV32_DISABLED TRUE)
+  message(WARNING "RV32 tests disabled because ${RVCC} does not support RV32:\n${RV32_Missing}")
+else()
+  message(STATUS "RV32 tests enabled")
+endif()
 
 # add_rev_test(test_name test_dir timeout labels)
 add_rev_test(EXT_VERSION ext_version 20 "rv64")

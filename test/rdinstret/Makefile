@@ -12,7 +12,7 @@
 
 EXAMPLE=rdinstret
 CC="${RVCC}"
-ARCH=rv64g
+ARCH=rv64gc
 ABI=lp64d
 
 CFLAGS=-I ../../common/syscalls -O1
