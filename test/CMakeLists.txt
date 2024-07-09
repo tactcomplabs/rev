@@ -135,57 +135,53 @@ macro(add_rev_test test_name test_dir timeout labels)
     #    set(startSymbol "\"[0:_start]\"")
   endif()
 
-  if(test_level LESS_EQUAL TEST_LEVEL)
-
   if(NOT optional_script)
     foreach(numHarts IN LISTS numHartsList)
       foreach(numCores IN LISTS numCoresList)
 
         # Define revmem target with the new naming convention
         add_custom_target(run_${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
-        COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --startSymbol "${startSymbol}"
-        DEPENDS build_${test_name_lower}
-        COMMENT "Running ${test_name_lower} test with revmem, numHarts=${numHarts}, numCores=${numCores}"
-      )
+          COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --startSymbol "${startSymbol}"
+          DEPENDS build_${test_name_lower}
+          COMMENT "Running ${test_name_lower} test with revmem, numHarts=${numHarts}, numCores=${numCores}"
+        )
         add_test(NAME ${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores)
 
-        if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+        if(((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED) OR test_level GREATER TEST_LEVEL)
           set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores PROPERTIES DISABLED TRUE)
         endif()
 
         # If 'memh' label found, add a memHierarchy test
         if(add_memh_test)
           add_custom_target(run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
-          COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --enableMemH=1 --startSymbol "${startSymbol}"
-          DEPENDS build_${test_name_lower}
-          COMMENT "Running ${test_name_lower} test with memHierarchy enabled, numHarts=${numHarts}, numCores=${numCores}"
-        )
+            COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --enableMemH=1 --startSymbol "${startSymbol}"
+            DEPENDS build_${test_name_lower}
+            COMMENT "Running ${test_name_lower} test with memHierarchy enabled, numHarts=${numHarts}, numCores=${numCores}"
+          )
           add_test(NAME ${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores COMMAND ${CMAKE_COMMAND} --build . --target run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores)
-          if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+          if(((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED) OR test_level GREATER TEST_LEVEL)
             set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores PROPERTIES DISABLED TRUE)
           endif()
-
         endif()
 
         set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
-        PROPERTIES
+          PROPERTIES
           ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
           TIMEOUT ${timeout}
           PASS_REGULAR_EXPRESSION "${passRegex}"
           LABELS "${labels}"
-      )
+	)
         if(add_memh_test)
           set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
-          PROPERTIES
+            PROPERTIES
             ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
             TIMEOUT ${timeout}
             PASS_REGULAR_EXPRESSION "${passRegex}"
             LABELS "${labels}"
-        )
+          )
         endif()
       endforeach()
     endforeach()
-
   else()
     # Custom target for running the specified script
     add_custom_target(run_${test_name_lower}_script
@@ -202,16 +198,15 @@ macro(add_rev_test test_name test_dir timeout labels)
     # Set test properties for the script test
     set_tests_properties(${test_name_lower}_script
       PROPERTIES
-        ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
-        TIMEOUT ${timeout}
-        PASS_REGULAR_EXPRESSION "${passRegex}"
-        LABELS "${labels}"
+      ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
+      TIMEOUT ${timeout}
+      PASS_REGULAR_EXPRESSION "${passRegex}"
+      LABELS "${labels}"
     )
-    if((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED)
+    if(((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED) OR test_level GREATER TEST_LEVEL)
       set_tests_properties(${test_name_lower}_script PROPERTIES DISABLED TRUE)
     endif()
   endif()
-endif()
 endmacro()
 
 # Not all toolchains have support RV32, so we test and skip RV32 tests with a warning
@@ -251,10 +246,7 @@ add_rev_test(ARGV_layout argv_layout 30 "test_level=2;memh;rv32;loader;" SCRIPT 
 add_rev_test(ARGV_limit argv_limit 75 "test_level=2;memh;rv32;loader;" SCRIPT "run_argv_limit.sh")
 add_rev_test(ARGV_stack argv_stack 10 "memh;rv64")
 add_rev_test(COPROC_EX coproc_ex 30 "memh;rv64;coproc" SCRIPT "run_coproc_ex.sh")
-
-if(TEST_LEVEL GREATER_EQUAL 2)
-  add_rev_test(ZICBOM zicbom 45 "test_level=2;memh;rv64" SCRIPT "run_zicbom.sh")
-endif()
+add_rev_test(ZICBOM zicbom 45 "test_level=2;memh;rv64" SCRIPT "run_zicbom.sh")
 
 add_rev_test(BACKINGSTORE backingstore 100 "test_level=2;rv64" SCRIPT "run_backingstore.sh")
 add_rev_test(MEM_DUMP mem_dump 10 "rv64" SCRIPT "run_mem_dump.sh")
@@ -279,10 +271,7 @@ endif()
 # add_rev_test(DOT_DOUBLE dot_double 30 "rv64;blas-required")
 # add_rev_test(BGE_BLE bge_ble 30 "rv64")
 
-if(TEST_LEVEL GREATER_EQUAL 2)
-  add_subdirectory(isa)
-endif()
-
+add_subdirectory(isa)
 add_subdirectory(amo)
 add_subdirectory(benchmarks)
 add_subdirectory(syscalls)

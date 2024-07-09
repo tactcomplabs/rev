@@ -29,12 +29,15 @@ foreach(testSrc ${TEST_SRCS})
   #COMMAND sst --model-options=${CMAKE_CURRENT_SOURCE_DIR}/${testName} ./rev-isa-test.py)
   # Add the tests for execution
   add_test(NAME ${testName}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMAND ./run_asm_test.sh)
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ./run_asm_test.sh)
   set_tests_properties( ${testName}
-      PROPERTIES
-      ENVIRONMENT "RVASM=${testName}; RVCC=${RVCC}"
-      TIMEOUT 30
-      LABELS "rv64;isa"
-      PASS_REGULAR_EXPRESSION "${passRegex}")
+    PROPERTIES
+    ENVIRONMENT "RVASM=${testName}; RVCC=${RVCC}"
+    TIMEOUT 30
+    LABELS "rv64;isa"
+    PASS_REGULAR_EXPRESSION "${passRegex}")
+  if(TEST_LEVEL LESS 2)
+    set_tests_properties(${testName} PROPERTIES DISABLED TRUE)
+  endif()
 endforeach(testSrc)
