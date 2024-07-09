@@ -19,22 +19,18 @@ namespace SST::RevCPU {
 
 using MemSegment        = RevMem::MemSegment;
 
-const char splash_msg[] = "\
-\n\
-*******                   \n\
-/**////**                  \n\
-/**   /**   *****  **    **\n\
-/*******   **///**/**   /**\n\
-/**///**  /*******//** /** \n\
-/**  //** /**////  //****  \n\
-/**   //**//******  //**   \n\
-//     //  //////    //    \n\
-\n\
-";
+const char splash_msg[] = R"(
+*******
+/**////**
+/**   /**   *****  **    **
+/*******   **///**/**   /**
+/**///**  /*******//** /**
+/**  //** /**////  //****
+/**   //**//******  //**
+//     //  //////    //
+)";
 
-RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
-  : SST::Component( id ), PrivTag( 0 ), address( -1 ), EnableMemH( false ), DisableCoprocClock( false ), Nic( nullptr ),
-    Ctrl( nullptr ), ClockHandler( nullptr ) {
+RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Component( id ) {
 
   const int Verbosity = params.find<int>( "verbose", 0 );
 
@@ -52,12 +48,12 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
 
   // Derive the simulation parameters
   // We must always derive the number of cores before initializing the options
-  numCores = params.find<unsigned>( "numCores", "1" );
-  numHarts = params.find<uint16_t>( "numHarts", "1" );
+  numCores = params.find<uint32_t>( "numCores", "1" );
+  numHarts = params.find<uint32_t>( "numHarts", "1" );
 
   // Make sure someone isn't trying to have more than 65536 harts per core
   if( numHarts > _MAX_HARTS_ ) {
-    output.fatal( CALL_INFO, -1, "Error: number of harts must be <= %" PRIu32 "\n", _MAX_HARTS_ );
+    output.fatal( CALL_INFO, -1, "Error: number of harts must be <= %" PRIu32 "\n", uint32_t{ _MAX_HARTS_ } );
   }
   output.verbose(
     CALL_INFO, 1, 0, "Building Rev with %" PRIu32 " cores and %" PRIu32 " hart(s) on each core \n", numCores, numHarts
@@ -67,9 +63,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   auto Exe = params.find<std::string>( "program", "a.out" );
 
   // Create the options object
-  Opts     = new( std::nothrow ) RevOpts( numCores, numHarts, Verbosity );
-  if( !Opts )
-    output.fatal( CALL_INFO, -1, "Error: failed to initialize the RevOpts object\n" );
+  Opts     = std::make_unique<RevOpts>( numCores, numHarts, Verbosity );
 
   // Program arguments
   Opts->SetArgs( params );
@@ -85,7 +79,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
        } ) {
     std::vector<std::string> optList;
     params.find_array( ParamName, optList );
-    if( !( Opts->*InitFunc )( optList ) )
+    if( !( Opts.get()->*InitFunc )( optList ) )
       output.fatal( CALL_INFO, -1, "Error: failed to initialize %s\n", ParamName );
   }
 
@@ -125,28 +119,15 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   const uint64_t memSize = params.find<unsigned long>( "memSize", 1073741824 );
   EnableMemH             = params.find<bool>( "enable_memH", 0 );
   if( !EnableMemH ) {
-    // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
-    Mem = new RevMem( memSize, Opts, &output );
-    if( !Mem )
-      output.fatal( CALL_INFO, -1, "Error: failed to initialize the memory object\n" );
+    Mem = std::make_unique<RevMem>( memSize, Opts.get(), &output );
   } else {
-    Ctrl = loadUserSubComponent<RevMemCtrl>( "memory" );
+    Ctrl = std::unique_ptr<RevMemCtrl>( loadUserSubComponent<RevMemCtrl>( "memory" ) );
     if( !Ctrl )
       output.fatal( CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n" );
-
-    // TODO: Use std::nothrow to return null instead of throwing std::bad_alloc
-    Mem = new RevMem( memSize, Opts, Ctrl, &output );
-    if( !Mem )
-      output.fatal( CALL_INFO, -1, "Error : failed to initialize the memory object\n" );
+    Mem = std::make_unique<RevMem>( memSize, Opts.get(), Ctrl.get(), &output );
 
     if( EnableFaults )
-      output.verbose(
-        CALL_INFO,
-        1,
-        0,
-        "Warning: memory faults cannot be enabled with "
-        "memHierarchy support\n"
-      );
+      output.verbose( CALL_INFO, 1, 0, "Warning: memory faults cannot be enabled with memHierarchy support\n" );
   }
 
   // Set TLB Size
@@ -158,27 +139,24 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   Mem->SetMaxHeapSize( maxHeapSize );
 
   // Load the binary into memory
-  Loader = new( std::nothrow ) RevLoader( Exe, Opts->GetArgv(), Mem, &output );
-  if( !Loader ) {
-    output.fatal( CALL_INFO, -1, "Error: failed to initialize the RISC-V loader\n" );
-  }
+  Loader = std::make_unique<RevLoader>( Exe, Opts->GetArgv(), Mem.get(), &output );
 
   // Create the processor objects
   Procs.reserve( Procs.size() + numCores );
   for( unsigned i = 0; i < numCores; i++ ) {
-    Procs.push_back( new RevCore( i, Opts, numHarts, Mem, Loader, this->GetNewTID(), &output ) );
+    Procs.push_back( std::make_unique<RevCore>( i, Opts.get(), numHarts, Mem.get(), Loader.get(), this->GetNewTID(), &output ) );
   }
 
   EnableCoProc = params.find<bool>( "enableCoProc", 0 );
   if( EnableCoProc ) {
     // Create the co-processor objects
     for( unsigned i = 0; i < numCores; i++ ) {
-      RevCoProc* CoProc = loadUserSubComponent<RevCoProc>( "co_proc", SST::ComponentInfo::SHARE_NONE, Procs[i] );
+      RevCoProc* CoProc = loadUserSubComponent<RevCoProc>( "co_proc", SST::ComponentInfo::SHARE_NONE, Procs[i].get() );
       if( !CoProc ) {
         output.fatal( CALL_INFO, -1, "Error : failed to inintialize the co-processor subcomponent\n" );
       }
-      CoProcs.push_back( CoProc );
       Procs[i]->SetCoProc( CoProc );
+      CoProcs.push_back( std::unique_ptr<RevCoProc>( CoProc ) );
     }
   }
 
@@ -335,7 +313,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
   DisableCoprocClock    = params.find<bool>( "independentCoprocClock", 0 );
 
   // Create the completion array
-  Enabled               = new bool[numCores]{ false };
+  Enabled               = std::vector<bool>( numCores );
 
   const unsigned Splash = params.find<bool>( "splash", 0 );
 
@@ -350,32 +328,6 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     std::ofstream dumpFile( Name + ".dump.init", std::ios::binary );
     Mem->DumpMemSeg( Seg, 16, dumpFile );
   }
-}
-
-RevCPU::~RevCPU() {
-  // delete the competion array
-  delete[] Enabled;
-
-  // delete the processors objects
-  for( size_t i = 0; i < Procs.size(); i++ ) {
-    delete Procs[i];
-  }
-
-  for( size_t i = 0; i < CoProcs.size(); i++ ) {
-    delete CoProcs[i];
-  }
-
-  // delete the memory controller if present
-  delete Ctrl;
-
-  // delete the memory object
-  delete Mem;
-
-  // delete the loader object
-  delete Loader;
-
-  // delete the options object
-  delete Opts;
 }
 
 void RevCPU::DecodeFaultWidth( const std::string& width ) {
@@ -850,7 +802,7 @@ void RevCPU::HandleThreadStateChangesForProc( uint32_t ProcID ) {
 }
 
 void RevCPU::InitMainThread( uint32_t MainThreadID, const uint64_t StartAddr ) {
-  auto MainThreadRegState = std::make_unique<RevRegFile>( Procs[0] );
+  auto MainThreadRegState = std::make_unique<RevRegFile>( Procs[0].get() );
 
   // The Program Counter gets set to the start address
   MainThreadRegState->SetPC( StartAddr );

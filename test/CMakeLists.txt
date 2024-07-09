@@ -215,12 +215,10 @@ endif()
 endmacro()
 
 # Not all toolchains have support RV32, so we test and skip RV32 tests with a warning
-execute_process(COMMAND ${RVCC} -march=rv32i -mabi=ilp32 -o /dev/null ex1.c WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/ex1 ERROR_VARIABLE RV32_Missing ECHO_ERROR_VARIABLE COMMAND_ECHO STDERR)
+execute_process(COMMAND ${RVCC} -march=rv32i -mabi=ilp32 -o /dev/null ex1.c WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/ex1 ERROR_VARIABLE RV32_Missing)
 if(RV32_Missing MATCHES "Cannot find suitable multilib set for '-march=rv32")
   set(RV32_DISABLED TRUE)
-  message(WARNING "RV32 tests disabled because ${RVCC} does not support RV32:\n${RV32_Missing}")
-else()
-  message(STATUS "RV32 tests enabled")
+  message(WARNING "RV32 tests disabled because ${RVCC} does not support RV32")
 endif()
 
 # add_rev_test(test_name test_dir timeout labels)
@@ -271,7 +269,7 @@ add_rev_test(Zfa zfa 30 "rv64" SCRIPT "run_zfa_tests.sh")
 execute_process(COMMAND ${RVCXX} -c -march=rv64gc_zfa zfa.cc WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/zfa ERROR_VARIABLE ZFA_Missing)
 if(ZFA_Missing MATCHES "unknown prefixed ISA extension .zfa")
   set_tests_properties(zfa_script PROPERTIES DISABLED TRUE)
-  message(WARNING "Zfa tests being skipped because ${RVCXX} does not support Zfa:\n${ZFA_Missing}")
+  message(WARNING "Zfa tests being skipped because ${RVCXX} does not support Zfa")
 endif()
 
 # add_rev_test(TRACER tracer 30 "rv64;tracer")
