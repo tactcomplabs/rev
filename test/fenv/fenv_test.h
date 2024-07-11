@@ -53,9 +53,9 @@ inline void fenv_write( int fd, const char* str ) {
 
 // Limits when converting from floating-point to integer
 template<typename FP, typename INT>
-inline constexpr FP fpmax = 0;
+inline constexpr FP fpmax = FP( 0 );
 template<typename FP, typename INT>
-inline constexpr FP fpmin = 0;
+inline constexpr FP fpmin = FP( 0 );
 template<>
 inline constexpr float fpmax<float, int32_t> = 0x1.fffffep+30f;
 template<>
