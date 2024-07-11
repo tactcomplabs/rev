@@ -51,7 +51,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   numCores = params.find<uint32_t>( "numCores", "1" );
   numHarts = params.find<uint32_t>( "numHarts", "1" );
 
-  // Make sure someone isn't trying to have more than 65536 harts per core
+  // Make sure someone isn't trying to have more than _MAX_HARTS_ harts per core
   if( numHarts > _MAX_HARTS_ ) {
     output.fatal( CALL_INFO, -1, "Error: number of harts must be <= %" PRIu32 "\n", uint32_t{ _MAX_HARTS_ } );
   }
