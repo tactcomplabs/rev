@@ -81,6 +81,9 @@ bool RevFeature::ParseMachineModel() {
   // -- step 2: parse all the features
   // Note: Extension strings, if present, must appear in the order listed in the table above.
   if( *mac ) {
+    char unsupported_version[128];
+    *unsupported_version = 0;
+
     for( auto [ext, majorVersion, minorVersion, minimumVersion, maximumVersion, flags] : table ) {
       // Look for an architecture string matching the current extension
       if( !strncasecmp( mac, ext.data(), ext.size() ) ) {
@@ -98,10 +101,12 @@ bool RevFeature::ParseMachineModel() {
             minorVersion = strtoul( mac, const_cast<char**>( &mac ), 10 );
         }
 
-        if( majorVersion < minimumVersion || majorVersion > maximumVersion ) {
-          output->fatal(
-            CALL_INFO,
-            -1,
+        // Record first unsupported extension version
+        // Error is delayed so that parse errors in the architecture string take priority
+        if( ( majorVersion < minimumVersion || majorVersion > maximumVersion ) && !*unsupported_version ) {
+          snprintf(
+            unsupported_version,
+            sizeof( unsupported_version ),
             "Error: Version %" PRIu32 ".%" PRIu32 " of %s extension is not supported\n",
             majorVersion,
             minorVersion,
@@ -114,8 +119,13 @@ bool RevFeature::ParseMachineModel() {
           ++mac;
 
         // Success if end of string is reached
-        if( !*mac )
+        if( !*mac ) {
+          // Report error on first unsupported extension version
+          if( *unsupported_version ) {
+            output->fatal( CALL_INFO, -1, "%s", unsupported_version );
+          }
           return true;
+        }
       }
     }
   }

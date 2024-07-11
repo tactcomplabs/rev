@@ -55,7 +55,7 @@ public:
   RevMem( uint64_t MemSize, RevOpts* Opts, SST::Output* Output );
 
   /// RevMem: standard memory controller constructor
-  RevMem( uint64_t MemSize, RevOpts* Opts, RevMemCtrl* Ctrl, SST::Output* Output );
+  RevMem( uint64_t memSize, RevOpts* opts, RevMemCtrl* ctrl, SST::Output* output );
 
   /// RevMem: standard destructor
   ~RevMem() { delete[] physMem; }

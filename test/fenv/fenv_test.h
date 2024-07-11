@@ -24,7 +24,7 @@
 
 //#pragma STDC FENV_ACCESS ON
 
-#define FP_SNAN 100  // A random value not returned by fpclassify()
+#define FP_SIGNAN 100  // A random value not returned by fpclassify()
 
 template<typename T>
 int float_class( T x ) {
@@ -34,7 +34,7 @@ int float_class( T x ) {
     std::conditional_t<std::is_same_v<T, float>, uint32_t, uint64_t> ix;
     std::memcpy( &ix, &x, sizeof( ix ) );
     if( !( ix & decltype( ix ){ 1 } << ( std::is_same_v<T, float> ? 22 : 51 ) ) ) {
-      c = FP_SNAN;
+      c = FP_SIGNAN;
     }
   }
   return c;
@@ -53,9 +53,9 @@ inline void fenv_write( int fd, const char* str ) {
 
 // Limits when converting from floating-point to integer
 template<typename FP, typename INT>
-inline constexpr FP fpmax = 0;
+inline constexpr FP fpmax = FP( 0 );
 template<typename FP, typename INT>
-inline constexpr FP fpmin = 0;
+inline constexpr FP fpmin = FP( 0 );
 template<>
 inline constexpr float fpmax<float, int32_t> = 0x1.fffffep+30f;
 template<>
@@ -140,7 +140,7 @@ const char* repr( T x ) {
       strcat( s, type<T> );
       strcat( s, ">::quiet_NaN()" );
       break;
-    case FP_SNAN:
+    case FP_SIGNAN:
       strcat( s, "std::numeric_limits<" );
       strcat( s, type<T> );
       strcat( s, ">::signaling_NaN()" );
@@ -178,7 +178,7 @@ const char* repr( T x ) {
     static_assert( sizeof( unsigned long long ) == sizeof( uint64_t ) );
     snprintf( s, sizeof( s ), "%" PRIu64 "llu", x );
   } else {
-    static_assert( ( sizeof( T ), false ), "Error: Unknown data type\n" );
+    static_assert( ( (void) sizeof( T ), false ), "Error: Unknown data type\n" );
   }
 
   return s;
@@ -227,7 +227,7 @@ bool test_result( const char* test, const char* file_prefix, const char* test_sr
     for( T& x : { std::ref( result ), std::ref( result_expected ) } ) {
       switch( float_class( x ) ) {
       case FP_NAN: x = std::numeric_limits<T>::quiet_NaN(); break;
-      case FP_SNAN: x = std::numeric_limits<T>::signaling_NaN(); break;
+      case FP_SIGNAN: x = std::numeric_limits<T>::signaling_NaN(); break;
       }
     }
   }
@@ -309,7 +309,7 @@ bool test_exceptions(
 template<typename T>
 inline auto revFMA( T x, T y, T z ) {
   using namespace std;
-  if( ( !y && isinf( x ) ) || ( !x && isinf( y ) ) ) {
+  if( ( y == 0 && isinf( x ) ) || ( x == 0 && isinf( y ) ) ) {
     feraiseexcept( FE_INVALID );
   }
   if constexpr( is_same_v<T, float> ) {

@@ -35,7 +35,7 @@ cd build
 rm -Rf ./*
 
 #-- Stage 3: initiate the build
-cmake -DCMAKE_BUILD_TYPE=Debug -DRVCC=${RVCC} ../ >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DRVCC=${RVCC} ../ >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make clean >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make uninstall >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
 make -j >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
