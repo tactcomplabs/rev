@@ -69,6 +69,7 @@ bool RevFeature::ParseMachineModel() {
     { "V",          1, 0, -1, 0, RV_V | RV_D | RV_F | RV_ZICSR                             },
     { "H",          1, 0, -1, 0, RV_H                                                      }, // Unsupported
     { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                                                 },
+    { "Zicond",     1, 0,  1, 1, RV_ZICOND                                                 },
     { "Zicsr",      2, 0,  2, 2, RV_ZICSR                                                  },
     { "Zifencei",   2, 0,  2, 2, RV_ZIFENCEI                                               },
     { "Zfa",        1, 0,  1, 1, RV_ZFA | RV_F | RV_ZICSR                                  }, // Unsupported
