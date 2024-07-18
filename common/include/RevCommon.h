@@ -34,8 +34,6 @@
 
 namespace SST::RevCPU {
 
-using float16 = _Float16;
-
 /// Zero-extend value of bits size
 template<typename T>
 constexpr auto ZeroExt( T val, size_t bits ) {
