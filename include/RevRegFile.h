@@ -31,66 +31,13 @@ namespace SST::RevCPU {
 
 struct RevInst;
 
-// Mappings from floating point to same-sized integer types
-template<typename T>
-struct uint_type {};
-
-template<>
-struct uint_type<double> {
-  using type = uint64_t;
-  static_assert( sizeof( type ) == sizeof( double ) );
-};
-
-template<>
-struct uint_type<float> {
-  using type = uint32_t;
-  static_assert( sizeof( type ) == sizeof( float ) );
-};
-
-template<>
-struct uint_type<float16> {
-  using type = uint16_t;
-  static_assert( sizeof( type ) == sizeof( float16 ) );
-};
-
-template<typename T>
-using uint_type_t = typename uint_type<T>::type;
-
-/// BoxNaN: Store a boxed floating point value inside a possibly larger one
-template<typename T, typename U, typename = std::enable_if_t<sizeof( T ) >= sizeof( U )>>
-inline void BoxNaN( T* dest, const U* value ) {
-  if constexpr( sizeof( T ) == sizeof( U ) ) {
-    *dest = *value;
-  } else {
-    uint_type_t<U> i;
-    memcpy( &i, value, sizeof( i ) );                                                    // The value
-    uint_type_t<T> box = uint_type_t<T>{ i } | ~uint_type_t<T>{ 0 } << sizeof( U ) * 8;  // Boxed NaN value
-    memcpy( dest, &box, sizeof( box ) );                                                 // Store in larger register
-    static_assert( sizeof( i ) == sizeof( U ) && sizeof( box ) == sizeof( T ) );
-  }
-}
-
-/// UnBoxNaN: Unbox a floating point value into a possibly smaller one
-// The second argument indicates whether it is a FMV/FS move/store
-// instruction which just transfers bits and not care about NaN-Boxing.
-template<typename T, bool FMV_FS = false, typename U, typename = std::enable_if_t<sizeof( T ) <= sizeof( U )>>
-inline T UnBoxNaN( const U* val ) {
-  if constexpr( sizeof( T ) == sizeof( U ) ) {
-    return *val;
-  } else {
-    uint_type_t<U> i;
-    memcpy( &i, val, sizeof( i ) );
-    static_assert( sizeof( i ) == sizeof( val ) );
-    T fp;
-    if( !FMV_FS && ~i >> sizeof( T ) * 8 ) {
-      fp = std::numeric_limits<T>::quiet_NaN();
-    } else {
-      auto ifp = static_cast<uint_type_t<T>>( i );
-      memcpy( &fp, &ifp, sizeof( fp ) );
-      static_assert( sizeof( ifp ) == sizeof( fp ) );
-    }
-    return fp;
-  }
+/// BoxNaN: Store a boxed float inside a double
+inline void BoxNaN( double* dest, const float* value ) {
+  uint32_t i32;
+  memcpy( &i32, value, sizeof( i32 ) );                   // The FP32 value
+  uint64_t i64 = uint64_t{ i32 } | ~uint64_t{ 0 } << 32;  // Boxed NaN value
+  memcpy( dest, &i64, sizeof( i64 ) );                    // Store in FP64 register
+  static_assert( sizeof( i32 ) == sizeof( float ) && sizeof( i64 ) == sizeof( double ) );
 }
 
 /// RISC-V Register Mneumonics
@@ -356,11 +303,22 @@ public:
   template<typename T, bool FMV_FS = false, typename U>
   T GetFP( U rs ) const {
     if constexpr( std::is_same_v<T, double> ) {
-      return DPF[size_t( rs )];
-    } else if( HasD ) {
-      return UnBoxNaN<T, FMV_FS>( &DPF[size_t( rs )] );
+      return DPF[size_t( rs )];  // The FP64 register's value
     } else {
-      return UnBoxNaN<T, FMV_FS>( &SPF[size_t( rs )] );
+      float fp32;
+      if( !HasD ) {
+        fp32 = SPF[size_t( rs )];  // The FP32 register's value
+      } else {
+        uint64_t i64;
+        memcpy( &i64, &DPF[size_t( rs )], sizeof( i64 ) );  // The FP64 register's value
+        if( !FMV_FS && ~i64 >> 32 ) {                       // Check for boxed NaN unless FMV/FS
+          fp32 = NAN;                                       // Return NaN if it's not boxed
+        } else {
+          auto i32 = static_cast<uint32_t>( i64 );  // For endian independence on host
+          memcpy( &fp32, &i32, sizeof( fp32 ) );    // The bottom half of FP64
+        }
+      }
+      return fp32;  // Reinterpreted as FP32
     }
   }
 
@@ -368,11 +326,11 @@ public:
   template<typename T, typename U>
   void SetFP( U rd, T value ) {
     if constexpr( std::is_same_v<T, double> ) {
-      DPF[size_t( rd )] = value;
+      DPF[size_t( rd )] = value;  // Store in FP64 register
     } else if( HasD ) {
-      BoxNaN( &DPF[size_t( rd )], &value );
+      BoxNaN( &DPF[size_t( rd )], &value );  // Store NaN-boxed float in FP64 register
     } else {
-      BoxNaN( &SPF[size_t( rd )], &value );
+      SPF[size_t( rd )] = value;  // Store in FP32 register
     }
   }
 
@@ -467,8 +425,8 @@ public:
   FCSR& GetFCSR() { return fcsr; }
 
   // Friend functions and classes to access internal register state
-  template<typename INT, typename FP>
-  friend bool fcvtif( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  template<typename FP, typename INT>
+  friend bool CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template<typename T>
   friend bool load( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
