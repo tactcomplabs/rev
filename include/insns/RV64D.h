@@ -20,38 +20,17 @@
 namespace SST::RevCPU {
 
 class RV64D : public RevExt {
-  static constexpr auto& fcvtld  = CvtFpToInt<double, int64_t>;
-  static constexpr auto& fcvtlud = CvtFpToInt<double, uint64_t>;
+  // Conversion from double to integer
+  static constexpr auto& fcvtld  = fcvtif<int64_t, double>;
+  static constexpr auto& fcvtlud = fcvtif<uint64_t, double>;
 
-  static bool fcvtdl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<double>( R->GetX<int64_t>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  // Conversion from integer to double
+  static constexpr auto& fcvtdl  = fcvtfi<double, int64_t>;
+  static constexpr auto& fcvtdlu = fcvtfi<double, uint64_t>;
 
-  static bool fcvtdlu( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<double>( R->GetX<uint64_t>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  static bool fmvxd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    uint64_t u64;
-    double   fp = R->GetFP<double, true>( Inst.rs1 );
-    memcpy( &u64, &fp, sizeof( u64 ) );
-    R->SetX( Inst.rd, u64 );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  static bool fmvdx( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    uint64_t u64 = R->GetX<uint64_t>( Inst.rs1 );
-    double   fp;
-    memcpy( &fp, &u64, sizeof( fp ) );
-    R->SetFP( Inst.rd, fp );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  // Moves between FP and integer registers
+  static constexpr auto& fmvxd   = fmvif<double>;
+  static constexpr auto& fmvdx   = fmvfi<double>;
 
   // ----------------------------------------------------------------------
   //
