@@ -47,11 +47,13 @@ struct uint_type<float> {
   static_assert( sizeof( type ) == sizeof( float ) );
 };
 
+#if 0
 template<>
 struct uint_type<float16> {
   using type = uint16_t;
   static_assert( sizeof( type ) == sizeof( float16 ) );
 };
+#endif
 
 template<typename T>
 using uint_type_t = typename uint_type<T>::type;

@@ -115,10 +115,12 @@ uint32_t fclass( T val ) {
       uint32_t i32;
       memcpy( &i32, &val, sizeof( i32 ) );
       return ( i32 & uint32_t{ 1 } << 22 ) != 0 ? QuietNaN : SignalingNaN;
+#if 0
     } else if constexpr( std::is_same_v<T, float16> ) {
       uint16_t i16;
       memcpy( &i16, &val, sizeof( i16 ) );
       return ( i16 & uint16_t{ 1 } << 9 ) != 0 ? QuietNaN : SignalingNaN;
+#endif
     } else {
       uint64_t i64;
       memcpy( &i64, &val, sizeof( i64 ) );

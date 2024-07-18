@@ -34,7 +34,7 @@
 
 namespace SST::RevCPU {
 
-using float16 = _Float16;
+// using float16 = _Float16;
 
 /// Zero-extend value of bits size
 template<typename T>
