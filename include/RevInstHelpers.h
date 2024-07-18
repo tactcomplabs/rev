@@ -65,8 +65,8 @@ inline constexpr double fpmin<double, uint64_t> = 0x0p+0;
 /// General template for converting between Floating Point and Integer.
 /// FP values outside the range of the target integer type are clipped
 /// at the integer type's numerical limits, whether signed or unsigned.
-template<typename FP, typename INT>
-bool CvtFpToInt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+template<typename INT, typename FP>
+bool fcvtif( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   // Read the FP register. Round to integer according to current rounding mode.
   FP fp = std::rint( R->GetFP<FP>( Inst.rs1 ) );
 
@@ -115,6 +115,10 @@ uint32_t fclass( T val ) {
       uint32_t i32;
       memcpy( &i32, &val, sizeof( i32 ) );
       return ( i32 & uint32_t{ 1 } << 22 ) != 0 ? QuietNaN : SignalingNaN;
+    } else if constexpr( std::is_same_v<T, float16> ) {
+      uint16_t i16;
+      memcpy( &i16, &val, sizeof( i16 ) );
+      return ( i16 & uint16_t{ 1 } << 9 ) != 0 ? QuietNaN : SignalingNaN;
     } else {
       uint64_t i64;
       memcpy( &i64, &val, sizeof( i64 ) );
@@ -439,6 +443,87 @@ bool fnmsub( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 template<typename T>
 bool fnmadd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   R->SetFP( Inst.rd, negate( revFMA( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ), R->GetFP<T>( Inst.rs3 ) ) ) );
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Square root
+template<typename T>
+static bool fsqrt( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  R->SetFP( Inst.rd, std::sqrt( R->GetFP<T>( Inst.rs1 ) ) );
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Transfer sign bit
+template<typename T>
+static bool fsgnj( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  R->SetFP( Inst.rd, std::copysign( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ) ) );
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Negated transfer sign bit
+template<typename T>
+static bool fsgnjn( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  R->SetFP( Inst.rd, std::copysign( R->GetFP<T>( Inst.rs1 ), negate( R->GetFP<T>( Inst.rs2 ) ) ) );
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Xor transfer sign bit
+template<typename T>
+static bool fsgnjx( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  T rs1 = R->GetFP<T>( Inst.rs1 ), rs2 = R->GetFP<T>( Inst.rs2 );
+  R->SetFP( Inst.rd, std::copysign( rs1, std::signbit( rs1 ) ? negate( rs2 ) : rs2 ) );
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Move floating-point register to integer register
+template<typename T>
+static bool fmvif( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  std::make_signed_t<uint_type_t<T>> i;
+  T                                  fp = R->GetFP<T, true>( Inst.rs1 );  // The FP value
+  static_assert( sizeof( i ) == sizeof( fp ) );
+  memcpy( &i, &fp, sizeof( i ) );  // Reinterpreted as int
+  R->SetX( Inst.rd, i );           // Copied to the destination register
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Move integer register to floating-point register
+template<typename T>
+static bool fmvfi( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  T    fp;
+  auto i = R->GetX<uint_type_t<T>>( Inst.rs1 );  // The X register
+  static_assert( sizeof( i ) == sizeof( fp ) );
+  memcpy( &fp, &i, sizeof( fp ) );  // Reinterpreted as FP
+  R->SetFP( Inst.rd, fp );          // Copied to the destination register
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Floating-point classify
+template<typename T>
+static bool fclassify( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  R->SetX( Inst.rd, fclass( R->GetFP<T>( Inst.rs1 ) ) );
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Convert integer to floating point
+template<typename FP, typename INT>
+static bool fcvtfi( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  R->SetFP( Inst.rd, static_cast<FP>( R->GetX<INT>( Inst.rs1 ) ) );
+  R->AdvancePC( Inst );
+  return true;
+}
+
+// Convert floating point to floating point
+template<typename FP2, typename FP1>
+static bool fcvtff( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  R->SetFP( Inst.rd, static_cast<FP2>( R->GetFP<FP1>( Inst.rs1 ) ) );
   R->AdvancePC( Inst );
   return true;
 }
