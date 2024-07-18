@@ -44,69 +44,33 @@ class RV32D : public RevExt {
   static constexpr auto& fled    = fcondop<double, std::less_equal>;
 
   // FP to Integer Conversion instructions
-  static constexpr auto& fcvtwd  = CvtFpToInt<double, int32_t>;
-  static constexpr auto& fcvtwud = CvtFpToInt<double, uint32_t>;
+  static constexpr auto& fcvtwd  = fcvtif<int32_t, double>;
+  static constexpr auto& fcvtwud = fcvtif<uint32_t, double>;
 
-  static bool fsqrtd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, std::sqrt( R->GetFP<double>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  // Square root
+  static constexpr auto& fsqrtd  = fsqrt<double>;
 
-  static bool fsgnjd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, std::copysign( R->GetFP<double>( Inst.rs1 ), R->GetFP<double>( Inst.rs2 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  // Sign transfer
+  static constexpr auto& fsgnjd  = fsgnj<double>;
+  static constexpr auto& fsgnjnd = fsgnjn<double>;
+  static constexpr auto& fsgnjxd = fsgnjx<double>;
 
-  static bool fsgnjnd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, std::copysign( R->GetFP<double>( Inst.rs1 ), -R->GetFP<double>( Inst.rs2 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  // Conversions between single and double precision FP
+  static constexpr auto& fcvtsd  = fcvtff<float, double>;
+  static constexpr auto& fcvtds  = fcvtff<double, float>;
 
-  static bool fsgnjxd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    double rs1 = R->GetFP<double>( Inst.rs1 ), rs2 = R->GetFP<double>( Inst.rs2 );
-    R->SetFP( Inst.rd, std::copysign( rs1, std::signbit( rs1 ) ? -rs2 : rs2 ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  // FP Classify
+  static constexpr auto& fclassd = fclassify<double>;
 
-  static bool fcvtsd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<float>( R->GetFP<double>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  static bool fcvtds( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<double>( R->GetFP<float>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  static bool fclassd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetX( Inst.rd, fclass( R->GetFP<double>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  static bool fcvtdw( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<double>( R->GetX<int32_t>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  static bool fcvtdwu( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<double>( R->GetX<uint32_t>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  // Conversion from integer to double
+  static constexpr auto& fcvtdw  = fcvtfi<double, int32_t>;
+  static constexpr auto& fcvtdwu = fcvtfi<double, uint32_t>;
 
   // Compressed instructions
-  static constexpr auto& cfldsp = fld;
-  static constexpr auto& cfsdsp = fsd;
-  static constexpr auto& cfld   = fld;
-  static constexpr auto& cfsd   = fsd;
+  static constexpr auto& cfldsp  = fld;
+  static constexpr auto& cfsdsp  = fsd;
+  static constexpr auto& cfld    = fld;
+  static constexpr auto& cfsd    = fsd;
 
   // ----------------------------------------------------------------------
   //
