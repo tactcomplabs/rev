@@ -20,20 +20,10 @@
 namespace SST::RevCPU {
 
 class RV64F : public RevExt {
-  static constexpr auto& fcvtls  = CvtFpToInt<float, int64_t>;
-  static constexpr auto& fcvtlus = CvtFpToInt<float, uint64_t>;
-
-  static bool fcvtsl( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<float>( R->GetX<int64_t>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
-
-  static bool fcvtslu( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    R->SetFP( Inst.rd, static_cast<float>( R->GetX<uint64_t>( Inst.rs1 ) ) );
-    R->AdvancePC( Inst );
-    return true;
-  }
+  static constexpr auto& fcvtls  = fcvtif<int64_t, float>;
+  static constexpr auto& fcvtlus = fcvtif<uint64_t, float>;
+  static constexpr auto& fcvtsl  = fcvtfi<float, int64_t>;
+  static constexpr auto& fcvtslu = fcvtfi<float, uint64_t>;
 
   // ----------------------------------------------------------------------
   //

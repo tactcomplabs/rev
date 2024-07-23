@@ -55,27 +55,29 @@ bool RevFeature::ParseMachineModel() {
   ///<
   ///< ExtensionName DefaultMajor DefaultMinor MinSupportedVersion MaxSupportedVersion Flags
   static constexpr std::tuple<std::string_view, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t> table[] = {
-    { "I",          2, 1,  2, 2, RV_I                                                      },
-    { "E",          2, 0, -1, 0, RV_E                                                      }, // Unsupported
-    { "M",          2, 0,  2, 2, RV_M                                                      },
-    { "A",          2, 1,  2, 2, RV_A                                                      },
-    { "F",          2, 2,  2, 2, RV_F | RV_ZICSR                                           },
-    { "D",          2, 2,  2, 2, RV_D | RV_F | RV_ZICSR                                    },
-    { "G",          2, 0,  2, 2, RV_I | RV_M | RV_A | RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI },
-    { "Q",          2, 2, -1, 0, RV_Q | RV_D | RV_F | RV_ZICSR                             }, // Unsupported
-    { "C",          2, 0,  2, 2, RV_C                                                      },
-    { "B",          1, 0, -1, 0, RV_B                                                      }, // Unsupported
-    { "P",          0, 2, -1, 0, RV_P                                                      }, // Unsupported
-    { "V",          1, 0, -1, 0, RV_V | RV_D | RV_F | RV_ZICSR                             },
-    { "H",          1, 0, -1, 0, RV_H                                                      }, // Unsupported
-    { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                                                 },
-    { "Zicond",     1, 0,  1, 1, RV_ZICOND                                                 },
-    { "Zicsr",      2, 0,  2, 2, RV_ZICSR                                                  },
-    { "Zifencei",   2, 0,  2, 2, RV_ZIFENCEI                                               },
-    { "Zfa",        1, 0,  1, 1, RV_ZFA | RV_F | RV_ZICSR                                  }, // Unsupported
-    { "Zfh",        1, 0, -1, 0, RV_ZFH | RV_ZFHMIN | RV_F | RV_ZICSR                      }, // Unsupported
-    { "Zfhmin",     1, 0, -1, 0, RV_ZFHMIN | RV_F | RV_ZICSR                               }, // Unsupported
-    { "Ztso",       1, 0, -1, 0, RV_ZTSO                                                   }, // Unsupported
+    { "I",          2, 1,  2, 2, RV_I                                   },
+    { "E",          2, 0, -1, 0, RV_E                                   }, // Unsupported
+    { "M",          2, 0,  2, 2, RV_M | RV_ZMMUL                        },
+    { "A",          2, 1,  2, 2, RV_A                                   },
+    { "F",          2, 2,  2, 2, RV_F | RV_ZICSR                        },
+    { "D",          2, 2,  2, 2, RV_D | RV_F | RV_ZICSR                 },
+    { "G",          2, 0,  2, 2, RV_I | RV_M | RV_ZMMUL | RV_A |
+                                 RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI   },
+    { "Q",          2, 2, -1, 0, RV_Q | RV_D | RV_F | RV_ZICSR          }, // Unsupported
+    { "C",          2, 0,  2, 2, RV_C                                   },
+    { "B",          1, 0, -1, 0, RV_B                                   }, // Unsupported
+    { "P",          0, 2, -1, 0, RV_P                                   }, // Unsupported
+    { "V",          1, 0, -1, 0, RV_V | RV_D | RV_F | RV_ZICSR          },
+    { "H",          1, 0, -1, 0, RV_H                                   }, // Unsupported
+    { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                              },
+    { "Zicond",     1, 0,  1, 1, RV_ZICOND                              },
+    { "Zicsr",      2, 0,  2, 2, RV_ZICSR                               },
+    { "Zifencei",   2, 0,  2, 2, RV_ZIFENCEI                            },
+    { "Zmmul",      1, 0,  1, 1, RV_ZMMUL                               },
+    { "Zfa",        1, 0,  1, 1, RV_ZFA | RV_F | RV_ZICSR               }, // Unsupported
+    { "Zfh",        1, 0, -1, 0, RV_ZFH | RV_ZFHMIN | RV_F | RV_ZICSR   }, // Unsupported
+    { "Zfhmin",     1, 0, -1, 0, RV_ZFHMIN | RV_F | RV_ZICSR            }, // Unsupported
+    { "Ztso",       1, 0, -1, 0, RV_ZTSO                                }, // Unsupported
   };
   // clang-format on
 

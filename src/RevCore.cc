@@ -161,7 +161,7 @@ bool RevCore::SeedInstTable() {
   }
 
   // M Extension
-  if( feature->IsModeEnabled( RV_M ) ) {
+  if( feature->IsModeEnabled( RV_ZMMUL ) ) {
     EnableExt( new RV32M( feature, mem, output ) );
     if( feature->IsRV64() ) {
       EnableExt( new RV64M( feature, mem, output ) );
