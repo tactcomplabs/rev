@@ -37,9 +37,10 @@
 #define DECODE_FUNCT2( x )     ( ( ( x ) >> ( 25 ) ) & ( 0b11 ) )
 #define DECODE_FUNCT3( x )     ( ( ( x ) >> ( 12 ) ) & ( 0b111 ) )
 
-#define DECODE_RM( x )         static_cast<FRMode>( DECODE_FUNCT3( x ) )
-#define DECODE_RL( x )         ( ( ( x ) >> ( 25 ) ) & ( 0b1 ) )
-#define DECODE_AQ( x )         ( ( ( x ) >> ( 26 ) ) & ( 0b1 ) )
+#define DECODE_RM( x ) \
+  FRMode { DECODE_FUNCT3( x ) }
+#define DECODE_RL( x ) ( ( ( x ) >> ( 25 ) ) & ( 0b1 ) )
+#define DECODE_AQ( x ) ( ( ( x ) >> ( 26 ) ) & ( 0b1 ) )
 
 namespace SST::RevCPU {
 

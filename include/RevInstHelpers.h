@@ -302,6 +302,18 @@ bool oper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   return true;
 }
 
+// Integer arithmetic unary operator template
+template<template<class> class OP, bool W_MODE = false, template<class> class SIGN = std::make_unsigned_t>
+bool operUnary( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  if( W_MODE || F->IsRV32() ) {
+    R->SetX( Inst.rd, OP()( R->GetX<SIGN<int32_t>>( Inst.rs1 ) ) );
+  } else {
+    R->SetX( Inst.rd, OP()( R->GetX<SIGN<int64_t>>( Inst.rs1 ) ) );
+  }
+  R->AdvancePC( Inst );
+  return true;
+}
+
 /// Left shift functor
 template<typename = void>
 struct ShiftLeft {
