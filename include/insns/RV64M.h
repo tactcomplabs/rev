@@ -48,19 +48,21 @@ class RV64M : public RevExt {
     Rev64MInstDefaults().SetMnemonic("mulw %rd, %rs1, %rs2" ).SetFunct3(0b000).SetImplFunc(mulw) ,
   };
 
-  std::vector<RevInstEntry> RV64DivTable = {
+  static std::vector<RevInstEntry> RV64DivTable() { return {
     Rev64MInstDefaults().SetMnemonic("divw %rd, %rs1, %rs2" ).SetFunct3(0b100).SetImplFunc(divw) ,
     Rev64MInstDefaults().SetMnemonic("divuw %rd, %rs1, %rs2").SetFunct3(0b101).SetImplFunc(divuw),
     Rev64MInstDefaults().SetMnemonic("remw %rd, %rs1, %rs2" ).SetFunct3(0b110).SetImplFunc(remw) ,
     Rev64MInstDefaults().SetMnemonic("remuw %rd, %rs1, %rs2").SetFunct3(0b111).SetImplFunc(remuw),
-  };
+  }; }
+
   // clang-format on
 
 public:
   /// RV64M: standard constructor
   RV64M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV64M", Feature, RevMem, Output ) {
     if( Feature->IsModeEnabled( RV_M ) ) {
-      RV64MTable.insert( RV64MTable.end(), RV64DivTable.begin(), RV64DivTable.end() );
+      auto Div{ RV64DivTable() };
+      RV64MTable.insert( RV64MTable.end(), std::move_iterator( Div.begin() ), std::move_iterator( Div.end() ) );
     }
     SetTable( std::move( RV64MTable ) );
   }

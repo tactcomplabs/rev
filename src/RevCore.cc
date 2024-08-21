@@ -147,7 +147,7 @@ bool RevCore::EnableExt( RevExt* Ext ) {
   return true;
 }
 
-bool RevCore::SeedInstTable() {
+bool RevCore::SeedInstTable() try {
   output->verbose(
     CALL_INFO, 6, 0, "Core %" PRIu32 " ; Seeding instruction table for machine model=%s\n", id, feature->GetMachineModel().data()
   );
@@ -212,7 +212,32 @@ bool RevCore::SeedInstTable() {
     EnableExt( new Zfa( feature, mem, output ) );
   }
 
+  // Zba Extension
+  if( feature->IsModeEnabled( RV_ZBA ) ) {
+    EnableExt( new Zba( feature, mem, output ) );
+  }
+
+  // Zbb Extension
+  if( feature->IsModeEnabled( RV_ZBB ) ) {
+    EnableExt( new Zbb( feature, mem, output ) );
+  }
+
+#if 0
+  // Zbc Extension
+  if( feature->IsModeEnabled( RV_ZBC ) ) {
+    EnableExt( new Zbc( feature, mem, output ) );
+  }
+
+  // Zbs Extension
+  if( feature->IsModeEnabled( RV_ZBS ) ) {
+    EnableExt( new Zbs( feature, mem, output ) );
+  }
+#endif
+
   return true;
+} catch( ... ) {
+
+  return false;
 }
 
 uint32_t RevCore::CompressCEncoding( const RevInstEntry& Entry ) {
@@ -1357,12 +1382,12 @@ RevInst RevCore::DecodeInst( uint32_t Inst ) const {
   } else if( ( inst65 == 0b10 ) && ( inst42 == 0b100 ) ) {
     // R-Type encodings
     Funct2or7 = DECODE_FUNCT7( Inst );
+  } else if( ( inst65 == 0b00 && inst42 == 0b100 && Funct3 == 0b101 ) || ( inst65 == 0b00 && inst42 == 0b110 && Funct3 == 0b001 ) ) {
+    // Special I-Type encoding for SRAI/SLLI - also, Funct7 is only 6 bits in this case
+    Funct2or7 = DECODE_FUNCT7( Inst ) >> 1;
   } else if( ( inst65 == 0b00 ) && ( inst42 == 0b110 ) && ( Funct3 != 0 ) ) {
     // R-Type encodings
     Funct2or7 = DECODE_FUNCT7( Inst );
-  } else if( ( inst65 == 0b00 ) && ( inst42 == 0b100 ) && ( Funct3 == 0b101 ) ) {
-    // Special I-Type encoding for SRAI - also, Funct7 is only 6 bits in this case
-    Funct2or7 = ( ( Inst >> 26 ) & 0b1111111 );
   }
 
   uint64_t rs2fcvtOp = 0;
@@ -1459,7 +1484,7 @@ RevInst RevCore::DecodeInst( uint32_t Inst ) const {
     );
   }
 
-  // Stage 8: Do a full deocode using the target format
+  // Stage 8: Do a full decode using the target format
   RevInst ret{};
   switch( InstTable[Entry].format ) {
   case RVTypeR: ret = DecodeRInst( Inst, Entry ); break;
