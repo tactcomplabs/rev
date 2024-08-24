@@ -203,17 +203,11 @@ public:
     return ReadMem( Hart, Addr, sizeof( T ), Target, req, flags );
   }
 
-  ///  RevMem: template LOAD RESERVE memory interface
-  template<typename T>
-  bool LR( unsigned Hart, uint64_t Addr, T* Target, uint8_t aq, uint8_t rl, const MemReq& req, RevFlag flags ) {
-    return LRBase( Hart, Addr, sizeof( T ), Target, aq, rl, req, flags );
-  }
+  ///  RevMem: LOAD RESERVE memory interface
+  void LR( unsigned hart, uint64_t addr, size_t len, void* target, const MemReq& req, RevFlag flags );
 
-  ///  RevMem: template STORE CONDITIONAL memory interface
-  template<typename T>
-  bool SC( unsigned Hart, uint64_t Addr, T* Data, T* Target, uint8_t aq, uint8_t rl, RevFlag flags ) {
-    return SCBase( Hart, Addr, sizeof( T ), Data, Target, aq, rl, flags );
-  }
+  ///  RevMem: STORE CONDITIONAL memory interface
+  bool SC( unsigned Hart, uint64_t addr, size_t len, void* data, RevFlag flags );
 
   /// RevMem: template AMO memory interface
   template<typename T>
@@ -246,14 +240,11 @@ public:
   // ----------------------------------------------------
   // ---- Atomic/Future/LRSC Interfaces
   // ----------------------------------------------------
-  /// RevMem: Add a memory reservation for the target address
-  bool LRBase( unsigned Hart, uint64_t Addr, size_t Len, void* Data, uint8_t aq, uint8_t rl, const MemReq& req, RevFlag flags );
-
-  /// RevMem: Clear a memory reservation for the target address
-  bool SCBase( unsigned Hart, uint64_t Addr, size_t Len, void* Data, void* Target, uint8_t aq, uint8_t rl, RevFlag flags );
-
   /// RevMem: Initiated an AMO request
   bool AMOMem( unsigned Hart, uint64_t Addr, size_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags );
+
+  /// RevMem: Invalidate Matching LR reservations
+  bool InvalidateLRReservations( unsigned hart, uint64_t addr, size_t len );
 
   /// RevMem: Initiates a future operation [RV64P only]
   bool SetFuture( uint64_t Addr );
@@ -424,16 +415,9 @@ private:
   uint64_t heapstart{};  ///< RevMem: top of the stack
   uint64_t stacktop{};   ///< RevMem: top of the stack
 
-  std::vector<uint64_t> FutureRes{};  ///< RevMem: future operation reservations
-
-  // these are LRSC tuple index macros
-#define LRSC_HART 0
-#define LRSC_ADDR 1
-#define LRSC_AQRL 2
-#define LRSC_VAL  3
-  std::vector<std::tuple<unsigned, uint64_t, unsigned, uint64_t*>> LRSC{};  ///< RevMem: load reserve/store conditional vector
-
-};  // class RevMem
+  std::vector<uint64_t>                                     FutureRes{};  ///< RevMem: future operation reservations
+  std::unordered_map<unsigned, std::pair<uint64_t, size_t>> LRSC{};       ///< RevMem: load reserve/store conditional set
+};                                                                        // class RevMem
 
 }  // namespace SST::RevCPU
 

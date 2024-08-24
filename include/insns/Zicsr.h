@@ -67,7 +67,7 @@ class Zicsr : public RevExt {
   // This calls the 32/64-bit ModCSR depending on the current XLEN
   template<OpKind OPKIND, CSROp OP>
   static bool ModCSR( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    return R->IsRV32 ? ModCSRImpl<uint32_t, OPKIND, OP>( R, Inst ) : ModCSRImpl<uint64_t, OPKIND, OP>( R, Inst );
+    return R->IsRV64 ? ModCSRImpl<uint64_t, OPKIND, OP>( R, Inst ) : ModCSRImpl<uint32_t, OPKIND, OP>( R, Inst );
   }
 
   static constexpr auto& csrrw  = ModCSR<OpKind::Reg, CSROp::Write>;

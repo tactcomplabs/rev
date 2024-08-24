@@ -105,9 +105,6 @@ public:
   /// RevCore: Debug mode write a register
   bool DebugWriteReg( unsigned Idx, uint64_t Value ) const;
 
-  /// RevCore: Is this an RV32 machine?
-  bool DebugIsRV32() { return feature->IsRV32(); }
-
   /// RevCore: Set an optional tracer
   void SetTracer( RevTracer* T ) { Tracer = T; }
 
