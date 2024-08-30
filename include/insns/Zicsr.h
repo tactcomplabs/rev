@@ -118,12 +118,12 @@ class Zicsr : public RevExt {
     RevZicsrInstDefaults().SetMnemonic( "csrrci %rd, %csr, $imm" ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ),
     RevZicsrInstDefaults().SetMnemonic( "csrci %csr, $imm"       ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ),
 
-    RevZicsrInstDefaults().SetMnemonic( "rdcycle %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc00; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdcycleh %rd"           ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc80; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdtime %rd"             ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc01; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdtimeh %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc81; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdinstret %rd"          ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc02; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdinstreth %rd"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == 0xc82; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdcycle %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::cycle; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdcycleh %rd"           ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::cycleh; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdtime %rd"             ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::time; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdtimeh %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::timeh; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdinstret %rd"          ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::instret; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdinstreth %rd"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::instreth; } ),
   };
   // clang-format on
 
