@@ -563,6 +563,8 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Dat
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
 
+  InvalidateLRReservations( Hart, Addr, Len );
+
   if( Addr == 0xDEADBEEF ) {
     std::cout << "Found special write. Val = " << std::hex << *(int*) ( Data ) << std::dec << std::endl;
   }
@@ -622,6 +624,8 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Dat
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
+
+  InvalidateLRReservations( Hart, Addr, Len );
 
   TRACE_MEM_WRITE( Addr, Len, Data );
 

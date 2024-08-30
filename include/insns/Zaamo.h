@@ -17,7 +17,6 @@
 namespace SST::RevCPU {
 
 class Zaamo : public RevExt {
-#if 0
   template<typename XLEN, RevFlag F_AMO>
   static bool amooper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     static_assert( std::is_unsigned_v<XLEN>, "XLEN must be unsigned integral type" );
@@ -34,23 +33,23 @@ class Zaamo : public RevExt {
     if( !R->IsRV64 ) {
       MemReq req(
         R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete()
-        );
+      );
       R->LSQueue->insert( req.LSQHashPair() );
-      M->AMOVal( F->GetHartToExecID(), R->RV32[Inst.rs1], &R->RV32[Inst.rs2], &R->RV32[Inst.rd], req, RevFlag{ flags } );
+      M->AMOVal( F->GetHartToExecID(), R->RV32[Inst.rs1], &R->RV32[Inst.rs2], &R->RV32[Inst.rd], req, flags );
     } else {
-      flags |= uint32_t( RevFlag::F_SEXT64 );
+      flags = RevFlag{ uint32_t( flags ) | uint32_t( RevFlag::F_SEXT64 ) };
       MemReq req(
         R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete()
-        );
+      );
       R->LSQueue->insert( req.LSQHashPair() );
       M->AMOVal(
         F->GetHartToExecID(),
         R->RV64[Inst.rs1],
-        reinterpret_cast<int32_t*>( &R->RV64[Inst.rs2] ),
-        reinterpret_cast<int32_t*>( &R->RV64[Inst.rd] ),
+        reinterpret_cast<std::make_signed_t<XLEN>*>( &R->RV64[Inst.rs2] ),
+        reinterpret_cast<std::make_signed_t<XLEN>*>( &R->RV64[Inst.rd] ),
         req,
-        RevFlag{ flags }
-        );
+        flags
+      );
     }
     // update the cost
     R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
@@ -58,42 +57,25 @@ class Zaamo : public RevExt {
     return true;
   }
 
-  /// Atomic Memory Operations
-  template<RevFlag F_AMO>
-  static bool amooperd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-
-    MemReq req(
-      R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete()
-    );
-    R->LSQueue->insert( req.LSQHashPair() );
-    M->AMOVal( F->GetHartToExecID(), R->RV64[Inst.rs1], &R->RV64[Inst.rs2], &R->RV64[Inst.rd], req, RevFlag{ flags } );
-
-    R->AdvancePC( Inst );
-
-    // update the cost
-    R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
-    return true;
-  }
-
-  static constexpr auto& amoswapw = amooper<uint32_t, RevFlag::F_AMOSWAP>;
   static constexpr auto& amoaddw  = amooper<uint32_t, RevFlag::F_AMOADD>;
-  static constexpr auto& amoxorw  = amooper<uint32_t, RevFlag::F_AMOXOR>;
   static constexpr auto& amoandw  = amooper<uint32_t, RevFlag::F_AMOAND>;
-  static constexpr auto& amoorw   = amooper<uint32_t, RevFlag::F_AMOOR>;
-  static constexpr auto& amominw  = amooper<uint32_t, RevFlag::F_AMOMIN>;
+  static constexpr auto& amomaxuw = amooper<uint32_t, RevFlag::F_AMOMAXU>;
   static constexpr auto& amomaxw  = amooper<uint32_t, RevFlag::F_AMOMAX>;
   static constexpr auto& amominuw = amooper<uint32_t, RevFlag::F_AMOMINU>;
-  static constexpr auto& amomaxuw = amooper<uint32_t, RevFlag::F_AMOMAXU>;
+  static constexpr auto& amominw  = amooper<uint32_t, RevFlag::F_AMOMIN>;
+  static constexpr auto& amoorw   = amooper<uint32_t, RevFlag::F_AMOOR>;
+  static constexpr auto& amoswapw = amooper<uint32_t, RevFlag::F_AMOSWAP>;
+  static constexpr auto& amoxorw  = amooper<uint32_t, RevFlag::F_AMOXOR>;
 
   static constexpr auto& amoaddd  = amooper<uint64_t, RevFlag::F_AMOADD>;
+  static constexpr auto& amoandd  = amooper<uint64_t, RevFlag::F_AMOAND>;
+  static constexpr auto& amomaxd  = amooper<uint64_t, RevFlag::F_AMOMAX>;
+  static constexpr auto& amomaxud = amooper<uint64_t, RevFlag::F_AMOMAXU>;
+  static constexpr auto& amomind  = amooper<uint64_t, RevFlag::F_AMOMIN>;
+  static constexpr auto& amominud = amooper<uint64_t, RevFlag::F_AMOMINU>;
+  static constexpr auto& amoord   = amooper<uint64_t, RevFlag::F_AMOOR>;
   static constexpr auto& amoswapd = amooper<uint64_t, RevFlag::F_AMOSWAP>;
   static constexpr auto& amoxord  = amooper<uint64_t, RevFlag::F_AMOXOR>;
-  static constexpr auto& amoandd  = amooper<uint64_t, RevFlag::F_AMOAND>;
-  static constexpr auto& amoord   = amooper<uint64_t, RevFlag::F_AMOOR>;
-  static constexpr auto& amomind  = amooper<uint64_t, RevFlag::F_AMOMIN>;
-  static constexpr auto& amomaxd  = amooper<uint64_t, RevFlag::F_AMOMAX>;
-  static constexpr auto& amominud = amooper<uint64_t, RevFlag::F_AMOMINU>;
-  static constexpr auto& amomaxud = amooper<uint64_t, RevFlag::F_AMOMAXU>;
 
   // ----------------------------------------------------------------------
   //
@@ -101,9 +83,7 @@ class Zaamo : public RevExt {
   //
   // ----------------------------------------------------------------------
   struct ZaamoInstDefaults : RevInstDefaults {
-    ZaamoInstDefaults() {
-      SetOpcode( 0b0101111 );
-    }
+    ZaamoInstDefaults() { SetOpcode( 0b0101111 ); }
   };
 
   // clang-format off
@@ -130,19 +110,17 @@ class Zaamo : public RevExt {
     ZaamoInstDefaults().SetMnemonic( "amominu.d %rd, %rs1, %rs2" ).SetFunct3( 0b011 ).SetFunct2or7( 0b0011000 ).SetImplFunc( amominud ),
     ZaamoInstDefaults().SetMnemonic( "amomaxu.d %rd, %rs1, %rs2" ).SetFunct3( 0b011 ).SetFunct2or7( 0b0011100 ).SetImplFunc( amomaxud ),
   }; }
+
   // clang-format on
-#endif
 
 public:
   /// Zaamo: standard constructor
   Zaamo( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zaamo", Feature, RevMem, Output ) {
-#if 0
-    if(Feature->IsRV64()) {
+    if( Feature->IsRV64() ) {
       auto Table{ RV64Table() };
       ZaamoTable.insert( ZaamoTable.end(), std::move_iterator( Table.begin() ), std::move_iterator( Table.end() ) );
     }
     SetTable( std::move( ZaamoTable ) );
-#endif
   }
 
 };  // end class Zaamo
