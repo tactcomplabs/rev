@@ -535,7 +535,7 @@ class RevCore;
 class RevRegFile {
 public:
   RevCore* const Core;    ///< RevRegFile: Owning core of this register file's hart
-  const bool     IsRV32;  ///< RevRegFile: Cached copy of Features->IsRV32()
+  const bool     IsRV64;  ///< RevRegFile: Cached copy of Features->IsRV64()
   const bool     HasD;    ///< RevRegFile: Cached copy of Features->HasD()
 
 private:
@@ -597,7 +597,7 @@ public:
   // Constructor which takes a RevCore to indicate its hart's parent core
   // Template is to prevent circular dependencies by not requiring RevCore to be a complete type now
   template<typename T, typename = std::enable_if_t<std::is_same_v<T, RevCore>>>
-  explicit RevRegFile( T* core ) : Core( core ), IsRV32( core->GetRevFeature()->IsRV32() ), HasD( core->GetRevFeature()->HasD() ) {}
+  explicit RevRegFile( T* core ) : Core( core ), IsRV64( core->GetRevFeature()->IsRV64() ), HasD( core->GetRevFeature()->HasD() ) {}
 
   /// RevRegFile: disallow copying and assignment
   RevRegFile( const RevRegFile& )            = delete;
@@ -645,10 +645,10 @@ public:
 
   /// Capture the PC of current instruction which raised exception
   void SetSEPC() {
-    if( IsRV32 ) {
-      RV32_SEPC = RV32_PC;
-    } else {
+    if( IsRV64 ) {
       RV64_SEPC = RV64_PC;
+    } else {
+      RV32_SEPC = RV32_PC;
     }
   }
 
@@ -656,10 +656,10 @@ public:
   /// (ECALL doesn't use it and sets it to 0)
   template<typename T>
   void SetSTVAL( T val ) {
-    if( IsRV32 ) {
-      RV32_STVAL = val;
-    } else {
+    if( IsRV64 ) {
       RV64_STVAL = val;
+    } else {
+      RV32_STVAL = val;
     }
   }
 
@@ -673,12 +673,12 @@ public:
   template<typename T, typename U>
   T GetX( U rs ) const {
     T res;
-    if( IsRV32 ) {
-      res = RevReg( rs ) != RevReg::zero ? T( RV32[size_t( rs )] ) : 0;
-      TRACE_REG_READ( size_t( rs ), uint32_t( res ) );
-    } else {
+    if( IsRV64 ) {
       res = RevReg( rs ) != RevReg::zero ? T( RV64[size_t( rs )] ) : 0;
       TRACE_REG_READ( size_t( rs ), uint64_t( res ) );
+    } else {
+      res = RevReg( rs ) != RevReg::zero ? T( RV32[size_t( rs )] ) : 0;
+      TRACE_REG_READ( size_t( rs ), uint32_t( res ) );
     }
     return res;
   }
@@ -687,35 +687,35 @@ public:
   template<typename T, typename U>
   void SetX( U rd, T val ) {
     T res;
-    if( IsRV32 ) {
-      res                = RevReg( rd ) != RevReg::zero ? uint32_t( val ) : 0;
-      RV32[size_t( rd )] = res;
-      TRACE_REG_WRITE( size_t( rd ), uint32_t( res ) );
-    } else {
+    if( IsRV64 ) {
       res                = RevReg( rd ) != RevReg::zero ? uint64_t( val ) : 0;
       RV64[size_t( rd )] = res;
       TRACE_REG_WRITE( size_t( rd ), uint64_t( res ) );
+    } else {
+      res                = RevReg( rd ) != RevReg::zero ? uint32_t( val ) : 0;
+      RV32[size_t( rd )] = res;
+      TRACE_REG_WRITE( size_t( rd ), uint32_t( res ) );
     }
   }
 
   /// GetPC: Get the Program Counter
   uint64_t GetPC() const {
-    if( IsRV32 ) {
-      return RV32_PC;
-    } else {
+    if( IsRV64 ) {
       return RV64_PC;
+    } else {
+      return RV32_PC;
     }
   }
 
   /// SetPC: Set the Program Counter to a specific value
   template<typename T>
   void SetPC( T val ) {
-    if( IsRV32 ) {
-      RV32_PC = static_cast<uint32_t>( val );
-      TRACE_PC_WRITE( RV32_PC );
-    } else {
+    if( IsRV64 ) {
       RV64_PC = static_cast<uint64_t>( val );
       TRACE_PC_WRITE( RV64_PC );
+    } else {
+      RV32_PC = static_cast<uint32_t>( val );
+      TRACE_PC_WRITE( RV32_PC );
     }
   }
 
@@ -723,10 +723,10 @@ public:
   // Note: This does not create tracer events like SetPC() does
   template<typename T>  // Used to allow RevInst to be incomplete type right now
   void AdvancePC( const T& Inst ) {
-    if( IsRV32 ) {
-      RV32_PC += Inst.instSize;
-    } else {
+    if( IsRV64 ) {
       RV64_PC += Inst.instSize;
+    } else {
+      RV32_PC += Inst.instSize;
     }
   }
 
@@ -871,8 +871,8 @@ public:
   friend std::ostream& operator<<( std::ostream& os, const RevRegFile& regFile );
 
   friend class RevCore;
-  friend class RV32A;
-  friend class RV64A;
+  friend class Zaamo;
+  friend class Zalrsc;
 };  // class RevRegFile
 
 }  // namespace SST::RevCPU

@@ -286,7 +286,7 @@ public:
   /// Zfa: standard constructor
   Zfa( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zfa", Feature, RevMem, Output ) {
     if( Feature->HasD() ) {
-      if( Feature->IsRV32() ) {
+      if( !Feature->IsRV64() ) {
         // clang-format off
         ZfaTable.push_back(
             RevZfaInstDefaults().SetMnemonic( "fmvh.x.d %rd, %rs1"       ).SetFunct2or7( 0b1110001 ).SetImplFunc( fmvhxd ).SetrdClass( RevRegClass::RegGPR ).Setrs1Class( RevRegClass::RegFLOAT )
