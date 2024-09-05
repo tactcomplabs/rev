@@ -135,7 +135,7 @@ class RV32F : public RevExt {
 
 public:
   /// RV32F: standard constructor
-  RV32F( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32F", Feature, RevMem, Output ) {
+  RV32F( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32F", Feature, RevMem, Output ) {
     SetTable( std::move( RV32FTable ) );
     if( !Feature->IsRV64() && !Feature->HasD() ) {
       // RV32FC-only instructions

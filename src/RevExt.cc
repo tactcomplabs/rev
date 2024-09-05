@@ -14,7 +14,7 @@ namespace SST::RevCPU {
 
 /// Execute an instruction
 bool RevExt::Execute( unsigned Inst, const RevInst& payload, uint16_t HartID, RevRegFile* regFile ) {
-  bool ( *func )( RevFeature*, RevRegFile*, RevMem*, const RevInst& );
+  bool ( *func )( const RevFeature*, RevRegFile*, RevMem*, const RevInst& );
 
   if( payload.compressed ) {
     // this is a compressed instruction, grab the compressed trampoline function

@@ -132,7 +132,7 @@ class RV32D : public RevExt {
 
 public:
   /// RV32D: standard constructor
-  RV32D( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32D", Feature, RevMem, Output ) {
+  RV32D( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32D", Feature, RevMem, Output ) {
     SetTable( std::move( RV32DTable ) );
     SetCTable( std::move( RV32DCTable ) );
   }
