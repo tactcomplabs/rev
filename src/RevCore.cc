@@ -23,7 +23,8 @@ RevCore::RevCore(
   RevMem*                   mem,
   RevLoader*                loader,
   std::function<uint32_t()> GetNewTID,
-  SST::Output*              output
+  SST::Output*              output,
+  bool                      randomizeCosts
 )
   : id( id ), numHarts( numHarts ), opts( opts ), mem( mem ), loader( loader ), GetNewThreadID( std::move( GetNewTID ) ),
     output( output ) {
@@ -47,7 +48,7 @@ RevCore::RevCore(
     ValidHarts.set( i, true );
   }
 
-  featureUP = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, id );
+  featureUP = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, id, randomizeCosts );
   feature   = featureUP.get();
   if( !feature )
     output->fatal( CALL_INFO, -1, "Error: failed to create the RevFeature object for core=%" PRIu32 "\n", id );
@@ -1683,7 +1684,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
     ExecPC     = RegFile->GetPC();
   }
 
-  if( ( ( HartToExecID != _REV_INVALID_HART_ID_ ) && !RegFile->GetTrigger() ) && !Halted && HartsClearToExecute[HartToExecID] ) {
+  if( HartToExecID != _REV_INVALID_HART_ID_ && !RegFile->GetTrigger() && !Halted && HartsClearToExecute[HartToExecID] ) {
     // trigger the next instruction
     // HartToExecID = HartToDecodeID;
     RegFile->SetTrigger( true );
@@ -1784,9 +1785,8 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   }
 
   // Check for pipeline hazards
-  if( !Pipeline.empty() && ( Pipeline.front().second.cost > 0 ) ) {
-    Pipeline.front().second.cost--;
-    if( Pipeline.front().second.cost == 0 ) {  // &&
+  if( !Pipeline.empty() && Pipeline.front().second.cost > 0 ) {
+    if( --Pipeline.front().second.cost == 0 ) {  // &&
       // Ready to retire this instruction
       uint16_t HartID = Pipeline.front().first;
 #ifdef NO_REV_TRACER
@@ -1805,14 +1805,11 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
       ++RegFile->InstRet;
 
       // Only clear the dependency if there is no outstanding load
-      if( ( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) ) == 0 ) {
-        DependencyClear( HartID, &( Pipeline.front().second ) );
+      if( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) == 0 ) {
+        DependencyClear( HartID, &Pipeline.front().second );
       }
       Pipeline.pop_front();
       RegFile->SetCost( 0 );
-    } else {
-      // could not retire the instruction, bump the cost
-      Pipeline.front().second.cost++;
     }
   }
   // Check for completion states and new tasks
@@ -1830,7 +1827,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
     }
 
     if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID] && HartHasNoDependencies( HartToExecID ) ) {
-      std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart( HartToDecodeID );
+      std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart( HartToExecID );
       ActiveThread->SetState( ThreadState::DONE );
       HartsClearToExecute[HartToExecID] = false;
       HartsClearToDecode[HartToExecID]  = false;

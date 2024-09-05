@@ -16,9 +16,9 @@
 
 namespace SST::RevCPU {
 
-RevFeature::RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id )
-  : machine( std::move( Machine ) ), output( Output ), MinCost( Min ), MaxCost( Max ), ProcID( Id ), HartToExecID( 0 ),
-    features( RV_UNKNOWN ), xlen( 0 ) {
+RevFeature::RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id, bool randomizeCosts )
+  : machine( std::move( Machine ) ), output( Output ), MinCost( Min ), MaxCost( Max ), ProcID( Id ),
+    randomizeCosts( randomizeCosts ) {
   output->verbose( CALL_INFO, 6, 0, "Core %u ; Initializing feature set from machine string=%s\n", ProcID, machine.c_str() );
   if( !ParseMachineModel() )
     output->fatal( CALL_INFO, -1, "Error: failed to parse the machine model: %s\n", machine.c_str() );

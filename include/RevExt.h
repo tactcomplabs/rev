@@ -27,6 +27,9 @@
 #include "RevInstTable.h"
 #include "RevMem.h"
 
+// Maximum cost when randomizing costs of instructions
+#define MAX_COST 2
+
 namespace SST::RevCPU {
 
 struct RevExt {
@@ -46,10 +49,10 @@ struct RevExt {
   /// RevExt: sets the internal instruction table
   // Note: && means the argument should be an rvalue or std::move(lvalue)
   // This avoids deep std::vector copies and uses only one std::vector move.
-  void SetTable( std::vector<RevInstEntry>&& InstVect ) { table = std::move( InstVect ); }
+  void SetTable( std::vector<RevInstEntry>&& InstVect ) { RandomizeCosts( table = std::move( InstVect ) ); }
 
   /// RevExt: sets the internal compressed instruction table
-  void SetCTable( std::vector<RevInstEntry>&& InstVect ) { ctable = std::move( InstVect ); }
+  void SetCTable( std::vector<RevInstEntry>&& InstVect ) { RandomizeCosts( ctable = std::move( InstVect ) ); }
 
   /// RevExt: retrieve the extension name
   std::string_view GetName() const { return name; }
@@ -64,6 +67,14 @@ struct RevExt {
   const std::vector<RevInstEntry>& GetCTable() { return ctable; }
 
 private:
+  // RevExt: Randomize instruction costs if randomizeCosts == true
+  void RandomizeCosts( std::vector<RevInstEntry>& table ) {
+    if( feature->GetRandomizeCosts() ) {
+      for( auto& entry : table )
+        entry.cost = RevRand( 1, MAX_COST );
+    }
+  }
+
   std::string_view const    name;      ///< RevExt: extension name
   RevFeature* const         feature;   ///< RevExt: feature object
   RevMem* const             mem;       ///< RevExt: memory object

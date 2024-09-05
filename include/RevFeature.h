@@ -49,7 +49,7 @@ enum RevFeatureType : uint32_t {
 class RevFeature {
 public:
   /// RevFeature: standard constructor
-  RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id );
+  RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id, bool randomizeCosts );
 
   /// RevFeature: standard destructor
   ~RevFeature()                              = default;
@@ -99,18 +99,21 @@ public:
   /// SetHartToExecID: Set the current executing Hart
   void SetHartToExecID( unsigned hart ) { HartToExecID = hart; }
 
-private:
-  std::string    machine{};       ///< RevFeature: feature string
-  SST::Output*   output{};        ///< RevFeature: output handler
-  unsigned       MinCost{};       ///< RevFeature: min memory cost
-  unsigned       MaxCost{};       ///< RevFeature: max memory cost
-  unsigned       ProcID{};        ///< RevFeature: RISC-V Proc ID
-  unsigned       HartToExecID{};  ///< RevFeature: The current executing Hart on RevCore
-  RevFeatureType features{};      ///< RevFeature: feature elements
-  unsigned       xlen{};          ///< RevFeature: RISC-V Xlen
+  /// GetRandomizeCosts: Return whether to randomize costs
+  bool GetRandomizeCosts() const { return randomizeCosts; }
 
-  /// ParseMachineModel: parse the machine model string
-  bool ParseMachineModel();
+private:
+  const std::string  machine;                 ///< RevFeature: feature string
+  SST::Output* const output;                  ///< RevFeature: output handler
+  const unsigned     MinCost;                 ///< RevFeature: min memory cost
+  const unsigned     MaxCost;                 ///< RevFeature: max memory cost
+  const unsigned     ProcID;                  ///< RevFeature: RISC-V Proc ID
+  unsigned           HartToExecID{};          ///< RevFeature: The current executing Hart on RevCore
+  RevFeatureType     features{ RV_UNKNOWN };  ///< RevFeature: feature elements
+  unsigned           xlen{};                  ///< RevFeature: RISC-V Xlen
+  const bool         randomizeCosts;          ///< RevFeature: Whether to randomize costs
+  bool               ParseMachineModel();     ///< RevFeature: Parse the machine model string
+
 };  // class RevFeature
 
 }  // namespace SST::RevCPU

@@ -101,8 +101,11 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
     msgPerCycle = params.find<unsigned>( "msgPerCycle", 1 );
   }
 
+  // Whether to randomize the costs of instructions
+  bool randomizeCosts = params.find<bool>( "randomizeCosts", 0 );
+
   // Look for the fault injection logic
-  EnableFaults = params.find<bool>( "enable_faults", 0 );
+  EnableFaults        = params.find<bool>( "enable_faults", 0 );
   if( EnableFaults ) {
     std::vector<std::string> faults;
     params.find_array<std::string>( "faults", faults );
@@ -144,7 +147,9 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   // Create the processor objects
   Procs.reserve( Procs.size() + numCores );
   for( unsigned i = 0; i < numCores; i++ ) {
-    Procs.push_back( std::make_unique<RevCore>( i, Opts.get(), numHarts, Mem.get(), Loader.get(), this->GetNewTID(), &output ) );
+    Procs.push_back(
+      std::make_unique<RevCore>( i, Opts.get(), numHarts, Mem.get(), Loader.get(), this->GetNewTID(), &output, randomizeCosts )
+    );
   }
 
   EnableCoProc = params.find<bool>( "enableCoProc", 0 );
