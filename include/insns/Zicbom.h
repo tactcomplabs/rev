@@ -18,26 +18,20 @@
 #include <vector>
 
 namespace SST::RevCPU {
-#define CBO_INVAL_IMM 0b000000000000
-#define CBO_FLUSH_IMM 0b000000000001
-#define CBO_CLEAN_IMM 0b000000000010
 
 class Zicbom : public RevExt {
+  enum CBO : uint16_t {
+    INVAL = 0b000,
+    CLEAN = 0b001,
+    FLUSH = 0b010,
+    ZERO  = 0b100,
+  };
 
   static bool cmo( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     switch( Inst.imm ) {
-    case CBO_INVAL_IMM:
-      // CBO.INVAL
-      M->InvLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) );
-      break;
-    case CBO_FLUSH_IMM:
-      // CBO.FLUSH
-      M->FlushLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) );
-      break;
-    case CBO_CLEAN_IMM:
-      // CBO.CLEAN
-      M->CleanLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) );
-      break;
+    case CBO::INVAL: M->InvLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
+    case CBO::CLEAN: M->CleanLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
+    case CBO::FLUSH: M->FlushLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
     default: return false;
     }
     R->AdvancePC( Inst );
@@ -58,9 +52,10 @@ class Zicbom : public RevExt {
 
   // clang-format off
   std::vector<RevInstEntry> ZicbomTable = {
-    RevZicbomInstDefaults().SetMnemonic("cbo.clean").Setimm12(0b0001),
-    RevZicbomInstDefaults().SetMnemonic("cbo.flush").Setimm12(0b0010),
-    RevZicbomInstDefaults().SetMnemonic("cbo.inval").Setimm12(0b0000),
+    RevZicbomInstDefaults().SetMnemonic( "cbo.inval" ).Setimm12( CBO::INVAL ),
+    RevZicbomInstDefaults().SetMnemonic( "cbo.clean" ).Setimm12( CBO::CLEAN ),
+    RevZicbomInstDefaults().SetMnemonic( "cbo.flush" ).Setimm12( CBO::FLUSH ),
+//  RevZicbomInstDefaults().SetMnemonic( "cbo.zero"  ).Setimm12( CBO::ZERO  ),
   };
   // clang-format on
 
