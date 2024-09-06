@@ -147,7 +147,7 @@ bool RevCore::EnableExt( RevExt* Ext ) {
   return true;
 }
 
-bool RevCore::SeedInstTable() {
+bool RevCore::SeedInstTable() try {
   output->verbose(
     CALL_INFO, 6, 0, "Core %" PRIu32 " ; Seeding instruction table for machine model=%s\n", id, feature->GetMachineModel().data()
   );
@@ -168,12 +168,14 @@ bool RevCore::SeedInstTable() {
     }
   }
 
-  // A Extension
-  if( feature->IsModeEnabled( RV_A ) ) {
-    EnableExt( new RV32A( feature, mem, output ) );
-    if( feature->IsRV64() ) {
-      EnableExt( new RV64A( feature, mem, output ) );
-    }
+  // Zaamo Extension
+  if( feature->IsModeEnabled( RV_ZAAMO ) ) {
+    EnableExt( new Zaamo( feature, mem, output ) );
+  }
+
+  // Zalrsc Extension
+  if( feature->IsModeEnabled( RV_ZALRSC ) ) {
+    EnableExt( new Zalrsc( feature, mem, output ) );
   }
 
   // F Extension
@@ -218,6 +220,9 @@ bool RevCore::SeedInstTable() {
   }
 
   return true;
+} catch( ... ) {
+
+  return false;
 }
 
 uint32_t RevCore::CompressCEncoding( const RevInstEntry& Entry ) {
@@ -671,14 +676,14 @@ RevInst RevCore::DecodeCSInst( uint16_t Inst, unsigned Entry ) const {
     CompInst.imm |= ( ( Inst & 0b01110000000000 ) >> 6 );  //offset[5:3]
     CompInst.imm |= ( ( Inst & 0b01000000 ) >> 4 );        //offset[2]
   } else {
-    if( feature->IsRV32() ) {
+    if( feature->IsRV64() ) {
+      //c.sd
+      CompInst.imm = ( ( Inst & 0b01100000 ) << 1 );         //imm[7:6]
+      CompInst.imm |= ( ( Inst & 0b01110000000000 ) >> 7 );  //imm[5:3]
+    } else {
       //c.fsw
       CompInst.imm = ( ( Inst & 0b00100000 ) << 1 );         //imm[6]
       CompInst.imm = ( ( Inst & 0b01000000 ) << 4 );         //imm[2]
-      CompInst.imm |= ( ( Inst & 0b01110000000000 ) >> 7 );  //imm[5:3]
-    } else {
-      //c.sd
-      CompInst.imm = ( ( Inst & 0b01100000 ) << 1 );         //imm[7:6]
       CompInst.imm |= ( ( Inst & 0b01110000000000 ) >> 7 );  //imm[5:3]
     }
   }
@@ -1491,10 +1496,10 @@ void RevCore::HandleRegFault( unsigned width ) {
 
   if( !feature->HasF() || RevRand( 0, 1 ) ) {
     // X registers
-    if( feature->IsRV32() ) {
-      regFile->RV32[RegIdx] |= RevRand( 0, ~( ~uint32_t{ 0 } << width ) );
-    } else {
+    if( regFile->IsRV64 ) {
       regFile->RV64[RegIdx] |= RevRand( 0, ~( ~uint64_t{ 0 } << width ) );
+    } else {
+      regFile->RV32[RegIdx] |= RevRand( 0, ~( ~uint32_t{ 0 } << width ) );
     }
     RegPrefix = "x";
   } else {
@@ -1745,18 +1750,17 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
 #endif
 
 #ifdef __REV_DEEP_TRACE__
-    if( feature->IsRV32() ) {
-      std::cout << "RDT: Executed PC = " << std::hex << ExecPC << " Inst: " << std::setw( 23 ) << InstTable[Inst.entry].mnemonic
-                << " r" << std::dec << (uint32_t) Inst.rd << "= " << std::hex << RegFile->RV32[Inst.rd] << " r" << std::dec
-                << (uint32_t) Inst.rs1 << "= " << std::hex << RegFile->RV32[Inst.rs1] << " r" << std::dec << (uint32_t) Inst.rs2
-                << "= " << std::hex << RegFile->RV32[Inst.rs2] << " imm = " << std::hex << Inst.imm << std::endl;
-
-    } else {
+    if( feature->IsRV64() ) {
       std::cout << "RDT: Executed PC = " << std::hex << ExecPC << " Inst: " << std::setw( 23 ) << InstTable[Inst.entry].mnemonic
                 << " r" << std::dec << (uint32_t) Inst.rd << "= " << std::hex << RegFile->RV64[Inst.rd] << " r" << std::dec
                 << (uint32_t) Inst.rs1 << "= " << std::hex << RegFile->RV64[Inst.rs1] << " r" << std::dec << (uint32_t) Inst.rs2
                 << "= " << std::hex << RegFile->RV64[Inst.rs2] << " imm = " << std::hex << Inst.imm << std::endl;
       std::cout << "RDT: Address of RD = 0x" << std::hex << (uint64_t*) ( &RegFile->RV64[Inst.rd] ) << std::dec << std::endl;
+    } else {
+      std::cout << "RDT: Executed PC = " << std::hex << ExecPC << " Inst: " << std::setw( 23 ) << InstTable[Inst.entry].mnemonic
+                << " r" << std::dec << (uint32_t) Inst.rd << "= " << std::hex << RegFile->RV32[Inst.rd] << " r" << std::dec
+                << (uint32_t) Inst.rs1 << "= " << std::hex << RegFile->RV32[Inst.rs1] << " r" << std::dec << (uint32_t) Inst.rs2
+                << "= " << std::hex << RegFile->RV32[Inst.rs2] << " imm = " << std::hex << Inst.imm << std::endl;
     }
 #endif
 
