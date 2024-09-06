@@ -92,7 +92,7 @@ bool RevOpts::InitStartAddrs( const std::vector<std::string>& StartAddrs ) {
   }
 
   for( size_t i = 0; i < StartAddrs.size(); i++ ) {
-    std::string s = StartAddrs[i];
+    const std::string& s = StartAddrs[i];
     splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
@@ -149,7 +149,7 @@ bool RevOpts::InitMachineModels( const std::vector<std::string>& Machines ) {
 
   // parse individual core configs
   for( size_t i = 0; i < Machines.size(); i++ ) {
-    std::string s = Machines[i];
+    const std::string& s = Machines[i];
     splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
