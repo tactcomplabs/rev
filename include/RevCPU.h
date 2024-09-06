@@ -116,7 +116,7 @@ public:
     {"trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0"},
     {"splash",          "Display the splash logo",                      "0"},
     {"independentCoprocClock",  "Enables each coprocessor to register its own clock handler", "0"},
-    { "randomizeCosts",  "Randomizes the cost of each instructionz",     "0" },
+    { "randomizeCosts",  "Randomizes the cost of each instruction",     "0" },
     )
 
   // -------------------------------------------------------
