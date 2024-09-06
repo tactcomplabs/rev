@@ -69,10 +69,13 @@ struct RevExt {
 private:
   // RevExt: Randomize instruction costs if randomizeCosts == true
   void RandomizeCosts( std::vector<RevInstEntry>& table ) const {
-    if( feature->GetRandomizeCosts() )
-      for( auto& entry : table )
-        if( entry.cost == 1 )
+    if( feature->GetRandomizeCosts() ) {
+      for( auto& entry : table ) {
+        if( entry.cost == 1 ) {
           entry.cost = RevRand( 1, MAX_COST );
+        }
+      }
+    }
   }
 
   std::string_view const    name;      ///< RevExt: extension name

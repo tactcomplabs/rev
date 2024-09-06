@@ -60,6 +60,7 @@ comp_cpu.addParams({
     "startAddr" : "[0:0x00000000]",
     "startSymbol" : args.startSymbol,
     "enable_memH" : args.enableMemH,
+    "randomizeCosts": args.randomizeCosts,
     "args": args.args,
     "splash" : 1
 })

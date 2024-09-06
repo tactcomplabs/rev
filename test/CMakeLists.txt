@@ -9,12 +9,20 @@
 if(NOT DEFINED TEST_LEVEL)
   set(TEST_LEVEL "$ENV{TEST_LEVEL}")
 endif()
-
 if(NOT TEST_LEVEL OR TEST_LEVEL GREATER 3 OR TEST_LEVEL LESS 1)
   set(TEST_LEVEL 3)
 endif()
-
 message("TEST_LEVEL=${TEST_LEVEL}")
+
+if(NOT DEFINED RANDOMIZE_COSTS)
+  set(RANDOMIZE_COSTS "$ENV{RANDOMIZE_COSTS}")
+endif()
+if(NOT RANDOMIZE_COSTS)
+  set(RANDOMIZE_COSTS "")
+else()
+  set(RANDOMIZE_COSTS --randomizeCosts)
+endif()
+message("RANDOMIZE_COSTS=\"${RANDOMIZE_COSTS}\"")
 
 set(RISCV_ENV "$ENV{RISCV}")
 if(RISCV_ENV)
@@ -65,8 +73,8 @@ set (passRegex "Simulation is complete")
 #------- TESTS  ---------------
 message(STATUS "CTest Setup")
 
-# Macro to build and configure tests in rev based on the labels the test was specified with
-macro(add_rev_test test_name test_dir timeout labels)
+# Function to build and configure tests in rev based on the labels the test was specified with
+function(add_rev_test test_name test_dir timeout labels)
   string(TOLOWER ${test_dir} test_dir_lower)
   string(TOLOWER ${test_name} test_name_lower)
 
@@ -135,13 +143,22 @@ macro(add_rev_test test_name test_dir timeout labels)
     #    set(startSymbol "\"[0:_start]\"")
   endif()
 
+  string(FIND "${labels}" "cost1" cost1_index)
+  if(NOT ${cost1_index} EQUAL -1)
+    set(RANDOMIZE_COSTS "")
+  endif()
+  # increase timeout if costs randomized
+  if(NOT RANDOMIZE_COSTS STREQUAL "")
+    math(EXPR timeout "${timeout} * 3 /2")
+  endif()
+
   if(NOT optional_script)
     foreach(numHarts IN LISTS numHartsList)
       foreach(numCores IN LISTS numCoresList)
 
         # Define revmem target with the new naming convention
         add_custom_target(run_${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
-          COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --startSymbol "${startSymbol}"
+          COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --startSymbol "${startSymbol}" ${RANDOMIZE_COSTS}
           DEPENDS build_${test_name_lower}
           COMMENT "Running ${test_name_lower} test with revmem, numHarts=${numHarts}, numCores=${numCores}"
         )
@@ -154,7 +171,7 @@ macro(add_rev_test test_name test_dir timeout labels)
         # If 'memh' label found, add a memHierarchy test
         if(add_memh_test)
           add_custom_target(run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
-            COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --enableMemH=1 --startSymbol "${startSymbol}"
+            COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --enableMemH=1 --startSymbol "${startSymbol}" ${RANDOMIZE_COSTS}
             DEPENDS build_${test_name_lower}
             COMMENT "Running ${test_name_lower} test with memHierarchy enabled, numHarts=${numHarts}, numCores=${numCores}"
           )
@@ -207,7 +224,7 @@ macro(add_rev_test test_name test_dir timeout labels)
       set_tests_properties(${test_name_lower}_script PROPERTIES DISABLED TRUE)
     endif()
   endif()
-endmacro()
+endfunction()
 
 # Not all toolchains have support RV32, so we test and skip RV32 tests with a warning
 execute_process(COMMAND ${RVCC} -march=rv32i -mabi=ilp32 -o /dev/null ex1.c WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/ex1 ERROR_VARIABLE RV32_Missing)
@@ -252,8 +269,8 @@ add_rev_test(BACKINGSTORE backingstore 100 "test_level=2;rv64" SCRIPT "run_backi
 add_rev_test(MEM_DUMP mem_dump 10 "rv64" SCRIPT "run_mem_dump.sh")
 add_rev_test(LWSP lwsp 30 "test_level=2;memh;rv64")
 add_rev_test(CSR csr 30 "rv64")
-add_rev_test(RDCYCLE rdcycle 5 "test_level=2;rv64")
-add_rev_test(RDTIME rdtime 5 "test_level=2;rv64")
+add_rev_test(RDCYCLE rdcycle 5 "test_level=2;rv64;cost1")
+add_rev_test(RDTIME rdtime 5 "test_level=2;rv64;cost1")
 add_rev_test(RDINSTRET rdinstret 5 "test_level=2;memh;rv64")
 add_rev_test(Zfa zfa 30 "rv64" SCRIPT "run_zfa_tests.sh")
 
