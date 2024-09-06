@@ -25,9 +25,11 @@ export CC=clang
 export CXX=clang++
 export RVCC=riscv64-unknown-elf-gcc
 
+exec 2>&1
+
 touch rev.jenkins.${SLURM_JOB_ID}.out
-sst --version >> rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-sst-info revcpu >> rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+sst --version >> rev.jenkins.${SLURM_JOB_ID}.out
+sst-info revcpu >> rev.jenkins.${SLURM_JOB_ID}.out
 
 #-- Stage 2: setup the build directories
 mkdir -p build
@@ -35,13 +37,13 @@ cd build
 rm -Rf ./*
 
 #-- Stage 3: initiate the build
-cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DRANDOMIZE_COSTS=1 -DRVCC=${RVCC} ../ >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-make clean >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-make uninstall >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-make -j >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-#make install >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DRANDOMIZE_COSTS=1 -DRVCC=${RVCC} ../ >> ../rev.jenkins.${SLURM_JOB_ID}.out
+make clean >> ../rev.jenkins.${SLURM_JOB_ID}.out
+make uninstall >> ../rev.jenkins.${SLURM_JOB_ID}.out
+make -j >> ../rev.jenkins.${SLURM_JOB_ID}.out
+#make install >> ../rev.jenkins.${SLURM_JOB_ID}.out
 
 #-- Stage 4: test everything
-make test >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+make test >> ../rev.jenkins.${SLURM_JOB_ID}.out
 
 #-- EOF
