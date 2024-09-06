@@ -55,13 +55,13 @@ struct RevExt {
   std::string_view GetName() const { return name; }
 
   /// RevExt: baseline execution function
-  bool Execute( unsigned Inst, const RevInst& Payload, uint16_t HartID, RevRegFile* regFile );
+  bool Execute( unsigned Inst, const RevInst& Payload, uint16_t HartID, RevRegFile* regFile ) const;
 
   /// RevExt: retrieves the extension's instruction table
-  const std::vector<RevInstEntry>& GetTable() { return table; }
+  const std::vector<RevInstEntry>& GetTable() const { return table; }
 
   /// RevExt: retrieves the extension's compressed instruction table
-  const std::vector<RevInstEntry>& GetCTable() { return ctable; }
+  const std::vector<RevInstEntry>& GetCTable() const { return ctable; }
 
 private:
   std::string_view const    name;      ///< RevExt: extension name
