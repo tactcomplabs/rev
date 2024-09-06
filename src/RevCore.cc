@@ -48,10 +48,7 @@ RevCore::RevCore(
     ValidHarts.set( i, true );
   }
 
-  featureUP = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, id, randomizeCosts );
-  feature   = featureUP.get();
-  if( !feature )
-    output->fatal( CALL_INFO, -1, "Error: failed to create the RevFeature object for core=%" PRIu32 "\n", id );
+  featureUP      = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, id, randomizeCosts );
 
   unsigned Depth = 0;
   opts->GetPrefetchDepth( id, Depth );
@@ -1689,7 +1686,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
     // HartToExecID = HartToDecodeID;
     RegFile->SetTrigger( true );
 
-#ifdef NO_REV_TRACER
+#ifndef NO_REV_TRACER
     // pull the PC
     output->verbose(
       CALL_INFO,
@@ -1717,7 +1714,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
     // -- BEGIN new pipelining implementation
     Pipeline.emplace_back( std::make_pair( HartToExecID, Inst ) );
 
-    if( ( Ext->GetName() == "RV32F" ) || ( Ext->GetName() == "RV32D" ) || ( Ext->GetName() == "RV64F" ) || ( Ext->GetName() == "RV64D" ) ) {
+    if( Ext->isFloat ) {
       Stats.floatsExec++;
     }
 
@@ -1786,10 +1783,10 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
 
   // Check for pipeline hazards
   if( !Pipeline.empty() && Pipeline.front().second.cost > 0 ) {
-    if( --Pipeline.front().second.cost == 0 ) {  // &&
+    if( --Pipeline.front().second.cost == 0 ) {
       // Ready to retire this instruction
       uint16_t HartID = Pipeline.front().first;
-#ifdef NO_REV_TRACER
+#ifndef NO_REV_TRACER
       output->verbose(
         CALL_INFO,
         6,

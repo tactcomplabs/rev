@@ -85,6 +85,8 @@ private:
   std::vector<RevInstEntry> table{};   ///< RevExt: instruction table
   std::vector<RevInstEntry> ctable{};  ///< RevExt: compressed instruction table
 
+public:
+  const bool isFloat = name == "RV32F" || name == "RV32D" || name == "RV64F" || name == "RV64D";
 };  // class RevExt
 
 }  // namespace SST::RevCPU
