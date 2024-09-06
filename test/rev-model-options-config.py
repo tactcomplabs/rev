@@ -11,6 +11,7 @@
 import os
 import argparse
 import sst
+import ast
 
 DEBUG_L1 = 0
 DEBUG_MEM = 0
@@ -23,14 +24,18 @@ parser = argparse.ArgumentParser(description="Run Rev SST Simulation")
 parser.add_argument("--numCores", type=int, help="Number of Rev Cores per RevCPU", default=1)
 parser.add_argument("--numHarts", type=int, help="Number of HARTs per Rev Core", default=1)
 parser.add_argument("--program", help="The program executable to run in the simulation", default="a.out")
-parser.add_argument("--enableMemH", type=int, choices=[0, 1], help="Enable (1) or disable (0) memHierarchy backend", default=0)
+parser.add_argument("--enableMemH", nargs='?', help="Enable memHierarchy backend", default="False")
 parser.add_argument("--verbose", type=int, help="Verbosity level", default=2)
 parser.add_argument("--machine", help="Machine type/configuration", default="[CORES:RV64GC]")
 parser.add_argument("--args", help="Command line arguments to pass to the target executable", default="")
 parser.add_argument("--startSymbol", help="ELF Symbol Rev should begin execution at", default="[0:main]")
+parser.add_argument("--randomizeCosts", nargs='?', help="Randomize costs of instructions", default="False")
 
 # Parse arguments
 args = parser.parse_args()
+
+args.enableMemH = True if args.enableMemH is None or ast.literal_eval(args.enableMemH) else False
+args.randomizeCosts = True if args.randomizeCosts is None or ast.literal_eval(args.randomizeCosts) else False
 
 # Print arguments nicely
 print("Rev SST Simulation Configuration:")
