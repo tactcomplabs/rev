@@ -66,7 +66,7 @@ class Zicsr : public RevExt {
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // This calls the 32/64-bit ModCSR depending on the current XLEN
   template<OpKind OPKIND, CSROp OP>
-  static bool ModCSR( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool ModCSR( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     return R->IsRV64 ? ModCSRImpl<uint64_t, OPKIND, OP>( R, Inst ) : ModCSRImpl<uint32_t, OPKIND, OP>( R, Inst );
   }
 
@@ -129,7 +129,7 @@ class Zicsr : public RevExt {
 
 public:
   /// Zicsr: standard constructor
-  Zicsr( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zicsr", Feature, RevMem, Output ) {
+  Zicsr( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zicsr", Feature, RevMem, Output ) {
     SetTable( std::move( ZicsrTable ) );
   }
 

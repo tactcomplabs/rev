@@ -43,7 +43,7 @@ RevSimpleCoProc::RevSimpleCoProc( ComponentId_t id, Params& params, RevCore* par
     output->output("Registering subcomponent RevSimpleCoProc with frequency=%s\n", ClockFreq.c_str());*/
 }
 
-bool RevSimpleCoProc::IssueInst( RevFeature* F, RevRegFile* R, RevMem* M, uint32_t Inst ) {
+bool RevSimpleCoProc::IssueInst( const RevFeature* F, RevRegFile* R, RevMem* M, uint32_t Inst ) {
   RevCoProcInst inst = RevCoProcInst( Inst, F, R, M );
   std::cout << "CoProc instruction issued: " << std::hex << Inst << std::dec << std::endl;
   //parent->ExternalDepSet(CreatePasskey(), F->GetHartToExecID(), 7, false);

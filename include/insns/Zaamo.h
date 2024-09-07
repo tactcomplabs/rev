@@ -18,7 +18,7 @@ namespace SST::RevCPU {
 
 class Zaamo : public RevExt {
   template<typename XLEN, RevFlag F_AMO>
-  static bool amooper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool amooper( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     static_assert( std::is_unsigned_v<XLEN>, "XLEN must be unsigned integral type" );
 
     RevFlag flags{ F_AMO };
@@ -115,7 +115,7 @@ class Zaamo : public RevExt {
 
 public:
   /// Zaamo: standard constructor
-  Zaamo( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zaamo", Feature, RevMem, Output ) {
+  Zaamo( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zaamo", Feature, RevMem, Output ) {
     if( Feature->IsRV64() ) {
       auto Table{ RV64Table() };
       ZaamoTable.insert( ZaamoTable.end(), std::move_iterator( Table.begin() ), std::move_iterator( Table.end() ) );
