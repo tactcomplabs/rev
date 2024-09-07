@@ -46,7 +46,7 @@ class RV64P : public RevExt {
     Rev64PInstDefaults() {
       SetOpcode( 0b1110111 );
       Setrs2Class( RevRegClass::RegUNKNOWN );
-      Setimm( FImm );
+      Setimm( RevImmFunc::FImm );
       SetFormat( RVTypeI );
     }
   };

@@ -20,15 +20,16 @@
 namespace SST::RevCPU {
 
 class Zicbom : public RevExt {
-  enum CBO : uint16_t {
+  enum class CBO : uint16_t {
     INVAL = 0b000,
     CLEAN = 0b001,
     FLUSH = 0b010,
     ZERO  = 0b100,
   };
 
+  template<CBO cbo>
   static bool cmo( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    switch( Inst.imm ) {
+    switch( cbo ) {
     case CBO::INVAL: M->InvLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
     case CBO::CLEAN: M->CleanLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
     case CBO::FLUSH: M->FlushLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
@@ -45,17 +46,17 @@ class Zicbom : public RevExt {
       SetFunct3( 0b010 );
       Setrs2Class( RevRegClass::RegUNKNOWN );
       SetrdClass( RevRegClass::RegUNKNOWN );
-      Setimm( FEnc );
-      SetImplFunc( cmo );
+      Setimm( RevImmFunc::FEnc );
+      SetPredicate( []( uint32_t Inst ) { return DECODE_RD( Inst ) == 0; } );
     }
   };
 
   // clang-format off
   std::vector<RevInstEntry> ZicbomTable = {
-    RevZicbomInstDefaults().SetMnemonic( "cbo.inval" ).Setimm12( CBO::INVAL ),
-    RevZicbomInstDefaults().SetMnemonic( "cbo.clean" ).Setimm12( CBO::CLEAN ),
-    RevZicbomInstDefaults().SetMnemonic( "cbo.flush" ).Setimm12( CBO::FLUSH ),
-//  RevZicbomInstDefaults().SetMnemonic( "cbo.zero"  ).Setimm12( CBO::ZERO  ),
+    RevZicbomInstDefaults().SetMnemonic( "cbo.inval" ).Setimm12( uint16_t( CBO::INVAL ) ).SetImplFunc( cmo<CBO::INVAL> ),
+    RevZicbomInstDefaults().SetMnemonic( "cbo.clean" ).Setimm12( uint16_t( CBO::CLEAN ) ).SetImplFunc( cmo<CBO::CLEAN> ),
+    RevZicbomInstDefaults().SetMnemonic( "cbo.flush" ).Setimm12( uint16_t( CBO::FLUSH ) ).SetImplFunc( cmo<CBO::FLUSH> ),
+//  RevZicbomInstDefaults().SetMnemonic( "cbo.zero"  ).Setimm12( uint16_t( CBO::ZERO  ) ).SetImplFunc( cmo<CBO::ZERO>  ),
   };
   // clang-format on
 
