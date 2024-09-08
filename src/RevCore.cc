@@ -16,6 +16,20 @@ namespace SST::RevCPU {
 
 using MemSegment = RevMem::MemSegment;
 
+std::unique_ptr<RevFeature> RevCore::CreateFeature() {
+  // initialize the machine model for the target core
+  std::string Machine;
+  if( !opts->GetMachineModel( id, Machine ) )
+    output->fatal( CALL_INFO, -1, "Error: failed to retrieve the machine model for core=%" PRIu32 "\n", id );
+
+  unsigned MinCost = 0;
+  unsigned MaxCost = 0;
+
+  opts->GetMemCost( id, MinCost, MaxCost );
+
+  return std::make_unique<RevFeature>( std::move( Machine ), output, MinCost, MaxCost, id );
+}
+
 RevCore::RevCore(
   unsigned                  id,
   RevOpts*                  opts,
@@ -27,17 +41,7 @@ RevCore::RevCore(
   bool                      randomizeCosts
 )
   : id( id ), numHarts( numHarts ), opts( opts ), mem( mem ), loader( loader ), GetNewThreadID( std::move( GetNewTID ) ),
-    output( output ) {
-
-  // initialize the machine model for the target core
-  std::string Machine;
-  if( !opts->GetMachineModel( id, Machine ) )
-    output->fatal( CALL_INFO, -1, "Error: failed to retrieve the machine model for core=%" PRIu32 "\n", id );
-
-  unsigned MinCost = 0;
-  unsigned MaxCost = 0;
-
-  opts->GetMemCost( id, MinCost, MaxCost );
+    output( output ), featureUP( CreateFeature() ) {
 
   LSQueue = std::make_shared<std::unordered_multimap<uint64_t, MemReq>>();
   LSQueue->clear();
@@ -47,8 +51,6 @@ RevCore::RevCore(
     Harts.emplace_back( std::make_unique<RevHart>( i, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } ) );
     ValidHarts.set( i, true );
   }
-
-  featureUP      = std::make_unique<RevFeature>( Machine, output, MinCost, MaxCost, id, randomizeCosts );
 
   unsigned Depth = 0;
   opts->GetPrefetchDepth( id, Depth );

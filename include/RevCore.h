@@ -184,6 +184,12 @@ public:
   ///< RevCore: Add a co-processor to the RevCore
   void SetCoProc( RevCoProc* coproc );
 
+  /// GetHartToExecID: Retrieve the current executing Hart
+  unsigned GetHartToExecID() const { return HartToExecID; }
+
+  /// SetHartToExecID: Set the current executing Hart
+  void SetHartToExecID( unsigned hart ) { HartToExecID = hart; }
+
   //--------------- External Interface for use with Co-Processor -------------------------
   ///< RevCore: Allow a co-processor to query the bits in scoreboard. Note the RevCorePassKey may only
   ///  be created by a RevCoProc (or a class derived from RevCoProc) so this function may not be called from even within
@@ -305,12 +311,13 @@ private:
   std::vector<std::unique_ptr<RevThread>>
     ThreadsThatChangedState{};  ///< RevCore: used to signal to RevCPU that the thread assigned to HART has changed state
 
-  SST::Output* const             output;       ///< RevCore: output handler
-  std::unique_ptr<RevFeature>    featureUP{};  ///< RevCore: feature handler
-  RevFeature*                    feature{};
-  RevCoreStats                   Stats{};       ///< RevCore: collection of performance stats
-  RevCoreStats                   StatsTotal{};  ///< RevCore: collection of total performance stats
-  std::unique_ptr<RevPrefetcher> sfetch{};      ///< RevCore: stream instruction prefetcher
+  SST::Output* const                output;                       ///< RevCore: output handler
+  std::unique_ptr<RevFeature>       CreateFeature();              ///< RevCore: Create a RevFeature object
+  std::unique_ptr<RevFeature> const featureUP = CreateFeature();  ///< RevCore: feature handler
+  RevFeature* const                 feature   = featureUP.get();  ///< RevCore: raw feature pointer
+  RevCoreStats                      Stats{};                      ///< RevCore: collection of performance stats
+  RevCoreStats                      StatsTotal{};                 ///< RevCore: collection of total performance stats
+  std::unique_ptr<RevPrefetcher>    sfetch{};                     ///< RevCore: stream instruction prefetcher
 
   std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>>
     LSQueue{};  ///< RevCore: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.

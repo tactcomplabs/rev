@@ -69,7 +69,7 @@ class RV32M : public RevExt {
 
 public:
   /// RV32M: standard constructor
-  RV32M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32M", Feature, RevMem, Output ) {
+  RV32M( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32M", Feature, RevMem, Output ) {
     if( Feature->IsModeEnabled( RV_M ) ) {
       RV32MTable.insert( RV32MTable.end(), RV32DivTable.begin(), RV32DivTable.end() );
     }
