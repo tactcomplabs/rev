@@ -58,7 +58,7 @@ class RV64M : public RevExt {
 
 public:
   /// RV64M: standard constructor
-  RV64M( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV64M", Feature, RevMem, Output ) {
+  RV64M( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV64M", Feature, RevMem, Output ) {
     if( Feature->IsModeEnabled( RV_M ) ) {
       RV64MTable.insert( RV64MTable.end(), RV64DivTable.begin(), RV64DivTable.end() );
     }

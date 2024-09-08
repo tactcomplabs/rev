@@ -20,7 +20,7 @@ class Zfa : public RevExt {
 
   // Round to integer without inexact exceptions
   template<typename T>
-  static bool fround( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fround( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetFP( Inst.rd, std::nearbyint( R->GetFP<T>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
@@ -28,7 +28,7 @@ class Zfa : public RevExt {
 
   // Round to integer with inexact exceptions
   template<typename T>
-  static bool froundnx( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool froundnx( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetFP( Inst.rd, std::rint( R->GetFP<T>( Inst.rs1 ) ) );
     R->AdvancePC( Inst );
     return true;
@@ -57,7 +57,7 @@ class Zfa : public RevExt {
   /// Floating-point minimum/maximum
   /// If either argument is NaN, the result is NaN
   template<typename T, template<class> class MINMAX>
-  static bool fminmaxm( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fminmaxm( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     T x   = R->GetFP<T>( Inst.rs1 );
     T y   = R->GetFP<T>( Inst.rs2 );
     T res = MINMAX()( x, y );
@@ -70,7 +70,7 @@ class Zfa : public RevExt {
   }
 
   // Move the high 32 bits of floating-point double to a XLEN==32 register
-  static bool fmvhxd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fmvhxd( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     double   fp = R->GetFP<double>( Inst.rs1 );
     uint64_t ifp;
     memcpy( &ifp, &fp, sizeof( ifp ) );
@@ -81,7 +81,7 @@ class Zfa : public RevExt {
   }
 
   // Move a pair of XLEN==32 registers to a floating-point double
-  static bool fmvpdx( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fmvpdx( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     uint64_t ifp = R->GetX<uint64_t>( Inst.rs1 ) | R->GetX<uint64_t>( Inst.rs2 ) << 32;
     double   fp;
     memcpy( &fp, &ifp, sizeof( fp ) );
@@ -94,7 +94,7 @@ class Zfa : public RevExt {
   // Convert double precision floating point to 32-bit signed integer modulo 2^32
   // Always truncates (rounds toward 0) regardless of rounding mode
   // Raises the same exceptions as fcvt.w.d but the result is always modulo 2^32
-  static bool fcvtmodwd( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fcvtmodwd( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
 
     double   fp = R->GetFP<double>( Inst.rs1 );
     uint64_t ifp;
@@ -284,7 +284,7 @@ class Zfa : public RevExt {
 
 public:
   /// Zfa: standard constructor
-  Zfa( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zfa", Feature, RevMem, Output ) {
+  Zfa( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zfa", Feature, RevMem, Output ) {
     if( Feature->HasD() ) {
       if( !Feature->IsRV64() ) {
         // clang-format off

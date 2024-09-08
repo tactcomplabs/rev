@@ -848,25 +848,25 @@ public:
 
   // Friend functions and classes to access internal register state
   template<typename INT, typename FP>
-  friend bool fcvtif( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  friend bool fcvtif( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template<typename T>
-  friend bool load( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  friend bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template<typename T>
-  friend bool store( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  friend bool store( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template<typename T>
-  friend bool fload( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  friend bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template<typename T>
-  friend bool fstore( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  friend bool fstore( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template<typename T, template<class> class OP>
-  friend bool foper( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  friend bool foper( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   template<typename T, template<class> class OP>
-  friend bool fcondop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
+  friend bool fcondop( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst );
 
   friend std::ostream& operator<<( std::ostream& os, const RevRegFile& regFile );
 

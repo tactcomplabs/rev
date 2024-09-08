@@ -20,7 +20,7 @@ class Zalrsc : public RevExt {
 
   // Load Reserved instruction
   template<typename TYPE>
-  static bool lr( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool lr( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     static_assert( std::is_unsigned_v<TYPE>, "TYPE must be unsigned integral type" );
     auto addr = R->GetX<uint64_t>( Inst.rs1 );
 
@@ -54,7 +54,7 @@ class Zalrsc : public RevExt {
 
   // Store Conditional instruction
   template<typename TYPE>
-  static bool sc( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool sc( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     static_assert( std::is_unsigned_v<TYPE>, "TYPE must be unsigned integral type" );
     auto addr     = R->GetX<uint64_t>( Inst.rs1 );
     auto val      = R->GetX<TYPE>( Inst.rs2 );
@@ -105,7 +105,7 @@ class Zalrsc : public RevExt {
 
 public:
   /// Zalrsc: standard constructor
-  Zalrsc( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zalrsc", Feature, RevMem, Output ) {
+  Zalrsc( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "Zalrsc", Feature, RevMem, Output ) {
     if( Feature->IsRV64() ) {
       auto Table{ RV64ZalrscTable() };
       ZalrscTable.insert( ZalrscTable.end(), std::move_iterator( Table.begin() ), std::move_iterator( Table.end() ) );

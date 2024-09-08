@@ -22,31 +22,31 @@ namespace SST::RevCPU {
 
 class RV32I : public RevExt {
   // Standard instructions
-  static bool nop( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool nop( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool lui( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool lui( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetX( Inst.rd, static_cast<int32_t>( Inst.imm << 12 ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool auipc( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool auipc( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     auto ui = static_cast<int32_t>( Inst.imm << 12 );
     R->SetX( Inst.rd, ui + R->GetPC() );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool jal( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool jal( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     R->SetX( Inst.rd, R->GetPC() + Inst.instSize );
     R->SetPC( R->GetPC() + Inst.ImmSignExt( 21 ) );
     return true;
   }
 
-  static bool jalr( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool jalr( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     auto ret = R->GetPC() + Inst.instSize;
     R->SetPC( ( R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) & -2 );
     R->SetX( Inst.rd, ret );
@@ -98,13 +98,13 @@ class RV32I : public RevExt {
   static constexpr auto& srl   = oper<ShiftRight, OpKind::Reg, std::make_unsigned_t>;
   static constexpr auto& sra   = oper<ShiftRight, OpKind::Reg>;
 
-  static bool fence( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fence( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     M->FenceMem( F->GetHartToExecID() );
     R->AdvancePC( Inst );
     return true;  // temporarily disabled
   }
 
-  static bool ecall( RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool ecall( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
     /*
      * In reality this should be getting/setting a LOT of bits inside the
      * CSRs however because we are only concerned with ecall right now it's
@@ -265,7 +265,7 @@ class RV32I : public RevExt {
 
 public:
   /// RV32I: standard constructor
-  RV32I( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32I", Feature, RevMem, Output ) {
+  RV32I( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV32I", Feature, RevMem, Output ) {
     if( !Feature->IsRV64() ) {
       // RV32C-Only instruction
       RV32ICTable.push_back( RevCInstDefaults()
