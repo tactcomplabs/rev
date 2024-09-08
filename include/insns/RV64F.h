@@ -49,7 +49,7 @@ class RV64F : public RevExt {
 
 public:
   /// RV364F: standard constructor
-  RV64F( RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV64F", Feature, RevMem, Output ) {
+  RV64F( const RevFeature* Feature, RevMem* RevMem, SST::Output* Output ) : RevExt( "RV64F", Feature, RevMem, Output ) {
     SetTable( std::move( RV64FTable ) );
   }
 };  // end class RV64F

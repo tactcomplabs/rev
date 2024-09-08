@@ -76,20 +76,20 @@ public:
   // --------------------
 
   /// RevCoProc: Instruction interface to RevCore
-  virtual bool IssueInst( RevFeature* F, RevRegFile* R, RevMem* M, uint32_t Inst ) = 0;
+  virtual bool IssueInst( const RevFeature* F, RevRegFile* R, RevMem* M, uint32_t Inst ) = 0;
 
   /// ReCoProc: Reset - called on startup
-  virtual bool Reset()                                                             = 0;
+  virtual bool Reset()                                                                   = 0;
 
   /// RevCoProc: Teardown - called when associated RevCore completes
-  virtual bool Teardown()                                                          = 0;
+  virtual bool Teardown()                                                                = 0;
 
   /// RevCoProc: Clock - can be called by SST or by overriding RevCPU
-  virtual bool ClockTick( SST::Cycle_t cycle )                                     = 0;
+  virtual bool ClockTick( SST::Cycle_t cycle )                                           = 0;
 
   /// RevCoProc: Returns true when co-processor has completed execution
   ///            - used for proper exiting of associated RevCore
-  virtual bool IsDone()                                                            = 0;
+  virtual bool IsDone()                                                                  = 0;
 
 protected:
   SST::Output*   output{};  ///< RevCoProc: sst output object
@@ -150,7 +150,7 @@ public:
   void registerStats();
 
   /// RevSimpleCoProc: Enqueue Inst into the InstQ and return
-  virtual bool IssueInst( RevFeature* F, RevRegFile* R, RevMem* M, uint32_t Inst );
+  virtual bool IssueInst( const RevFeature* F, RevRegFile* R, RevMem* M, uint32_t Inst );
 
   /// RevSimpleCoProc: Reset the co-processor by emmptying the InstQ
   virtual bool Reset();
@@ -165,12 +165,13 @@ public:
 
 private:
   struct RevCoProcInst {
-    RevCoProcInst( uint32_t inst, RevFeature* F, RevRegFile* R, RevMem* M ) : Inst( inst ), Feature( F ), RegFile( R ), Mem( M ) {}
+    RevCoProcInst( uint32_t inst, const RevFeature* F, RevRegFile* R, RevMem* M )
+      : Inst( inst ), Feature( F ), RegFile( R ), Mem( M ) {}
 
-    uint32_t const    Inst;
-    RevFeature* const Feature;
-    RevRegFile* const RegFile;
-    RevMem* const     Mem;
+    uint32_t const          Inst;
+    const RevFeature* const Feature;
+    RevRegFile* const       RegFile;
+    RevMem* const           Mem;
   };
 
   /// RevSimpleCoProc: Total number of instructions retired
