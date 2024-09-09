@@ -8,7 +8,6 @@
 # rev-basic-config.py
 #
 
-import os
 import argparse
 import sst
 

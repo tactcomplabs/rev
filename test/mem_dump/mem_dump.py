@@ -8,7 +8,6 @@
 # mem_dump.py
 #
 
-import os
 import argparse
 import sst
 
