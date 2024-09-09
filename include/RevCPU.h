@@ -101,7 +101,7 @@ public:
     {"enable_pan",      "Enable PAN network endpoint",                  "0"},
     {"enable_test",     "Enable PAN network endpoint test",             "0"},
     {"enable_pan_stats", "Enable PAN network statistics",               "1"},
-    {"enable_memH",     "Enable memHierarchy",                          "0"},
+    {"enableMemH",      "Enable memHierarchy",                          "0"},
     {"enableRDMAMbox",  "Enable the RDMA mailbox",                      "1"},
     {"enableCoProc",    "Enable an attached coProcessor for all cores", "0"},
     {"enable_faults",   "Enable the fault injection logic",             "0"},

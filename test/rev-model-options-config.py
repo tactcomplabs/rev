@@ -15,7 +15,7 @@ DEBUG_L1 = 0
 DEBUG_MEM = 0
 DEBUG_LEVEL = 10
 VERBOSE = 2
-MEM_SIZE = 1024*1024*1024-1
+memSize = 1024*1024*1024-1
 
 # Setup argument parser
 parser = argparse.ArgumentParser(description="Run Rev SST Simulation")
@@ -37,7 +37,6 @@ for arg in vars(args):
     print("\t", arg, " = ", getattr(args, arg))
 
 # SST core options and parameters
-mem_size = 1024*1024*1024-1
 clock = "2.0GHz"
 
 # Define the simulation components
@@ -47,13 +46,13 @@ comp_cpu.addParams({
     "numCores": args.numCores,
     "numHarts": args.numHarts,
     "clock": clock,
-    "memSize": mem_size,
+    "memSize": memSize,
     "machine": args.machine,
     "memCost": "[0:1:10]",
     "program": args.program,
     "startAddr": "[0:0x00000000]",
     "startSymbol": args.startSymbol,
-    "enable_memH": args.enableMemH,
+    "enableMemH": args.enableMemH,
     "args": args.args,
     "splash": 1
 })
@@ -91,7 +90,7 @@ if args.enableMemH:
         "clock": "2GHz",
         "verbose": VERBOSE,
         "addr_range_start": 0,
-        "addr_range_end": MEM_SIZE,
+        "addr_range_end": memSize,
         "backing": "malloc"
     })
 

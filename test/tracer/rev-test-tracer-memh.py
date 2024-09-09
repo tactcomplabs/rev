@@ -28,7 +28,7 @@ print(f"REV_EXE={rev_exe}")
 DEBUG_MEM = 0
 DEBUG_LEVEL = 10
 VERBOSE = 2
-MEM_SIZE = 1024*1024*1024-1
+memSize = 1024*1024*1024-1
 
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
@@ -50,7 +50,7 @@ for i in range(0, sim_nodes):
           "startAddr": "[CORES:0x00000000]",  # Starting address for core 0
           "memCost": "[0:1:10]",              # Memory loads required 1-10 cycles
           "program": rev_exe,                 # Target executable
-          "enable_memH": 1,                   # Enable memHierarchy support
+          "enableMemH": 1,                    # Enable memHierarchy support
           "splash": 1,                        # Display the splash message
           # "trcOp": "slli",                  # base command for tracing [default: slli]
           # "trcLimit": 0,                    # Maximum number of trace lines [default: 0]
@@ -87,7 +87,7 @@ memctrl.addParams({
     "clock": "2GHz",
     "verbose": VERBOSE,
     "addr_range_start": 0,
-    "addr_range_end": MEM_SIZE,
+    "addr_range_end": memSize,
     "backing": "malloc"
 })
 
