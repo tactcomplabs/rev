@@ -95,17 +95,14 @@ private:
   unsigned numHarts{};   ///< RevOpts: number of harts per core
   int      verbosity{};  ///< RevOpts: verbosity level
 
-  std::map<unsigned, uint64_t>    startAddr{};      ///< RevOpts: map of core id to starting address
-  std::map<unsigned, std::string> startSym{};       ///< RevOpts: map of core id to starting symbol
-  std::map<unsigned, std::string> machine{};        ///< RevOpts: map of core id to machine model
-  std::map<unsigned, std::string> table{};          ///< RevOpts: map of core id to inst table
-  std::map<unsigned, unsigned>    prefetchDepth{};  ///< RevOpts: map of core id to prefretch depth
-
-  std::vector<std::pair<unsigned, unsigned>> memCosts{};  ///< RevOpts: vector of memory cost ranges
-
-  std::vector<std::string> Argv{};  ///< RevOpts: vector of function arguments
-
-  std::vector<std::string> MemDumpRanges{};  ///< RevOpts: vector of function arguments
+  std::unordered_map<unsigned, uint64_t>     startAddr{};      ///< RevOpts: map of core id to starting address
+  std::unordered_map<unsigned, std::string>  startSym{};       ///< RevOpts: map of core id to starting symbol
+  std::unordered_map<unsigned, std::string>  machine{};        ///< RevOpts: map of core id to machine model
+  std::unordered_map<unsigned, std::string>  table{};          ///< RevOpts: map of core id to inst table
+  std::unordered_map<unsigned, unsigned>     prefetchDepth{};  ///< RevOpts: map of core id to prefretch depth
+  std::vector<std::pair<unsigned, unsigned>> memCosts{};       ///< RevOpts: vector of memory cost ranges
+  std::vector<std::string>                   Argv{};           ///< RevOpts: vector of function arguments
+  std::vector<std::string>                   MemDumpRanges{};  ///< RevOpts: vector of function arguments
 
 };  // class RevOpts
 
