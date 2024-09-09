@@ -17,8 +17,7 @@
 namespace SST::RevCPU {
 
 RevFeature::RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id )
-  : machine( std::move( Machine ) ), output( Output ), MinCost( Min ), MaxCost( Max ), ProcID( Id ), HartToExecID( 0 ),
-    features( RV_UNKNOWN ), xlen( 0 ) {
+  : machine( std::move( Machine ) ), output( Output ), MinCost( Min ), MaxCost( Max ), ProcID( Id ) {
   output->verbose( CALL_INFO, 6, 0, "Core %u ; Initializing feature set from machine string=%s\n", ProcID, machine.c_str() );
   if( !ParseMachineModel() )
     output->fatal( CALL_INFO, -1, "Error: failed to parse the machine model: %s\n", machine.c_str() );
@@ -58,10 +57,10 @@ bool RevFeature::ParseMachineModel() {
     { "I",          2, 1,  2, 2, RV_I                                   },
     { "E",          2, 0, -1, 0, RV_E                                   }, // Unsupported
     { "M",          2, 0,  2, 2, RV_M | RV_ZMMUL                        },
-    { "A",          2, 1,  2, 2, RV_A                                   },
+    { "A",          2, 1,  2, 2, RV_ZAAMO | RV_ZALRSC                   },
     { "F",          2, 2,  2, 2, RV_F | RV_ZICSR                        },
     { "D",          2, 2,  2, 2, RV_D | RV_F | RV_ZICSR                 },
-    { "G",          2, 0,  2, 2, RV_I | RV_M | RV_ZMMUL | RV_A |
+    { "G",          2, 0,  2, 2, RV_I | RV_M | RV_ZMMUL | RV_ZAAMO | RV_ZALRSC |
                                  RV_F | RV_D | RV_ZICSR | RV_ZIFENCEI   },
     { "Q",          2, 2, -1, 0, RV_Q | RV_D | RV_F | RV_ZICSR          }, // Unsupported
     { "C",          2, 0,  2, 2, RV_C                                   },
@@ -73,6 +72,8 @@ bool RevFeature::ParseMachineModel() {
     { "Zicsr",      2, 0,  2, 2, RV_ZICSR                               },
     { "Zifencei",   2, 0,  2, 2, RV_ZIFENCEI                            },
     { "Zmmul",      1, 0,  1, 1, RV_ZMMUL                               },
+    { "Zaamo",      2, 1,  2, 2, RV_ZAAMO                               },
+    { "Zalrsc",     2, 1,  2, 2, RV_ZALRSC                              },
     { "Zfa",        1, 0,  1, 1, RV_ZFA | RV_F | RV_ZICSR               }, // Unsupported
     { "Zfh",        1, 0, -1, 0, RV_ZFH | RV_ZFHMIN | RV_F | RV_ZICSR   }, // Unsupported
     { "Zfhmin",     1, 0, -1, 0, RV_ZFHMIN | RV_F | RV_ZICSR            }, // Unsupported

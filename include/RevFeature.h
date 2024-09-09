@@ -26,27 +26,27 @@ enum RevFeatureType : uint32_t {
   RV_I        = 1 << 0,   ///< RevFeatureType: I-extension
   RV_E        = 1 << 1,   ///< RevFeatureType: E-extension
   RV_M        = 1 << 2,   ///< RevFeatureType: M-extension
-  RV_A        = 1 << 3,   ///< RevFeatureType: A-extension
-  RV_F        = 1 << 4,   ///< RevFeatureType: F-extension
-  RV_D        = 1 << 5,   ///< RevFeatureType: D-extension
-  RV_Q        = 1 << 6,   ///< RevFeatureType: Q-extension
-  RV_C        = 1 << 7,   ///< RevFeatureType: C-extension
-  RV_B        = 1 << 8,   ///< RevFeatureType: C-extension
-  RV_P        = 1 << 9,   ///< RevFeatureType: P-Extension
-  RV_V        = 1 << 10,  ///< RevFeatureType: V-extension
-  RV_H        = 1 << 11,  ///< RevFeatureType: H-extension
-  RV_ZICBOM   = 1 << 12,  ///< RevFeatureType: Zicbom-extension
-  RV_ZICSR    = 1 << 13,  ///< RevFEatureType: Zicsr-extension
-  RV_ZIFENCEI = 1 << 14,  ///< RevFeatureType: Zifencei-extension
-  RV_ZMMUL    = 1 << 15,  ///< RevFeatureType: Zmmul-extension
-  RV_ZFA      = 1 << 16,  ///< RevFeatureType: Zfa-extension
-  RV_ZFH      = 1 << 17,  ///< RevFeatureType: H-extension
-  RV_ZFHMIN   = 1 << 18,  ///< RevFeatureRtpe: Zfhmin extension
-  RV_ZTSO     = 1 << 19,  ///< RevFeatureType: Ztso-extension
+  RV_F        = 1 << 3,   ///< RevFeatureType: F-extension
+  RV_D        = 1 << 4,   ///< RevFeatureType: D-extension
+  RV_Q        = 1 << 5,   ///< RevFeatureType: Q-extension
+  RV_C        = 1 << 6,   ///< RevFeatureType: C-extension
+  RV_B        = 1 << 7,   ///< RevFeatureType: C-extension
+  RV_P        = 1 << 8,   ///< RevFeatureType: P-Extension
+  RV_V        = 1 << 9,   ///< RevFeatureType: V-extension
+  RV_H        = 1 << 10,  ///< RevFeatureType: H-extension
+  RV_ZICBOM   = 1 << 11,  ///< RevFeatureType: Zicbom-extension
+  RV_ZICSR    = 1 << 12,  ///< RevFEatureType: Zicsr-extension
+  RV_ZIFENCEI = 1 << 13,  ///< RevFeatureType: Zifencei-extension
+  RV_ZMMUL    = 1 << 14,  ///< RevFeatureType: Zmmul-extension
+  RV_ZAAMO    = 1 << 15,  ///< RevFeatureType: Zaamo-extension
+  RV_ZALRSC   = 1 << 16,  ///< RevFeatureType: Zalrsc-extension
+  RV_ZFA      = 1 << 17,  ///< RevFeatureType: Zfa-extension
+  RV_ZFH      = 1 << 18,  ///< RevFeatureType: H-extension
+  RV_ZFHMIN   = 1 << 19,  ///< RevFeatureRtpe: Zfhmin extension
+  RV_ZTSO     = 1 << 20,  ///< RevFeatureType: Ztso-extension
 };
 
-class RevFeature {
-public:
+struct RevFeature {
   /// RevFeature: standard constructor
   RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id );
 
@@ -77,11 +77,8 @@ public:
   /// GetMaxCost: get the maximum cost
   auto GetMaxCost() const { return MaxCost; }
 
-  /// IsRV32: Is the device an RV32
-  bool IsRV32() const { return xlen == 32; }
-
   /// IsRV64: Is the device an RV64
-  bool IsRV64() const { return xlen == 64; }
+  bool IsRV64() const { return xlen >= 64; }
 
   /// HasF: Does the device support F?
   bool HasF() const { return IsModeEnabled( RV_F ); }
@@ -102,14 +99,14 @@ public:
   void SetHartToExecID( unsigned hart ) { HartToExecID = hart; }
 
 private:
-  std::string    machine{};       ///< RevFeature: feature string
-  SST::Output*   output{};        ///< RevFeature: output handler
-  unsigned       MinCost{};       ///< RevFeature: min memory cost
-  unsigned       MaxCost{};       ///< RevFeature: max memory cost
-  unsigned       ProcID{};        ///< RevFeature: RISC-V Proc ID
-  unsigned       HartToExecID{};  ///< RevFeature: The current executing Hart on RevCore
-  RevFeatureType features{};      ///< RevFeature: feature elements
-  unsigned       xlen{};          ///< RevFeature: RISC-V Xlen
+  const std::string  machine;                 ///< RevFeature: feature string
+  SST::Output* const output;                  ///< RevFeature: output handler
+  const unsigned     MinCost;                 ///< RevFeature: min memory cost
+  const unsigned     MaxCost;                 ///< RevFeature: max memory cost
+  const unsigned     ProcID;                  ///< RevFeature: RISC-V Proc ID
+  unsigned           HartToExecID{};          ///< RevFeature: The current executing Hart on RevCore
+  RevFeatureType     features{ RV_UNKNOWN };  ///< RevFeature: feature elements
+  unsigned           xlen{};                  ///< RevFeature: RISC-V Xlen
 
   /// ParseMachineModel: parse the machine model string
   bool ParseMachineModel();

@@ -70,6 +70,10 @@ constexpr bool RevFlagHas( RevFlag flag, RevFlag has ) {
   return ( static_cast<uint32_t>( flag ) & static_cast<uint32_t>( has ) ) != 0;
 }
 
+inline void RevFlagSet( RevFlag& flag, RevFlag set ) {
+  flag = RevFlag{ uint32_t( flag ) | uint32_t( set ) };
+}
+
 /// RevFlag: Handle flag response
 void RevHandleFlagResp( void* target, size_t size, RevFlag flags );
 
