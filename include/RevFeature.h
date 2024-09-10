@@ -33,9 +33,9 @@ enum RevFeatureType : uint32_t {
   RV_B        = 1 << 7,   ///< RevFeatureType: C-extension
   RV_P        = 1 << 8,   ///< RevFeatureType: P-Extension
   RV_V        = 1 << 9,   ///< RevFeatureType: V-extension
-  RV_H        = 1 << 10,  ///< RevFeatureType: H-extension
-  RV_ZICBOM   = 1 << 11,  ///< RevFeatureType: Zicbom-extension
-  RV_ZICSR    = 1 << 12,  ///< RevFEatureType: Zicsr-extension
+  RV_ZICBOM   = 1 << 10,  ///< RevFeatureType: Zicbom-extension
+  RV_ZICOND   = 1 << 11,  ///< RevFeatureType: Zicond-extension
+  RV_ZICSR    = 1 << 12,  ///< RevFeatureType: Zicsr-extension
   RV_ZIFENCEI = 1 << 13,  ///< RevFeatureType: Zifencei-extension
   RV_ZMMUL    = 1 << 14,  ///< RevFeatureType: Zmmul-extension
   RV_ZAAMO    = 1 << 15,  ///< RevFeatureType: Zaamo-extension

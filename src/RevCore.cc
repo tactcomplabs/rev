@@ -198,6 +198,11 @@ bool RevCore::SeedInstTable() try {
     EnableExt( new Zicbom( feature, mem, output ) );
   }
 
+  // Zicond Extension
+  if( feature->IsModeEnabled( RV_ZICOND ) ) {
+    EnableExt( new Zicond( feature, mem, output ) );
+  }
+
   // Zicsr Extension
   if( feature->IsModeEnabled( RV_ZICSR ) ) {
     EnableExt( new Zicsr( feature, mem, output ) );

@@ -32,6 +32,7 @@
 #include "insns/Zalrsc.h"
 #include "insns/Zfa.h"
 #include "insns/Zicbom.h"
+#include "insns/Zicond.h"
 #include "insns/Zicsr.h"
 #include "insns/Zifencei.h"
 
