@@ -673,7 +673,7 @@ REV_SYSCALL( 9006, void dump_thread_mem( ) );
 REV_SYSCALL( 9007, void dump_thread_mem_to_file( const char* outputFile ) );
 
 // ==================== REV PRINT UTILITIES
-REV_SYSCALL( 9110, int rev_fast_printf(const char* format, uint64_t a1=0, uint64_t a2=0, uint64_t a3=0, uint64_t a4=0, uint64_t a4=0, uint64_t a6=0) );
+REV_SYSCALL( 9110, int rev_fast_printf(const char* format, uint64_t a1=0, uint64_t a2=0, uint64_t a3=0, uint64_t a4=0, uint64_t a5=0, uint64_t a6=0) );
 
 // clang-format on
 

@@ -3390,7 +3390,7 @@ EcallStatus RevCore::ECALL_dump_thread_mem_to_file() {
   return EcallLoadAndParseString( pathname, action );
 }
 
-// 9110, rev_fast_printf(const char *, uint64_t a1=0, uint64_t a2=0, uint64_t a3=0, uint64_t a4=0, uint64_t a5=0, , uint64_t a6=0)
+// 9110, rev_fast_printf(const char *, uint64_t a1=0, uint64_t a2=0, uint64_t a3=0, uint64_t a4=0, uint64_t a5=0, uint64_t a6=0)
 //  printf helper executed on host rather than rev.
 //  Use xml-like tags to define <rev-print>start/end<rev-print> of printed text to allow post processor extraction
 //  Restrictions:
@@ -3412,7 +3412,7 @@ EcallStatus RevCore::ECALL_fast_printf() {
     int       cx;
     cx = snprintf( buffer, sz, EcallState.string.c_str(), a1, a2, a3, a4, a5, a6 );
     if( cx >= 0 && cx < sz )
-      output->verbose( CALL_INFO, 0, 0, "<rev-print>\n%s</rev-print>\n", buffer );
+      output->verbose( CALL_INFO, 0, 0, "<rev-print>%s</rev-print>\n", buffer );
   };
   return EcallLoadAndParseString( pFormat, action );
 }
