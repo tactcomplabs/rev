@@ -44,7 +44,8 @@ EcallStatus RevCore::EcallLoadAndParseString( uint64_t straddr, std::function<vo
         HartToExecID,
         MemOp::MemOpREAD,
         true,
-        [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } };
+        [=]( const MemReq& req ) { this->MarkLoadComplete( req ); }
+      };
       LSQueue->insert( req.LSQHashPair() );
       mem->ReadVal( HartToExecID, straddr + EcallState.string.size(), EcallState.buf.data(), req, RevFlag::F_NONE );
       EcallState.bytesRead = 1;
@@ -3389,6 +3390,33 @@ EcallStatus RevCore::ECALL_dump_thread_mem_to_file() {
   return EcallLoadAndParseString( pathname, action );
 }
 
+// 9110, rev_fast_printf(const char *, uint64_t a1=0, uint64_t a2=0, uint64_t a3=0, uint64_t a4=0, uint64_t a5=0, , uint64_t a6=0)
+//  printf helper executed on host rather than rev.
+//  Use xml-like tags to define <rev-print>start/end<rev-print> of printed text to allow post processor extraction
+//  Restrictions:
+//  - 6 data, all uint64_t
+//  - 1024 characters
+EcallStatus RevCore::ECALL_fast_printf() {
+  auto&    EcallState = Harts.at( HartToExecID )->GetEcallState();
+  uint64_t pFormat    = RegFile->GetX<uint64_t>( RevReg::a0 );
+
+  auto action         = [&] {
+    uint64_t  a1 = RegFile->GetX<uint64_t>( RevReg::a1 );
+    uint64_t  a2 = RegFile->GetX<uint64_t>( RevReg::a2 );
+    uint64_t  a3 = RegFile->GetX<uint64_t>( RevReg::a3 );
+    uint64_t  a4 = RegFile->GetX<uint64_t>( RevReg::a4 );
+    uint64_t  a5 = RegFile->GetX<uint64_t>( RevReg::a5 );
+    uint64_t  a6 = RegFile->GetX<uint64_t>( RevReg::a6 );
+    const int sz = 1024;
+    char      buffer[sz];
+    int       cx;
+    cx = snprintf( buffer, sz, EcallState.string.c_str(), a1, a2, a3, a4, a5, a6 );
+    if( cx >= 0 && cx < sz )
+      output->verbose( CALL_INFO, 0, 0, "<rev-print>\n%s</rev-print>\n", buffer );
+  };
+  return EcallLoadAndParseString( pFormat, action );
+}
+
 /* ========================================= */
 /* System Call (ecall) Implementations Below */
 /* ========================================= */
@@ -3718,6 +3746,7 @@ const std::unordered_map<uint32_t, EcallStatus(RevCore::*)()> RevCore::Ecalls = 
     { 9005, &RevCore::ECALL_dump_valid_mem_to_file },   // rev_dump_valid_mem_to_file(const char* filename)
     { 9004, &RevCore::ECALL_dump_thread_mem },          // rev_dump_thread_mem()
     { 9005, &RevCore::ECALL_dump_thread_mem_to_file },  // rev_dump_thread_mem_to_file(const char* filename)
+    { 9110, &RevCore::ECALL_fast_printf },              // rev_fast_printf(const char *, uint64_t a1=0, uint64_t a2=0, uint64_t a3=0, uint64_t a4=0, uint64_t a5=0, uint64_t a6=0)
 };
 // clang-format on
 

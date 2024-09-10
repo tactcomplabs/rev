@@ -306,8 +306,8 @@ private:
   std::function<uint32_t()> const GetNewThreadID;
 
   // If a given assigned thread experiences a change of state, it sets the corresponding bit
-  std::vector<std::unique_ptr<RevThread>>
-    ThreadsThatChangedState{};  ///< RevCore: used to signal to RevCPU that the thread assigned to HART has changed state
+  std::vector<std::unique_ptr<RevThread>> ThreadsThatChangedState{
+  };  ///< RevCore: used to signal to RevCPU that the thread assigned to HART has changed state
 
   SST::Output* const                output;                       ///< RevCore: output handler
   std::unique_ptr<RevFeature>       CreateFeature();              ///< RevCore: Create a RevFeature object
@@ -317,8 +317,8 @@ private:
   RevCoreStats                      StatsTotal{};                 ///< RevCore: collection of total performance stats
   std::unique_ptr<RevPrefetcher>    sfetch{};                     ///< RevCore: stream instruction prefetcher
 
-  std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>>
-    LSQueue{};  ///< RevCore: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
+  std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>> LSQueue{
+  };  ///< RevCore: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
   TimeConverter* timeConverter{};  ///< RevCore: Time converter for RTC
 
   RevRegFile* RegFile        = nullptr;        ///< RevCore: Initial pointer to HartToDecodeID RegFile
@@ -671,7 +671,10 @@ private:
 
   EcallStatus ECALL_dump_thread_mem();         // 9006, dump_thread_mem()
   EcallStatus ECALL_dump_thread_mem_to_file(); // 9007, dump_thread_mem_to_file(const char* outputFile)
-  // clang-format on
+
+  // =============== REV print utilities
+  EcallStatus ECALL_fast_printf();             // 9010, rev_fast_printf(const char *, uint64_t a1=0, uint64_t a2=0, uint64_t a3=0, uint64_t a4=0, uint64_t a5=0, uint64_t a6=0)
+    // clang-format on
 
   /// RevCore: Table of ecall codes w/ corresponding function pointer implementations
   static const std::unordered_map<uint32_t, EcallStatus ( RevCore::* )()> Ecalls;
