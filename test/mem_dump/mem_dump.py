@@ -8,7 +8,6 @@
 # mem_dump.py
 #
 
-import os
 import argparse
 import sst
 
@@ -16,7 +15,7 @@ DEBUG_L1 = 0
 DEBUG_MEM = 0
 DEBUG_LEVEL = 10
 VERBOSE = 2
-MEM_SIZE = 1024 * 1024 * 10 - 1
+memSize = 1024 * 1024 * 10 - 1
 
 # Setup argument parser
 parser = argparse.ArgumentParser(description="Run Rev SST Simulation")
@@ -56,7 +55,6 @@ for arg in vars(args):
     print("\t", arg, " = ", getattr(args, arg))
 
 # SST core options and parameters
-mem_size = 1024 * 1024 * 10 - 1
 clock = "2.0GHz"
 
 # Define the simulation components
@@ -67,7 +65,7 @@ comp_cpu.addParams(
         "numCores": args.numCores,
         "numHarts": args.numHarts,
         "clock": clock,
-        "memSize": mem_size,
+        "memSize": memSize,
         "machine": args.machine,
         "memCost": "[0:1:10]",
         "program": "basic.exe",

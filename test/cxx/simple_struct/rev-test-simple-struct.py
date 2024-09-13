@@ -22,17 +22,17 @@ max_addr_gb = 1
 # Define the simulation components
 comp_cpu = sst.Component("cpu", "revcpu.RevCPU")
 comp_cpu.addParams({
-        "verbose" : 5,                                # Verbosity
-        "numCores" : 1,                               # Number of cores
-        "clock" : "1.0GHz",                           # Clock
-        "memSize" : 1024*1024*1024,                   # Memory size in bytes
-        "machine" : "[0:RV64IMAFDC]",                 #
-        # "startAddr" : "[0:0x00000000]",               # Starting address for core 0
-        "startSymbol" : "[0:_start]",
-        "memCost" : "[0:1:10]",                       # Memory loads required 1-10 cycles
-        "program" : os.getenv("REV_EXE", "simple_struct.exe"),  # Target executable
-        "trcStartCycle" : 1,
-        "splash" : 1                                  # Display the splash message
+        "verbose": 5,                                          # Verbosity
+        "numCores": 1,                                         # Number of cores
+        "clock": "1.0GHz",                                     # Clock
+        "memSize": 1024*1024*1024,                             # Memory size in bytes
+        "machine": "[0:RV64IMAFDC]",                           #
+        # "startAddr": "[0:0x00000000]",                       # Starting address for core 0
+        "startSymbol": "[0:_start]",
+        "memCost": "[0:1:10]",                                 # Memory loads required 1-10 cycles
+        "program": os.getenv("REV_EXE", "simple_struct.exe"),  # Target executable
+        "trcStartCycle": 1,
+        "splash": 1                                            # Display the splash message
 })
 
 sst.setStatisticOutput("sst.statOutputCSV")
