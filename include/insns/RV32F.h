@@ -124,10 +124,10 @@ class RV32F : public RevExt {
 
   static std::vector<RevInstEntry> RV32FCOTable() {
     return {
-      RevCInstDefaults().SetMnemonic("c.flwsp %rd, $imm"     ).SetFunct3(0b011).SetImplFunc(cflwsp).Setimm(FVal).SetrdClass(RevRegClass::RegFLOAT  )                                   .SetFormat(RVCTypeCI ).SetOpcode(0b10),
-      RevCInstDefaults().SetMnemonic("c.fswsp %rs2, $imm"    ).SetFunct3(0b111).SetImplFunc(cfswsp).Setimm(FVal).SetrdClass(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegFLOAT).SetFormat(RVCTypeCSS).SetOpcode(0b10),
-      RevCInstDefaults().SetMnemonic("c.flw %rd, %rs1, $imm" ).SetFunct3(0b011).SetImplFunc(cflw  ).Setimm(FVal).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR)  .SetFormat(RVCTypeCL ).SetOpcode(0b00),
-      RevCInstDefaults().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetFunct3(0b111).SetImplFunc(cfsw  ).Setimm(FVal).SetrdClass(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegFLOAT).SetFormat(RVCTypeCS ).SetOpcode(0b00),
+      RevCInstDefaults().SetMnemonic("c.flwsp %rd, $imm"     ).SetFunct3(0b011).SetImplFunc(cflwsp).Setimm(RevImmFunc::FVal).SetrdClass(RevRegClass::RegFLOAT  )                                   .SetFormat(RVCTypeCI ).SetOpcode(0b10),
+      RevCInstDefaults().SetMnemonic("c.fswsp %rs2, $imm"    ).SetFunct3(0b111).SetImplFunc(cfswsp).Setimm(RevImmFunc::FVal).SetrdClass(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegFLOAT).SetFormat(RVCTypeCSS).SetOpcode(0b10),
+      RevCInstDefaults().SetMnemonic("c.flw %rd, %rs1, $imm" ).SetFunct3(0b011).SetImplFunc(cflw  ).Setimm(RevImmFunc::FVal).SetrdClass(RevRegClass::RegFLOAT  ).Setrs1Class(RevRegClass::RegGPR)  .SetFormat(RVCTypeCL ).SetOpcode(0b00),
+      RevCInstDefaults().SetMnemonic("c.fsw %rs2, %rs1, $imm").SetFunct3(0b111).SetImplFunc(cfsw  ).Setimm(RevImmFunc::FVal).SetrdClass(RevRegClass::RegUNKNOWN).Setrs2Class(RevRegClass::RegFLOAT).SetFormat(RVCTypeCS ).SetOpcode(0b00),
     };
   }
 
