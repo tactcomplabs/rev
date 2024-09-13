@@ -117,7 +117,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
 
   // Create the memory object
   const uint64_t memSize = params.find<unsigned long>( "memSize", 1073741824 );
-  EnableMemH             = params.find<bool>( "enable_memH", 0 );
+  EnableMemH             = params.find<bool>( "enableMemH", 0 );
   if( !EnableMemH ) {
     Mem = std::make_unique<RevMem>( memSize, Opts.get(), &output );
   } else {
