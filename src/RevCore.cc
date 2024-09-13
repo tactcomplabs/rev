@@ -1002,7 +1002,7 @@ RevInst RevCore::DecodeRInst( uint32_t Inst, unsigned Entry ) const {
   }
 
   // imm
-  if( ( InstTable[Entry].imm == FImm ) && ( InstTable[Entry].rs2Class == RevRegClass::RegUNKNOWN ) ) {
+  if( InstTable[Entry].imm == RevImmFunc::FImm && InstTable[Entry].rs2Class == RevRegClass::RegUNKNOWN ) {
     DInst.imm = DECODE_IMM12( Inst ) & 0b011111;
   } else {
     DInst.imm = 0x0;
@@ -1400,9 +1400,9 @@ RevInst RevCore::DecodeInst( uint32_t Inst ) const {
     // clang-format on
   }
 
-  // Stage 5: Determine if we have an imm12 field (ECALL and EBREAK)
+  // Stage 5: Determine if we have an imm12 field (ECALL and EBREAK, CBO)
   uint32_t Imm12 = 0x00ul;
-  if( inst42 == 0b100 && inst65 == 0b11 && Funct3 == 0 ) {
+  if( ( inst42 == 0b100 && inst65 == 0b11 && Funct3 == 0b000 ) || ( inst42 == 0b011 && inst65 == 0b00 && Funct3 == 0b010 ) ) {
     Imm12 = DECODE_IMM12( Inst );
   }
 

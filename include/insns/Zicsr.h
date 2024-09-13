@@ -88,7 +88,7 @@ class Zicsr : public RevExt {
       SetRaiseFPE( true );
       SetrdClass( RevRegClass::RegGPR );
       Setrs2Class( RevRegClass::RegUNKNOWN );
-      Setimm( FImm );
+      Setimm( RevImmFunc::FImm );
       SetFormat( RVTypeI );
     }
   };
