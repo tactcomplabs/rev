@@ -64,11 +64,11 @@ enum RevInstF : int {  ///< Rev CPU Instruction Formats
   RVCTypeCJ     = 18,  ///< RevInstF: Compressed CJ-Type
 };
 
-enum RevImmFunc : int {  ///< Rev Immediate Values
-  FUnk = 0,              ///< RevRegClass: Imm12 is not used
-  FImm = 1,              ///< RevRegClass: Imm12 is an immediate
-  FEnc = 2,              ///< RevRegClass: Imm12 is an encoding value
-  FVal = 3,              ///< RevRegClass: Imm12 is an incoming register value
+enum class RevImmFunc : int {  ///< Rev Immediate Values
+  FUnk = 0,                    ///< RevRegClass: Imm12 is not used
+  FImm = 1,                    ///< RevRegClass: Imm12 is an immediate
+  FEnc = 2,                    ///< RevRegClass: Imm12 is an encoding value
+  FVal = 3,                    ///< RevRegClass: Imm12 is an incoming register value
 };
 
 /*! \struct RevInst
@@ -140,7 +140,7 @@ struct RevInstEntry {
   RevRegClass rs2Class = RevRegClass::RegGPR;      ///< RevInstEntry: Rs2 register class
   RevRegClass rs3Class = RevRegClass::RegUNKNOWN;  ///< RevInstEntry: Rs3 register class
   uint16_t    imm12    = 0;                        ///< RevInstEntry: imm12 value
-  RevImmFunc  imm      = FUnk;                     ///< RevInstEntry: does the imm12 exist?
+  RevImmFunc  imm      = RevImmFunc::FUnk;         ///< RevInstEntry: does the imm12 exist?
 
   // formatting
   RevInstF format      = RVTypeR;  ///< RevInstEntry: instruction format
