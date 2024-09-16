@@ -18,6 +18,12 @@
 
 #define assert TRACE_ASSERT
 
+#ifdef __cplusplus
+#define printf rev_fast_printf
+#else
+#define printf( ... )
+#endif
+
 // inefficient calculation of r-s
 int long_sub( int r, int s ) {
   for( int i = 0; i < s; i++ )
@@ -70,14 +76,14 @@ int main( int argc, char** argv ) {
   res     = long_sub( res, 1000 );
   // res == 2000;
 
-  rev_fast_printf( "Enable Tracing\n" );
+  printf( "Enable Tracing\n" );
   // enable tracing
   TRACE_ON;
   res = long_sub( res, 20 );
   // res == 1980
   assert( res == 1980 );
   TRACE_OFF;
-  rev_fast_printf( "Tracing Disabled\n" );
+  printf( "Tracing Disabled\n" );
 
   // not traced
   for( int i = 0; i < 1980 / 2; i++ )
