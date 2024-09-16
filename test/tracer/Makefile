@@ -22,6 +22,7 @@ LOGS   = $(addsuffix .log,$(TLIST))
 TARGS = $(EXES) $(DIASMS) $(LOGS)
 
 CC=${RVCC}
+CXX=${RVCXX}
 OBJDUMP=${RISCV}/bin/riscv64-unknown-elf-objdump -D --source
 INCLUDE = -I../../common/syscalls -I../include
 
@@ -46,7 +47,7 @@ compile: $(EXES) $(DIASMS)
 %.memh.rv64g.log: REVCFG=./rev-test-tracer-memh.py
 
 %.exe: tracer.c
-	$(CC) -g -O0 -march=$(ARCH) $(OPTS) $(INCLUDE) -o  $@ $<
+	$(CXX) -g -O0 -march=$(ARCH) $(OPTS) $(INCLUDE) -o  $@ $<
 
 %.rv64g.log: ARCH=rv64g
 %.rv32i.log: ARCH=rv32i

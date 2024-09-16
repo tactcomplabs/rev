@@ -70,12 +70,14 @@ int main( int argc, char** argv ) {
   res     = long_sub( res, 1000 );
   // res == 2000;
 
+  rev_fast_printf( "Enable Tracing\n" );
   // enable tracing
   TRACE_ON;
   res = long_sub( res, 20 );
   // res == 1980
   assert( res == 1980 );
   TRACE_OFF;
+  rev_fast_printf( "Tracing Disabled\n" );
 
   // not traced
   for( int i = 0; i < 1980 / 2; i++ )
