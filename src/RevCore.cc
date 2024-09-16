@@ -1784,54 +1784,57 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   }
 
   // Check for pipeline hazards
-  if( !Pipeline.empty() && Pipeline.front().second.cost > 0 ) {
-    if( --Pipeline.front().second.cost == 0 ) {
-      // Ready to retire this instruction
-      uint16_t HartID = Pipeline.front().first;
+  if( !Pipeline.empty() && !--Pipeline.front().second.cost ) {
+    // Ready to retire this instruction
+    uint16_t HartID = Pipeline.front().first;
 #ifndef NO_REV_TRACER
-      output->verbose(
-        CALL_INFO,
-        6,
-        0,
-        "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
-        id,
-        HartID,
-        ActiveThreadID,
-        ExecPC
-      );
+    output->verbose(
+      CALL_INFO,
+      6,
+      0,
+      "Core %" PRIu32 "; Hart %" PRIu32 "; ThreadID %" PRIu32 "; Retiring PC= 0x%" PRIx64 "\n",
+      id,
+      HartID,
+      ActiveThreadID,
+      ExecPC
+    );
 #endif
-      ++Stats.retired;
-      ++RegFile->InstRet;
+    ++Stats.retired;
+    ++RegFile->InstRet;
 
-      // Only clear the dependency if there is no outstanding load
-      if( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) == 0 ) {
-        DependencyClear( HartID, &Pipeline.front().second );
-      }
-      Pipeline.pop_front();
-      RegFile->SetCost( 0 );
+    // Only clear the dependency if there is no outstanding load
+    if( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) == 0 ) {
+      DependencyClear( HartID, &Pipeline.front().second );
     }
+    Pipeline.pop_front();
+    RegFile->SetCost( 0 );
   }
+
   // Check for completion states and new tasks
-  if( RegFile->GetPC() == 0x00ull ) {
+  if( !RegFile->GetPC() ) {
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
     if( HartHasNoDependencies( HartToDecodeID ) ) {
       std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart( HartToDecodeID );
-      ActiveThread->SetState( ThreadState::DONE );
-      HartsClearToExecute[HartToDecodeID] = false;
-      HartsClearToDecode[HartToDecodeID]  = false;
+      HartsClearToExecute[HartToDecodeID]     = false;
+      HartsClearToDecode[HartToDecodeID]      = false;
       IdleHarts.set( HartToDecodeID );
-      AddThreadsThatChangedState( std::move( ActiveThread ) );
+      if( ActiveThread ) {
+        ActiveThread->SetState( ThreadState::DONE );
+        AddThreadsThatChangedState( std::move( ActiveThread ) );
+      }
     }
 
     if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID] && HartHasNoDependencies( HartToExecID ) ) {
       std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart( HartToExecID );
-      ActiveThread->SetState( ThreadState::DONE );
-      HartsClearToExecute[HartToExecID] = false;
-      HartsClearToDecode[HartToExecID]  = false;
-      IdleHarts[HartToExecID]           = true;
-      AddThreadsThatChangedState( std::move( ActiveThread ) );
+      HartsClearToExecute[HartToExecID]       = false;
+      HartsClearToDecode[HartToExecID]        = false;
+      IdleHarts.set( HartToExecID );
+      if( ActiveThread ) {
+        ActiveThread->SetState( ThreadState::DONE );
+        AddThreadsThatChangedState( std::move( ActiveThread ) );
+      }
     }
   }
 

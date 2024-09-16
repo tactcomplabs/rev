@@ -802,6 +802,8 @@ private:
   /// RevCore: Whether any scoreboard bits are set
   bool AnyDependency( unsigned HartID, RevRegClass regClass = RevRegClass::RegUNKNOWN ) const {
     const RevRegFile* regFile = GetRegFile( HartID );
+    if( !regFile )
+      return false;
     switch( regClass ) {
     case RevRegClass::RegGPR: return regFile->RV_Scoreboard.any();
     case RevRegClass::RegFLOAT: return regFile->FP_Scoreboard.any();

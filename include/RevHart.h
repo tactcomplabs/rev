@@ -75,10 +75,12 @@ public:
     LoadRegFile( Thread->TransferVirtRegState() );
   }
 
-  ///< RevHart: Removed a RevThread from this Hart
+  ///< RevHart: Remove a RevThread from this Hart
   std::unique_ptr<RevThread> PopThread() {
-    // return the register file to the thread
-    Thread->UpdateVirtRegState( std::move( RegFile ) );
+    // return the register file to the thread if one exists
+    if( Thread ) {
+      Thread->UpdateVirtRegState( std::move( RegFile ) );
+    }
     // return the thread
     return std::move( Thread );
   }

@@ -80,7 +80,7 @@ public:
   const std::unordered_set<int>& GetFildes() { return fildes; }
 
   ///< RevThread: Update this thread's virtual register state
-  void UpdateVirtRegState( std::unique_ptr<RevVirtRegState> vRegState ) { VirtRegState = std::move( vRegState ); }
+  void UpdateVirtRegState( std::unique_ptr<RevVirtRegState>&& vRegState ) { VirtRegState = std::move( vRegState ); }
 
   ///< RevThread: Transfers the pointer of this Thread's register state
   ///             (Used for loading reg state into a Hart's RegFile)
