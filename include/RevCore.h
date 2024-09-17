@@ -673,6 +673,10 @@ private:
 
   EcallStatus ECALL_dump_thread_mem();         // 9006, dump_thread_mem()
   EcallStatus ECALL_dump_thread_mem_to_file(); // 9007, dump_thread_mem_to_file(const char* outputFile)
+
+  // =============== REV print utilities
+  EcallStatus ECALL_fast_printf();             // 9010, rev_fast_printf(const char *, ...)
+
   // clang-format on
 
   /// RevCore: Table of ecall codes w/ corresponding function pointer implementations
