@@ -18,6 +18,8 @@
 
 #define assert TRACE_ASSERT
 
+#define printf rev_fast_printf
+
 // inefficient calculation of r-s
 int long_sub( int r, int s ) {
   for( int i = 0; i < s; i++ )
@@ -64,6 +66,15 @@ void* thread2() {
 }
 
 int main( int argc, char** argv ) {
+
+  // fast print check
+  printf( "check print 1 param: 0x%05x\n", 0xfab6 );
+  printf( "check print 6 params: %d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6 );
+  printf( "check print 2 with 2 newlines: here->\nhere->\n" );
+  printf( "check back to back print with no new lines " );
+  printf( " [no new line] " );
+  printf( " [no new line] " );
+  printf( " ... new line here->\n" );
 
   // tracing is initially off
   int res = 3000;
@@ -155,5 +166,6 @@ check_tight_loop:
   TRACE_ASSERT(thread2_counter==20);
 #endif
 
+  printf( "tracer test completed normally\n" );
   return 0;
 }

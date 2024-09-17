@@ -20,11 +20,13 @@ TLIST   += $(addprefix $(EXAMPLE),.mem.rv32i.cpp .mem.rv64g.cpp .memh.rv32i.cpp 
 EXES   = $(addsuffix .exe,$(TLIST))
 DIASMS = $(addsuffix .dis,$(TLIST))
 LOGS   = $(addsuffix .log,$(TLIST))
+REVLOGS = $(addsuffix .revlog,$(TLIST))
 
-TARGS = $(EXES) $(DIASMS) $(LOGS)
+TARGS = $(EXES) $(DIASMS) $(LOGS) $(REVLOGS)
 
 CC=${RVCC}
 CXX=${RVCXX}
+REVPRINT=$(realpath ../../scripts/rev-print.py)
 
 OBJDUMP=${RISCV}/bin/riscv64-unknown-elf-objdump -D --source
 INCLUDE = -I../../common/syscalls -I../include
@@ -63,9 +65,12 @@ compile: $(EXES) $(DIASMS)
 	ARCH=$(ARCH) REV_EXE=$< sst --add-lib-path=../../build/src $(REVCFG) > $(tmp)
 	mv $(tmp) $@
 
+%.revlog: %.log
+	$(REVPRINT) -l $< > $@
+
 .PHONY: clean
 
 clean:
-	rm -f $(EXES) $(DIASMS) $(LOGS) *.log.tmp
+	rm -f $(TARGS) *.log.tmp
 
 #-- EOF
