@@ -671,6 +671,14 @@ REV_SYSCALL( 9004, void dump_valid_mem( ) );
 REV_SYSCALL( 9005, void dump_valid_mem_to_file( const char* outputFile ) );
 REV_SYSCALL( 9006, void dump_thread_mem( ) );
 REV_SYSCALL( 9007, void dump_thread_mem_to_file( const char* outputFile ) );
+
+// ==================== REV PRINT UTILITIES
+__attribute__(( naked ))
+__attribute__(( format( printf, 1, 2 ) ))
+static int rev_fast_printf( const char* format, ... ) {
+  asm( " li a7, 9110; ecall; ret" );
+}
+
 // clang-format on
 
 #endif  //SYSCALL_TYPES_ONLY
