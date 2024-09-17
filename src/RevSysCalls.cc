@@ -3389,6 +3389,48 @@ EcallStatus RevCore::ECALL_dump_thread_mem_to_file() {
   return EcallLoadAndParseString( pathname, action );
 }
 
+// 9110, rev_fast_printf(const char *, ...)
+//  printf helper executed on host rather than rev.
+//  Use xml-like tags to define <rev-print>start/end<rev-print> of printed text to allow post processor extraction
+//  Restrictions:
+//  - 6 data, all XLEN in size
+EcallStatus RevCore::ECALL_fast_printf() {
+  auto&    EcallState = Harts.at( HartToExecID )->GetEcallState();
+  uint64_t pFormat    = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto     action     = [&] {
+    const char* format = EcallState.string.c_str();
+    char        buffer[1024];
+    // This is sort of a hack -- we pass XLEN-sized values from a1-a6 which go into va_args slots
+    if( feature->IsRV64() ) {
+      snprintf(
+        buffer,
+        sizeof( buffer ),
+        format,
+        RegFile->GetX<uint64_t>( RevReg::a1 ),
+        RegFile->GetX<uint64_t>( RevReg::a2 ),
+        RegFile->GetX<uint64_t>( RevReg::a3 ),
+        RegFile->GetX<uint64_t>( RevReg::a4 ),
+        RegFile->GetX<uint64_t>( RevReg::a5 ),
+        RegFile->GetX<uint64_t>( RevReg::a6 )
+      );
+    } else {
+      snprintf(
+        buffer,
+        sizeof( buffer ),
+        format,
+        RegFile->GetX<uint32_t>( RevReg::a1 ),
+        RegFile->GetX<uint32_t>( RevReg::a2 ),
+        RegFile->GetX<uint32_t>( RevReg::a3 ),
+        RegFile->GetX<uint32_t>( RevReg::a4 ),
+        RegFile->GetX<uint32_t>( RevReg::a5 ),
+        RegFile->GetX<uint32_t>( RevReg::a6 )
+      );
+    }
+    output->verbose( CALL_INFO, 0, 0, "<rev-print>%s</rev-print>\n", buffer );
+  };
+  return EcallLoadAndParseString( pFormat, action );
+}
+
 /* ========================================= */
 /* System Call (ecall) Implementations Below */
 /* ========================================= */
@@ -3718,6 +3760,7 @@ const std::unordered_map<uint32_t, EcallStatus(RevCore::*)()> RevCore::Ecalls = 
     { 9005, &RevCore::ECALL_dump_valid_mem_to_file },   // rev_dump_valid_mem_to_file(const char* filename)
     { 9004, &RevCore::ECALL_dump_thread_mem },          // rev_dump_thread_mem()
     { 9005, &RevCore::ECALL_dump_thread_mem_to_file },  // rev_dump_thread_mem_to_file(const char* filename)
+    { 9110, &RevCore::ECALL_fast_printf },              // rev_fast_printf(const char *, ...)
 };
 // clang-format on
 
