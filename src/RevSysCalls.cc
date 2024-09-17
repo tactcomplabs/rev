@@ -3399,12 +3399,12 @@ EcallStatus RevCore::ECALL_fast_printf() {
   uint64_t pFormat    = RegFile->GetX<uint64_t>( RevReg::a0 );
   auto     action     = [&] {
     const char* format = EcallState.string.c_str();
-    char*       buffer{};
-    int         cx;
+    char        buffer[1024];
     // This is sort of a hack -- we pass XLEN-sized values from a1-a6 which go into va_args slots
     if( feature->IsRV64() ) {
-      cx = asprintf(
-        &buffer,
+      snprintf(
+        buffer,
+        sizeof( buffer ),
         format,
         RegFile->GetX<uint64_t>( RevReg::a1 ),
         RegFile->GetX<uint64_t>( RevReg::a2 ),
@@ -3414,8 +3414,9 @@ EcallStatus RevCore::ECALL_fast_printf() {
         RegFile->GetX<uint64_t>( RevReg::a6 )
       );
     } else {
-      cx = asprintf(
-        &buffer,
+      snprintf(
+        buffer,
+        sizeof( buffer ),
         format,
         RegFile->GetX<uint32_t>( RevReg::a1 ),
         RegFile->GetX<uint32_t>( RevReg::a2 ),
@@ -3425,10 +3426,7 @@ EcallStatus RevCore::ECALL_fast_printf() {
         RegFile->GetX<uint32_t>( RevReg::a6 )
       );
     }
-    if( cx >= 0 ) {
-      output->verbose( CALL_INFO, 0, 0, "<rev-print>%s</rev-print>\n", buffer );
-      free( buffer );
-    }
+    output->verbose( CALL_INFO, 0, 0, "<rev-print>%s</rev-print>\n", buffer );
   };
   return EcallLoadAndParseString( pFormat, action );
 }
