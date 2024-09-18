@@ -1822,8 +1822,8 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
       IdleHarts.set( HartToDecodeID );
       if( ActiveThread ) {
         ActiveThread->SetState( ThreadState::DONE );
-        AddThreadsThatChangedState( std::move( ActiveThread ) );
       }
+      AddThreadsThatChangedState( std::move( ActiveThread ) );
     }
 
     if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID] && HartHasNoDependencies( HartToExecID ) ) {
@@ -1833,8 +1833,8 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
       IdleHarts.set( HartToExecID );
       if( ActiveThread ) {
         ActiveThread->SetState( ThreadState::DONE );
-        AddThreadsThatChangedState( std::move( ActiveThread ) );
       }
+      AddThreadsThatChangedState( std::move( ActiveThread ) );
     }
   }
 
