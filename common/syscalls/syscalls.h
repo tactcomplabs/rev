@@ -18,6 +18,10 @@
 #include <sys/types.h>
 #include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // The following is required to build on MacOS
 // because sigval & siginfo_t are already defined
 // in the two headers that get pulled in when building
@@ -672,10 +676,32 @@ REV_SYSCALL( 9005, void dump_valid_mem_to_file( const char* outputFile ) );
 REV_SYSCALL( 9006, void dump_thread_mem( ) );
 REV_SYSCALL( 9007, void dump_thread_mem_to_file( const char* outputFile ) );
 
-// ==================== REV PRINT UTILITIES
-REV_SYSCALL( 9110, __attribute__(( format( printf, 1, 2 ) )) int rev_fast_printf( const char* format, ... ) );
-
 // clang-format on
+
+// ==================== REV PRINT UTILITIES
+
+#ifdef __cplusplus
+
+}  // extern "C"
+
+template<typename... Ts>
+__attribute__( ( naked ) ) static int rev_fast_printf( const char* format, Ts... args ) {
+  asm( " li a7, 9110; ecall; ret" );
+}
+
+#else  // __cplusplus
+
+__attribute__( ( naked ) ) static int rev_fast_printf() {
+  asm( " li a7, 9110; ecall; ret" );
+}
+
+#endif  // __cplusplus
+
+#else  //SYSCALL_TYPES_ONLY
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif  //SYSCALL_TYPES_ONLY
 
