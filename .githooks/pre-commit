@@ -149,17 +149,18 @@ is_text_file() {
 
 # Test if argument is a C/C++ file
 is_cxx_file() {
+    trap "$(shopt -p nocasematch)" RETURN
+    shopt -u nocasematch
     case $1 in
         *.c|*.h|*.cc) true ;;
         *.hpp) printf "${RED}$1: Error: C++ header files should have .h extension instead of .hpp${END}\n"
-               errors=true
-               true ;;
+               errors=true ;;
         *.cxx) printf "${RED}$1: Error: C++ source files should have .cc extension instead of .cxx${END}\n"
-               errors=true
-               true ;;
+               errors=true ;;
         *.cpp) printf "${RED}$1: Error: C++ source files should have .cc extension instead of .cpp${END}\n"
-               errors=true
-               true ;;
+               errors=true ;;
+        *.C)   printf "${RED}$1: Error: C++ source files should have .cc extension instead of .C${END}\n"
+               errors=true ;;
         *) false
     esac
 }
