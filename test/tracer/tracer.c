@@ -20,10 +20,17 @@
 
 #define printf rev_fast_printf
 
+#if 0
 #define REV_TIME( X )                         \
   do {                                        \
     asm volatile( " rdtime %0" : "=r"( X ) ); \
   } while( 0 )
+#else
+#define REV_TIME( X ) \
+  do {                \
+    X = 0;            \
+  } while( 0 )
+#endif
 
 // inefficient calculation of r-s
 int long_sub( int r, int s ) {

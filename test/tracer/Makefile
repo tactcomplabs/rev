@@ -14,8 +14,12 @@
 
 EXAMPLE ?= tracer
 
-TLIST   = $(addprefix $(EXAMPLE),.mem.rv32i.c .mem.rv64g.c .memh.rv32i.c .memh.rv64g.c)
-TLIST   += $(addprefix $(EXAMPLE),.mem.rv32i.cpp .mem.rv64g.cpp .memh.rv32i.cpp .memh.rv64g.cpp)
+ALLTESTS   := $(addprefix $(EXAMPLE),.mem.rv32i.c .mem.rv64g.c .memh.rv32i.c .memh.rv64g.c)
+ALLTESTS   += $(addprefix $(EXAMPLE),.mem.rv32i.cpp .mem.rv64g.cpp .memh.rv32i.cpp .memh.rv64g.cpp)
+
+TLIST = $(ALLTESTS)
+# filter out RV32 until csr read resolved
+# TLIST = $(filter-out %rv32i.c %rv32i.cpp,$(ALLTESTS))
 
 EXES   = $(addsuffix .exe,$(TLIST))
 DIASMS = $(addsuffix .dis,$(TLIST))
