@@ -150,7 +150,16 @@ is_text_file() {
 # Test if argument is a C/C++ file
 is_cxx_file() {
     case $1 in
-        *.c|*.h|*.cc|*.hpp|*.cpp|*.cxx) true ;;
+        *.c|*.h|*.cc) true ;;
+        *.hpp) printf "${RED}$1: Error: C++ header files should have .h extension instead of .hpp${END}\n"
+               errors=true
+               true ;;
+        *.cxx) printf "${RED}$1: Error: C++ source files should have .cc extension instead of .cxx${END}\n"
+               errors=true
+               true ;;
+        *.cpp) printf "${RED}$1: Error: C++ source files should have .cc extension instead of .cpp${END}\n"
+               errors=true
+               true ;;
         *) false
     esac
 }
