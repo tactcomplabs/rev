@@ -14,12 +14,12 @@
 
 EXAMPLE ?= tracer
 
-ALLTESTS   := $(addprefix $(EXAMPLE),.mem.rv32i.c .mem.rv64g.c .memh.rv32i.c .memh.rv64g.c)
-ALLTESTS   += $(addprefix $(EXAMPLE),.mem.rv32i.cpp .mem.rv64g.cpp .memh.rv32i.cpp .memh.rv64g.cpp)
+ALLTESTS   := $(addprefix $(EXAMPLE),.mem.rv32.c .mem.rv64.c .memh.rv32.c .memh.rv64.c)
+ALLTESTS   += $(addprefix $(EXAMPLE),.mem.rv32.cpp .mem.rv64.cpp .memh.rv32.cpp .memh.rv64.cpp)
 
 TLIST = $(ALLTESTS)
-# TLIST = $(filter-out %rv32i.c %rv32i.cpp,$(ALLTESTS))
-# TLIST = $(filter %.mem.rv64g.cpp %.mem.rv32i.cpp,$(ALLTESTS))
+# TLIST = $(filter-out %rv32.c %rv32.cpp,$(ALLTESTS))
+# TLIST = $(filter %.mem.rv64.cpp %.mem.rv32.cpp,$(ALLTESTS))
 
 EXES   = $(addsuffix .exe,$(TLIST))
 DIASMS = $(addsuffix .dis,$(TLIST))
@@ -46,23 +46,24 @@ compile: $(EXES) $(DIASMS)
 %.c.exe: GCC = $(CC)
 %.cpp.exe: GCC = $(CXX)
 
-%.rv32i.c.exe %.rv32i.cpp.exe: ARCH=rv32i
-%.rv32i.c.exe %.rv32i.cpp.exe: OPTS=-mabi=ilp32
+# TODO check: compiling with rv32i but running with rv32g
+%.rv32.c.exe %.rv32.cpp.exe: ARCH=rv32i
+%.rv32.c.exe %.rv32.cpp.exe: OPTS=-mabi=ilp32
 
-%.rv64g.c.exe %.rv64g.cpp.exe: ARCH=rv64g
-%.rv64g.c.exe %.rv64g.cpp.exe: OPTS=-DRV64G
+%.rv64.c.exe %.rv64.cpp.exe: ARCH=rv64g
+%.rv64.c.exe %.rv64.cpp.exe: OPTS=-DRV64G
 
-%.mem.rv32i.c.log %.mem.rv32i.cpp.log:   REVCFG=./rev-test-tracer.py
-%.memh.rv32i.c.log %.memh.rv32i.cpp.log: REVCFG=./rev-test-tracer-memh.py
+%.mem.rv32.c.log %.mem.rv32.cpp.log:   REVCFG=./rev-test-tracer.py
+%.memh.rv32.c.log %.memh.rv32.cpp.log: REVCFG=./rev-test-tracer-memh.py
 
-%.mem.rv64g.c.log %.mem.rv64g.cpp.log:   REVCFG=./rev-test-tracer.py
-%.memh.rv64g.c.log %.memh.rv64g.cpp.log: REVCFG=./rev-test-tracer-memh.py
+%.mem.rv64.c.log %.mem.rv64.cpp.log:   REVCFG=./rev-test-tracer.py
+%.memh.rv64.c.log %.memh.rv64.cpp.log: REVCFG=./rev-test-tracer-memh.py
 
 %.exe: $(EXAMPLE).c
 	$(GCC) -g -O0 -march=$(ARCH) $(OPTS) $(INCLUDE) -o  $@ $<
 
-%.rv64g.c.log %.rv64g.cpp.log: ARCH=rv64g
-%.rv32i.c.log %.rv32i.cpp.log: ARCH=rv32i
+%.rv64.c.log %.rv64.cpp.log: ARCH=rv64g
+%.rv32.c.log %.rv32.cpp.log: ARCH=rv32g
 
 %.log: %.exe
 	@$(eval tmp := $(basename $@).tmplog)
