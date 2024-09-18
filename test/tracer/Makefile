@@ -54,7 +54,7 @@ compile: $(EXES) $(DIASMS)
 %.mem.rv64g.c.log %.mem.rv64g.cpp.log:   REVCFG=./rev-test-tracer.py
 %.memh.rv64g.c.log %.memh.rv64g.cpp.log: REVCFG=./rev-test-tracer-memh.py
 
-%.exe: tracer.c
+%.exe: $(EXAMPLE).c
 	$(GCC) -g -O0 -march=$(ARCH) $(OPTS) $(INCLUDE) -o  $@ $<
 
 %.rv64g.c.log %.rv64g.cpp.log: ARCH=rv64g
@@ -71,6 +71,6 @@ compile: $(EXES) $(DIASMS)
 .PHONY: clean
 
 clean:
-	rm -f $(TARGS) *.log.tmp
+	rm -f $(TARGS) *.tmplog
 
 #-- EOF

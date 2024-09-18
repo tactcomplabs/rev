@@ -46,7 +46,7 @@ for i in range(0, sim_nodes):
         "splash" : 1,                                 # Display the splash message
         # "trcOp": "slli",                            # base command for tracing [default: slli]
         # "trcLimit": 0,                              # Maximum number of trace lines [default: 0]
-        # "trcStartCycle" : 0                         # Starting trace cycle [default: 0]
+        "trcStartCycle" : 1                           # Starting trace cycle [default: 0]
         })
 #  comp_cpu.enableAllStatistics()
 

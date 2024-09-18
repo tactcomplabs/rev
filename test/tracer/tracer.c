@@ -20,6 +20,11 @@
 
 #define printf rev_fast_printf
 
+#define REV_TIME( X )                         \
+  do {                                        \
+    asm volatile( " rdtime %0" : "=r"( X ) ); \
+  } while( 0 )
+
 // inefficient calculation of r-s
 int long_sub( int r, int s ) {
   for( int i = 0; i < s; i++ )
@@ -67,6 +72,9 @@ void* thread2() {
 
 int main( int argc, char** argv ) {
 
+  // Enable tracing at start to see return instruction pointer
+  TRACE_OFF;
+
   // fast print check
   printf( "check print 1 param: 0x%05x\n", 0xfab6 );
   printf( "check print 6 params: %d %d %d %d %d %d\n", 1, 2, 3, 4, 5, 6 );
@@ -76,7 +84,6 @@ int main( int argc, char** argv ) {
   printf( " [no new line] " );
   printf( " ... new line here->\n" );
 
-  // tracing is initially off
   int res = 3000;
   res     = long_sub( res, 1000 );
   // res == 2000;
@@ -164,6 +171,18 @@ check_tight_loop:
 
   TRACE_ASSERT(thread1_counter==10);
   TRACE_ASSERT(thread2_counter==20);
+#endif
+
+  TRACE_ON;
+
+#if 1
+  // use CSR to get time
+  size_t time1, time2;
+  REV_TIME( time1 );
+  int fubar = long_sub( 100, 20 );
+  REV_TIME( time2 );
+  assert( fubar == 80 );
+  printf( "Time check: %ld\n", time2 - time1 );
 #endif
 
   printf( "tracer test completed normally\n" );
