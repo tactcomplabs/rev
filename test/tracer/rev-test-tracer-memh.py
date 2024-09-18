@@ -55,7 +55,7 @@ for i in range(0, sim_nodes):
         # "trcLimit": 0,                              # Maximum number of trace lines [default: 0]
         "trcStartCycle" : 1                           # Starting trace cycle [default: 0]
         })
-#  comp_cpu.enableAllStatistics()
+# comp_cpu.enableAllStatistics()
 
 # Create the RevMemCtrl subcomponent
 comp_lsq = comp_cpu.setSubComponent("memory", "revcpu.RevBasicMemCtrl");

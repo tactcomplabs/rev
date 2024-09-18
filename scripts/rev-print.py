@@ -18,7 +18,7 @@ import re
 
 parser = argparse.ArgumentParser(
     prog="rev-print.py",
-    description="Extract REV fast print strings from log file")
+    description="Extract and render rev-fast-print strings from log file")
 parser.add_argument('-l', '--logFile', dest='logFile', required=True,
                     help="path to REV output log file")
 parser.add_argument('-ts', '--timeStamp', dest="timeStamp", required=False, default="False",

@@ -48,7 +48,7 @@ for i in range(0, sim_nodes):
         # "trcLimit": 0,                              # Maximum number of trace lines [default: 0]
         "trcStartCycle" : 1                           # Starting trace cycle [default: 0]
         })
-#  comp_cpu.enableAllStatistics()
+# comp_cpu.enableAllStatistics()
 
 # sst.setStatisticOutput("sst.statOutputCSV")
 # sst.enableAllStatisticsForAllComponents()
