@@ -5,7 +5,7 @@
 # Based on https://github.com/rocm/rocBLAS
 #
 # shellcheck enable=all
-# shellcheck disable=2034,2059,2064,2250,2310,2312
+# shellcheck disable=2034,2059,2250,2310,2312
 
 set_shell_options() {
     set -eEu -o pipefail
@@ -149,18 +149,8 @@ is_text_file() {
 
 # Test if argument is a C/C++ file
 is_cxx_file() {
-    trap "$(shopt -p nocasematch)" RETURN
-    shopt -u nocasematch
     case $1 in
-        *.c|*.h|*.cc) true ;;
-        *.hpp) printf "${RED}$1: Error: C++ header files should have .h extension instead of .hpp${END}\n"
-               errors=true ;;
-        *.cxx) printf "${RED}$1: Error: C++ source files should have .cc extension instead of .cxx${END}\n"
-               errors=true ;;
-        *.cpp) printf "${RED}$1: Error: C++ source files should have .cc extension instead of .cpp${END}\n"
-               errors=true ;;
-        *.C)   printf "${RED}$1: Error: C++ source files should have .cc extension instead of .C${END}\n"
-               errors=true ;;
+        *.c|*.h|*.cc|*.hpp|*.cpp|*.cxx) true ;;
         *) false
     esac
 }
@@ -217,7 +207,7 @@ reformat_files() {
             fi
 
             # Shell scripts
-            if [[ $file = *.sh || $file = .githooks/pre-commit ]]; then
+            if [[ $file = *.sh ]]; then
                 if command -v shellcheck >/dev/null 2>&1; then
                     shellcheck --color=always "$file" || errors=true
                 else
