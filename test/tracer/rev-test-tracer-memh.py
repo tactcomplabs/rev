@@ -28,7 +28,7 @@ print(f"REV_EXE={rev_exe}")
 DEBUG_MEM = 0
 DEBUG_LEVEL = 10
 VERBOSE = 2
-memSize = 1024*1024*1024-1
+MEM_SIZE = 1024*1024*1024-1
 
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
@@ -42,21 +42,21 @@ for i in range(0, sim_nodes):
     print("Building " + str(i))
     comp_cpu = sst.Component("cpu" + str(i), "revcpu.RevCPU")
     comp_cpu.addParams({
-          "verbose": 5,                       # Verbosity
-          "numCores": 1,                      # Number of cores
-          "clock": "1.0GHz",                  # Clock
-          "memSize": 1024*1024*1024,          # Memory size in bytes
-          "machine": f"[CORES:{arch}]",       # Core:Config; RV32I for all
-          "startAddr": "[CORES:0x00000000]",  # Starting address for core 0
-          "memCost": "[0:1:10]",              # Memory loads required 1-10 cycles
-          "program": rev_exe,                 # Target executable
-          "enableMemH": 1,                    # Enable memHierarchy support
-          "splash": 1,                        # Display the splash message
-          # "trcOp": "slli",                  # base command for tracing [default: slli]
-          # "trcLimit": 0,                    # Maximum number of trace lines [default: 0]
-          # "trcStartCycle": 0                # Starting trace cycle [default: 0]
-          })
-#  comp_cpu.enableAllStatistics()
+        "verbose": 5,                                # Verbosity
+        "numCores": 1,                               # Number of cores
+        "clock": "1.0GHz",                           # Clock
+        "memSize": 1024*1024*1024,                   # Memory size in bytes
+        "machine": f"[CORES:{arch}]",                  # Core:Config; RV32I for all
+        "startAddr": "[CORES:0x00000000]",           # Starting address for core 0
+        "memCost": "[0:1:10]",                       # Memory loads required 1-10 cycles
+        "program": rev_exe,                          # Target executable
+        "enable_memH": 1,                            # Enable memHierarchy support
+        "splash": 1,                                 # Display the splash message
+        # "trcOp": "slli",                            # base command for tracing [default: slli]
+        # "trcLimit": 0,                              # Maximum number of trace lines [default: 0]
+        "trcStartCycle": 1                           # Starting trace cycle [default: 0]
+        })
+# comp_cpu.enableAllStatistics()
 
 # Create the RevMemCtrl subcomponent
 comp_lsq = comp_cpu.setSubComponent("memory", "revcpu.RevBasicMemCtrl")
@@ -87,7 +87,7 @@ memctrl.addParams({
     "clock": "2GHz",
     "verbose": VERBOSE,
     "addr_range_start": 0,
-    "addr_range_end": memSize,
+    "addr_range_end": MEM_SIZE,
     "backing": "malloc"
 })
 
