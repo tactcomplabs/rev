@@ -35,6 +35,18 @@ class RevZicntr {
   // Performance counters
   // Template allows RevCore to be an incomplete type now
   // std::enable_if_t<...> makes the functions only match ZICNTR == RevZicntr
+
+  template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
+  static void fatal( const ZICNTR* Zicntr, const char* msg ) {
+    return Zicntr->GetCore()->output->fatal( CALL_INFO, -1, msg, Zicntr->GetPC() );
+  }
+
+  template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
+  static bool isZicntr( const ZICNTR* Zicntr ) {
+    return Zicntr->GetCore()->GetRevFeature()->IsModeEnabled( RV_ZICNTR );
+  }
+
+protected:
   template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
   static uint64_t rdcycle( const ZICNTR* Zicntr ) {
     return Zicntr->GetCore()->GetCycles();
@@ -50,25 +62,10 @@ class RevZicntr {
     return Zicntr->InstRet;
   }
 
-  template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
-  static bool isZicntr( const ZICNTR* Zicntr ) {
-    return Zicntr->GetCore()->GetRevFeature()->IsModeEnabled( RV_ZICNTR );
-  }
-
-  template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
-  static void fatal( const ZICNTR* Zicntr, const char* msg ) {
-    return Zicntr->GetCore()->output->fatal( CALL_INFO, -1, msg, Zicntr->GetPC() );
-  }
-
-public:
-  // Increment the number of retired instructions
-  void IncrementInstRet() { ++InstRet; }
-
-protected:
   enum class Half { Lo, Hi };
 
   /// Performance Counter template
-  // Passed a function which gets the 64-bit value of a performance counter
+  // Passed a COUNTER function which gets the 64-bit value of a performance counter
   template<typename XLEN, Half HALF, uint64_t COUNTER( const RevZicntr* )>
   XLEN GetPerfCounter() const {
     if( !isZicntr( this ) ) {
@@ -89,6 +86,10 @@ protected:
       }
     }
   }
+
+public:
+  /// RevZicntr: Increment the number of retired instructions
+  void IncrementInstRet() { ++InstRet; }
 };  // class RevZicntr
 
 }  // namespace SST::RevCPU
