@@ -109,6 +109,11 @@ macro(add_rev_test test_name test_dir timeout labels)
     set(machine_args "\"[CORES:RV32GC]\"")
   endif()
 
+  string(FIND "${labels}" "zicntr" zicntr_label_index)
+  if(NOT ${zicntr_label_index} EQUAL -1)
+    set(machine_args "\"[CORES:RV64GC_zicntr]\"")
+  endif()
+
   string(FIND "${labels}" "multihart" multihart_label_index)
   if(NOT ${multihart_label_index} EQUAL -1)
     set(numHartsList 1 2 4)
@@ -252,9 +257,9 @@ add_rev_test(BACKINGSTORE backingstore 100 "test_level=2;rv64" SCRIPT "run_backi
 add_rev_test(MEM_DUMP mem_dump 10 "rv64" SCRIPT "run_mem_dump.sh")
 add_rev_test(LWSP lwsp 30 "test_level=2;memh;rv64")
 add_rev_test(CSR csr 30 "rv64")
-add_rev_test(RDCYCLE rdcycle 5 "test_level=2;rv64")
-add_rev_test(RDTIME rdtime 5 "test_level=2;rv64")
-add_rev_test(RDINSTRET rdinstret 5 "test_level=2;memh;rv64")
+add_rev_test(RDCYCLE rdcycle 5 "test_level=2;rv64;zicntr")
+add_rev_test(RDTIME rdtime 5 "test_level=2;rv64;zicntr")
+add_rev_test(RDINSTRET rdinstret 5 "test_level=2;memh;rv64;zicntr")
 add_rev_test(Zfa zfa 30 "rv64" SCRIPT "run_zfa_tests.sh")
 
 # Not all toolchains have support for Zfa yet, so we test and skip Zfa tests with a warning
