@@ -50,8 +50,8 @@
 #include "RevThread.h"
 #include "RevTracer.h"
 #define SYSCALL_TYPES_ONLY
-#include "../common/include/RevCommon.h"
 #include "../common/syscalls/syscalls.h"
+#include "RevCommon.h"
 
 #include "AllRevInstTables.h"
 

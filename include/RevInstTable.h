@@ -11,7 +11,7 @@
 #ifndef _SST_REVCPU_REVINSTTABLE_H_
 #define _SST_REVCPU_REVINSTTABLE_H_
 
-#include "../common/include/RevCommon.h"
+#include "RevCommon.h"
 #include "RevFCSR.h"
 #include <bitset>
 #include <cmath>

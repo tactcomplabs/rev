@@ -23,8 +23,8 @@
 #include <unordered_map>
 #include <utility>
 
-#include "../common/include/RevCommon.h"
 #include "RevCSR.h"
+#include "RevCommon.h"
 #include "RevTracer.h"
 
 namespace SST::RevCPU {
