@@ -71,31 +71,38 @@ parse_options() {
     fi
 }
 
+# How to install a package
+howto_install() {
+    package=$1
+
+    INSTALL=
+    if [[ $OSTYPE = darwin* ]]; then
+        if command -v brew >/dev/null; then
+            INSTALL="brew install $package"
+        fi
+    elif [[ $OSTYPE = linux* ]]; then
+        if [[ -f /etc/redhat-release ]]; then
+            if command -v dnf >/dev/null; then
+                INSTALL="sudo dnf install $package"
+            elif command -v yum >/dev/null; then
+                INSTALL="sudo yum install $package"
+            fi
+        elif [[ -f /etc/debian_version ]] && command -v apt-get >/dev/null; then
+            INSTALL="sudo apt-get install $package"
+        fi
+    fi
+    if [[ -n $INSTALL ]]; then
+        printf "${YELLOW}\nTo install $package, run:\n\n%s\n\n${END}" "$INSTALL"
+    else
+        printf "${YELLOW}\nInstall $package and make sure it is in PATH.\n\n${END}"
+    fi
+}
+
 # Check for existence of clang-format or print error message on how to install
 check_clang_format() {
     if ! command -v clang-format >/dev/null; then
-        printf "${RED}\nError: clang-format not found\n"
-        INSTALL=
-        if [[ $OSTYPE = darwin* ]]; then
-            if command -v brew >/dev/null; then
-                INSTALL="brew install clang-format"
-            fi
-        elif [[ $OSTYPE = linux* ]]; then
-            if [[ -f /etc/redhat-release ]]; then
-                if command -v dnf >/dev/null; then
-                    INSTALL="sudo dnf install clang-format"
-                elif command -v yum >/dev/null; then
-                    INSTALL="sudo yum install clang-format"
-                fi
-            elif [[ -f /etc/debian_version ]] && command -v apt-get >/dev/null; then
-                INSTALL="sudo apt-get install clang-format"
-            fi
-        fi
-        if [[ -n $INSTALL ]]; then
-            printf "To install clang-format, run:\n\n%s\n${END}" "$INSTALL"
-        else
-            printf "Install clang-format and make sure it is in PATH.\n${END}"
-        fi
+        printf "${RED}\nError: clang-format not found\n${END}"
+        howto_install clang-format
         exit 1
     fi
 }
@@ -175,6 +182,7 @@ reformat_files() {
 
     errors=false
     flake8_warning=false
+    shellcheck_warning=false
 
     # Fix formatting on text files
     for file in "${FILES[@]}"; do
@@ -209,10 +217,7 @@ reformat_files() {
                     flake8 --color=always --max-line-length 131 "$file" || errors=true
                 else
                     printf "${YELLOW}Warning: flake8 utility not found. $file not checked with flake8.${END}\n"
-                    if [[ $flake8_warning = false ]]; then
-                        flake8_warning=true
-                        printf "${YELLOW}\nTo Install flake8, type:\n\npip install flake8\n\n${END}"
-                    fi
+                    flake8_warning=true
                 fi
             fi
 
@@ -222,10 +227,19 @@ reformat_files() {
                     shellcheck -o all -e 1091,2059,2154,2248,2250,2312 "$file" || errors=true
                 else
                     printf "${YELLOW}Warning: shellcheck utility not found. $file not checked with shellcheck.${END}\n"
+                    shellcheck_warning=true
                 fi
             fi
         fi
     done
+
+    if [[ $flake8_warning = true ]]; then
+        printf "${YELLOW}\nTo Install flake8, type:\n\npip install flake8\n\n${END}"
+    fi
+
+    if [[ $shellcheck_warning = true ]]; then
+        howto_install shellcheck
+    fi
 
     if [[ $errors = true ]]; then
         exit 1
