@@ -26,10 +26,7 @@ class RevZicntr {
 
 public:
   // Constructor which takes a RevCore to indicate its hart's parent core
-  // Template allows RevCore to be an incomplete type now
-  // std::enable_if_t<...> makes the constructor only match CORE == RevCore
-  template<typename CORE, typename = std::enable_if_t<std::is_same_v<CORE, RevCore>>>
-  explicit RevZicntr( CORE* Core ) : Core( Core ) {}
+  explicit RevZicntr( RevCore* Core ) : Core( Core ) {}
 
   /// RevZicntr: disallow copying and assignment
   RevZicntr( const RevZicntr& )            = delete;

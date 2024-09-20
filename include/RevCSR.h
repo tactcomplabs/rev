@@ -44,23 +44,17 @@ namespace SST::RevCPU {
 // To ease maintainability and prevent large code size, it is recommended that
 // functions related to specific CSR registers be made base classes of RevCSR
 // in separate header files (e.g. RevZicntr). RevCSR can then dispatch the
-// GetCSR()/SetCSR() functions of these CSR registers to the base class. It is
-// recommended that the base class have an explicit constructor which takes a
-// templated RevCore parameter using SFINAE with std::enable_if_t<...>. Each
-// base class and derived class (e.g., RevZicntr, RevCSR, RevRegFile) has its
-// own copy of RevCore* const Core.
+// GetCSR()/SetCSR() functions of these CSR registers to the base class.
 //
 // To access a RevCSR or RevRegFile member function in one of its base classes,
 // it is recommended that the function be made a pure virtual function in the
 // base class so that RevCSR or RevRegFile will override it, similar to how
 // GetPC() is a pure virtual function in RevZicntr which RevRegFile overrides.
 // RevZicntr needs GetPC(), but rather than have to store a pointer to the
-// RevRegFile parent class in RevZicntr's constructor and use a template
-// function to avoid RevRegFile having to be a complete type when RevZicntr is
-// declared, it is much simpler to simply declare GetPC() as a pure virtual
-// function in RevZicntr which must be overriden, which makes RevZicntr and
-// RevCSR abstract classes which cannot be instantiated except as a base class
-// of RevRegFile, which defines GetPC().
+// RevRegFile parent class in RevZicntr's constructor, it is much simpler to
+// simply declare GetPC() as a pure virtual function in RevZicntr which must
+// be overriden, which makes RevZicntr and RevCSR abstract classes which cannot
+// be instantiated except as a base class of RevRegFile, which defines GetPC().
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -451,10 +445,7 @@ public:
   };
 
   // Constructor which takes a RevCore to indicate its hart's parent core
-  // Template allows RevCore to be an incomplete type now
-  // std::enable_if_t<...> makes the constructor only match CORE == RevCore
-  template<typename CORE, typename = std::enable_if_t<std::is_same_v<CORE, RevCore>>>
-  explicit RevCSR( CORE* Core ) : RevZicntr( Core ), Core( Core ) {}
+  explicit RevCSR( RevCore* Core ) : RevZicntr( Core ), Core( Core ) {}
 
   /// RevCSR: disallow copying and assignment
   RevCSR( const RevCSR& )            = delete;
