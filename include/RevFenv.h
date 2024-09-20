@@ -29,8 +29,8 @@
 namespace SST::RevCPU {
 
 class RevFenv {
-  RevRegFile* R;
-  std::fenv_t saved_env{};  // The saved FP environment which is restored
+  RevRegFile* const R;
+  std::fenv_t       saved_env{};  // The saved FP environment which is restored
 
 public:
   /// Constructor saves Fenv state to be restored at destruction
