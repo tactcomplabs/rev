@@ -219,7 +219,7 @@ reformat_files() {
             # Shell scripts
             if [[ $file = *.sh || $file = .githooks/pre-commit ]]; then
                 if command -v shellcheck >/dev/null 2>&1; then
-                    shellcheck --color=always "$file" || errors=true
+                    shellcheck -o all -e 1091,2059,2154,2248,2250,2312 "$file" || errors=true
                 else
                     printf "${YELLOW}Warning: shellcheck utility not found. $file not checked with shellcheck.${END}\n"
                 fi
