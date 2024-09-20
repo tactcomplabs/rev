@@ -48,13 +48,13 @@ namespace SST::RevCPU {
 //
 // To access a RevCSR or RevRegFile member function in one of its base classes,
 // it is recommended that the function be made a pure virtual function in the
-// base class so that RevCSR or RevRegFile will override it, similar to how
-// GetPC() is a pure virtual function in RevZicntr which RevRegFile overrides.
-// RevZicntr needs GetPC(), but rather than have to store a pointer to the
-// RevRegFile parent class in RevZicntr's constructor, it is much simpler to
-// simply declare GetPC() as a pure virtual function in RevZicntr which must
-// be overriden, which makes RevZicntr and RevCSR abstract classes which cannot
-// be instantiated except as a base class of RevRegFile, which defines GetPC().
+// base class so that RevCSR or RevRegFile must override it, similar to how
+// GetCore() is a pure virtual function in RevZicntr which RevRegFile
+// overrides. RevZicntr needs GetCore(), but rather than have to store a
+// pointer in RevZicntr's constructor, it is much simpler to simply declare
+// GetCore() as a pure virtual function in RevZicntr which must be overriden,
+// which makes RevZicntr and RevCSR abstract classes which cannot be
+// instantiated except as a base class of RevRegFile, which defines GetCore().
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -62,7 +62,6 @@ class RevCore;
 
 class RevCSR : public RevZicntr {
   static constexpr size_t         CSR_LIMIT = 0x1000;
-  RevCore* const                  Core;   ///< RevCSR: Owning core of this register file's hart
   std::array<uint64_t, CSR_LIMIT> CSR{};  ///< RegCSR: CSR registers
 
 public:
@@ -443,13 +442,6 @@ public:
     dscratch0      = 0x7b2,
     dscratch1      = 0x7b3,
   };
-
-  // Constructor which takes a RevCore to indicate its hart's parent core
-  explicit RevCSR( RevCore* Core ) : RevZicntr( Core ), Core( Core ) {}
-
-  /// RevCSR: disallow copying and assignment
-  RevCSR( const RevCSR& )            = delete;
-  RevCSR& operator=( const RevCSR& ) = delete;
 
   /// Get the Floating-Point Rounding Mode
   FRMode GetFRM() const { return static_cast<FRMode>( CSR[fcsr] >> 5 & 0b111 ); }

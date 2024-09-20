@@ -131,15 +131,13 @@ class RevCore;
 class RevTracer;
 
 class RevRegFile : public RevCSR {
-public:
-  RevCore* const Core;      ///< RevRegFile: Owning core of this register file's hart
-  const bool     IsRV64_v;  ///< RevRegFile: Cached copy of Features->IsRV64()
-  const bool     HasD_v;    ///< RevRegFile: Cached copy of Features->HasD()
-
-  bool       trigger{};  ///< RevRegFile: Has the instruction been triggered?
-  unsigned   Entry{};    ///< RevRegFile: Instruction entry
-  uint32_t   cost{};     ///< RevRegFile: Cost of the instruction
-  RevTracer* Tracer{};   ///< RegRegFile: Tracer object
+  RevCore* const Core;       ///< RevRegFile: Owning core of this register file's hart
+  const bool     IsRV64_v;   ///< RevRegFile: Cached copy of Features->IsRV64()
+  const bool     HasD_v;     ///< RevRegFile: Cached copy of Features->HasD()
+  bool           trigger{};  ///< RevRegFile: Has the instruction been triggered?
+  unsigned       Entry{};    ///< RevRegFile: Instruction entry
+  uint32_t       cost{};     ///< RevRegFile: Cost of the instruction
+  RevTracer*     Tracer{};   ///< RegRegFile: Tracer object
 
   union {                // Anonymous union. We zero-initialize the largest member
     uint32_t RV32_PC;    ///< RevRegFile: RV32 PC
@@ -187,7 +185,7 @@ public:
   // std::enable_if_t<...> makes the constructor only match CORE == RevCore
   template<typename CORE, typename = std::enable_if_t<std::is_same_v<CORE, RevCore>>>
   explicit RevRegFile( CORE* Core )
-    : RevCSR( Core ), Core( Core ), IsRV64_v( Core->GetRevFeature()->IsRV64() ), HasD_v( Core->GetRevFeature()->HasD() ) {}
+    : Core( Core ), IsRV64_v( Core->GetRevFeature()->IsRV64() ), HasD_v( Core->GetRevFeature()->HasD() ) {}
 
   /// RevRegFile: disallow copying and assignment
   RevRegFile( const RevRegFile& )            = delete;
@@ -195,6 +193,9 @@ public:
 
   /// RevRegFile: standard destructor
   ~RevRegFile()                              = default;
+
+  ///< RevRegFile: Return the core owning this hart
+  RevCore* GetCore() const { return Core; }
 
   // Feature tests
   ///< RevRegFile: Whether it is RV64

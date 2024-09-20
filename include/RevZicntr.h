@@ -21,38 +21,28 @@ namespace SST::RevCPU {
 class RevCore;
 
 class RevZicntr {
-  RevCore* const Core;       ///< RevZicntr: Owning core of this register file's hart
-  uint64_t       InstRet{};  ///< RevZicntr: Number of instructions retired
+  uint64_t InstRet{};  ///< RevZicntr: Number of instructions retired
 
-public:
-  // Constructor which takes a RevCore to indicate its hart's parent core
-  explicit RevZicntr( RevCore* Core ) : Core( Core ) {}
+  /// RevZicntr: Get the core owning this hart
+  virtual RevCore* GetCore() const = 0;
 
-  /// RevZicntr: disallow copying and assignment
-  RevZicntr( const RevZicntr& )            = delete;
-  RevZicntr& operator=( const RevZicntr& ) = delete;
-
-  // Increment the number of retired instructions
-  void IncrementInstRet() { ++InstRet; }
-
-private:
   /// RevZicntr: Get the Program Counter
-  virtual uint64_t GetPC() const = 0;
+  virtual uint64_t GetPC() const   = 0;
 
   /// RevZicntr: Is this RV64?
-  virtual bool IsRV64() const    = 0;
+  virtual bool IsRV64() const      = 0;
 
   // Performance counters
   // Template allows RevCore to be an incomplete type now
   // std::enable_if_t<...> makes the functions only match ZICNTR == RevZicntr
   template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
   static uint64_t rdcycle( const ZICNTR* Zicntr ) {
-    return Zicntr->Core->GetCycles();
+    return Zicntr->GetCore()->GetCycles();
   }
 
   template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
   static uint64_t rdtime( const ZICNTR* Zicntr ) {
-    return Zicntr->Core->GetCurrentSimCycle();
+    return Zicntr->GetCore()->GetCurrentSimCycle();
   }
 
   template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
@@ -62,13 +52,17 @@ private:
 
   template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
   static bool isZicntr( const ZICNTR* Zicntr ) {
-    return Zicntr->Core->GetRevFeature()->IsModeEnabled( RV_ZICNTR );
+    return Zicntr->GetCore()->GetRevFeature()->IsModeEnabled( RV_ZICNTR );
   }
 
   template<typename ZICNTR, typename = std::enable_if_t<std::is_same_v<ZICNTR, RevZicntr>>>
   static void fatal( const ZICNTR* Zicntr, const char* msg ) {
-    return Zicntr->Core->output->fatal( CALL_INFO, -1, msg, Zicntr->GetPC() );
+    return Zicntr->GetCore()->output->fatal( CALL_INFO, -1, msg, Zicntr->GetPC() );
   }
+
+public:
+  // Increment the number of retired instructions
+  void IncrementInstRet() { ++InstRet; }
 
 protected:
   enum class Half { Lo, Hi };
