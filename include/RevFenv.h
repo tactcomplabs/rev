@@ -11,6 +11,7 @@
 #ifndef _REV_FENV_H_
 #define _REV_FENV_H_
 
+#include "RevFCSR.h"
 #include "RevRegFile.h"
 #include <cfenv>
 #include <cmath>
