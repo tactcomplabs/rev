@@ -50,8 +50,8 @@
 #include "RevThread.h"
 #include "RevTracer.h"
 #define SYSCALL_TYPES_ONLY
-#include "../common/include/RevCommon.h"
 #include "../common/syscalls/syscalls.h"
+#include "RevCommon.h"
 
 #include "AllRevInstTables.h"
 
@@ -309,7 +309,10 @@ private:
   std::vector<std::unique_ptr<RevThread>>
     ThreadsThatChangedState{};  ///< RevCore: used to signal to RevCPU that the thread assigned to HART has changed state
 
-  SST::Output* const                output;                       ///< RevCore: output handler
+public:
+  SST::Output* const output;  ///< RevCore: output handler
+
+private:
   std::unique_ptr<RevFeature>       CreateFeature();              ///< RevCore: Create a RevFeature object
   std::unique_ptr<RevFeature> const featureUP = CreateFeature();  ///< RevCore: feature handler
   RevFeature* const                 feature   = featureUP.get();  ///< RevCore: raw feature pointer

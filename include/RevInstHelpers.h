@@ -133,7 +133,7 @@ uint32_t fclass( T val ) {
 /// Load template
 template<typename T>
 bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  if( sizeof( T ) < sizeof( int64_t ) && !R->IsRV64 ) {
+  if( sizeof( T ) < sizeof( int64_t ) && !F->IsRV64() ) {
     static constexpr RevFlag flags =
       sizeof( T ) < sizeof( int32_t ) ? std::is_signed_v<T> ? RevFlag::F_SEXT32 : RevFlag::F_ZEXT32 : RevFlag::F_NONE;
     auto   rs1 = R->GetX<uint64_t>( Inst.rs1 );  // read once for tracer
@@ -284,7 +284,7 @@ enum class OpKind { Imm, Reg };
 // The optional fourth parameter indicates W mode (32-bit on XLEN == 64)
 template<template<class> class OP, OpKind KIND, template<class> class SIGN = std::make_signed_t, bool W_MODE = false>
 bool oper( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  if( !W_MODE && !R->IsRV64 ) {
+  if( !W_MODE && !F->IsRV64() ) {
     using T = SIGN<int32_t>;
     T rs1   = R->GetX<T>( Inst.rs1 );
     T rs2   = KIND == OpKind::Imm ? T( Inst.ImmSignExt( 12 ) ) : R->GetX<T>( Inst.rs2 );
@@ -323,7 +323,7 @@ struct ShiftRight {
 // Computes the UPPER half of multiplication, based on signedness
 template<bool rs1_is_signed, bool rs2_is_signed>
 bool uppermul( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  if( R->IsRV64 ) {
+  if( F->IsRV64() ) {
     uint64_t rs1 = R->GetX<uint64_t>( Inst.rs1 );
     uint64_t rs2 = R->GetX<uint64_t>( Inst.rs2 );
     uint64_t mul = static_cast<uint64_t>( rs1 * __int128( rs2 ) >> 64 );
@@ -354,7 +354,7 @@ enum class DivRem { Div, Rem };
 // The optional third parameter indicates W mode (32-bit on XLEN == 64)
 template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
 bool divrem( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  if( !W_MODE && !R->IsRV64 ) {
+  if( !W_MODE && !F->IsRV64() ) {
     using T = SIGN<int32_t>;
     T rs1   = R->GetX<T>( Inst.rs1 );
     T rs2   = R->GetX<T>( Inst.rs2 );
@@ -388,7 +388,7 @@ bool divrem( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst 
 template<template<class> class OP, template<class> class SIGN = std::make_unsigned_t>
 bool bcond( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   bool cond;
-  if( R->IsRV64 ) {
+  if( F->IsRV64() ) {
     cond = OP()( R->GetX<SIGN<int64_t>>( Inst.rs1 ), R->GetX<SIGN<int64_t>>( Inst.rs2 ) );
   } else {
     cond = OP()( R->GetX<SIGN<int32_t>>( Inst.rs1 ), R->GetX<SIGN<int32_t>>( Inst.rs2 ) );
