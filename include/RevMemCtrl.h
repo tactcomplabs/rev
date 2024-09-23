@@ -29,7 +29,7 @@
 #include "SST.h"
 
 // -- RevCPU Headers
-#include "../common/include/RevCommon.h"
+#include "RevCommon.h"
 #include "RevOpts.h"
 #include "RevTracer.h"
 

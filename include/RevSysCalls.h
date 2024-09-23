@@ -20,7 +20,7 @@
 #include <string>
 
 // -- RevCPU Headers
-#include "../common/include/RevCommon.h"
+#include "RevCommon.h"
 
 namespace SST::RevCPU {
 

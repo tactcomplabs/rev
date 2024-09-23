@@ -12,6 +12,7 @@
 
 EXAMPLE=rdcycle
 CC="${RVCC}"
+# ARCH=rv64gc_zicntr
 ARCH=rv64gc
 ABI=lp64d
 

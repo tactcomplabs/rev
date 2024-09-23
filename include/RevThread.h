@@ -21,6 +21,7 @@
 // -- Rev Headers
 #include "RevInstTable.h"
 #include "RevMem.h"
+#include "RevRegFile.h"
 
 namespace SST::RevCPU {
 

@@ -11,7 +11,8 @@
 #ifndef _REV_FENV_H_
 #define _REV_FENV_H_
 
-#include "RevInstTable.h"
+#include "RevFCSR.h"
+#include "RevRegFile.h"
 #include <cfenv>
 #include <cmath>
 #include <stdexcept>
@@ -29,12 +30,12 @@
 namespace SST::RevCPU {
 
 class RevFenv {
-  FCSR&       fcsr;         // Reference to this register file's FCSR
-  std::fenv_t saved_env{};  // The saved FP environment which is restored
+  RevRegFile* const R;
+  std::fenv_t       saved_env{};  // The saved FP environment which is restored
 
 public:
   /// Constructor saves Fenv state to be restored at destruction
-  RevFenv( RevRegFile* R, FRMode rm, SST::Output* output ) : fcsr( R->GetFCSR() ) {
+  RevFenv( RevRegFile* R, FRMode rm, SST::Output* output ) : R( R ) {
 
     // Save host's FP environment and set flags to default, non-trapping
     if( std::feholdexcept( &saved_env ) ) {
@@ -73,12 +74,11 @@ public:
 #endif
       break;
 
-    case FRMode::DYN:
-      output->fatal( CALL_INFO, -1, "Illegal FCSR Rounding Mode of DYN at PC = 0x%" PRIx64 "\n", R->GetPC() );
-      break;
+    case FRMode::DYN: output->fatal( CALL_INFO, -1, "Illegal FRM Rounding Mode of DYN at PC = 0x%" PRIx64 "\n", R->GetPC() ); break;
 
     default: output->fatal( CALL_INFO, -1, "Unknown Rounding Mode at PC = 0x%" PRIx64 "\n", R->GetPC() ); break;
     }
+
     if( ret != 0 ) {
       output->fatal( CALL_INFO, -1, "Could not set FP rounding mode at PC = 0x%" PRIx64 "\n", R->GetPC() );
     }
@@ -90,15 +90,15 @@ public:
     // Set the accumulated fflags based on exceptions
     int except = std::fetestexcept( FE_ALL_EXCEPT );
     if( except & FE_DIVBYZERO )
-      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::DZ ) };
+      R->SetFFlags( FCSR::DZ );
     if( except & FE_INEXACT )
-      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::NX ) };
+      R->SetFFlags( FCSR::NX );
     if( except & FE_INVALID )
-      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::NV ) };
+      R->SetFFlags( FCSR::NV );
     if( except & FE_OVERFLOW )
-      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::OF ) };
+      R->SetFFlags( FCSR::OF );
     if( except & FE_UNDERFLOW )
-      fcsr = FCSR{ static_cast<uint32_t>( fcsr ) | static_cast<uint32_t>( FCSR::UF ) };
+      R->SetFFlags( FCSR::UF );
 
     // Restore the host's saved FP Environment
     std::fesetenv( &saved_env );

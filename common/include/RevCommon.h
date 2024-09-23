@@ -39,7 +39,7 @@ namespace SST::RevCPU {
 /// Zero-extend value of bits size
 template<typename T>
 constexpr auto ZeroExt( T val, size_t bits ) {
-  return static_cast<std::make_unsigned_t<T>>( val ) & ~( ~std::make_unsigned_t<T>{ 0 } << bits );
+  return static_cast<std::make_unsigned_t<T>>( val ) & ( ( std::make_unsigned_t<T>( 1 ) << bits ) - 1 );
 }
 
 /// Sign-extend value of bits size
