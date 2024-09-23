@@ -3,4 +3,4 @@
 
 BASE=$1
 
-rm -Rf $BASE/_*.3
+rm -Rf "$BASE"/_*.3
