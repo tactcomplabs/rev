@@ -181,8 +181,6 @@ reformat_files() {
     get_files
 
     errors=false
-    flake8_warning=false
-    shellcheck_warning=false
 
     # Fix formatting on text files
     for file in "${FILES[@]}"; do
@@ -216,8 +214,9 @@ reformat_files() {
                 if command -v flake8 >/dev/null 2>&1; then
                     flake8 --color=always --max-line-length 131 "$file" || errors=true
                 else
-                    printf "${YELLOW}Warning: flake8 utility not found. $file not checked with flake8.${END}\n"
-                    flake8_warning=true
+                    printf "${RED}Error: flake8 utility not found. %s not checked with flake8.${END}\n" "$file"
+                    printf "${YELLOW}\nTo Install flake8, type:\n\npip install flake8\n\n${END}"
+                    exit 1
                 fi
             fi
 
@@ -226,20 +225,13 @@ reformat_files() {
                 if command -v shellcheck >/dev/null 2>&1; then
                     shellcheck -o all -e 1091,2059,2154,2248,2250,2312 "$file" || errors=true
                 else
-                    printf "${YELLOW}Warning: shellcheck utility not found. $file not checked with shellcheck.${END}\n"
-                    shellcheck_warning=true
+                    printf "${RED}Error: shellcheck utility not found. %s not checked with shellcheck.${END}\n" "$file"
+                    howto_install shellcheck
+                    exit 1
                 fi
             fi
         fi
     done
-
-    if [[ $flake8_warning = true ]]; then
-        printf "${YELLOW}\nTo Install flake8, type:\n\npip install flake8\n\n${END}"
-    fi
-
-    if [[ $shellcheck_warning = true ]]; then
-        howto_install shellcheck
-    fi
 
     if [[ $errors = true ]]; then
         exit 1
