@@ -1495,7 +1495,7 @@ void RevCore::HandleRegFault( unsigned width ) {
 
   if( !feature->HasF() || RevRand( 0, 1 ) ) {
     // X registers
-    if( regFile->IsRV64 ) {
+    if( regFile->IsRV64() ) {
       regFile->RV64[RegIdx] |= RevRand( 0, ~( ~uint64_t{ 0 } << width ) );
     } else {
       regFile->RV32[RegIdx] |= RevRand( 0, ~( ~uint32_t{ 0 } << width ) );
@@ -1806,7 +1806,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
       );
 #endif
       ++Stats.retired;
-      ++RegFile->InstRet;
+      RegFile->IncrementInstRet();
 
       // Only clear the dependency if there is no outstanding load
       if( ( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) ) == 0 ) {

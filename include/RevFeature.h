@@ -33,17 +33,19 @@ enum RevFeatureType : uint32_t {
   RV_B        = 1 << 7,   ///< RevFeatureType: C-extension
   RV_P        = 1 << 8,   ///< RevFeatureType: P-Extension
   RV_V        = 1 << 9,   ///< RevFeatureType: V-extension
-  RV_ZICBOM   = 1 << 10,  ///< RevFeatureType: Zicbom-extension
-  RV_ZICOND   = 1 << 11,  ///< RevFeatureType: Zicond-extension
-  RV_ZICSR    = 1 << 12,  ///< RevFeatureType: Zicsr-extension
-  RV_ZIFENCEI = 1 << 13,  ///< RevFeatureType: Zifencei-extension
-  RV_ZMMUL    = 1 << 14,  ///< RevFeatureType: Zmmul-extension
-  RV_ZAAMO    = 1 << 15,  ///< RevFeatureType: Zaamo-extension
-  RV_ZALRSC   = 1 << 16,  ///< RevFeatureType: Zalrsc-extension
-  RV_ZFA      = 1 << 17,  ///< RevFeatureType: Zfa-extension
-  RV_ZFH      = 1 << 18,  ///< RevFeatureType: H-extension
-  RV_ZFHMIN   = 1 << 19,  ///< RevFeatureRtpe: Zfhmin extension
-  RV_ZTSO     = 1 << 20,  ///< RevFeatureType: Ztso-extension
+  RV_H        = 1 << 10,  ///< RevFeatureType: H-extension
+  RV_ZICBOM   = 1 << 11,  ///< RevFeatureType: Zicbom-extension
+  RV_ZICNTR   = 1 << 12,  ///< RevFeatureType: Zicntr-extension
+  RV_ZICOND   = 1 << 13,  ///< RevFeatureType: Zicond-extension
+  RV_ZICSR    = 1 << 14,  ///< RevFEatureType: Zicsr-extension
+  RV_ZIFENCEI = 1 << 15,  ///< RevFeatureType: Zifencei-extension
+  RV_ZMMUL    = 1 << 16,  ///< RevFeatureType: Zmmul-extension
+  RV_ZAAMO    = 1 << 17,  ///< RevFeatureType: Zaamo-extension
+  RV_ZALRSC   = 1 << 18,  ///< RevFeatureType: Zalrsc-extension
+  RV_ZFA      = 1 << 19,  ///< RevFeatureType: Zfa-extension
+  RV_ZFH      = 1 << 20,  ///< RevFeatureType: H-extension
+  RV_ZFHMIN   = 1 << 21,  ///< RevFeatureRtpe: Zfhmin extension
+  RV_ZTSO     = 1 << 22,  ///< RevFeatureType: Ztso-extension
 };
 
 struct RevFeature {

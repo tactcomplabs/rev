@@ -30,7 +30,7 @@ class Zaamo : public RevExt {
       flags = RevFlag{ uint32_t( flags ) | uint32_t( RevFlag::F_RL ) };
     }
 
-    if( !R->IsRV64 ) {
+    if( !F->IsRV64() ) {
       MemReq req(
         R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete()
       );

@@ -11,6 +11,8 @@
 #ifndef _SST_REVCPU_REVINSTTABLE_H_
 #define _SST_REVCPU_REVINSTTABLE_H_
 
+#include "RevCommon.h"
+#include "RevFCSR.h"
 #include <bitset>
 #include <cmath>
 #include <cstddef>
@@ -21,30 +23,28 @@
 #include <string>
 #include <type_traits>
 
-#include "RevRegFile.h"
-
-// Register Decoding Macros
-#define DECODE_RD( x )         ( ( ( x ) >> ( 7 ) ) & ( 0b11111 ) )
-#define DECODE_RS1( x )        ( ( ( x ) >> ( 15 ) ) & ( 0b11111 ) )
-#define DECODE_RS2( x )        ( ( ( x ) >> ( 20 ) ) & ( 0b11111 ) )
-#define DECODE_RS3( x )        ( ( ( x ) >> ( 27 ) ) & ( 0b11111 ) )
-#define DECODE_IMM12( x )      ( ( ( x ) >> ( 20 ) ) & ( 0b111111111111 ) )
-#define DECODE_IMM20( x )      ( ( ( x ) >> ( 12 ) ) & ( 0b11111111111111111111 ) )
-
-#define DECODE_LOWER_CRS2( x ) ( ( ( x ) >> ( 2 ) ) & ( 0b11111 ) )
-
-#define DECODE_FUNCT7( x )     ( ( ( x ) >> ( 25 ) ) & ( 0b1111111 ) )
-#define DECODE_FUNCT2( x )     ( ( ( x ) >> ( 25 ) ) & ( 0b11 ) )
-#define DECODE_FUNCT3( x )     ( ( ( x ) >> ( 12 ) ) & ( 0b111 ) )
-
-#define DECODE_RM( x )         static_cast<FRMode>( DECODE_FUNCT3( x ) )
-#define DECODE_RL( x )         ( ( ( x ) >> 25 & 0b1 ) != 0 )
-#define DECODE_AQ( x )         ( ( ( x ) >> 26 & 0b1 ) != 0 )
-
 namespace SST::RevCPU {
 
+// Register Decoding functions
+// clang-format off
+constexpr uint8_t  DECODE_RD        ( uint32_t Inst ) { return Inst >>  7 &                0b11111; }
+constexpr uint8_t  DECODE_RS1       ( uint32_t Inst ) { return Inst >> 15 &                0b11111; }
+constexpr uint8_t  DECODE_RS2       ( uint32_t Inst ) { return Inst >> 20 &                0b11111; }
+constexpr uint8_t  DECODE_RS3       ( uint32_t Inst ) { return Inst >> 27 &                0b11111; }
+constexpr uint16_t DECODE_IMM12     ( uint32_t Inst ) { return Inst >> 20 &         0b111111111111; }
+constexpr uint32_t DECODE_IMM20     ( uint32_t Inst ) { return Inst >> 12 & 0b11111111111111111111; }
+constexpr uint8_t  DECODE_LOWER_CRS2( uint32_t Inst ) { return Inst >>  2 &                0b11111; }
+constexpr uint8_t  DECODE_FUNCT7    ( uint32_t Inst ) { return Inst >> 25 &              0b1111111; }
+constexpr uint8_t  DECODE_FUNCT2    ( uint32_t Inst ) { return Inst >> 25 &                   0b11; }
+constexpr uint8_t  DECODE_FUNCT3    ( uint32_t Inst ) { return Inst >> 12 &                  0b111; }
+constexpr bool     DECODE_RL        ( uint32_t Inst ) { return Inst >> 25 &                    0b1; }
+constexpr bool     DECODE_AQ        ( uint32_t Inst ) { return Inst >> 26 &                    0b1; }
+constexpr FRMode   DECODE_RM        ( uint32_t Inst ) { return FRMode{ Inst >> 12 &          0b111 }; }
+
+// clang-format on
+
 enum RevInstF : int {  ///< Rev CPU Instruction Formats
-  RVTypeUNKNOWN = 0,   ///< RevInstf: Unknown format
+  RVTypeUNKNOWN = 0,   ///< RevInstF: Unknown format
   RVTypeR       = 1,   ///< RevInstF: R-Type
   RVTypeI       = 2,   ///< RevInstF: I-Type
   RVTypeS       = 3,   ///< RevInstF: S-Type
@@ -64,11 +64,11 @@ enum RevInstF : int {  ///< Rev CPU Instruction Formats
   RVCTypeCJ     = 18,  ///< RevInstF: Compressed CJ-Type
 };
 
-enum class RevImmFunc : int {  ///< Rev Immediate Values
-  FUnk = 0,                    ///< RevRegClass: Imm12 is not used
-  FImm = 1,                    ///< RevRegClass: Imm12 is an immediate
-  FEnc = 2,                    ///< RevRegClass: Imm12 is an encoding value
-  FVal = 3,                    ///< RevRegClass: Imm12 is an incoming register value
+enum class RevImmFunc {  ///< Rev Immediate Values
+  FUnk = 0,              ///< RevRegClass: Imm12 is not used
+  FImm = 1,              ///< RevRegClass: Imm12 is an immediate
+  FEnc = 2,              ///< RevRegClass: Imm12 is an encoding value
+  FVal = 3,              ///< RevRegClass: Imm12 is an incoming register value
 };
 
 /*! \struct RevInst
@@ -111,6 +111,10 @@ struct RevInst {
 
 /// CRegIdx: Maps the compressed index to normal index
 #define CRegIdx( x ) ( ( x ) + 8 )
+
+class RevFeature;
+class RevRegFile;
+class RevMem;
 
 /*! \struct RevInstEntry
  *  \brief Rev instruction entry
