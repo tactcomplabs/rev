@@ -474,6 +474,10 @@ public:
   /// Set a CSR register
   template<typename XLEN>
   bool SetCSR( uint16_t csr, XLEN val ) {
+    // Read-only CSRs cannot be written to
+    if( csr >= 0xc00 && csr < 0xe00 )
+      return false;
+
     switch( csr ) {
     case fflags: CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b00011111 } ) | ( val & 0b00011111 ); break;
     case frm: CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b11100000 } ) | ( val & 0b00000111 ) << 5; break;
