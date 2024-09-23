@@ -180,9 +180,13 @@ reformat_files() {
     # Get the list of files into FILES
     get_files
 
-    errors=false
-
     # Fix formatting on text files
+    if [[ ${#FILES[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    errors=false
+# Fix formatting on text files
     for file in "${FILES[@]}"; do
         if [[ -f $file ]] && is_text_file "$file"; then
             # Replace non-ASCII characters with ASCII equivalents
