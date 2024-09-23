@@ -25,23 +25,23 @@ export CC=gcc-11
 export CXX=g++-11
 export RVCC=riscv64-unknown-elf-gcc
 
-touch rev.jenkins.${SLURM_JOB_ID}.out
-sst --version >> rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-sst-info revcpu >> rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+exec >> "rev.jenkins.${SLURM_JOB_ID}.out" 2>&1
+sst --version
+sst-info revcpu
 
 #-- Stage 2: setup the build directories
 mkdir -p build
-cd build
+cd build || exit
 rm -Rf ./*
 
 #-- Stage 3: initiate the build
-cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DRVCC=${RVCC} ../ >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-make clean >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-make uninstall >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-make -j >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
-#make install >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+cmake -DBUILD_ASM_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DRVCC=${RVCC} ../
+make clean
+make uninstall
+make -j
+#make install
 
 #-- Stage 4: test everything
-make test >> ../rev.jenkins.${SLURM_JOB_ID}.out 2>&1
+make test
 
 #-- EOF
