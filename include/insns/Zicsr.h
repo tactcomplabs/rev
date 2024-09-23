@@ -7,6 +7,27 @@
 //
 // See LICENSE in the top level directory for licensing details
 //
+////////////////////////////////////////////////////////////////////////////////
+//
+// A note about the separation of scopes in include/insns/Zicsr.h and
+// include/RevCSR.h:
+//
+// Zicsr.h: Decode and execute one of only 6 CSR instructions (csrrw, csrrs,
+// csrrc, csrrwi, csrrsi, csrrci). Do not enable or disable certain CSR
+// registers, or implement the semantics of particular CSR registers here.
+// All CSR instructions with a valid encoding are valid as far as Zicsr.h is
+// concerned. The particular CSR register accessed in a CSR instruction is
+// secondary to the scope of Zicsr.h. Certain pseudoinstructions like RDTIME or
+// FRFLAGS are listed separately in Zicsr.h only for user-friendly disassembly,
+// not for enabling, disabling or implementing them.
+//
+// RevCSR.h: GetCSR() and SetCSR() are used to get and set specific CSR
+// registers in the register file, regardless of how we arrive here. If a
+// particular CSR register is disabled because of CPU extensions present, or if
+// a particular CSR register does not apply to it (such as RDTIMEH on RV64),
+// then raise an invalid instruction or other exception here.
+//
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef _SST_REVCPU_ZICSR_H_
 #define _SST_REVCPU_ZICSR_H_
@@ -24,6 +45,8 @@ class Zicsr : public RevExt {
   // Because CSR has a 32/64-bit width, this function is templatized
   template<typename XLEN, OpKind OPKIND, CSROp OP>
   static bool ModCSRImpl( RevRegFile* R, const RevInst& Inst ) {
+    static_assert( std::is_unsigned_v<XLEN>, "XLEN must be an unsigned type" );
+
     XLEN old = 0;
 
     // CSRRW with rd == zero does not read CSR
@@ -49,12 +72,9 @@ class Zicsr : public RevExt {
       }
     }
 
-    // Read-only CSRs cannot be written to
-    if( Inst.imm >= 0xc00 && Inst.imm < 0xe00 )
-      return false;
-
     // Write the new CSR value
-    R->SetCSR( Inst.imm, val );
+    if( !R->SetCSR( Inst.imm, val ) )
+      return false;
 
   end:
     // Advance PC
@@ -67,7 +87,7 @@ class Zicsr : public RevExt {
   // This calls the 32/64-bit ModCSR depending on the current XLEN
   template<OpKind OPKIND, CSROp OP>
   static bool ModCSR( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    return R->IsRV64 ? ModCSRImpl<uint64_t, OPKIND, OP>( R, Inst ) : ModCSRImpl<uint32_t, OPKIND, OP>( R, Inst );
+    return F->IsRV64() ? ModCSRImpl<uint64_t, OPKIND, OP>( R, Inst ) : ModCSRImpl<uint32_t, OPKIND, OP>( R, Inst );
   }
 
   static constexpr auto& csrrw  = ModCSR<OpKind::Reg, CSROp::Write>;
@@ -118,12 +138,12 @@ class Zicsr : public RevExt {
     RevZicsrInstDefaults().SetMnemonic( "csrrci %rd, %csr, $imm" ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) != 0; } ),
     RevZicsrInstDefaults().SetMnemonic( "csrci %csr, $imm"       ).SetFunct3( 0b111 ).SetImplFunc( csrrci     ).SetPredicate( []( uint32_t Inst ){ return DECODE_RD( Inst ) == 0; } ),
 
-    RevZicsrInstDefaults().SetMnemonic( "rdcycle %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::cycle; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdcycleh %rd"           ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::cycleh; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdtime %rd"             ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::time; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdtimeh %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::timeh; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdinstret %rd"          ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::instret; } ),
-    RevZicsrInstDefaults().SetMnemonic( "rdinstreth %rd"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && RevCSR{ DECODE_IMM12( Inst ) } == RevCSR::instreth; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdcycle %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == RevCSR::cycle; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdcycleh %rd"           ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == RevCSR::cycleh; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdtime %rd"             ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == RevCSR::time; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdtimeh %rd"            ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == RevCSR::timeh; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdinstret %rd"          ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == RevCSR::instret; } ),
+    RevZicsrInstDefaults().SetMnemonic( "rdinstreth %rd"         ).SetFunct3( 0b010 ).SetImplFunc( csrrs      ).SetPredicate( []( uint32_t Inst ){ return DECODE_RS1( Inst ) == 0 && DECODE_IMM12( Inst ) == RevCSR::instreth; } ),
   };
   // clang-format on
 

@@ -1,5 +1,5 @@
 //
-// _RevMemCtrl_h_
+// _RevMemCtrl_cc_
 //
 // Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,8 +8,8 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#include "RevInstTable.h"
 #include "RevMemCtrl.h"
+#include "RevRegFile.h"
 
 namespace SST::RevCPU {
 

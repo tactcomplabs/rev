@@ -10,8 +10,8 @@
 
 #include "RevFeature.h"
 #include <cctype>
-#include <cstring>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 namespace SST::RevCPU {
@@ -69,6 +69,7 @@ bool RevFeature::ParseMachineModel() {
     { "V",          1, 0, -1, 0, RV_V | RV_D | RV_F | RV_ZICSR          },
     { "H",          1, 0, -1, 0, RV_H                                   }, // Unsupported
     { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                              },
+    { "Zicntr",     2, 0,  2, 2, RV_ZICNTR | RV_ZICSR                   },
     { "Zicsr",      2, 0,  2, 2, RV_ZICSR                               },
     { "Zifencei",   2, 0,  2, 2, RV_ZIFENCEI                            },
     { "Zmmul",      1, 0,  1, 1, RV_ZMMUL                               },
