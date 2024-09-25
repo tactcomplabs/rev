@@ -216,7 +216,7 @@ reformat_files() {
             # Python files
             if [[ $file = *.py ]]; then
                 if command -v flake8 >/dev/null 2>&1; then
-                    flake8 --color=always --max-line-length 131 "$file" || errors=true
+                    flake8 --max-line-length 131 "$file" || errors=true
                 else
                     printf "${RED}Error: flake8 utility not found. %s not checked with flake8.${END}\n" "$file"
                     printf "${YELLOW}\nTo Install flake8, type:\n\npip install flake8\n\n${END}"
