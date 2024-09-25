@@ -27,13 +27,9 @@ namespace SST::RevCPU {
 
 class RevThread {
 public:
-  using RevVirtRegState = RevRegFile;
-
   ///< RevThread: Constructor
-  RevThread(
-    uint32_t ID, uint32_t ParentID, std::shared_ptr<RevMem::MemSegment>& ThreadMem, std::unique_ptr<RevVirtRegState> VirtRegState
-  )
-    : ID( ID ), ParentID( ParentID ), ThreadMem( ThreadMem ), VirtRegState( std::move( VirtRegState ) ) {}
+  RevThread( uint32_t ID, uint32_t ParentID, std::shared_ptr<RevMem::MemSegment> ThreadMem, std::unique_ptr<RevRegFile> RegFile )
+    : ID( ID ), ParentID( ParentID ), ThreadMem( std::move( ThreadMem ) ), RegFile( std::move( RegFile ) ) {}
 
   ///< RevThread: Destructor
   ~RevThread() {
@@ -53,20 +49,14 @@ public:
   ///< RevThread: Get this thread's ID
   uint32_t GetID() const { return ID; }
 
-  ///< RevThread: Set this thread's ID
-  void SetID( const uint32_t NewID ) { ID = NewID; }
-
   ///< RevThread: Get the parent of this thread's TID
   uint32_t GetParentID() const { return ParentID; }
-
-  ///< RevThread: Set the parent of this thread's TID
-  void SetParentID( const uint32_t NewParentID ) { ParentID = NewParentID; }
 
   ///< RevThread: Get the TID of the thread that this thread is waiting to join
   uint32_t GetWaitingToJoinTID() const { return WaitingToJoinTID; }
 
   ///< RevThread: Set the TID of the thread that this thread is waiting to join
-  void SetWaitingToJoinTID( const uint32_t ThreadToWaitOn ) { WaitingToJoinTID = ThreadToWaitOn; }
+  void SetWaitingToJoinTID( uint32_t ThreadToWaitOn ) { WaitingToJoinTID = ThreadToWaitOn; }
 
   ///< RevThread: Add new file descriptor to this thread (ie. rev_open)
   void AddFD( int fd ) { fildes.insert( fd ); }
@@ -75,23 +65,16 @@ public:
   void RemoveFD( int fd ) { fildes.erase( fd ); }
 
   ///< See if file descriptor exists/is owned by this thread
-  bool FindFD( int fd ) { return fildes.count( fd ); }
+  bool FindFD( int fd ) const { return fildes.count( fd ); }
 
-  ///< RevThread: Get the fildes valid for this thread
-  const std::unordered_set<int>& GetFildes() { return fildes; }
-
-  ///< RevThread: Update this thread's virtual register state
-  void UpdateVirtRegState( std::unique_ptr<RevVirtRegState>&& vRegState ) { VirtRegState = std::move( vRegState ); }
-
-  ///< RevThread: Transfers the pointer of this Thread's register state
-  ///             (Used for loading reg state into a Hart's RegFile)
-  std::unique_ptr<RevVirtRegState> TransferVirtRegState() { return std::move( VirtRegState ); }
+  ///< RevThread: Returns this Thread's register state
+  RevRegFile* GetRegFile() const { return RegFile.get(); }
 
   ///< RevThread: Get this thread's current ThreadState
   ThreadState GetState() const { return State; }
 
   ///< RevThread: Set this thread's ThreadState
-  void SetState( ThreadState newState ) { State = std::move( newState ); }
+  void SetState( ThreadState newState ) { State = newState; }
 
   ///< RevThread: Add a child to this thread id
   void AddChildID( uint32_t tid ) { ChildrenIDs.insert( tid ); }
@@ -110,11 +93,11 @@ public:
   }
 
 private:
-  uint32_t                            ID{};                         // Thread ID
-  uint32_t                            ParentID{};                   // Parent ID
+  uint32_t const                      ID;                           // Thread ID
+  uint32_t const                      ParentID;                     // Parent ID
   std::shared_ptr<RevMem::MemSegment> ThreadMem{};                  // TLS and Stack memory
   ThreadState                         State{ ThreadState::START };  // Thread state
-  std::unique_ptr<RevVirtRegState>    VirtRegState{};               // Register file
+  std::unique_ptr<RevRegFile> const   RegFile;                      // Register file
   std::unordered_set<uint32_t>        ChildrenIDs{};                // Child thread IDs
   std::unordered_set<int>             fildes{ 0, 1, 2 };            // Default file descriptors
 

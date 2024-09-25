@@ -650,12 +650,12 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
 // - Adds it's ThreadID to the ReadyThreads to be scheduled
 void RevCPU::InitThread( std::unique_ptr<RevThread>&& ThreadToInit ) {
   // Get a pointer to the register state for this thread
-  std::unique_ptr<RevRegFile> RegState = ThreadToInit->TransferVirtRegState();
+  RevRegFile* RegFile = ThreadToInit->GetRegFile();
 
   // Set the global pointer register and the frame pointer register
-  auto gp                              = Loader->GetSymbolAddr( "__global_pointer$" );
-  RegState->SetX( RevReg::gp, gp );
-  RegState->SetX( RevReg::fp, gp );
+  auto gp             = Loader->GetSymbolAddr( "__global_pointer$" );
+  RegFile->SetX( RevReg::gp, gp );
+  RegFile->SetX( RevReg::fp, gp );
 
   // Set state to Ready
   ThreadToInit->SetState( ThreadState::READY );
@@ -664,11 +664,11 @@ void RevCPU::InitThread( std::unique_ptr<RevThread>&& ThreadToInit ) {
   ReadyThreads.emplace_back( std::move( ThreadToInit ) );
 }
 
-// Assigns a RevThred to a specific Proc which then loads it into a RevHart
+// Assigns a RevThread to a specific Proc which then loads it into a RevHart
 // This should not be called without first checking if the Proc has an IdleHart
-void RevCPU::AssignThread( std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID ) {
+void RevCPU::SetThread( std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID ) {
   output.verbose( CALL_INFO, 4, 0, "Assigning Thread %" PRIu32 " to Processor %" PRIu32 "\n", ThreadToAssign->GetID(), ProcID );
-  Procs[ProcID]->AssignThread( std::move( ThreadToAssign ) );
+  Procs.at( ProcID )->SetThread( std::move( ThreadToAssign ) );
   return;
 }
 
@@ -726,7 +726,7 @@ void RevCPU::UpdateThreadAssignments( uint32_t ProcID ) {
   if( Procs[ProcID]->HasIdleHart() ) {
     // There is room, assign a thread
     // Get the next thread to assign
-    Procs[ProcID]->AssignThread( std::move( ReadyThreads.front() ) );
+    Procs[ProcID]->SetThread( std::move( ReadyThreads.front() ) );
 
     // Remove thread from ready threads vector
     ReadyThreads.erase( ReadyThreads.begin() );
@@ -807,10 +807,10 @@ void RevCPU::HandleThreadStateChangesForProc( uint32_t ProcID ) {
 }
 
 void RevCPU::InitMainThread( uint32_t MainThreadID, const uint64_t StartAddr ) {
-  auto MainThreadRegState = std::make_unique<RevRegFile>( Procs[0].get() );
+  auto RegFile = std::make_unique<RevRegFile>( Procs[0].get() );
 
   // The Program Counter gets set to the start address
-  MainThreadRegState->SetPC( StartAddr );
+  RegFile->SetPC( StartAddr );
 
   // We need to initialize the a0 register to the value of ARGC.
   // This is >= 1 (the executable name is always included).
@@ -818,8 +818,8 @@ void RevCPU::InitMainThread( uint32_t MainThreadID, const uint64_t StartAddr ) {
   // of the ARGV base pointer in memory which is currently set to
   // the top of stack.
   uint64_t stackTop = Mem->GetStackTop();
-  MainThreadRegState->SetX( RevReg::a0, Opts->GetArgv().size() + 1 );
-  MainThreadRegState->SetX( RevReg::a1, stackTop );
+  RegFile->SetX( RevReg::a0, Opts->GetArgv().size() + 1 );
+  RegFile->SetX( RevReg::a1, stackTop );
 
   // We subtract Mem->GetTLSSize() bytes from the current stack top, and
   // round down to a multiple of 16 bytes. We set it as the new top of stack.
@@ -829,18 +829,18 @@ void RevCPU::InitMainThread( uint32_t MainThreadID, const uint64_t StartAddr ) {
   // We set the stack pointer and the thread pointer to the new stack top
   // The thread local storage is accessed with a nonnegative offset from tp,
   // and the stack grows down with sp being subtracted from before storing.
-  MainThreadRegState->SetX( RevReg::sp, stackTop );
-  MainThreadRegState->SetX( RevReg::tp, stackTop );
+  RegFile->SetX( RevReg::sp, stackTop );
+  RegFile->SetX( RevReg::tp, stackTop );
 
   auto gp = Loader->GetSymbolAddr( "__global_pointer$" );
-  MainThreadRegState->SetX( RevReg::gp, gp );
-  MainThreadRegState->SetX( RevReg::fp, gp );
+  RegFile->SetX( RevReg::gp, gp );
+  RegFile->SetX( RevReg::fp, gp );
 
   std::unique_ptr<RevThread> MainThread = std::make_unique<RevThread>(
     MainThreadID,
     _INVALID_TID_,  // No Parent Thread ID
     Mem->GetThreadMemSegs().front(),
-    std::move( MainThreadRegState )
+    std::move( RegFile )
   );
   MainThread->SetState( ThreadState::READY );
 

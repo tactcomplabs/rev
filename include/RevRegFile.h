@@ -206,9 +206,7 @@ public:
 
   // Getters/Setters
   /// Get cost of the instruction
-  const uint32_t& GetCost() const { return cost; }
-
-  uint32_t& GetCost() { return cost; }
+  uint32_t GetCost() const { return cost; }
 
   /// Set cost of the instruction
   void SetCost( uint32_t c ) { cost = c; }
@@ -299,13 +297,7 @@ public:
   }
 
   /// GetPC: Get the Program Counter
-  uint64_t GetPC() const {
-    if( IsRV64() ) {
-      return RV64_PC;
-    } else {
-      return RV32_PC;
-    }
-  }
+  uint64_t GetPC() const { return IsRV64() ? RV64_PC : RV32_PC; }
 
   /// SetPC: Set the Program Counter to a specific value
   template<typename T>

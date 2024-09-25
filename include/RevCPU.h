@@ -234,7 +234,7 @@ private:
 
   // Adds Thread with ThreadID to AssignedThreads vector for ProcID
   // - Handles updating LSQueue & MarkLoadComplete function pointers
-  void AssignThread( std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID );
+  void SetThread( std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID );
 
   // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();
