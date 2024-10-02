@@ -1664,6 +1664,8 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   // ready to decode
   UpdateStatusOfHarts();
 
+  HartToExecID = _REV_INVALID_HART_ID_;
+
   if( HartsClearToDecode.any() && ( !Halted ) ) {
     // Determine what hart is ready to decode
     HartToDecodeID = GetNextHartToDecodeID();
@@ -1803,7 +1805,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   }
 
   // Check for pipeline hazards
-  if( !Pipeline.empty() && !--Pipeline.front().second.cost ) {
+  if( HartToExecID != _REV_INVALID_HART_ID_ && !Pipeline.empty() && !--Pipeline.front().second.cost ) {
     // Ready to retire this instruction
     uint16_t HartID = Pipeline.front().first;
 #ifndef NO_REV_TRACER
@@ -1830,7 +1832,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
   }
 
   // Check for completion states and new tasks
-  if( !GetRegFile( HartToExecID )->GetPC() ) {
+  if( !GetRegFile( HartToDecodeID )->GetPC() ) {
     // look for more work on the execution queue
     // if no work is found, don't update the PC
     // just wait and spin
