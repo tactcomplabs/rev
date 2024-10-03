@@ -5,3 +5,4 @@
 *.d
 *.dis
 *.revlog
+*.tmplog

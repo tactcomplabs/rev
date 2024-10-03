@@ -1,7 +1,5 @@
 /*
- * tracer.c
- *
- * RISC-V ISA: RV32G/RV64G
+ * bug test
  *
  * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved

@@ -67,7 +67,7 @@ compile: $(EXES) $(DIASMS)
 
 %.log: %.exe
 	@$(eval tmp := $(basename $@).tmplog)
-	ARCH=$(ARCH) REV_EXE=$< sst --add-lib-path=../../build/src $(REVCFG) > $(tmp)
+	ARCH=$(ARCH)_zicntr REV_EXE=$< sst --add-lib-path=../../build/src $(REVCFG) > $(tmp)
 	mv $(tmp) $@
 
 %.revlog: %.log

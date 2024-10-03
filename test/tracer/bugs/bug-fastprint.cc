@@ -1,5 +1,5 @@
 /*
- * bug-fatprint.cpp: Testing various issues for fast printf development
+ * bug-fastprint.cpp: Testing various issues for fast printf development
  *
  * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
