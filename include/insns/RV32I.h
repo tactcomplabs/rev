@@ -22,31 +22,31 @@ namespace SST::RevCPU {
 
 class RV32I : public RevExt {
   // Standard instructions
-  static bool nop( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool nop( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool lui( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool lui( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     R->SetX( Inst.rd, static_cast<int32_t>( Inst.imm << 12 ) );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool auipc( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool auipc( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     auto ui = static_cast<int32_t>( Inst.imm << 12 );
     R->SetX( Inst.rd, ui + R->GetPC() );
     R->AdvancePC( Inst );
     return true;
   }
 
-  static bool jal( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool jal( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     R->SetX( Inst.rd, R->GetPC() + Inst.instSize );
     R->SetPC( R->GetPC() + Inst.ImmSignExt( 21 ) );
     return true;
   }
 
-  static bool jalr( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool jalr( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     auto ret = R->GetPC() + Inst.instSize;
     R->SetPC( ( R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) & -2 );
     R->SetX( Inst.rd, ret );
@@ -98,13 +98,13 @@ class RV32I : public RevExt {
   static constexpr auto& srl   = oper<ShiftRight, OpKind::Reg, std::make_unsigned_t>;
   static constexpr auto& sra   = oper<ShiftRight, OpKind::Reg>;
 
-  static bool fence( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fence( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     M->FenceMem( F->GetHartToExecID() );
     R->AdvancePC( Inst );
     return true;  // temporarily disabled
   }
 
-  static bool ecall( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool ecall( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     /*
      * In reality this should be getting/setting a LOT of bits inside the
      * CSRs however because we are only concerned with ecall right now it's

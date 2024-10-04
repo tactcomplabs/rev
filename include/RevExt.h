@@ -58,7 +58,7 @@ struct RevExt {
   std::string_view GetName() const { return name; }
 
   /// RevExt: baseline execution function
-  bool Execute( unsigned Inst, const RevInst& Payload, uint16_t HartID, RevRegFile* regFile ) const;
+  bool Execute( unsigned Inst, RevInst& Payload, uint16_t HartID, RevRegFile* regFile ) const;
 
   /// RevExt: retrieves the extension's instruction table
   const std::vector<RevInstEntry>& GetTable() const { return table; }

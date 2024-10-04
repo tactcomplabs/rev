@@ -18,6 +18,15 @@
 
 namespace SST::RevCPU {
 
+enum class RevHartState {
+  Idle,
+  Fetching,
+  Decoding,
+  Halted,
+  Executing,
+  Retired,
+};
+
 class RevHart {
   ///< RevHart: Id for the Hart (0,1,2,3,etc)
   unsigned const ID;
@@ -34,6 +43,12 @@ class RevHart {
   ///< RevHart: Thread currently executing on this Hart
   std::unique_ptr<RevThread> Thread = nullptr;
 
+  ///< RevHart: State of hart
+  RevHartState State                = RevHartState::Idle;
+
+  ///<RevHart: Cost of executing instruction
+  unsigned Cost                     = 0;
+
 public:
   ///< RevHart: Constructor
   RevHart(
@@ -49,6 +64,18 @@ public:
 
   ///< RevHart: Destructor
   ~RevHart()                           = default;
+
+  ///< RevHart: Get the State
+  RevHartState GetState() const { return State; }
+
+  ///< RevHart: Set the State
+  void SetState( RevHartState state ) { State = state; }
+
+  ///< RevHart: Get the Cost
+  unsigned GetCost() const { return Cost; }
+
+  ///< RevHart: Set the Cost
+  void SetCost( unsigned cost ) { Cost = cost; }
 
   ///< RevHart: Get the EcallState
   EcallState& GetEcallState() { return Ecall; }

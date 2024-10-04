@@ -82,6 +82,15 @@ public:
   /// RevCore: per-processor clock function
   bool ClockTick( SST::Cycle_t currentCycle );
 
+  /// RevCore: per-processor clock frontend function
+  bool FrontEnd();
+
+  /// RevCore: per-processor clock backend function
+  bool BackEnd();
+
+  /// RevCore: Backend execute instruction function
+  bool RevCore::Backend_Execute( RevInst& Inst );
+
   /// RevCore: Called by RevCPU when there is no more work to do (ie. All RevThreads are ThreadState::DONE )
   void PrintStatSummary();
 
@@ -167,7 +176,7 @@ public:
   void CreateThread( uint32_t NewTid, uint64_t fn, void* arg );
 
   ///< RevCore: Returns the current HartToExecID active pid
-  uint32_t GetActiveThreadID() { return Harts.at( HartToDecodeID )->GetThreadID(); }
+  uint32_t GetThreadID( unsigned HartID ) { return Harts.at( HartID )->GetThreadID(); }
 
   ///< RevCore: Get this Core's feature
   const RevFeature* GetRevFeature() const { return feature; }
@@ -180,12 +189,6 @@ public:
 
   ///< RevCore: Add a co-processor to the RevCore
   void SetCoProc( RevCoProc* coproc );
-
-  /// GetHartToExecID: Retrieve the current executing Hart
-  unsigned GetHartToExecID() const { return HartToExecID; }
-
-  /// SetHartToExecID: Set the current executing Hart
-  void SetHartToExecID( unsigned hart ) { HartToExecID = hart; }
 
   //--------------- External Interface for use with Co-Processor -------------------------
   ///< RevCore: Allow a co-processor to query the bits in scoreboard. Note the RevCorePassKey may only
@@ -255,22 +258,38 @@ public:
   ///< RevCore: Used for loading a software thread into a RevHart
   void SetThread( std::unique_ptr<RevThread> ThreadToAssign );
 
-  ///< RevCore:
-  void UpdateStatusOfHarts();
-
-  ///< RevCore: Returns the id of an idle hart (or _INVALID_HART_ID_ if none are idle)
-  unsigned FindIdleHartID() const;
+  ///< RevCore: Returns the id of an idle hart (or _REV_INVALID_HART_ID_ if none are idle)
+  unsigned FindIdleHartID() const {
+    for( auto& hart : Harts ) {
+      if( hart->GetState() == RevHartState::Idle )
+        return &hart - &Harts[0];
+    }
+    output->fatal( CALL_INFO, -1, "Attempted to find an idle hart but none were found. This is a bug\n" );
+    return _REV_INVALID_HART_ID_;
+  }
 
   ///< RevCore: Returns true if all harts are available (ie. There is nothing executing on this Core)
-  bool HasNoBusyHarts() const { return IdleHarts == ValidHarts; }
+  bool HasNoBusyHarts() const {
+    for( auto& hart : Harts ) {
+      if( hart->GetState() != RevHartState::Idle )
+        return false;
+    }
+    return true;
+  }
+
+  ///< RevCore: Returns true if there are any IdleHarts
+  bool HasIdleHart() const {
+    for( auto& hart : Harts ) {
+      if( hart->GetState() == RevHartState::Idle )
+        return true;
+    }
+    return false;
+  }
 
   ///< RevCore: Used by RevCPU to determine if it can disable this proc
   ///           based on the criteria there are no threads assigned to it and the
   ///           CoProc is done
   bool HasNoWork() const;
-
-  ///< RevCore: Returns true if there are any IdleHarts
-  bool HasIdleHart() const { return IdleHarts.any(); }
 
   ///< RevCore: Returns the number of cycles executed so far
   uint64_t GetCycles() const { return cycles; }
@@ -283,11 +302,13 @@ private:
   bool           ALUFault       = false;  ///< RevCore: determines if we need to handle an ALU fault
   bool           RandomizeCosts = false;  ///< RevCore: whether to randomize costs of instructions
   unsigned       fault_width    = 0;      ///< RevCore: the width of the target fault
-  unsigned const id;                      ///< RevCore: processor id
-  uint64_t       ExecPC          = 0;     ///< RevCore: executing PC
-  unsigned       HartToDecodeID  = 0;     ///< RevCore: Current executing ThreadID
-  unsigned       HartToExecID    = 0;     ///< RevCore: Thread to dispatch instruction
-  uint64_t       currentSimCycle = 0;     ///< RevCore: Current simulation cycle
+  unsigned const id;                      ///< RevCore: ID
+                                          //  uint64_t       ExecPC          = 0;     ///< RevCore: executing PC
+                                          //  unsigned       HartToDecodeID  = 0;     ///< RevCore: Current executing ThreadID
+                                          //  unsigned       HartToExecID    = 0;     ///< RevCore: Thread to dispatch instruction
+  unsigned HartToExecID    = 0;           ///< RevCore: Thread to dispatch instruction
+  uint64_t currentSimCycle = 0;           ///< RevCore: Current simulation cycle
+  unsigned CurrentHartID   = 0;           ///< RevCore: Current executing ThreadID
 
   std::vector<std::shared_ptr<RevHart>> Harts{};                ///< RevCore: vector of Harts without a thread assigned to them
   std::bitset<_MAX_HARTS_>              IdleHarts{};            ///< RevCore: bitset of Harts with no thread assigned
@@ -690,10 +711,9 @@ private:
   /// RevCore: Get ECALL state
   EcallState& GetEcallState( unsigned HartID ) const { return Harts.at( HartID )->GetEcallState(); }
 
-  std::vector<RevInstEntry>            InstTable{};   ///< RevCore: target instruction table
-  std::vector<std::unique_ptr<RevExt>> Extensions{};  ///< RevCore: vector of enabled extensions
-  //std::vector<std::tuple<uint16_t, RevInst, bool>>  Pipeline; ///< RevCore: pipeline of instructions
-  std::deque<std::pair<uint16_t, RevInst>>    Pipeline{};     ///< RevCore: pipeline of instructions
+  std::vector<RevInstEntry>                   InstTable{};    ///< RevCore: target instruction table
+  std::vector<std::unique_ptr<RevExt>>        Extensions{};   ///< RevCore: vector of enabled extensions
+  std::deque<std::pair<unsigned, RevInst>>    Pipeline{};     ///< RevCore: pipeline of instructions
   std::unordered_map<std::string, unsigned>   NameToEntry{};  ///< RevCore: instruction mnemonic to table entry mapping
   std::unordered_multimap<uint64_t, unsigned> EncToEntry{};   ///< RevCore: instruction encoding to table entry mapping
   std::unordered_multimap<uint64_t, unsigned> CEncToEntry{};  ///< RevCore: compressed instruction encoding to table entry mapping
@@ -833,8 +853,6 @@ private:
     }
   }
 
-  bool HartHasNoDependencies( unsigned HartID ) const { return !AnyDependency( HartID ); }
-
   ///< Removes thread from Hart and returns it
   std::unique_ptr<RevThread> PopThreadFromHart( unsigned HartID );
 
@@ -854,14 +872,18 @@ private:
   void DependencySet( unsigned HartID, T RegNum, RevRegClass RegClass, bool value = true ) {
     if( size_t( RegNum ) < _REV_NUM_REGS_ ) {
       RevRegFile* RegFile = GetRegFile( HartID );
+      // clang-format off
       switch( RegClass ) {
       case RevRegClass::RegGPR:
         if( size_t( RegNum ) != 0 )
           RegFile->RV_Scoreboard[size_t( RegNum )] = value;
         break;
-      case RevRegClass::RegFLOAT: RegFile->FP_Scoreboard[size_t( RegNum )] = value; break;
+      case RevRegClass::RegFLOAT:
+        RegFile->FP_Scoreboard[size_t( RegNum )] = value;
+        break;
       default: break;
       }
+      // clang-format on
     }
   }
 

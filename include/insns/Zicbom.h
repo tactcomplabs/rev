@@ -28,7 +28,7 @@ class Zicbom : public RevExt {
   };
 
   template<CBO cbo>
-  static bool cmo( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool cmo( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     switch( cbo ) {
     case CBO::INVAL: M->InvLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
     case CBO::CLEAN: M->CleanLine( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) ); break;
