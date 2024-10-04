@@ -642,6 +642,8 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Dat
   uint64_t endOfPage   = ( pageMap[pageNum].first << addrShift ) + pageSize;
   char*    BaseMem     = &physMem[physAddr];
   char*    DataMem     = (char*) ( Data );
+
+  // TODO: simplify to not consider crossing pages when using MemH
   if( ( physAddr + Len ) > endOfPage ) {
     uint32_t span = ( physAddr + Len ) - endOfPage;
     adjPageNum    = ( ( Addr + Len ) - span ) >> addrShift;
@@ -663,29 +665,28 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Dat
     std::cout << "Warning: Writing off end of page... " << std::endl;
 #endif
     if( ctrl ) {
-      ctrl->sendWRITERequest( Hart, Addr, (uint64_t) ( BaseMem ), Len, DataMem, RevFlag::F_NONE );
+      ctrl->sendWRITERequest( Hart, Addr, uint64_t( BaseMem ), Len, DataMem, RevFlag::F_NONE );
     } else {
-      for( unsigned i = 0; i < ( Len - span ); i++ ) {
-        BaseMem[i] = DataMem[i];
-      }
+      memcpy( BaseMem, DataMem, Len - span );
     }
-    BaseMem = &physMem[adjPhysAddr];
+    BaseMem      = &physMem[adjPhysAddr];
+    unsigned Cur = Len - span;
     if( ctrl ) {
       // write the memory using RevMemCtrl
-      unsigned Cur = ( Len - span );
-      ctrl->sendWRITERequest( Hart, Addr, (uint64_t) ( BaseMem ), Len, &( DataMem[Cur] ), RevFlag::F_NONE );
+      ctrl->sendWRITERequest( Hart, Addr, uint64_t( BaseMem ), Len, &DataMem[Cur], RevFlag::F_NONE );
     } else {
       // write the memory using the internal RevMem model
-      unsigned Cur = ( Len - span );
+#ifdef _REV_DEBUG_
       for( unsigned i = 0; i < span; i++ ) {
         BaseMem[i] = DataMem[Cur];
-#ifdef _REV_DEBUG_
         std::cout << "ADJ WRITE TO: " << std::hex << (uint64_t) ( &BaseMem[i] ) << std::dec << "; FROM LOGICAL PHYS=" << std::hex
                   << adjPhysAddr + i << std::dec << "; DATA=" << std::hex << (uint8_t) ( BaseMem[i] ) << std::dec
                   << "; VIRTUAL ADDR=" << std::hex << Addr + Cur << std::dec << std::endl;
-#endif
         Cur++;
       }
+#else
+      memcpy( BaseMem, DataMem + Cur, span );
+#endif
     }
   } else {
     if( ctrl ) {
@@ -693,9 +694,7 @@ bool RevMem::WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Dat
       ctrl->sendWRITERequest( Hart, Addr, (uint64_t) ( BaseMem ), Len, DataMem, RevFlag::F_NONE );
     } else {
       // write the memory using the internal RevMem model
-      for( unsigned i = 0; i < Len; i++ ) {
-        BaseMem[i] = DataMem[i];
-      }
+      memcpy( BaseMem, DataMem, Len );
     }
   }
   memStats.bytesWritten += Len;
@@ -755,6 +754,7 @@ bool RevMem::ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, co
   char*    BaseMem     = &physMem[physAddr];
   char*    DataMem     = static_cast<char*>( Target );
 
+  // TODO: simplify to not consider crossing pages when using MemH
   if( ( physAddr + Len ) > endOfPage ) {
     uint32_t span = ( physAddr + Len ) - endOfPage;
     adjPageNum    = ( ( Addr + Len ) - span ) >> addrShift;
@@ -762,24 +762,16 @@ bool RevMem::ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, co
     if( ctrl ) {
       ctrl->sendREADRequest( Hart, Addr, (uint64_t) ( BaseMem ), Len, Target, req, flags );
     } else {
-      for( unsigned i = 0; i < ( Len - span ); i++ ) {
-        DataMem[i] = BaseMem[i];
-      }
-    }
+      memcpy( DataMem, BaseMem, Len - span );
+      BaseMem = &physMem[adjPhysAddr];
+      memcpy( DataMem + Len - span, BaseMem, span );
 
-    BaseMem      = &physMem[adjPhysAddr];
-    //If we are using memH, this paging scheme is not relevant, we already issued the ReadReq above
-    //ctrl->sendREADRequest(Hart, Addr, (uint64_t)(BaseMem), Len, ((char*)Target)+Cur, req, flags);
-    unsigned Cur = ( Len - span );
-    for( unsigned i = 0; i < span; i++ ) {
-      DataMem[Cur] = BaseMem[i];
-      Cur++;
-    }
-    // Handle flag response
-    RevHandleFlagResp( Target, Len, flags );
-    // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
-    if( MemOp::MemOpAMO != req.ReqType ) {
-      req.MarkLoadComplete();
+      // Handle flag response
+      RevHandleFlagResp( Target, Len, flags );
+      // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
+      if( MemOp::MemOpAMO != req.ReqType ) {
+        req.MarkLoadComplete();
+      }
     }
 #ifdef _REV_DEBUG_
     std::cout << "Warning: Reading off end of page... " << std::endl;
