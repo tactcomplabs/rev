@@ -62,7 +62,8 @@ class RevCore;
 
 class RevCSR : public RevZicntr {
   static constexpr size_t         CSR_LIMIT = 0x1000;
-  std::array<uint64_t, CSR_LIMIT> CSR{};  ///< RegCSR: CSR registers
+  std::array<uint64_t, CSR_LIMIT> CSR{};             ///< RegCSR: CSR registers
+  std::bitset<CSR_LIMIT>          CSR_Scoreboard{};  ///< RevCSR: Scoreboard for CSR RF to manage pipeline hazard
 
 public:
   // CSR Registers
