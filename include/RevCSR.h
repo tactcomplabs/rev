@@ -13,8 +13,8 @@
 #include "RevFCSR.h"
 #include "RevFeature.h"
 #include "RevZicntr.h"
-#include "SST.h"
 #include <array>
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -61,6 +61,7 @@ namespace SST::RevCPU {
 class RevCore;
 
 class RevCSR : public RevZicntr {
+protected:
   static constexpr size_t         CSR_LIMIT = 0x1000;
   std::array<uint64_t, CSR_LIMIT> CSR{};             ///< RegCSR: CSR registers
   std::bitset<CSR_LIMIT>          CSR_Scoreboard{};  ///< RevCSR: Scoreboard for CSR RF to manage pipeline hazard

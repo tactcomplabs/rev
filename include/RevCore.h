@@ -810,6 +810,7 @@ private:
     switch( regClass ) {
     case RevRegClass::RegGPR: return regFile->RV_Scoreboard.any();
     case RevRegClass::RegFLOAT: return regFile->FP_Scoreboard.any();
+    case RevRegClass::RegCSR: return regFile->CSR_Scoreboard.any();
     case RevRegClass::RegUNKNOWN: return regFile->RV_Scoreboard.any() || regFile->FP_Scoreboard.any();
     default: return false;
     }
@@ -829,6 +830,7 @@ private:
     switch( regClass ) {
     case RevRegClass::RegGPR: return reg != 0 && regFile->RV_Scoreboard[reg];
     case RevRegClass::RegFLOAT: return regFile->FP_Scoreboard[reg];
+    case RevRegClass::RegCSR: return regFile->CSR_Scoreboard[reg];
     default: return false;
     }
   }
@@ -852,16 +854,21 @@ private:
   /// RevCore: Set or clear scoreboard based on register number and floating point.
   template<typename T>
   void DependencySet( unsigned HartID, T RegNum, RevRegClass regClass, bool value = true ) {
-    if( size_t( RegNum ) < _REV_NUM_REGS_ ) {
-      RevRegFile* regFile = GetRegFile( HartID );
-      switch( regClass ) {
-      case RevRegClass::RegGPR:
-        if( size_t( RegNum ) != 0 )
-          regFile->RV_Scoreboard[size_t( RegNum )] = value;
-        break;
-      case RevRegClass::RegFLOAT: regFile->FP_Scoreboard[size_t( RegNum )] = value; break;
-      default: break;
-      }
+    RevRegFile* regFile = GetRegFile( HartID );
+    switch( regClass ) {
+    case RevRegClass::RegGPR:
+      if( size_t( RegNum ) != 0 && size_t( RegNum ) < _REV_NUM_REGS_ )
+        regFile->RV_Scoreboard[size_t( RegNum )] = value;
+      break;
+    case RevRegClass::RegFLOAT:
+      if( size_t( RegNum ) < _REV_NUM_REGS_ )
+        regFile->FP_Scoreboard[size_t( RegNum )] = value;
+      break;
+    case RevRegClass::RegCSR:
+      if( size_t( RegNum ) < regFile->CSR_LIMIT )
+        regFile->CSR_Scoreboard[size_t( RegNum )] = value;
+      break;
+    default: break;
     }
   }
 

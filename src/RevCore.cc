@@ -1829,7 +1829,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
     }
 
     if( HartToExecID != _REV_INVALID_HART_ID_ && !IdleHarts[HartToExecID] && HartHasNoDependencies( HartToExecID ) ) {
-      std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart( HartToDecodeID );
+      std::unique_ptr<RevThread> ActiveThread = PopThreadFromHart( HartToExecID );
       ActiveThread->SetState( ThreadState::DONE );
       HartsClearToExecute[HartToExecID] = false;
       HartsClearToDecode[HartToExecID]  = false;

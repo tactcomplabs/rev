@@ -11,7 +11,7 @@
 #ifndef _SST_REVZICNTR_H_
 #define _SST_REVZICNTR_H_
 
-#include <cstdint>
+#include <cinttypes>
 #include <type_traits>
 
 // Zicntr performance counters
