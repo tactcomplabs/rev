@@ -18,7 +18,7 @@ namespace SST::RevCPU {
 
 class Zaamo : public RevExt {
   template<typename XLEN, RevFlag F_AMO>
-  static bool amooper( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool amooper( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     static_assert( std::is_unsigned_v<XLEN>, "XLEN must be unsigned integral type" );
 
     RevFlag flags{ F_AMO };
@@ -52,7 +52,7 @@ class Zaamo : public RevExt {
       );
     }
     // update the cost
-    R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
+    Inst.cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
     R->AdvancePC( Inst );
     return true;
   }

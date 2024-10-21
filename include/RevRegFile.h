@@ -131,13 +131,10 @@ class RevCore;
 class RevTracer;
 
 class RevRegFile : public RevCSR {
-  RevCore* const Core;       ///< RevRegFile: Owning core of this register file's hart
-  const bool     IsRV64_v;   ///< RevRegFile: Cached copy of Features->IsRV64()
-  const bool     HasD_v;     ///< RevRegFile: Cached copy of Features->HasD()
-  bool           trigger{};  ///< RevRegFile: Has the instruction been triggered?
-  unsigned       Entry{};    ///< RevRegFile: Instruction entry
-  uint32_t       cost{};     ///< RevRegFile: Cost of the instruction
-  RevTracer*     Tracer{};   ///< RegRegFile: Tracer object
+  RevCore* const Core;      ///< RevRegFile: Owning core of this register file's hart
+  const bool     IsRV64_v;  ///< RevRegFile: Cached copy of Features->IsRV64()
+  const bool     HasD_v;    ///< RevRegFile: Cached copy of Features->HasD()
+  RevTracer*     Tracer{};  ///< RegRegFile: Tracer object
 
   union {                // Anonymous union. We zero-initialize the largest member
     uint32_t RV32_PC;    ///< RevRegFile: RV32 PC
@@ -205,26 +202,6 @@ public:
   bool HasD() const { return HasD_v; }
 
   // Getters/Setters
-  /// Get cost of the instruction
-  const uint32_t& GetCost() const { return cost; }
-
-  uint32_t& GetCost() { return cost; }
-
-  /// Set cost of the instruction
-  void SetCost( uint32_t c ) { cost = c; }
-
-  /// Get whether the instruction has been triggered
-  bool GetTrigger() const { return trigger; }
-
-  /// Set whether the instruction has been triggered
-  void SetTrigger( bool t ) { trigger = t; }
-
-  /// Get the instruction entry
-  unsigned GetEntry() const { return Entry; }
-
-  /// Set the instruction entry
-  void SetEntry( unsigned e ) { Entry = e; }
-
   /// Get the Load/Store Queue
   const auto& GetLSQueue() const { return LSQueue; }
 
@@ -299,13 +276,7 @@ public:
   }
 
   /// GetPC: Get the Program Counter
-  uint64_t GetPC() const {
-    if( IsRV64() ) {
-      return RV64_PC;
-    } else {
-      return RV32_PC;
-    }
-  }
+  uint64_t GetPC() const { return IsRV64() ? RV64_PC : RV32_PC; }
 
   /// SetPC: Set the Program Counter to a specific value
   template<typename T>
@@ -358,25 +329,25 @@ public:
 
   // Friend functions and classes to access internal register state
   template<typename INT, typename FP>
-  friend bool fcvtif( const class RevFeature* F, RevRegFile* R, class RevMem* M, const class RevInst& Inst );
+  friend bool fcvtif( const class RevFeature* F, RevRegFile* R, class RevMem* M, class RevInst& Inst );
 
   template<typename T>
-  friend bool load( const class RevFeature* F, RevRegFile* R, class RevMem* M, const class RevInst& Inst );
+  friend bool load( const class RevFeature* F, RevRegFile* R, class RevMem* M, class RevInst& Inst );
 
   template<typename T>
-  friend bool store( const class RevFeature* F, RevRegFile* R, class RevMem* M, const class RevInst& Inst );
+  friend bool store( const class RevFeature* F, RevRegFile* R, class RevMem* M, class RevInst& Inst );
 
   template<typename T>
-  friend bool fload( const class RevFeature* F, RevRegFile* R, class RevMem* M, const class RevInst& Inst );
+  friend bool fload( const class RevFeature* F, RevRegFile* R, class RevMem* M, class RevInst& Inst );
 
   template<typename T>
-  friend bool fstore( const class RevFeature* F, RevRegFile* R, class RevMem* M, const class RevInst& Inst );
+  friend bool fstore( const class RevFeature* F, RevRegFile* R, class RevMem* M, class RevInst& Inst );
 
   template<typename T, template<class> class OP>
-  friend bool foper( const class RevFeature* F, RevRegFile* R, class RevMem* M, const class RevInst& Inst );
+  friend bool foper( const class RevFeature* F, RevRegFile* R, class RevMem* M, class RevInst& Inst );
 
   template<typename T, template<class> class OP>
-  friend bool fcondop( const class RevFeature* F, RevRegFile* R, class RevMem* M, const class RevInst& Inst );
+  friend bool fcondop( const class RevFeature* F, RevRegFile* R, class RevMem* M, class RevInst& Inst );
 
   friend std::ostream& operator<<( std::ostream& os, const RevRegFile& regFile );
 

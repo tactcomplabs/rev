@@ -11,8 +11,9 @@ namespace SST::RevCPU {
 /// Parse a string for an ECALL starting at address straddr, updating the state
 /// as characters are read, and call action() when the end of string is reached.
 EcallStatus RevCore::EcallLoadAndParseString( uint64_t straddr, std::function<void()> action ) {
-  auto  rtval      = EcallStatus::ERROR;
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto        rtval      = EcallStatus::ERROR;
+  auto&       EcallState = GetEcallState( HartToExecID );
+  RevRegFile* RegFile    = GetRegFile( HartToExecID );
 
   if( RegFile->GetLSQueue()->count( LSQHash( RevReg::a0, RevRegClass::RegGPR, HartToExecID ) ) > 0 ) {
     rtval = EcallStatus::CONTINUE;
@@ -100,7 +101,7 @@ EcallStatus RevCore::ECALL_setxattr() {
 #if 0
   // TODO: Need to load the data from (value, size bytes) into
   // hostValue vector before it can be passed to setxattr() on host.
-
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
   auto path = RegFile->GetX<uint64_t>(RevReg::a0);
   auto name = RegFile->GetX<uint64_t>(RevReg::a1);
   auto value = RegFile->GetX<uint64_t>(RevReg::a2);
@@ -245,9 +246,10 @@ EcallStatus RevCore::ECALL_fremovexattr() {
 
 // 17, rev_getcwd(char  *buf, unsigned long size)
 EcallStatus RevCore::ECALL_getcwd() {
-  auto BufAddr = RegFile->GetX<uint64_t>( RevReg::a0 );
-  auto size    = RegFile->GetX<uint64_t>( RevReg::a1 );
-  auto CWD     = std::filesystem::current_path();
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        BufAddr = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto        size    = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto        CWD     = std::filesystem::current_path();
   mem->WriteMem( HartToExecID, BufAddr, size, CWD.c_str() );
 
   // Returns null-terminated string in buf
@@ -386,12 +388,13 @@ EcallStatus RevCore::ECALL_mknodat() {
 // TODO: 34, rev_mkdirat(int dfd, const char  * pathname, umode_t mode)
 EcallStatus RevCore::ECALL_mkdirat() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: mkdirat called" );
-  EcallState& ECALL = Harts.at( HartToExecID )->GetEcallState();
-  auto        dirfd = RegFile->GetX<int>( RevReg::a0 );
-  auto        path  = RegFile->GetX<uint64_t>( RevReg::a1 );
-  auto        mode  = RegFile->GetX<unsigned short>( RevReg::a2 );
+  EcallState& ECALL   = GetEcallState( HartToExecID );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        dirfd   = RegFile->GetX<int>( RevReg::a0 );
+  auto        path    = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto        mode    = RegFile->GetX<unsigned short>( RevReg::a2 );
 
-  auto action       = [&] {
+  auto action         = [&] {
     // Do the mkdirat on the host
     int rc = mkdirat( dirfd, ECALL.string.c_str(), mode );
     RegFile->SetX( RevReg::a0, rc );
@@ -520,9 +523,10 @@ EcallStatus RevCore::ECALL_faccessat() {
 // 49, rev_chdir(const char  *filename)
 EcallStatus RevCore::ECALL_chdir() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: chdir called\n" );
-  auto path   = RegFile->GetX<uint64_t>( RevReg::a0 );
-  auto action = [&] {
-    int rc = chdir( Harts.at( HartToExecID )->GetEcallState().string.c_str() );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        path    = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto        action  = [&] {
+    int rc = chdir( GetEcallState( HartToExecID ).string.c_str() );
     RegFile->SetX( RevReg::a0, rc );
   };
   return EcallLoadAndParseString( path, action );
@@ -584,18 +588,19 @@ EcallStatus RevCore::ECALL_fchown() {
 
 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
 EcallStatus RevCore::ECALL_openat() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO, 2, 0, "ECALL: openat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
     );
   }
-  auto dirfd    = RegFile->GetX<int>( RevReg::a0 );
-  auto pathname = RegFile->GetX<uint64_t>( RevReg::a1 );
+  RevRegFile* RegFile  = GetRegFile( HartToExecID );
+  auto        dirfd    = RegFile->GetX<int>( RevReg::a0 );
+  auto        pathname = RegFile->GetX<uint64_t>( RevReg::a1 );
 
   // commented out to remove warnings
   // auto flags = RegFile->GetX<int>(RevReg::a2);
-  auto mode     = RegFile->GetX<int>( RevReg::a3 );
+  auto mode            = RegFile->GetX<int>( RevReg::a3 );
 
   /*
    * NOTE: this is currently only opening files in the current directory
@@ -605,16 +610,16 @@ EcallStatus RevCore::ECALL_openat() {
 
   /* Read the filename from memory one character at a time until we find '\0' */
 
-  auto action   = [&] {
+  auto action          = [&] {
     // Do the openat on the host
     dirfd  = open( std::filesystem::current_path().c_str(), mode );
     int fd = openat( dirfd, EcallState.string.c_str(), mode );
 
     // Add the file descriptor to this thread
-    Harts.at( HartToExecID )->Thread->AddFD( fd );
+    Harts.at( HartToExecID )->AddFD( fd );
 
     // openat returns the file descriptor of the opened file
-    Harts.at( HartToExecID )->RegFile->SetX( RevReg::a0, fd );
+    RegFile->SetX( RevReg::a0, fd );
   };
 
   return EcallLoadAndParseString( pathname, action );
@@ -625,11 +630,12 @@ EcallStatus RevCore::ECALL_close() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: close called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  auto  fd           = RegFile->GetX<int>( RevReg::a0 );
-  auto& ActiveThread = Harts.at( HartToExecID )->Thread;
+  RevRegFile* RegFile    = GetRegFile( HartToExecID );
+  auto        fd         = RegFile->GetX<int>( RevReg::a0 );
+  auto&       ActiveHart = Harts.at( HartToExecID );
 
   // Check if CurrCtx has fd in fildes vector
-  if( !ActiveThread->FindFD( fd ) ) {
+  if( !ActiveHart->FindFD( fd ) ) {
     output->fatal(
       CALL_INFO,
       -1,
@@ -646,7 +652,7 @@ EcallStatus RevCore::ECALL_close() {
   int rc = close( fd );
 
   // Remove from Ctx's fildes
-  ActiveThread->RemoveFD( fd );
+  ActiveHart->RemoveFD( fd );
 
   // rc is propogated to rev from host
   RegFile->SetX( RevReg::a0, rc );
@@ -699,14 +705,15 @@ EcallStatus RevCore::ECALL_read() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: read called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  auto fd            = RegFile->GetX<int>( RevReg::a0 );
-  auto BufAddr       = RegFile->GetX<uint64_t>( RevReg::a1 );
-  auto BufSize       = RegFile->GetX<uint64_t>( RevReg::a2 );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        fd      = RegFile->GetX<int>( RevReg::a0 );
+  auto        BufAddr = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto        BufSize = RegFile->GetX<uint64_t>( RevReg::a2 );
 
   // Check if Current Ctx has access to the fd
-  auto& ActiveThread = Harts.at( HartToExecID )->Thread;
+  auto& ActiveHart    = Harts.at( HartToExecID );
 
-  if( !ActiveThread->FindFD( fd ) ) {
+  if( !ActiveHart->FindFD( fd ) ) {
     output->fatal(
       CALL_INFO,
       -1,
@@ -735,17 +742,18 @@ EcallStatus RevCore::ECALL_read() {
 }
 
 EcallStatus RevCore::ECALL_write() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO, 2, 0, "ECALL: write called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
     );
   }
-  auto fd       = RegFile->GetX<int>( RevReg::a0 );
-  auto addr     = RegFile->GetX<uint64_t>( RevReg::a1 );
-  auto nbytes   = RegFile->GetX<uint64_t>( RevReg::a2 );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        fd      = RegFile->GetX<int>( RevReg::a0 );
+  auto        addr    = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto        nbytes  = RegFile->GetX<uint64_t>( RevReg::a2 );
 
-  auto lsq_hash = LSQHash( RevReg::a0, RevRegClass::RegGPR, HartToExecID );  // Cached hash value
+  auto lsq_hash       = LSQHash( RevReg::a0, RevRegClass::RegGPR, HartToExecID );  // Cached hash value
 
   if( EcallState.bytesRead && LSQueue->count( lsq_hash ) == 0 ) {
     EcallState.string += std::string_view( EcallState.buf.data(), EcallState.bytesRead );
@@ -1036,7 +1044,8 @@ EcallStatus RevCore::ECALL_exit() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: exit called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  auto status = RegFile->GetX<uint64_t>( RevReg::a0 );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        status  = RegFile->GetX<uint64_t>( RevReg::a0 );
 
   output->verbose(
     CALL_INFO,
@@ -1209,6 +1218,7 @@ EcallStatus RevCore::ECALL_clock_gettime() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: clock_gettime called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
+  RevRegFile*     RegFile = GetRegFile( HartToExecID );
   struct timespec src, *tp = (struct timespec*) RegFile->GetX<uint64_t>( RevReg::a1 );
 
   if( timeConverter == nullptr ) {
@@ -1757,6 +1767,7 @@ EcallStatus RevCore::ECALL_gettid() {
     CALL_INFO, 2, 0, "ECALL: gettid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
 
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
   /* rc = Currently Executing Hart */
   RegFile->SetX( RevReg::a0, ActiveThreadID );
   return EcallStatus::SUCCESS;
@@ -2044,7 +2055,8 @@ EcallStatus RevCore::ECALL_readahead() {
 
 // 214, rev_brk(unsigned long brk)
 EcallStatus RevCore::ECALL_brk() {
-  auto Addr              = RegFile->GetX<uint64_t>( RevReg::a0 );
+  RevRegFile* RegFile    = GetRegFile( HartToExecID );
+  auto        Addr       = RegFile->GetX<uint64_t>( RevReg::a0 );
 
   const uint64_t heapend = mem->GetHeapEnd();
   if( Addr > 0 && Addr > heapend ) {
@@ -2065,10 +2077,11 @@ EcallStatus RevCore::ECALL_brk() {
 // 215, rev_munmap(unsigned long addr, size_t len)
 EcallStatus RevCore::ECALL_munmap() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: munmap called\n" );
-  auto Addr = RegFile->GetX<uint64_t>( RevReg::a0 );
-  auto Size = RegFile->GetX<uint64_t>( RevReg::a1 );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        Addr    = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto        Size    = RegFile->GetX<uint64_t>( RevReg::a1 );
 
-  int rc    = mem->DeallocMem( Addr, Size ) == uint64_t( -1 );
+  int rc              = mem->DeallocMem( Addr, Size ) == uint64_t( -1 );
   if( rc == -1 ) {
     output->fatal(
       CALL_INFO,
@@ -2258,7 +2271,7 @@ EcallStatus RevCore::ECALL_clone() {
   //    RegFile->SetX(RevReg::a0, ChildPID);
 
   //    // Child's return value is 0
-  //    ChildCtx->GetRegFile()->SetX(RevReg::a0, 0);
+  //    ChildCtx->GetRegFile( HartToExecID )->SetX(RevReg::a0, 0);
 
   //    // clean up ecall state
   //    rtval = EcallStatus::SUCCESS;
@@ -2278,9 +2291,10 @@ EcallStatus RevCore::ECALL_execve() {
 // 222, rev_old_mmap(struct mmap_arg_struct  *arg)
 EcallStatus RevCore::ECALL_mmap() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: mmap called\n" );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
 
-  auto addr = RegFile->GetX<uint64_t>( RevReg::a0 );
-  auto size = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto addr           = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto size           = RegFile->GetX<uint64_t>( RevReg::a1 );
   // auto prot = RegFile->GetX<int>(RevReg::a2);
   // auto Flags = RegFile->GetX<int>(RevReg::a3);
   // auto fd = RegFile->GetX<int>(RevReg::a4);
@@ -3109,7 +3123,7 @@ EcallStatus RevCore::ECALL_clone3() {
   //    RegFile->SetX(RevReg::a0, ChildPID);
 
   //    // Child's return value is 0
-  //    ChildCtx->GetRegFile()->SetX(RevReg::a0, 0);
+  //    ChildCtx->GetRegFile( HartToExecID )->SetX(RevReg::a0, 0);
 
   //    // clean up ecall state
   //    rtval = EcallStatus::SUCCESS;
@@ -3162,9 +3176,10 @@ EcallStatus RevCore::ECALL_process_madvise() {
 EcallStatus RevCore::ECALL_cpuinfo() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: cpuinfoc called by thread %" PRIu32 "\n", ActiveThreadID );
   struct rev_cpuinfo info;
-  auto               addr = RegFile->GetX<int>( RevReg::a0 );
-  info.cores              = opts->GetNumCores();
-  info.harts_per_core     = opts->GetNumHarts();
+  RevRegFile*        RegFile = GetRegFile( HartToExecID );
+  auto               addr    = RegFile->GetX<int>( RevReg::a0 );
+  info.cores                 = opts->GetNumCores();
+  info.harts_per_core        = opts->GetNumHarts();
   mem->WriteMem( HartToExecID, addr, sizeof( info ), &info );
   RegFile->SetX( RevReg::a0, 0 );
   return EcallStatus::SUCCESS;
@@ -3173,7 +3188,8 @@ EcallStatus RevCore::ECALL_cpuinfo() {
 // 501, rev_perf_stats(struct rev_perf_stats *stats)
 EcallStatus RevCore::ECALL_perf_stats() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: perf_stats called by thread %" PRIu32 "\n", GetActiveThreadID() );
-  rev_stats rs, *dest = reinterpret_cast<rev_stats*>( RegFile->GetX<uint64_t>( RevReg::a0 ) );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  rev_stats   rs, *dest = reinterpret_cast<rev_stats*>( RegFile->GetX<uint64_t>( RevReg::a0 ) );
 
   rs.cycles       = Stats.totalCycles;
   rs.instructions = Stats.retired;
@@ -3190,7 +3206,8 @@ EcallStatus RevCore::ECALL_pthread_create() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pthread_create called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  uint64_t tidAddr              = RegFile->GetX<uint64_t>( RevReg::a0 );
+  RevRegFile* RegFile           = GetRegFile( HartToExecID );
+  uint64_t    tidAddr           = RegFile->GetX<uint64_t>( RevReg::a0 );
   //uint64_t AttrPtr     = RegFile->GetX<uint64_t>(RevReg::a1);
   uint64_t          NewThreadPC = RegFile->GetX<uint64_t>( RevReg::a2 );
   uint64_t          ArgPtr      = RegFile->GetX<uint64_t>( RevReg::a3 );
@@ -3214,6 +3231,7 @@ EcallStatus RevCore::ECALL_pthread_join() {
     // Set current thread to blocked
     std::unique_ptr<RevThread> BlockedThread = PopThreadFromHart( HartToExecID );
     BlockedThread->SetState( ThreadState::BLOCKED );
+    RevRegFile* RegFile = GetRegFile( HartToExecID );
     BlockedThread->SetWaitingToJoinTID( RegFile->GetX<uint64_t>( RevReg::a0 ) );
 
     // Signal to RevCPU this thread is has changed state
@@ -3226,26 +3244,21 @@ EcallStatus RevCore::ECALL_pthread_join() {
     // // if retval is not null,
     //
     //store the return value of the thread in retval
-    // void **retval = (void **)RegFile->RV64[11];
-    // if( retval != NULL ){
-    //   *retval = (void *)
-    //   Harts.at(HartToExecID)->Thread(HartToDecodeID)->GetRegFile()->RV64[10];
-    // }
-    //
   }
   return rtval;
 }
 
 // 9000, rev_dump_mem_range(uint64_t addr, uint64_t size)
 EcallStatus RevCore::ECALL_dump_mem_range() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO, 2, 0, "ECALL: openat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
     );
   }
-  auto addr = RegFile->GetX<uint64_t>( RevReg::a1 );
-  auto size = RegFile->GetX<uint64_t>( RevReg::a2 );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
+  auto        addr    = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto        size    = RegFile->GetX<uint64_t>( RevReg::a2 );
 
   // TODO: Add error handling if memh is enabled
   mem->DumpMem( addr, size, 16 );
@@ -3255,18 +3268,19 @@ EcallStatus RevCore::ECALL_dump_mem_range() {
 
 // 9001, rev_dump_mem_range(const char* outputFile, uint64_t addr, uint64_t size)
 EcallStatus RevCore::ECALL_dump_mem_range_to_file() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO, 2, 0, "ECALL: dump_mem_range called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
     );
   }
-  auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
-  auto addr     = RegFile->GetX<uint64_t>( RevReg::a1 );
-  auto size     = RegFile->GetX<uint64_t>( RevReg::a2 );
+  RevRegFile* RegFile  = GetRegFile( HartToExecID );
+  auto        pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto        addr     = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto        size     = RegFile->GetX<uint64_t>( RevReg::a2 );
 
   /* Read the filename from memory one character at a time until we find '\0' */
-  auto action   = [&] {
+  auto action          = [&] {
     // open the current directory and the file
     // open the file in write mode
     std::ofstream outputFile( EcallState.string, std::ios::out | std::ios::binary );
@@ -3279,6 +3293,7 @@ EcallStatus RevCore::ECALL_dump_mem_range_to_file() {
 // 9002, rev_mem_dump_stack()
 EcallStatus RevCore::ECALL_dump_stack() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: dump_stack called" );
+  RevRegFile* RegFile = GetRegFile( HartToExecID );
   // TODO: Factor in TLS
   // Check if sp + _STACK_SIZE_ is in the valid memory range
   // if not, dump the memory that is valid
@@ -3290,16 +3305,17 @@ EcallStatus RevCore::ECALL_dump_stack() {
 
 // 9003, rev_dump_stck_to_file(const char* outputFile)
 EcallStatus RevCore::ECALL_dump_stack_to_file() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO, 2, 0, "ECALL: dump_stack_to_file called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
     );
   }
-  auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
+  RevRegFile* RegFile  = GetRegFile( HartToExecID );
+  auto        pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
 
   /* Read the filename from memory one character at a time until we find '\0' */
-  auto action   = [&] {
+  auto action          = [&] {
     // open the current directory and the file
     // open the file in write mode
     std::ofstream outputFile( EcallState.string, std::ios::out | std::ios::binary );
@@ -3316,7 +3332,7 @@ EcallStatus RevCore::ECALL_dump_stack_to_file() {
 }
 
 EcallStatus RevCore::ECALL_dump_valid_mem() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO, 2, 0, "ECALL: dump_valid_mem called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
@@ -3328,7 +3344,7 @@ EcallStatus RevCore::ECALL_dump_valid_mem() {
 }
 
 EcallStatus RevCore::ECALL_dump_valid_mem_to_file() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO,
@@ -3339,10 +3355,11 @@ EcallStatus RevCore::ECALL_dump_valid_mem_to_file() {
       HartToExecID
     );
   }
-  auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
+  RevRegFile* RegFile  = GetRegFile( HartToExecID );
+  auto        pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
 
   /* Read the filename from memory one character at a time until we find '\0' */
-  auto action   = [&] {
+  auto action          = [&] {
     // open the current directory and the file
     // open the file in write mode
     std::ofstream outputFile( EcallState.string, std::ios::out | std::ios::binary );
@@ -3353,7 +3370,7 @@ EcallStatus RevCore::ECALL_dump_valid_mem_to_file() {
 }
 
 EcallStatus RevCore::ECALL_dump_thread_mem() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO, 2, 0, "ECALL: dump_thread_mem called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
@@ -3365,7 +3382,7 @@ EcallStatus RevCore::ECALL_dump_thread_mem() {
 }
 
 EcallStatus RevCore::ECALL_dump_thread_mem_to_file() {
-  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  auto& EcallState = GetEcallState( HartToExecID );
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
       CALL_INFO,
@@ -3376,10 +3393,11 @@ EcallStatus RevCore::ECALL_dump_thread_mem_to_file() {
       HartToExecID
     );
   }
-  auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
+  RevRegFile* RegFile  = GetRegFile( HartToExecID );
+  auto        pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
 
   /* Read the filename from memory one character at a time until we find '\0' */
-  auto action   = [&] {
+  auto action          = [&] {
     // open the current directory and the file
     // open the file in write mode
     std::ofstream outputFile( EcallState.string, std::ios::out | std::ios::binary );
@@ -3395,9 +3413,10 @@ EcallStatus RevCore::ECALL_dump_thread_mem_to_file() {
 //  Restrictions:
 //  - 6 data, all XLEN in size
 EcallStatus RevCore::ECALL_fast_printf() {
-  auto&    EcallState = Harts.at( HartToExecID )->GetEcallState();
-  uint64_t pFormat    = RegFile->GetX<uint64_t>( RevReg::a0 );
-  auto     action     = [&] {
+  auto&       EcallState = GetEcallState( HartToExecID );
+  RevRegFile* RegFile    = GetRegFile( HartToExecID );
+  uint64_t    pFormat    = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto        action     = [&] {
     const char* format = EcallState.string.c_str();
     char        buffer[1024];
     // This is sort of a hack -- we pass XLEN-sized values from a1-a6 which go into va_args slots

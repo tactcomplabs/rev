@@ -20,7 +20,7 @@ class Zalrsc : public RevExt {
 
   // Load Reserved instruction
   template<typename TYPE>
-  static bool lr( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool lr( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     static_assert( std::is_unsigned_v<TYPE>, "TYPE must be unsigned integral type" );
     auto addr = R->GetX<uint64_t>( Inst.rs1 );
 
@@ -47,14 +47,14 @@ class Zalrsc : public RevExt {
 
     // Create a reservation and load the data
     M->LR( F->GetHartToExecID(), addr, sizeof( TYPE ), target, req, flags );
-    R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
+    Inst.cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
     R->AdvancePC( Inst );
     return true;
   }
 
   // Store Conditional instruction
   template<typename TYPE>
-  static bool sc( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool sc( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     static_assert( std::is_unsigned_v<TYPE>, "TYPE must be unsigned integral type" );
     auto addr     = R->GetX<uint64_t>( Inst.rs1 );
     auto val      = R->GetX<TYPE>( Inst.rs2 );

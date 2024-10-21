@@ -18,9 +18,18 @@
 
 namespace SST::RevCPU {
 
+enum class RevHartState {
+  Idle,
+  Fetching,
+  Decoding,
+  Halted,
+  Executing,
+  Retired,
+};
+
 class RevHart {
   ///< RevHart: Id for the Hart (0,1,2,3,etc)
-  unsigned ID{};
+  unsigned const ID;
 
   ///< RevHart: State management object when a Hart is executing a system call
   EcallState Ecall{};
@@ -29,14 +38,16 @@ class RevHart {
   const std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>>& LSQueue;
 
   ///< RevHart: Pointer to the Proc's MarkLoadCompleteFunc
-  std::function<void( const MemReq& )> MarkLoadCompleteFunc{};
+  std::function<void( const MemReq& )> const MarkLoadCompleteFunc;
 
   ///< RevHart: Thread currently executing on this Hart
-  std::unique_ptr<RevThread>  Thread  = nullptr;
-  std::unique_ptr<RevRegFile> RegFile = nullptr;
+  std::unique_ptr<RevThread> Thread = nullptr;
 
-  ///< RevHart: Make RevCore a friend of this
-  friend class RevCore;
+  ///< RevHart: State of hart
+  RevHartState State                = RevHartState::Idle;
+
+  ///<RevHart: Cost of executing instruction
+  unsigned Cost                     = 0;
 
 public:
   ///< RevHart: Constructor
@@ -47,41 +58,57 @@ public:
   )
     : ID( ID ), LSQueue( LSQueue ), MarkLoadCompleteFunc( std::move( MarkLoadCompleteFunc ) ) {}
 
+  ///< RevHart: disallow copying and assignment
+  RevHart( const RevHart& )            = delete;
+  RevHart& operator=( const RevHart& ) = delete;
+
   ///< RevHart: Destructor
-  ~RevHart() = default;
+  ~RevHart()                           = default;
+
+  ///< RevHart: Get the State
+  RevHartState GetState() const { return State; }
+
+  ///< RevHart: Set the State
+  void SetState( RevHartState state ) { State = state; }
+
+  ///< RevHart: Get the Cost
+  unsigned GetCost() const { return Cost; }
+
+  ///< RevHart: Set the Cost
+  void SetCost( unsigned cost ) { Cost = cost; }
 
   ///< RevHart: Get the EcallState
   EcallState& GetEcallState() { return Ecall; }
 
-  const EcallState& GetEcallState() const { return Ecall; }
+  ///< RevHart: Get the RegFile
+  RevRegFile* GetRegFile() const { return Thread->GetRegFile(); }
+
+  ///< RevHart: Add new file descriptor to this hart's thread (ie. rev_open)
+  void AddFD( int fd ) { Thread->AddFD( fd ); }
+
+  ///< RevHart: Remove file descriptor from this hart's thread (ie. rev_close)
+  void RemoveFD( int fd ) { Thread->RemoveFD( fd ); }
+
+  ///< See if file descriptor exists/is owned by this hart's thread
+  bool FindFD( int fd ) const { return Thread->FindFD( fd ); }
 
   ///< RevHart: Get Hart's ID
   uint16_t GetID() const { return ID; }
 
   ///< RevHart: Returns the ID of the assigned thread
-  uint32_t GetAssignedThreadID() const { return Thread ? Thread->GetID() : _INVALID_TID_; }
-
-  ///< RevHart: Load the register file from the RevThread
-  void LoadRegFile( std::unique_ptr<RevRegFile> regFile ) {
-    RegFile = std::move( regFile );
-    RegFile->SetMarkLoadComplete( MarkLoadCompleteFunc );
-    RegFile->SetLSQueue( LSQueue );
-  }
+  uint32_t GetThreadID() const { return Thread ? Thread->GetID() : _INVALID_TID_; }
 
   ///< RevHart: Assigns a RevThread to this Hart
-  void AssignThread( std::unique_ptr<RevThread> ThreadToAssign ) {
-    Thread = std::move( ThreadToAssign );
+  void SetThread( std::unique_ptr<RevThread> ThreadToAssign ) {
+    Thread       = std::move( ThreadToAssign );
+    auto RegFile = Thread->GetRegFile();
+    RegFile->SetMarkLoadComplete( MarkLoadCompleteFunc );
+    RegFile->SetLSQueue( LSQueue );
     Thread->SetState( ThreadState::RUNNING );
-    LoadRegFile( Thread->TransferVirtRegState() );
   }
 
-  ///< RevHart: Removed a RevThread from this Hart
-  std::unique_ptr<RevThread> PopThread() {
-    // return the register file to the thread
-    Thread->UpdateVirtRegState( std::move( RegFile ) );
-    // return the thread
-    return std::move( Thread );
-  }
+  ///< RevHart: Remove a RevThread from this Hart
+  std::unique_ptr<RevThread> PopThread() { return std::move( Thread ); }
 };  // class RevHart
 
 }  // namespace SST::RevCPU

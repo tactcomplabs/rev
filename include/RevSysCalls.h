@@ -43,7 +43,9 @@ struct EcallState {
     bytesRead = 0;
   }
 
-  explicit EcallState() = default;
+  explicit EcallState()                      = default;
+  EcallState( const EcallState& )            = delete;
+  EcallState& operator=( const EcallState& ) = delete;
 };  // struct EcallState
 }  // namespace SST::RevCPU
 #endif

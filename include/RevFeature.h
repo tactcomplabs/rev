@@ -49,7 +49,7 @@ enum RevFeatureType : uint32_t {
 
 struct RevFeature {
   /// RevFeature: standard constructor
-  RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id );
+  RevFeature( std::string Machine, SST::Output* Output, unsigned Min, unsigned Max, unsigned Id, bool randomizeCosts );
 
   /// RevFeature: standard destructor
   ~RevFeature()                              = default;
@@ -99,6 +99,9 @@ struct RevFeature {
   /// SetHartToExecID: Set the current executing Hart
   void SetHartToExecID( unsigned hart ) { HartToExecID = hart; }
 
+  /// GetRandomizeCosts: Return whether to randomize costs
+  bool GetRandomizeCosts() const { return randomizeCosts; }
+
 private:
   const std::string  machine;                 ///< RevFeature: feature string
   SST::Output* const output;                  ///< RevFeature: output handler
@@ -108,9 +111,9 @@ private:
   unsigned           HartToExecID{};          ///< RevFeature: The current executing Hart on RevCore
   RevFeatureType     features{ RV_UNKNOWN };  ///< RevFeature: feature elements
   unsigned           xlen{};                  ///< RevFeature: RISC-V Xlen
+  const bool         randomizeCosts;          ///< RevFeature: Whether to randomize costs
+  bool               ParseMachineModel();     ///< RevFeature: Parse the machine model string
 
-  /// ParseMachineModel: parse the machine model string
-  bool ParseMachineModel();
 };  // class RevFeature
 
 }  // namespace SST::RevCPU

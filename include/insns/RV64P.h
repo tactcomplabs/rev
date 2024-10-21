@@ -19,19 +19,19 @@ namespace SST::RevCPU {
 
 class RV64P : public RevExt {
 
-  static bool future( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool future( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     R->SetX( Inst.rd, !!M->SetFuture( R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) );
     // R->AdvancePC(Inst);
     return true;
   }
 
-  static bool rfuture( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool rfuture( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     R->SetX( Inst.rd, !!M->RevokeFuture( R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) );
     // R->AdvancePC(Inst);
     return true;
   }
 
-  static bool sfuture( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool sfuture( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     R->SetX( Inst.rd, !!M->StatusFuture( R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ) ) );
     // R->AdvancePC(Inst);
     return true;

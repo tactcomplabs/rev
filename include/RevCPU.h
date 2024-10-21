@@ -116,6 +116,7 @@ public:
     { "trcStartCycle",   "Starting tracer cycle (disables trcOp)",       "0" },
     { "splash",          "Display the splash logo",                      "0" },
     { "independentCoprocClock",  "Enables each coprocessor to register its own clock handler", "0" },
+    { "randomizeCosts",  "Randomizes the cost of each instruction",     "0" },
     )
 
   // -------------------------------------------------------
@@ -233,7 +234,7 @@ private:
 
   // Adds Thread with ThreadID to AssignedThreads vector for ProcID
   // - Handles updating LSQueue & MarkLoadComplete function pointers
-  void AssignThread( std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID );
+  void SetThread( std::unique_ptr<RevThread>&& ThreadToAssign, unsigned ProcID );
 
   // Checks the status of ALL threads that are currently blocked.
   void CheckBlockedThreads();
