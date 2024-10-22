@@ -215,6 +215,10 @@ void RevTracer::Render( size_t cycle ) {
   // Instruction Trace
   if( instHeader.valid ) {
     if( OutputOK() ) {
+      std::string s = RenderExec( instHeader.fallbackMnemonic ).c_str();
+      if( probe_->triggering() )
+        probe_->trigger( instHeader.tid > 0 );
+#if 0
       pOutput->verbose(
         CALL_INFO,
         5,
@@ -223,8 +227,11 @@ void RevTracer::Render( size_t cycle ) {
         instHeader.id,
         instHeader.hart,
         instHeader.tid,
-        RenderExec( instHeader.fallbackMnemonic ).c_str()
+        s.c_str()
       );
+#endif
+      if( probe_->sampling() )
+        probe_->capture_trace( probe_->comp()->getCurrentSimCycle(), s );
     }
     InstTraceReset();
   }
@@ -383,6 +390,32 @@ std::string RevTracer::fmt_data( unsigned len, uint64_t d ) {
     s << std::setw( len * 2 ) << ( d & mask );
   }
   return s.str();
+}
+
+RevProbe::RevProbe(
+  SST::Component* comp,
+  SST::Output*    out,
+  int             mode,
+  int             startCycle,
+  int             endCycle,
+  int             bufferSize,
+  int             port,
+  int             postDelay,
+  uint64_t        cliControl
+)
+  : ProbeControl( comp, out, mode, startCycle, endCycle, bufferSize, port, postDelay, cliControl ) {
+  probeBuffer = std::make_shared<ProbeBuffer<trace_event_t>>( bufferSize );
+  setBufferControls( probeBuffer );
+}
+
+void RevProbe::capture_trace( uint64_t cycle, std::string trc ) {
+  if( !sampling() )
+    return;
+  // copy the sample into the circular buffer
+  trace_event_t e( cycle, trc );
+  probeBuffer->capture( e );
+  // Finally call base class to update counters
+  ProbeControl::sample();
 }
 
 }  // namespace SST::RevCPU

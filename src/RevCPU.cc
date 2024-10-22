@@ -46,6 +46,19 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   registerAsPrimaryComponent();
   primaryComponentDoNotEndSim();
 
+  // Debug Probe Parameters
+  int      probeMode       = params.find<int>( "probeMode", 0 );
+  int      probeStartCycle = params.find<int>( "probeStartCycle", 0 );
+  int      probeEndCycle   = params.find<int>( "probeEndCycle", 0 );
+  int      probeBufferSize = params.find<int>( "probeBufferSize", DEFAULT_PROBE_BUFFER_SIZE );
+  int      probePort       = params.find<int>( "probePort", 0 );
+  int      probePostDelay  = params.find<int>( "probePostDelay", 0 );
+  uint64_t cliControl      = params.find<uint64_t>( "cliControl", 0 );
+  // Create Probe
+  probe_                   = std::make_shared<RevProbe>(
+    this, &output, probeMode, probeStartCycle, probeEndCycle, probeBufferSize, probePort, probePostDelay, cliControl
+  );
+
   // Derive the simulation parameters
   // We must always derive the number of cores before initializing the options
   numCores = params.find<uint32_t>( "numCores", "1" );
@@ -199,7 +212,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   if( output.getVerboseLevel() >= 5 ) {
     for( unsigned i = 0; i < numCores; i++ ) {
       // Each core gets its very own tracer
-      RevTracer*  trc = new RevTracer( getName(), &output );
+      RevTracer* trc = new RevTracer( getName(), &output );
+      trc->SetProbe( probe_ );
       std::string diasmType;
       Opts->GetMachineModel( 0, diasmType );  // TODO first param is core
       if( trc->SetDisassembler( diasmType ) )

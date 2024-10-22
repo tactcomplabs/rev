@@ -25,6 +25,7 @@
 
 // -- Rev Headers
 #include "RevCommon.h"
+#include "probe.h"
 
 // Integrated Disassembler (toolchain dependent)
 #ifdef REV_USE_SPIKE
@@ -58,6 +59,8 @@
 #define TRACE_MEM_READ_RESPONSE(LEN, DATA, REQ)
 #endif
 // clang-format on
+
+using namespace SSTDEBUG::Probe;
 
 namespace SST::RevCPU {
 
@@ -142,7 +145,7 @@ struct TraceRec_t {
   uint64_t a{};  // reg             adr                     adr
   uint64_t b{};  // value           len                     len
   uint64_t c{};  // origin(TODO)    data (limited 8 bytes)  reg
-  TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) : key( Key ), a( A ), b( B ), c( C ){};
+  TraceRec_t( TraceKeyword_t Key, uint64_t A, uint64_t B, uint64_t C = 0 ) : key( Key ), a( A ), b( B ), c( C ) {};
 };
 
 struct InstHeader_t {
@@ -183,12 +186,50 @@ struct CompletionRec_t {
   }
 };
 
+class RevProbe : public ProbeControl {
+
+public:
+  RevProbe(
+    SST::Component* comp,
+    SST::Output*    out,
+    int             mode,
+    int             startCycle,
+    int             endCycle,
+    int             bufferSize,
+    int             port,
+    int             postDelay,
+    uint64_t        cliControl
+  );
+  // User custom sampling functions
+  void capture_trace( uint64_t cycle, std::string trc );
+
+  // Custom data type for samples
+  struct trace_event_t {
+    uint64_t    cycle_ = 0;
+    std::string trace_ = "";
+    trace_event_t() : cycle_( 0 ), trace_( "" ) {};
+    trace_event_t( uint64_t c, std::string t ) : cycle_( c ), trace_( t ) {};
+
+    friend std::ostream& operator<<( std::ostream& os, const trace_event_t& e ) {
+      os << std::dec << e.cycle_ << " " << e.trace_;
+      return os;
+    }
+  };
+
+  // trace buffer
+  std::shared_ptr<ProbeBuffer<trace_event_t>> probeBuffer;
+
+};  //class RevProbe
+
 class RevTracer {
 public:
   /// RevTracer: standard constructor standard constructor
   RevTracer( std::string Name, SST::Output* output );
   /// RevTracer:standard destructor
   ~RevTracer();
+
+  /// probe demo
+  void SetProbe( std::shared_ptr<RevProbe> p ) { probe_ = p; }
 
   /// RevTracer: assign disassembler. Returns 0 if successful
   int SetDisassembler( std::string machine );
@@ -230,6 +271,9 @@ public:
   void Reset();
 
 private:
+  /// probe proof of concept
+  std::shared_ptr<RevProbe> probe_;
+
   /// RevTracer: clear instruction trace capture buffer and reset trace state
   void InstTraceReset();
 
@@ -287,7 +331,7 @@ private:
   uint64_t traceCycles{};
   /// RevTracer: Hard disable for output
   bool disabled{};
-  /// RevTracer: Disasllow copying and assignment
+  /// RevTracer: Disallow copying and assignment
   RevTracer( const RevTracer& )            = delete;
   RevTracer& operator=( const RevTracer& ) = delete;
 };  // class RevTracer
