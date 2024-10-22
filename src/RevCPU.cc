@@ -651,6 +651,21 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
     rtn = false;
   }
 
+  /// Debug Probe sequencing
+  if( probe_->active() )
+    probe_->updateProbeState( currentCycle );
+
+  // demoware-only: mimic sync state
+  auto c = getCurrentSimCycle();
+  if( ( probe_->comp()->getCurrentSimCycle() % 1000000 ) == 0 ) {
+    //std::cout << "###P handle sync point action" << std::endl;
+    // basically from DbgCLI::handle_chkpt_probe_action()
+    probe_->updateSyncState( c );
+    probe_->updateProbeState( c );  // ensure states update before next sim clock
+  }
+  if( probe_->active() )
+    probe_->updateProbeState( c );
+
   return rtn;
 }
 

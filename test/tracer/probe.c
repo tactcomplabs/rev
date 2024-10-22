@@ -62,18 +62,14 @@ volatile unsigned thread1_counter = 0;
 volatile unsigned thread2_counter = 0;
 
 void* thread1() {
-  TRACE_PUSH_ON
   for( int i = 0; i < 10; i++ )
     thread1_counter++;
-  TRACE_PUSH_OFF
   return 0;
 }
 
 void* thread2() {
-  TRACE_PUSH_ON
   for( int i = 0; i < 10; i++ )
     thread2_counter += 2;
-  TRACE_PUSH_OFF
   return 0;
 }
 
@@ -197,6 +193,7 @@ check_mem_access_sizes:
                 : "t3", "t4" );
 #endif
 
+  TRACE_ON;
   // trace some memory operations with register dependencies
   // in a tight loop
 check_tight_loop:
@@ -213,7 +210,6 @@ check_tight_loop:
                 : "t3", "t4" );
 
   // trace some threads
-#if 1
   rev_pthread_t tid1, tid2;
   printf( "Starting thread test\n" );
   rev_pthread_create( &tid1, NULL, (void*) thread1, NULL );
@@ -224,9 +220,6 @@ check_tight_loop:
   TRACE_ASSERT( thread1_counter == 10 );
   TRACE_ASSERT( thread2_counter == 20 );
   printf( "Thread test successful\n" );
-#endif
-
-  TRACE_ON;
 
   // use CSR to get time
   size_t time1, time2;
@@ -237,6 +230,8 @@ check_tight_loop:
   //printf( "Time check: %ld\n", time2 - time1 );
 
   check_lw_sign_ext();
+
+  TRACE_OFF;
 
   printf( "tracer test completed normally\n" );
   return 0;

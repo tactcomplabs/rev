@@ -30,7 +30,7 @@ parser.add_argument("--probeStartCycle", type=int, help="cycle to initiate debug
 parser.add_argument("--probeEndCycle", type=int, help="cycle to end debug probe. 0=Never", default=0)
 parser.add_argument("--probeBufferSize", type=int, help="number of records in circular buffer", default=32)
 parser.add_argument("--probePostDelay", type=int, help="number of events to capture after trigger event", default=32)
-parser.add_argument("--probePort", type=int, help="sst probe starting socket. 0=None", default=0 )
+parser.add_argument("--probePort", type=int, help="sst probe starting socket. 0=None", default=0)
 # parser.add_argument("--verbose", type=int, help="verbosity. 5=send/recv", default=1)
 # 0b0100_0000 : 0x40 : 64 Every checkpoint
 # 0b0010_0000 : 0x20 : 32 Every checkpoint when probe is active
@@ -39,12 +39,13 @@ parser.add_argument("--probePort", type=int, help="sst probe starting socket. 0=
 # 0b0000_0010 : 0x02 : 02 Every probe sample from trigger onward
 # 0b0000_0001 : 0x01 : 01 Every probe state change,
 parser.add_argument("--cliControl", type=int, help="event types on which to break into interactive mode"
-" [64 Every checkpoint]"
-" [32 Every checkpoint when probe is active]"
-" [16 Every checkpoint sync state change]"
-" [04 Every probe sample]"
-" [02 Every probe sample from trigger onward]"
-" [01 Every probe state change]", default=0)
+                    " [64 Every checkpoint]"
+                    " [32 Every checkpoint when probe is active]"
+                    " [16 Every checkpoint sync state change]"
+                    " [04 Every probe sample]"
+                    " [02 Every probe sample from trigger onward]"
+                    " [01 Every probe state change]",
+                    default=0)
 args = parser.parse_args()
 print("debug probe demo configuration:")
 for arg in vars(args):
@@ -56,6 +57,10 @@ sst.setProgramOption("timebase", "1ps")
 # Tell SST what statistics handling we want
 sst.setStatisticLoadLevel(4)
 
+# enable probe if start > 0
+probeMode = 0
+if args.probeStartCycle > 0:
+   probeMode = 1
 # Define the simulation components
 # Instantiate all the CPUs
 for i in range(0, sim_nodes):
@@ -75,6 +80,7 @@ for i in range(0, sim_nodes):
             # "trcLimit": 0,                             # Maximum number of trace lines [default: 0]
             "trcStartCycle": 1,                          # Starting trace cycle [default: 0]
             # debug probe controls
+            "probeMode"       : probeMode,
             "probeStartCycle" : args.probeStartCycle,
             "probeEndCycle"   : args.probeEndCycle,
             "probeBufferSize" : args.probeBufferSize,

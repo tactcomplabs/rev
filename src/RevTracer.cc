@@ -216,8 +216,10 @@ void RevTracer::Render( size_t cycle ) {
   if( instHeader.valid ) {
     if( OutputOK() ) {
       std::string s = RenderExec( instHeader.fallbackMnemonic ).c_str();
-      if( probe_->triggering() )
-        probe_->trigger( instHeader.tid > 0 );
+      if( probe_->triggering() ) {
+        std::cout << "###P check trigger" << std::endl;
+        probe_->trigger( instHeader.tid > 1 );
+      }
 #if 0
       pOutput->verbose(
         CALL_INFO,
@@ -230,8 +232,10 @@ void RevTracer::Render( size_t cycle ) {
         s.c_str()
       );
 #endif
-      if( probe_->sampling() )
+      if( probe_->sampling() ) {
+        //std::cout << "###P capture" << std::endl;
         probe_->capture_trace( probe_->comp()->getCurrentSimCycle(), s );
+      }
     }
     InstTraceReset();
   }
