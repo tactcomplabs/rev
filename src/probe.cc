@@ -98,8 +98,17 @@ void ProbeControl::updateSyncState( int cycle ) {
   lastSyncState_ = syncState_;
 }
 
-void ProbeControl::updateProbeState( int cycle ) {
+void ProbeControl::updateProbeState( int cycle, bool finish ) {
   // TODO the sample and trigger functions may be able to manage the probe state
+  if( finish ) {
+    // call finish if simulation exiting.
+    // force flush
+    syncActions_.f.flush2stdout = true;
+    if( probeState_ != ProbeState::IDLE ) {
+      out_->verbose( CALL_INFO, 1, 0, "probe finished\n" );
+      probeState_ = ProbeState::WAIT;
+    }
+  }
   switch( probeState_ ) {
   case ProbeState::IDLE:
     if( syncState_ == SyncState::ACTIVE ) {

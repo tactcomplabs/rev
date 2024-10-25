@@ -445,7 +445,10 @@ void RevCPU::setup() {
   }
 }
 
-void RevCPU::finish() {}
+void RevCPU::finish() {
+  probe_->updateProbeState( getCurrentSimCycle(), true );
+  probe_->updateSyncState( getCurrentSimCycle() );
+}
 
 void RevCPU::init( unsigned int phase ) {
   if( EnableNIC )

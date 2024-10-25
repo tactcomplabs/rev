@@ -201,17 +201,35 @@ public:
     uint64_t        cliControl
   );
   // User custom sampling functions
-  void capture_trace( uint64_t cycle, std::string trc );
+  void capture_event( uint64_t cycle, uint64_t cpu, uint64_t hart, uint64_t tid, std::string trc );
 
   // Custom data type for samples
   struct trace_event_t {
     uint64_t    cycle_ = 0;
+    uint64_t    cpu_   = 0;
+    uint64_t    hart_  = 0;
+    uint64_t    tid_   = 0;
     std::string trace_ = "";
-    trace_event_t() : cycle_( 0 ), trace_( "" ) {};
-    trace_event_t( uint64_t c, std::string t ) : cycle_( c ), trace_( t ) {};
+    trace_event_t() : cycle_( 0 ), cpu_( 0 ), hart_( 0 ), tid_( 0 ), trace_( "" ) {};
+
+    trace_event_t( uint64_t cycle, uint64_t cpu, uint64_t hart, uint64_t tid, std::string trace )
+      : cycle_( cycle ), cpu_( cpu ), hart_( hart ), tid_( tid ) {
+      if( trace.length() > 128 ) {
+        trace_ = trace.substr( 0, 128 - 16 ) + " ... [truncated]";
+      } else {
+        trace_ = trace;
+      }
+    };
 
     friend std::ostream& operator<<( std::ostream& os, const trace_event_t& e ) {
-      os << std::dec << e.cycle_ << " " << e.trace_;
+      os << std::dec << e.cycle_ << " ";
+      os << std::hex << e.cpu_ << ":" << e.hart_;
+      if( e.tid_ > 0 ) {
+        os << ":" << e.tid_;
+      } else {
+        os << " RETURN FROM MEMH";
+      }
+      os << " " << e.trace_;
       return os;
     }
   };

@@ -197,7 +197,7 @@ void RevTracer::Render( size_t cycle ) {
   // Trace on/off controls
   CheckUserControls( cycle );
 
-  // memory completions
+  // memory completion trace
   if( completionRecs.size() > 0 ) {
     if( OutputOK() ) {
       for( auto r : completionRecs ) {
@@ -205,7 +205,11 @@ void RevTracer::Render( size_t cycle ) {
         std::stringstream s;
         s << data_str << "<-[0x" << std::hex << r.addr << "," << std::dec << r.len << "] ";
         s << fmt_reg( r.destReg ) << "<-" << data_str << " ";
+#if 0
         pOutput->verbose( CALL_INFO, 5, 0, "Hart %" PRIu32 "; *A %s\n", r.hart, s.str().c_str() );
+#else
+        probe_->capture_event( probe_->comp()->getCurrentSimCycle(), probe_->comp()->getId(), r.hart, 0, s.str().c_str() );
+#endif
       }
     }
     // reset completion reqs
@@ -217,7 +221,7 @@ void RevTracer::Render( size_t cycle ) {
     if( OutputOK() ) {
       std::string s = RenderExec( instHeader.fallbackMnemonic ).c_str();
       if( probe_->triggering() ) {
-        std::cout << "###P check trigger" << std::endl;
+        //std::cout << "###P check trigger" << std::endl;
         probe_->trigger( instHeader.tid > 1 );
       }
 #if 0
@@ -234,7 +238,7 @@ void RevTracer::Render( size_t cycle ) {
 #endif
       if( probe_->sampling() ) {
         //std::cout << "###P capture" << std::endl;
-        probe_->capture_trace( probe_->comp()->getCurrentSimCycle(), s );
+        probe_->capture_event( probe_->comp()->getCurrentSimCycle(), instHeader.id, instHeader.hart, instHeader.tid, s );
       }
     }
     InstTraceReset();
@@ -412,11 +416,11 @@ RevProbe::RevProbe(
   setBufferControls( probeBuffer );
 }
 
-void RevProbe::capture_trace( uint64_t cycle, std::string trc ) {
+void RevProbe::capture_event( uint64_t cycle, uint64_t cpu, uint64_t hart, uint64_t tid, std::string trc ) {
   if( !sampling() )
     return;
   // copy the sample into the circular buffer
-  trace_event_t e( cycle, trc );
+  trace_event_t e( cycle, cpu, hart, tid, trc );
   probeBuffer->capture( e );
   // Finally call base class to update counters
   ProbeControl::sample();

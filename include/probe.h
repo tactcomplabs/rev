@@ -117,7 +117,7 @@ public:
   /// Call back for sync points for high level controller updates
   void updateSyncState( int cycle );
   /// Called at end of component's clock cycle and end of updateSyncState
-  void updateProbeState( int cycle );
+  void updateProbeState( int cycle, bool finish = false );
   /// handle any requested sync point actions
   void handleSyncPointActions();
   /// Detect trigger to transition between pre and post sampling phase
