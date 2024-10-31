@@ -453,22 +453,22 @@ public:
 
   /// Get a CSR register
   template<typename XLEN>
-  XLEN GetCSR( uint16_t csr ) const {
+  XLEN GetCSR( uint16_t csr ) {
     // clang-format off
     switch( csr ) {
-      case fflags:   return static_cast<XLEN>( CSR[fcsr] >> 0 & 0b00011111 );
-      case frm:      return static_cast<XLEN>( CSR[fcsr] >> 5 & 0b00000111 );
-      case fcsr:     return static_cast<XLEN>( CSR[fcsr] >> 0 & 0b11111111 );
+      case fflags:         return static_cast<XLEN>( CSR[fcsr] >> 0 & 0b00011111 );
+      case frm:            return static_cast<XLEN>( CSR[fcsr] >> 5 & 0b00000111 );
+      case fcsr:           return static_cast<XLEN>( CSR[fcsr] >> 0 & 0b11111111 );
 
       // Performance Counters
-      case cycle:    return GetPerfCounter<XLEN, Half::Lo, rdcycle  >();
-      case cycleh:   return GetPerfCounter<XLEN, Half::Hi, rdcycle  >();
-      case time:     return GetPerfCounter<XLEN, Half::Lo, rdtime   >();
-      case timeh:    return GetPerfCounter<XLEN, Half::Hi, rdtime   >();
-      case instret:  return GetPerfCounter<XLEN, Half::Lo, rdinstret>();
-      case instreth: return GetPerfCounter<XLEN, Half::Hi, rdinstret>();
+      case cycle:          return GetPerfCounter<XLEN, Half::Lo, rdcycle  >();
+      case cycleh:         return GetPerfCounter<XLEN, Half::Hi, rdcycle  >();
+      case time:           return GetPerfCounter<XLEN, Half::Lo, rdtime   >();
+      case timeh:          return GetPerfCounter<XLEN, Half::Hi, rdtime   >();
+      case instret:        return GetPerfCounter<XLEN, Half::Lo, rdinstret>();
+      case instreth:       return GetPerfCounter<XLEN, Half::Hi, rdinstret>();
 
-      default:       return static_cast<XLEN>( CSR.at( csr ) );
+      default:             return static_cast<XLEN>( CSR.at( csr ) );
     }
     // clang-format on
   }
@@ -480,12 +480,16 @@ public:
     if( csr >= 0xc00 && csr < 0xe00 )
       return false;
 
+    // clang-format off
     switch( csr ) {
-    case fflags: CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b00011111 } ) | ( val & 0b00011111 ); break;
-    case frm: CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b11100000 } ) | ( val & 0b00000111 ) << 5; break;
-    case fcsr: CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b11111111 } ) | ( val & 0b11111111 ); break;
+    case fflags: CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b00011111 } ) | ( val & 0b00011111 ) << 0; break;
+    case frm:    CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b11100000 } ) | ( val & 0b00000111 ) << 5; break;
+    case fcsr:   CSR[fcsr] = ( CSR[fcsr] & ~uint64_t{ 0b11111111 } ) | ( val & 0b11111111 ) << 0; break;
+
     default: CSR.at( csr ) = val;
     }
+    // clang-format on
+
     return true;
   }
 };  // class RevCSR
