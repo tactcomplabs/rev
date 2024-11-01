@@ -67,7 +67,7 @@ static_assert( std::is_same_v<StandardMem::Request::flags_t, std::underlying_typ
 
 /// RevFlag: determine if the request is an AMO
 constexpr bool RevFlagHas( RevFlag flag, RevFlag has ) {
-  return ( static_cast<uint32_t>( flag ) & static_cast<uint32_t>( has ) ) != 0;
+  return ( safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( has ) ) != 0;
 }
 
 inline void RevFlagSet( RevFlag& flag, RevFlag set ) {
@@ -139,10 +139,10 @@ public:
   RevFlag getFlags() const { return flags; }
 
   /// RevMemOp: retrieve the standard set of memory flags for MemEventBase
-  RevFlag getStdFlags() const { return RevFlag{ static_cast<uint32_t>( flags ) & 0xFFFF }; }
+  RevFlag getStdFlags() const { return RevFlag{ safe_static_cast<uint32_t>( flags ) & 0xFFFF }; }
 
   /// RevMemOp: retrieve the flags for MemEventBase without caching enable
-  RevFlag getNonCacheFlags() const { return RevFlag{ static_cast<uint32_t>( flags ) & 0xFFFD }; }
+  RevFlag getNonCacheFlags() const { return RevFlag{ safe_static_cast<uint32_t>( flags ) & 0xFFFD }; }
 
   /// RevMemOp: sets the number of split cache line requests
   void setSplitRqst( unsigned S ) { SplitRqst = S; }
@@ -175,7 +175,9 @@ public:
   const MemReq& getMemReq() const { return procReq; }
 
   // RevMemOp: determine if the request is cache-able
-  bool isCacheable() const { return ( static_cast<uint32_t>( flags ) & static_cast<uint32_t>( RevFlag::F_NONCACHEABLE ) ) == 0; }
+  bool isCacheable() const {
+    return ( safe_static_cast<uint32_t>( flags ) & safe_static_cast<uint32_t>( RevFlag::F_NONCACHEABLE ) ) == 0;
+  }
 
 private:
   unsigned             Hart{};       ///< RevMemOp: RISC-V Hart

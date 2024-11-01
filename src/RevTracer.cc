@@ -117,19 +117,19 @@ void RevTracer::CheckUserControls( uint64_t cycle ) {
 
   // programatic controls
   bool nextState = outputEnabled;
-  if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_OFF )] ) {
+  if( insn == nops[safe_static_cast<unsigned>( TRC_CMD_IDX::TRACE_OFF )] ) {
     nextState = false;
-  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_ON )] ) {
+  } else if( insn == nops[safe_static_cast<unsigned>( TRC_CMD_IDX::TRACE_ON )] ) {
     nextState = true;
-  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_PUSH_OFF )] ) {
+  } else if( insn == nops[safe_static_cast<unsigned>( TRC_CMD_IDX::TRACE_PUSH_OFF )] ) {
     enableQ[enableQindex] = outputEnabled;
     enableQindex          = ( enableQindex + 1 ) % MAX_ENABLE_Q;
     nextState             = false;
-  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_PUSH_ON )] ) {
+  } else if( insn == nops[safe_static_cast<unsigned>( TRC_CMD_IDX::TRACE_PUSH_ON )] ) {
     enableQ[enableQindex] = outputEnabled;
     enableQindex          = ( enableQindex + 1 ) % MAX_ENABLE_Q;
     nextState             = true;
-  } else if( insn == nops[static_cast<unsigned>( TRC_CMD_IDX::TRACE_POP )] ) {
+  } else if( insn == nops[safe_static_cast<unsigned>( TRC_CMD_IDX::TRACE_POP )] ) {
     enableQindex = ( enableQindex - 1 ) % MAX_ENABLE_Q;
     nextState    = enableQ[enableQindex];
   }

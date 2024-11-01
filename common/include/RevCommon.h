@@ -36,9 +36,22 @@ namespace SST::RevCPU {
 
 // using float16 = _Float16;
 
+/// Safe non-narrowing cast of enum to integer type
+/// C++17 allows non-narrowing cast of integer to scoped enum, but not the reverse
+template<typename INT, typename ENUM, typename = decltype( INT{ std::declval<std::underlying_type_t<ENUM>>() } )>
+inline constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_enum_v<ENUM>, INT> safe_static_cast( ENUM e ) {
+  return static_cast<INT>( e );
+}
+
+/// Allow non-narrowing int->int cast with enum_int_cast
+template<typename INT, typename ENUM, typename = decltype( INT{ std::declval<ENUM>() } )>
+inline constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_integral_v<ENUM>, INT> safe_static_cast( ENUM e ) {
+  return static_cast<INT>( e );
+}
+
 /// Zero-extend value of bits size
 template<typename T>
-constexpr auto ZeroExt( T val, size_t bits ) {
+inline constexpr auto ZeroExt( T val, size_t bits ) {
   return static_cast<std::make_unsigned_t<T>>( val ) & ( ( std::make_unsigned_t<T>( 1 ) << bits ) - 1 );
 }
 
@@ -51,7 +64,7 @@ constexpr auto SignExt( T val, size_t bits ) {
 
 /// Base-2 logarithm of integers
 template<typename T>
-constexpr int lg( T x ) {
+inline constexpr int lg( T x ) {
   static_assert( std::is_integral_v<T> );
 
   // We select the __builtin_clz which takes integers no smaller than x
@@ -88,7 +101,7 @@ enum class MemOp : uint8_t {
 std::ostream& operator<<( std::ostream& os, MemOp op );
 
 template<typename T>
-constexpr uint64_t LSQHash( T DestReg, RevRegClass RegType, unsigned Hart ) {
+inline constexpr uint64_t LSQHash( T DestReg, RevRegClass RegType, unsigned Hart ) {
   return static_cast<uint64_t>( RegType ) << ( 16 + 8 ) | static_cast<uint64_t>( DestReg ) << 16 | Hart;
 }
 

@@ -166,14 +166,11 @@ public:
   // ----------------------------------------------------
   // ---- Base Memory Interfaces
   // ----------------------------------------------------
-  /// RevMem: write to the target memory location
-  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Data );
-
   /// RevMem: write to the target memory location with the target flags
-  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Data, RevFlag flags );
+  bool WriteMem( unsigned Hart, uint64_t Addr, size_t Len, const void* Data, RevFlag flags = RevFlag::F_NONE );
 
   /// RevMem: read data from the target memory location
-  bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, const MemReq& req, RevFlag flags );
+  bool ReadMem( unsigned Hart, uint64_t Addr, size_t Len, void* Target, const MemReq& req, RevFlag flags = RevFlag::F_NONE );
 
   /// RevMem: flush a cache line
   bool FlushLine( unsigned Hart, uint64_t Addr );
@@ -183,16 +180,6 @@ public:
 
   /// RevMem: clean a line
   bool CleanLine( unsigned Hart, uint64_t Addr );
-
-  /// RevMem: DEPRECATED: read data from the target memory location
-  [[deprecated( "Simple RevMem interfaces have been deprecated" )]] bool ReadMem( uint64_t Addr, size_t Len, void* Data );
-
-  [[deprecated( "ReadU* interfaces have been deprecated" )]] uint64_t ReadU64( uint64_t Addr ) {
-    uint64_t Value;
-    if( !ReadMem( Addr, sizeof( Value ), &Value ) )
-      output->fatal( CALL_INFO, -1, "Error: could not read memory (U64)\n" );
-    return Value;
-  }
 
   // ----------------------------------------------------
   // ---- Read Memory Interfaces
@@ -403,7 +390,9 @@ private:
   void     FlushTLB();                                     ///< RevMem: Used to flush the TLB & LRUQueue
   uint64_t
     CalcPhysAddr( uint64_t pageNum, uint64_t vAddr );  ///< RevMem: Used to calculate the physical address based on virtual address
-  bool isValidVirtAddr( uint64_t vAddr );              ///< RevMem: Used to check if a virtual address exists in MemSegs
+  std::tuple<uint64_t, uint64_t, uint64_t>
+       AdjPageAddr( uint64_t Addr, uint64_t Len );  ///< RevMem: Used to adjust address crossing pages
+  bool isValidVirtAddr( uint64_t vAddr );           ///< RevMem: Used to check if a virtual address exists in MemSegs
 
   std::map<uint64_t, std::pair<uint32_t, bool>> pageMap{};    ///< RevMem: map of logical to pair<physical addresses, allocated>
   uint32_t                                      pageSize{};   ///< RevMem: size of allocated pages
