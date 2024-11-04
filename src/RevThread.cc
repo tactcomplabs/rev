@@ -48,7 +48,7 @@ std::ostream& operator<<( std::ostream& os, const RevThread& Thread ) {
   }
   os << "\n";
 
-  os << *Thread.VirtRegState.get();
+  os << *Thread.GetRegFile();
 
   return os;
 }

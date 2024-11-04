@@ -44,7 +44,7 @@ class Zicsr : public RevExt {
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // Because CSR has a 32/64-bit width, this function is templatized
   template<typename XLEN, OpKind OPKIND, CSROp OP>
-  static bool ModCSRImpl( RevRegFile* R, const RevInst& Inst ) {
+  static bool ModCSRImpl( RevRegFile* R, RevInst& Inst ) {
     static_assert( std::is_unsigned_v<XLEN>, "XLEN must be an unsigned type" );
 
     XLEN old = 0;
@@ -86,7 +86,7 @@ class Zicsr : public RevExt {
   /// Modify a CSR Register according to CSRRW, CSRRS, or CSRRC
   // This calls the 32/64-bit ModCSR depending on the current XLEN
   template<OpKind OPKIND, CSROp OP>
-  static bool ModCSR( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool ModCSR( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     return F->IsRV64() ? ModCSRImpl<uint64_t, OPKIND, OP>( R, Inst ) : ModCSRImpl<uint32_t, OPKIND, OP>( R, Inst );
   }
 

@@ -153,7 +153,7 @@ struct RevInstEntry {
   bool     raisefpe    = false;    ///<RevInstEntry: Whether FP exceptions are raised
 
   /// Instruction implementation function
-  bool ( *func )( const RevFeature*, RevRegFile*, RevMem*, const RevInst& ){};
+  bool ( *func )( const RevFeature*, RevRegFile*, RevMem*, RevInst& ){};
 
   /// Predicate for enabling table entries for only certain encodings
   bool ( *predicate )( uint32_t Inst ) = []( uint32_t ) { return true; };
@@ -180,7 +180,7 @@ struct RevInstEntry {
   auto& SetCompressed(bool c)        { this->compressed = c;     return *this; }
   auto& Setrs2fcvtOp(uint8_t op)     { this->rs2fcvtOp  = op;    return *this; }
   auto& SetRaiseFPE(bool c)          { this->raisefpe   = c;     return *this; }
-  auto& SetImplFunc( bool func( const RevFeature *, RevRegFile *, RevMem *, const RevInst& ) )
+  auto& SetImplFunc( bool func( const RevFeature *, RevRegFile *, RevMem *, RevInst& ) )
                                      { this->func       = func;  return *this; }
   auto& SetPredicate( bool pred( uint32_t ) )
                                      { this->predicate  = pred;  return *this; }

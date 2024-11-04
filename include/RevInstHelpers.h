@@ -66,7 +66,7 @@ inline constexpr double fpmin<double, uint64_t> = 0x0p+0;
 /// FP values outside the range of the target integer type are clipped
 /// at the integer type's numerical limits, whether signed or unsigned.
 template<typename INT, typename FP>
-bool fcvtif( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fcvtif( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   // Read the FP register. Round to integer according to current rounding mode.
   FP fp = std::rint( R->GetFP<FP>( Inst.rs1 ) );
 
@@ -132,7 +132,7 @@ uint32_t fclass( T val ) {
 
 /// Load template
 template<typename T>
-bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool load( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   if( sizeof( T ) < sizeof( int64_t ) && !F->IsRV64() ) {
     static constexpr RevFlag flags =
       sizeof( T ) < sizeof( int32_t ) ? std::is_signed_v<T> ? RevFlag::F_SEXT32 : RevFlag::F_ZEXT32 : RevFlag::F_NONE;
@@ -168,14 +168,14 @@ bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
   }
 
   // update the cost
-  R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
+  Inst.cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
   R->AdvancePC( Inst );
   return true;
 }
 
 /// Store template
 template<typename T>
-bool store( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool store( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   M->Write( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ), R->GetX<T>( Inst.rs2 ) );
   R->AdvancePC( Inst );
   return true;
@@ -183,7 +183,7 @@ bool store( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
 
 /// Floating-point load template
 template<typename T>
-bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   if( std::is_same_v<T, double> || F->HasD() ) {
     static constexpr RevFlag flags = sizeof( T ) < sizeof( double ) ? RevFlag::F_BOXNAN : RevFlag::F_NONE;
     uint64_t                 rs1   = R->GetX<uint64_t>( Inst.rs1 );
@@ -212,15 +212,16 @@ bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
     R->LSQueue->insert( req.LSQHashPair() );
     M->ReadVal( F->GetHartToExecID(), rs1 + Inst.ImmSignExt( 12 ), &R->SPF[Inst.rd], std::move( req ), RevFlag::F_NONE );
   }
+
   // update the cost
-  R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
+  Inst.cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
   R->AdvancePC( Inst );
   return true;
 }
 
 /// Floating-point store template
 template<typename T>
-bool fstore( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fstore( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   T val = R->GetFP<T, true>( Inst.rs2 );
   M->Write( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) + Inst.ImmSignExt( 12 ), val );
   R->AdvancePC( Inst );
@@ -229,7 +230,7 @@ bool fstore( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst 
 
 /// Floating-point operation template
 template<typename T, template<class> class OP>
-bool foper( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool foper( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, OP()( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -267,7 +268,7 @@ struct FMax {
 
 /// Floating-point conditional operation template
 template<typename T, template<class> class OP>
-bool fcondop( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fcondop( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   bool res = OP()( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ) );
   R->SetX( Inst.rd, res );
   R->AdvancePC( Inst );
@@ -283,7 +284,7 @@ enum class OpKind { Imm, Reg };
 // The third parameter is std::make_unsigned_t or std::make_signed_t (default)
 // The optional fourth parameter indicates W mode (32-bit on XLEN == 64)
 template<template<class> class OP, OpKind KIND, template<class> class SIGN = std::make_signed_t, bool W_MODE = false>
-bool oper( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool oper( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   if( !W_MODE && !F->IsRV64() ) {
     using T = SIGN<int32_t>;
     T rs1   = R->GetX<T>( Inst.rs1 );
@@ -322,7 +323,7 @@ struct ShiftRight {
 
 // Computes the UPPER half of multiplication, based on signedness
 template<bool rs1_is_signed, bool rs2_is_signed>
-bool uppermul( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool uppermul( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   if( F->IsRV64() ) {
     uint64_t rs1 = R->GetX<uint64_t>( Inst.rs1 );
     uint64_t rs2 = R->GetX<uint64_t>( Inst.rs2 );
@@ -353,7 +354,7 @@ enum class DivRem { Div, Rem };
 // The second parameter is std::make_signed_t or std::make_unsigned_t
 // The optional third parameter indicates W mode (32-bit on XLEN == 64)
 template<DivRem DIVREM, template<class> class SIGN, bool W_MODE = false>
-bool divrem( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool divrem( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   if( !W_MODE && !F->IsRV64() ) {
     using T = SIGN<int32_t>;
     T rs1   = R->GetX<T>( Inst.rs1 );
@@ -386,7 +387,7 @@ bool divrem( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst 
 // The first template parameter is the comparison functor
 // The second template parameter is std::make_signed_t or std::make_unsigned_t
 template<template<class> class OP, template<class> class SIGN = std::make_unsigned_t>
-bool bcond( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool bcond( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   bool cond;
   if( F->IsRV64() ) {
     cond = OP()( R->GetX<SIGN<int64_t>>( Inst.rs1 ), R->GetX<SIGN<int64_t>>( Inst.rs2 ) );
@@ -419,7 +420,7 @@ inline auto revFMA( T x, T y, T z ) {
 
 /// Fused Multiply+Add
 template<typename T>
-bool fmadd( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fmadd( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, revFMA( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ), R->GetFP<T>( Inst.rs3 ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -427,7 +428,7 @@ bool fmadd( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
 
 /// Fused Multiply-Subtract
 template<typename T>
-bool fmsub( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fmsub( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, revFMA( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ), negate( R->GetFP<T>( Inst.rs3 ) ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -435,7 +436,7 @@ bool fmsub( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
 
 /// Fused Negated (Multiply-Subtract)
 template<typename T>
-bool fnmsub( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fnmsub( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, revFMA( negate( R->GetFP<T>( Inst.rs1 ) ), R->GetFP<T>( Inst.rs2 ), R->GetFP<T>( Inst.rs3 ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -443,7 +444,7 @@ bool fnmsub( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst 
 
 /// Fused Negated (Multiply+Add)
 template<typename T>
-bool fnmadd( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+bool fnmadd( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, negate( revFMA( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ), R->GetFP<T>( Inst.rs3 ) ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -451,7 +452,7 @@ bool fnmadd( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst 
 
 // Square root
 template<typename T>
-static bool fsqrt( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fsqrt( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, std::sqrt( R->GetFP<T>( Inst.rs1 ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -459,7 +460,7 @@ static bool fsqrt( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst&
 
 // Transfer sign bit
 template<typename T>
-static bool fsgnj( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fsgnj( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, std::copysign( R->GetFP<T>( Inst.rs1 ), R->GetFP<T>( Inst.rs2 ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -467,7 +468,7 @@ static bool fsgnj( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst&
 
 // Negated transfer sign bit
 template<typename T>
-static bool fsgnjn( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fsgnjn( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, std::copysign( R->GetFP<T>( Inst.rs1 ), negate( R->GetFP<T>( Inst.rs2 ) ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -475,7 +476,7 @@ static bool fsgnjn( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst
 
 // Xor transfer sign bit
 template<typename T>
-static bool fsgnjx( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fsgnjx( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   T rs1 = R->GetFP<T>( Inst.rs1 ), rs2 = R->GetFP<T>( Inst.rs2 );
   R->SetFP( Inst.rd, std::copysign( rs1, std::signbit( rs1 ) ? negate( rs2 ) : rs2 ) );
   R->AdvancePC( Inst );
@@ -484,7 +485,7 @@ static bool fsgnjx( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst
 
 // Move floating-point register to integer register
 template<typename T>
-static bool fmvif( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fmvif( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   std::make_signed_t<uint_type_t<T>> i;
   T                                  fp = R->GetFP<T, true>( Inst.rs1 );  // The FP value
   static_assert( sizeof( i ) == sizeof( fp ) );
@@ -496,7 +497,7 @@ static bool fmvif( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst&
 
 // Move integer register to floating-point register
 template<typename T>
-static bool fmvfi( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fmvfi( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   T    fp;
   auto i = R->GetX<uint_type_t<T>>( Inst.rs1 );  // The X register
   static_assert( sizeof( i ) == sizeof( fp ) );
@@ -508,7 +509,7 @@ static bool fmvfi( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst&
 
 // Floating-point classify
 template<typename T>
-static bool fclassify( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fclassify( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetX( Inst.rd, fclass( R->GetFP<T>( Inst.rs1 ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -516,7 +517,7 @@ static bool fclassify( const RevFeature* F, RevRegFile* R, RevMem* M, const RevI
 
 // Convert integer to floating point
 template<typename FP, typename INT>
-static bool fcvtfi( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fcvtfi( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, static_cast<FP>( R->GetX<INT>( Inst.rs1 ) ) );
   R->AdvancePC( Inst );
   return true;
@@ -524,7 +525,7 @@ static bool fcvtfi( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst
 
 // Convert floating point to floating point
 template<typename FP2, typename FP1>
-static bool fcvtff( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+static bool fcvtff( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
   R->SetFP( Inst.rd, static_cast<FP2>( R->GetFP<FP1>( Inst.rs1 ) ) );
   R->AdvancePC( Inst );
   return true;

@@ -18,7 +18,7 @@ namespace SST::RevCPU {
 
 class Zifencei : public RevExt {
 
-  static bool fencei( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  static bool fencei( const RevFeature* F, RevRegFile* R, RevMem* M, RevInst& Inst ) {
     M->FenceMem( F->GetHartToExecID() );
     R->AdvancePC( Inst );
     return true;
