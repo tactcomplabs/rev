@@ -64,14 +64,14 @@ protected:
   // Passed a COUNTER function which gets the 64-bit value of a performance counter
   template<typename XLEN, Half HALF, uint64_t COUNTER( const RevZicntr* )>
   XLEN GetPerfCounter() const {
-    if( !isZicntr( this ) ) {
+    if( !isZicntr( this ) )
       fatal( this, "Illegal instruction at PC = 0x%" PRIx64 ": Zicntr extension not available\n" );
-    } else if constexpr( HALF == Half::Hi ) {
-      if( IsRV64() ) {
+
+    if constexpr( HALF == Half::Hi ) {
+      if( IsRV64() )
         fatal( this, "Illegal instruction at PC = 0x%" PRIx64 ": High half of Zicntr register not available on RV64\n" );
-      } else {
+      else
         return static_cast<XLEN>( COUNTER( this ) >> 32 );
-      }
     }
     return static_cast<XLEN>( COUNTER( this ) );
   }

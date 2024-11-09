@@ -811,7 +811,8 @@ private:
     case RevRegClass::RegGPR: return regFile->RV_Scoreboard.any();
     case RevRegClass::RegFLOAT: return regFile->FP_Scoreboard.any();
     case RevRegClass::RegCSR: return regFile->CSR_Scoreboard.any();
-    case RevRegClass::RegUNKNOWN: return regFile->RV_Scoreboard.any() || regFile->FP_Scoreboard.any();
+    case RevRegClass::RegUNKNOWN:
+      return regFile->RV_Scoreboard.any() || regFile->FP_Scoreboard.any() || regFile->CSR_Scoreboard.any();
     default: return false;
     }
   }
