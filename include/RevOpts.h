@@ -18,6 +18,7 @@
 #include <cinttypes>
 #include <map>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -25,24 +26,38 @@
 namespace SST::RevCPU {
 
 class RevOpts {
-  template<typename VAL>
-  bool GetProperty( uint32_t Core, const std::vector<VAL>& Vec, VAL& Val ) const {
-    if( Core >= Vec.size() )
-      return false;
 
-    Val = Vec[Core];
-    return true;
+  // Queries whether type is a std::vector type
+  template<typename T>
+  struct is_vector : std::false_type {};
+
+  template<typename T>
+  struct is_vector<std::vector<T>> : std::true_type {};
+
+  // Return a property by looking up its table
+  // VAL is a universal reference so that either an lvalue reference or an assignable rvalue reference such as std::tie can be used
+  template<typename MAP, typename VAL>
+  bool GetProperty( uint32_t Core, const MAP& Map, VAL&& Val ) const {
+    if constexpr( is_vector<MAP>::value ) {
+      // If MAP is a vector
+      return Core < numCores ? Val = Map[Core], true : false;
+    } else {
+      // If MAP is a map/unordered_map
+      auto it                      = Map.find( Core );
+      return it != Map.end() ? Val = it->second, true : false;
+    }
   }
 
-  template<typename MAP>
-  bool InitPropertyMap( const std::vector<std::string>& Opts, MAP& map );
+  template<typename VEC>
+  bool InitPropertyMap( const std::vector<std::string>& Opts, VEC& map );
 
-  template<typename MAP>
-  std::pair<bool, bool> InitPropertyMapCores( const std::vector<std::string>& Opts, MAP& map );
+  template<typename VEC>
+  std::pair<bool, bool> InitPropertyMapCores( const std::vector<std::string>& Opts, VEC& map );
 
 public:
   /// RevOpts: options constructor
-  RevOpts( uint32_t NumCores, uint32_t NumHarts, int Verbosity );
+  RevOpts( uint32_t NumCores, uint32_t NumHarts, int Verbosity )
+    : numCores( NumCores ), numHarts( NumHarts ), verbosity( Verbosity ) {}
 
   /// RevOpts: options destructor
   ~RevOpts() = default;
@@ -88,10 +103,7 @@ public:
 
   /// RevOpts: retrieve the memory cost range for the target core
   bool GetMemCost( uint32_t Core, uint32_t& Min, uint32_t& Max ) const {
-    if( Core >= memCosts.size() )
-      return false;
-    std::tie( Min, Max ) = memCosts[Core];
-    return true;
+    return GetProperty( Core, memCosts, std::tie( Min, Max ) );
   }
 
   /// RevOpts: retrieve the prefetch depth for the target core
@@ -116,15 +128,25 @@ private:
   uint32_t const numHarts;   ///< RevOpts: number of harts per core
   int const      verbosity;  ///< RevOpts: verbosity level
 
-  std::vector<uint64_t>    startAddr     = std::vector<uint64_t>( numCores );     ///< RevOpts: core id to starting address
-  std::vector<std::string> startSym      = std::vector<std::string>( numCores );  ///< RevOpts: core id to starting symbol
-  std::vector<std::string> machine       = std::vector<std::string>( numCores );  ///< RevOpts: core id to machine model
-  std::vector<std::string> table         = std::vector<std::string>( numCores );  ///< RevOpts: core id to inst table
-  std::vector<uint32_t>    prefetchDepth = std::vector<uint32_t>( numCores );     ///< RevOpts: core id to prefretch depth
-  std::vector<std::pair<uint32_t, uint32_t>> memCosts =
-    std::vector<std::pair<uint32_t, uint32_t>>( numCores );  ///< RevOpts: core id to memory cost range
-  std::vector<std::string> Argv;                             ///< RevOpts: vector of function arguments
-  std::vector<std::string> MemDumpRanges;                    ///< RevOpts: vector of function arguments
+  // init all the standard options
+  // -- startAddr = 0x00000000
+  // -- machine = "G" aka, "IMAFD"
+  // -- table = internal
+  // -- memCosts[core] = 0:10
+  // -- prefetch depth = 16
+  // -- pipeLine = 5 ???
+
+  // clang-format off
+  std::vector<uint64_t>                     startAddr{decltype( startAddr     )( numCores, 0 )};                 ///< RevOpts: starting address
+  std::vector<std::string>                    machine{decltype( machine       )( numCores, "G" )};               ///< RevOpts: machine model
+  std::vector<std::string>                      table{decltype( table         )( numCores, "_REV_INTERNAL_" )};  ///< RevOpts: inst table
+  std::vector<std::pair<uint32_t, uint32_t>> memCosts{decltype( memCosts      )( numCores, {0, 10} )};           ///< RevOpts: memory cost range
+  std::vector<uint32_t>                 prefetchDepth{decltype( prefetchDepth )( numCores, 16 )};                ///< RevOpts: prefretch depth
+  // clang-format on
+
+  std::unordered_map<uint32_t, std::string> startSym;       ///< RevOpts: starting symbol
+  std::vector<std::string>                  Argv;           ///< RevOpts: vector of function arguments
+  std::vector<std::string>                  MemDumpRanges;  ///< RevOpts: vector of function arguments
 
 };  // class RevOpts
 

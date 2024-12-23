@@ -12,25 +12,6 @@
 
 namespace SST::RevCPU {
 
-RevOpts::RevOpts( uint32_t NumCores, uint32_t NumHarts, int Verbosity )
-  : numCores( NumCores ), numHarts( NumHarts ), verbosity( Verbosity ) {
-
-  // init all the standard options
-  // -- startAddr = 0x00000000
-  // -- machine = "G" aka, "IMAFD"
-  // -- pipeLine = 5
-  // -- table = internal
-  // -- memCosts[core] = 0:10
-  // -- prefetch depth = 16
-  for( uint32_t i = 0; i < numCores; i++ ) {
-    startAddr[i]     = 0;
-    machine[i]       = "G";
-    table[i]         = "_REV_INTERNAL_";
-    memCosts[i]      = { 0, 10 };
-    prefetchDepth[i] = 16;
-  }
-}
-
 void RevOpts::SetArgs( const SST::Params& params ) {
   static constexpr char delim[] = " \t\n";
 
@@ -45,8 +26,8 @@ void RevOpts::SetArgs( const SST::Params& params ) {
   }
 }
 
-template<typename VEC>
-bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, VEC& map ) {
+template<typename MAP>
+bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, MAP& map ) {
   for( auto& s : Opts ) {
     std::vector<std::string> vstr;
 
@@ -59,20 +40,29 @@ bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, VEC& map ) 
       return false;
 
     // Store as cast integer if target is integer; otherwise store as string
-    if constexpr( std::is_integral_v<typename VEC::value_type> ) {
-      map[Core] = (typename VEC::value_type) std::stoull( vstr[1], nullptr, 0 );
+    auto parse = [&]( auto val ) {
+      if constexpr( std::is_integral_v<decltype( val )> ) {
+        map[Core] = decltype( val )( std::stoull( vstr[1], nullptr, 0 ) );
+      } else {
+        map[Core] = vstr[1];
+      }
+    };
+
+    if constexpr( is_vector<MAP>::value ) {
+      parse( typename MAP::value_type{} );
     } else {
-      map[Core] = vstr[1];
+      parse( typename MAP::mapped_type{} );
     }
   }
+
   return true;
 }
 
-template<typename VEC>
-std::pair<bool, bool> RevOpts::InitPropertyMapCores( const std::vector<std::string>& Opts, VEC& map ) {
+template<typename MAP>
+std::pair<bool, bool> RevOpts::InitPropertyMapCores( const std::vector<std::string>& Opts, MAP& map ) {
   // check to see if we expand into multiple cores
   if( Opts.size() == 1 ) {
-    std::string              s = Opts[0];
+    auto&                    s = Opts[0];
     std::vector<std::string> vstr;
 
     splitStr( s, ":", vstr );
@@ -80,15 +70,25 @@ std::pair<bool, bool> RevOpts::InitPropertyMapCores( const std::vector<std::stri
       return { true, false };
 
     if( vstr[0] == "CORES" ) {
+
       // set all cores to the value, stored as cast integer or as string
-      if constexpr( std::is_integral_v<typename VEC::value_type> ) {
-        auto Val = (typename VEC::value_type) std::stoull( vstr[1], nullptr, 0 );
-        for( uint32_t i = 0; i < numCores; i++ )
-          map[i] = Val;
+      auto parse = [&]( auto val ) {
+        if constexpr( std::is_integral_v<decltype( val )> ) {
+          auto Val = decltype( val )( std::stoull( vstr[1], nullptr, 0 ) );
+          for( uint32_t i = 0; i < numCores; i++ )
+            map[i] = Val;
+        } else {
+          for( uint32_t i = 0; i < numCores; i++ )
+            map[i] = vstr[1];
+        }
+      };
+
+      if constexpr( is_vector<MAP>::value ) {
+        parse( typename MAP::value_type{} );
       } else {
-        for( uint32_t i = 0; i < numCores; i++ )
-          map[i] = vstr[1];
+        parse( typename MAP::mapped_type{} );
       }
+
       return { true, true };
     }
   }
@@ -134,7 +134,7 @@ bool RevOpts::InitMemCosts( const std::vector<std::string>& MemCosts ) {
     auto Max  = decltype( memCosts[Core].second )( std::stoull( vstr[2], nullptr, 0 ) );
     if( Core >= numCores || !Min || !Max )
       return false;
-    memCosts[Core] = { Min, Max };
+    memCosts[Core] = std::pair( Min, Max );
   }
   return true;
 }
