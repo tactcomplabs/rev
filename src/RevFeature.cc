@@ -77,7 +77,7 @@ bool RevFeature::ParseMachineModel() {
     { "Zmmul",      1, 0,  1, 1, RV_ZMMUL                               },
     { "Zaamo",      2, 1,  2, 2, RV_ZAAMO                               },
     { "Zalrsc",     2, 1,  2, 2, RV_ZALRSC                              },
-    { "Zfa",        1, 0,  1, 1, RV_ZFA | RV_F | RV_ZICSR               }, // Unsupported
+    { "Zfa",        1, 0,  1, 1, RV_ZFA | RV_F | RV_ZICSR               },
     { "Zfh",        1, 0, -1, 0, RV_ZFH | RV_ZFHMIN | RV_F | RV_ZICSR   }, // Unsupported
     { "Zfhmin",     1, 0, -1, 0, RV_ZFHMIN | RV_F | RV_ZICSR            }, // Unsupported
     { "Ztso",       1, 0, -1, 0, RV_ZTSO                                }, // Unsupported
