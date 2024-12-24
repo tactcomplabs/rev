@@ -52,7 +52,7 @@ class RevOpts {
   bool InitPropertyMap( const std::vector<std::string>& Opts, VEC& map );
 
   template<typename VEC>
-  std::pair<bool, bool> InitPropertyMapCores( const std::vector<std::string>& Opts, VEC& map );
+  bool InitPropertyMapCores( const std::vector<std::string>& Opts, VEC& map );
 
 public:
   /// RevOpts: options constructor

@@ -59,7 +59,7 @@ bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, MAP& map ) 
 }
 
 template<typename MAP>
-std::pair<bool, bool> RevOpts::InitPropertyMapCores( const std::vector<std::string>& Opts, MAP& map ) {
+bool RevOpts::InitPropertyMapCores( const std::vector<std::string>& Opts, MAP& map ) {
   // check to see if we expand into multiple cores
   if( Opts.size() == 1 ) {
     auto&                    s = Opts[0];
@@ -67,7 +67,7 @@ std::pair<bool, bool> RevOpts::InitPropertyMapCores( const std::vector<std::stri
 
     splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
-      return { true, false };
+      return false;
 
     if( vstr[0] == "CORES" ) {
 
@@ -89,16 +89,15 @@ std::pair<bool, bool> RevOpts::InitPropertyMapCores( const std::vector<std::stri
         parse( typename MAP::mapped_type{} );
       }
 
-      return { true, true };
+      return true;
     }
   }
-  return { false, false };
+  return InitPropertyMap( Opts, map );
 }
 
 /// RevOpts: initialize the set of starting addresses
 bool RevOpts::InitStartAddrs( const std::vector<std::string>& StartAddrs ) {
-  auto [ret, retval] = InitPropertyMapCores( StartAddrs, startAddr );
-  return ret ? retval : InitPropertyMap( StartAddrs, startAddr );
+  return InitPropertyMapCores( StartAddrs, startAddr );
 }
 
 /// RevOpts: initialize the set of potential starting symbols
@@ -108,8 +107,7 @@ bool RevOpts::InitStartSymbols( const std::vector<std::string>& StartSymbols ) {
 
 /// RevOpts: initialize the set of machine models
 bool RevOpts::InitMachineModels( const std::vector<std::string>& Machines ) {
-  auto [ret, retval] = InitPropertyMapCores( Machines, machine );
-  return ret ? retval : InitPropertyMap( Machines, machine );
+  return InitPropertyMapCores( Machines, machine );
 }
 
 /// RevOpts: initalize the set of instruction tables
