@@ -13,7 +13,7 @@
 namespace SST::RevCPU {
 
 void RevOpts::SetArgs( const SST::Params& params ) {
-  static constexpr char delim[] = " \t\n";
+  static constexpr char delim[] = " \t\v\n\r\f";
 
   // If the "args" param does not start with a left bracket, split it up at whitespace
   // Otherwise interpet it as an array
@@ -28,9 +28,9 @@ void RevOpts::SetArgs( const SST::Params& params ) {
 
 template<typename MAP>
 bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, MAP& map ) {
-  for( auto& s : Opts ) {
-    std::vector<std::string> vstr;
+  std::vector<std::string> vstr;
 
+  for( auto& s : Opts ) {
     splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
@@ -62,10 +62,9 @@ template<typename MAP>
 bool RevOpts::InitPropertyMapCores( const std::vector<std::string>& Opts, MAP& map ) {
   // check to see if we expand into multiple cores
   if( Opts.size() == 1 ) {
-    auto&                    s = Opts[0];
     std::vector<std::string> vstr;
 
-    splitStr( s, ":", vstr );
+    splitStr( Opts[0], ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
