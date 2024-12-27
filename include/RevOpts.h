@@ -60,17 +60,23 @@ public:
   RevOpts( uint32_t NumCores, uint32_t NumHarts, int Verbosity )
     : numCores( NumCores ), numHarts( NumHarts ), verbosity( Verbosity ) {}
 
+  /// RevOpts: Disallow copying and assignment
+  RevOpts( const RevOpts& )            = delete;
+  RevOpts( RevOpts&& )                 = delete;
+  RevOpts& operator=( const RevOpts& ) = delete;
+  RevOpts& operator=( RevOpts&& )      = delete;
+
   /// RevOpts: options destructor
-  ~RevOpts() = default;
+  ~RevOpts()                           = default;
 
   /// RevOpts: retrieve the number of configured cores
-  uint32_t GetNumCores() { return numCores; }
+  uint32_t GetNumCores() const { return numCores; }
 
   /// RevOpts: retrieve the number of configured harts per core
-  uint32_t GetNumHarts() { return numHarts; }
+  uint32_t GetNumHarts() const { return numHarts; }
 
   /// RevOpts: retrieve the verbosity level
-  int GetVerbosity() { return verbosity; }
+  int GetVerbosity() const { return verbosity; }
 
   /// RevOpts: initialize the set of starting addresses
   bool InitStartAddrs( const std::vector<std::string>& StartAddrs );
@@ -108,7 +114,7 @@ public:
   }
 
   /// RevOpts: retrieve the prefetch depth for the target core
-  bool GetPrefetchDepth( uint32_t Core, uint32_t& Depth ) { return GetProperty( Core, prefetchDepth, Depth ); }
+  bool GetPrefetchDepth( uint32_t Core, uint32_t& Depth ) const { return GetProperty( Core, prefetchDepth, Depth ); }
 
   /// RevOpts: set the argv array
   void SetArgs( const SST::Params& params );
@@ -120,7 +126,7 @@ public:
   static void splitStr( std::string s, const char* delim, std::vector<std::string>& v ) {
     char* ptr     = s.data();
     char* saveptr = nullptr;
-    for( v.clear(); auto token = strtok_r( ptr, delim, &saveptr ); ptr = nullptr )
+    for( v.clear(); char* token = strtok_r( ptr, delim, &saveptr ); ptr = nullptr )
       v.push_back( token );
   }
 
