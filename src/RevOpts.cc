@@ -74,10 +74,10 @@ bool RevOpts::InitPropertyMapCores( const std::vector<std::string>& Opts, MAP& m
       auto parse = [&]( auto val ) {
         if constexpr( std::is_integral_v<decltype( val )> ) {
           auto Val = decltype( val )( std::stoull( vstr[1], nullptr, 0 ) );
-          for( uint32_t i = 0; i < numCores; i++ )
+          for( size_t i = 0; i < numCores; i++ )
             map[i] = Val;
         } else {
-          for( uint32_t i = 0; i < numCores; i++ )
+          for( size_t i = 0; i < numCores; i++ )
             map[i] = vstr[1];
         }
       };
