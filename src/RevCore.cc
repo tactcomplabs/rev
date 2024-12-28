@@ -247,8 +247,7 @@ std::string RevCore::ExtractMnemonic( const RevInstEntry& Entry ) {
   std::string              Tmp = Entry.mnemonic;
   std::vector<std::string> vstr;
   RevOpts::splitStr( Tmp, " ", vstr );
-
-  return vstr[0];
+  return std::move( vstr[0] );
 }
 
 bool RevCore::InitTableMapping() {

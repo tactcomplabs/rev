@@ -123,8 +123,8 @@ bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ) {
 
 /// RevOpts: initialize the memory latency cost tables
 bool RevOpts::InitMemCosts( const std::vector<std::string>& MemCosts ) {
+  std::vector<std::string> vstr;
   for( auto& s : MemCosts ) {
-    std::vector<std::string> vstr;
     splitStr( s, ":", vstr );
     if( vstr.size() != 3 )
       return false;

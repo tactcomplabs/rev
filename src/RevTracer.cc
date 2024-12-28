@@ -200,7 +200,7 @@ void RevTracer::Render( size_t cycle ) {
   // memory completions
   if( completionRecs.size() > 0 ) {
     if( OutputOK() ) {
-      for( auto r : completionRecs ) {
+      for( auto& r : completionRecs ) {
         std::string       data_str = fmt_data( r.len, r.data );
         std::stringstream s;
         s << data_str << "<-[0x" << std::hex << r.addr << "," << std::dec << r.len << "] ";
@@ -296,7 +296,7 @@ std::string RevTracer::RenderExec( const std::string& fallbackMnemonic ) {
   bool squashNextSetX = false;
 
   std::stringstream ss_rw;
-  for( TraceRec_t r : traceRecs ) {
+  for( TraceRec_t& r : traceRecs ) {
     switch( r.key ) {
     case RegRead:
       // a:reg b:data
