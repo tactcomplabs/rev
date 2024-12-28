@@ -15,6 +15,7 @@
 #include "SST.h"
 
 // -- Standard Headers
+#include "RevCommon.h"
 #include <cinttypes>
 #include <map>
 #include <string>
