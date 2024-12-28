@@ -44,9 +44,9 @@ bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, MAP& map ) 
       if constexpr( std::is_integral_v<decltype( val )> ) {
         map[Core] = decltype( val )( std::stoull( vstr[1], nullptr, 0 ) );
       } else if constexpr( is_vector<MAP>::value ) {
-        map[Core] = make_dependent<MAP, decltype( val )>( std::move( vstr[1] ) );
+        map[Core] = make_dependent<decltype( val )>( std::move( vstr[1] ) );
       } else {
-        map.insert_or_assign( Core, make_dependent<MAP, decltype( val )>( std::move( vstr[1] ) ) );
+        map.insert_or_assign( Core, make_dependent<decltype( val )>( std::move( vstr[1] ) ) );
       }
     };
 
