@@ -1,7 +1,7 @@
 //
 // _RevMemCtrl_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -213,9 +213,7 @@ bool RevBasicMemCtrl::sendAMORequest(
     return true;
 
   // Check to see if our flags contain an atomic request
-  // The flag hex value is a bitwise OR of all the RevFlag
-  // AMO enums
-  if( !RevFlagHas( flags, RevFlag::F_ATOMIC ) ) {
+  if( !RevFlagAtomic( flags ) ) {
     // not an atomic request
     return true;
   }
@@ -250,8 +248,9 @@ bool RevBasicMemCtrl::sendAMORequest(
     {RevFlag::F_AMOSWAP, RevBasicMemCtrl::MemCtrlStats::AMOSwapPending},
   };
 
-  for( auto& [flag, stat] : table ) {
-    if( RevFlagHas( flags, flag ) ) {
+  RevFlag amo{ RevFlagAtomic( flags ) };
+  for( const auto& [flag, stat] : table ) {
+    if( amo == flag ) {
       recordStat( stat, 1 );
       break;
     }
@@ -960,7 +959,7 @@ bool RevBasicMemCtrl::isAQ( uint32_t Slot, uint32_t Hart ) {
 
   // search all preceding slots for an AMO from the same Hart
   for( uint32_t i = 0; i < Slot; i++ ) {
-    if( RevFlagHas( rqstQ[i]->getFlags(), RevFlag::F_ATOMIC ) && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ) {
+    if( RevFlagAtomic( rqstQ[i]->getFlags() ) && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ) {
       if( RevFlagHas( rqstQ[i]->getFlags(), RevFlag::F_AQ ) ) {
         // this implies that we found a preceding request in the request queue
         // that was 1) an AMO and 2) came from the same HART as 'slot'
@@ -981,7 +980,7 @@ bool RevBasicMemCtrl::isRL( uint32_t Slot, uint32_t Hart ) {
     return false;
   }
 
-  if( RevFlagHas( rqstQ[Slot]->getFlags(), RevFlag::F_ATOMIC ) && RevFlagHas( rqstQ[Slot]->getFlags(), RevFlag::F_RL ) ) {
+  if( RevFlagAtomic( rqstQ[Slot]->getFlags() ) && RevFlagHas( rqstQ[Slot]->getFlags(), RevFlag::F_RL ) ) {
     // this is an AMO, check to see if there are other ops from the same
     // HART in flight
     for( uint32_t i = 0; i < Slot; i++ ) {

@@ -1,7 +1,7 @@
 //
 // _Zaamo_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -24,10 +24,10 @@ class Zaamo : public RevExt {
     RevFlag flags{ F_AMO };
 
     if( Inst.aq ) {
-      flags = RevFlag{ uint32_t( flags ) | uint32_t( RevFlag::F_AQ ) };
+      RevFlagSet( flags, RevFlag::F_AQ );
     }
     if( Inst.rl ) {
-      flags = RevFlag{ uint32_t( flags ) | uint32_t( RevFlag::F_RL ) };
+      RevFlagSet( flags, RevFlag::F_RL );
     }
 
     if( !F->IsRV64() ) {
