@@ -44,7 +44,7 @@ constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_enum_v<ENUM>, INT>
   return static_cast<INT>( e );
 }
 
-/// Allow non-narrowing int->int cast with enum_int_cast
+/// Allow non-narrowing integer->integer cast with safe_static_cast
 template<typename INT, typename ENUM, typename = decltype( INT{ std::declval<ENUM>() } )>
 constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_integral_v<ENUM>, INT> safe_static_cast( ENUM e ) {
   return static_cast<INT>( e );
