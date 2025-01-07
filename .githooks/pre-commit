@@ -198,7 +198,7 @@ check_extension() {
     local file=$1 ext=$2 mimetype=$3 shebang=$4 instead
     trap "$(shopt -p nocasematch)" RETURN
     shopt -u nocasematch
-    if [[ $(file -Lb --mime-type "$1") != "${mimetype}" ]]; then
+    if [[ ! $(file -Lb --mime-type "$1") =~ ${mimetype} ]]; then
         if [[ $file = *$ext ]]; then
             printf "\n${RED}${file}: Error: Not recognized as ${mimetype}.\n${shebang:+Make sure that shebang ${shebang} is at the top of ${file}.\n}${END}"
             errors=true
@@ -268,9 +268,9 @@ EOF
 
             # check filename extensions and magic
             if [[ $file != **/pre-commit ]]; then
-                check_extension  "$file"  ".sh"  "text/x-shellscript"    "#!/bin/bash"
-                check_extension  "$file"  ".py"  "text/x-script.python"  "#!/usr/bin/env python3"
-                check_extension  "$file"  ".pl"  "text/x-perl"           "#!/usr/bin/perl"
+                check_extension  "$file"  ".sh"  "^text/x-shellscript$"                   "#!/bin/bash"
+                check_extension  "$file"  ".py"  "^text/x-script\.python|text/x-python$"  "#!/usr/bin/env python3"
+                check_extension  "$file"  ".pl"  "^text/x-perl$"                          "#!/usr/bin/perl"
             fi
 
             # Python files
