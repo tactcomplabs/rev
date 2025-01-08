@@ -1,7 +1,7 @@
 //
 // _RevFeature_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -68,7 +68,11 @@ bool RevFeature::ParseMachineModel() {
     { "C",          2, 0,  2, 2, RV_C                                   },
     { "B",          1, 0, -1, 0, RV_B                                   }, // Unsupported
     { "P",          0, 2, -1, 0, RV_P                                   }, // Unsupported
+#ifdef RVV
+    { "V",          1, 0,  1, 1, RV_V | RV_D | RV_F | RV_ZICSR          },
+#else
     { "V",          1, 0, -1, 0, RV_V | RV_D | RV_F | RV_ZICSR          },
+#endif
     { "H",          1, 0, -1, 0, RV_H                                   }, // Unsupported
     { "Zicbom",     1, 0,  1, 1, RV_ZICBOM                              },
     { "Zicntr",     2, 0,  2, 2, RV_ZICNTR | RV_ZICSR                   },

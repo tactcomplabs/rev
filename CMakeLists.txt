@@ -1,5 +1,5 @@
 # RevCPU Top-Level CMake
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 # See LICENSE in the top level directory for licensing details
@@ -72,6 +72,13 @@ if(REV_TRACER)
 else()
   # requires cmake 3.12
   add_compile_definitions(NO_REV_TRACER)
+endif()
+
+# Vector decoding
+option(RVV "Enable vector decoding (requires r2v2 coprocessor)" OFF)
+if (RVV)
+  message(RVV=ON)
+  add_compile_definitions("RVV")
 endif()
 
 # Compiler Options
