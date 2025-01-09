@@ -1,7 +1,7 @@
 //
 // _RevCore_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -129,8 +129,9 @@ bool RevCore::EnableExt( RevExt* Ext ) {
     InstTable.reserve( InstTable.size() + Table.size() );
     for( uint32_t i = 0; i < Table.size(); i++ ) {
       InstTable.push_back( Table[i] );
-      auto ExtObj = std::pair<uint32_t, uint32_t>( Extensions.size() - 1, i );
-      EntryToExt.insert( std::pair<uint32_t, std::pair<uint32_t, uint32_t>>( InstTable.size() - 1, ExtObj ) );
+      if( !EntryToExt.insert( std::pair( uint32_t( InstTable.size() - 1 ), std::pair( uint32_t( Extensions.size() - 1 ), i ) ) )
+             .second )
+        output->fatal( CALL_INFO, -1, "Error: EntryToExt entry already exists for index %zu\n", InstTable.size() - 1 );
     }
   };
 
@@ -818,15 +819,20 @@ auto RevCore::matchInst(
   uint32_t                                           Inst
 ) const {
   // Iterate through all entries which match the encoding
+  auto match = map.end();  // No match
   for( auto [it, end] = map.equal_range( encoding ); it != end; ++it ) {
     uint32_t Entry = it->second;
-    // If an entry is valid and has a satisfied predicate, return it
-    if( Entry < InstTable.size() && InstTable[Entry].predicate( Inst ) )
-      return it;
+    // If an entry is valid and has a satisfied predicate
+    if( Entry < InstTable.size() && InstTable[Entry].predicate( Inst ) ) {
+      // Only one instruction entry with a satisfied predicate should match
+      if( match != map.end() )
+        output->fatal(
+          CALL_INFO, -1, "Error: Multiple decodings for instruction 0x%08" PRIx32 " at PC=0x%" PRIx64 "\n", Inst, GetPC()
+        );
+      match = it;
+    }
   }
-
-  // No match
-  return map.end();
+  return match;
 }
 
 RevInst RevCore::DecodeCompressed( uint32_t Inst ) const {
@@ -1713,7 +1719,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
     // -- BEGIN new pipelining implementation
     Pipeline.emplace_back( std::make_pair( HartToExecID, Inst ) );
 
-    if( ( Ext->GetName() == "RV32F" ) || ( Ext->GetName() == "RV32D" ) || ( Ext->GetName() == "RV64F" ) || ( Ext->GetName() == "RV64D" ) ) {
+    if( Ext->GetName() == "RV32F" || Ext->GetName() == "RV32D" || Ext->GetName() == "RV64F" || Ext->GetName() == "RV64D" ) {
       Stats.floatsExec++;
     }
 
