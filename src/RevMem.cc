@@ -267,7 +267,7 @@ bool RevMem::isValidVirtAddr( const uint64_t vAddr ) {
 }
 
 uint64_t RevMem::AddMemSegAt( const uint64_t& BaseAddr, const uint64_t& SegSize ) {
-  MemSegs.emplace_back( std::make_shared<MemSegment>( BaseAddr, SegSize ) );
+  MemSegs.emplace_back( new MemSegment( BaseAddr, SegSize ) );
   return BaseAddr;
 }
 
@@ -333,7 +333,7 @@ uint64_t RevMem::AddRoundedMemSeg( uint64_t BaseAddr, const uint64_t& SegSize, s
   if( !Added ) {
     // BaseAddr & RoundedTopAddr not a part of a segment
     // Add rounded segment
-    MemSegs.emplace_back( std::make_shared<MemSegment>( BaseAddr, RoundedSegSize ) );
+    MemSegs.emplace_back( new MemSegment( BaseAddr, RoundedSegSize ) );
   }
 
   return BaseAddr;
@@ -342,7 +342,7 @@ uint64_t RevMem::AddRoundedMemSeg( uint64_t BaseAddr, const uint64_t& SegSize, s
 std::shared_ptr<MemSegment> RevMem::AddThreadMem() {
   // Calculate the BaseAddr of the segment
   uint64_t BaseAddr = NextThreadMemAddr - ThreadMemSize;
-  ThreadMemSegs.emplace_back( std::make_shared<MemSegment>( BaseAddr, ThreadMemSize ) );
+  ThreadMemSegs.emplace_back( new MemSegment( BaseAddr, ThreadMemSize ) );
   // Page boundary between
   NextThreadMemAddr = BaseAddr - pageSize - 1;
   return ThreadMemSegs.back();
@@ -371,7 +371,7 @@ uint64_t RevMem::AllocMem( const uint64_t& SegSize ) {
     if( oldFreeSegSize > SegSize ) {
       // New data will start where the free segment started
       NewSegBaseAddr = FreeSeg->getBaseAddr();
-      MemSegs.emplace_back( std::make_shared<MemSegment>( NewSegBaseAddr, SegSize ) );
+      MemSegs.emplace_back( new MemSegment( NewSegBaseAddr, SegSize ) );
       FreeSeg->setBaseAddr( FreeSeg->getBaseAddr() + SegSize );
       FreeSeg->setSize( oldFreeSegSize - SegSize );
       return NewSegBaseAddr;
@@ -381,7 +381,7 @@ uint64_t RevMem::AllocMem( const uint64_t& SegSize ) {
     else if( oldFreeSegSize == SegSize ) {
       // New data will start where the free segment started
       NewSegBaseAddr = FreeSeg->getBaseAddr();
-      MemSegs.emplace_back( std::make_shared<MemSegment>( NewSegBaseAddr, SegSize ) );
+      MemSegs.emplace_back( new MemSegment( NewSegBaseAddr, SegSize ) );
       FreeMemSegs.erase( FreeMemSegs.begin() + ptrdiff_t( i ) );
       return NewSegBaseAddr;
     }
@@ -395,7 +395,7 @@ uint64_t RevMem::AllocMem( const uint64_t& SegSize ) {
   if( !NewSegBaseAddr ) {
     NewSegBaseAddr = heapend;
   }
-  MemSegs.emplace_back( std::make_shared<MemSegment>( NewSegBaseAddr, SegSize ) );
+  MemSegs.emplace_back( new MemSegment( NewSegBaseAddr, SegSize ) );
 
   ExpandHeap( SegSize );
 
@@ -429,7 +429,7 @@ uint64_t RevMem::AllocMemAt( const uint64_t& BaseAddr, const uint64_t& SegSize )
         // Create New FreeSeg that fills the upper part of the old FreeSeg
         uint64_t NewFreeSegBaseAddr = BaseAddr + SegSize;
         size_t   NewFreeSegSize     = OldFreeSegTop - NewFreeSegBaseAddr;
-        FreeMemSegs.emplace_back( std::make_shared<MemSegment>( NewFreeSegBaseAddr, NewFreeSegSize ) );
+        FreeMemSegs.emplace_back( new MemSegment( NewFreeSegBaseAddr, NewFreeSegSize ) );
       }
 
       // If were allocating at the beginning of a FreeSeg (That doesn't take up the whole segment)
@@ -477,7 +477,7 @@ uint64_t RevMem::AllocMemAt( const uint64_t& BaseAddr, const uint64_t& SegSize )
         continue;
       }
     }
-    MemSegs.emplace_back( std::make_shared<MemSegment>( BaseAddr, SegSize ) );
+    MemSegs.emplace_back( new MemSegment( BaseAddr, SegSize ) );
   }
 
   return ret;
@@ -759,7 +759,7 @@ uint64_t RevMem::DeallocMem( uint64_t BaseAddr, uint64_t Size ) {
       // allocated data and is `Size` bytes long
       // - Before: |--------------------|--- AllocedSeg ---|
       // - After:  |---- NewFreeSeg ----|--- AllocedSeg ---|
-      FreeMemSegs.emplace_back( std::make_shared<MemSegment>( BaseAddr, Size ) );
+      FreeMemSegs.emplace_back( new MemSegment( BaseAddr, Size ) );
     }
   }
 
@@ -777,7 +777,7 @@ void RevMem::InitHeap( const uint64_t& EndOfStaticData ) {
     );
   } else {
     // Mark heap as free
-    FreeMemSegs.emplace_back( std::make_shared<MemSegment>( EndOfStaticData + 1, maxHeapSize ) );
+    FreeMemSegs.emplace_back( new MemSegment( EndOfStaticData + 1, maxHeapSize ) );
 
     heapend   = EndOfStaticData + 1;
     heapstart = EndOfStaticData + 1;

@@ -150,28 +150,28 @@ bool RevTracer::OutputOK() {
 }
 
 void RevTracer::regRead( uint64_t r, uint64_t v ) {
-  traceRecs.emplace_back( TraceRec_t( RegRead, r, v ) );
+  traceRecs.emplace_back( RegRead, r, v );
 }
 
 void RevTracer::regWrite( uint64_t r, uint64_t v ) {
-  traceRecs.emplace_back( TraceRec_t( RegWrite, r, v ) );
+  traceRecs.emplace_back( RegWrite, r, v );
 }
 
 void RevTracer::memWrite( uint64_t adr, size_t len, const void* data ) {
   // Only tracing the first 8 bytes. Retaining pointer in case we change that.
   uint64_t d = 0;
   memcpy( &d, data, len > sizeof( d ) ? sizeof( d ) : len );
-  traceRecs.emplace_back( TraceRec_t( MemStore, adr, len, d ) );
+  traceRecs.emplace_back( MemStore, adr, len, d );
 }
 
 void RevTracer::memRead( uint64_t adr, size_t len, void* data ) {
   uint64_t d = 0;
   memcpy( &d, data, len > sizeof( d ) ? sizeof( d ) : len );
-  traceRecs.emplace_back( TraceRec_t( MemLoad, adr, len, d ) );
+  traceRecs.emplace_back( MemLoad, adr, len, d );
 }
 
 void SST::RevCPU::RevTracer::memhSendRead( uint64_t adr, size_t len, uint16_t reg ) {
-  traceRecs.emplace_back( TraceRec_t( MemhSendLoad, adr, len, reg ) );
+  traceRecs.emplace_back( MemhSendLoad, adr, len, reg );
 }
 
 void RevTracer::memReadResponse( size_t len, void* data, const MemReq* req ) {
@@ -182,11 +182,11 @@ void RevTracer::memReadResponse( size_t len, void* data, const MemReq* req ) {
 }
 
 void RevTracer::pcWrite( uint32_t newpc ) {
-  traceRecs.emplace_back( TraceRec_t( PcWrite, newpc, 0, 0 ) );
+  traceRecs.emplace_back( PcWrite, newpc, 0, 0 );
 }
 
 void RevTracer::pcWrite( uint64_t newpc ) {
-  traceRecs.emplace_back( TraceRec_t( PcWrite, newpc, 0, 0 ) );
+  traceRecs.emplace_back( PcWrite, newpc, 0, 0 );
 }
 
 void RevTracer::Exec( size_t cycle, uint32_t id, uint32_t hart, uint32_t tid, const std::string& fallbackMnemonic ) {

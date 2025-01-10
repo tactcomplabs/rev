@@ -20,7 +20,7 @@ namespace SST::RevCPU {
 
 class RevHart {
   ///< RevHart: Id for the Hart (0,1,2,3,etc)
-  uint16_t ID{};
+  uint32_t ID{};
 
   ///< RevHart: State management object when a Hart is executing a system call
   EcallState Ecall{};
@@ -41,7 +41,7 @@ class RevHart {
 public:
   ///< RevHart: Constructor
   RevHart(
-    uint16_t                                                          ID,
+    uint32_t                                                          ID,
     const std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>>& LSQueue,
     std::function<void( const MemReq& )>                              MarkLoadCompleteFunc
   )
@@ -56,7 +56,7 @@ public:
   const EcallState& GetEcallState() const { return Ecall; }
 
   ///< RevHart: Get Hart's ID
-  uint16_t GetID() const { return ID; }
+  uint32_t GetID() const { return ID; }
 
   ///< RevHart: Returns the ID of the assigned thread
   uint32_t GetAssignedThreadID() const { return Thread ? Thread->GetID() : _INVALID_TID_; }

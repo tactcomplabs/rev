@@ -46,8 +46,8 @@ RevCore::RevCore(
   LSQueue->clear();
 
   // Create the Hart Objects
-  for( size_t i = 0; i < numHarts; i++ ) {
-    Harts.emplace_back( std::make_unique<RevHart>( i, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } ) );
+  for( uint32_t i = 0; i < numHarts; i++ ) {
+    Harts.emplace_back( new RevHart( i, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } ) );
     ValidHarts.set( i, true );
   }
 
@@ -1717,7 +1717,7 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
     RevExt*                       Ext  = Extensions[EToE.first].get();
 
     // -- BEGIN new pipelining implementation
-    Pipeline.emplace_back( std::make_pair( HartToExecID, Inst ) );
+    Pipeline.emplace_back( HartToExecID, Inst );
 
     if( Ext->GetName() == "RV32F" || Ext->GetName() == "RV32D" || Ext->GetName() == "RV64F" || Ext->GetName() == "RV64D" ) {
       Stats.floatsExec++;
