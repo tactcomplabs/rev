@@ -74,13 +74,6 @@ else()
   add_compile_definitions(NO_REV_TRACER)
 endif()
 
-# Vector decoding
-option(RVV "Enable vector decoding (requires r2v2 coprocessor)" OFF)
-if (RVV)
-  message(RVV=ON)
-  add_compile_definitions("RVV")
-endif()
-
 # Compiler Options
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   set(FP_MODE_FLAG "-ffp-model=strict -frounding-math -ftrapping-math")
