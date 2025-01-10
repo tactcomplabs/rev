@@ -149,29 +149,29 @@ bool RevTracer::OutputOK() {
   return outputEnabled || events.f.trc_ctl;
 }
 
-void RevTracer::regRead( size_t r, uint64_t v ) {
-  traceRecs.emplace_back( TraceRec_t( RegRead, r, v ) );
+void RevTracer::regRead( uint64_t r, uint64_t v ) {
+  traceRecs.emplace_back( RegRead, r, v );
 }
 
-void RevTracer::regWrite( size_t r, uint64_t v ) {
-  traceRecs.emplace_back( TraceRec_t( RegWrite, r, v ) );
+void RevTracer::regWrite( uint64_t r, uint64_t v ) {
+  traceRecs.emplace_back( RegWrite, r, v );
 }
 
 void RevTracer::memWrite( uint64_t adr, size_t len, const void* data ) {
   // Only tracing the first 8 bytes. Retaining pointer in case we change that.
   uint64_t d = 0;
   memcpy( &d, data, len > sizeof( d ) ? sizeof( d ) : len );
-  traceRecs.emplace_back( TraceRec_t( MemStore, adr, len, d ) );
+  traceRecs.emplace_back( MemStore, adr, len, d );
 }
 
 void RevTracer::memRead( uint64_t adr, size_t len, void* data ) {
   uint64_t d = 0;
   memcpy( &d, data, len > sizeof( d ) ? sizeof( d ) : len );
-  traceRecs.emplace_back( TraceRec_t( MemLoad, adr, len, d ) );
+  traceRecs.emplace_back( MemLoad, adr, len, d );
 }
 
 void SST::RevCPU::RevTracer::memhSendRead( uint64_t adr, size_t len, uint16_t reg ) {
-  traceRecs.emplace_back( TraceRec_t( MemhSendLoad, adr, len, reg ) );
+  traceRecs.emplace_back( MemhSendLoad, adr, len, reg );
 }
 
 void RevTracer::memReadResponse( size_t len, void* data, const MemReq* req ) {
@@ -182,11 +182,11 @@ void RevTracer::memReadResponse( size_t len, void* data, const MemReq* req ) {
 }
 
 void RevTracer::pcWrite( uint32_t newpc ) {
-  traceRecs.emplace_back( TraceRec_t( PcWrite, newpc, 0, 0 ) );
+  traceRecs.emplace_back( PcWrite, newpc, 0, 0 );
 }
 
 void RevTracer::pcWrite( uint64_t newpc ) {
-  traceRecs.emplace_back( TraceRec_t( PcWrite, newpc, 0, 0 ) );
+  traceRecs.emplace_back( PcWrite, newpc, 0, 0 );
 }
 
 void RevTracer::Exec( size_t cycle, uint32_t id, uint32_t hart, uint32_t tid, const std::string& fallbackMnemonic ) {
@@ -354,16 +354,16 @@ void RevTracer::InstTraceReset() {
   instHeader.clear();
 }
 
-std::string RevTracer::fmt_reg( uint8_t r ) {
+std::string RevTracer::fmt_reg( uint64_t r ) {
   std::stringstream s;
 #ifdef REV_USE_SPIKE
   if( r < 32 ) {
     s << xpr_name[r];  // defined in disasm.h
     return s.str();
   }
-  s << "?" << (uint32_t) r;
+  s << "?" << r;
 #else
-  s << "x" << std::dec << (uint16_t) r;  // Use SST::RevCPU::RevReg?
+  s << "x" << std::dec << r;  // Use SST::RevCPU::RevReg?
 #endif
   return s.str();
 }
@@ -374,9 +374,9 @@ std::string RevTracer::fmt_data( size_t len, uint64_t d ) {
     return "";
   s << "0x" << std::hex << std::setfill( '0' );
   if( len > sizeof( d ) )
-    s << std::setw( sizeof( d ) * 2 ) << d << "..+" << std::dec << len - sizeof( d );
+    s << std::setw( int( sizeof( d ) * 2 ) ) << d << "..+" << std::dec << len - sizeof( d );
   else {
-    s << std::setw( len * 2 ) << ( d & ~( ~uint64_t{} << len * 8 ) );
+    s << std::setw( int( len * 2 ) ) << ( d & ~( ~uint64_t{} << len * 8 ) );
   }
   return s.str();
 }

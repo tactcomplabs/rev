@@ -343,9 +343,9 @@ void RevBasicMemCtrl::init( uint32_t phase ) {
 
   // query the caching infrastructure
   if( phase == 1 ) {
-    lineSize = memIface->getLineSize();
+    lineSize = uint32_t( memIface->getLineSize() );
     if( lineSize > 0 ) {
-      output->verbose( CALL_INFO, 5, 0, "Detected cache layers; default line size=%" PRIu64 "\n", lineSize );
+      output->verbose( CALL_INFO, 5, 0, "Detected cache layers; default line size=%" PRIu32 "\n", lineSize );
       hasCache = true;
     } else {
       output->verbose( CALL_INFO, 5, 0, "No cache detected; disabling caching\n" );
@@ -442,7 +442,7 @@ uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) {
   bool     done          = false;
   uint64_t BaseCacheAddr = Addr;
   while( !done ) {
-    if( ( BaseCacheAddr % (uint64_t) ( lineSize ) ) == 0 ) {
+    if( BaseCacheAddr % lineSize == 0 ) {
       done = true;
     } else {
       BaseCacheAddr -= 1;
@@ -462,11 +462,11 @@ uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) {
     } else {
       return lineSize;
     }
-  } else if( ( Addr + (uint64_t) ( Size ) ) <= ( BaseCacheAddr + (uint64_t) ( lineSize ) ) ) {
+  } else if( Addr + Size <= BaseCacheAddr + lineSize ) {
     // we stay within a single cache line
     return Size;
   } else {
-    return ( ( BaseCacheAddr + lineSize ) - Addr );
+    return uint32_t( BaseCacheAddr + lineSize - Addr );
   }
 }
 
@@ -583,7 +583,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
 #ifdef _REV_DEBUG_
   std::cout << "base cache line request size = " << BaseCacheLineSize << std::endl;
 #endif
-  uint32_t curByte = 0;
+  uint64_t curByte = 0;
 
   switch( op->getOp() ) {
   case MemOp::MemOpREAD:
@@ -618,11 +618,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
     break;
   case MemOp::MemOpFLUSH:
     rqst = new Interfaces::StandardMem::FlushAddr(
-      op->getAddr(),
-      (uint64_t) ( BaseCacheLineSize ),
-      op->getInv(),
-      (uint64_t) ( BaseCacheLineSize ),
-      (StandardMem::Request::flags_t) TmpFlags
+      op->getAddr(), BaseCacheLineSize, op->getInv(), BaseCacheLineSize, (StandardMem::Request::flags_t) TmpFlags
     );
     requests.push_back( rqst->getID() );
     outstanding[rqst->getID()] = op;
@@ -697,14 +693,14 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
   newBuf.clear();
   uint64_t newBase   = op->getAddr() + BaseCacheLineSize;
   uint64_t bytesLeft = (uint64_t) ( op->getSize() ) - BaseCacheLineSize;
-  uint64_t newSize   = 0;
+  uint32_t newSize   = 0;
 
   for( uint32_t i = 1; i < NumLines; i++ ) {
     // setup the adjusted size of the request
     if( bytesLeft < lineSize ) {
-      newSize = bytesLeft;
+      newSize = uint32_t( bytesLeft );
     } else {
-      newSize = lineSize;
+      newSize = uint32_t( lineSize );
     }
 
     // clear the adjusted buffer
@@ -720,7 +716,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
       num_read++;
       break;
     case MemOp::MemOpWRITE:
-      for( uint32_t j = curByte; j < ( curByte + newSize ); j++ ) {
+      for( auto j = curByte; j < curByte + newSize; j++ ) {
         newBuf.push_back( tmpBuf[j] );
       }
       curByte += newSize;
@@ -749,7 +745,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
       num_readlock++;
       break;
     case MemOp::MemOpWRITEUNLOCK:
-      for( uint32_t j = curByte; j < ( curByte + newSize ); j++ ) {
+      for( auto j = curByte; j < curByte + newSize; j++ ) {
         newBuf.push_back( tmpBuf[j] );
       }
       curByte += newSize;
@@ -769,7 +765,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
       num_llsc++;
       break;
     case MemOp::MemOpSTORECOND:
-      for( uint32_t j = curByte; j < ( curByte + newSize ); j++ ) {
+      for( auto j = curByte; j < curByte + newSize; j++ ) {
         newBuf.push_back( tmpBuf[j] );
       }
       curByte += newSize;
@@ -830,11 +826,7 @@ bool RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
     break;
   case MemOp::MemOpFLUSH:
     rqst = new Interfaces::StandardMem::FlushAddr(
-      op->getAddr(),
-      (uint64_t) ( op->getSize() ),
-      op->getInv(),
-      (uint64_t) ( op->getSize() ),
-      (StandardMem::Request::flags_t) TmpFlags
+      op->getAddr(), op->getSize(), op->getInv(), op->getSize(), (StandardMem::Request::flags_t) TmpFlags
     );
     requests.push_back( rqst->getID() );
     outstanding[rqst->getID()] = op;

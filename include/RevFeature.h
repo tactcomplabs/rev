@@ -1,7 +1,7 @@
 //
 // _RevFeature_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -95,7 +95,7 @@ public:
   auto GetProcID() const { return ProcID; }
 
   /// GetHartToExecID: Retrieve the current executing Hart
-  uint16_t GetHartToExecID() const { return HartToExecID; }
+  auto GetHartToExecID() const { return HartToExecID; }
 
   /// SetHartToExecID: Set the current executing Hart
   void SetHartToExecID( uint32_t hart ) { HartToExecID = hart; }

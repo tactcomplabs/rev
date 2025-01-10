@@ -1,7 +1,7 @@
 //
 // _RevCPU_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -111,7 +111,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
     std::string width = params.find<std::string>( "fault_width", "1" );
     DecodeFaultWidth( width );
 
-    fault_width = params.find<int64_t>( "fault_range", "65536" );
+    fault_width = params.find<uint32_t>( "fault_range", "65536" );
     FaultCntr   = fault_width;
   }
 
@@ -131,7 +131,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   }
 
   // Set TLB Size
-  const uint64_t tlbSize = params.find<uint64_t>( "tlbSize", 512 );
+  auto tlbSize = params.find<uint32_t>( "tlbSize", 512 );
   Mem->SetTLBSize( tlbSize );
 
   // Set max heap size
@@ -228,14 +228,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   }
 
   // Initial thread setup
-  uint32_t MainThreadID = id + 1;  // Prevents having MainThreadID == 0 which is reserved for INVALID
+  uint32_t MainThreadID = uint32_t( id ) + 1;  // Prevents having MainThreadID == 0 which is reserved for INVALID
 
   uint64_t    StartAddr = 0;
   std::string StartSymbol;
 
-  bool     IsStartSymbolProvided   = Opts->GetStartSymbol( id, StartSymbol );
-  bool     IsStartAddrProvided     = Opts->GetStartAddr( id, StartAddr ) && StartAddr != 0;
-  uint64_t ResolvedStartSymbolAddr = ( IsStartSymbolProvided ) ? Loader->GetSymbolAddr( StartSymbol ) : 0;
+  bool     IsStartSymbolProvided   = Opts->GetStartSymbol( uint32_t( id ), StartSymbol );
+  bool     IsStartAddrProvided     = Opts->GetStartAddr( uint32_t( id ), StartAddr ) && StartAddr != 0;
+  uint64_t ResolvedStartSymbolAddr = IsStartSymbolProvided ? Loader->GetSymbolAddr( StartSymbol ) : 0;
 
   // If no start address has been provided ...
   if( !IsStartAddrProvided ) {
@@ -338,7 +338,7 @@ void RevCPU::DecodeFaultWidth( const std::string& width ) {
   } else if( width == "word" ) {
     fault_width = 8;
   } else {
-    fault_width = std::stoul( width );
+    fault_width = uint32_t( std::stoul( width ) );
   }
 
   if( fault_width > 64 ) {
@@ -558,7 +558,7 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
   output.verbose( CALL_INFO, 8, 0, "Cycle: %" PRIu64 "\n", currentCycle );
 
   // Execute each enabled core
-  for( size_t i = 0; i < Procs.size(); i++ ) {
+  for( uint32_t i = 0; i < Procs.size(); i++ ) {
     // Check if we have more work to assign and places to put it
     UpdateThreadAssignments( i );
     if( Enabled[i] ) {
@@ -568,10 +568,10 @@ bool RevCPU::clockTick( SST::Cycle_t currentCycle ) {
         }
         UpdateCoreStatistics( i );
         Enabled[i] = false;
-        output.verbose( CALL_INFO, 5, 0, "Closing Processor %zu at Cycle: %" PRIu64 "\n", i, currentCycle );
+        output.verbose( CALL_INFO, 5, 0, "Closing Processor %" PRIu32 " at Cycle: %" PRIu64 "\n", i, currentCycle );
       }
       if( EnableCoProc && !CoProcs[i]->ClockTick( currentCycle ) && !DisableCoprocClock ) {
-        output.verbose( CALL_INFO, 5, 0, "Closing Co-Processor %zu at Cycle: %" PRIu64 "\n", i, currentCycle );
+        output.verbose( CALL_INFO, 5, 0, "Closing Co-Processor %" PRIu32 " at Cycle: %" PRIu64 "\n", i, currentCycle );
       }
     }
 

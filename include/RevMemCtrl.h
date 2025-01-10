@@ -654,24 +654,24 @@ private:
   StandardMem*       memIface{};         ///< StandardMem memory interface
   RevStdMemHandlers* stdMemHandlers{};   ///< StandardMem interface response handlers
   bool               hasCache{};         ///< detects whether cache layers are present
-  uint64_t           lineSize{};         ///< cache line size
-  uint64_t           max_loads{};        ///< maximum number of outstanding loads
-  uint64_t           max_stores{};       ///< maximum number of outstanding stores
-  uint64_t           max_flush{};        ///< maximum number of oustanding flush events
-  uint64_t           max_llsc{};         ///< maximum number of outstanding llsc events
-  uint64_t           max_readlock{};     ///< maximum number of oustanding readlock events
-  uint64_t           max_writeunlock{};  ///< maximum number of oustanding writelock events
-  uint64_t           max_custom{};       ///< maximum number of oustanding custom events
-  uint64_t           max_ops{};          ///< maximum number of ops to issue per cycle
+  uint32_t           lineSize{};         ///< cache line size
+  uint32_t           max_loads{};        ///< maximum number of outstanding loads
+  uint32_t           max_stores{};       ///< maximum number of outstanding stores
+  uint32_t           max_flush{};        ///< maximum number of oustanding flush events
+  uint32_t           max_llsc{};         ///< maximum number of outstanding llsc events
+  uint32_t           max_readlock{};     ///< maximum number of oustanding readlock events
+  uint32_t           max_writeunlock{};  ///< maximum number of oustanding writelock events
+  uint32_t           max_custom{};       ///< maximum number of oustanding custom events
+  uint32_t           max_ops{};          ///< maximum number of ops to issue per cycle
 
-  uint64_t num_read{};         ///< number of outstanding read requests
-  uint64_t num_write{};        ///< number of outstanding write requests
-  uint64_t num_flush{};        ///< number of outstanding flush requests
-  uint64_t num_llsc{};         ///< number of outstanding LL/SC requests
-  uint64_t num_readlock{};     ///< number of oustanding readlock requests
-  uint64_t num_writeunlock{};  ///< number of oustanding writelock requests
-  uint64_t num_custom{};       ///< number of outstanding custom requests
-  uint64_t num_fence{};        ///< number of oustanding fence requests
+  uint32_t num_read{};         ///< number of outstanding read requests
+  uint32_t num_write{};        ///< number of outstanding write requests
+  uint32_t num_flush{};        ///< number of outstanding flush requests
+  uint32_t num_llsc{};         ///< number of outstanding LL/SC requests
+  uint32_t num_readlock{};     ///< number of oustanding readlock requests
+  uint32_t num_writeunlock{};  ///< number of oustanding writelock requests
+  uint32_t num_custom{};       ///< number of outstanding custom requests
+  uint32_t num_fence{};        ///< number of oustanding fence requests
 
   std::vector<StandardMem::Request::id_t>         requests{};     ///< outstanding StandardMem requests
   std::vector<RevMemOp*>                          rqstQ{};        ///< queued memory requests

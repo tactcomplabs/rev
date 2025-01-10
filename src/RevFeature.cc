@@ -1,7 +1,7 @@
 //
 // _RevFeature_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -55,7 +55,7 @@ bool RevFeature::ParseMachineModel() {
   ///< Values of -1, 0 for the fourth and fifth values indicates no Rev support yet.
   ///<
   ///< ExtensionName DefaultMajor DefaultMinor MinSupportedVersion MaxSupportedVersion Flags
-  static constexpr std::tuple<std::string_view, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t> table[] = {
+  static constexpr std::tuple<std::string_view, uint64_t, uint64_t, uint64_t, uint64_t, uint32_t> table[] = {
     { "I",          2, 1,  2, 2, RV_I                                   },
     { "E",          2, 0, -1, 0, RV_E                                   }, // Unsupported
     { "M",          2, 0,  2, 2, RV_M | RV_ZMMUL                        },
@@ -113,7 +113,7 @@ bool RevFeature::ParseMachineModel() {
           snprintf(
             unsupported_version,
             sizeof( unsupported_version ),
-            "Error: Version %" PRIu32 ".%" PRIu32 " of %s extension is not supported\n",
+            "Error: Version %" PRIu64 ".%" PRIu64 " of %s extension is not supported\n",
             majorVersion,
             minorVersion,
             ext.data()
