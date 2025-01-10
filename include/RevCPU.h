@@ -1,7 +1,7 @@
 //
 // _RevCPU_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -266,7 +266,7 @@ private:
   uint8_t PrivTag{};  ///< RevCPU: private tag locator
   //  uint32_t LToken{};   ///< RevCPU: token identifier for PAN Test
 
-  int address{ -1 };  ///< RevCPU: local network address
+  int64_t address{ -1 };  ///< RevCPU: local network address
 
   uint32_t fault_width{};  ///< RevCPU: the width (in bits) for target faults
   // int64_t  fault_range{};  ///< RevCPU: the range of cycles to inject the fault

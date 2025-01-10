@@ -1,7 +1,7 @@
 //
 // _RevOpts_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -12,31 +12,8 @@
 
 namespace SST::RevCPU {
 
-RevOpts::RevOpts( uint32_t NumCores, uint32_t NumHarts, const int Verbosity )
-  : numCores( NumCores ), numHarts( NumHarts ), verbosity( Verbosity ) {
-
-  std::pair<uint32_t, uint32_t> InitialPair;
-  InitialPair.first  = 0;
-  InitialPair.second = 10;
-
-  // init all the standard options
-  // -- startAddr = 0x00000000
-  // -- machine = "G" aka, "IMAFD"
-  // -- pipeLine = 5
-  // -- table = internal
-  // -- memCosts[core] = 0:10
-  // -- prefetch depth = 16
-  for( uint32_t i = 0; i < numCores; i++ ) {
-    startAddr.insert( std::pair<uint32_t, uint64_t>( i, 0 ) );
-    machine.insert( std::pair<uint32_t, std::string>( i, "G" ) );
-    table.insert( std::pair<uint32_t, std::string>( i, "_REV_INTERNAL_" ) );
-    memCosts.push_back( InitialPair );
-    prefetchDepth.insert( std::pair<uint32_t, uint32_t>( i, 16 ) );
-  }
-}
-
 void RevOpts::SetArgs( const SST::Params& params ) {
-  static constexpr char delim[] = " \t\n";
+  static constexpr char delim[] = " \t\v\n\r\f";
 
   // If the "args" param does not start with a left bracket, split it up at whitespace
   // Otherwise interpet it as an array
@@ -49,226 +26,116 @@ void RevOpts::SetArgs( const SST::Params& params ) {
   }
 }
 
-bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ) {
+template<typename MAP>
+bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, MAP& map ) {
   std::vector<std::string> vstr;
-  for( uint32_t i = 0; i < Depths.size(); i++ ) {
-    std::string s = Depths[i];
+
+  for( auto& s : Opts ) {
     splitStr( s, ":", vstr );
     if( vstr.size() != 2 )
       return false;
 
-    uint32_t Core = std::stoul( vstr[0], nullptr, 0 );
-    if( Core > numCores )
+    auto Core = uint32_t( std::stoull( vstr[0], nullptr, 0 ) );
+    if( Core >= numCores )
       return false;
 
-    std::string::size_type sz          = 0;
-    uint32_t               Depth       = std::stoul( vstr[1], &sz, 0 );
+    // Store as cast integer if target is integer; otherwise store as string
+    auto parse = [&]( auto val ) {
+      if constexpr( std::is_integral_v<decltype( val )> ) {
+        map[Core] = decltype( val )( std::stoull( vstr[1], nullptr, 0 ) );
+      } else if constexpr( is_vector<MAP>::value ) {
+        map[Core] = make_dependent<decltype( val )>( std::move( vstr[1] ) );
+      } else {
+        map.insert_or_assign( Core, make_dependent<decltype( val )>( std::move( vstr[1] ) ) );
+      }
+    };
 
-    prefetchDepth.find( Core )->second = Depth;
-    vstr.clear();
+    if constexpr( is_vector<MAP>::value ) {
+      parse( typename MAP::value_type{} );
+    } else {
+      parse( typename MAP::mapped_type{} );
+    }
   }
+
   return true;
 }
 
+template<typename MAP>
+bool RevOpts::InitPropertyMapCores( const std::vector<std::string>& Opts, MAP& map ) {
+  // check to see if we expand into multiple cores
+  if( Opts.size() == 1 ) {
+    std::vector<std::string> vstr;
+
+    splitStr( Opts[0], ":", vstr );
+    if( vstr.size() != 2 )
+      return false;
+
+    if( vstr[0] == "CORES" ) {
+
+      // set all cores to the value, stored as cast integer or as string
+      auto parse = [&]( auto val ) {
+        if constexpr( std::is_integral_v<decltype( val )> ) {
+          auto Val = decltype( val )( std::stoull( vstr[1], nullptr, 0 ) );
+          for( size_t i = 0; i < numCores; i++ )
+            map[i] = Val;
+        } else {
+          for( size_t i = 0; i < numCores; i++ )
+            map[i] = make_dependent<decltype( val )>( vstr[1] );
+        }
+      };
+
+      if constexpr( is_vector<MAP>::value ) {
+        parse( typename MAP::value_type{} );
+      } else {
+        parse( typename MAP::mapped_type{} );
+      }
+
+      return true;
+    }
+  }
+  return InitPropertyMap( Opts, map );
+}
+
+/// RevOpts: initialize the set of starting addresses
 bool RevOpts::InitStartAddrs( const std::vector<std::string>& StartAddrs ) {
-  std::vector<std::string> vstr;
-
-  // check to see if we expand into multiple cores
-  if( StartAddrs.size() == 1 ) {
-    std::string s = StartAddrs[0];
-    splitStr( s, ":", vstr );
-    if( vstr.size() != 2 )
-      return false;
-
-    if( vstr[0] == "CORES" ) {
-      // set all cores to the target machine model
-      std::string::size_type sz   = 0;
-      uint64_t               Addr = std::stoull( vstr[1], &sz, 0 );
-      for( uint32_t i = 0; i < numCores; i++ ) {
-        startAddr.find( i )->second = Addr;
-      }
-      return true;
-    }
-  }
-
-  for( uint32_t i = 0; i < StartAddrs.size(); i++ ) {
-    std::string s = StartAddrs[i];
-    splitStr( s, ":", vstr );
-    if( vstr.size() != 2 )
-      return false;
-
-    uint32_t Core = std::stoul( vstr[0], nullptr, 0 );
-    if( Core > numCores )
-      return false;
-
-    std::string::size_type sz      = 0;
-    uint64_t               Addr    = std::stoull( vstr[1], &sz, 0 );
-
-    startAddr.find( Core )->second = Addr;
-    vstr.clear();
-  }
-  return true;
+  return InitPropertyMapCores( StartAddrs, startAddr );
 }
 
+/// RevOpts: initialize the set of potential starting symbols
 bool RevOpts::InitStartSymbols( const std::vector<std::string>& StartSymbols ) {
-  std::vector<std::string> vstr;
-  for( uint32_t i = 0; i < StartSymbols.size(); i++ ) {
-    std::string s = StartSymbols[i];
-    splitStr( s, ":", vstr );
-    if( vstr.size() != 2 )
-      return false;
-
-    uint32_t Core = std::stoul( vstr[0], nullptr, 0 );
-    if( Core > numCores )
-      return false;
-
-    startSym.insert( std::pair<uint32_t, std::string>( Core, vstr[1] ) );
-    vstr.clear();
-  }
-  return true;
+  return InitPropertyMap( StartSymbols, startSym );
 }
 
+/// RevOpts: initialize the set of machine models
 bool RevOpts::InitMachineModels( const std::vector<std::string>& Machines ) {
-  std::vector<std::string> vstr;
-
-  // check to see if we expand into multiple cores
-  if( Machines.size() == 1 ) {
-    std::string s = Machines[0];
-    splitStr( s, ":", vstr );
-    if( vstr.size() != 2 )
-      return false;
-
-    if( vstr[0] == "CORES" ) {
-      // set all cores to the target machine model
-      for( uint32_t i = 0; i < numCores; i++ ) {
-        machine.at( i ) = vstr[1];
-      }
-      return true;
-    }
-  }
-
-  // parse individual core configs
-  for( uint32_t i = 0; i < Machines.size(); i++ ) {
-    std::string s = Machines[i];
-    splitStr( s, ":", vstr );
-    if( vstr.size() != 2 )
-      return false;
-
-    uint32_t Core = std::stoul( vstr[0], nullptr, 0 );
-    if( Core > numCores )
-      return false;
-
-    machine.at( Core ) = vstr[1];
-    vstr.clear();
-  }
-  return true;
+  return InitPropertyMapCores( Machines, machine );
 }
 
+/// RevOpts: initalize the set of instruction tables
 bool RevOpts::InitInstTables( const std::vector<std::string>& InstTables ) {
-  std::vector<std::string> vstr;
-  for( uint32_t i = 0; i < InstTables.size(); i++ ) {
-    std::string s = InstTables[i];
-    splitStr( s, ":", vstr );
-    if( vstr.size() != 2 )
-      return false;
-
-    uint32_t Core = std::stoul( vstr[0], nullptr, 0 );
-    if( Core > numCores )
-      return false;
-
-    table.at( Core ) = vstr[1];
-    vstr.clear();
-  }
-  return true;
+  return InitPropertyMap( InstTables, table );
 }
 
+/// RevOpts: initialize the prefetch depths
+bool RevOpts::InitPrefetchDepth( const std::vector<std::string>& Depths ) {
+  return InitPropertyMap( Depths, prefetchDepth );
+}
+
+/// RevOpts: initialize the memory latency cost tables
 bool RevOpts::InitMemCosts( const std::vector<std::string>& MemCosts ) {
   std::vector<std::string> vstr;
-
-  for( uint32_t i = 0; i < MemCosts.size(); i++ ) {
-    std::string s = MemCosts[i];
+  for( auto& s : MemCosts ) {
     splitStr( s, ":", vstr );
     if( vstr.size() != 3 )
       return false;
-
-    uint32_t Core         = std::stoul( vstr[0], nullptr, 0 );
-    uint32_t Min          = std::stoul( vstr[1], nullptr, 0 );
-    uint32_t Max          = std::stoul( vstr[2], nullptr, 0 );
-    memCosts[Core].first  = Min;
-    memCosts[Core].second = Max;
-    if( ( Min == 0 ) || ( Max == 0 ) ) {
+    auto Core = std::stoull( vstr[0], nullptr, 0 );
+    auto Min  = decltype( memCosts[Core].first )( std::stoull( vstr[1], nullptr, 0 ) );
+    auto Max  = decltype( memCosts[Core].second )( std::stoull( vstr[2], nullptr, 0 ) );
+    if( Core >= numCores || !Min || !Max )
       return false;
-    }
-    vstr.clear();
+    memCosts[Core] = std::pair( Min, Max );
   }
-
   return true;
 }
-
-bool RevOpts::GetPrefetchDepth( uint32_t Core, uint32_t& Depth ) {
-  if( Core > numCores )
-    return false;
-
-  if( prefetchDepth.find( Core ) == prefetchDepth.end() )
-    return false;
-
-  Depth = prefetchDepth.at( Core );
-  return true;
-}
-
-bool RevOpts::GetStartAddr( uint32_t Core, uint64_t& StartAddr ) {
-  if( Core > numCores )
-    return false;
-
-  if( startAddr.find( Core ) == startAddr.end() )
-    return false;
-
-  StartAddr = startAddr.at( Core );
-  return true;
-}
-
-bool RevOpts::GetStartSymbol( uint32_t Core, std::string& Symbol ) {
-  if( Core > numCores )
-    return false;
-
-  if( startSym.find( Core ) == startSym.end() )
-    return false;
-
-  Symbol = startSym.at( Core );
-  return true;
-}
-
-bool RevOpts::GetMachineModel( uint32_t Core, std::string& MachModel ) {
-  if( Core > numCores )
-    return false;
-
-  MachModel = machine.at( Core );
-  return true;
-}
-
-bool RevOpts::GetInstTable( uint32_t Core, std::string& Table ) {
-  if( Core > numCores )
-    return false;
-
-  Table = table.at( Core );
-  return true;
-}
-
-bool RevOpts::GetMemCost( uint32_t Core, uint32_t& Min, uint32_t& Max ) {
-  if( Core > numCores )
-    return false;
-
-  Min = memCosts[Core].first;
-  Max = memCosts[Core].second;
-
-  return true;
-}
-
-// bool RevOpts::GetMemDumpRanges() {
-
-// return true;
-// }
 
 }  // namespace SST::RevCPU
-
-// EOF

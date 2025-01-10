@@ -1,7 +1,7 @@
 //
 // _RevHart_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -56,7 +56,7 @@ public:
   const EcallState& GetEcallState() const { return Ecall; }
 
   ///< RevHart: Get Hart's ID
-  uint16_t GetID() const { return ID; }
+  uint32_t GetID() const { return ID; }
 
   ///< RevHart: Returns the ID of the assigned thread
   uint32_t GetAssignedThreadID() const { return Thread ? Thread->GetID() : _INVALID_TID_; }

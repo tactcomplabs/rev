@@ -1,7 +1,7 @@
 //
 // _Rev_Common_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -44,7 +44,7 @@ constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_enum_v<ENUM>, INT>
   return static_cast<INT>( e );
 }
 
-/// Allow non-narrowing int->int cast with enum_int_cast
+/// Allow non-narrowing integer->integer cast with safe_static_cast
 template<typename INT, typename ENUM, typename = decltype( INT{ std::declval<ENUM>() } )>
 constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_integral_v<ENUM>, INT> safe_static_cast( ENUM e ) {
   return static_cast<INT>( e );
@@ -62,7 +62,7 @@ constexpr T&& make_dependent( T&& x ) {
 template<typename T>
 constexpr auto ZeroExt( T val, int bits ) {
   using UT = std::make_unsigned_t<T>;
-  return UT( val & ~( UT( ~UT{} ) << bits ) );
+  return UT( UT( val ) & UT( ~( UT( ~UT{} ) << bits ) ) );
 }
 
 /// Sign-extend value of bits size

@@ -1,7 +1,7 @@
 //
 // _RevCSR_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -464,29 +464,29 @@ struct RevCSR : RevZicntr {
   };
 
   ///< RevCSR: Register a custom getter for a particular CSR register
-  void SetCSRGetter( uint16_t csr, std::function<uint64_t( uint16_t )> handler ) {
+  void SetCSRGetter( uint32_t csr, std::function<uint64_t( uint32_t )> handler ) {
     handler ? (void) Getter.insert_or_assign( csr, std::move( handler ) ) : (void) Getter.erase( csr );
   }
 
   ///< RevCSR: Register a custom setter for a particular CSR register
-  void SetCSRSetter( uint16_t csr, std::function<bool( uint16_t, uint64_t )> handler ) {
+  void SetCSRSetter( uint32_t csr, std::function<bool( uint32_t, uint64_t )> handler ) {
     handler ? (void) Setter.insert_or_assign( csr, std::move( handler ) ) : (void) Setter.erase( csr );
   }
 
   ///< RevCSR: Get the custom getter for a particular CSR register
   // If no custom getter exists for this RevCSR, look for one in the owning RevCore
-  template<typename CSR>
-  auto GetCSRGetter( CSR csr ) const {
+  template<typename T = void>
+  auto GetCSRGetter( uint32_t csr ) const {
     auto it = Getter.find( csr );
-    return it != Getter.end() && it->second ? it->second : make_dependent<CSR>( GetCore() )->GetCSRGetter( csr );
+    return it != Getter.end() && it->second ? it->second : make_dependent<T>( GetCore() )->GetCSRGetter( csr );
   }
 
   ///< RevCSR: Get the custom setter for a particular CSR register
   // If no custom setter exists for this RevCSR, look for one in the owning RevCore
-  template<typename CSR>
-  auto GetCSRSetter( CSR csr ) {
+  template<typename T = void>
+  auto GetCSRSetter( uint32_t csr ) {
     auto it = Setter.find( csr );
-    return it != Setter.end() && it->second ? it->second : make_dependent<CSR>( GetCore() )->GetCSRSetter( csr );
+    return it != Setter.end() && it->second ? it->second : make_dependent<T>( GetCore() )->GetCSRSetter( csr );
   }
 
   /// Get the Floating-Point Rounding Mode
@@ -497,7 +497,10 @@ struct RevCSR : RevZicntr {
 
   /// Get a CSR register
   template<typename XLEN>
-  XLEN GetCSR( uint16_t csr ) const {
+  XLEN GetCSR( uint32_t csr ) const {
+    // Check for valid CSR register
+    if( csr >= 0x1000 )
+      fatal( "Invalid CSR register at PC = 0x%" PRIx64 "\n" );
 
     // If a custom Getter exists, use it
     auto getter = GetCSRGetter( make_dependent<XLEN>( csr ) );
@@ -507,9 +510,9 @@ struct RevCSR : RevZicntr {
     // clang-format off
     switch( csr ) {
       // Floating Point flags
-      case fflags:   return BitExtract<0, 5, XLEN>( CSR[fcsr] );
-      case frm:      return BitExtract<5, 3, XLEN>( CSR[fcsr] );
-      case fcsr:     return BitExtract<0, 8, XLEN>( CSR[fcsr] );
+      case fflags:   return BitExtract<0, 5>( XLEN( CSR[fcsr] ) );
+      case frm:      return BitExtract<5, 3>( XLEN( CSR[fcsr] ) );
+      case fcsr:     return BitExtract<0, 8>( XLEN( CSR[fcsr] ) );
 
       // Performance Counters
       case cycle:    return GetPerfCounter<XLEN, Half::Lo, rdcycle  >();
@@ -527,7 +530,10 @@ struct RevCSR : RevZicntr {
 
   /// Set a CSR register
   template<typename XLEN>
-  bool SetCSR( uint16_t csr, XLEN val ) {
+  bool SetCSR( uint32_t csr, XLEN val ) {
+    // Check for valid CSR register
+    if( csr >= 0x1000 )
+      fatal( "Invalid CSR register at PC = 0x%" PRIx64 "\n" );
 
     // Read-only CSRs cannot be written to
     if( csr >= 0xc00 && csr < 0xe00 )
@@ -554,8 +560,8 @@ struct RevCSR : RevZicntr {
 
 private:
   std::array<uint64_t, CSR_LIMIT>                                         CSR{};     ///< RegCSR: CSR registers
-  std::unordered_map<uint16_t, std::function<uint64_t( uint16_t )>>       Getter{};  ///< RevCSR: CSR Getters
-  std::unordered_map<uint16_t, std::function<bool( uint16_t, uint64_t )>> Setter{};  ///< RevCSR: CSR Setters
+  std::unordered_map<uint32_t, std::function<uint64_t( uint32_t )>>       Getter{};  ///< RevCSR: CSR Getters
+  std::unordered_map<uint32_t, std::function<bool( uint32_t, uint64_t )>> Setter{};  ///< RevCSR: CSR Setters
 
 };  // class RevCSR
 

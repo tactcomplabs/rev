@@ -1,7 +1,7 @@
 //
 // _RevInstHelpers_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -425,7 +425,7 @@ inline auto negate( T x ) {
 // RISC-V requires INVALID exception when x * y is INVALID even when z = qNaN
 template<typename T>
 inline auto revFMA( T x, T y, T z ) {
-  if( ( !y && std::isinf( x ) ) || ( !x && std::isinf( y ) ) ) {
+  if( ( y == 0 && std::isinf( x ) ) || ( x == 0 && std::isinf( y ) ) ) {
     feraiseexcept( FE_INVALID );
   }
   return std::fma( x, y, z );

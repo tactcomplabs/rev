@@ -1,7 +1,7 @@
 //
 // _RevLoader_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -47,7 +47,7 @@ bool RevLoader::IsRVBig( const Elf64_Ehdr eh64 ) {
 }
 
 // breaks the write into cache line chunks
-bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, const void* Data ) {
+bool RevLoader::WriteCacheLine( uint64_t Addr, uint32_t Len, const void* Data ) {
   if( Len == 0 ) {
     // nothing to do here, move along
     return true;
@@ -82,7 +82,7 @@ bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, const void* Data ) {
   }
 
   // write the first cache line
-  size_t   TmpSize = BaseCacheAddr + lineSize - Addr;
+  uint32_t TmpSize = uint32_t( BaseCacheAddr + lineSize - Addr );
   uint64_t TmpData = uint64_t( Data );
   uint64_t TmpAddr = Addr;
   if( !mem->WriteMem( 0, TmpAddr, TmpSize, reinterpret_cast<void*>( TmpData ) ) ) {
@@ -100,7 +100,7 @@ bool RevLoader::WriteCacheLine( uint64_t Addr, size_t Len, const void* Data ) {
       TmpSize = lineSize;
     } else {
       // this is probably the final write operation
-      TmpSize = ( Len - Total );
+      TmpSize = uint32_t( Len - Total );
     }
 
     if( !mem->WriteMem( 0, TmpAddr, TmpSize, reinterpret_cast<void*>( TmpData ) ) ) {
@@ -210,8 +210,8 @@ bool RevLoader::LoadElf32( char* membuf, size_t sz ) {
   elfinfo.phdr_size = eh->e_phnum * sizeof( Elf32_Phdr );
 
   // set the first stack pointer
-  uint32_t sp       = mem->GetStackTop() - (uint32_t) ( elfinfo.phdr_size );
-  WriteCacheLine( sp, elfinfo.phdr_size, ph );
+  uint64_t sp       = mem->GetStackTop() - elfinfo.phdr_size;
+  WriteCacheLine( sp, uint32_t( elfinfo.phdr_size ), ph );
   mem->SetStackTop( sp );
 
   // iterate over the program headers
@@ -239,8 +239,8 @@ bool RevLoader::LoadElf32( char* membuf, size_t sz ) {
   if( sz < sh[eh->e_shstrndx].sh_offset + sh[eh->e_shstrndx].sh_size )
     output->fatal( CALL_INFO, -1, "Error: RV32 Elf is unrecognizable\n" );
 
-  uint32_t strtabidx = 0;
-  uint32_t symtabidx = 0;
+  uint64_t strtabidx = 0;
+  uint64_t symtabidx = 0;
 
   // Iterate over every section header
   for( size_t i = 0; i < eh->e_shnum; i++ ) {
@@ -365,7 +365,7 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
 
   // set the first stack pointer
   uint64_t sp       = mem->GetStackTop() - elfinfo.phdr_size;
-  WriteCacheLine( sp, elfinfo.phdr_size, ph );
+  WriteCacheLine( sp, uint32_t( elfinfo.phdr_size ), ph );
   mem->SetStackTop( sp );
 
   // iterate over the program headers
@@ -376,10 +376,10 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
         if( sz < ph[i].p_offset + ph[i].p_filesz ) {
           output->fatal( CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
         }
-        WriteCacheLine( ph[i].p_paddr, ph[i].p_filesz, (uint8_t*) ( membuf + ph[i].p_offset ) );
+        WriteCacheLine( ph[i].p_paddr, uint32_t( ph[i].p_filesz ), (uint8_t*) ( membuf + ph[i].p_offset ) );
       }
       std::vector<uint8_t> zeros( ph[i].p_memsz - ph[i].p_filesz );
-      WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz, ph[i].p_memsz - ph[i].p_filesz, &zeros[0] );
+      WriteCacheLine( ph[i].p_paddr + ph[i].p_filesz, uint32_t( ph[i].p_memsz - ph[i].p_filesz ), &zeros[0] );
     }
   }
 
@@ -393,8 +393,8 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
   if( sz < sh[eh->e_shstrndx].sh_offset + sh[eh->e_shstrndx].sh_size )
     output->fatal( CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
 
-  uint32_t strtabidx = 0;
-  uint32_t symtabidx = 0;
+  uint64_t strtabidx = 0;
+  uint64_t symtabidx = 0;
 
   // Iterate over every section header
   for( size_t i = 0; i < eh->e_shnum; i++ ) {
@@ -421,7 +421,7 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
     // Iterate over every symbol in the symbol table
     for( size_t i = 0; i < sh[symtabidx].sh_size / sizeof( Elf64_Sym ); i++ ) {
       // Calculate the maximum length of the symbol
-      uint32_t maxlen = sh[strtabidx].sh_size - sym[i].st_name;
+      uint64_t maxlen = sh[strtabidx].sh_size - sym[i].st_name;
       if( sym[i].st_name >= sh[strtabidx].sh_size )
         output->fatal( CALL_INFO, -1, "Error: RV64 Elf is unrecognizable\n" );
       if( strnlen( strtab + sym[i].st_name, maxlen ) >= maxlen )
@@ -484,13 +484,13 @@ bool RevLoader::LoadProgramArgs( const std::string& exe, const std::vector<std::
 
   // Allocate sizeof(XLEN) bytes for each of the argv[] pointers
   // ArgvBase + ArgvOffset is the address where each of the argv strings will start
-  XLEN ArgvOffset   = sizeof( XLEN ) * ( args.size() + 1 );
+  XLEN ArgvOffset   = XLEN( sizeof( XLEN ) * ( args.size() + 1 ) );
 
   // Compute the total size, rounding each string up to a multiple of sizeof( XLEN )
   // The terminating 0 byte is included, so arg.size() is rounded up to next multiple
   XLEN ArgArraySize = ArgvOffset;
   for( auto& arg : args )
-    ArgArraySize += ( arg.size() | ( sizeof( XLEN ) - 1 ) ) + 1;
+    ArgArraySize += XLEN( arg.size() | ( sizeof( XLEN ) - 1 ) ) + 1;
 
   // Round ArgArraySize up to a multiple of 16 bytes
   ArgArraySize            = ( ( ArgArraySize - 1 ) | XLEN{ 15 } ) + 1;
@@ -521,10 +521,10 @@ bool RevLoader::LoadProgramArgs( const std::string& exe, const std::vector<std::
     ArgArray += sizeof( XLEN );
 
     // Write the contents of argv[i] string into &argv[i][0]
-    WriteCacheLine( Target, Len, arg.c_str() );
+    WriteCacheLine( Target, uint32_t( Len ), arg.c_str() );
 
     // Advance ArgvOffset the string length rounded up to a multiple of sizeof( XLEN )
-    ArgvOffset += ( ( Len - 1 ) | ( sizeof( XLEN ) - 1 ) ) + 1;
+    ArgvOffset += XLEN( ( Len - 1 ) | ( sizeof( XLEN ) - 1 ) ) + 1;
   };
 
   // argv[0] == name of executable
