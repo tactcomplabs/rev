@@ -1,7 +1,7 @@
 //
 // _RevTracer_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -275,7 +275,7 @@ private:
   /// RevTracer: determine if this buffer should be rendered
   bool OutputOK();
   /// RevTracer: format register address for rendering
-  std::string fmt_reg( uint8_t r );
+  std::string fmt_reg( uint64_t r );
   /// RevTracer: Format data associated with memory access
   std::string fmt_data( size_t len, uint64_t data );
   /// RevTracer: Generate string from captured state

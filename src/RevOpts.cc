@@ -1,7 +1,7 @@
 //
 // _RevOpts_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -35,7 +35,7 @@ bool RevOpts::InitPropertyMap( const std::vector<std::string>& Opts, MAP& map ) 
     if( vstr.size() != 2 )
       return false;
 
-    auto Core = std::stoull( vstr[0], nullptr, 0 );
+    auto Core = uint32_t( std::stoull( vstr[0], nullptr, 0 ) );
     if( Core >= numCores )
       return false;
 

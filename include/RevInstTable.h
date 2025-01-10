@@ -1,7 +1,7 @@
 //
 // _RevInstTable_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -89,11 +89,11 @@ public:
   uint8_t  funct4    = 0;            ///< RevInst: compressed funct4 value
   uint8_t  funct6    = 0;            ///< RevInst: compressed funct6 value
   uint8_t  funct2or7 = 0;            ///< RevInst: uncompressed funct2 or funct7 value
-  uint64_t rd        = ~uint64_t{};  ///< RevInst: rd value
-  uint64_t rs1       = ~uint64_t{};  ///< RevInst: rs1 value
-  uint64_t rs2       = ~uint64_t{};  ///< RevInst: rs2 value
-  uint64_t rs3       = ~uint64_t{};  ///< RevInst: rs3 value
-  uint64_t imm       = 0;            ///< RevInst: immediate value
+  uint32_t rd        = ~uint32_t{};  ///< RevInst: rd value
+  uint32_t rs1       = ~uint32_t{};  ///< RevInst: rs1 value
+  uint32_t rs2       = ~uint32_t{};  ///< RevInst: rs2 value
+  uint32_t rs3       = ~uint32_t{};  ///< RevInst: rs3 value
+  uint32_t imm       = 0;            ///< RevInst: immediate value
   bool     raisefpe  = 0;            ///< RevInst: raises FP exceptions
   FRMode   rm{ FRMode::None };       ///< RevInst: floating point rounding mode
   bool     aq           = false;     ///< RevInst: aqr field for atomic instructions
@@ -110,11 +110,12 @@ public:
   explicit RevInst()    = default;  // prevent aggregate initialization
 
   ///< RevInst: Sign-extended immediate value
-  constexpr int64_t ImmSignExt( int bits ) const { return SignExt( imm, bits ); }
+  constexpr auto ImmSignExt( int bits ) const { return SignExt( imm, bits ); }
 };  // RevInst
 
 /// CRegIdx: Maps the compressed index to normal index
-constexpr auto CRegIdx( uint32_t x ) {
+template<typename T>
+constexpr auto CRegIdx( T x ) {
   return x + 8;
 }
 

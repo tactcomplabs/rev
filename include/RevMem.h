@@ -1,7 +1,7 @@
 //
 // _RevMem_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -167,10 +167,10 @@ public:
   // ---- Base Memory Interfaces
   // ----------------------------------------------------
   /// RevMem: write to the target memory location with the target flags
-  bool WriteMem( uint32_t Hart, uint64_t Addr, size_t Len, const void* Data, RevFlag flags = RevFlag::F_NONE );
+  bool WriteMem( uint32_t Hart, uint64_t Addr, uint32_t Len, const void* Data, RevFlag flags = RevFlag::F_NONE );
 
   /// RevMem: read data from the target memory location
-  bool ReadMem( uint32_t Hart, uint64_t Addr, size_t Len, void* Target, const MemReq& req, RevFlag flags = RevFlag::F_NONE );
+  bool ReadMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Target, const MemReq& req, RevFlag flags = RevFlag::F_NONE );
 
   /// RevMem: flush a cache line
   bool FlushLine( uint32_t Hart, uint64_t Addr );
@@ -194,12 +194,12 @@ public:
   void LR( uint32_t hart, uint64_t addr, size_t len, void* target, const MemReq& req, RevFlag flags );
 
   ///  RevMem: STORE CONDITIONAL memory interface
-  bool SC( uint32_t Hart, uint64_t addr, size_t len, void* data, RevFlag flags );
+  bool SC( uint32_t Hart, uint64_t addr, uint32_t len, void* data, RevFlag flags );
 
   /// RevMem: template AMO memory interface
   template<typename T>
   bool AMOVal( uint32_t Hart, uint64_t Addr, T* Data, T* Target, const MemReq& req, RevFlag flags ) {
-    return AMOMem( Hart, Addr, sizeof( T ), Data, Target, req, flags );
+    return AMOMem( Hart, Addr, uint32_t{ sizeof( T ) }, Data, Target, req, flags );
   }
 
   // ----------------------------------------------------
@@ -228,7 +228,7 @@ public:
   // ---- Atomic/Future/LRSC Interfaces
   // ----------------------------------------------------
   /// RevMem: Initiated an AMO request
-  bool AMOMem( uint32_t Hart, uint64_t Addr, size_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags );
+  bool AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags );
 
   /// RevMem: Invalidate Matching LR reservations
   bool InvalidateLRReservations( uint32_t hart, uint64_t addr, size_t len );

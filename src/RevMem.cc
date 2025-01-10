@@ -1,7 +1,7 @@
 //
 // _RevMem_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -54,7 +54,7 @@ void RevMem::HandleMemFault( uint32_t width ) {
   uint64_t rval    = RevRand( 0, ( uint32_t{ 1 } << width ) - 1 );
 
   // find an address to fault
-  uint32_t  NBytes = RevRand( 0, memSize - 8 );
+  uint64_t  NBytes = RevRand( 0, memSize - 8 );
   uint64_t* Addr   = (uint64_t*) ( &physMem[0] + NBytes );
 
   // write the fault (read-modify-write)
@@ -99,7 +99,7 @@ void RevMem::LR( uint32_t hart, uint64_t addr, size_t len, void* target, const M
   unsigned char* BaseMem  = &physMem[physAddr];
 
   if( ctrl ) {
-    ctrl->sendREADLOCKRequest( hart, addr, reinterpret_cast<uint64_t>( BaseMem ), len, target, req, flags );
+    ctrl->sendREADLOCKRequest( hart, addr, uint64_t( BaseMem ), uint32_t( len ), target, req, flags );
   } else {
     memcpy( target, BaseMem, len );
     RevHandleFlagResp( target, len, flags );
@@ -124,7 +124,7 @@ bool RevMem::InvalidateLRReservations( uint32_t hart, uint64_t addr, size_t len 
   return ret;
 }
 
-bool RevMem::SC( uint32_t hart, uint64_t addr, size_t len, void* data, RevFlag flags ) {
+bool RevMem::SC( uint32_t hart, uint64_t addr, uint32_t len, void* data, RevFlag flags ) {
   // Find the reservation for this hart (there can only be one active reservation per hart)
   auto it = LRSC.find( hart );
   if( it != LRSC.end() ) {
@@ -490,7 +490,7 @@ bool RevMem::FenceMem( uint32_t Hart ) {
   return true;  // base RevMem support does nothing here
 }
 
-bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, size_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags ) {
+bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags ) {
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -501,9 +501,7 @@ bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, size_t Len, void* Data, void*
     uint64_t       physAddr = CalcPhysAddr( pageNum, Addr );
     unsigned char* BaseMem  = &physMem[physAddr];
 
-    ctrl->sendAMORequest(
-      Hart, Addr, reinterpret_cast<uint64_t>( BaseMem ), Len, static_cast<unsigned char*>( Data ), Target, req, flags
-    );
+    ctrl->sendAMORequest( Hart, Addr, uint64_t( BaseMem ), Len, static_cast<unsigned char*>( Data ), Target, req, flags );
   } else {
     // process the request locally
     union {
@@ -542,7 +540,7 @@ bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, size_t Len, void* Data, void*
   return true;
 }
 
-bool RevMem::WriteMem( uint32_t Hart, uint64_t Addr, size_t Len, const void* Data, RevFlag flags ) {
+bool RevMem::WriteMem( uint32_t Hart, uint64_t Addr, uint32_t Len, const void* Data, RevFlag flags ) {
 #ifdef _REV_DEBUG_
   std::cout << "Writing " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -595,7 +593,7 @@ std::tuple<uint64_t, uint64_t, uint64_t> RevMem::AdjPageAddr( uint64_t Addr, uin
   return { remainder, physAddr, adjPhysAddr };
 }
 
-bool RevMem::ReadMem( uint32_t Hart, uint64_t Addr, size_t Len, void* Target, const MemReq& req, RevFlag flags ) {
+bool RevMem::ReadMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Target, const MemReq& req, RevFlag flags ) {
 #ifdef _REV_DEBUG_
   std::cout << "NEW READMEM: Reading " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif

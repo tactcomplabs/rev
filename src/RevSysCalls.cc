@@ -248,7 +248,7 @@ EcallStatus RevCore::ECALL_getcwd() {
   auto BufAddr = RegFile->GetX<uint64_t>( RevReg::a0 );
   auto size    = RegFile->GetX<uint64_t>( RevReg::a1 );
   auto CWD     = std::filesystem::current_path();
-  mem->WriteMem( HartToExecID, BufAddr, size, CWD.c_str() );
+  mem->WriteMem( HartToExecID, BufAddr, uint32_t( size ), CWD.c_str() );
 
   // Returns null-terminated string in buf
   // (no need to set x10 since it's already got BufAddr)
@@ -725,10 +725,10 @@ EcallStatus RevCore::ECALL_read() {
   std::vector<char> TmpBuf( BufSize );
 
   // Do the read on the host
-  int rc = read( fd, &TmpBuf[0], BufSize );
+  auto rc = read( fd, &TmpBuf[0], BufSize );
 
   // Write that data to the buffer inside of Rev
-  mem->WriteMem( HartToExecID, BufAddr, BufSize, &TmpBuf[0] );
+  mem->WriteMem( HartToExecID, BufAddr, uint32_t( BufSize ), &TmpBuf[0] );
 
   RegFile->SetX( RevReg::a0, rc );
   return EcallStatus::SUCCESS;
@@ -754,7 +754,7 @@ EcallStatus RevCore::ECALL_write() {
 
   auto nleft = nbytes - EcallState.string.size();
   if( nleft == 0 && LSQueue->count( lsq_hash ) == 0 ) {
-    int rc = write( fd, EcallState.string.data(), EcallState.string.size() );
+    auto rc = write( fd, EcallState.string.data(), EcallState.string.size() );
     RegFile->SetX( RevReg::a0, rc );
     DependencyClear( HartToExecID, RevReg::a0, RevRegClass::RegGPR );
     return EcallStatus::SUCCESS;
@@ -1048,7 +1048,7 @@ EcallStatus RevCore::ECALL_exit() {
     HartToExecID,
     status
   );
-  exit( status );
+  exit( int( status ) );
   // return EcallStatus::SUCCESS;
 }
 
@@ -3190,11 +3190,11 @@ EcallStatus RevCore::ECALL_pthread_create() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pthread_create called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  uint64_t tidAddr              = RegFile->GetX<uint64_t>( RevReg::a0 );
+  uint64_t tidAddr     = RegFile->GetX<uint64_t>( RevReg::a0 );
   //uint64_t AttrPtr     = RegFile->GetX<uint64_t>(RevReg::a1);
-  uint64_t          NewThreadPC = RegFile->GetX<uint64_t>( RevReg::a2 );
-  uint64_t          ArgPtr      = RegFile->GetX<uint64_t>( RevReg::a3 );
-  unsigned long int NewTID      = GetNewThreadID();
+  uint64_t NewThreadPC = RegFile->GetX<uint64_t>( RevReg::a2 );
+  uint64_t ArgPtr      = RegFile->GetX<uint64_t>( RevReg::a3 );
+  uint32_t NewTID      = GetNewThreadID();
   CreateThread( NewTID, NewThreadPC, reinterpret_cast<void*>( ArgPtr ) );
 
   mem->WriteMem( HartToExecID, tidAddr, sizeof( NewTID ), &NewTID, RevFlag::F_NONE );
@@ -3214,7 +3214,7 @@ EcallStatus RevCore::ECALL_pthread_join() {
     // Set current thread to blocked
     std::unique_ptr<RevThread> BlockedThread = PopThreadFromHart( HartToExecID );
     BlockedThread->SetState( ThreadState::BLOCKED );
-    BlockedThread->SetWaitingToJoinTID( RegFile->GetX<uint64_t>( RevReg::a0 ) );
+    BlockedThread->SetWaitingToJoinTID( RegFile->GetX<uint32_t>( RevReg::a0 ) );
 
     // Signal to RevCPU this thread is has changed state
     AddThreadsThatChangedState( std::move( BlockedThread ) );

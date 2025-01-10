@@ -1,7 +1,7 @@
 //
 // _RevLoader_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -349,7 +349,7 @@ private:
   bool LoadElf64( char* MemBuf, size_t Size );
 
   ///< Breaks bulk writes into cache lines
-  bool WriteCacheLine( uint64_t Addr, size_t Len, const void* Data );
+  bool WriteCacheLine( uint64_t Addr, uint32_t Len, const void* Data );
 
   ///< RevLoader: Replaces first MemSegment (initialized to entire memory space) with the static memory
   void InitStaticMem();

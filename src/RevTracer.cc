@@ -149,11 +149,11 @@ bool RevTracer::OutputOK() {
   return outputEnabled || events.f.trc_ctl;
 }
 
-void RevTracer::regRead( size_t r, uint64_t v ) {
+void RevTracer::regRead( uint64_t r, uint64_t v ) {
   traceRecs.emplace_back( TraceRec_t( RegRead, r, v ) );
 }
 
-void RevTracer::regWrite( size_t r, uint64_t v ) {
+void RevTracer::regWrite( uint64_t r, uint64_t v ) {
   traceRecs.emplace_back( TraceRec_t( RegWrite, r, v ) );
 }
 
@@ -354,16 +354,16 @@ void RevTracer::InstTraceReset() {
   instHeader.clear();
 }
 
-std::string RevTracer::fmt_reg( uint8_t r ) {
+std::string RevTracer::fmt_reg( uint64_t r ) {
   std::stringstream s;
 #ifdef REV_USE_SPIKE
   if( r < 32 ) {
     s << xpr_name[r];  // defined in disasm.h
     return s.str();
   }
-  s << "?" << (uint32_t) r;
+  s << "?" << r;
 #else
-  s << "x" << std::dec << (uint16_t) r;  // Use SST::RevCPU::RevReg?
+  s << "x" << std::dec << r;  // Use SST::RevCPU::RevReg?
 #endif
   return s.str();
 }
@@ -374,9 +374,9 @@ std::string RevTracer::fmt_data( size_t len, uint64_t d ) {
     return "";
   s << "0x" << std::hex << std::setfill( '0' );
   if( len > sizeof( d ) )
-    s << std::setw( sizeof( d ) * 2 ) << d << "..+" << std::dec << len - sizeof( d );
+    s << std::setw( int( sizeof( d ) * 2 ) ) << d << "..+" << std::dec << len - sizeof( d );
   else {
-    s << std::setw( len * 2 ) << ( d & ~( ~uint64_t{} << len * 8 ) );
+    s << std::setw( int( len * 2 ) ) << ( d & ~( ~uint64_t{} << len * 8 ) );
   }
   return s.str();
 }

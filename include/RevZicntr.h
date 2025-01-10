@@ -1,7 +1,7 @@
 //
 // _RevZicntr_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -77,13 +77,13 @@ protected:
         fatal( "Illegal instruction at PC = 0x%" PRIx64 ": High half of Zicntr register not available on RV64\n" );
         return 0;
       } else {
-        return COUNTER( this );
+        return XLEN( COUNTER( this ) );
       }
     } else {
       if constexpr( HALF == Half::Hi ) {
-        return COUNTER( this ) >> 32;
+        return XLEN( COUNTER( this ) >> 32 );
       } else {
-        return COUNTER( this ) & 0xffffffff;
+        return XLEN( COUNTER( this ) & 0xffffffff );
       }
     }
   }
