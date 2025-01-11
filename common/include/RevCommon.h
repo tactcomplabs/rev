@@ -1,7 +1,7 @@
 //
 // _Rev_Common_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -11,6 +11,7 @@
 #ifndef __REV_COMMON__
 #define __REV_COMMON__
 
+#include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -23,51 +24,97 @@
 #endif
 
 #ifndef _REV_INVALID_HART_ID_
-#define _REV_INVALID_HART_ID_ (unsigned(~0))
+#define _REV_INVALID_HART_ID_ ( unsigned( ~0 ) )
 #endif
 
-#define _INVALID_ADDR_ (~uint64_t{0})
+#define _INVALID_ADDR_ ( ~uint64_t{ 0 } )
 
-#define _INVALID_TID_ (uint32_t{0})
+#define _INVALID_TID_  ( uint32_t{ 0 } )
 
-#define _MAX_HARTS_ 4096
+#define _MAX_HARTS_    4096
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
+
+// using float16 = _Float16;
+
+/// Safe non-narrowing cast of enum to integer type
+/// C++17 allows non-narrowing cast of integer to scoped enum, but not the reverse
+template<typename INT, typename ENUM, typename = decltype( INT{ std::declval<std::underlying_type_t<ENUM>>() } )>
+constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_enum_v<ENUM>, INT> safe_static_cast( ENUM e ) {
+  return static_cast<INT>( e );
+}
+
+/// Allow non-narrowing integer->integer cast with safe_static_cast
+template<typename INT, typename ENUM, typename = decltype( INT{ std::declval<ENUM>() } )>
+constexpr std::enable_if_t<std::is_integral_v<INT> && std::is_integral_v<ENUM>, INT> safe_static_cast( ENUM e ) {
+  return static_cast<INT>( e );
+}
+
+/// Make an expression dependent on arbitrary template type parameters.
+/// This has the effect of lazy evaluation of an expression until a template containing it is instantiated.
+/// It can be used to wrap an incomplete class type which will be completed by template instantiation time.
+template<typename..., typename T>
+constexpr T&& make_dependent( T&& x ) {
+  return std::forward<T>( x );
+}
 
 /// Zero-extend value of bits size
 template<typename T>
-constexpr auto ZeroExt(T val, size_t bits){
-  return static_cast<std::make_unsigned_t<T>>(val) & ~(~std::make_unsigned_t<T>{0} << bits);
+constexpr auto ZeroExt( T val, int bits ) {
+  using UT = std::make_unsigned_t<T>;
+  return UT( UT( val ) & UT( ~( UT( ~UT{} ) << bits ) ) );
 }
 
 /// Sign-extend value of bits size
 template<typename T>
-constexpr auto SignExt(T val, size_t bits){
-  auto signbit = std::make_unsigned_t<T>{1} << (bits-1);
-  return static_cast<std::make_signed_t<T>>((ZeroExt(val, bits) ^ signbit) - signbit);
+constexpr auto SignExt( T val, int bits ) {
+  auto signbit = std::make_unsigned_t<T>{ 1 } << ( bits - 1 );
+  return std::make_signed_t<T>( ( ZeroExt( val, bits ) ^ signbit ) - signbit );
 }
 
 /// Base-2 logarithm of integers
 template<typename T>
-constexpr int lg(T x){
-  static_assert(std::is_integral_v<T>);
-
+constexpr int lg( T x ) {
+  static_assert( std::is_integral_v<T> );
   // We select the __builtin_clz which takes integers no smaller than x
-  if constexpr(sizeof(x) <= sizeof(int)){
-    return x ? 8*sizeof(int)-1 - __builtin_clz(x) : -1;
-  }else if constexpr(sizeof(x) <= sizeof(long)){
-    return x ? 8*sizeof(long)-1 - __builtin_clzl(x) : -1;
-  }else{
-    return x ? 8*sizeof(long long)-1 - __builtin_clzll(x) : -1;
+  if constexpr( sizeof( x ) <= sizeof( int ) ) {
+    return x ? int{ 8 * sizeof( int ) - 1 } - __builtin_clz( x ) : INT_MIN;
+  } else if constexpr( sizeof( x ) <= sizeof( long ) ) {
+    return x ? int{ 8 * sizeof( long ) - 1 } - __builtin_clzl( x ) : INT_MIN;
+  } else {
+    return x ? int{ 8 * sizeof( long long ) - 1 } - __builtin_clzll( x ) : INT_MIN;
   }
 }
 
-enum class RevRegClass : uint8_t { ///< Rev CPU Register Classes
-  RegUNKNOWN  = 0,           ///< RevRegClass: Unknown register file
-  RegIMM      = 1,           ///< RevRegClass: Treat the reg class like an immediate: S-Format
-  RegGPR      = 2,           ///< RevRegClass: GPR reg file
-  RegCSR      = 3,           ///< RevRegClass: CSR reg file
-  RegFLOAT    = 4,           ///< RevRegClass: Float register file
+/// Bit extraction of (pos+width-1 : pos) into a signed or unsigned type
+template<int pos, int width, typename T>
+constexpr auto BitExtract( T x ) {
+  if constexpr( std::is_signed_v<T> )
+    return SignExt( x >> pos, width );
+  else
+    return ZeroExt( x >> pos, width );
+}
+
+/// Bit deposit of a value into (pos+width-1 : pos)
+template<int pos, int width, typename T, typename U>
+constexpr T& BitDeposit( T& x, U val ) {
+  auto mask = ~std::make_unsigned_t<T>( ( std::make_unsigned_t<T>( ~std::make_unsigned_t<T>{} ) << width ) << pos );
+  return x  = ( x & ~mask ) | ( std::make_unsigned_t<T>( val ) << pos & mask );
+}
+
+/// Bit shift of a value by a positive (left) or negative (right) shift amount
+template<typename T>
+constexpr auto BitShift( T x, int shift ) {
+  return shift <= 0 ? T( x >> -shift ) : T( std::make_unsigned_t<T>( x ) << shift );
+}
+
+enum class RevRegClass : uint8_t {  ///< Rev CPU Register Classes
+  RegUNKNOWN = 0,                   ///< RevRegClass: Unknown register file
+  RegIMM     = 1,                   ///< RevRegClass: Treat the reg class like an immediate: S-Format
+  RegGPR     = 2,                   ///< RevRegClass: GPR reg file
+  RegCSR     = 3,                   ///< RevRegClass: CSR reg file
+  RegFLOAT   = 4,                   ///< RevRegClass: Float register file
+  RegVEC     = 5,                   ///< RevRegClass: Vector register file
 };
 
 enum class MemOp : uint8_t {
@@ -83,59 +130,50 @@ enum class MemOp : uint8_t {
   MemOpAMO         = 9,
 };
 
-std::ostream& operator<<(std::ostream& os, MemOp op);
+std::ostream& operator<<( std::ostream& os, MemOp op );
 
 template<typename T>
-constexpr uint64_t LSQHash(T DestReg, RevRegClass RegType, unsigned Hart){
-  return static_cast<uint64_t>(RegType) << (16 + 8) | static_cast<uint64_t>(DestReg) << 16 | Hart;
+constexpr uint64_t LSQHash( T DestReg, RevRegClass RegType, unsigned Hart ) {
+  return static_cast<uint64_t>( RegType ) << ( 16 + 8 ) | static_cast<uint64_t>( DestReg ) << 16 | Hart;
 }
 
-struct MemReq{
-  MemReq() = default;
-  MemReq(const MemReq&) = default;
-  MemReq(MemReq&&) = default;
-  MemReq& operator=(const MemReq&) = default;
-  MemReq& operator=(MemReq&&) = default;
-  ~MemReq() = default;
+struct MemReq {
+  MemReq()                           = default;
+  MemReq( const MemReq& )            = default;
+  MemReq( MemReq&& )                 = default;
+  MemReq& operator=( const MemReq& ) = default;
+  MemReq& operator=( MemReq&& )      = default;
+  ~MemReq()                          = default;
 
   template<typename T>
-  MemReq(uint64_t Addr,
-         T DestReg,
-         RevRegClass RegType,
-         unsigned Hart,
-         MemOp ReqType,
-         bool isOutstanding,
-         std::function<void(const MemReq&)> MarkLoadCompleteFunc) :
-    Addr(Addr),
-    DestReg(uint16_t(DestReg)),
-    RegType(RegType),
-    Hart(Hart),
-    ReqType(ReqType),
-    isOutstanding(isOutstanding),
-    MarkLoadCompleteFunc(std::move(MarkLoadCompleteFunc)){}
+  MemReq(
+    uint64_t                             Addr,
+    T                                    DestReg,
+    RevRegClass                          RegType,
+    unsigned                             Hart,
+    MemOp                                ReqType,
+    bool                                 isOutstanding,
+    std::function<void( const MemReq& )> MarkLoadCompleteFunc
+  )
+    : Addr( Addr ), DestReg( uint16_t( DestReg ) ), RegType( RegType ), Hart( Hart ), ReqType( ReqType ),
+      isOutstanding( isOutstanding ), MarkLoadCompleteFunc( std::move( MarkLoadCompleteFunc ) ) {}
 
-  void MarkLoadComplete() const {
-    MarkLoadCompleteFunc(*this);
-  }
+  void MarkLoadComplete() const { MarkLoadCompleteFunc( *this ); }
 
-  auto LSQHash() const {
-    return SST::RevCPU::LSQHash(DestReg, RegType, Hart);
-  }
+  auto LSQHash() const { return SST::RevCPU::LSQHash( DestReg, RegType, Hart ); }
 
-  auto LSQHashPair() const {
-    return std::make_pair( LSQHash(), *this );
-  }
+  auto LSQHashPair() const { return std::make_pair( LSQHash(), *this ); }
 
-  uint64_t    Addr          = _INVALID_ADDR_;
-  uint16_t    DestReg       = 0;
-  RevRegClass RegType       = RevRegClass::RegUNKNOWN;
-  unsigned    Hart          = _REV_INVALID_HART_ID_;
-  MemOp       ReqType       = MemOp::MemOpCUSTOM;
-  bool        isOutstanding = false;
+  uint64_t    Addr                                          = _INVALID_ADDR_;
+  uint16_t    DestReg                                       = 0;
+  RevRegClass RegType                                       = RevRegClass::RegUNKNOWN;
+  unsigned    Hart                                          = _REV_INVALID_HART_ID_;
+  MemOp       ReqType                                       = MemOp::MemOpCUSTOM;
+  bool        isOutstanding                                 = false;
 
-  std::function<void(const MemReq&)> MarkLoadCompleteFunc = nullptr;
+  std::function<void( const MemReq& )> MarkLoadCompleteFunc = nullptr;
 
-};//struct MemReq
+};  //struct MemReq
 
 // Enum for tracking the state of a RevThread.
 // Ex. Possible flow of thread state:
@@ -162,7 +200,6 @@ enum class ThreadState {
   DONE,     // Thread has finished; deallocate resources.
 };
 
-
-}//namespace SST::RevCPU
+}  //namespace SST::RevCPU
 
 #endif

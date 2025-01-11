@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV32I
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -13,10 +13,10 @@
 
 #include <stdlib.h>
 
-int main(int argc, char **argv){
+int main( int argc, char** argv ) {
   int i = 9;
-  i = i + argc;
-  asm volatile("ADDIW a0, a0, 0");
-  asm volatile("ADDIW a0, a0, 0");
+  i     = i + argc;
+  asm volatile( "ADDIW a0, a0, 0" );
+  asm volatile( "ADDIW a0, a0, 0" );
   return i;
 }

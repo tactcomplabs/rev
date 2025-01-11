@@ -1,6 +1,7 @@
 // A minimalistic FFT library
 // Copyright (c) 2016-2022 Alexander Mukhin
 // SPDX-License-Identifier: MIT
+// clang-format off
 
 #ifndef MINFFT_H
 #define MINFFT_H

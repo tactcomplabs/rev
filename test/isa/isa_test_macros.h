@@ -1,4 +1,4 @@
-
+// clang-format off
 
 #ifndef __ISA_TEST_MACROS_H
 #define __ISA_TEST_MACROS_H

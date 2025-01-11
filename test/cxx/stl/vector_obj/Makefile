@@ -1,9 +1,9 @@
 #
 # Makefile
 #
-# makefile: vector
+# makefile: vector_obj
 #
-# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -13,14 +13,13 @@
 .PHONY: src
 
 EXAMPLE=vector_obj
-CC=riscv64-unknown-elf-g++
-#CC="${RVCC}"
+CXX=${RVCXX}
 #ARCH=rv64g
-ARCH=rv64imafdc
+ARCH=rv64gc
 
 all: $(EXAMPLE).exe
-$(EXAMPLE).exe: $(EXAMPLE).c
-	$(CC) -march=$(ARCH) -O0 -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).c -static
+$(EXAMPLE).exe: $(EXAMPLE).cc
+	$(CXX) -march=$(ARCH) -O0 -I../../../../common/include -I../../../../common/syscalls -I../../../include -o $(EXAMPLE).exe $(EXAMPLE).cc -static
 clean:
 	rm -Rf $(EXAMPLE).exe
 

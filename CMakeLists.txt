@@ -1,5 +1,5 @@
 # RevCPU Top-Level CMake
-# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 # See LICENSE in the top level directory for licensing details
@@ -12,6 +12,9 @@ endif()
 # Minimum required version of CMake and project information
 cmake_minimum_required(VERSION 3.19)
 project(revcpu CXX)
+
+# Make sure Git hooks are set properly
+execute_process(COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_git_hooks.sh)
 
 # Options for enabling tests
 option(CTEST_BLAS_REQUIRED_TESTS "Enable tests which require BLAS headers" OFF)
@@ -73,14 +76,14 @@ endif()
 
 # Compiler Options
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  set(WERROR_FLAG "")
-  set(FP_MODE_FLAG "-ffp-model=strict")
+  set(FP_MODE_FLAG "-ffp-model=strict -frounding-math -ftrapping-math")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument")
 else()
-  set(WERROR_FLAG "-Werror")
-  set(FP_MODE_FLAG "-frounding-math")
+  set(FP_MODE_FLAG "-frounding-math -ftrapping-math")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmissing-format-attribute -Wsuggest-final-methods -Wsuggest-final-types -Wvolatile")
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++17 ${FP_MODE_FLAG} -O2 -Wall -Wextra ${WERROR_FLAG} -Wvla -Wuninitialized -Wfloat-conversion -Wdouble-promotion -Wno-unused-parameter -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
+set(CMAKE_CXX_FLAGS "-std=c++17 ${FP_MODE_FLAG} -O2 -Wall -Wextra -Wsuggest-override -Wmissing-noreturn -Wvla -Wuninitialized -Wdouble-promotion -Wsign-conversion -Wconversion -Wno-unused-parameter -Wno-deprecated-declarations -Wno-macro-redefined -Werror ${CMAKE_CXX_FLAGS} -I./ ${LDFLAGS} ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall ${REVCPU_COMPILER_MACROS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall ${REVCPU_COMPILER_MACROS}")
 
@@ -99,7 +102,7 @@ if(BUILD_DOCUMENTATION)
     message(FATAL_ERROR "Doxygen is required to build the documentation.")
   endif()
 
-  set(doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/RevCPU.conf)
+  set(doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/Rev.conf)
 
   add_custom_target(doc
     COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}

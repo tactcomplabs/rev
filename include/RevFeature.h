@@ -1,7 +1,7 @@
 //
 // _RevFeature_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -11,65 +11,61 @@
 #ifndef _SST_REVCPU_REVFEATURE_H_
 #define _SST_REVCPU_REVFEATURE_H_
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 // -- SST Headers
 #include "SST.h"
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
 /// Table of RISC-V extension flags. They must be powers of two which can be
 /// ORed to indicate multiple extensions being present.
 enum RevFeatureType : uint32_t {
-  RV_UNKNOWN  = 0,      ///< RevFeatureType: unknown feature
-  RV_E        = 1<<0,   ///< RevFeatureType: E-extension
-  RV_I        = 1<<1,   ///< RevFeatureType: I-extension
-  RV_M        = 1<<2,   ///< RevFeatureType: M-extension
-  RV_A        = 1<<3,   ///< RevFeatureType: A-extension
-  RV_F        = 1<<4,   ///< RevFeatureType: F-extension
-  RV_D        = 1<<5,   ///< RevFeatureType: D-extension
-  RV_Q        = 1<<6,   ///< RevFeatureType: Q-extension
-  RV_L        = 1<<7,   ///< RevFeatureType: L-extension
-  RV_C        = 1<<8,   ///< RevFeatureType: C-extension
-  RV_B        = 1<<9,   ///< RevFeatureType: B-extension
-  RV_J        = 1<<10,  ///< RevFeatureType: J-extension
-  RV_T        = 1<<11,  ///< RevFeatureType: T-extension
-  RV_P        = 1<<12,  ///< RevFeatureType: P-Extension
-  RV_V        = 1<<13,  ///< RevFeatureType: V-extension
-  RV_N        = 1<<14,  ///< RevFeatureType: N-extension
-  RV_ZICSR    = 1<<15,  ///< RevFEatureType: Zicsr-extension
-  RV_ZIFENCEI = 1<<16,  ///< RevFeatureType: Zifencei-extension
-  RV_ZAM      = 1<<17,  ///< RevFeatureType: Zam-extension
-  RV_ZTSO     = 1<<18,  ///< RevFeatureType: Ztso-extension
-  RV_ZFA      = 1<<19,  ///< RevFeatureType: Zfa-extension
-  RV_ZICBOM   = 1<<20,  ///< RevFeatureType: Zicbom-extension
+  RV_UNKNOWN  = 0,        ///< RevFeatureType: unknown feature
+  RV_I        = 1 << 0,   ///< RevFeatureType: I-extension
+  RV_E        = 1 << 1,   ///< RevFeatureType: E-extension
+  RV_M        = 1 << 2,   ///< RevFeatureType: M-extension
+  RV_F        = 1 << 3,   ///< RevFeatureType: F-extension
+  RV_D        = 1 << 4,   ///< RevFeatureType: D-extension
+  RV_Q        = 1 << 5,   ///< RevFeatureType: Q-extension
+  RV_C        = 1 << 6,   ///< RevFeatureType: C-extension
+  RV_B        = 1 << 7,   ///< RevFeatureType: C-extension
+  RV_P        = 1 << 8,   ///< RevFeatureType: P-Extension
+  RV_V        = 1 << 9,   ///< RevFeatureType: V-extension
+  RV_H        = 1 << 10,  ///< RevFeatureType: H-extension
+  RV_ZICBOM   = 1 << 11,  ///< RevFeatureType: Zicbom-extension
+  RV_ZICNTR   = 1 << 12,  ///< RevFeatureType: Zicntr-extension
+  RV_ZICSR    = 1 << 13,  ///< RevFEatureType: Zicsr-extension
+  RV_ZIFENCEI = 1 << 14,  ///< RevFeatureType: Zifencei-extension
+  RV_ZMMUL    = 1 << 15,  ///< RevFeatureType: Zmmul-extension
+  RV_ZAAMO    = 1 << 16,  ///< RevFeatureType: Zaamo-extension
+  RV_ZALRSC   = 1 << 17,  ///< RevFeatureType: Zalrsc-extension
+  RV_ZFA      = 1 << 18,  ///< RevFeatureType: Zfa-extension
+  RV_ZFH      = 1 << 19,  ///< RevFeatureType: H-extension
+  RV_ZFHMIN   = 1 << 20,  ///< RevFeatureRtpe: Zfhmin extension
+  RV_ZTSO     = 1 << 21,  ///< RevFeatureType: Ztso-extension
 };
 
-class RevFeature{
+class RevFeature {
 public:
   /// RevFeature: standard constructor
-  RevFeature( std::string Machine, SST::Output *Output,
-              unsigned Min, unsigned Max, unsigned Id );
+  RevFeature( std::string Machine, SST::Output* Output, uint32_t Min, uint32_t Max, uint32_t Id );
 
   /// RevFeature: standard destructor
-  ~RevFeature() = default;
+  ~RevFeature()                              = default;
 
   /// RevFeature: deleted copy constructor
-  RevFeature( const RevFeature& ) = delete;
+  RevFeature( const RevFeature& )            = delete;
 
   /// RevFeature: deleted copy assignment operator
   RevFeature& operator=( const RevFeature& ) = delete;
 
   /// IsModeEnabled: determines if the target mode is enabled
-  bool IsModeEnabled( RevFeatureType Type ) const {
-    return (features & Type) == Type;
-  }
+  bool IsModeEnabled( RevFeatureType Type ) const { return ( features & Type ) == Type; }
 
   /// SetMachineEntry: set the machine model item
-  void SetMachineEntry( RevFeatureType Type ) {
-    features = RevFeatureType{features | Type};
-  }
+  void SetMachineEntry( RevFeatureType Type ) { features = RevFeatureType{ features | Type }; }
 
   /// GetMachineModel: retrieve the feature string
   auto GetMachineModel() const { return machine; }
@@ -83,45 +79,42 @@ public:
   /// GetMaxCost: get the maximum cost
   auto GetMaxCost() const { return MaxCost; }
 
-  /// IsRV32: Is the device an RV32
-  bool IsRV32() const { return xlen == 32; }
-
   /// IsRV64: Is the device an RV64
-  bool IsRV64() const { return xlen == 64; }
+  bool IsRV64() const { return xlen >= 64; }
 
   /// HasF: Does the device support F?
-  bool HasF() const { return IsModeEnabled(RV_F); }
+  bool HasF() const { return IsModeEnabled( RV_F ); }
 
   /// HasD: Does the device support D?
-  bool HasD() const { return IsModeEnabled(RV_D); }
+  bool HasD() const { return IsModeEnabled( RV_D ); }
 
   /// HasCompressed: Returns whether RV32 or RV64 "C" is enabled
-  bool HasCompressed() const { return IsModeEnabled(RV_C); }
+  bool HasCompressed() const { return IsModeEnabled( RV_C ); }
 
   /// GetProcID: Retrieve the ProcID of the target object
   auto GetProcID() const { return ProcID; }
 
   /// GetHartToExecID: Retrieve the current executing Hart
-  uint16_t GetHartToExecID() const { return HartToExecID; }
+  auto GetHartToExecID() const { return HartToExecID; }
 
   /// SetHartToExecID: Set the current executing Hart
-  void SetHartToExecID(unsigned hart) { HartToExecID = hart; }
+  void SetHartToExecID( uint32_t hart ) { HartToExecID = hart; }
 
 private:
-  std::string machine;      ///< RevFeature: feature string
-  SST::Output *output;      ///< RevFeature: output handler
-  unsigned MinCost;         ///< RevFeature: min memory cost
-  unsigned MaxCost;         ///< RevFeature: max memory cost
-  unsigned ProcID;          ///< RevFeature: RISC-V Proc ID
-  unsigned HartToExecID;      ///< RevFeature: The current executing Hart on RevProc
-  RevFeatureType features;  ///< RevFeature: feature elements
-  unsigned xlen;            ///< RevFeature: RISC-V Xlen
+  const std::string  machine;                 ///< RevFeature: feature string
+  SST::Output* const output;                  ///< RevFeature: output handler
+  const uint32_t     MinCost;                 ///< RevFeature: min memory cost
+  const uint32_t     MaxCost;                 ///< RevFeature: max memory cost
+  const uint32_t     ProcID;                  ///< RevFeature: RISC-V Proc ID
+  uint32_t           HartToExecID{};          ///< RevFeature: The current executing Hart on RevCore
+  RevFeatureType     features{ RV_UNKNOWN };  ///< RevFeature: feature elements
+  uint32_t           xlen{};                  ///< RevFeature: RISC-V Xlen
 
   /// ParseMachineModel: parse the machine model string
   bool ParseMachineModel();
-}; // class RevFeature
+};  // class RevFeature
 
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif
 

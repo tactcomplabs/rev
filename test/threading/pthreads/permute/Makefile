@@ -3,7 +3,7 @@
 #
 # makefile: simple_pthreads
 #
-# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -15,7 +15,7 @@
 TEST_NAME = simple_pthreads
 REV_ROOT=../../../..
 CC=${RVCC}
-OBJDUMP=${RISCV}/bin/riscv64-unknown-elf-objdump -D --source 
+OBJDUMP=${RISCV}/bin/riscv64-unknown-elf-objdump -D --source
 INCLUDE = -I$(REV_ROOT)/common/syscalls -I$(REV_ROOT)/test/include
 
 # permute architectures

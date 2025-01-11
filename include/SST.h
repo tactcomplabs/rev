@@ -1,7 +1,7 @@
 //
 // _SST_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -17,7 +17,18 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
 
+#if defined( __GNUC__ ) && !defined( __clang__ )
+#pragma GCC diagnostic ignored "-Wsuggest-final-methods"
+#pragma GCC diagnostic ignored "-Wsuggest-final-types"
+#endif
+
+// The #include order is important, so we prevent clang-format from reordering
+// clang-format off
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/event.h>
@@ -30,6 +41,7 @@
 #include <sst/core/timeConverter.h>
 #include <sst/core/model/element_python.h>
 #include <sst/core/rng/mersenne.h>
+// clang-format on
 
 #pragma GCC diagnostic pop
 

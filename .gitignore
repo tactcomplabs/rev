@@ -4,10 +4,9 @@
 *.csv
 .cache/clangd/index
 .vscode
-*.dylib
+*.o
 .#*
 *~
 .gdb_history
 *.out
-build/*
 *.asm

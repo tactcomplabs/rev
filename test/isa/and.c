@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV32I
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -11,16 +11,16 @@
  *
  */
 
+#include "isa_test_macros.h"
+#include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdbool.h>
-#include "isa_test_macros.h"
 
-int main(int argc, char **argv){
+int main( int argc, char** argv ) {
 
- // #-------------------------------------------------------------
- // # Arithmetic tests
- // #-------------------------------------------------------------
+  // #-------------------------------------------------------------
+  // # Arithmetic tests
+  // #-------------------------------------------------------------
 
   TEST_RR_OP( 2, and, 0x0f000f00, 0xff00ff00, 0x0f0f0f0f );
   TEST_RR_OP( 3, and, 0x00f000f0, 0x0ff00ff0, 0xf0f0f0f0 );
@@ -35,15 +35,15 @@ int main(int argc, char **argv){
   TEST_RR_SRC2_EQ_DEST( 7, and, 0x00f000f0, 0x0ff00ff0, 0xf0f0f0f0 );
   TEST_RR_SRC12_EQ_DEST( 8, and, 0xff00ff00, 0xff00ff00 );
 
-  asm volatile(" bne x0, gp, pass;");
-asm volatile("pass:" );
-     asm volatile("j continue");
+  asm volatile( " bne x0, gp, pass;" );
+  asm volatile( "pass:" );
+  asm volatile( "j continue" );
 
-asm volatile("fail:" );
-     assert(false);
+  asm volatile( "fail:" );
+  assert( false );
 
-asm volatile("continue:");
-asm volatile("li ra, 0x0");
+  asm volatile( "continue:" );
+  asm volatile( "li ra, 0x0" );
 
   return 0;
 }

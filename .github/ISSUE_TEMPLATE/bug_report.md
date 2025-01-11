@@ -11,7 +11,7 @@ assignees: ''
 A clear and concise description of what the issue is.  Please note that issues labeled "broken" with little to no descriptive behavior will be immediately closed.  Further, issues that do not include any information to reproduce the behavior will be immediately closed.
 
 **To Reproduce**
-All issues must be accompanied by: 
+All issues must be accompanied by:
 - The version of SST utilized (`sst --version`; `sst-config --CXX`; `sst-config --ELEMENT_CXXFLAGS`)
 - The source code branch being used
 - The last commit hash
@@ -24,7 +24,7 @@ All issues must be accompanied by:
 A clear and concise description of what you expected to happen.
 
 **Trace**
-If applicable, post a trace of the execution.  
+If applicable, post a trace of the execution.
 
 **Additional context**
 Add any other context about the problem here.

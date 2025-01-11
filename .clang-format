@@ -1,0 +1,74 @@
+BasedOnStyle: LLVM
+Standard: c++17
+ColumnLimit: 132
+UseTab: Never
+UseCRLF: false
+AlignEscapedNewlines: Left
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: true
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: true
+BitFieldColonSpacing: Both
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+ConstructorInitializerIndentWidth: 2
+BreakConstructorInitializers: BeforeColon
+ContinuationIndentWidth: 2
+FixNamespaceComments: true
+IndentWrappedFunctionNames: true
+SortIncludes: true
+SpaceBeforeParens: Never
+SpacesInAngles: Never
+SpacesInParentheses: true
+SpacesInSquareBrackets: false
+SpacesInConditionalStatement: true
+SpacesInCStyleCastParentheses: false
+SpaceInEmptyParentheses: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCaseColon: false
+SpaceBeforeAssignmentOperators: true
+SpaceAfterLogicalNot: false
+SpaceAfterCStyleCast: true
+SpaceAroundPointerQualifiers: Default
+PointerAlignment: Left
+DerivePointerAlignment: false
+ReferenceAlignment: Pointer
+InsertTrailingCommas: Wrapped
+MaxEmptyLinesToKeep: 1
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 2
+AlignArrayOfStructures: Right
+AlignConsecutiveAssignments: AcrossEmptyLinesAndComments
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveMacros: AcrossEmptyLinesAndComments
+AlignConsecutiveBitFields: AcrossEmptyLinesAndComments
+AlignAfterOpenBracket: BlockIndent
+AlwaysBreakTemplateDeclarations: Yes
+BreakBeforeBinaryOperators: false
+BreakBeforeTernaryOperators: false
+AlignOperands: Align
+ReflowComments: false
+SeparateDefinitionBlocks: Always
+EmptyLineBeforeAccessModifier: LogicalBlock

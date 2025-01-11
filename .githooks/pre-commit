@@ -1,0 +1,313 @@
+#!/bin/bash
+#
+# This pre-commit hook reformats text files to meet coding guidelines.
+#
+# Based on https://github.com/rocm/rocBLAS
+#
+# shellcheck enable=all
+# shellcheck disable=2034,2059,2064,2250,2310,2312
+
+set_shell_options() {
+    set -eEu -o pipefail
+    shopt -s nocasematch
+    export PATH=$PATH:/usr/bin:/bin
+    exec >&2
+}
+
+# Terminal colors
+set_colors() {
+    if [[ -z ${NO_COLOR+x} ]] && tty -s <&2; then
+        RED="\033[91m"
+        YELLOW="\033[93m"
+        GREEN="\033[92m"
+        END="\033[0m"
+    else
+        RED=
+        YELLOW=
+        GREEN=
+        END=
+    fi
+}
+
+usage() {
+    cat<<EOF
+Usage: pre-commit [ --reformat] [ --nostage ] [ file1 ] [ file2 ] [ file3 ] ...
+
+Format files prior to commit so that they match style guidelines
+
+Normally called before commit, but if files are explicitly specified, reformats
+them in-place without respect to commits.
+
+Options:
+   --reformat   Reformat all files in the source tree, rather than staged files
+   --nostage    Do not add files modified by pre-commit to the staging area
+EOF
+    exit 1
+}
+
+# Parse command-line options
+parse_options() {
+    FILES=()
+    REFORMAT=
+    NOSTAGE=
+    EXPLICIT_FILES=
+    local endopts=
+    for opt in "$@"; do
+        if [[ -n $endopts ]]; then
+            FILES+=("$opt")
+        else
+            case $opt in
+                --)         endopts=1  ;;
+                --reformat) REFORMAT=1 ;;
+                --nostage)  NOSTAGE=1  ;;
+                -*)         usage      ;;
+                *)          FILES+=("$opt")
+            esac
+        fi
+    done
+    if [[ ${#FILES[@]} -ne 0 ]]; then
+        EXPLICIT_FILES=1
+        NOSTAGE=1
+    fi
+}
+
+# How to install a package
+howto_install() {
+    package=$1
+
+    INSTALL=
+    if [[ $OSTYPE = darwin* ]]; then
+        if command -v brew >/dev/null; then
+            INSTALL="brew install $package"
+        fi
+    elif [[ $OSTYPE = linux* ]]; then
+        if [[ -f /etc/redhat-release ]]; then
+            if command -v dnf >/dev/null; then
+                INSTALL="sudo dnf install $package"
+            elif command -v yum >/dev/null; then
+                if [[ $package = shellcheck ]]; then
+                    package=ShellCheck
+                fi
+                INSTALL="sudo yum install $package"
+            fi
+        elif [[ -f /etc/debian_version ]] && command -v apt-get >/dev/null; then
+            INSTALL="sudo apt-get install $package"
+        fi
+    fi
+    if [[ -n $INSTALL ]]; then
+        printf "${YELLOW}\nTo install $package, run:\n\n%s\n\n${END}" "$INSTALL"
+    else
+        printf "${YELLOW}\nInstall $package and make sure it is in PATH.\n\n${END}"
+    fi
+}
+
+# Check for existence of clang-format or print error message on how to install
+check_clang_format() {
+    if ! command -v clang-format >/dev/null; then
+        printf "${RED}\nError: clang-format not found\n${END}"
+        howto_install clang-format
+        exit 1
+    fi
+}
+
+# Test a file for changes and add them to the Git commit if changed
+detect_change() {
+    if ! cmp -s "$1" "$2"; then
+        printf "${YELLOW}$3${END}\n" "$1"
+        cp -f "$2" "$1"
+        if [[ -z $EXPLICIT_FILES && -z $NOSTAGE ]]; then
+            git add -u "$1"
+        fi
+    fi
+}
+
+# Generate list of modified files
+# If --reformat is used, all files are reformatted
+get_files() {
+    if [[ -n $EXPLICIT_FILES ]]; then
+        # cd to this script's directory before running clang-format
+        # so that the .clang-format from this script's repo is used
+        REPO=$(dirname "$0")
+    else
+        # Do everything from top level
+        REPO=$(git rev-parse --show-toplevel)
+        cd "$REPO"
+        if [[ -n $REFORMAT ]]; then
+            while IFS= read -r -d $'\0' FILE; do
+                FILES+=("$FILE")
+            done < <(git ls-files -z --exclude-standard)
+        else
+            if git rev-parse --verify HEAD >/dev/null 2>&1; then
+                against=HEAD
+            else
+                # Initial commit: diff against initial commit
+                against=$(git log --reverse --pretty=format:%H | head -1)
+            fi
+            while IFS= read -r -d $'\0' FILE; do
+                FILES+=("$FILE")
+            done < <(git diff-index -z --cached --name-only "$against")
+        fi
+    fi
+}
+
+# Test if argument is a text file
+# git grep tests whether Git considers it a text file
+# If files were explicitly specified, they are assumed to be text files
+is_text_file() {
+    [[ -n $EXPLICIT_FILES ]] || git grep -Iqe . -- "$1"
+}
+
+# Test if argument is a C/C++ file
+is_cxx_file() {
+    local file=$1
+    trap "$(shopt -p nocasematch)" RETURN
+    shopt -u nocasematch
+    case $file in
+        *.c|*.h|*.cc) true ;;
+       *.hpp)  printf "${RED}${file}: Error: C++ header files should have .h extension instead of .hpp${END}\n\n"
+               errors=true ;;
+        *.cxx) printf "${RED}${file}: Error: C++ source files should have .cc extension instead of .cxx${END}\n\n"
+               errors=true ;;
+        *.cpp) printf "${RED}${file}: Error: C++ source files should have .cc extension instead of .cpp${END}\n\n"
+               errors=true ;;
+        *.C)   printf "${RED}${file}: Error: C++ source files should have .cc extension instead of .C${END}\n\n"
+               errors=true ;;
+        *) false
+    esac
+}
+
+
+# Check for redundant C++ directives
+check_override_final() {
+    local file=$1 err
+    if err=$(grep -Hno "^[^/].*\bvirtual\b.*\boverride\b" "$file"); then
+        printf "${err}\n${RED}Error: virtual keyword is redundant with override directive${END}\n\n"
+        errors=true
+    elif err=$(grep -Hno "^[^/].*\bvirtual\b.*\bfinal\b" "$file"); then
+        printf "${err}\n${RED}Error: If final directive is used, virtual should not be specified${END}\n\n"
+        errors=true
+    elif err=$(grep -Hno "^[^/].*\boverride\b.*\bfinal\b" "$file") || err=$(grep -Hno "\bfinal\b.*\boverride\b" "$file"); then
+        printf "${err}\n${RED}Error: If final directive is used, override is redundant${END}\n\n"
+        errors=true
+    fi
+}
+
+# Check for correct magic and filename extensions
+# filename extension mime-type shebang
+check_extension() {
+    local file=$1 ext=$2 mimetype=$3 shebang=$4 instead
+    trap "$(shopt -p nocasematch)" RETURN
+    shopt -u nocasematch
+    if [[ ! $(file -Lb --mime-type "$1") =~ ${mimetype} ]]; then
+        if [[ $file = *$ext ]]; then
+            printf "\n${RED}${file}: Error: Not recognized as ${mimetype}.\n${shebang:+Make sure that shebang ${shebang} is at the top of ${file}.\n}${END}"
+            errors=true
+        fi
+    elif [[ $file != *$ext ]]; then
+        instead=$( if [[ $file = *.* ]]; then echo "instead of .${file##*.}"; fi )
+        printf "\n${RED}${file}: Error: ${mimetype} filenames should have $ext extension ${instead}${END}\n"
+        errors=true
+    fi
+}
+
+reformat_files() {
+    # Temporary file for reformatting
+    temp=$(mktemp)
+    trap 'rm -f "$temp"' EXIT
+
+    # Get the list of files into FILES
+    get_files
+
+    # Fix formatting on text files
+    if [[ ${#FILES[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    errors=false
+    shellcheck_warning=
+
+# Fix formatting on text files
+    for file in "${FILES[@]}"; do
+        if [[ -f $file ]] && is_text_file "$file"; then
+            # Replace non-ASCII characters with ASCII equivalents
+            if ! iconv -s -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"; then
+                cat <<EOF
+${YELLOW}iconv -f utf-8 -t ascii//TRANSLIT "$file" > "$temp"${END}
+EOF
+                iconv -f utf-8 -t ascii//TRANSLIT "$file" > "$temp" || true
+                fold -s -w79 <<EOF
+${RED}Some non-ASCII characters in $file could not be converted into equivalent
+ASCII characters. Please replace non-ASCII characters in $file and try again.${END}
+EOF
+                exit 1
+            fi
+
+            detect_change "$file" "$temp" "%s: Converting non-ASCII characters to ASCII equivalents"
+
+            # Change the copyright date at the top of any text files
+            perl -e ''
+            if perl -pe 'INIT { exit 1 if !-f $ARGV[0] || -B $ARGV[0]; $year = (localtime)[5] + 1900 } s/^([*\/#\/"*[:space:]]*)Copyright\s+(?:\(C\)\s*)?(\d+)(?:\s*-\s*\d+)?(?=\s+Tactical Computing)/qq($1Copyright (C) $2@{[$year != $2 ? "-$year" : ""]})/ie if $. < 10' "$file" > "$temp"; then
+                detect_change "$file" "$temp" "%s: Changing copyright date"
+            fi
+
+            # Run clang-format on C/C++ files
+            if is_cxx_file "$file"; then
+                check_clang_format
+                (cd "$REPO" && clang-format) < "$file" > "$temp"
+                detect_change "$file" "$temp" "%s: Reformatting with clang-format according to coding guidelines"
+                check_override_final "$file"
+            fi
+
+            # Remove trailing whitespace at end of lines
+            sed -e 's/[[:space:]]*$//' < "$file" > "$temp"
+            detect_change "$file" "$temp" "%s: Removing trailing whitespace at line endings"
+
+            # Add missing newline at EOF
+            awk 1 < "$file" > "$temp"
+            detect_change "$file" "$temp" "%s: Adding missing newline at end of file"
+
+            # check filename extensions and magic
+            if [[ $file != **/pre-commit ]]; then
+                check_extension  "$file"  ".sh"  "^text/x-shellscript$"                   "#!/bin/bash"
+                check_extension  "$file"  ".py"  "^text/x-script\.python|text/x-python$"  "#!/usr/bin/env python3"
+                check_extension  "$file"  ".pl"  "^text/x-perl$"                          "#!/usr/bin/perl"
+            fi
+
+            # Python files
+            if [[ $file = *.py ]]; then
+                if command -v flake8 >/dev/null 2>&1; then
+                    flake8 --max-line-length 131 "$file" || errors=true
+                else
+                    printf "${RED}Error: flake8 utility not found. %s not checked with flake8.${END}\n" "$file"
+                    printf "${YELLOW}\nTo Install flake8, type:\n\npip install flake8\n\n${END}"
+                    exit 1
+                fi
+            fi
+
+            # Shell scripts
+            if [[ $file = *.sh || $file = **/pre-commit ]]; then
+                if command -v shellcheck >/dev/null 2>&1 && shellcheck -o all -e2148 /dev/null >/dev/null 2>&1; then
+                    shellcheck -o all -e 1091,2059,2154,2248,2250,2312 "$file" || errors=true
+                else
+                    printf "${YELLOW}Warning: %s not checked with shellcheck.${END}\n" "$file"
+                    shellcheck_warning=1
+                fi
+            fi
+        fi
+    done
+
+    if [[ -n $shellcheck_warning ]]; then
+        printf "${YELLOW}\nWarning: shellcheck utility not found or not recent enough version.\n${END}"
+        howto_install shellcheck
+    fi
+
+    if [[ $errors = true ]]; then
+        exit 1
+    fi
+}
+
+# Main Program
+set_shell_options
+set_colors
+parse_options "$@"
+reformat_files

@@ -1,5 +1,5 @@
 // See LICENSE for license details.
-
+// clang-format off
 #ifndef __UTIL_H
 #define __UTIL_H
 

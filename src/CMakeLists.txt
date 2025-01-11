@@ -1,5 +1,5 @@
 # RevCPU src CMakeLists.txt
-# Copyright (C) 2017-2022 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -15,7 +15,7 @@ set(RevCPUSrcs
   RevMemCtrl.cc
   RevNIC.cc
   RevOpts.cc
-  RevProc.cc
+  RevCore.cc
   RevTracer.cc
   librevcpu.cc
   RevPrefetcher.cc

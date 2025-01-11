@@ -4,3 +4,5 @@
 *.trc
 *.d
 *.dis
+*.revlog
+*.tmplog

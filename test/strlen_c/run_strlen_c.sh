@@ -4,7 +4,7 @@
 make clean && make
 
 # Check that the exec was built...
-if [ -x strlen_c.exe ]; then
+if [[ -x strlen_c.exe ]]; then
 	sst --add-lib-path=../../build/src/ ./strlen_c.py
 else
 	echo "Test STRLEN_C: strlen_c.exe not Found - likely build failed"

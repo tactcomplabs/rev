@@ -3,7 +3,7 @@
 #
 # makefile: ex1
 #
-# Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -14,7 +14,7 @@
 
 EXAMPLE=coproc_ex
 CC="${RVCC}"
-ARCH=rv64imafd
+ARCH=rv64gc
 #ABI=lp64
 
 all: $(EXAMPLE).exe

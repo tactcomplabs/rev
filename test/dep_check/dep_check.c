@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV32I
  *
- * Copyright (C) 2017-2023 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -13,11 +13,10 @@
 
 #include <stdlib.h>
 
-int main(int argc, char **argv){
+int main( int argc, char** argv ) {
   int o;
 
-
-/* The assembly sequence below should produce a
+  /* The assembly sequence below should produce a
  * cascade of dependent instructions
  * The cost of "add" in the RV32I instruction
  * table MUST be set to a value larger than 1
@@ -32,29 +31,29 @@ int main(int argc, char **argv){
   //ADD a0, a0, a0
   //ADD a0, a0, a0
 
-  asm volatile("ADDI a0, zero, %1" : "=r"(o) :  "I"(42));
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0");
-  asm volatile("ADD a0, a0, a0" : "=r"(o));
+  asm volatile( "ADDI a0, zero, %1" : "=r"( o ) : "I"( 42 ) );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" );
+  asm volatile( "ADD a0, a0, a0" : "=r"( o ) );
 
   return o;
 }

@@ -1,0 +1,6 @@
+fenv_gentests
+fenv_test.makefile
+TONEAREST_*.cc
+UPWARD_*.cc
+DOWNWARD_*.cc
+TOWARDZERO_*.cc

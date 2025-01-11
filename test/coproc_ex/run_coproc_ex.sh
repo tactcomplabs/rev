@@ -4,7 +4,7 @@
 make
 
 # Check that the exec was built...
-if [ -x coproc_ex.exe ]; then
+if [[ -x coproc_ex.exe ]]; then
 	sst-info revcpu
 	sst --add-lib-path=../../build/src/ ./rev-test-coproc_ex.py
 else

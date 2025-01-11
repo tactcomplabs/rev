@@ -4,7 +4,7 @@
 make clean && make
 
 # Check that the exec was built...
-if [ -x dot_double.exe ]; then
+if [[ -x dot_double.exe ]]; then
 	sst --add-lib-path=../../build/src/ ./dot_double.py
 else
 	echo "Test DOT_DOUBLE: dot_double.exe not Found - likely build failed"

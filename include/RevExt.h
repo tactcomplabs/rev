@@ -1,7 +1,7 @@
 //
 // _RevExt_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -15,73 +15,64 @@
 #include "SST.h"
 
 // -- Standard Headers
-#include <string>
 #include <cmath>
+#include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 // -- RevCPU Headers
-#include "RevInstTable.h"
-#include "RevMem.h"
 #include "RevFeature.h"
 #include "RevFenv.h"
+#include "RevInstTable.h"
+#include "RevMem.h"
 
-namespace SST::RevCPU{
+namespace SST::RevCPU {
 
-struct RevExt{
+struct RevExt {
   /// RevExt: standard constructor
-  RevExt( std::string_view name,
-          RevFeature* feature,
-          RevMem *mem,
-          SST::Output *output )
-    : name(name), feature(feature), mem(mem), output(output){
-  }
+  RevExt( std::string_view name, const RevFeature* feature, RevMem* mem, SST::Output* output )
+    : name( name ), feature( feature ), mem( mem ), output( output ) {}
 
   /// RevExt: standard destructor. virtual so that Extensions[i] can be deleted
-  virtual ~RevExt() = default;
+  virtual ~RevExt()                  = default;
+
+  // We do not allow copying, moving or assigning
+  RevExt( const RevExt& )            = delete;
+  RevExt( RevExt&& )                 = delete;
+  RevExt& operator=( const RevExt& ) = delete;
+  RevExt& operator=( RevExt&& )      = delete;
 
   /// RevExt: sets the internal instruction table
-  void SetTable(std::vector<RevInstEntry> InstVect){
-    table = std::move(InstVect);
-  }
+  // Note: && means the argument should be an rvalue or std::move(lvalue)
+  // This avoids deep std::vector copies and uses only one std::vector move.
+  void SetTable( std::vector<RevInstEntry>&& InstVect ) { table = std::move( InstVect ); }
 
   /// RevExt: sets the internal compressed instruction table
-  void SetCTable(std::vector<RevInstEntry> InstVect){
-    ctable = std::move(InstVect);
-  }
-
-  /// RevExt: sets the optional table (used for variant-specific compressed encodings)
-  void SetOTable(std::vector<RevInstEntry> InstVect){
-    otable = std::move(InstVect);
-  }
+  void SetCTable( std::vector<RevInstEntry>&& InstVect ) { ctable = std::move( InstVect ); }
 
   /// RevExt: retrieve the extension name
   std::string_view GetName() const { return name; }
 
   /// RevExt: baseline execution function
-  bool Execute(unsigned Inst, const RevInst& Payload, uint16_t HartID, RevRegFile* regFile);
+  bool Execute( uint32_t Inst, const RevInst& Payload, uint32_t HartID, RevRegFile* regFile ) const;
 
   /// RevExt: retrieves the extension's instruction table
-  const std::vector<RevInstEntry>& GetInstTable(){ return table; }
+  const std::vector<RevInstEntry>& GetTable() const { return table; }
 
   /// RevExt: retrieves the extension's compressed instruction table
-  const std::vector<RevInstEntry>& GetCInstTable(){ return ctable; }
-
-  /// RevExt: retrieves the extension's optional instruction table
-  const std::vector<RevInstEntry>& GetOInstTable(){ return otable; }
+  const std::vector<RevInstEntry>& GetCTable() const { return ctable; }
 
 private:
-  std::string_view const name;      ///< RevExt: extension name
-  RevFeature *const feature;        ///< RevExt: feature object
-  RevMem *const mem;                ///< RevExt: memory object
-  SST::Output *const output;        ///< RevExt: output handler
+  std::string_view const    name;      ///< RevExt: extension name
+  const RevFeature* const   feature;   ///< RevExt: feature object
+  RevMem* const             mem;       ///< RevExt: memory object
+  SST::Output* const        output;    ///< RevExt: output handler
+  std::vector<RevInstEntry> table{};   ///< RevExt: instruction table
+  std::vector<RevInstEntry> ctable{};  ///< RevExt: compressed instruction table
 
-  std::vector<RevInstEntry>  table; ///< RevExt: instruction table
-  std::vector<RevInstEntry> ctable; ///< RevExt: compressed instruction table
-  std::vector<RevInstEntry> otable; ///< RevExt: optional compressed instruction table
+};  // class RevExt
 
-  auto SetFPEnv(unsigned Inst, const RevInst& Payload, uint16_t threadID, RevRegFile* regFile);
-}; // class RevExt
-} // namespace SST::RevCPU
+}  // namespace SST::RevCPU
 
 #endif
