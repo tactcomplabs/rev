@@ -213,7 +213,7 @@ bool RevBasicMemCtrl::sendAMORequest(
     return true;
 
   // Check to see if our flags contain an atomic request
-  if( !RevFlagAtomic( flags ) ) {
+  if( RevFlagAtomic( flags ) == RevFlag::F_NONE ) {
     // not an atomic request
     return true;
   }
@@ -951,7 +951,7 @@ bool RevBasicMemCtrl::isAQ( uint32_t Slot, uint32_t Hart ) {
 
   // search all preceding slots for an AMO from the same Hart
   for( uint32_t i = 0; i < Slot; i++ ) {
-    if( RevFlagAtomic( rqstQ[i]->getFlags() ) && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ) {
+    if( RevFlagAtomic( rqstQ[i]->getFlags() ) != RevFlag::F_NONE && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ) {
       if( RevFlagHas( rqstQ[i]->getFlags(), RevFlag::F_AQ ) ) {
         // this implies that we found a preceding request in the request queue
         // that was 1) an AMO and 2) came from the same HART as 'slot'
@@ -972,7 +972,7 @@ bool RevBasicMemCtrl::isRL( uint32_t Slot, uint32_t Hart ) {
     return false;
   }
 
-  if( RevFlagAtomic( rqstQ[Slot]->getFlags() ) && RevFlagHas( rqstQ[Slot]->getFlags(), RevFlag::F_RL ) ) {
+  if( RevFlagAtomic( rqstQ[Slot]->getFlags() ) != RevFlag::F_NONE && RevFlagHas( rqstQ[Slot]->getFlags(), RevFlag::F_RL ) ) {
     // this is an AMO, check to see if there are other ops from the same
     // HART in flight
     for( uint32_t i = 0; i < Slot; i++ ) {
