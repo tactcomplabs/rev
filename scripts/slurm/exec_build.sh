@@ -2,7 +2,7 @@
 #
 # scripts/slurm/exec_build.sh
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -14,7 +14,7 @@ USER=$(id -un)
 
 #-- execute the job
 SCRIPT=$1
-SLURM_ID=$(sbatch -N1 --export=ALL "$SCRIPT" | awk '{print $4}')
+SLURM_ID=$(sbatch -N1 --exclusive --export=ALL "$SCRIPT" | awk '{print $4}')
 
 #-- wait for completion
 COMPLETE=$(squeue -u "$USER" | grep "${SLURM_ID}")
