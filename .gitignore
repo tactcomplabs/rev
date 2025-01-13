@@ -1,11 +1,12 @@
 *.so
-*.dylib
+77;30704;0c*.dylib
 *.exe
 *.csv
 .cache/clangd/index
 .vscode
 *.o
-.#*
+.\#*
+\#*\#
 *~
 .gdb_history
 *.out
