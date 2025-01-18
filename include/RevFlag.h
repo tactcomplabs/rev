@@ -19,12 +19,12 @@
 
 namespace SST::RevCPU {
 
-using namespace SST::Interfaces;
-
 // ----------------------------------------
 // Extended StandardMem::Request::Flag enums
 // ----------------------------------------
-enum class RevFlag : uint32_t {
+using flags_t = StandardMem::Request::flags_t;
+
+enum class RevFlag : flags_t {
   F_NONE               = 0,        /// no special operation
   F_NONCACHEABLE       = 1u << 1,  /// non cacheable
 
@@ -66,42 +66,39 @@ enum class RevFlag : uint32_t {
   F_RETURN  = F_FORZANN | F_FORZAON | F_FORZANO,
 };
 
-// Ensure RevFlag is same underlying type as StandardMem::Request::flags_t
-static_assert( std::is_same_v<StandardMem::Request::flags_t, std::underlying_type_t<RevFlag>> );
-
 /// RevFlag: determine if the request has certain flags set
 constexpr bool RevFlagHas( RevFlag flag, RevFlag has ) {
-  return ( safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( has ) ) == safe_static_cast<uint32_t>( has );
+  return ( safe_static_cast<flags_t>( flag ) & safe_static_cast<flags_t>( has ) ) == safe_static_cast<flags_t>( has );
 }
 
 /// RevFlag: set certain flags
 constexpr void RevFlagSet( RevFlag& flag, RevFlag set ) {
-  flag = RevFlag{ safe_static_cast<uint32_t>( flag ) | safe_static_cast<uint32_t>( set ) };
+  flag = RevFlag{ safe_static_cast<flags_t>( flag ) | safe_static_cast<flags_t>( set ) };
 }
 
 /// RevFlag: determine if the request is an AMO, and if so, return the operation; otherwise return 0
 constexpr RevFlag RevFlagAtomic( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_ATOMIC ) };
+  return RevFlag{ safe_static_cast<flags_t>( flag ) & safe_static_cast<flags_t>( RevFlag::F_ATOMIC ) };
 }
 
 /// RevFlag: determine if the request is a float AMO, and if so, return the operation; otherwise return 0
 constexpr RevFlag RevFlagAtomicFloat( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_FORZA_ATOMIC_FLOAT ) };
+  return RevFlag{ safe_static_cast<flags_t>( flag ) & safe_static_cast<flags_t>( RevFlag::F_FORZA_ATOMIC_FLOAT ) };
 }
 
 /// RevFlag: determine the return flags
 constexpr RevFlag RevFlagReturn( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_RETURN ) };
+  return RevFlag{ safe_static_cast<flags_t>( flag ) & safe_static_cast<flags_t>( RevFlag::F_RETURN ) };
 }
 
 /// RevFlag: determine which response flags are present
 constexpr RevFlag RevFlagResp( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_RESP ) };
+  return RevFlag{ safe_static_cast<flags_t>( flag ) & safe_static_cast<flags_t>( RevFlag::F_RESP ) };
 }
 
 // RevFlag: determine if the request is cache-able
 constexpr bool isCacheable( RevFlag flag ) {
-  return ( safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_NONCACHEABLE ) ) == 0;
+  return ( safe_static_cast<flags_t>( flag ) & safe_static_cast<flags_t>( RevFlag::F_NONCACHEABLE ) ) == 0;
 }
 
 }  // namespace SST::RevCPU

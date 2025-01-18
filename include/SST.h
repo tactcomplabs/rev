@@ -45,4 +45,8 @@
 
 #pragma GCC diagnostic pop
 
+namespace SST::RevCPU {
+using namespace SST::Interfaces;
+}
+
 #endif
