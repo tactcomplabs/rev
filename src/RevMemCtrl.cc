@@ -83,12 +83,6 @@ RevMemOp::RevMemOp(
   }
 }
 
-void RevMemOp::setTempT( std::vector<uint8_t> T ) {
-  for( auto i : T ) {
-    tempT.push_back( i );
-  }
-}
-
 // ---------------------------------------------------------------
 // RevMemCtrl
 // ---------------------------------------------------------------
@@ -1071,48 +1065,39 @@ bool RevBasicMemCtrl::processNextRqst(
   return true;
 }
 
-/// RevFlag: Perform an integer conversion
-template<typename SRC, typename DEST>
-static inline void convert( void* target ) {
-  SRC src;
-  memcpy( &src, target, sizeof( src ) );
-  DEST dest{ src };
-  memcpy( target, &dest, sizeof( dest ) );
-}
-
 /// RevFlag: Handle flag response
-void RevHandleFlagResp( void* target, size_t size, RevFlag flags ) {
+void RevBasicMemCtrl::RevHandleFlagResp( void* target, size_t size, RevFlag flags ) {
   if( RevFlagHas( flags, RevFlag::F_BOXNAN ) && size < sizeof( double ) ) {
     BoxNaN( static_cast<double*>( target ), static_cast<float*>( target ) );
   } else {
     switch( size ) {
     case 1:
       if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
-        convert<int8_t, int32_t>( target );
+        RevConvertInt<int8_t, int32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
-        convert<uint8_t, uint32_t>( target );
+        RevConvertInt<uint8_t, uint32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-        convert<int8_t, int64_t>( target );
+        RevConvertInt<int8_t, int64_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-        convert<uint8_t, uint64_t>( target );
+        RevConvertInt<uint8_t, uint64_t>( target );
       }
       break;
     case 2:
       if( RevFlagHas( flags, RevFlag::F_SEXT32 ) ) {
-        convert<int16_t, int32_t>( target );
+        RevConvertInt<int16_t, int32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT32 ) ) {
-        convert<uint16_t, uint32_t>( target );
+        RevConvertInt<uint16_t, uint32_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-        convert<int16_t, int64_t>( target );
+        RevConvertInt<int16_t, int64_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-        convert<uint16_t, uint64_t>( target );
+        RevConvertInt<uint16_t, uint64_t>( target );
       }
       break;
     case 4:
       if( RevFlagHas( flags, RevFlag::F_SEXT64 ) ) {
-        convert<int32_t, int64_t>( target );
+        RevConvertInt<int32_t, int64_t>( target );
       } else if( RevFlagHas( flags, RevFlag::F_ZEXT64 ) ) {
-        convert<uint32_t, uint64_t>( target );
+        RevConvertInt<uint32_t, uint64_t>( target );
       }
     }
   }
@@ -1143,28 +1128,22 @@ void RevBasicMemCtrl::handleReadResp( StandardMem::ReadResp* ev ) {
     std::cout << "Address of the target register = 0x" << std::hex << (uint64_t*) ( op->getTarget() ) << std::dec << std::endl;
 #endif
 
-    auto range = AMOTable.equal_range( op->getAddr() );
     bool isAMO = false;
-    for( auto i = range.first; i != range.second; ++i ) {
-      auto Entry = i->second;
+    for( auto [i, end] = AMOTable.equal_range( op->getAddr() ); i != end; ++i ) {
+      const auto& [hart, buffer, target, flags, memop, in] = i->second;
+
       // determine if we have an atomic request associated
       // with this read operation
-      if( std::get<AMOTABLE_MEMOP>( Entry ) == op ) {
+      if( memop == op ) {
         isAMO = true;
+        break;
       }
     }
 
     // determine if we have a split request
     if( op->getSplitRqst() > 1 ) {
       // split request exists, determine how to handle it
-
-      uint8_t* target    = static_cast<uint8_t*>( op->getTarget() );
-      uint32_t startByte = (uint32_t) ( ev->pAddr - op->getAddr() );
-      target += uint8_t( startByte );
-      for( uint32_t i = 0; i < (uint32_t) ( ev->size ); i++ ) {
-        *target = ev->data[i];
-        target++;
-      }
+      memcpy( static_cast<uint8_t*>( op->getTarget() ) + uint8_t( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
 
       if( getNumSplitRqsts( op ) == 1 ) {
         // this was the last request to service, delete the op
@@ -1185,11 +1164,8 @@ void RevBasicMemCtrl::handleReadResp( StandardMem::ReadResp* ev ) {
     }
 
     // no split request exists; handle as normal
-    uint8_t* target = (uint8_t*) ( op->getTarget() );
-    for( uint32_t i = 0; i < op->getSize(); i++ ) {
-      *target = ev->data[i];
-      target++;
-    }
+    memcpy( op->getTarget(), &ev->data[0], op->getSize() );
+
     // determine if we need to sign/zero extend
     handleFlagResp( op );
     if( isAMO ) {
@@ -1210,81 +1186,81 @@ void RevBasicMemCtrl::handleReadResp( StandardMem::ReadResp* ev ) {
   num_read--;
 }
 
-void RevBasicMemCtrl::performAMO( std::tuple<uint32_t, unsigned char*, void*, RevFlag, RevMemOp*, bool> Entry ) {
-  RevMemOp* Tmp = std::get<AMOTABLE_MEMOP>( Entry );
+void RevBasicMemCtrl::performAMO( RevMemOp* Tmp ) {
   if( Tmp == nullptr ) {
     output->fatal( CALL_INFO, -1, "Error : AMOTable entry is null\n" );
   }
-  void* Target                = Tmp->getTarget();
 
-  RevFlag              flags  = Tmp->getFlags();
-  std::vector<uint8_t> buffer = Tmp->getBuf();
-  std::vector<uint8_t> tempT;
+  RevFlag  flags = Tmp->getFlags();
+  uint32_t size  = Tmp->getSize();
 
-  tempT.clear();
-  uint8_t* TmpBuf8 = static_cast<uint8_t*>( Target );
-  for( size_t i = 0; i < Tmp->getSize(); i++ ) {
-    tempT.push_back( TmpBuf8[i] );
-  }
+  union {
+    uint8_t       u8;
+    uint16_t      u16;
+    uint32_t      u32;
+    uint64_t      u64;
+    float         f;
+    double        d;
+    unsigned char uc[8];
+  } Target, Src, Rtn;
 
-  if( Tmp->getSize() == 4 ) {
-    // 32-bit (W) AMOs
-    uint32_t TmpBuf = 0;
-    for( size_t i = 0; i < buffer.size(); i++ ) {
-      TmpBuf |= uint32_t{ buffer[i] } << i * 8;
+  // Copy the contents of the original target
+  memcpy( &Target, Tmp->getTarget(), size );
+
+  // Copy the source value
+  memcpy( &Src, &Tmp->getBuf()[0], size );
+
+  // Perform the atomic operation
+  if( RevFlagAtomicFloat( flags ) == RevFlag::F_NONE ) {
+    switch( size ) {
+    case 4: ApplyAMO( flags, &Target, Src.u32 ); break;
+    case 8: ApplyAMO( flags, &Target, Src.u64 ); break;
     }
-    ApplyAMO( flags, Target, TmpBuf );
-  } else {
-    // 64-bit (D) AMOs
-    uint64_t TmpBuf = 0;
-    for( size_t i = 0; i < buffer.size(); i++ ) {
-      TmpBuf |= uint64_t{ buffer[i] } << i * 8;
-    }
-    ApplyAMO( flags, Target, TmpBuf );
   }
 
   // copy the target data over to the buffer and build the memory request
-  buffer.clear();
-  for( size_t i = 0; i < Tmp->getSize(); i++ ) {
-    buffer.push_back( TmpBuf8[i] );
-  }
+  // this will write the value to memory
+  std::vector<uint8_t> buffer;
+  for( uint32_t i = 0; i < size; ++i )
+    buffer.push_back( Target.uc[i] );
 
   RevMemOp* Op =
-    new RevMemOp( Tmp->getHart(), Tmp->getAddr(), Tmp->getPhysAddr(), Tmp->getSize(), buffer, MemOp::MemOpWRITE, Tmp->getFlags() );
-  Op->setTempT( tempT );
-  for( uint32_t i = 0; i < Op->getSize(); i++ ) {
-    TmpBuf8[i] = tempT[i];
-  }
+    new RevMemOp( Tmp->getHart(), Tmp->getAddr(), Tmp->getPhysAddr(), size, std::move( buffer ), MemOp::MemOpWRITE, flags );
+
+  // Copy the return result to tempT
+  std::vector<uint8_t> tempT;
+  for( uint32_t i = 0; i < size; ++i )
+    tempT.push_back( Rtn.uc[i] );
+  Op->setTempT( std::move( tempT ) );
 
   // Retrieve the memory request object, but DO NOT mark the load
   // as complete.  The actual write response from the read-modify-write
   // process will mark the load as complete.  At this point, copy the
   // MemReq object to the new request
-  const MemReq& r = Tmp->getMemReq();
-  Op->setMemReq( r );
+  Op->setMemReq( Tmp->getMemReq() );
 
   // insert a new entry into the AMO Table
-  auto NewEntry = std::make_tuple(
-    Op->getHart(),
-    nullptr,  // this can be null here since we don't need to modify the response
-    Op->getTarget(),
-    Op->getFlags(),
-    Op,
-    true
+  AMOTable.emplace(
+    Op->getAddr(),
+    std::make_tuple(
+      Op->getHart(),
+      nullptr,  // this can be null here since we don't need to modify the response
+      Op->getTarget(),
+      Op->getFlags(),
+      Op,
+      true
+    )
   );
-  AMOTable.insert( { Op->getAddr(), NewEntry } );
   rqstQ.push_back( Op );
 }
 
 void RevBasicMemCtrl::handleAMO( RevMemOp* op ) {
-  auto range = AMOTable.equal_range( op->getAddr() );
-  for( auto i = range.first; i != range.second; ++i ) {
-    auto Entry = i->second;
+  for( auto [i, end] = AMOTable.equal_range( op->getAddr() ); i != end; ++i ) {
+    const auto& [hart, buffer, target, flags, memop, in] = i->second;
     // perform the arithmetic operation and generate a WRITE request
-    if( std::get<AMOTABLE_MEMOP>( Entry ) == op ) {
-      performAMO( Entry );
+    if( memop == op ) {
       AMOTable.erase( i );  // erase the current entry so we can add a new one
-      return;
+      return performAMO( op );
     }
   }
 }
@@ -1302,12 +1278,10 @@ void RevBasicMemCtrl::handleWriteResp( StandardMem::WriteResp* ev ) {
     // walk the AMOTable and clear any matching AMO ops
     // note that we must match on both the target address and the RevMemOp pointer
     bool isAMO = false;
-    auto range = AMOTable.equal_range( op->getAddr() );
-    for( auto i = range.first; i != range.second; ) {
-      auto Entry = i->second;
-      // if the request matches the target,
-      // then delete it
-      if( std::get<AMOTABLE_MEMOP>( Entry ) == op ) {
+    for( auto [i, end] = AMOTable.equal_range( op->getAddr() ); i != end; ) {
+      const auto& [hart, buffer, target, flags, memop, in] = i->second;
+      // if the request matches the target, then delete it
+      if( memop == op ) {
         AMOTable.erase( i++ );
         isAMO = true;
       } else {

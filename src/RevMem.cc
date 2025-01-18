@@ -102,7 +102,7 @@ void RevMem::LR( uint32_t hart, uint64_t addr, size_t len, void* target, const M
     ctrl->sendREADLOCKRequest( hart, addr, uint64_t( BaseMem ), uint32_t( len ), target, req, flags );
   } else {
     memcpy( target, BaseMem, len );
-    RevHandleFlagResp( target, len, flags );
+    RevBasicMemCtrl::RevHandleFlagResp( target, len, flags );
     // clear the hazard
     req.MarkLoadComplete();
   }
@@ -614,7 +614,7 @@ bool RevMem::ReadMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Target, 
     memcpy( DataMem + remainder, &physMem[adjPhysAddr], Len - remainder );
 
     // Handle flag response
-    RevHandleFlagResp( Target, Len, flags );
+    RevBasicMemCtrl::RevHandleFlagResp( Target, Len, flags );
 
     // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
     if( MemOp::MemOpAMO != req.ReqType )

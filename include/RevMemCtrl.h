@@ -13,16 +13,14 @@
 
 // -- C++ Headers
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
+#include <cstddef>
 #include <functional>
-#include <list>
-#include <map>
 #include <memory>
 #include <random>
 #include <tuple>
 #include <type_traits>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 // -- SST Headers
@@ -30,68 +28,10 @@
 
 // -- RevCPU Headers
 #include "RevCommon.h"
-#include "RevOpts.h"
-#include "RevTracer.h"
+#include "RevFlag.h"
+#include "RevInstHelpers.h"
 
 namespace SST::RevCPU {
-
-using namespace SST::Interfaces;
-
-// ----------------------------------------
-// Extended StandardMem::Request::Flag enums
-// ----------------------------------------
-enum class RevFlag : uint32_t {
-  F_NONE         = 0,        /// no special operation
-  F_NONCACHEABLE = 1u << 1,  /// non cacheable
-
-  F_BOXNAN       = 1u << 16,  /// NaN-box the 32-bit float
-  F_SEXT32       = 1u << 17,  /// sign extend the 32bit result
-  F_SEXT64       = 1u << 18,  /// sign extend the 64bit result
-  F_ZEXT32       = 1u << 19,  /// zero extend the 32bit result
-  F_ZEXT64       = 1u << 20,  /// zero extend the 64bit result
-  F_RESP         = F_BOXNAN | F_SEXT32 | F_SEXT64 | F_ZEXT32 | F_ZEXT64,
-
-  F_AQ           = 1u << 21,  /// AMO AQ Flag
-  F_RL           = 1u << 22,  /// AMO RL Flag
-
-  F_AMOADD       = 1u << 23,  /// AMO Add
-  F_AMOXOR       = 2u << 23,  /// AMO Xor
-  F_AMOAND       = 3u << 23,  /// AMO And
-  F_AMOOR        = 4u << 23,  /// AMO Or
-  F_AMOMIN       = 5u << 23,  /// AMO Min
-  F_AMOMAX       = 6u << 23,  /// AMO Max
-  F_AMOMINU      = 7u << 23,  /// AMO Minu
-  F_AMOMAXU      = 8u << 23,  /// AMO Maxu
-  F_AMOSWAP      = 9u << 23,  /// AMO Swap
-  F_ATOMIC       = F_AMOADD | F_AMOXOR | F_AMOAND | F_AMOOR | F_AMOMIN | F_AMOMAX | F_AMOMINU | F_AMOMAXU | F_AMOSWAP,
-
-};
-
-// Ensure RevFlag is same underlying type as StandardMem::Request::flags_t
-static_assert( std::is_same_v<StandardMem::Request::flags_t, std::underlying_type_t<RevFlag>> );
-
-/// RevFlag: determine if the request has certain flags set
-constexpr bool RevFlagHas( RevFlag flag, RevFlag has ) {
-  return ( safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( has ) ) == safe_static_cast<uint32_t>( has );
-}
-
-/// RevFlag: set certain flags
-constexpr void RevFlagSet( RevFlag& flag, RevFlag set ) {
-  flag = RevFlag{ safe_static_cast<uint32_t>( flag ) | safe_static_cast<uint32_t>( set ) };
-}
-
-/// RevFlag: determine if the request is an AMO, and if so, return the operation; otherwise return 0
-constexpr RevFlag RevFlagAtomic( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_ATOMIC ) };
-}
-
-/// RevFlag: determine which response flags are present
-constexpr RevFlag RevFlagResp( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_RESP ) };
-}
-
-/// RevFlag: Handle flag response
-void RevHandleFlagResp( void* target, size_t size, RevFlag flags );
 
 // ----------------------------------------
 // RevMemOp
@@ -148,10 +88,10 @@ public:
   uint32_t getSize() const { return Size; }
 
   /// RevMemOp: retrieve the memory buffer
-  std::vector<uint8_t> getBuf() const { return membuf; }
+  const std::vector<uint8_t>& getBuf() const { return membuf; }
 
   /// RevMemOp: retrieve the temporary target buffer
-  std::vector<uint8_t> getTempT() const { return tempT; }
+  const std::vector<uint8_t>& getTempT() const { return tempT; }
 
   /// RevMemOp: retrieve the memory operation flags
   RevFlag getFlags() const { return flags; }
@@ -175,7 +115,7 @@ public:
   void setMemReq( const MemReq& req ) { procReq = req; }
 
   /// RevMemOp: set the temporary target buffer
-  void setTempT( std::vector<uint8_t> T );
+  void setTempT( std::vector<uint8_t> T ) { tempT = std::move( T ); }
 
   /// RevMemOp: retrieve the invalidate flag
   bool getInv() const { return Inv; }
@@ -558,6 +498,18 @@ public:
   /// RevBasicMemCtrl: assign tracer pointer
   void setTracer( RevTracer* tracer ) final;
 
+  /// RevBasicMemCtrl: handle flag response
+  static void RevHandleFlagResp( void* target, size_t size, RevFlag flags );
+
+  /// RevFlag: Perform an integer conversion
+  template<typename SRC, typename DEST>
+  static void RevConvertInt( void* target ) {
+    SRC src;
+    memcpy( &src, target, sizeof( src ) );
+    DEST dest{ src };
+    memcpy( target, &dest, sizeof( dest ) );
+  }
+
 protected:
   // ----------------------------------------
   // RevStdMemHandlers
@@ -658,7 +610,7 @@ private:
   uint32_t getNumSplitRqsts( RevMemOp* op );
 
   /// RevBasicMemCtrl: perform the MODIFY portion of the AMO (READ+MODIFY+WRITE)
-  void performAMO( std::tuple<uint32_t, unsigned char*, void*, RevFlag, RevMemOp*, bool> Entry );
+  void performAMO( RevMemOp* op );
 
   // -- private data members
   StandardMem*       memIface{};         ///< StandardMem memory interface
@@ -683,19 +635,12 @@ private:
   uint32_t num_custom{};       ///< number of outstanding custom requests
   uint32_t num_fence{};        ///< number of oustanding fence requests
 
-  std::vector<StandardMem::Request::id_t>         requests{};     ///< outstanding StandardMem requests
-  std::vector<RevMemOp*>                          rqstQ{};        ///< queued memory requests
-  std::map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
-
-#define AMOTABLE_HART   0
-#define AMOTABLE_BUFFER 1
-#define AMOTABLE_TARGET 2
-#define AMOTABLE_FLAGS  3
-#define AMOTABLE_MEMOP  4
-#define AMOTABLE_IN     5
+  std::vector<StandardMem::Request::id_t>                   requests{};     ///< outstanding StandardMem requests
+  std::vector<RevMemOp*>                                    rqstQ{};        ///< queued memory requests
+  std::unordered_map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
 
   /// RevBasicMemCtrl: map of amo operations to memory addresses
-  std::multimap<uint64_t, std::tuple<uint32_t, unsigned char*, void*, RevFlag, RevMemOp*, bool>> AMOTable{};
+  std::unordered_multimap<uint64_t, std::tuple<uint32_t, unsigned char*, void*, RevFlag, RevMemOp*, bool>> AMOTable{};
 
   std::vector<Statistic<uint64_t>*> stats{};  ///< statistics vector
 

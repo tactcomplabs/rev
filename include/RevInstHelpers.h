@@ -146,7 +146,7 @@ bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
       true,
       R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
-    M->ReadVal(
+    make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(),
       rs1 + uint64_t( Inst.ImmSignExt( 12 ) ),
       reinterpret_cast<T*>( &R->RV32[Inst.rd] ),
@@ -166,7 +166,7 @@ bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
       true,
       R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
-    M->ReadVal(
+    make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(),
       rs1 + uint64_t( Inst.ImmSignExt( 12 ) ),
       reinterpret_cast<T*>( &R->RV64[Inst.rd] ),
@@ -176,7 +176,7 @@ bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
   }
 
   // update the cost
-  R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
+  R->cost += make_dependent<T>( M )->RandCost( F->GetMinCost(), F->GetMaxCost() );
   R->AdvancePC( Inst );
   return true;
 }
@@ -184,7 +184,9 @@ bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
 /// Store template
 template<typename T>
 bool store( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-  M->Write( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) + uint64_t( Inst.ImmSignExt( 12 ) ), R->GetX<T>( Inst.rs2 ) );
+  make_dependent<T>( M )->Write(
+    F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) + uint64_t( Inst.ImmSignExt( 12 ) ), R->GetX<T>( Inst.rs2 )
+  );
   R->AdvancePC( Inst );
   return true;
 }
@@ -204,7 +206,7 @@ bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
       true,
       R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
-    M->ReadVal(
+    make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(),
       rs1 + uint64_t( Inst.ImmSignExt( 12 ) ),
       reinterpret_cast<T*>( &R->DPF[Inst.rd] ),
@@ -222,12 +224,12 @@ bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
       true,
       R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
-    M->ReadVal(
+    make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(), rs1 + uint64_t( Inst.ImmSignExt( 12 ) ), &R->SPF[Inst.rd], std::move( req ), RevFlag::F_NONE
     );
   }
   // update the cost
-  R->cost += M->RandCost( F->GetMinCost(), F->GetMaxCost() );
+  R->cost += make_dependent<T>( M )->RandCost( F->GetMinCost(), F->GetMaxCost() );
   R->AdvancePC( Inst );
   return true;
 }
@@ -236,7 +238,7 @@ bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
 template<typename T>
 bool fstore( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
   T val = R->GetFP<T, true>( Inst.rs2 );
-  M->Write( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) + uint64_t( Inst.ImmSignExt( 12 ) ), val );
+  make_dependent<T>( M )->Write( F->GetHartToExecID(), R->GetX<uint64_t>( Inst.rs1 ) + uint64_t( Inst.ImmSignExt( 12 ) ), val );
   R->AdvancePC( Inst );
   return true;
 }
