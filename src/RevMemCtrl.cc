@@ -897,7 +897,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst( RevMemOp* op, bool& Success ) {
     std::cout << "WARNING: lineSize == 0!" << std::endl;
   else if( op->getAddr() % lineSize )
     std::cout << "WARNING: address is not cache aligned!" << std::endl;
-  if( !op->isCacheable() )
+  if( !isCacheable( op->getFlags() ) )
     std::cout << "WARNING: operation is not cache-able!" << std::endl;
 #endif
 
@@ -919,20 +919,19 @@ bool RevBasicMemCtrl::buildStandardMemRqst( RevMemOp* op, bool& Success ) {
   // ALWAYS 1 and we dispatch a single memory requests per
   // RevMemOp
   // ---------------------------------------------------------
-  RevFlag TmpFlags;
-  if( ( hasCache ) && ( op->isCacheable() ) ) {
-    // cache is enabled and we want to cache the request
-    return buildCacheMemRqst( op, Success );
-  } else if( ( hasCache ) && ( !op->isCacheable() ) ) {
-    // cache is enabled but the request says not to cache the data
-    Success  = true;
-    TmpFlags = op->getStdFlags();
-    return buildRawMemRqst( op, TmpFlags );
+  if( hasCache ) {
+    if( isCacheable( op->getFlags() ) ) {
+      // cache is enabled and we want to cache the request
+      return buildCacheMemRqst( op, Success );
+    } else {
+      // cache is enabled but the request says not to cache the data
+      Success = true;
+      return buildRawMemRqst( op, op->getStdFlags() );
+    }
   } else {
     // no cache enabled
-    Success  = true;
-    TmpFlags = op->getNonCacheFlags();
-    return buildRawMemRqst( op, TmpFlags );
+    Success = true;
+    return buildRawMemRqst( op, op->getNonCacheFlags() );
   }
 }
 

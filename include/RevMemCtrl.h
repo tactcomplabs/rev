@@ -132,11 +132,6 @@ public:
   /// RevMemOp: Get the originating proc memory request
   const MemReq& getMemReq() const { return procReq; }
 
-  // RevMemOp: determine if the request is cache-able
-  bool isCacheable() const {
-    return ( safe_static_cast<uint32_t>( flags ) & safe_static_cast<uint32_t>( RevFlag::F_NONCACHEABLE ) ) == 0;
-  }
-
 private:
   uint32_t             Hart{};       ///< RevMemOp: RISC-V Hart
   uint64_t             Addr{};       ///< RevMemOp: address

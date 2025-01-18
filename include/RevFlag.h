@@ -99,6 +99,11 @@ constexpr RevFlag RevFlagResp( RevFlag flag ) {
   return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_RESP ) };
 }
 
+// RevFlag: determine if the request is cache-able
+constexpr bool isCacheable( RevFlag flag ) {
+  return ( safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_NONCACHEABLE ) ) == 0;
+}
+
 }  // namespace SST::RevCPU
 
 #endif  // _SST_REVFLAG_H_
