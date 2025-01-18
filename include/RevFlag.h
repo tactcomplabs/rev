@@ -50,16 +50,14 @@ enum class RevFlag : flags_t {
   F_FORZAFADD          = 1u << 27,  /// XForza: AMO FADD
   F_FORZAFSUB          = 2u << 27,  /// XForza: AMO FSUB
   F_FORZAFSUBR         = 3u << 27,  /// XForza: AMO FSUBR
-  F_FORZAFMIN          = 3u << 27,  /// XForza: AMO FSUBR
-  F_FORZAFMAX          = 4u << 27,  /// XForza: AMO FSUBR
-  F_FORZA_ATOMIC_FLOAT = F_FORZAFADD | F_FORZAFSUB | F_FORZAFSUBR | F_FORZAFMIN | F_FORZAFMAX,
+  F_FORZA_ATOMIC_FLOAT = F_FORZAFADD | F_FORZAFSUB | F_FORZAFSUBR,
 
   F_ATOMIC = F_AMOADD | F_AMOXOR | F_AMOAND | F_AMOOR | F_AMOMIN | F_AMOMAX | F_AMOMINU | F_AMOMAXU | F_AMOSWAP | F_FORZASUB |
              F_FORZATHRS | F_FORZA_ATOMIC_FLOAT,
 
-  F_FORZANN = 1u << 30,  /// XForza: AMO RETURN NN
-  F_FORZAON = 2u << 30,  /// XForza: AMO RETURN ON
-  F_FORZANO = 3u << 30,  /// XForza: AMO RETURN NO
+  F_FORZANN = 1u << 29,  /// XForza: AMO RETURN NN
+  F_FORZAON = 2u << 29,  /// XForza: AMO RETURN ON
+  F_FORZANO = 3u << 29,  /// XForza: AMO RETURN NO
   F_RETURN  = F_FORZANN | F_FORZAON | F_FORZANO,
 };
 
