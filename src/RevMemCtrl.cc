@@ -65,7 +65,7 @@ RevMemOp::RevMemOp(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, std::vector<uint8_t> buffer, MemOp Op, RevFlag flags
 )
   : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Inv( false ), Op( Op ), CustomOpc( 0 ), SplitRqst( 1 ),
-    membuf( buffer ), flags( flags ), target( nullptr ), procReq() {}
+    membuf( std::move( buffer ) ), flags( flags ), target( nullptr ), procReq() {}
 
 RevMemOp::RevMemOp(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, uint32_t CustomOpc, MemOp Op, RevFlag flags
@@ -1142,7 +1142,7 @@ void RevBasicMemCtrl::handleReadResp( StandardMem::ReadResp* ev ) {
     // determine if we have a split request
     if( op->getSplitRqst() > 1 ) {
       // split request exists, determine how to handle it
-      memcpy( static_cast<uint8_t*>( op->getTarget() ) + uint8_t( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
+      memcpy( static_cast<uint8_t*>( op->getTarget() ) + ( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
 
       if( getNumSplitRqsts( op ) == 1 ) {
         // this was the last request to service, delete the op
@@ -1190,47 +1190,42 @@ void RevBasicMemCtrl::performAMO( RevMemOp* Tmp ) {
     output->fatal( CALL_INFO, -1, "Error : AMOTable entry is null\n" );
   }
 
-  RevFlag  flags = Tmp->getFlags();
-  uint32_t size  = Tmp->getSize();
+  RevFlag  flags  = Tmp->getFlags();
+  uint32_t size   = Tmp->getSize();
+  uint8_t* target = reinterpret_cast<uint8_t*>( Tmp->getTarget() );
 
   union {
-    uint8_t       u8;
-    uint16_t      u16;
-    uint32_t      u32;
-    uint64_t      u64;
-    float         f;
-    double        d;
-    unsigned char uc[8];
-  } Target, Src, Rtn;
+    uint8_t  u8;
+    uint16_t u16;
+    uint32_t u32;
+    uint64_t u64;
+    float    f;
+    double   d;
+  } Src, Rtn;
 
-  // Copy the contents of the original target
-  memcpy( &Target, Tmp->getTarget(), size );
-
-  // Copy the source value
+  // Copy the rs2 source register value
   memcpy( &Src, &Tmp->getBuf()[0], size );
 
+  // Copy the original value into Rtn
+  memcpy( &Rtn, target, size );
+
   // Perform the atomic operation
-  if( RevFlagAtomicFloat( flags ) == RevFlag::F_NONE ) {
-    switch( size ) {
-    case 4: ApplyAMO( flags, &Target, Src.u32 ); break;
-    case 8: ApplyAMO( flags, &Target, Src.u64 ); break;
-    }
+  switch( size ) {
+  case 4: ApplyAMO( flags, target, Src.u32 ); break;
+  case 8: ApplyAMO( flags, target, Src.u64 ); break;
   }
 
-  // copy the target data over to the buffer and build the memory request
+  // copy the modified target data over to the buffer and build the memory request
   // this will write the value to memory
   std::vector<uint8_t> buffer;
   for( uint32_t i = 0; i < size; ++i )
-    buffer.push_back( Target.uc[i] );
+    buffer.push_back( target[i] );
+
+  // Copy the return value to the destination register
+  memcpy( target, &Rtn, size );
 
   RevMemOp* Op =
     new RevMemOp( Tmp->getHart(), Tmp->getAddr(), Tmp->getPhysAddr(), size, std::move( buffer ), MemOp::MemOpWRITE, flags );
-
-  // Copy the return result to tempT
-  std::vector<uint8_t> tempT;
-  for( uint32_t i = 0; i < size; ++i )
-    tempT.push_back( Rtn.uc[i] );
-  Op->setTempT( std::move( tempT ) );
 
   // Retrieve the memory request object, but DO NOT mark the load
   // as complete.  The actual write response from the read-modify-write
@@ -1309,8 +1304,6 @@ void RevBasicMemCtrl::handleWriteResp( StandardMem::WriteResp* ev ) {
     // this was a write request for an AMO, clear the hazard
     const MemReq& r = op->getMemReq();
     if( isAMO ) {
-      // write the target
-      std::vector<uint8_t> tempT = op->getTempT();
       r.MarkLoadComplete();
     }
     delete op;

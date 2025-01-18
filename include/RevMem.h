@@ -131,7 +131,7 @@ public:
   };
 
   /// RevMem: determine if there are any outstanding requests
-  bool outstandingRqsts();
+  bool outstandingRqsts() const { return ctrl && ctrl->outstandingRqsts(); }
 
   /// RevMem: handle incoming memory event
   void handleEvent( Interfaces::StandardMem::Request* ev ) {}
@@ -155,7 +155,7 @@ public:
   uint64_t GetStackBottom() { return stacktop - _STACK_SIZE_; }
 
   /// RevMem: initiate a memory fence
-  bool FenceMem( uint32_t Hart );
+  bool FenceMem( uint32_t Hart ) { return !ctrl || ctrl->sendFENCE( Hart ); }
 
   /// RevMem: retrieves the cache line size.  Returns 0 if no cache is configured
   uint32_t getLineSize() { return ctrl ? ctrl->getLineSize() : 64; }
@@ -173,13 +173,17 @@ public:
   bool ReadMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Target, const MemReq& req, RevFlag flags = RevFlag::F_NONE );
 
   /// RevMem: flush a cache line
-  bool FlushLine( uint32_t Hart, uint64_t Addr );
+  bool FlushLine( uint32_t Hart, uint64_t Addr ) {
+    return !ctrl || ctrl->sendFLUSHRequest( Hart, Addr, 0, getLineSize(), false, RevFlag::F_NONE );
+  }
 
   /// RevMem: invalidate a cache line
-  bool InvLine( uint32_t Hart, uint64_t Addr );
+  bool InvLine( uint32_t Hart, uint64_t Addr ) {
+    return !ctrl || ctrl->sendFLUSHRequest( Hart, Addr, 0, getLineSize(), true, RevFlag::F_NONE );
+  }
 
   /// RevMem: clean a line
-  bool CleanLine( uint32_t Hart, uint64_t Addr );
+  bool CleanLine( uint32_t Hart, uint64_t Addr ) { return !ctrl || ( ctrl->sendFENCE( Hart ) && FlushLine( Hart, Addr ) ); }
 
   // ----------------------------------------------------
   // ---- Read Memory Interfaces

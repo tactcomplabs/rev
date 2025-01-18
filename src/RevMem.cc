@@ -40,15 +40,6 @@ RevMem::RevMem( uint64_t memSize, RevOpts* opts, SST::Output* output )
   AddMemSegAt( stacktop, 1024 );  // Add the 1024 bytes for the program header information
 }
 
-bool RevMem::outstandingRqsts() {
-  if( ctrl ) {
-    return ctrl->outstandingRqsts();
-  }
-
-  // RevMemCtrl is not enabled; no outstanding requests
-  return false;
-}
-
 void RevMem::HandleMemFault( uint32_t width ) {
   // build up the fault payload
   uint64_t rval    = RevRand( 0, ( uint32_t{ 1 } << width ) - 1 );
@@ -93,14 +84,14 @@ void RevMem::LR( uint32_t hart, uint64_t addr, size_t len, void* target, const M
   // A reservation maps a hart to an (addr, len) range and is invalidated if any other hart writes to this range
   LRSC.insert_or_assign( hart, std::pair( addr, len ) );
 
-  // now handle the memory operation
-  uint64_t       pageNum  = addr >> addrShift;
-  uint64_t       physAddr = CalcPhysAddr( pageNum, addr );
-  unsigned char* BaseMem  = &physMem[physAddr];
-
   if( ctrl ) {
-    ctrl->sendREADLOCKRequest( hart, addr, uint64_t( BaseMem ), uint32_t( len ), target, req, flags );
+    ctrl->sendREADLOCKRequest( hart, addr, 0, uint32_t( len ), target, req, flags );
   } else {
+    // now handle the memory operation
+    uint64_t       pageNum  = addr >> addrShift;
+    uint64_t       physAddr = CalcPhysAddr( pageNum, addr );
+    unsigned char* BaseMem  = &physMem[physAddr];
+
     memcpy( target, BaseMem, len );
     RevBasicMemCtrl::RevHandleFlagResp( target, len, flags );
     // clear the hazard
@@ -483,13 +474,6 @@ uint64_t RevMem::AllocMemAt( const uint64_t& BaseAddr, const uint64_t& SegSize )
   return ret;
 }
 
-bool RevMem::FenceMem( uint32_t Hart ) {
-  if( ctrl ) {
-    return ctrl->sendFENCE( Hart );
-  }
-  return true;  // base RevMem support does nothing here
-}
-
 bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags ) {
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
@@ -497,11 +481,7 @@ bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, voi
 
   if( ctrl ) {
     // sending to the RevMemCtrl
-    uint64_t       pageNum  = Addr >> addrShift;
-    uint64_t       physAddr = CalcPhysAddr( pageNum, Addr );
-    unsigned char* BaseMem  = &physMem[physAddr];
-
-    ctrl->sendAMORequest( Hart, Addr, uint64_t( BaseMem ), Len, static_cast<unsigned char*>( Data ), Target, req, flags );
+    ctrl->sendAMORequest( Hart, Addr, 0, Len, static_cast<unsigned char*>( Data ), Target, req, flags );
   } else {
     // process the request locally
     union {
@@ -621,37 +601,6 @@ bool RevMem::ReadMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Target, 
       req.MarkLoadComplete();
   }
   memStats.bytesRead += Len;
-  return true;
-}
-
-bool RevMem::FlushLine( uint32_t Hart, uint64_t Addr ) {
-  uint64_t pageNum  = Addr >> addrShift;
-  uint64_t physAddr = CalcPhysAddr( pageNum, Addr );
-  if( ctrl ) {
-    ctrl->sendFLUSHRequest( Hart, Addr, physAddr, getLineSize(), false, RevFlag::F_NONE );
-  }
-  // else, this is effectively a nop
-  return true;
-}
-
-bool RevMem::InvLine( uint32_t Hart, uint64_t Addr ) {
-  uint64_t pageNum  = Addr >> addrShift;
-  uint64_t physAddr = CalcPhysAddr( pageNum, Addr );
-  if( ctrl ) {
-    ctrl->sendFLUSHRequest( Hart, Addr, physAddr, getLineSize(), true, RevFlag::F_NONE );
-  }
-  // else, this is effectively a nop
-  return true;
-}
-
-bool RevMem::CleanLine( uint32_t Hart, uint64_t Addr ) {
-  uint64_t pageNum  = Addr >> addrShift;
-  uint64_t physAddr = CalcPhysAddr( pageNum, Addr );
-  if( ctrl ) {
-    ctrl->sendFENCE( Hart );
-    ctrl->sendFLUSHRequest( Hart, Addr, physAddr, getLineSize(), false, RevFlag::F_NONE );
-  }
-  // else, this is effectively a nop
   return true;
 }
 
