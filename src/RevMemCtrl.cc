@@ -1185,44 +1185,74 @@ void RevBasicMemCtrl::handleReadResp( StandardMem::ReadResp* ev ) {
   num_read--;
 }
 
-void RevBasicMemCtrl::performAMO( RevMemOp* Tmp ) {
+///< Apply Atomic Memory Operation
+/// The operation described by "flags" is applied to memory "Target" with value "value"
+template<typename T>
+static std::enable_if_t<!std::is_floating_point_v<T>> ApplyAMO( RevFlag flags, void* Target, T value ) {
+  // Target and value cast to signed and uint32_t versions
+  auto* TmpTarget  = static_cast<std::make_signed_t<T>*>( Target );
+  auto* TmpTargetU = static_cast<std::make_unsigned_t<T>*>( Target );
+  auto  TmpBuf     = static_cast<std::make_signed_t<T>>( value );
+  auto  TmpBufU    = static_cast<std::make_unsigned_t<T>>( value );
+
+  // Table mapping atomic operations to executable code
+  // clang-format off
+  static const std::pair<RevCPU::RevFlag, std::function<void()>> table[] = {
+    { RevFlag::F_AMOADD,    [&]{ *TmpTarget += TmpBuf; } },
+    { RevFlag::F_AMOXOR,    [&]{ *TmpTarget ^= TmpBuf; } },
+    { RevFlag::F_AMOAND,    [&]{ *TmpTarget &= TmpBuf; } },
+    { RevFlag::F_AMOOR,     [&]{ *TmpTarget |= TmpBuf; } },
+    { RevFlag::F_AMOSWAP,   [&]{ *TmpTarget  = TmpBuf; } },
+    { RevFlag::F_AMOMIN,    [&]{ *TmpTarget  = std::min( *TmpTarget,  TmpBuf );  } },
+    { RevFlag::F_AMOMAX,    [&]{ *TmpTarget  = std::max( *TmpTarget,  TmpBuf );  } },
+    { RevFlag::F_AMOMINU,   [&]{ *TmpTargetU = std::min( *TmpTargetU, TmpBufU ); } },
+    { RevFlag::F_AMOMAXU,   [&]{ *TmpTargetU = std::max( *TmpTargetU, TmpBufU ); } },
+  };
+  // clang-format on
+  RevFlag amo{ RevFlagAtomic( flags ) };
+  for( const auto& [flag, op] : table ) {
+    if( amo == flag ) {
+      op();
+      break;
+    }
+  }
+}
+
+AMOData RevBasicMemCtrl::performAMO( RevFlag flags, uint32_t size, void* target, const void* data ) {
+  AMOData src, newMem;
+
+  // Copy the rs2 source register value
+  memcpy( &src, data, size );
+
+  // Copy the original memory value into New memory
+  memcpy( &newMem, target, size );
+
+  // Perform the atomic operation
+  switch( size ) {
+  case 4: ApplyAMO( flags, &newMem, src.u32 ); break;
+  case 8: ApplyAMO( flags, &newMem, src.u64 ); break;
+  }
+
+  // Return the new value to be written to memory
+  return newMem;
+}
+
+void RevBasicMemCtrl::performAMOMemH( RevMemOp* Tmp ) {
   if( Tmp == nullptr ) {
     output->fatal( CALL_INFO, -1, "Error : AMOTable entry is null\n" );
   }
 
-  RevFlag  flags  = Tmp->getFlags();
-  uint32_t size   = Tmp->getSize();
-  uint8_t* target = reinterpret_cast<uint8_t*>( Tmp->getTarget() );
+  RevFlag  flags = Tmp->getFlags();
+  uint32_t size  = Tmp->getSize();
 
-  union {
-    uint8_t  u8;
-    uint16_t u16;
-    uint32_t u32;
-    uint64_t u64;
-    float    f;
-    double   d;
-  } Src, Rtn;
-
-  // Copy the rs2 source register value
-  memcpy( &Src, &Tmp->getBuf()[0], size );
-
-  // Copy the original value into Rtn
-  memcpy( &Rtn, target, size );
-
-  // Perform the atomic operation
-  switch( size ) {
-  case 4: ApplyAMO( flags, target, Src.u32 ); break;
-  case 8: ApplyAMO( flags, target, Src.u64 ); break;
-  }
+  // Perform the AMO operation on the already-loaded data
+  auto newMem    = performAMO( flags, size, Tmp->getTarget(), &Tmp->getBuf()[0] );
 
   // copy the modified target data over to the buffer and build the memory request
   // this will write the value to memory
   std::vector<uint8_t> buffer;
   for( uint32_t i = 0; i < size; ++i )
-    buffer.push_back( target[i] );
-
-  // Copy the return value to the destination register
-  memcpy( target, &Rtn, size );
+    buffer.push_back( newMem.uc[i] );
 
   RevMemOp* Op =
     new RevMemOp( Tmp->getHart(), Tmp->getAddr(), Tmp->getPhysAddr(), size, std::move( buffer ), MemOp::MemOpWRITE, flags );
@@ -1254,7 +1284,7 @@ void RevBasicMemCtrl::handleAMO( RevMemOp* op ) {
     // perform the arithmetic operation and generate a WRITE request
     if( memop == op ) {
       AMOTable.erase( i );  // erase the current entry so we can add a new one
-      return performAMO( op );
+      return performAMOMemH( op );
     }
   }
 }

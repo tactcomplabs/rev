@@ -484,34 +484,19 @@ bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, voi
     ctrl->sendAMORequest( Hart, Addr, 0, Len, static_cast<unsigned char*>( Data ), Target, req, flags );
   } else {
     // process the request locally
-    union {
-      uint32_t TmpD4;
-      uint64_t TmpD8;
-    };
 
     // Get a copy of the data operand
-    memcpy( &TmpD8, Data, Len );
+    AMOData data;
+    memcpy( &data, Data, Len );
 
     // Read Target from memory
     ReadMem( Hart, Addr, Len, Target, req, flags );
 
-    union {
-      uint32_t TmpT4;
-      uint64_t TmpT8;
-    };
-
-    // Make a copy of Target for atomic operation
-    memcpy( &TmpT8, Target, Len );
-
     // Perform atomic operation
-    if( Len == 4 ) {
-      ApplyAMO( flags, &TmpT4, TmpD4 );
-    } else {
-      ApplyAMO( flags, &TmpT8, TmpD8 );
-    }
+    auto newMem = RevBasicMemCtrl::performAMO( flags, Len, Target, &data );
 
     // Write new value to memory
-    WriteMem( Hart, Addr, Len, &TmpT8, flags );
+    WriteMem( Hart, Addr, Len, &newMem, flags );
 
     // clear the hazard
     req.MarkLoadComplete();

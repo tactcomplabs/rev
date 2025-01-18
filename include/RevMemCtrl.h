@@ -33,6 +33,17 @@
 
 namespace SST::RevCPU {
 
+/// AMO data union
+union AMOData {
+  uint8_t       u8;
+  uint16_t      u16;
+  uint32_t      u32;
+  uint64_t      u64;
+  float         f;
+  double        d;
+  unsigned char uc[8];
+};
+
 // ----------------------------------------
 // RevMemOp
 // ----------------------------------------
@@ -483,6 +494,12 @@ public:
   /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
   void handleAMO( RevMemOp* op ) final;
 
+  /// RevBasicMemCtrl: perform an AMO on local data
+  static AMOData performAMO( RevFlag flags, uint32_t size, void* target, const void* data );
+
+  /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
+  void performAMOMemH( RevMemOp* op );
+
   /// RevBasicMemCtrl: assign tracer pointer
   void setTracer( RevTracer* tracer ) final;
 
@@ -597,9 +614,6 @@ private:
   /// RevBasicMemCtrl: retrieve the number of outstanding requests on the wire
   uint32_t getNumSplitRqsts( RevMemOp* op );
 
-  /// RevBasicMemCtrl: perform the MODIFY portion of the AMO (READ+MODIFY+WRITE)
-  void performAMO( RevMemOp* op );
-
   // -- private data members
   StandardMem*       memIface{};         ///< StandardMem memory interface
   RevStdMemHandlers* stdMemHandlers{};   ///< StandardMem interface response handlers
@@ -633,38 +647,6 @@ private:
   std::vector<Statistic<uint64_t>*> stats{};  ///< statistics vector
 
 };  // RevBasicMemCtrl
-
-///< Apply Atomic Memory Operation
-/// The operation described by "flags" is applied to memory "Target" with value "value"
-template<typename T>
-void ApplyAMO( RevFlag flags, void* Target, T value ) {
-  // Target and value cast to signed and uint32_t versions
-  auto* TmpTarget  = static_cast<std::make_signed_t<T>*>( Target );
-  auto* TmpTargetU = static_cast<std::make_unsigned_t<T>*>( Target );
-  auto  TmpBuf     = static_cast<std::make_signed_t<T>>( value );
-  auto  TmpBufU    = static_cast<std::make_unsigned_t<T>>( value );
-
-  // Table mapping atomic operations to executable code
-  // clang-format off
-  static const std::pair<RevFlag, std::function<void()>> table[] = {
-    { RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
-    { RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
-    { RevFlag::F_AMOAND,  [&]{ *TmpTarget &= TmpBuf; } },
-    { RevFlag::F_AMOOR,   [&]{ *TmpTarget |= TmpBuf; } },
-    { RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = TmpBuf; } },
-    { RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  TmpBuf);  } },
-    { RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  TmpBuf);  } },
-    { RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
-    { RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
-  };
-  // clang-format on
-  for( const auto& [amo, op] : table ) {
-    if( RevFlagAtomic( flags ) == amo ) {
-      op();
-      break;
-    }
-  }
-}
 
 }  // namespace SST::RevCPU
 
