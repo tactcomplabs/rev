@@ -11,9 +11,6 @@
 #ifndef _SST_REVFLAG_H_
 #define _SST_REVFLAG_H_
 
-#include <cstdint>
-#include <type_traits>
-
 #include "RevCommon.h"
 #include "SST.h"
 
