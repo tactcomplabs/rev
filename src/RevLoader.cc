@@ -496,7 +496,7 @@ bool RevLoader::LoadProgramArgs( const std::string& exe, const std::vector<std::
   ArgArraySize            = ( ( ArgArraySize - 1 ) | XLEN{ 15 } ) + 1;
 
   // OldStackTop is the current StackTop rounded down to a multiple of 16 bytes
-  const XLEN OldStackTop  = mem->GetStackTop() & ~XLEN{ 15 };
+  const XLEN OldStackTop  = XLEN( mem->GetStackTop() ) & ~XLEN{ 15 };
 
   // Allocate ArgArraySize elements at ArgArrayBase
   // Set the new StackTop to ArgArraySize bytes below OldStackTop
