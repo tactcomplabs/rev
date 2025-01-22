@@ -181,7 +181,7 @@ public:
   void finish() override                                                                                                = 0;
 
   /// RevMemCtrl: determines if outstanding requests exist
-  virtual bool outstandingRqsts()                                                                                       = 0;
+  virtual bool outstandingRqsts() const                                                                                 = 0;
 
   /// RevMemCtrl: send flush request
   virtual bool sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, bool Inv, RevFlag flags ) = 0;
@@ -251,14 +251,8 @@ public:
   /// RevMemCtrl: handle an invalidate response
   virtual void handleInvResp( StandardMem::InvNotify* ev )     = 0;
 
-  /// RevMemCtrl: handle RevMemCtrl flags for write responses
-  virtual void handleFlagResp( RevMemOp* op )                  = 0;
-
-  /// RevMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
-  virtual void handleAMO( RevMemOp* op )                       = 0;
-
   /// RevMemCtrl: returns the cache line size
-  virtual uint32_t getLineSize()                               = 0;
+  virtual uint32_t getLineSize() const                         = 0;
 
   /// Assign processor tracer
   virtual void setTracer( RevTracer* tracer )                  = 0;
@@ -412,10 +406,10 @@ public:
   virtual bool clockTick( Cycle_t cycle );
 
   /// RevBasicMemCtrl: determines if outstanding requests exist
-  bool outstandingRqsts() final;
+  bool outstandingRqsts() const final { return requests.size() > 0; }
 
   /// RevBasicMemCtrl: returns the cache line size
-  uint32_t getLineSize() final { return lineSize; }
+  uint32_t getLineSize() const final { return lineSize; }
 
   /// RevBasicMemCtrl: memory event processing handler
   void processMemEvent( StandardMem::Request* ev );
@@ -474,26 +468,24 @@ public:
   // RevBasicMemCtrl: send a FENCE request
   bool sendFENCE( uint32_t Hart ) final;
 
+  /// RevBasicMemCtrl: handle a response generally
+  template<typename RESP>
+  void handleResp( RESP* ev, const char* name, uint32_t* counter );
+
   /// RevBasicMemCtrl: handle a read response
-  void handleReadResp( StandardMem::ReadResp* ev ) final;
+  void handleReadResp( StandardMem::ReadResp* ev ) final { handleResp( ev, "ReadResp", &num_read ); }
 
   /// RevBasicMemCtrl: handle a write response
-  void handleWriteResp( StandardMem::WriteResp* ev ) final;
+  void handleWriteResp( StandardMem::WriteResp* ev ) final { handleResp( ev, "WriteResp", &num_write ); }
 
   /// RevBasicMemCtrl: handle a flush response
-  void handleFlushResp( StandardMem::FlushResp* ev ) final;
+  void handleFlushResp( StandardMem::FlushResp* ev ) final { handleResp( ev, "FlushResp", &num_flush ); }
 
   /// RevBasicMemCtrl: handle a custom response
-  void handleCustomResp( StandardMem::CustomResp* ev ) final;
+  void handleCustomResp( StandardMem::CustomResp* ev ) final { handleResp( ev, "CustomResp", &num_custom ); }
 
   /// RevBasicMemCtrl: handle an invalidate response
-  void handleInvResp( StandardMem::InvNotify* ev ) final;
-
-  /// RevBasicMemCtrl: handle RevMemCtrl flags for write responses
-  void handleFlagResp( RevMemOp* op ) final { RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() ); }
-
-  /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
-  void handleAMO( RevMemOp* op ) final;
+  void handleInvResp( StandardMem::InvNotify* ev ) final { handleResp( ev, "InvResp", nullptr ); }
 
   /// RevBasicMemCtrl: perform an AMO on local data
   static AMOData performAMO( RevFlag flags, uint32_t size, void* target, const void* data );
@@ -502,7 +494,7 @@ public:
   void performAMOMemH( RevMemOp* op );
 
   /// RevBasicMemCtrl: assign tracer pointer
-  void setTracer( RevTracer* tracer ) final;
+  void setTracer( RevTracer* tracer ) final { Tracer = tracer; }
 
   /// RevBasicMemCtrl: handle flag response
   static void RevHandleFlagResp( void* target, size_t size, RevFlag flags );
@@ -520,34 +512,33 @@ protected:
   // ----------------------------------------
   // RevStdMemHandlers
   // ----------------------------------------
-  class RevStdMemHandlers final : public Interfaces::StandardMem::RequestHandler {
-  public:
+  struct RevStdMemHandlers final : Interfaces::StandardMem::RequestHandler {
     friend class RevBasicMemCtrl;
 
     /// RevStdMemHandlers: constructor
-    RevStdMemHandlers( RevBasicMemCtrl* Ctrl, SST::Output* output );
+    RevStdMemHandlers( RevBasicMemCtrl* Ctrl, SST::Output* output )
+      : Interfaces::StandardMem::RequestHandler( output ), Ctrl( Ctrl ) {}
 
     /// RevStdMemHandlers: destructor
-    ~RevStdMemHandlers() final;
+    ~RevStdMemHandlers() final                               = default;
 
     /// RevStdMemHandlers: disallow copying and assignment
     RevStdMemHandlers( const RevStdMemHandlers& )            = delete;
     RevStdMemHandlers& operator=( const RevStdMemHandlers& ) = delete;
 
-    /// RevStdMemHandlers: handle read response
-    void handle( StandardMem::ReadResp* ev ) final;
+    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleReadResp( ev ); }
 
-    /// RevStdMemhandlers: handle write response
-    void handle( StandardMem::WriteResp* ev ) final;
+    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleWriteResp( ev ); }
 
-    /// RevStdMemHandlers: handle flush response
-    void handle( StandardMem::FlushResp* ev ) final;
+    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleFlushResp( ev ); }
 
-    /// RevStdMemHandlers: handle custom response
-    void handle( StandardMem::CustomResp* ev ) final;
+    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleCustomResp( ev ); }
 
-    /// RevStdMemHandlers: handle invalidate response
-    void handle( StandardMem::InvNotify* ev ) final;
+    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleInvResp( ev ); }
+
+    // ---------------------------------------------------------------
+    // RevStdMemHandlers
+    // ---------------------------------------------------------------
 
   private:
     RevBasicMemCtrl* Ctrl{};  ///< RevStdMemHandlers: memory controller object
@@ -604,16 +595,16 @@ private:
   void recordStat( MemCtrlStats Stat, uint64_t Data );
 
   /// RevBasicMemCtrl: returns the total number of outstanding requests
-  uint64_t getTotalRqsts();
+  uint64_t getTotalRqsts() const { return num_read + num_write + num_llsc + num_readlock + num_writeunlock + num_custom; }
 
   /// RevBasicMemCtrl: Determine the number of cache lines are required
-  uint32_t getNumCacheLines( uint64_t Addr, uint32_t Size );
+  uint32_t getNumCacheLines( uint64_t Addr, uint32_t Size ) const;
 
   /// RevBasicMemCtrl: Retrieve the base cache line request size
-  uint32_t getBaseCacheLineSize( uint64_t Addr, uint32_t Size );
+  uint32_t getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const;
 
   /// RevBasicMemCtrl: retrieve the number of outstanding requests on the wire
-  uint32_t getNumSplitRqsts( RevMemOp* op );
+  uint32_t getNumSplitRqsts( RevMemOp* op ) const;
 
   // -- private data members
   StandardMem*       memIface{};         ///< StandardMem memory interface

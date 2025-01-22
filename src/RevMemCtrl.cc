@@ -425,7 +425,7 @@ bool RevBasicMemCtrl::isMemOpAvail(
   return false;
 }
 
-uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) {
+uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const {
 
   bool     done          = false;
   uint64_t BaseCacheAddr = Addr;
@@ -458,7 +458,7 @@ uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) {
   }
 }
 
-uint32_t RevBasicMemCtrl::getNumCacheLines( uint64_t Addr, uint32_t Size ) {
+uint32_t RevBasicMemCtrl::getNumCacheLines( uint64_t Addr, uint32_t Size ) const {
   // if the cache is disabled, then return 1
   // eg, there is a 1-to-1 mapping of CPU memops to memory requests
   if( !hasCache )
@@ -1096,87 +1096,8 @@ void RevBasicMemCtrl::RevHandleFlagResp( void* target, size_t size, RevFlag flag
   }
 }
 
-uint32_t RevBasicMemCtrl::getNumSplitRqsts( RevMemOp* op ) {
-  uint32_t count = 0;
-  for( const auto& n : outstanding ) {
-    if( n.second == op ) {
-      count++;
-    }
-  }
-  return count;
-}
-
-void RevBasicMemCtrl::handleReadResp( StandardMem::ReadResp* ev ) {
-  if( std::find( requests.begin(), requests.end(), ev->getID() ) != requests.end() ) {
-    requests.erase( std::find( requests.begin(), requests.end(), ev->getID() ) );
-    RevMemOp* op = outstanding[ev->getID()];
-    if( !op )
-      output->fatal( CALL_INFO, -1, "RevMemOp is null in handleReadResp\n" );
-#ifdef _REV_DEBUG_
-    std::cout << "handleReadResp : id=" << ev->getID() << " @Addr= 0x" << std::hex << op->getAddr() << std::dec << std::endl;
-    for( uint32_t i = 0; i < op->getSize(); i++ ) {
-      std::cout << "               : data[" << i << "] = " << (uint32_t) ( ev->data[i] ) << std::endl;
-    }
-    std::cout << "isOutstanding val = 0x" << std::hex << op->getMemReq().isOutstanding << std::dec << std::endl;
-    std::cout << "Address of the target register = 0x" << std::hex << (uint64_t*) ( op->getTarget() ) << std::dec << std::endl;
-#endif
-
-    bool isAMO = false;
-    for( auto [i, end] = AMOTable.equal_range( op->getAddr() ); i != end; ++i ) {
-      const auto& [hart, buffer, target, flags, memop, in] = i->second;
-
-      // determine if we have an atomic request associated
-      // with this read operation
-      if( memop == op ) {
-        isAMO = true;
-        break;
-      }
-    }
-
-    // determine if we have a split request
-    if( op->getSplitRqst() > 1 ) {
-      // split request exists, determine how to handle it
-      memcpy( static_cast<uint8_t*>( op->getTarget() ) + ( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
-
-      if( getNumSplitRqsts( op ) == 1 ) {
-        // this was the last request to service, delete the op
-        handleFlagResp( op );
-        if( isAMO ) {
-          handleAMO( op );
-        }
-        const MemReq& r = op->getMemReq();
-        if( !isAMO ) {
-          r.MarkLoadComplete();
-        }
-        delete op;
-      }
-      outstanding.erase( ev->getID() );
-      delete ev;
-      num_read--;
-      return;
-    }
-
-    // no split request exists; handle as normal
-    memcpy( op->getTarget(), &ev->data[0], op->getSize() );
-
-    // determine if we need to sign/zero extend
-    handleFlagResp( op );
-    if( isAMO ) {
-      handleAMO( op );
-    }
-
-    const MemReq& r = op->getMemReq();
-    if( !isAMO ) {
-      TRACE_MEM_READ_RESPONSE( op->getSize(), op->getTarget(), &r );
-      r.MarkLoadComplete();
-    }
-    delete op;
-    outstanding.erase( ev->getID() );
-    delete ev;
-  } else {
-    output->fatal( CALL_INFO, -1, "Error : found unknown ReadResp\n" );
-  }
-  num_read--;
+uint32_t RevBasicMemCtrl::getNumSplitRqsts( RevMemOp* op ) const {
+  return (uint32_t) std::count_if( outstanding.begin(), outstanding.end(), [op]( auto& x ) { return x.second == op; } );
 }
 
 ///< Apply Atomic Memory Operation
@@ -1266,168 +1187,89 @@ void RevBasicMemCtrl::performAMOMemH( RevMemOp* Tmp ) {
   rqstQ.push_back( Op );
 }
 
-void RevBasicMemCtrl::handleAMO( RevMemOp* op ) {
-  for( auto [i, end] = AMOTable.equal_range( op->getAddr() ); i != end; ++i ) {
-    const auto& [hart, buffer, target, flags, memop, in] = i->second;
-    // perform the arithmetic operation and generate a WRITE request
-    if( memop == op ) {
-      AMOTable.erase( i );  // erase the current entry so we can add a new one
-      return performAMOMemH( op );
-    }
-  }
-}
+template<typename RESP>
+void RevBasicMemCtrl::handleResp( RESP* ev, const char* name, uint32_t* counter ) {
+  auto id = ev->getID();
+  auto it = std::find( requests.begin(), requests.end(), id );
+  if( it == requests.end() )
+    output->fatal( CALL_INFO, -1, "Error : found unknown %s\n", name );
+  requests.erase( it );
 
-void RevBasicMemCtrl::handleWriteResp( StandardMem::WriteResp* ev ) {
-  auto it = std::find( requests.begin(), requests.end(), ev->getID() );
-  if( it != requests.end() ) {
-    requests.erase( it );
-    RevMemOp* op = outstanding[ev->getID()];
-    if( !op )
-      output->fatal( CALL_INFO, -1, "RevMemOp is null in handleWriteResp\n" );
+  RevMemOp* op = outstanding[id];
+  if( !op )
+    output->fatal( CALL_INFO, -1, "RevMemOp is null in handle%s\n", name );
+
 #ifdef _REV_DEBUG_
-    std::cout << "handleWriteResp : id=" << ev->getID() << " @Addr= 0x" << std::hex << op->getAddr() << std::dec << std::endl;
+  std::cout << "handle" << name << " : id=" << id << " @Addr= 0x" << std::hex << op->getAddr() << std::dec << std::endl;
 #endif
 
-    // walk the AMOTable and clear any matching AMO ops
-    // note that we must match on both the target address and the RevMemOp pointer
-    bool isAMO = false;
-    for( auto [i, end] = AMOTable.equal_range( op->getAddr() ); i != end; ) {
-      const auto& [hart, buffer, target, flags, memop, in] = i->second;
-      // if the request matches the target, then delete it
-      if( memop == op ) {
-        AMOTable.erase( i++ );
-        isAMO = true;
-      } else {
-        ++i;
-      }
-    }
+  // For read responses, handle split requests
+  if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
 
-    // determine if we have a split request
+#ifdef _REV_DEBUG_
+    for( uint32_t i = 0; i < op->getSize(); i++ ) {
+      std::cout << "               : data[" << i << "] = " << (uint32_t) ( ev->data[i] ) << std::endl;
+    }
+    std::cout << "isOutstanding val = 0x" << std::hex << op->getMemReq().isOutstanding << std::dec << std::endl;
+    std::cout << "Address of the target register = 0x" << std::hex << (uint64_t*) ( op->getTarget() ) << std::dec << std::endl;
+#endif
+
+    // determine if we have a split read request
     if( op->getSplitRqst() > 1 ) {
-      // split request exists, determine how to handle it
-      if( getNumSplitRqsts( op ) == 1 ) {
-        // this was the last request to service, delete the op
-        const MemReq& r = op->getMemReq();
-        if( isAMO ) {
-          r.MarkLoadComplete();
+      // split request exists; determine how to handle it
+      memcpy( static_cast<uint8_t*>( op->getTarget() ) + ( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
+    } else {
+      // no split request exists; handle as normal
+      memcpy( op->getTarget(), &ev->data[0], op->getSize() );
+    }
+  }
+
+  // determine if we have a split request
+  if( op->getSplitRqst() <= 1 || getNumSplitRqsts( op ) == 1 ) {
+    // if this was not a split request or it was the last request to service, delete the op
+
+    // Handle read and write responses
+    if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> || std::is_same_v<RESP, StandardMem::WriteResp> ) {
+
+      // determine if we have an atomic request associated with this read/write operation
+      bool isAMO = false;
+      for( auto [i, end] = AMOTable.equal_range( op->getAddr() ); i != end; ++i ) {
+        const auto& [hart, buffer, target, flags, memop, in] = i->second;
+        if( memop == op ) {
+          AMOTable.erase( i );  // erase the current entry so we can add a new one
+          isAMO = true;
+          break;
         }
-        delete op;
       }
-      outstanding.erase( ev->getID() );
-      delete ev;
-      num_write--;
-      return;
-    }
 
-    // no split request exists; handle as normal
-    // this was a write request for an AMO, clear the hazard
-    const MemReq& r = op->getMemReq();
-    if( isAMO ) {
-      r.MarkLoadComplete();
-    }
-    delete op;
-    outstanding.erase( ev->getID() );
-    delete ev;
-  } else {
-    output->fatal( CALL_INFO, -1, "Error : found unknown WriteResp\n" );
-  }
-  num_write--;
-}
+      if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
+        // handleReadResp
 
-void RevBasicMemCtrl::handleFlushResp( StandardMem::FlushResp* ev ) {
-  if( std::find( requests.begin(), requests.end(), ev->getID() ) != requests.end() ) {
-    requests.erase( std::find( requests.begin(), requests.end(), ev->getID() ) );
-    RevMemOp* op = outstanding[ev->getID()];
-    if( !op )
-      output->fatal( CALL_INFO, -1, "RevMemOp is null in handleFlushResp\n" );
+        // determine if we need to sign/zero extend or NaN-box the read value
+        RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
 
-    // determine if we have a split request
-    if( op->getSplitRqst() > 1 ) {
-      // split request exists, determine how to handle it
-      if( getNumSplitRqsts( op ) == 1 ) {
-        // this was the last request to service, delete the op
-        delete op;
+        if( isAMO ) {
+          performAMOMemH( op );  // perform the atomic operation and generate a WRITE request
+        } else {
+          op->getMemReq().MarkLoadComplete();  // for non-atomic operations, mark load complete
+        }
+
+      } else {
+        // handleWriteResp
+
+        // For atomic operations, mark the original load complete after write is completed
+        if( isAMO )
+          op->getMemReq().MarkLoadComplete();
       }
-      outstanding.erase( ev->getID() );
-      delete ev;
-      num_flush--;
-      return;
     }
 
-    // no split request exists; handle as normal
     delete op;
-    outstanding.erase( ev->getID() );
-    delete ev;
-  } else {
-    output->fatal( CALL_INFO, -1, "Error : found unknown FlushResp\n" );
   }
-  num_flush--;
-}
 
-void RevBasicMemCtrl::handleCustomResp( StandardMem::CustomResp* ev ) {
-  if( std::find( requests.begin(), requests.end(), ev->getID() ) != requests.end() ) {
-    requests.erase( std::find( requests.begin(), requests.end(), ev->getID() ) );
-    RevMemOp* op = outstanding[ev->getID()];
-    if( !op )
-      output->fatal( CALL_INFO, -1, "RevMemOp is null in handleCustomResp\n" );
-
-    // determine if we have a split request
-    if( op->getSplitRqst() > 1 ) {
-      // split request exists, determine how to handle it
-      if( getNumSplitRqsts( op ) == 1 ) {
-        // this was the last request to service, delete the op
-        delete op;
-      }
-      outstanding.erase( ev->getID() );
-      delete ev;
-      num_custom--;
-      return;
-    }
-
-    // no split request exists; handle as normal
-    delete op;
-    outstanding.erase( ev->getID() );
-    delete ev;
-  } else {
-    output->fatal( CALL_INFO, -1, "Error : found unknown CustomResp\n" );
-  }
-  num_custom--;
-}
-
-void RevBasicMemCtrl::handleInvResp( StandardMem::InvNotify* ev ) {
-  if( std::find( requests.begin(), requests.end(), ev->getID() ) != requests.end() ) {
-    requests.erase( std::find( requests.begin(), requests.end(), ev->getID() ) );
-    RevMemOp* op = outstanding[ev->getID()];
-    if( !op )
-      output->fatal( CALL_INFO, -1, "RevMemOp is null in handleInvResp\n" );
-
-    // determine if we have a split request
-    if( op->getSplitRqst() > 1 ) {
-      // split request exists, determine how to handle it
-      if( getNumSplitRqsts( op ) == 1 ) {
-        // this was the last request to service, delete the op
-        delete op;
-      }
-      outstanding.erase( ev->getID() );
-      delete ev;
-      return;
-    }
-
-    // no split request exists; handle as normal
-    delete op;
-    outstanding.erase( ev->getID() );
-    delete ev;
-  } else {
-    output->fatal( CALL_INFO, -1, "Error : found unknown InvResp\n" );
-  }
-}
-
-uint64_t RevBasicMemCtrl::getTotalRqsts() {
-  return num_read + num_write + num_llsc + num_readlock + num_writeunlock + num_custom;
-}
-
-bool RevBasicMemCtrl::outstandingRqsts() {
-  return ( requests.size() > 0 );
+  outstanding.erase( id );
+  delete ev;
+  if( counter )
+    --*counter;
 }
 
 bool RevBasicMemCtrl::clockTick( Cycle_t cycle ) {
@@ -1469,38 +1311,6 @@ bool RevBasicMemCtrl::clockTick( Cycle_t cycle ) {
   }
 
   return false;
-}
-
-// ---------------------------------------------------------------
-// RevStdMemHandlers
-// ---------------------------------------------------------------
-RevBasicMemCtrl::RevStdMemHandlers::RevStdMemHandlers( RevBasicMemCtrl* Ctrl, SST::Output* output )
-  : Interfaces::StandardMem::RequestHandler( output ), Ctrl( Ctrl ) {}
-
-RevBasicMemCtrl::RevStdMemHandlers::~RevStdMemHandlers() {}
-
-void RevBasicMemCtrl::RevStdMemHandlers::handle( StandardMem::ReadResp* ev ) {
-  Ctrl->handleReadResp( ev );
-}
-
-void RevBasicMemCtrl::RevStdMemHandlers::handle( StandardMem::WriteResp* ev ) {
-  Ctrl->handleWriteResp( ev );
-}
-
-void RevBasicMemCtrl::RevStdMemHandlers::handle( StandardMem::FlushResp* ev ) {
-  Ctrl->handleFlushResp( ev );
-}
-
-void RevBasicMemCtrl::RevStdMemHandlers::handle( StandardMem::CustomResp* ev ) {
-  Ctrl->handleCustomResp( ev );
-}
-
-void RevBasicMemCtrl::RevStdMemHandlers::handle( StandardMem::InvNotify* ev ) {
-  Ctrl->handleInvResp( ev );
-}
-
-void RevBasicMemCtrl::setTracer( RevTracer* tracer ) {
-  Tracer = tracer;
 }
 
 }  // namespace SST::RevCPU
