@@ -139,7 +139,6 @@ RevBasicMemCtrl::RevBasicMemCtrl( ComponentId_t id, const Params& params )
 RevBasicMemCtrl::~RevBasicMemCtrl() {
   for( auto* p : rqstQ )
     delete p;
-  rqstQ.clear();
   delete stdMemHandlers;
 }
 
@@ -158,7 +157,7 @@ void RevBasicMemCtrl::registerStats() {
   }
 }
 
-void RevBasicMemCtrl::recordStat( RevBasicMemCtrl::MemCtrlStats Stat, uint64_t Data ) {
+void RevBasicMemCtrl::recordStat( MemCtrlStats Stat, uint64_t Data ) {
   if( Stat < MemCtrlStats::END )
     stats[size_t( Stat )]->addData( Data );
 }
