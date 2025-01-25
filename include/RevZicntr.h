@@ -11,8 +11,8 @@
 #ifndef _SST_REVZICNTR_H_
 #define _SST_REVZICNTR_H_
 
-#include <cstdint>
-#include <type_traits>
+#include "RevCommon.h"
+#include <exception>
 
 // Zicntr performance counters
 
@@ -37,8 +37,9 @@ protected:
   // Template allows RevCore to be an incomplete type now
 
   template<typename T>
-  void fatal( const T* msg ) const {
-    return make_dependent<T>( GetCore() )->output->fatal( CALL_INFO, -1, msg, GetPC() );
+  [[noreturn]] void fatal( const T* msg ) const {
+    make_dependent<T>( GetCore() )->output->fatal( CALL_INFO, -1, msg, GetPC() );
+    std::terminate();
   }
 
 protected:
@@ -47,6 +48,7 @@ protected:
   RevZicntr( RevZicntr&& )                 = default;
   RevZicntr& operator=( const RevZicntr& ) = delete;
   RevZicntr& operator=( RevZicntr&& )      = delete;
+  virtual ~RevZicntr()                     = default;
 
   template<typename ZICNTR>
   static uint64_t rdcycle( const ZICNTR* Zicntr ) {
@@ -71,20 +73,16 @@ protected:
   XLEN GetPerfCounter() const {
     if( !make_dependent<XLEN>( GetCore() )->GetRevFeature()->IsModeEnabled( RV_ZICNTR ) ) {
       fatal( "Illegal instruction at PC = 0x%" PRIx64 ": Zicntr extension not available\n" );
-      return 0;
     } else if( IsRV64() ) {
       if constexpr( HALF == Half::Hi ) {
         fatal( "Illegal instruction at PC = 0x%" PRIx64 ": High half of Zicntr register not available on RV64\n" );
-        return 0;
       } else {
         return XLEN( COUNTER( this ) );
       }
+    } else if constexpr( HALF == Half::Hi ) {
+      return XLEN( COUNTER( this ) >> 32 );
     } else {
-      if constexpr( HALF == Half::Hi ) {
-        return XLEN( COUNTER( this ) >> 32 );
-      } else {
-        return XLEN( COUNTER( this ) & 0xffffffff );
-      }
+      return XLEN( COUNTER( this ) & 0xffffffff );
     }
   }
 
