@@ -206,6 +206,9 @@ public:
     return AMOMem( Hart, Addr, uint32_t{ sizeof( T ) }, Data, Target, req, flags );
   }
 
+  /// RevMem: Initiated an AMO request
+  bool AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags );
+
   // ----------------------------------------------------
   // ---- Write Memory Interfaces
   // ----------------------------------------------------
@@ -231,8 +234,6 @@ public:
   // ----------------------------------------------------
   // ---- Atomic/Future/LRSC Interfaces
   // ----------------------------------------------------
-  /// RevMem: Initiated an AMO request
-  bool AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags );
 
   /// RevMem: Invalidate Matching LR reservations
   bool InvalidateLRReservations( uint32_t hart, uint64_t addr, size_t len );

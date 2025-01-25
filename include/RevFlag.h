@@ -42,6 +42,7 @@ enum class RevFlag : flags_t {
   F_AMOSWAP      = 9u << 23,   /// AMO Swap
   F_AMOSUB       = 10u << 23,  /// AMO Sub
   F_AMOTHRES     = 11u << 23,  /// AMO Threshold
+  F_AMOCAS       = 12u << 23,  /// AMO Compare and swap
   F_AMOFADD      = 1u << 27,   /// AMO Fadd
   F_AMOFSUB      = 2u << 27,   /// AMO Fsub
   F_AMOFSUBR     = 3u << 27,   /// AMO Fsubr
@@ -51,7 +52,7 @@ enum class RevFlag : flags_t {
   F_ATOMIC_RESP  = F_BOXNAN | F_SEXT32 | F_SEXT64 | F_ZEXT32 | F_ZEXT64,
   F_ATOMIC_FLOAT = F_AMOFADD | F_AMOFSUB | F_AMOFSUBR,
   F_ATOMIC       = F_AMOADD | F_AMOXOR | F_AMOAND | F_AMOOR | F_AMOMIN | F_AMOMAX | F_AMOMINU | F_AMOMAXU | F_AMOSWAP | F_AMOSUB |
-             F_AMOTHRES | F_ATOMIC_FLOAT,
+             F_AMOTHRES | F_AMOCAS | F_ATOMIC_FLOAT,
   F_ATOMIC_RETURN = F_AMONN | F_AMOON | F_AMONO,
 };
 
