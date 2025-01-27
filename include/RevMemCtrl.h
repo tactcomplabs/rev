@@ -713,24 +713,19 @@ void ApplyAMO( RevFlag flags, void* Target, T value ) {
 
   // Table mapping atomic operations to executable code
   // clang-format off
-  static const std::pair<RevFlag, std::function<void()>> table[] = {
-    { RevFlag::F_AMOADD,  [&]{ *TmpTarget += TmpBuf; } },
-    { RevFlag::F_AMOXOR,  [&]{ *TmpTarget ^= TmpBuf; } },
-    { RevFlag::F_AMOAND,  [&]{ *TmpTarget &= TmpBuf; } },
-    { RevFlag::F_AMOOR,   [&]{ *TmpTarget |= TmpBuf; } },
-    { RevFlag::F_AMOSWAP, [&]{ *TmpTarget  = TmpBuf; } },
-    { RevFlag::F_AMOMIN,  [&]{ *TmpTarget  = std::min(*TmpTarget,  TmpBuf);  } },
-    { RevFlag::F_AMOMAX,  [&]{ *TmpTarget  = std::max(*TmpTarget,  TmpBuf);  } },
-    { RevFlag::F_AMOMINU, [&]{ *TmpTargetU = std::min(*TmpTargetU, TmpBufU); } },
-    { RevFlag::F_AMOMAXU, [&]{ *TmpTargetU = std::max(*TmpTargetU, TmpBufU); } },
+  switch( RevFlagAtomic( flags ) ) {
+    case RevFlag::F_AMOADD:  *TmpTarget += TmpBuf; break;
+    case RevFlag::F_AMOXOR:  *TmpTarget ^= TmpBuf; break;
+    case RevFlag::F_AMOAND:  *TmpTarget &= TmpBuf; break;
+    case RevFlag::F_AMOOR:   *TmpTarget |= TmpBuf; break;
+    case RevFlag::F_AMOSWAP: *TmpTarget  = TmpBuf; break;
+    case RevFlag::F_AMOMIN:  *TmpTarget  = std::min(*TmpTarget,  TmpBuf); break;
+    case RevFlag::F_AMOMAX:  *TmpTarget  = std::max(*TmpTarget,  TmpBuf); break;
+    case RevFlag::F_AMOMINU: *TmpTargetU = std::min(*TmpTargetU, TmpBufU); break;
+    case RevFlag::F_AMOMAXU: *TmpTargetU = std::max(*TmpTargetU, TmpBufU); break;
+    default: break;
   };
   // clang-format on
-  for( const auto& [amo, op] : table ) {
-    if( RevFlagAtomic( flags ) == amo ) {
-      op();
-      break;
-    }
-  }
 }
 
 }  // namespace SST::RevCPU
