@@ -348,93 +348,35 @@ void RevBasicMemCtrl::setup() {
 void RevBasicMemCtrl::finish() {}
 
 bool RevBasicMemCtrl::isMemOpAvail(
-  RevMemOp* Op,
-  uint32_t& t_max_loads,
-  uint32_t& t_max_stores,
-  uint32_t& t_max_flush,
-  uint32_t& t_max_llsc,
-  uint32_t& t_max_readlock,
-  uint32_t& t_max_writeunlock,
-  uint32_t& t_max_custom
-) {
-
+  const RevMemOp* Op,
+  uint32_t&       t_max_loads,
+  uint32_t&       t_max_stores,
+  uint32_t&       t_max_flush,
+  uint32_t&       t_max_llsc,
+  uint32_t&       t_max_readlock,
+  uint32_t&       t_max_writeunlock,
+  uint32_t&       t_max_custom
+) const {
+  auto cmp = []( auto& stat, auto val ) { return stat < val ? ++stat, true : false; };
+  // clang-format off
   switch( Op->getOp() ) {
-  case MemOp::MemOpREAD:
-    if( t_max_loads < max_loads ) {
-      t_max_loads++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpWRITE:
-    if( t_max_stores < max_stores ) {
-      t_max_stores++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpFLUSH:
-    if( t_max_flush < max_flush ) {
-      t_max_flush++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpREADLOCK:
-    if( t_max_readlock < max_readlock ) {
-      t_max_readlock++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpWRITEUNLOCK:
-    if( t_max_writeunlock < max_writeunlock ) {
-      t_max_writeunlock++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpLOADLINK:
-    if( t_max_llsc < max_llsc ) {
-      t_max_llsc++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpSTORECOND:
-    if( t_max_llsc < max_llsc ) {
-      t_max_llsc++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpCUSTOM:
-    if( t_max_custom < max_custom ) {
-      t_max_custom++;
-      return true;
-    }
-    return false;
-    break;
-  case MemOp::MemOpFENCE: return true; break;
-  default:
-    output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
-    return false;
-    break;
+    case MemOp::MemOpREAD:        return cmp( t_max_loads,       max_loads       );
+    case MemOp::MemOpWRITE:       return cmp( t_max_stores,      max_stores      );
+    case MemOp::MemOpFLUSH:       return cmp( t_max_flush,       max_flush       );
+    case MemOp::MemOpREADLOCK:    return cmp( t_max_readlock,    max_readlock    );
+    case MemOp::MemOpWRITEUNLOCK: return cmp( t_max_writeunlock, max_writeunlock );
+    case MemOp::MemOpLOADLINK:    return cmp( t_max_llsc,        max_llsc        );
+    case MemOp::MemOpSTORECOND:   return cmp( t_max_llsc,        max_llsc        );
+    case MemOp::MemOpCUSTOM:      return cmp( t_max_custom,      max_custom      );
+    case MemOp::MemOpFENCE:       return true;
+    default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
   }
+  // clang-format on
   return false;
 }
 
 uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const {
-
-  bool     done          = false;
-  uint64_t BaseCacheAddr = Addr;
-  while( !done ) {
-    if( BaseCacheAddr % lineSize == 0 ) {
-      done = true;
-    } else {
-      BaseCacheAddr -= 1;
-    }
-  }
+  uint64_t BaseCacheAddr = Addr - Addr % linesize;
 
 #ifdef _REV_DEBUG_
   std::cout << "not aligned to a base cache line" << std::endl;

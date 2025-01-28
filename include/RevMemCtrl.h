@@ -560,15 +560,15 @@ private:
 
   /// RevBasicMemCtrl: determine if we can instantiate the target memory operation
   bool isMemOpAvail(
-    RevMemOp* Op,
-    uint32_t& t_max_loads,
-    uint32_t& t_max_stores,
-    uint32_t& t_max_flush,
-    uint32_t& t_max_llsc,
-    uint32_t& t_max_readlock,
-    uint32_t& t_max_writeunlock,
-    uint32_t& t_max_custom
-  );
+    const RevMemOp* Op,
+    uint32_t&       t_max_loads,
+    uint32_t&       t_max_stores,
+    uint32_t&       t_max_flush,
+    uint32_t&       t_max_llsc,
+    uint32_t&       t_max_readlock,
+    uint32_t&       t_max_writeunlock,
+    uint32_t&       t_max_custom
+  ) const;
 
   /// RevBasicMemCtrl: build a standard memory request
   bool buildStandardMemRqst( RevMemOp* op, bool& Success );
