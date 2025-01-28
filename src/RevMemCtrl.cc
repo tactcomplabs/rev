@@ -376,7 +376,7 @@ bool RevBasicMemCtrl::isMemOpAvail(
 }
 
 uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const {
-  uint64_t BaseCacheAddr = Addr - Addr % linesize;
+  uint64_t BaseCacheAddr = Addr - Addr % lineSize;
 
 #ifdef _REV_DEBUG_
   std::cout << "not aligned to a base cache line" << std::endl;
