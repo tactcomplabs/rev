@@ -226,7 +226,7 @@ bool RevBasicMemCtrl::sendAMORequest(
 
   // now we record the stat for the particular AMO
   switch( RevFlagAtomic( flags ) ) {
-    // clang-format off
+  // clang-format off
     case RevFlag::F_AMOADD:   recordStat( MemCtrlStats::AMOAddPending,  1 ); break;
     case RevFlag::F_AMOXOR:   recordStat( MemCtrlStats::AMOXorPending,  1 ); break;
     case RevFlag::F_AMOAND:   recordStat( MemCtrlStats::AMOAndPending,  1 ); break;
@@ -1048,7 +1048,6 @@ static std::enable_if_t<!std::is_floating_point_v<T>> ApplyAMO( RevFlag flags, v
   auto  TmpBuf     = static_cast<std::make_signed_t<T>>( value );
   auto  TmpBufU    = static_cast<std::make_unsigned_t<T>>( value );
 
-  // Table mapping atomic operations to executable code
   // clang-format off
   switch( RevFlagAtomic( flags ) ){
     case RevFlag::F_AMOADD:   *TmpTarget += TmpBuf; break;
