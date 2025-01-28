@@ -218,8 +218,7 @@ bool RevBasicMemCtrl::sendAMORequest(
   // response comes back, we will catch the response, perform
   // the MODIFY (using the operation in flags), then dispatch
   // a WRITE operation.
-  auto tmp = std::make_tuple( Hart, buffer, target, flags, Op, false );
-  AMOTable.insert( { Addr, tmp } );
+  AMOTable.emplace( Addr, std::tuple{ Hart, buffer, target, flags, Op, false } );
 
   // We have the request created and recorded in the AMOTable
   // Push it onto the request queue

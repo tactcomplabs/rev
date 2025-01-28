@@ -634,7 +634,7 @@ private:
   std::unordered_map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
 
   /// RevBasicMemCtrl: map of amo operations to memory addresses
-  std::unordered_multimap<uint64_t, std::tuple<uint32_t, unsigned char*, void*, RevFlag, RevMemOp*, bool>> AMOTable{};
+  std::unordered_multimap<uint64_t, std::tuple<uint32_t, void*, void*, RevFlag, RevMemOp*, bool>> AMOTable{};
 
   std::vector<Statistic<uint64_t>*> stats{};  ///< statistics vector
 
