@@ -5,7 +5,8 @@
 .cache/clangd/index
 .vscode
 *.o
-.#*
+.\#*
+\#*\#
 *~
 .gdb_history
 *.out
