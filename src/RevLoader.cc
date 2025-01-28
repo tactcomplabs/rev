@@ -579,7 +579,7 @@ bool RevLoader::LoadElf( const std::string& exe, const std::vector<std::string>&
   munmap( membuf, FileSize );
 
   // print the symbol table entries
-  std::map<std::string, uint64_t>::iterator it = symtable.begin();
+  auto it = symtable.begin();
   while( it != symtable.end() ) {
     // create inverse map to allow tracer to lookup symbols
     tracer_symbols.emplace( it->second, it->first );
