@@ -1,5 +1,5 @@
 *.so
-77;30704;0c*.dylib
+*.dylib
 *.exe
 *.csv
 .cache/clangd/index
