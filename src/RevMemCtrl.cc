@@ -226,22 +226,20 @@ bool RevBasicMemCtrl::sendAMORequest(
   rqstQ.push_back( Op );
 
   // now we record the stat for the particular AMO
-  static const std::map<RevFlag, MemCtrlStats> table = {
-  // clang-format off
-    { RevFlag::F_AMOADD,   MemCtrlStats::AMOAddPending   },
-    { RevFlag::F_AMOXOR,   MemCtrlStats::AMOXorPending   },
-    { RevFlag::F_AMOAND,   MemCtrlStats::AMOAndPending   },
-    { RevFlag::F_AMOOR,    MemCtrlStats::AMOOrPending    },
-    { RevFlag::F_AMOMIN,   MemCtrlStats::AMOMinPending   },
-    { RevFlag::F_AMOMAX,   MemCtrlStats::AMOMaxPending   },
-    { RevFlag::F_AMOMIN,   MemCtrlStats::AMOMinuPending  },
-    { RevFlag::F_AMOMAXU,  MemCtrlStats::AMOMaxuPending  },
-    { RevFlag::F_AMOSWAP,  MemCtrlStats::AMOSwapPending  },
-  // clang-format on
+  switch( RevFlagAtomic( flags ) ) {
+    // clang-format off
+    case RevFlag::F_AMOADD:   recordStat( MemCtrlStats::AMOAddPending,  1 ); break;
+    case RevFlag::F_AMOXOR:   recordStat( MemCtrlStats::AMOXorPending,  1 ); break;
+    case RevFlag::F_AMOAND:   recordStat( MemCtrlStats::AMOAndPending,  1 ); break;
+    case RevFlag::F_AMOOR:    recordStat( MemCtrlStats::AMOOrPending,   1 ); break;
+    case RevFlag::F_AMOMIN:   recordStat( MemCtrlStats::AMOMinPending,  1 ); break;
+    case RevFlag::F_AMOMAX:   recordStat( MemCtrlStats::AMOMaxPending,  1 ); break;
+    case RevFlag::F_AMOMINU:  recordStat( MemCtrlStats::AMOMinuPending, 1 ); break;
+    case RevFlag::F_AMOMAXU:  recordStat( MemCtrlStats::AMOMaxuPending, 1 ); break;
+    case RevFlag::F_AMOSWAP:  recordStat( MemCtrlStats::AMOSwapPending, 1 ); break;
+    default: break;
+    // clang-format on
   };
-  auto it = table.find( RevFlagAtomic( flags ) );
-  if( it != table.end() )
-    recordStat( it->second, 1 );
   return true;
 }
 
