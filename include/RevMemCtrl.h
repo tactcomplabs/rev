@@ -476,6 +476,9 @@ public:
   // RevBasicMemCtrl: send a FENCE request
   bool sendFENCE( uint32_t Hart ) final;
 
+  // RevBasicMemCtrl: Whether an atomic request is associated with this read/write operation
+  bool isAMO( RevMemOp* op );
+
   /// RevBasicMemCtrl: handle a response generally
   template<typename RESP>
   void handleResp( RESP* ev, const char* name, uint32_t* counter );
