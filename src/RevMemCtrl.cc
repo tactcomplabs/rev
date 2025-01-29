@@ -175,7 +175,7 @@ bool RevBasicMemCtrl::sendAMORequest(
 
   // now we record the stat for the particular AMO
   switch( RevFlagAtomic( flags ) ) {
-  // clang-format off
+    // clang-format off
     case RevFlag::F_AMOADD:   recordStat( MemCtrlStats::AMOAddPending   ); break;
     case RevFlag::F_AMOXOR:   recordStat( MemCtrlStats::AMOXorPending   ); break;
     case RevFlag::F_AMOAND:   recordStat( MemCtrlStats::AMOAndPending   ); break;
@@ -305,7 +305,7 @@ bool RevBasicMemCtrl::isMemOpAvail(
 ) const {
   auto cmp = []( auto& stat, auto val ) { return stat < val ? ++stat, true : false; };
   switch( Op->getOp() ) {
-    // clang-format off
+  // clang-format off
     case MemOp::MemOpREAD:        return cmp( t_max_loads,       max_loads       );
     case MemOp::MemOpWRITE:       return cmp( t_max_stores,      max_stores      );
     case MemOp::MemOpFLUSH:       return cmp( t_max_flush,       max_flush       );
@@ -383,7 +383,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
   // if we don't have enough request slots, then requeue the entire RevMemOp
   Success = false;
   switch( op->getOp() ) {
-  // clang-format off
+    // clang-format off
     case MemOp::MemOpREAD:         if( max_loads       - num_read        < NumLines ) return true; break;
     case MemOp::MemOpWRITE:        if( max_stores      - num_write       < NumLines ) return true; break;
     case MemOp::MemOpFLUSH:        if( max_flush       - num_flush       < NumLines ) return true; break;
@@ -407,7 +407,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
 
   op->setSplitRqst( NumLines );
 
-  auto     flags     = safe_static_cast<StandardMem::Request::flags_t>( op->getStdFlags() );
+  auto     flags     = safe_static_cast<flags_t>( op->getStdFlags() );
   uint64_t bytesLeft = op->getSize();
   uint64_t base      = op->getAddr();
   auto     curByte   = op->getBuf().begin();
@@ -489,7 +489,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
 }
 
 bool RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
-  auto flags = safe_static_cast<StandardMem::Request::flags_t>( TmpFlags );
+  auto flags = safe_static_cast<flags_t>( TmpFlags );
 
 #ifdef _REV_DEBUG_
   std::cout << "building raw mem request for addr=0x" << std::hex << op->getAddr() << std::dec << "; Flags = 0x" << std::hex
@@ -563,7 +563,7 @@ bool RevBasicMemCtrl::buildStandardMemRqst( RevMemOp* op, bool& Success ) {
 
 #ifdef _REV_DEBUG_
   std::cout << "building mem request for addr=0x" << std::hex << op->getAddr() << std::dec << "; flags = 0x" << std::hex
-            << (StandardMem::Request::flags_t) op->getFlags() << std::dec << std::endl;
+            << flags_t( op->getFlags() ) << std::dec << std::endl;
   if( !lineSize )
     std::cout << "WARNING: lineSize == 0!" << std::endl;
   else if( op->getAddr() % lineSize )
