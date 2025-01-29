@@ -112,42 +112,41 @@ void RevBasicMemCtrl::recordStat( MemCtrlStats Stat, uint64_t Data ) {
 }
 
 bool RevBasicMemCtrl::sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, bool Inv, RevFlag flags ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, MemOp::MemOpFLUSH, flags );
-  Op->setInv( Inv );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::FlushPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, MemOp::MemOpFLUSH, flags );
+    Op->setInv( Inv );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::FlushPending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendREADRequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, const MemReq& req, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, MemOp::MemOpREAD, flags );
-  Op->setMemReq( req );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::ReadPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, MemOp::MemOpREAD, flags );
+    Op->setMemReq( req );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::ReadPending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendWRITERequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITE, flags );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::WritePending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITE, flags );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::WritePending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendAMORequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, void* target, const MemReq& req, RevFlag flags
 ) {
-
   if( Size == 0 )
     return true;
 
@@ -194,65 +193,65 @@ bool RevBasicMemCtrl::sendAMORequest(
 bool RevBasicMemCtrl::sendREADLOCKRequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, const MemReq& req, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, MemOp::MemOpREADLOCK, flags );
-  Op->setMemReq( req );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::ReadLockPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, MemOp::MemOpREADLOCK, flags );
+    Op->setMemReq( req );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::ReadLockPending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendWRITELOCKRequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITEUNLOCK, flags );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::WriteUnlockPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITEUNLOCK, flags );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::WriteUnlockPending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, MemOp::MemOpLOADLINK, flags );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::LoadLinkPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, MemOp::MemOpLOADLINK, flags );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::LoadLinkPending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendSTORECONDRequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpSTORECOND, flags );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::StoreCondPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpSTORECOND, flags );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::StoreCondPending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendCUSTOMREADRequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, uint32_t Opc, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, Opc, MemOp::MemOpCUSTOM, flags );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::CustomPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, Opc, MemOp::MemOpCUSTOM, flags );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::CustomPending );
+  }
   return true;
 }
 
 bool RevBasicMemCtrl::sendCUSTOMWRITERequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, uint32_t Opc, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-  RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, Opc, MemOp::MemOpCUSTOM, flags );
-  rqstQ.push_back( Op );
-  recordStat( MemCtrlStats::CustomPending );
+  if( Size ) {
+    RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, Opc, MemOp::MemOpCUSTOM, flags );
+    rqstQ.push_back( Op );
+    recordStat( MemCtrlStats::CustomPending );
+  }
   return true;
 }
 
@@ -265,9 +264,8 @@ bool RevBasicMemCtrl::sendFENCE( uint32_t Hart ) {
 
 void RevBasicMemCtrl::processMemEvent( StandardMem::Request* ev ) {
   output->verbose( CALL_INFO, 15, 0, "Received memory request event\n" );
-  if( ev == nullptr ) {
+  if( ev == nullptr )
     output->fatal( CALL_INFO, -1, "Error : Received null memory event\n" );
-  }
   ev->handle( stdMemHandlers );
 }
 
@@ -277,12 +275,11 @@ void RevBasicMemCtrl::init( uint32_t phase ) {
   // query the caching infrastructure
   if( phase == 1 ) {
     lineSize = uint32_t( memIface->getLineSize() );
-    if( lineSize > 0 ) {
+    hasCache = lineSize > 0;
+    if( hasCache ) {
       output->verbose( CALL_INFO, 5, 0, "Detected cache layers; default line size=%" PRIu32 "\n", lineSize );
-      hasCache = true;
     } else {
       output->verbose( CALL_INFO, 5, 0, "No cache detected; disabling caching\n" );
-      hasCache = false;
     }
   }
 }
@@ -322,100 +319,72 @@ bool RevBasicMemCtrl::isMemOpAvail(
 }
 
 uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const {
-  uint64_t BaseCacheAddr = Addr - Addr % lineSize;
-
-#ifdef _REV_DEBUG_
-  std::cout << "not aligned to a base cache line" << std::endl;
-  std::cout << "BaseCacheAddr = 0x" << std::hex << BaseCacheAddr << std::dec << std::endl;
-  std::cout << "Addr          = 0x" << std::hex << Addr << std::dec << std::endl;
-  std::cout << "lineSize      = " << (uint64_t) ( lineSize ) << std::endl;
-#endif
-
-  if( Addr == BaseCacheAddr ) {
-    if( Size < lineSize ) {
-      return Size;
-    } else {
-      return lineSize;
-    }
-  } else if( Addr + Size <= BaseCacheAddr + lineSize ) {
-    // we stay within a single cache line
+  // if the cache is disabled, the first line is the whole size
+  if( !hasCache )
     return Size;
-  } else {
-    return uint32_t( BaseCacheAddr + lineSize - Addr );
-  }
+
+  // number of bytes accessed in first cache line containing Addr
+  return std::min( Size, lineSize - uint32_t( Addr % lineSize ) );
 }
 
 uint32_t RevBasicMemCtrl::getNumCacheLines( uint64_t Addr, uint32_t Size ) const {
+  if( !Size )
+    return 0;
+
   // if the cache is disabled, then return 1
   // eg, there is a 1-to-1 mapping of CPU memops to memory requests
   if( !hasCache )
     return 1;
 
-  if( Addr % lineSize ) {
-    if( (uint64_t) ( Size ) <= ( lineSize - ( Addr % lineSize ) ) ) {
-      return 1;
-    } else if( Size < lineSize ) {
-      // this request is less than a cache line but
-      // due to the offset, it spans two cache lines
-      return 2;
-    } else {
-      return ( ( Size / lineSize ) + ( Addr % lineSize > 1 ) );
-    }
-  } else {
-    // address is aligned already
-    if( Size <= lineSize ) {
-      return 1;
-    } else {
-      return ( Size / lineSize ) + 1;
-    }
-  }
+  // The size of the segment plus the address offset within in the line takes a certain number of lines
+  return ( uint32_t( Addr % lineSize ) + Size - 1 ) / lineSize + 1;
 }
 
 bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
-  uint32_t NumLines = getNumCacheLines( op->getAddr(), op->getSize() );
+  uint64_t base      = op->getAddr();
+  uint32_t bytesLeft = op->getSize();
+  uint32_t NumLines  = getNumCacheLines( base, bytesLeft );
 
 #ifdef _REV_DEBUG_
-  std::cout << "building caching mem request for addr=0x" << std::hex << op->getAddr() << std::dec << "; NumLines = " << NumLines
-            << "; Size = " << op->getSize() << std::endl;
+  std::cout << "Building caching mem request for addr=0x" << std::hex << base << std::dec << "; NumLines = " << NumLines
+            << "; Size = " << bytesLeft << std::endl;
 #endif
 
   // first determine if we have enough request slots to service all the cache lines
-  // if we don't have enough request slots, then requeue the entire RevMemOp
-  Success = false;
+  uint32_t left;
   switch( op->getOp() ) {
     // clang-format off
-    case MemOp::MemOpREAD:         if( max_loads       - num_read        < NumLines ) return true; break;
-    case MemOp::MemOpWRITE:        if( max_stores      - num_write       < NumLines ) return true; break;
-    case MemOp::MemOpFLUSH:        if( max_flush       - num_flush       < NumLines ) return true; break;
-    case MemOp::MemOpREADLOCK:     if( max_readlock    - num_readlock    < NumLines ) return true; break;
-    case MemOp::MemOpWRITEUNLOCK:  if( max_writeunlock - num_writeunlock < NumLines ) return true; break;
-    case MemOp::MemOpLOADLINK:     if( max_llsc        - num_llsc        < NumLines ) return true; break;
-    case MemOp::MemOpSTORECOND:    if( max_llsc        - num_llsc        < NumLines ) return true; break;
-    case MemOp::MemOpCUSTOM:       if( max_custom      - num_custom      < NumLines ) return true; break;
+    case MemOp::MemOpREAD:         left = max_loads       - num_read;        break;
+    case MemOp::MemOpWRITE:        left = max_stores      - num_write;       break;
+    case MemOp::MemOpFLUSH:        left = max_flush       - num_flush;       break;
+    case MemOp::MemOpREADLOCK:     left = max_readlock    - num_readlock;    break;
+    case MemOp::MemOpWRITEUNLOCK:  left = max_writeunlock - num_writeunlock; break;
+    case MemOp::MemOpLOADLINK:     left = max_llsc        - num_llsc;        break;
+    case MemOp::MemOpSTORECOND:    left = max_llsc        - num_llsc;        break;
+    case MemOp::MemOpCUSTOM:       left = max_custom      - num_custom;      break;
     default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
     // clang-format on
   }
-  Success = true;
+
+  // if we don't have enough request slots, then requeue the entire RevMemOp
+  Success = NumLines <= left;
+  if( !Success )
+    return true;
 
 #ifdef _REV_DEBUG_
   std::cout << "Found sufficient request slots for multi-line cache requests" << std::endl;
 #endif
 
-  // dispatch the base request
-  // this the base address to the end of the first cache line
+  // dispatch the requests
+  // starting with the end of the first cache line, then each cache line afterwards
   // this prevents us from sending requests that span multiple cache lines
-
   op->setSplitRqst( NumLines );
 
-  auto     flags     = safe_static_cast<flags_t>( op->getStdFlags() );
-  uint64_t bytesLeft = op->getSize();
-  uint64_t base      = op->getAddr();
-  auto     curByte   = op->getBuf().begin();
+  auto flags   = safe_static_cast<flags_t>( op->getStdFlags() );
+  auto curByte = op->getBuf().begin();
+  auto size    = getBaseCacheLineSize( base, bytesLeft );
 
-  while( bytesLeft ) {
-    // setup the adjusted size of the request
-    uint32_t size = bytesLeft < lineSize ? uint32_t( bytesLeft ) : lineSize;
-
+  while( size ) {
     switch( op->getOp() ) {
     case MemOp::MemOpREAD:
 #ifdef _REV_DEBUG_
@@ -474,7 +443,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
 
     case MemOp::MemOpFENCE:
       // we should never get here with a FENCE operation
-      // the FENCE is handled locally and never dispatch on the memIface
+      // the FENCE is handled locally and never dispatched on the memIface
       return false;
 
     default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
@@ -483,6 +452,9 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
     base += size;
     curByte += size;
     bytesLeft -= size;
+
+    // setup the adjusted size of the request
+    size = std::min( bytesLeft, lineSize );
   }
 
   return true;
