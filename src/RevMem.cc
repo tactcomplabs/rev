@@ -31,6 +31,56 @@ RevMem::RevMem( uint64_t memSize, RevOpts* opts, RevMemCtrl* ctrl, SST::Output* 
   AddMemSegAt( stacktop, 1024 );  // Add the 1024 bytes for the program header information
 }
 
+void RevMem::UpDownMemoryHolePunch() {
+  // TODO all this will be removed and declared in elf file
+  // beware: keep these in sync with config file
+  #define BASE_SPMEM_ADDR           0x100'0000'0000llu
+  #define BASE_CTRL_ADDR            0x200'0000'0000llu
+  #define BASE_MAPPED_ADDR          0x80'0000'0000llu
+  #define BASE_MAPPED_GLOBAL_ADDR   0x380'0000'0000llu
+
+  const long sz = 0x100000000;
+  output->verbose(
+    CALL_INFO,
+    4,
+    0,
+    "Enabling UpDown SPMEM Range: 0x%lx - 0x%lx\n",
+    (long unsigned) BASE_SPMEM_ADDR,
+    (long unsigned) ( BASE_SPMEM_ADDR + sz - 1 )
+  );
+  AddMemSegAt( BASE_SPMEM_ADDR, sz );
+
+  output->verbose(
+    CALL_INFO,
+    4,
+    0,
+    "Enabling UpDown CTRL Range: 0x%lx - 0x%lx\n",
+    (long unsigned) BASE_CTRL_ADDR,
+    (long unsigned) ( BASE_CTRL_ADDR + sz - 1 )
+  );
+  AddMemSegAt( BASE_CTRL_ADDR, sz );
+
+  output->verbose(
+    CALL_INFO,
+    4,
+    0,
+    "Enabling UpDown MAPPED Range: 0x%lx - 0x%lx\n",
+    (long unsigned) BASE_MAPPED_ADDR,
+    (long unsigned) ( BASE_MAPPED_ADDR + sz - 1 )
+  );
+  AddMemSegAt( BASE_MAPPED_ADDR, sz );
+
+  output->verbose(
+    CALL_INFO,
+    4,
+    0,
+    "Enabling UpDown MAPPED Range: 0x%lx - 0x%lx\n",
+    (long unsigned) BASE_MAPPED_ADDR,
+    (long unsigned) ( BASE_MAPPED_GLOBAL_ADDR + sz - 1 )
+  );
+  AddMemSegAt( BASE_MAPPED_GLOBAL_ADDR, sz );
+}
+
 // allocate the backing memory, zeroing it
 RevMem::RevMem( uint64_t memSize, RevOpts* opts, SST::Output* output )
   : physMem( new( std::nothrow ) unsigned char[memSize]{} ), memSize( memSize ), opts( opts ), output( output ), pageSize( 262144 ),

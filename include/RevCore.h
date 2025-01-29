@@ -702,6 +702,11 @@ private:
 
   // =============== REV print utilities
   EcallStatus ECALL_fast_printf();             // 9010, rev_fast_printf(const char *, ...)
+  
+  // =============== Custom utilities - DO NOT COMMIT TO MAIN BRANCH!
+  EcallStatus ECALL_dump_mem();                // 9001, PLACEHOLDER rev_dump_mem(void *vaddr, uint64_t size, const char* filename)
+  EcallStatus ECALL_fast_print();              // 9011, rev_fast_print(const char *, ...)
+  EcallStatus ECALL_udrt_print();              // 9012, rev_udrt_print(const char *, ...)
 
   // clang-format on
 

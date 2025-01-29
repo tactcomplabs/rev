@@ -583,6 +583,11 @@ EcallStatus RevCore::ECALL_fchown() {
 }
 
 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
+
+// ubuntu$ man openat
+// int openat(int dirfd, const char *pathname, int flags);
+// int openat(int dirfd, const char *pathname, int flags, mode_t mode);
+
 EcallStatus RevCore::ECALL_openat() {
   auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
   if( EcallState.bytesRead == 0 ) {
@@ -593,8 +598,7 @@ EcallStatus RevCore::ECALL_openat() {
   auto dirfd    = RegFile->GetX<int>( RevReg::a0 );
   auto pathname = RegFile->GetX<uint64_t>( RevReg::a1 );
 
-  // commented out to remove warnings
-  // auto flags = RegFile->GetX<int>(RevReg::a2);
+  auto flags    = RegFile->GetX<int>( RevReg::a2 );
   auto mode     = RegFile->GetX<int>( RevReg::a3 );
 
   /*
@@ -607,9 +611,19 @@ EcallStatus RevCore::ECALL_openat() {
 
   auto action   = [&] {
     // Do the openat on the host
-    dirfd  = open( std::filesystem::current_path().c_str(), mode );
-    int fd = openat( dirfd, EcallState.string.c_str(), mode );
+    dirfd = open( std::filesystem::current_path().c_str(), O_RDONLY );
+    if( dirfd == -1 )
+      output->fatal( CALL_INFO, -1, "opening CWD returned error: %s\n", strerror( errno ) );
 
+    // example open file for writing:
+    // open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
+
+    int fd = openat( dirfd, EcallState.string.c_str(), flags, mode );
+
+    if( fd == -1 )
+      output->fatal( CALL_INFO, -1, "openat for filename=%s returned error: %s\n", EcallState.string.c_str(), strerror( errno ) );
+
+    output->verbose( CALL_INFO, 1, 0, "fd=0% " PRId32 " filename=%s\n", fd, EcallState.string.c_str() );
     // Add the file descriptor to this thread
     Harts.at( HartToExecID )->Thread->AddFD( fd );
 
@@ -696,12 +710,20 @@ EcallStatus RevCore::ECALL_lseek() {
 
 // 63, rev_read(unsigned int fd
 EcallStatus RevCore::ECALL_read() {
+  auto fd      = RegFile->GetX<int>( RevReg::a0 );
+  auto BufAddr = RegFile->GetX<uint64_t>( RevReg::a1 );
+  auto BufSize = RegFile->GetX<uint64_t>( RevReg::a2 );
   output->verbose(
-    CALL_INFO, 2, 0, "ECALL: read called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
+    CALL_INFO,
+    2,
+    0,
+    "ECALL: read called by thread %" PRIu32 " on hart %" PRIu32 " fd=%" PRId32 " BufAddr=0x%" PRIx64 " BufSize=0x%" PRIu64 "\n",
+    ActiveThreadID,
+    HartToExecID,
+    fd,
+    BufAddr,
+    BufSize
   );
-  auto fd            = RegFile->GetX<int>( RevReg::a0 );
-  auto BufAddr       = RegFile->GetX<uint64_t>( RevReg::a1 );
-  auto BufSize       = RegFile->GetX<uint64_t>( RevReg::a2 );
 
   // Check if Current Ctx has access to the fd
   auto& ActiveThread = Harts.at( HartToExecID )->Thread;
@@ -728,7 +750,78 @@ EcallStatus RevCore::ECALL_read() {
   auto rc = read( fd, &TmpBuf[0], BufSize );
 
   // Write that data to the buffer inside of Rev
-  mem->WriteMem( HartToExecID, BufAddr, uint32_t( BufSize ), &TmpBuf[0] );
+  // mem->WriteMem( HartToExecID, BufAddr, BufSize, &TmpBuf[0], RevFlag::F_NONCACHEABLE );
+
+  // We must ensure writes are cache aligned.
+  // TODO get cache line size from configuration
+#if 1
+  const uint32_t cache_line_size = 8;
+  uint64_t       remaining       = BufSize;
+  uint64_t       dstAddr         = BufAddr;
+  size_t         srcIndex        = 0;
+
+  // The initial bit
+  uint32_t nBytes                = 0;
+  if( dstAddr % cache_line_size ) {
+    nBytes = cache_line_size - ( dstAddr % cache_line_size );
+    if( nBytes > BufSize )
+      nBytes = uint32_t( BufSize );
+    output->verbose( CALL_INFO, 2, 0, "ECALL: read: write(a) %" PRIu32 " to %" PRIx64 "\n", nBytes, dstAddr );
+    mem->WriteMem( HartToExecID, dstAddr, nBytes, &TmpBuf[srcIndex], RevFlag::F_NONCACHEABLE );
+    srcIndex += nBytes;
+    dstAddr += nBytes;
+    remaining -= nBytes;
+    if( remaining > 0 ) {
+      assert( ( dstAddr % cache_line_size ) == 0 );
+    }
+  }
+  // The middle bit
+  uint64_t alignedSize = remaining - remaining % cache_line_size;
+  if( alignedSize > 0 ) {
+    output->verbose( CALL_INFO, 2, 0, "ECALL: read(b): alignedSize=%" PRIu64 "\n", alignedSize );
+    for( unsigned i = 0; i < alignedSize; i += cache_line_size ) {
+      assert( srcIndex < BufSize );
+      output->verbose( CALL_INFO, 2, 0, "ECALL: read: write(b) %" PRIu32 " to %" PRIx64 "\n", cache_line_size, dstAddr );
+      mem->WriteMem( HartToExecID, dstAddr, cache_line_size, &TmpBuf[srcIndex], RevFlag::F_NONCACHEABLE );
+      srcIndex += cache_line_size;
+      dstAddr += cache_line_size;
+      remaining -= cache_line_size;
+      assert( ( dstAddr % cache_line_size ) == 0 );
+    }
+  }
+  // The last bit
+  assert( remaining < (int) cache_line_size );
+  nBytes = remaining % cache_line_size;
+  if( nBytes > 0 ) {
+    assert( srcIndex < BufSize );
+    output->verbose( CALL_INFO, 2, 0, "ECALL: read: write(c) %" PRIu32 " to %" PRIx64 "\n", nBytes, dstAddr );
+    mem->WriteMem( HartToExecID, dstAddr, nBytes, &TmpBuf[srcIndex], RevFlag::F_NONCACHEABLE );
+    srcIndex += nBytes;
+    dstAddr += nBytes;
+    remaining -= nBytes;
+  }
+  // final sanity check
+  assert( srcIndex == BufSize );
+  assert( dstAddr == ( BufAddr + BufSize ) );
+  assert( remaining == 0 );
+#else
+  size_t   i;
+  uint64_t alignedSize = BufSize - BufSize % cache_line_size;
+  output->verbose( CALL_INFO, 2, 0, "ECALL: read: alignedSize=%" PRIu64 "\n", alignedSize );
+
+  // The middle bit
+  for( i = 0; i < alignedSize; i += cache_line_size ) {
+    output->verbose( CALL_INFO, 2, 0, "ECALL: read: write(a) %" PRIu64 " to %" PRIx64 "\n", cache_line_size, BufAddr + i );
+    mem->WriteMem( HartToExecID, BufAddr + i, cache_line_size, &TmpBuf[i], RevFlag::F_NONCACHEABLE );
+  }
+  // The last bit
+  if( BufSize % cache_line_size ) {
+    output->verbose(
+      CALL_INFO, 2, 0, "ECALL: read: write(b) %" PRIu64 " to %" PRIx64 "\n", BufSize % cache_line_size, BufAddr + i
+    );
+    mem->WriteMem( HartToExecID, BufAddr + i, BufSize % cache_line_size, &TmpBuf[i], RevFlag::F_NONCACHEABLE );
+  }
+#endif
 
   RegFile->SetX( RevReg::a0, rc );
   return EcallStatus::SUCCESS;
@@ -754,6 +847,7 @@ EcallStatus RevCore::ECALL_write() {
 
   auto nleft = nbytes - EcallState.string.size();
   if( nleft == 0 && LSQueue->count( lsq_hash ) == 0 ) {
+    output->verbose( CALL_INFO, 2, 0, "Write fd=%" PRId32 " size=%zu\n", fd, EcallState.string.size() );
     auto rc = write( fd, EcallState.string.data(), EcallState.string.size() );
     RegFile->SetX( RevReg::a0, rc );
     DependencyClear( HartToExecID, RevReg::a0, RevRegClass::RegGPR );
@@ -3389,6 +3483,88 @@ EcallStatus RevCore::ECALL_dump_thread_mem_to_file() {
   return EcallLoadAndParseString( pathname, action );
 }
 
+// 9101, rev_dump_mem(void *vaddr, uint64_t size, const char* filename)
+EcallStatus RevCore::ECALL_dump_mem() {
+  auto&    EcallState = Harts.at( HartToExecID )->GetEcallState();
+  uint64_t pMem       = RegFile->GetX<uint64_t>( RevReg::a0 );
+  uint64_t size       = RegFile->GetX<uint64_t>( RevReg::a1 );
+  uint64_t pFilename  = RegFile->GetX<uint64_t>( RevReg::a2 );
+  output->verbose( CALL_INFO, 1, 0, "addr=0x%" PRIx64 " size=%" PRIu64 " fn_addr=0x%" PRIx64 "\n", pMem, size, pFilename );
+  auto action = [&] { output->verbose( CALL_INFO, 1, 0, "filename=%s\n", EcallState.string.c_str() ); };
+  return EcallLoadAndParseString( pFilename, action );
+}
+
+// 9111, rev_fast_print(const char *, Ts...)
+//  Very limited printf-like helper executed on host rather than rev.
+//  Use xml-like tags to define <rev-print>start/end<rev-print> of printed text to allow post processor extraction
+//  Restrictions:
+//  - 6 data, all uint64_t
+//  - 1024 characters
+EcallStatus RevCore::ECALL_fast_print() {
+  auto&    EcallState = Harts.at( HartToExecID )->GetEcallState();
+  uint64_t pFormat    = RegFile->GetX<uint64_t>( RevReg::a0 );
+
+  auto action         = [&] {
+    // Assumption: ECALL blocks until finished so register state preserved
+    uint64_t a1 = RegFile->GetX<uint64_t>( RevReg::a1 );
+    uint64_t a2 = RegFile->GetX<uint64_t>( RevReg::a2 );
+    uint64_t a3 = RegFile->GetX<uint64_t>( RevReg::a3 );
+    uint64_t a4 = RegFile->GetX<uint64_t>( RevReg::a4 );
+    uint64_t a5 = RegFile->GetX<uint64_t>( RevReg::a5 );
+    uint64_t a6 = RegFile->GetX<uint64_t>( RevReg::a6 );
+
+    char buffer[1024];
+    int  cx = snprintf( buffer, sizeof( buffer ), EcallState.string.c_str(), a1, a2, a3, a4, a5, a6 );
+    if( cx >= 0 && size_t( cx ) < sizeof( buffer ) )
+      output->verbose( CALL_INFO, 0, 0, "<rev-print>\n%s</rev-print>\n", buffer );
+  };
+  return EcallLoadAndParseString( pFormat, action );
+}
+
+// 9112, rev_udrt_print(const char *, Ts...)
+//  Similar to rev_fast_print but using UPDOWN_INFO prefix to facililate updown runtime trace comparisons.
+//  Use only in test/udruntime code
+EcallStatus RevCore::ECALL_udrt_print() {
+  auto&    EcallState = Harts.at( HartToExecID )->GetEcallState();
+  uint64_t pFormat    = RegFile->GetX<uint64_t>( RevReg::a0 );
+
+  auto action         = [&] {
+    char buffer[1024];
+    int  cx;
+
+    // Assumption: ECALL blocks until finished so register state preserved
+    if( feature->IsRV64() ) {
+      cx = snprintf(
+        buffer,
+        sizeof( buffer ),
+        EcallState.string.c_str(),
+        RegFile->GetX<uint64_t>( RevReg::a1 ),
+        RegFile->GetX<uint64_t>( RevReg::a2 ),
+        RegFile->GetX<uint64_t>( RevReg::a3 ),
+        RegFile->GetX<uint64_t>( RevReg::a4 ),
+        RegFile->GetX<uint64_t>( RevReg::a5 ),
+        RegFile->GetX<uint64_t>( RevReg::a6 )
+      );
+    } else {
+      cx = snprintf(
+        buffer,
+        sizeof( buffer ),
+        EcallState.string.c_str(),
+        RegFile->GetX<uint32_t>( RevReg::a1 ),
+        RegFile->GetX<uint32_t>( RevReg::a2 ),
+        RegFile->GetX<uint32_t>( RevReg::a3 ),
+        RegFile->GetX<uint32_t>( RevReg::a4 ),
+        RegFile->GetX<uint32_t>( RevReg::a5 ),
+        RegFile->GetX<uint32_t>( RevReg::a6 )
+      );
+    }
+
+    if( cx >= 0 && size_t( cx ) < sizeof( buffer ) )
+      output->verbose( CALL_INFO, 0, 0, "[UPDOWN_INFO] %s\n", buffer );
+  };
+  return EcallLoadAndParseString( pFormat, action );
+}
+
 // 9110, rev_fast_printf(const char *, ...)
 //  printf helper executed on host rather than rev.
 //  Use xml-like tags to define <rev-print>start/end<rev-print> of printed text to allow post processor extraction
@@ -3400,9 +3576,11 @@ EcallStatus RevCore::ECALL_fast_printf() {
   auto     action     = [&] {
     const char* format = EcallState.string.c_str();
     char        buffer[1024];
+    int         cx;
+
     // This is sort of a hack -- we pass XLEN-sized values from a1-a6 which go into va_args slots
     if( feature->IsRV64() ) {
-      snprintf(
+      cx = snprintf(
         buffer,
         sizeof( buffer ),
         format,
@@ -3414,7 +3592,7 @@ EcallStatus RevCore::ECALL_fast_printf() {
         RegFile->GetX<uint64_t>( RevReg::a6 )
       );
     } else {
-      snprintf(
+      cx = snprintf(
         buffer,
         sizeof( buffer ),
         format,
@@ -3426,6 +3604,7 @@ EcallStatus RevCore::ECALL_fast_printf() {
         RegFile->GetX<uint32_t>( RevReg::a6 )
       );
     }
+    if( cx >= 0 && size_t( cx ) < sizeof( buffer ) )
     output->verbose( CALL_INFO, 0, 0, "<rev-print>%s</rev-print>\n", buffer );
   };
   return EcallLoadAndParseString( pFormat, action );
@@ -3759,8 +3938,11 @@ const std::unordered_map<uint32_t, EcallStatus(RevCore::*)()> RevCore::Ecalls = 
     { 9004, &RevCore::ECALL_dump_valid_mem },           // rev_dump_valid_mem()
     { 9005, &RevCore::ECALL_dump_valid_mem_to_file },   // rev_dump_valid_mem_to_file(const unsigned char* filename)
     { 9004, &RevCore::ECALL_dump_thread_mem },          // rev_dump_thread_mem()
-    { 9005, &RevCore::ECALL_dump_thread_mem_to_file },  // rev_dump_thread_mem_to_file(const unsigned char* filename)
+    { 9005, &RevCore::ECALL_dump_thread_mem_to_file },  // rev_dump_thread_mem_to_file(const char* filename)
+    { 9101, &RevCore::ECALL_dump_mem },                 // rev_dump_mem(void *vaddr, uint64_t size, const char* filename)
     { 9110, &RevCore::ECALL_fast_printf },              // rev_fast_printf(const char *, ...)
+    { 9111, &RevCore::ECALL_fast_print },               // rev_fast_print(const char *, ...)
+    { 9112, &RevCore::ECALL_udrt_print },               // rev_udrt_print(const char *, ...)
 };
 // clang-format on
 

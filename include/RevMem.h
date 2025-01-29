@@ -64,6 +64,9 @@ public:
   RevMem( const RevMem& )            = delete;
   RevMem& operator=( const RevMem& ) = delete;
 
+  /// RevMem: Force direct access of UpDown physical memory locations
+  void UpDownMemoryHolePunch();
+
   /* Virtual Memory Blocks  */
   class MemSegment {
   public:

@@ -276,8 +276,8 @@ struct ElfInfo {
 class RevLoader {
 public:
   /// RevLoader: standard constructor
-  RevLoader( const std::string& exe, const std::vector<std::string>& args, RevMem* mem, SST::Output* output )
-    : mem( mem ), output( output ) {
+  RevLoader( const std::string& exe, const std::vector<std::string>& args, RevMem* mem, SST::Output* output, uint64_t heapBuffer )
+    : mem( mem ), output( output ), heapBuffer( heapBuffer ) {
     if( !LoadElf( exe, args ) )
       output->fatal( CALL_INFO, -1, "Error: failed to load executable into memory\n" );
   }
@@ -309,7 +309,8 @@ public:
 private:
   RevMem*      mem{};     ///< RevLoader: memory object
   SST::Output* output{};  ///< RevLoader: output handler
-
+  uint64_t     heapBuffer{};  ///< RevLoader: spacing for heap memory
+  
   uint32_t RV32Entry{};  ///< RevLoader: RV32 entry
   uint64_t RV64Entry{};  ///< RevLoader: RV64 entry
 

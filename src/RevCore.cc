@@ -1980,6 +1980,9 @@ bool RevCore::ExecEcall() {
   if( completed ) {
     Harts[HartToDecodeID]->GetEcallState().clear();
     RegFile->SetSCAUSE( RevExceptionCause::NONE );
+  } else {
+    // Avoid recapturing register reads every cycle ecall is reissued
+    RegFile->SetTracer( nullptr );
   }
 
   return true;
