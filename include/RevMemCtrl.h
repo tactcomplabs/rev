@@ -50,31 +50,39 @@ union AMOData {
 class RevMemOp {
 public:
   /// RevMemOp constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, MemOp Op, RevFlag flags );
+  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, MemOp Op, RevFlag flags )
+    : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Op( Op ), flags( flags ) {}
 
   /// RevMemOp constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, MemOp Op, RevFlag flags );
+  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, MemOp Op, RevFlag flags )
+    : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Op( Op ), flags( flags ), target( target ) {}
 
   /// RevMemOp overloaded constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, MemOp Op, RevFlag flags );
+  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, MemOp Op, RevFlag flags )
+    : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Op( Op ), membuf( buffer, buffer + Size ), flags( flags ) {}
 
   /// RevMemOp overloaded constructor
   RevMemOp(
     uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, void* target, MemOp Op, RevFlag flags
-  );
+  )
+    : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Op( Op ), membuf( buffer, buffer + Size ), flags( flags ),
+      target( target ) {}
 
   /// RevMemOp overloaded constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, std::vector<uint8_t> buffer, MemOp Op, RevFlag flags );
+  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, std::vector<uint8_t> buffer, MemOp Op, RevFlag flags )
+    : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Op( Op ), membuf( std::move( buffer ) ), flags( flags ) {}
 
   /// RevMemOp overloaded constructor
-  RevMemOp(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, uint32_t CustomOpc, MemOp Op, RevFlag flags
-  );
+  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, uint32_t CustomOpc, MemOp Op, RevFlag flags )
+    : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Op( Op ), CustomOpc( CustomOpc ), flags( flags ), target( target ) {
+  }
 
   /// RevMemOp overloaded constructor
   RevMemOp(
     uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, uint32_t CustomOpc, MemOp Op, RevFlag flags
-  );
+  )
+    : Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), Op( Op ), CustomOpc( CustomOpc ), membuf( buffer, buffer + Size ),
+      flags( flags ) {}
 
   /// RevMemOp default destructor
   ~RevMemOp()                            = default;
@@ -138,18 +146,18 @@ public:
   const MemReq& getMemReq() const { return procReq; }
 
 private:
-  uint32_t             Hart{};       ///< RevMemOp: RISC-V Hart
-  uint64_t             Addr{};       ///< RevMemOp: address
-  uint64_t             PAddr{};      ///< RevMemOp: physical address (for RevMem I/O)
-  uint32_t             Size{};       ///< RevMemOp: size of the memory operation in bytes
-  bool                 Inv{};        ///< RevMemOp: flush operation invalidate flag
-  MemOp                Op{};         ///< RevMemOp: target memory operation
-  uint32_t             CustomOpc{};  ///< RevMemOp: custom memory opcode
-  uint32_t             SplitRqst{};  ///< RevMemOp: number of split cache line requests
-  std::vector<uint8_t> membuf{};     ///< RevMemOp: buffer
-  RevFlag              flags{};      ///< RevMemOp: request flags
-  void*                target{};     ///< RevMemOp: target register pointer
-  MemReq               procReq{};    ///< RevMemOp: original request from RevCore
+  uint32_t             Hart{};         ///< RevMemOp: RISC-V Hart
+  uint64_t             Addr{};         ///< RevMemOp: address
+  uint64_t             PAddr{};        ///< RevMemOp: physical address (for RevMem I/O)
+  uint32_t             Size{};         ///< RevMemOp: size of the memory operation in bytes
+  bool                 Inv{};          ///< RevMemOp: flush operation invalidate flag
+  MemOp                Op{};           ///< RevMemOp: target memory operation
+  uint32_t             CustomOpc{};    ///< RevMemOp: custom memory opcode
+  uint32_t             SplitRqst = 1;  ///< RevMemOp: number of split cache line requests
+  std::vector<uint8_t> membuf{};       ///< RevMemOp: buffer
+  RevFlag              flags{};        ///< RevMemOp: request flags
+  void*                target{};       ///< RevMemOp: target register pointer
+  MemReq               procReq{};      ///< RevMemOp: original request from RevCore
 };
 
 // ----------------------------------------
@@ -570,6 +578,13 @@ private:
     uint32_t&       t_max_custom
   ) const;
 
+  /// RevBasicMemCtrl: Add a new memory request
+  void addMemRqst( RevMemOp* op, Interfaces::StandardMem::Request* rqst ) {
+    requests.push_back( rqst->getID() );
+    outstanding[rqst->getID()] = op;
+    memIface->send( rqst );
+  };
+
   /// RevBasicMemCtrl: build a standard memory request
   bool buildStandardMemRqst( RevMemOp* op, bool& Success );
 
@@ -592,7 +607,7 @@ private:
   void registerStats();
 
   /// RevBasicMemCtrl: inject statistics data for the target metric
-  void recordStat( MemCtrlStats Stat, uint64_t Data );
+  void recordStat( MemCtrlStats Stat, uint64_t Data = 1 );
 
   /// RevBasicMemCtrl: returns the total number of outstanding requests
   uint64_t getTotalRqsts() const { return num_read + num_write + num_llsc + num_readlock + num_writeunlock + num_custom; }
