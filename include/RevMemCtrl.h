@@ -504,7 +504,7 @@ public:
   bool sendFENCE( uint32_t Hart ) final;
 
   // RevBasicMemCtrl: Whether an atomic request is associated with this read/write operation
-  bool isAMO( RevMemOp* op );
+  bool isAMO( const std::shared_ptr<RevMemOp>& op );
 
   /// RevBasicMemCtrl: handle a response generally
   template<typename RESP>
@@ -529,7 +529,7 @@ public:
   static AMOData performAMO( RevFlag flags, uint32_t size, void* target, const void* data );
 
   /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
-  void performAMOMemH( RevMemOp* op );
+  void performAMOMemH( const std::shared_ptr<RevMemOp>& readOp );
 
   /// RevBasicMemCtrl: assign tracer pointer
   void setTracer( RevTracer* tracer ) final { Tracer = tracer; }
@@ -587,27 +587,24 @@ private:
   /// RevBasicMemCtrl: process the next memory request
   bool processNextRqst( MemOpParams& t );
 
-  /// RevBasicMemCtrl: determine if we can instantiate the target memory operation
-  bool isMemOpAvail( const RevMemOp* Op, MemOpParams& t ) const;
-
   /// RevBasicMemCtrl: Add a new memory request
-  void addMemRqst( RevMemOp* op, Interfaces::StandardMem::Request* rqst ) {
+  void addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst ) {
     requests.push_back( rqst->getID() );
-    outstanding[rqst->getID()] = op;
+    outstanding.insert_or_assign( rqst->getID(), op );
     memIface->send( rqst );
   };
 
   /// RevBasicMemCtrl: build a standard memory request
-  bool buildStandardMemRqst( RevMemOp* op );
+  bool buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op );
 
   /// RevBasicMemCtrl: build raw memory requests with a 1-to-1 mapping to RevMemOps'
-  void buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags );
+  bool buildRawMemRqst( const std::shared_ptr<RevMemOp>& op, RevFlag Flags );
 
   /// RevBasicMemCtrl: build cache-aligned requests
-  bool buildCacheMemRqst( RevMemOp* op );
+  bool buildCacheMemRqst( const std::shared_ptr<RevMemOp>& op );
 
   /// RevBasicMemCtrl: determine if there are any pending AMOs that would prevent a request from dispatching
-  bool isPendingAMO( std::deque<RevMemOp*>::const_iterator Slot ) const;
+  bool isPendingAMO( std::deque<std::shared_ptr<RevMemOp>>::const_iterator Slot ) const;
 
   /// RevBasicMemCtrl: register statistics
   void registerStats();
@@ -628,23 +625,23 @@ private:
   uint32_t getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const;
 
   /// RevBasicMemCtrl: retrieve the number of outstanding requests on the wire
-  uint32_t getNumSplitRqsts( RevMemOp* op ) const;
+  uint32_t getNumSplitRqsts( const std::shared_ptr<RevMemOp>& op ) const;
 
   // -- private data members
-  StandardMem*                                              memIface{};     ///< StandardMem memory interface
-  bool                                                      hasCache{};     ///< detects whether cache layers are present
-  uint32_t                                                  lineSize{};     ///< cache line size
-  MemOpParams                                               memOpNum{};     ///< numbers in effect of memory parameters
-  MemOpParams                                               memOpMax{};     ///< maximums allowable of memory parameters
-  std::vector<StandardMem::Request::id_t>                   requests{};     ///< outstanding StandardMem requests
-  std::unordered_map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
-  std::deque<RevMemOp*>                                     rqstQ{};        ///< queued memory requests
+  StandardMem*                            memIface{};  ///< StandardMem memory interface
+  bool                                    hasCache{};  ///< detects whether cache layers are present
+  uint32_t                                lineSize{};  ///< cache line size
+  MemOpParams                             memOpNum{};  ///< numbers in effect of memory parameters
+  MemOpParams                             memOpMax{};  ///< maximums allowable of memory parameters
+  std::vector<StandardMem::Request::id_t> requests{};  ///< outstanding StandardMem requests
+  std::unordered_map<StandardMem::Request::id_t, std::shared_ptr<RevMemOp>> outstanding{};  ///< map of outstanding requests
+  std::deque<std::shared_ptr<RevMemOp>>                                     rqstQ{};        ///< queued memory requests
 
   ///< StandardMem interface response handlers
   const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this, output.get() ) };
 
   /// RevBasicMemCtrl: map of amo operations to memory addresses
-  std::unordered_multimap<uint64_t, std::tuple<uint32_t, void*, void*, RevFlag, RevMemOp*, bool>> AMOTable{};
+  std::unordered_multimap<uint64_t, std::tuple<uint32_t, void*, void*, RevFlag, std::shared_ptr<RevMemOp>, bool>> AMOTable{};
 
   std::vector<Statistic<uint64_t>*> stats{};  ///< statistics vector
 
