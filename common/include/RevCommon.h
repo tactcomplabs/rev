@@ -109,25 +109,27 @@ constexpr auto BitShift( T x, int shift ) {
 }
 
 enum class RevRegClass : uint8_t {  ///< Rev CPU Register Classes
-  RegUNKNOWN = 0,                   ///< RevRegClass: Unknown register file
-  RegIMM     = 1,                   ///< RevRegClass: Treat the reg class like an immediate: S-Format
-  RegGPR     = 2,                   ///< RevRegClass: GPR reg file
-  RegCSR     = 3,                   ///< RevRegClass: CSR reg file
-  RegFLOAT   = 4,                   ///< RevRegClass: Float register file
-  RegVEC     = 5,                   ///< RevRegClass: Vector register file
+  RegUNKNOWN,                       ///< RevRegClass: Unknown register file
+  RegIMM,                           ///< RevRegClass: Treat the reg class like an immediate: S-Format
+  RegGPR,                           ///< RevRegClass: GPR reg file
+  RegCSR,                           ///< RevRegClass: CSR reg file
+  RegFLOAT,                         ///< RevRegClass: Float register file
+  RegVEC,                           ///< RevRegClass: Vector register file
 };
 
 enum class MemOp : uint8_t {
-  MemOpREAD        = 0,
-  MemOpWRITE       = 1,
-  MemOpFLUSH       = 2,
-  MemOpREADLOCK    = 3,
-  MemOpWRITEUNLOCK = 4,
-  MemOpLOADLINK    = 5,
-  MemOpSTORECOND   = 6,
-  MemOpCUSTOM      = 7,
-  MemOpFENCE       = 8,
-  MemOpAMO         = 9,
+  MemOpREAD,
+  MemOpWRITE,
+  MemOpFLUSH,
+  MemOpREADLOCK,
+  MemOpWRITEUNLOCK,
+  MemOpLOADLINK,
+  MemOpSTORECOND,
+  MemOpCUSTOM,
+  MemOpFENCE,
+  MemOpAMO,
+  MemOpTOTAL,
+  END
 };
 
 std::ostream& operator<<( std::ostream& os, MemOp op );

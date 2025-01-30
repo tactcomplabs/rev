@@ -27,9 +27,9 @@ std::ostream& operator<<( std::ostream& os, MemOp op ) {
     case MemOp::MemOpCUSTOM:      return os << "MemOpCUSTOM";
     case MemOp::MemOpFENCE:       return os << "MemOpFENCE";
     case MemOp::MemOpAMO:         return os << "MemOpAMO";
+    default:                      return os;
   }
   // clang-format on
-  return os;
 }
 
 // ---------------------------------------------------------------
@@ -44,20 +44,18 @@ RevMemCtrl::RevMemCtrl( ComponentId_t id, const Params& params ) : SubComponent(
 // RevBasicMemCtrl
 // ---------------------------------------------------------------
 RevBasicMemCtrl::RevBasicMemCtrl( ComponentId_t id, const Params& params ) : RevMemCtrl( id, params ) {
-  std::string ClockFreq      = params.find<std::string>( "clock", "1Ghz" );
+  std::string ClockFreq             = params.find<std::string>( "clock", "1Ghz" );
 
-  max[MemParam::loads]       = params.find<uint32_t>( "max_loads", 64 );
-  max[MemParam::stores]      = params.find<uint32_t>( "max_stores", 64 );
-  max[MemParam::flush]       = params.find<uint32_t>( "max_flush", 64 );
-  max[MemParam::llsc]        = params.find<uint32_t>( "max_llsc", 64 );
-  max[MemParam::readlock]    = params.find<uint32_t>( "max_readlock", 64 );
-  max[MemParam::writeunlock] = params.find<uint32_t>( "max_writeunlock", 64 );
-  max[MemParam::custom]      = params.find<uint32_t>( "max_custom", 64 );
-  max[MemParam::ops]         = params.find<uint32_t>( "ops_per_cycle", 2 );
+  memOpMax[MemOp::MemOpREAD]        = params.find<uint32_t>( "max_loads", 64 );
+  memOpMax[MemOp::MemOpWRITE]       = params.find<uint32_t>( "max_stores", 64 );
+  memOpMax[MemOp::MemOpFLUSH]       = params.find<uint32_t>( "max_flush", 64 );
+  memOpMax[MemOp::MemOpLOADLINK]    = params.find<uint32_t>( "max_llsc", 64 );
+  memOpMax[MemOp::MemOpREADLOCK]    = params.find<uint32_t>( "max_readlock", 64 );
+  memOpMax[MemOp::MemOpWRITEUNLOCK] = params.find<uint32_t>( "max_writeunlock", 64 );
+  memOpMax[MemOp::MemOpCUSTOM]      = params.find<uint32_t>( "max_custom", 64 );
+  memOpMax[MemOp::MemOpTOTAL]       = params.find<uint32_t>( "ops_per_cycle", 2 );
 
-  rqstQ.reserve( max[MemParam::ops] );
-
-  memIface = loadUserSubComponent<Interfaces::StandardMem>(
+  memIface                          = loadUserSubComponent<Interfaces::StandardMem>(
     "memIface",
     ComponentInfo::SHARE_NONE,  //*/ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
     getTimeConverter( ClockFreq ),
@@ -277,10 +275,10 @@ void RevBasicMemCtrl::setup() {
 
 void RevBasicMemCtrl::finish() {}
 
-bool RevBasicMemCtrl::isMemOpAvail( const RevMemOp* Op, MemParams& t ) const {
-  auto param = OpToMemParam( Op->getOp() );
-  if( t[param] < max[param] ) {
-    ++t[param];
+bool RevBasicMemCtrl::isMemOpAvail( const RevMemOp* Op, MemOpParams& memOps ) const {
+  auto memOp = Op->getOp();
+  if( memOps[memOp] < memOpMax[memOp] ) {
+    ++memOps[memOp];
     return true;
   }
   return false;
@@ -323,8 +321,8 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
 
   // first determine if we have enough request slots to service all the cache lines
   // if we don't have enough request slots, then requeue the entire RevMemOp
-  auto param = OpToMemParam( op->getOp() );
-  Success    = NumLines + num[param] <= max[param];
+  auto memOp = op->getOp();
+  Success    = NumLines + memOpNum[memOp] <= memOpMax[memOp];
   if( !Success )
     return true;
 
@@ -342,14 +340,13 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
   auto size    = getBaseCacheLineSize( base, bytesLeft );
 
   while( size ) {
-    switch( op->getOp() ) {
+    switch( memOp ) {
     case MemOp::MemOpREAD:
 #ifdef _REV_DEBUG_
       std::cout << "<<<< READ REQUEST >>>>" << std::endl;
 #endif
       addMemRqst( op, new Interfaces::StandardMem::Read( base, size, flags ) );
       recordStat( MemCtrlStats::ReadInFlight );
-      ++num[MemParam::read];
       break;
 
     case MemOp::MemOpWRITE:
@@ -358,44 +355,37 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
 #endif
       addMemRqst( op, new Interfaces::StandardMem::Write( base, size, { curByte, curByte + size }, false, flags ) );
       recordStat( MemCtrlStats::WriteInFlight );
-      ++num[MemParam::write];
       break;
 
     case MemOp::MemOpFLUSH:
       addMemRqst( op, new Interfaces::StandardMem::FlushAddr( base, size, op->getInv(), size, flags ) );
       recordStat( MemCtrlStats::FlushInFlight );
-      ++num[MemParam::flush];
       break;
 
     case MemOp::MemOpREADLOCK:
       addMemRqst( op, new Interfaces::StandardMem::ReadLock( base, size, flags ) );
       recordStat( MemCtrlStats::ReadLockInFlight );
-      ++num[MemParam::readlock];
       break;
 
     case MemOp::MemOpWRITEUNLOCK:
       addMemRqst( op, new Interfaces::StandardMem::WriteUnlock( base, size, { curByte, curByte + size }, false, flags ) );
       recordStat( MemCtrlStats::WriteUnlockInFlight );
-      ++num[MemParam::writeunlock];
       break;
 
     case MemOp::MemOpLOADLINK:
       addMemRqst( op, new Interfaces::StandardMem::LoadLink( base, size, flags ) );
       recordStat( MemCtrlStats::LoadLinkInFlight );
-      ++num[MemParam::llsc];
       break;
 
     case MemOp::MemOpSTORECOND:
       addMemRqst( op, new Interfaces::StandardMem::StoreConditional( base, size, { curByte, curByte + size }, flags ) );
       recordStat( MemCtrlStats::StoreCondInFlight );
-      ++num[MemParam::llsc];
       break;
 
     case MemOp::MemOpCUSTOM:
       // TODO: need more support for custom memory ops
       addMemRqst( op, new Interfaces::StandardMem::CustomReq( nullptr, flags ) );
       recordStat( MemCtrlStats::CustomInFlight );
-      ++num[MemParam::custom];
       break;
 
       // we should never get here with a FENCE operation
@@ -404,6 +394,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
     default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
     }
 
+    ++memOpNum[memOp];
     base += size;
     curByte += size;
     bytesLeft -= size;
@@ -416,6 +407,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
 }
 
 bool RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
+  auto memOp = op->getOp();
   auto flags = safe_static_cast<flags_t>( TmpFlags );
 
 #ifdef _REV_DEBUG_
@@ -423,54 +415,46 @@ bool RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
             << (StandardMem::Request::flags_t) TmpFlags << std::dec << std::endl;
 #endif
 
-  switch( op->getOp() ) {
+  switch( memOp ) {
   case MemOp::MemOpREAD:
     addMemRqst( op, new Interfaces::StandardMem::Read( op->getAddr(), op->getSize(), flags ) );
     recordStat( MemCtrlStats::ReadInFlight );
-    ++num[MemParam::read];
     break;
 
   case MemOp::MemOpWRITE:
     addMemRqst( op, new Interfaces::StandardMem::Write( op->getAddr(), op->getSize(), op->getBuf(), flags ) );
     recordStat( MemCtrlStats::WriteInFlight );
-    ++num[MemParam::write];
     break;
 
   case MemOp::MemOpFLUSH:
     addMemRqst( op, new Interfaces::StandardMem::FlushAddr( op->getAddr(), op->getSize(), op->getInv(), op->getSize(), flags ) );
     recordStat( MemCtrlStats::FlushInFlight );
-    ++num[MemParam::flush];
     break;
 
   case MemOp::MemOpREADLOCK:
     addMemRqst( op, new Interfaces::StandardMem::ReadLock( op->getAddr(), op->getSize(), flags ) );
     recordStat( MemCtrlStats::ReadLockInFlight );
-    ++num[MemParam::readlock];
     break;
 
   case MemOp::MemOpWRITEUNLOCK:
     addMemRqst( op, new Interfaces::StandardMem::WriteUnlock( op->getAddr(), op->getSize(), op->getBuf(), false, flags ) );
     recordStat( MemCtrlStats::WriteUnlockInFlight );
-    ++num[MemParam::writeunlock];
     break;
 
   case MemOp::MemOpLOADLINK:
     addMemRqst( op, new Interfaces::StandardMem::LoadLink( op->getAddr(), op->getSize(), flags ) );
     recordStat( MemCtrlStats::LoadLinkInFlight );
-    ++num[MemParam::llsc];
     break;
 
   case MemOp::MemOpSTORECOND:
     addMemRqst( op, new Interfaces::StandardMem::StoreConditional( op->getAddr(), op->getSize(), op->getBuf(), flags ) );
     recordStat( MemCtrlStats::StoreCondInFlight );
-    ++num[MemParam::llsc];
     break;
 
   case MemOp::MemOpCUSTOM:
     // TODO: need more support for custom memory ops
     addMemRqst( op, new Interfaces::StandardMem::CustomReq( nullptr, flags ) );
     recordStat( MemCtrlStats::CustomInFlight );
-    ++num[MemParam::custom];
     break;
 
   case MemOp::MemOpFENCE:
@@ -480,6 +464,8 @@ bool RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
 
   default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
   }
+
+  ++memOpNum[memOp];
   return true;
 }
 
@@ -573,10 +559,10 @@ bool RevBasicMemCtrl::isPendingAMO( uint32_t Slot ) {
   return isAQ( Slot, Hart ) || isRL( Slot, Hart );
 }
 
-bool RevBasicMemCtrl::processNextRqst( MemParams& t ) {
+bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
   if( rqstQ.size() == 0 ) {
     // nothing to do, saturate and exit this cycle
-    t[MemParam::ops] = max[MemParam::ops];
+    memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
     return true;
   }
 
@@ -590,24 +576,24 @@ bool RevBasicMemCtrl::processNextRqst( MemParams& t ) {
       // time to fence!
       // saturate and exit this cycle
       // no need to build a StandardMem request
-      t[MemParam::ops] = max[MemParam::ops];
+      memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
       rqstQ.erase( rqstQ.begin() + i );
-      ++num[MemParam::fence];
+      ++memOpNum[MemOp::MemOpFENCE];
       delete op;
       return true;
     }
 
-    if( isMemOpAvail( op, t ) ) {
+    if( isMemOpAvail( op, memOps ) ) {
 
       // op is good to execute, build a StandardMem packet
-      ++t[MemParam::ops];
+      ++memOps[MemOp::MemOpTOTAL];
 
       // determine if we have any AMOs that would prevent us
       // from dispatching this request.  if this returns 'true'
       // then we can't dispatch the request.  note that
       // we do this after processing FENCE requests
       if( isPendingAMO( i ) ) {
-        t[MemParam::ops] = max[MemParam::ops];
+        memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
         return true;
       }
 
@@ -624,7 +610,7 @@ bool RevBasicMemCtrl::processNextRqst( MemParams& t ) {
         // go ahead and max out our current request window
         // otherwise, this request for induce an infinite loop
         // we also leave the current (failed) request in the queue
-        t[MemParam::ops] = max[MemParam::ops];
+        memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
       }
 
       return true;
@@ -634,7 +620,7 @@ bool RevBasicMemCtrl::processNextRqst( MemParams& t ) {
   // if we reach this point, then we've attempted to
   // process all the potential requests.  none exist
   // that can be dispatched at this time.
-  t[MemParam::ops] = max[MemParam::ops];
+  memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
 
 #ifdef _REV_DEBUG_
   for( uint32_t i = 0; i < rqstQ.size(); i++ ) {
@@ -860,23 +846,23 @@ void RevBasicMemCtrl::handleResp( RESP* ev, const char* name, uint32_t* counter 
 
 bool RevBasicMemCtrl::clockTick( Cycle_t cycle ) {
   // check to see if the top request is a FENCE
-  if( num[MemParam::fence] > 0 ) {
-    if( num[MemParam::read] || num[MemParam::write] || num[MemParam::llsc] || num[MemParam::readlock] || num[MemParam::writeunlock] || num[MemParam::custom] ) {
+  if( memOpNum[MemOp::MemOpFENCE] > 0 ) {
+    if( getTotalRqsts() ) {
       // waiting for the outstanding ops to clear
       recordStat( MemCtrlStats::FencePending );
       return false;
     } else {
       // clear the fence and continue processing
-      --num[MemParam::fence];
+      --memOpNum[MemOp::MemOpFENCE];
     }
   }
 
   // process the memory queue
-  MemParams t;
+  MemOpParams memOps;
   do {
-    if( !processNextRqst( t ) )
+    if( !processNextRqst( memOps ) )
       output->fatal( CALL_INFO, -1, "Error : failed to process next memory request" );
-  } while( t[MemParam::ops] < max[MemParam::ops] );
+  } while( memOps[MemOp::MemOpTOTAL] < memOpMax[MemOp::MemOpTOTAL] );
 
   return false;
 }

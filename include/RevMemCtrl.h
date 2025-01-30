@@ -277,46 +277,30 @@ protected:
 // ----------------------------------------
 class RevBasicMemCtrl final : public RevMemCtrl {
 public:
-  enum class MemParam : uint32_t {
-    loads,  ///< number of outstanding load requests
-    read = loads,
-    stores,  ///< number of outstanding store requests
-    write = stores,
-    flush,        ///< number of oustanding flush requests
-    llsc,         ///< number of outstanding LR/SC requests
-    readlock,     ///< number of oustanding readlock requests
-    writeunlock,  ///< number of oustanding writelock requests
-    custom,       ///< number of oustanding custom requests
-    fence,        ///< number of oustanding fence requests
-    amo,          ///< number of outstanding atomic requests
-    ops,          ///< number of ops to issue per cycle
-    END
-  };
+  // Memory operation parameters accessible with MemOp
+  class MemOpParams {
+    std::array<uint32_t, safe_static_cast<size_t>( MemOp::END )> paramVal{};
 
-  // Convert MemOp
-  MemParam OpToMemParam( MemOp Op ) const {
-    switch( Op ) {
-    case MemOp::MemOpREAD: return MemParam::loads;
-    case MemOp::MemOpWRITE: return MemParam::stores;
-    case MemOp::MemOpFLUSH: return MemParam::flush;
-    case MemOp::MemOpREADLOCK: return MemParam::readlock;
-    case MemOp::MemOpWRITEUNLOCK: return MemParam::writeunlock;
-    case MemOp::MemOpLOADLINK:
-    case MemOp::MemOpSTORECOND: return MemParam::llsc;
-    case MemOp::MemOpCUSTOM: return MemParam::custom;
-    case MemOp::MemOpFENCE: return MemParam::fence;
-    case MemOp::MemOpAMO: return MemParam::amo;
+  public:
+    // Access a memory operation parameter
+    auto& operator[]( MemOp op ) {
+
+      if( op == MemOp::MemOpSTORECOND )  // Combine LR+SC
+        op = MemOp::MemOpLOADLINK;
+
+      return paramVal.at( safe_static_cast<size_t>( op ) );
     }
-    output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
-    return {};
-  }
 
-  struct MemParams {
-    std::array<uint32_t, safe_static_cast<size_t>( MemParam::END )> paramVal{};
+    // const version
+    const auto& operator[]( MemOp op ) const { return const_cast<MemOpParams&>( *this )[op]; }
 
-    auto& operator[]( MemParam param ) { return paramVal[safe_static_cast<size_t>( param )]; }
-
-    auto& operator[]( MemParam param ) const { return paramVal[safe_static_cast<size_t>( param )]; }
+    // default non-aggregate constructors and assignment operators
+    explicit MemOpParams()                       = default;
+    ~MemOpParams()                               = default;
+    MemOpParams( const MemOpParams& )            = default;
+    MemOpParams( MemOpParams&& )                 = default;
+    MemOpParams& operator=( const MemOpParams& ) = default;
+    MemOpParams& operator=( MemOpParams&& )      = default;
   };
 
   SST_ELI_REGISTER_SUBCOMPONENT(
@@ -527,16 +511,16 @@ public:
   void handleResp( RESP* ev, const char* name, uint32_t* counter );
 
   /// RevBasicMemCtrl: handle a read response
-  void handleReadResp( StandardMem::ReadResp* ev ) final { handleResp( ev, "ReadResp", &num[MemParam::loads] ); }
+  void handleReadResp( StandardMem::ReadResp* ev ) final { handleResp( ev, "ReadResp", &memOpNum[MemOp::MemOpREAD] ); }
 
   /// RevBasicMemCtrl: handle a write response
-  void handleWriteResp( StandardMem::WriteResp* ev ) final { handleResp( ev, "WriteResp", &num[MemParam::stores] ); }
+  void handleWriteResp( StandardMem::WriteResp* ev ) final { handleResp( ev, "WriteResp", &memOpNum[MemOp::MemOpWRITE] ); }
 
   /// RevBasicMemCtrl: handle a flush response
-  void handleFlushResp( StandardMem::FlushResp* ev ) final { handleResp( ev, "FlushResp", &num[MemParam::flush] ); }
+  void handleFlushResp( StandardMem::FlushResp* ev ) final { handleResp( ev, "FlushResp", &memOpNum[MemOp::MemOpFLUSH] ); }
 
   /// RevBasicMemCtrl: handle a custom response
-  void handleCustomResp( StandardMem::CustomResp* ev ) final { handleResp( ev, "CustomResp", &num[MemParam::custom] ); }
+  void handleCustomResp( StandardMem::CustomResp* ev ) final { handleResp( ev, "CustomResp", &memOpNum[MemOp::MemOpCUSTOM] ); }
 
   /// RevBasicMemCtrl: handle an invalidate response
   void handleInvResp( StandardMem::InvNotify* ev ) final { handleResp( ev, "InvResp", nullptr ); }
@@ -601,10 +585,10 @@ protected:
 
 private:
   /// RevBasicMemCtrl: process the next memory request
-  bool processNextRqst( MemParams& t );
+  bool processNextRqst( MemOpParams& t );
 
   /// RevBasicMemCtrl: determine if we can instantiate the target memory operation
-  bool isMemOpAvail( const RevMemOp* Op, MemParams& t ) const;
+  bool isMemOpAvail( const RevMemOp* Op, MemOpParams& t ) const;
 
   /// RevBasicMemCtrl: Add a new memory request
   void addMemRqst( RevMemOp* op, Interfaces::StandardMem::Request* rqst ) {
@@ -639,8 +623,8 @@ private:
 
   /// RevBasicMemCtrl: returns the total number of outstanding requests
   auto getTotalRqsts() const {
-    return num[MemParam::loads] + num[MemParam::stores] + num[MemParam::llsc] + num[MemParam::readlock] +
-           num[MemParam::writeunlock] + num[MemParam::custom];
+    return memOpNum[MemOp::MemOpREAD] + memOpNum[MemOp::MemOpWRITE] + memOpNum[MemOp::MemOpLOADLINK] +
+           memOpNum[MemOp::MemOpREADLOCK] + memOpNum[MemOp::MemOpWRITEUNLOCK] + memOpNum[MemOp::MemOpCUSTOM];
   }
 
   /// RevBasicMemCtrl: Determine the number of cache lines are required
@@ -656,8 +640,8 @@ private:
   StandardMem*                                              memIface{};     ///< StandardMem memory interface
   bool                                                      hasCache{};     ///< detects whether cache layers are present
   uint32_t                                                  lineSize{};     ///< cache line size
-  MemParams                                                 num{};          ///< numbers in effect of memory parameters
-  MemParams                                                 max{};          ///< maximums allowable of memory parameters
+  MemOpParams                                               memOpNum{};     ///< numbers in effect of memory parameters
+  MemOpParams                                               memOpMax{};     ///< maximums allowable of memory parameters
   std::vector<StandardMem::Request::id_t>                   requests{};     ///< outstanding StandardMem requests
   std::unordered_map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
   std::vector<RevMemOp*>                                    rqstQ{};        ///< queued memory requests
