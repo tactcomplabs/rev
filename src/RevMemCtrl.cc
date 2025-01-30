@@ -100,7 +100,7 @@ bool RevBasicMemCtrl::sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t P
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, MemOp::MemOpFLUSH, flags );
     Op->setInv( Inv );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::FlushPending );
   }
   return true;
@@ -112,7 +112,7 @@ bool RevBasicMemCtrl::sendREADRequest(
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, MemOp::MemOpREAD, flags );
     Op->setMemReq( req );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::ReadPending );
   }
   return true;
@@ -123,7 +123,7 @@ bool RevBasicMemCtrl::sendWRITERequest(
 ) {
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITE, flags );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::WritePending );
   }
   return true;
@@ -155,7 +155,7 @@ bool RevBasicMemCtrl::sendAMORequest(
 
   // We have the request created and recorded in the AMOTable
   // Push it onto the request queue
-  rqstQ.push_back( Op );
+  rqstQ.emplace_back( Op );
 
   // now we record the stat for the particular AMO
   // clang-format off
@@ -181,7 +181,7 @@ bool RevBasicMemCtrl::sendREADLOCKRequest(
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, MemOp::MemOpREADLOCK, flags );
     Op->setMemReq( req );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::ReadLockPending );
   }
   return true;
@@ -192,7 +192,7 @@ bool RevBasicMemCtrl::sendWRITELOCKRequest(
 ) {
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITEUNLOCK, flags );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::WriteUnlockPending );
   }
   return true;
@@ -201,7 +201,7 @@ bool RevBasicMemCtrl::sendWRITELOCKRequest(
 bool RevBasicMemCtrl::sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags ) {
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, MemOp::MemOpLOADLINK, flags );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::LoadLinkPending );
   }
   return true;
@@ -212,7 +212,7 @@ bool RevBasicMemCtrl::sendSTORECONDRequest(
 ) {
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpSTORECOND, flags );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::StoreCondPending );
   }
   return true;
@@ -223,7 +223,7 @@ bool RevBasicMemCtrl::sendCUSTOMREADRequest(
 ) {
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, target, Opc, MemOp::MemOpCUSTOM, flags );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::CustomPending );
   }
   return true;
@@ -234,7 +234,7 @@ bool RevBasicMemCtrl::sendCUSTOMWRITERequest(
 ) {
   if( Size ) {
     RevMemOp* Op = new RevMemOp( Hart, Addr, PAddr, Size, buffer, Opc, MemOp::MemOpCUSTOM, flags );
-    rqstQ.push_back( Op );
+    rqstQ.emplace_back( Op );
     recordStat( MemCtrlStats::CustomPending );
   }
   return true;
@@ -242,7 +242,7 @@ bool RevBasicMemCtrl::sendCUSTOMWRITERequest(
 
 bool RevBasicMemCtrl::sendFENCE( uint32_t Hart ) {
   RevMemOp* Op = new RevMemOp( Hart, 0, 0, 0, MemOp::MemOpFENCE, RevFlag::F_NONE );
-  rqstQ.push_back( Op );
+  rqstQ.emplace_back( Op );
   recordStat( MemCtrlStats::FencePending );
   return true;
 }
@@ -695,7 +695,7 @@ void RevBasicMemCtrl::performAMOMemH( RevMemOp* Tmp ) {
       true
     )
   );
-  rqstQ.push_back( Op );
+  rqstQ.emplace_back( Op );
 }
 
 // determine if we have an atomic request associated with this read/write operation
@@ -721,7 +721,7 @@ void RevBasicMemCtrl::handleResp( RESP* ev, const char* name, uint32_t* counter 
     output->fatal( CALL_INFO, -1, "Error : found unknown %s\n", name );
   requests.erase( it );
 
-  RevMemOp* op = outstanding[id];
+  auto& op = outstanding[id];
   if( !op )
     output->fatal( CALL_INFO, -1, "RevMemOp is null in handle%s\n", name );
 
