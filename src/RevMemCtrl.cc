@@ -275,15 +275,6 @@ void RevBasicMemCtrl::setup() {
 
 void RevBasicMemCtrl::finish() {}
 
-bool RevBasicMemCtrl::isMemOpAvail( const RevMemOp* Op, MemOpParams& memOps ) const {
-  auto memOp = Op->getOp();
-  if( memOps[memOp] < memOpMax[memOp] ) {
-    ++memOps[memOp];
-    return true;
-  }
-  return false;
-}
-
 uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const {
   // if the cache is disabled, the first line is the whole size
   if( !hasCache )
@@ -306,10 +297,10 @@ uint32_t RevBasicMemCtrl::getNumCacheLines( uint64_t Addr, uint32_t Size ) const
   return ( uint32_t( Addr % lineSize ) + Size - 1 ) / lineSize + 1;
 }
 
-bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
+bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op ) {
   uint32_t bytesLeft = op->getSize();
   if( !bytesLeft )
-    return true;
+    return false;
 
   uint64_t base     = op->getAddr();
   uint32_t NumLines = getNumCacheLines( base, bytesLeft );
@@ -322,9 +313,8 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
   // first determine if we have enough request slots to service all the cache lines
   // if we don't have enough request slots, then requeue the entire RevMemOp
   auto memOp = op->getOp();
-  Success    = NumLines + memOpNum[memOp] <= memOpMax[memOp];
-  if( !Success )
-    return true;
+  if( NumLines + memOpNum[memOp] > memOpMax[memOp] )
+    return false;
 
 #ifdef _REV_DEBUG_
   std::cout << "Found sufficient request slots for multi-line cache requests" << std::endl;
@@ -406,7 +396,7 @@ bool RevBasicMemCtrl::buildCacheMemRqst( RevMemOp* op, bool& Success ) {
   return true;
 }
 
-bool RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
+void RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
   auto memOp = op->getOp();
   auto flags = safe_static_cast<flags_t>( TmpFlags );
 
@@ -457,19 +447,16 @@ bool RevBasicMemCtrl::buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags ) {
     recordStat( MemCtrlStats::CustomInFlight );
     break;
 
-  case MemOp::MemOpFENCE:
     // we should never get here with a FENCE operation
     // the FENCE is handled locally and never dispatch on the memIface
-    return false;
-
+  case MemOp::MemOpFENCE:
   default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
   }
 
   ++memOpNum[memOp];
-  return true;
 }
 
-bool RevBasicMemCtrl::buildStandardMemRqst( RevMemOp* op, bool& Success ) {
+bool RevBasicMemCtrl::buildStandardMemRqst( RevMemOp* op ) {
 
 #ifdef _REV_DEBUG_
   std::cout << "building mem request for addr=0x" << std::hex << op->getAddr() << std::dec << "; flags = 0x" << std::hex
@@ -500,128 +487,82 @@ bool RevBasicMemCtrl::buildStandardMemRqst( RevMemOp* op, bool& Success ) {
   // ALWAYS 1 and we dispatch a single memory requests per
   // RevMemOp
   // ---------------------------------------------------------
-  if( hasCache ) {
-    if( isCacheable( op->getFlags() ) ) {
-      // cache is enabled and we want to cache the request
-      return buildCacheMemRqst( op, Success );
-    } else {
-      // cache is enabled but the request says not to cache the data
-      Success = true;
-      return buildRawMemRqst( op, op->getStdFlags() );
-    }
+  if( hasCache && isCacheable( op->getFlags() ) ) {
+    // cache is enabled and we want to cache the request
+    return buildCacheMemRqst( op );
   } else {
-    // no cache enabled
-    Success = true;
-    return buildRawMemRqst( op, op->getNonCacheFlags() );
+    buildRawMemRqst( op, hasCache ? op->getStdFlags() : op->getNonCacheFlags() );
+    return true;
   }
 }
 
-bool RevBasicMemCtrl::isAQ( uint32_t Slot, uint32_t Hart ) {
-  if( !Slot || AMOTable.empty() )
+bool RevBasicMemCtrl::isPendingAMO( std::deque<RevMemOp*>::const_iterator Slot ) const {
+  if( AMOTable.empty() )
     return false;
-
-  // search all preceding slots for an AMO from the same Hart
-  for( uint32_t i = 0; i < Slot; i++ ) {
-    if( RevFlagAtomic( rqstQ[i]->getFlags() ) != RevFlag::F_NONE && rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ) {
-      if( RevFlagHas( rqstQ[i]->getFlags(), RevFlag::F_AQ ) ) {
-        // this implies that we found a preceding request in the request queue
-        // that was 1) an AMO and 2) came from the same HART as 'slot'
-        // and 3) had the AQ flag set;
-        // we must wait until this operation clears before this particular
-        // request can proceed
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool RevBasicMemCtrl::isRL( uint32_t Slot, uint32_t Hart ) {
-  if( !Slot || AMOTable.empty() )
-    return false;
-
-  if( RevFlagAtomic( rqstQ[Slot]->getFlags() ) != RevFlag::F_NONE && RevFlagHas( rqstQ[Slot]->getFlags(), RevFlag::F_RL ) ) {
-    // this is an AMO, check to see if there are other ops from the same
-    // HART in flight
-    for( uint32_t i = 0; i < Slot; i++ ) {
-      if( rqstQ[i]->getHart() == rqstQ[Slot]->getHart() ) {
+  auto Hart  = ( *Slot )->getHart();
+  auto Flags = ( *Slot )->getFlags();
+  for( auto i = rqstQ.begin(); i != Slot; ++i ) {
+    // if a preceding request is from the same hart
+    if( ( *i )->getHart() == Hart ) {
+      if( RevFlagAtomic( Flags ) != RevFlag::F_NONE && RevFlagHas( Flags, RevFlag::F_RL ) ) {
         // this implies that the same Hart has preceding memory ops
-        // in which case, we can't dispatch this AMO until they clear
+        // in which case, we can't dispatch this release AMO until they clear
+        return true;
+      }
+      auto flags = ( *i )->getFlags();
+      if( RevFlagAtomic( flags ) != RevFlag::F_NONE && RevFlagHas( flags, RevFlag::F_AQ ) ) {
+        // This implies that we found a preceding request in the request queue that:
+        // 1) was an AMO, 2) had the AQ flag set, and 3) came from the same HART as 'Slot'.
+        // We must wait until this operation clears before this particular request can proceed.
         return true;
       }
     }
   }
   return false;
-}
-
-bool RevBasicMemCtrl::isPendingAMO( uint32_t Slot ) {
-  auto Hart = rqstQ[Slot]->getHart();
-  return isAQ( Slot, Hart ) || isRL( Slot, Hart );
 }
 
 bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
-  if( rqstQ.size() == 0 ) {
-    // nothing to do, saturate and exit this cycle
-    memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
-    return true;
-  }
-
-  bool success = false;
-
   // retrieve the next candidate memory operation
-  for( uint32_t i = 0; i < rqstQ.size(); i++ ) {
-    RevMemOp* op = rqstQ[i];
+  for( auto Slot = rqstQ.begin(); Slot != rqstQ.end(); ++Slot ) {
+    auto  op    = *Slot;
+    MemOp memOp = op->getOp();
 
-    if( op->getOp() == MemOp::MemOpFENCE ) {
+    if( memOp == MemOp::MemOpFENCE ) {
       // time to fence!
       // saturate and exit this cycle
       // no need to build a StandardMem request
-      memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
-      rqstQ.erase( rqstQ.begin() + i );
-      ++memOpNum[MemOp::MemOpFENCE];
+      rqstQ.erase( Slot );
       delete op;
-      return true;
+      ++memOpNum[MemOp::MemOpFENCE];
+      return false;
     }
 
-    if( isMemOpAvail( op, memOps ) ) {
-
-      // op is good to execute, build a StandardMem packet
-      ++memOps[MemOp::MemOpTOTAL];
-
+    if( memOps[memOp] < memOpMax[memOp] ) {
       // determine if we have any AMOs that would prevent us
       // from dispatching this request.  if this returns 'true'
       // then we can't dispatch the request.  note that
       // we do this after processing FENCE requests
-      if( isPendingAMO( i ) ) {
-        memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
-        return true;
-      }
+      if( isPendingAMO( Slot ) )
+        return false;
 
       // build a StandardMem request
-      if( !buildStandardMemRqst( op, success ) ) {
-        output->fatal( CALL_INFO, -1, "Error : failed to build memory request" );
+      if( buildStandardMemRqst( op ) ) {
+        rqstQ.erase( Slot );          // Sent the request, remove it
+        ++memOps[memOp];              // Increment the number of this kind of memory request for this clock
+        ++memOps[MemOp::MemOpTOTAL];  // Increment the total number of memory requests for this clock
+        return true;
+      } else {
+        // stop processing any more memory requests for this clock
+        // otherwise, this request will induce an infinite loop
+        // since we also leave the current (failed) request in the queue
         return false;
       }
-
-      // sent the request, remove it
-      if( success ) {
-        rqstQ.erase( rqstQ.begin() + i );
-      } else {
-        // go ahead and max out our current request window
-        // otherwise, this request for induce an infinite loop
-        // we also leave the current (failed) request in the queue
-        memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
-      }
-
-      return true;
     }
   }
 
   // if we reach this point, then we've attempted to
   // process all the potential requests.  none exist
   // that can be dispatched at this time.
-  memOps[MemOp::MemOpTOTAL] = memOpMax[MemOp::MemOpTOTAL];
-
 #ifdef _REV_DEBUG_
   for( uint32_t i = 0; i < rqstQ.size(); i++ ) {
     std::cout << "rqstQ[" << i << "] = " << rqstQ[i]->getOp() << " @ 0x" << std::hex << rqstQ[i]->getAddr() << std::dec
@@ -629,7 +570,7 @@ bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
   }
 #endif
 
-  return true;
+  return false;
 }
 
 /// RevFlag: Handle flag response
@@ -859,11 +800,8 @@ bool RevBasicMemCtrl::clockTick( Cycle_t cycle ) {
 
   // process the memory queue
   MemOpParams memOps;
-  do {
-    if( !processNextRqst( memOps ) )
-      output->fatal( CALL_INFO, -1, "Error : failed to process next memory request" );
-  } while( memOps[MemOp::MemOpTOTAL] < memOpMax[MemOp::MemOpTOTAL] );
-
+  while( processNextRqst( memOps ) && memOps[MemOp::MemOpTOTAL] < memOpMax[MemOp::MemOpTOTAL] )
+    ;
   return false;
 }
 

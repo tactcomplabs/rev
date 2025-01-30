@@ -598,22 +598,16 @@ private:
   };
 
   /// RevBasicMemCtrl: build a standard memory request
-  bool buildStandardMemRqst( RevMemOp* op, bool& Success );
+  bool buildStandardMemRqst( RevMemOp* op );
 
   /// RevBasicMemCtrl: build raw memory requests with a 1-to-1 mapping to RevMemOps'
-  bool buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags );
+  void buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags );
 
   /// RevBasicMemCtrl: build cache-aligned requests
-  bool buildCacheMemRqst( RevMemOp* op, bool& Success );
+  bool buildCacheMemRqst( RevMemOp* op );
 
   /// RevBasicMemCtrl: determine if there are any pending AMOs that would prevent a request from dispatching
-  bool isPendingAMO( uint32_t Slot );
-
-  /// RevBasicMemCtrl: determine if we need to utilize AQ ordering semantics
-  bool isAQ( uint32_t Slot, uint32_t Hart );
-
-  /// RevBasicMemCtrl: determine if we need to utilize RL ordering semantics
-  bool isRL( uint32_t Slot, uint32_t Hart );
+  bool isPendingAMO( std::deque<RevMemOp*>::const_iterator Slot ) const;
 
   /// RevBasicMemCtrl: register statistics
   void registerStats();
@@ -644,7 +638,7 @@ private:
   MemOpParams                                               memOpMax{};     ///< maximums allowable of memory parameters
   std::vector<StandardMem::Request::id_t>                   requests{};     ///< outstanding StandardMem requests
   std::unordered_map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
-  std::vector<RevMemOp*>                                    rqstQ{};        ///< queued memory requests
+  std::deque<RevMemOp*>                                     rqstQ{};        ///< queued memory requests
 
   ///< StandardMem interface response handlers
   const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this, output.get() ) };
