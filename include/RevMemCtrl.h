@@ -128,6 +128,8 @@ public:
   /// RevMemOp: set the originating memory request
   void setMemReq( const MemReq& req ) { procReq = req; }
 
+  void setMemReq( MemReq&& req ) { procReq = std::move( req ); }
+
   /// RevMemOp: retrieve the invalidate flag
   bool getInv() const { return Inv; }
 
@@ -138,7 +140,7 @@ public:
   uint32_t getHart() const { return Hart; }
 
   /// RevMemOp: Get the originating proc memory request
-  const MemReq& getMemReq() const { return procReq; }
+  MemReq& getMemReq() { return procReq; }
 
   /// RqstCount: Get the number of requests referring to this op
   auto& rqstCount() { return refCount; }
@@ -612,7 +614,10 @@ private:
   void registerStats();
 
   /// RevBasicMemCtrl: inject statistics data for the target metric
-  void recordStat( MemCtrlStats Stat, uint64_t Data = 1 );
+  void recordStat( MemCtrlStats Stat, uint64_t Data = 1 ) {
+    if( Stat < MemCtrlStats::END )
+      stats[size_t( Stat )]->addData( Data );
+  }
 
   /// RevBasicMemCtrl: returns the total number of outstanding requests
   auto getTotalRqsts() const {
@@ -621,21 +626,17 @@ private:
   }
 
   // -- private data members
-  StandardMem* memIface{};  ///< StandardMem memory interface
-  bool         hasCache{};  ///< detects whether cache layers are present
-  uint32_t     lineSize{};  ///< cache line size
-  MemOpParams  memOpNum{};  ///< numbers in effect of memory parameters
-  MemOpParams  memOpMax{};  ///< maximums allowable of memory parameters
+  StandardMem*                      memIface{};  ///< StandardMem memory interface
+  bool                              hasCache{};  ///< detects whether cache layers are present
+  uint32_t                          lineSize{};  ///< cache line size
+  MemOpParams                       memOpNum{};  ///< numbers in effect of memory parameters
+  MemOpParams                       memOpMax{};  ///< maximums allowable of memory parameters
+  std::vector<Statistic<uint64_t>*> stats{};     ///< statistics vector
   std::unordered_map<StandardMem::Request::id_t, std::shared_ptr<RevMemOp>> outstanding{};  ///< map of outstanding requests
   std::list<std::shared_ptr<RevMemOp>>                                      rqstQ{};        ///< queued memory requests
 
   ///< StandardMem interface response handlers
   const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this, output.get() ) };
-
-  /// RevBasicMemCtrl: map of amo operations to memory addresses
-  std::unordered_multimap<uint64_t, std::tuple<uint32_t, void*, void*, RevFlag, std::shared_ptr<RevMemOp>, bool>> AMOTable{};
-
-  std::vector<Statistic<uint64_t>*> stats{};  ///< statistics vector
 
 };  // RevBasicMemCtrl
 

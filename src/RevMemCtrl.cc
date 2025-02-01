@@ -86,11 +86,6 @@ void RevBasicMemCtrl::registerStats() {
   }
 }
 
-void RevBasicMemCtrl::recordStat( MemCtrlStats Stat, uint64_t Data ) {
-  if( Stat < MemCtrlStats::END )
-    stats[size_t( Stat )]->addData( Data );
-}
-
 bool RevBasicMemCtrl::sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, bool Inv, RevFlag flags ) {
   if( Size ) {
     auto Op = std::make_shared<RevMemOp>( Hart, Addr, PAddr, Size, MemOp::MemOpFLUSH, flags );
@@ -127,29 +122,16 @@ bool RevBasicMemCtrl::sendWRITERequest(
 bool RevBasicMemCtrl::sendAMORequest(
   uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, void* target, const MemReq& req, RevFlag flags
 ) {
-  if( Size == 0 )
-    return true;
-
   // Check to see if our flags contain an atomic request
   if( RevFlagAtomic( flags ) == RevFlag::F_NONE ) {
     // not an atomic request
     return true;
   }
 
-  // Create a memory operation for the AMO
-  // Since this is a read-modify-write operation, the first RevMemOp
-  // is a MemOp::MemOpREAD.
+  // Create a memory operation for the AMO read
+  // Since this is a read-modify-write operation, the first RevMemOp is a MemOp::MemOpREAD.
   auto Op = std::make_shared<RevMemOp>( Hart, Addr, PAddr, Size, buffer, target, MemOp::MemOpREAD, flags );
   Op->setMemReq( req );
-
-  // Store the first operation in the AMOTable.  When the read
-  // response comes back, we will catch the response, perform
-  // the MODIFY (using the operation in flags), then dispatch
-  // a WRITE operation.
-  AMOTable.emplace( Addr, std::tuple{ Hart, buffer, target, flags, Op, false } );
-
-  // We have the request created and recorded in the AMOTable
-  // Push it onto the request queue
   rqstQ.emplace_back( std::move( Op ) );
 
   // now we record the stat for the particular AMO
@@ -561,61 +543,29 @@ AMOData RevBasicMemCtrl::performAMO( RevFlag flags, uint32_t size, void* target,
 }
 
 void RevBasicMemCtrl::performAMOMemH( const std::shared_ptr<RevMemOp>& readOp ) {
-  if( readOp == nullptr ) {
-    output->fatal( CALL_INFO, -1, "Error : AMOTable entry is null\n" );
-  }
-
-  RevFlag  flags = readOp->getFlags();
-  uint32_t size  = readOp->getSize();
+  auto flags   = readOp->getFlags();
+  auto size    = readOp->getSize();
 
   // Perform the AMO operation on the already-loaded data
-  auto newMem    = performAMO( flags, size, readOp->getTarget(), &readOp->getBuf()[0] );
+  auto newMem  = performAMO( flags, size, readOp->getTarget(), &readOp->getBuf()[0] );
 
-  // copy the modified target data over to the buffer and build the memory request
-  // this will write the value to memory
-  auto writeOp   = std::make_shared<RevMemOp>(
+  // Build the memory request that will write the modified value to memory
+  auto writeOp = std::make_shared<RevMemOp>(
     readOp->getHart(),
     readOp->getAddr(),
     readOp->getPhysAddr(),
     size,
     std::vector( newMem.uc, newMem.uc + size ),
     MemOp::MemOpWRITE,
-    flags  // TODO: getPhysAddr()->nullptr
+    flags
   );
 
-  // Retrieve the memory request object, but DO NOT mark the load
-  // as complete.  The actual write response from the read-modify-write
-  // process will mark the load as complete.  At this point, copy the
-  // MemReq object to the new request
-  writeOp->setMemReq( readOp->getMemReq() );
+  // Move the memory request object, but DO NOT mark the load as complete.
+  // The actual write response from the read-modify-write process will mark the
+  // load as complete. At this point, move the MemReq object to the new request.
+  writeOp->setMemReq( std::move( readOp->getMemReq() ) );
 
-  // insert a new entry into the AMO Table
-  AMOTable.emplace(
-    writeOp->getAddr(),
-    std::tuple{
-      writeOp->getHart(),
-      nullptr,  // this can be null here since we don't need to modify the response
-      writeOp->getTarget(),
-      writeOp->getFlags(),
-      writeOp,
-      true }
-  );
   rqstQ.emplace_back( std::move( writeOp ) );
-}
-
-// determine if we have an atomic request associated with this read/write operation
-bool RevBasicMemCtrl::isAMO( const std::shared_ptr<RevMemOp>& op ) {
-  bool isAMO = false;
-  for( auto [it, end] = AMOTable.equal_range( op->getAddr() ); it != end; ) {
-    const auto& [hart, buffer, target, flags, memop, in] = it->second;
-    if( memop == op ) {
-      AMOTable.erase( it++ );  // erase the current entry so we can add a new one
-      isAMO = true;
-    } else {
-      ++it;
-    }
-  }
-  return isAMO;
 }
 
 template<typename RESP>
@@ -638,7 +588,7 @@ void RevBasicMemCtrl::handleResp( RESP* ev, const char* name ) {
       RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
 
       // determine if we have an atomic request associated with this read operation
-      if( isAMO( op ) ) {
+      if( RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE ) {
         performAMOMemH( op );  // perform the atomic operation and generate a WRITE request
       } else {
         op->getMemReq().MarkLoadComplete();  // for non-atomic reads, mark load complete
@@ -647,7 +597,7 @@ void RevBasicMemCtrl::handleResp( RESP* ev, const char* name ) {
     // handleWriteResp
     if constexpr( std::is_same_v<RESP, StandardMem::WriteResp> ) {
       // determine if we have an atomic request associated with this write operation
-      if( isAMO( op ) ) {
+      if( RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE ) {
         op->getMemReq().MarkLoadComplete();  // mark the original read complete after write is completed
       }
     }
