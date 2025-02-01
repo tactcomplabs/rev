@@ -117,13 +117,11 @@ bool RevMem::InvalidateLRReservations( uint32_t hart, uint64_t addr, size_t len 
 
 bool RevMem::SC( uint32_t hart, uint64_t addr, uint32_t len, void* data, RevFlag flags ) {
   // Find the reservation for this hart (there can only be one active reservation per hart)
-  auto it = LRSC.find( hart );
-  if( it != LRSC.end() ) {
+  // Invalidate the reservation for this hart unconditionally
+  auto node = LRSC.extract( hart );
+  if( !node.empty() ) {
     // Get the address and length of the reservation
-    auto [Addr, Len] = it->second;
-
-    // Invalidate the reservation for this hart unconditionally
-    LRSC.erase( it );
+    auto [Addr, Len] = node.mapped();
 
     // SC succeeds only if the store's address range lies totally within the reservation
     if( addr >= Addr && addr + len <= Addr + Len ) {

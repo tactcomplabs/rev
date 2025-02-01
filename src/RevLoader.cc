@@ -579,12 +579,10 @@ bool RevLoader::LoadElf( const std::string& exe, const std::vector<std::string>&
   munmap( membuf, FileSize );
 
   // print the symbol table entries
-  auto it = symtable.begin();
-  while( it != symtable.end() ) {
+  for( auto& [name, addr] : symtable ) {
     // create inverse map to allow tracer to lookup symbols
-    tracer_symbols.emplace( it->second, it->first );
-    output->verbose( CALL_INFO, 6, 0, "Symbol Table Entry [%s:0x%" PRIx64 "]\n", it->first.c_str(), it->second );
-    it++;
+    tracer_symbols.emplace( addr, name );
+    output->verbose( CALL_INFO, 6, 0, "Symbol Table Entry [%s:0x%" PRIx64 "]\n", name.c_str(), addr );
   }
 
   /// load the program arguments
@@ -598,15 +596,12 @@ bool RevLoader::LoadElf( const std::string& exe, const std::vector<std::string>&
   return true;
 }
 
-uint64_t RevLoader::GetSymbolAddr( std::string Symbol ) {
-  uint64_t tmp = 0;
-  if( symtable.find( Symbol ) != symtable.end() ) {
-    tmp = symtable[Symbol];
-  }
-  return tmp;
+uint64_t RevLoader::GetSymbolAddr( const std::string& Symbol ) {
+  auto it = symtable.find( Symbol );
+  return it != symtable.end() ? it->second : 0;
 }
 
-std::map<uint64_t, std::string>* SST::RevCPU::RevLoader::GetTraceSymbols() {
+std::map<uint64_t, std::string>* RevLoader::GetTraceSymbols() {
   return &tracer_symbols;
 }
 

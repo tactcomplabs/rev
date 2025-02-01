@@ -264,41 +264,47 @@ void RevBasicMemCtrl::init( uint32_t phase ) {
   }
 }
 
-void RevBasicMemCtrl::setup() {
-  memIface->setup();
-}
+// ---------------------------------------------------------
+// Cache Handler Logic
+// ---------------------------------------------------------
+// There are five potential scenarios:
+// 1. Caching is disabled (no L1 cache detected)
+// 2. Addr = Cache Aligned && Size <= LineSize
+// 3. Addr = Cache Aligned && Size > LineSize
+// 4. Addr = !Cache Aligned && Size <= LineSize
+// 5. Addr = !Cache Aligned && Size > LineSize
+//
+// We handle these by adjusting:
+// 1. the number of cache lines to request
+// 2. the base address of each request (cache aligned)
+//
+// If caching is disabled, then the number of cache lines is
+// ALWAYS 1 and we dispatch a single memory requests per
+// RevMemOp
+// ---------------------------------------------------------
 
-void RevBasicMemCtrl::finish() {}
+bool RevBasicMemCtrl::buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op ) {
+#ifdef _REV_DEBUG_
+  std::cout << "building mem request for addr=0x" << std::hex << op->getAddr() << std::dec << "; flags = 0x" << std::hex
+            << flags_t( op->getFlags() ) << std::dec << std::endl;
+  if( !lineSize )
+    std::cout << "WARNING: lineSize == 0!" << std::endl;
+  else if( op->getAddr() % lineSize )
+    std::cout << "WARNING: address is not cache aligned!" << std::endl;
+  if( !isCacheable( op->getFlags() ) )
+    std::cout << "WARNING: operation is not cache-able!" << std::endl;
+#endif
 
-uint32_t RevBasicMemCtrl::getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const {
-  // if the cache is disabled, the first line is the whole size
-  if( !hasCache )
-    return Size;
-
-  // number of bytes accessed in first cache line containing Addr
-  return std::min( Size, lineSize - uint32_t( Addr % lineSize ) );
-}
-
-uint32_t RevBasicMemCtrl::getNumCacheLines( uint64_t Addr, uint32_t Size ) const {
-  if( !Size )
-    return 0;
-
-  // if the cache is disabled, then return 1
-  // eg, there is a 1-to-1 mapping of CPU memops to memory requests
-  if( !hasCache )
-    return 1;
-
-  // The size of the segment plus the address offset within the line takes a certain number of lines
-  return ( uint32_t( Addr % lineSize ) + Size - 1 ) / lineSize + 1;
-}
-
-bool RevBasicMemCtrl::buildCacheMemRqst( const std::shared_ptr<RevMemOp>& op ) {
   uint32_t bytesLeft = op->getSize();
   uint64_t base      = op->getAddr();
-  uint32_t NumLines  = getNumCacheLines( base, bytesLeft );
+  bool     isCached  = hasCache && isCacheable( op->getFlags() );  // cache is enabled and we want to cache the request
+
+  // The size of the segment plus the address offset within the line takes a certain number of lines
+  // if the cache is disabled, then 1; eg, there is a 1-to-1 mapping of CPU memops to memory requests
+  uint32_t NumLines  = isCached ? uint32_t( ( base % lineSize + bytesLeft - 1 ) / lineSize + 1 ) : 1;
 
 #ifdef _REV_DEBUG_
-  std::cout << "Building caching mem request for addr=0x" << std::hex << base << std::dec << "; NumLines = " << NumLines
+  std::cout << "Building mem request for addr=0x" << std::hex << base << std::dec << "; NumLines = " << NumLines
             << "; Size = " << bytesLeft << std::endl;
 #endif
 
@@ -309,18 +315,21 @@ bool RevBasicMemCtrl::buildCacheMemRqst( const std::shared_ptr<RevMemOp>& op ) {
     return false;
 
 #ifdef _REV_DEBUG_
-  std::cout << "Found sufficient request slots for multi-line cache requests" << std::endl;
+  std::cout << "Found sufficient request slots for " << NumLines << " cache lines" << std::endl;
 #endif
+
+  op->setSplitRqst( NumLines );
+
+  auto flags   = safe_static_cast<flags_t>( hasCache ? op->getStdFlags() : op->getNonCacheFlags() );
+  auto curByte = op->getBuf().begin();
+
+  // number of bytes accessed in first cache line containing base address
+  // if the cache is disabled, then the first and only request is the entire number of bytes
+  auto size    = isCached ? std::min( bytesLeft, lineSize - uint32_t( base % lineSize ) ) : bytesLeft;
 
   // dispatch the requests
   // starting with the end of the first cache line, then each cache line afterwards
   // this prevents us from sending requests that span multiple cache lines
-  op->setSplitRqst( NumLines );
-
-  auto flags   = safe_static_cast<flags_t>( op->getStdFlags() );
-  auto curByte = op->getBuf().begin();
-  auto size    = getBaseCacheLineSize( base, bytesLeft );
-
   while( size ) {
     switch( memOp ) {
     case MemOp::MemOpREAD:
@@ -381,111 +390,11 @@ bool RevBasicMemCtrl::buildCacheMemRqst( const std::shared_ptr<RevMemOp>& op ) {
     curByte += size;
     bytesLeft -= size;
 
-    // setup the adjusted size of the request
+    // setup the adjusted size of the next request
     size = std::min( bytesLeft, lineSize );
   }
 
   return true;
-}
-
-bool RevBasicMemCtrl::buildRawMemRqst( const std::shared_ptr<RevMemOp>& op, RevFlag Flags ) {
-  auto memOp = op->getOp();
-  auto flags = safe_static_cast<flags_t>( Flags );
-
-#ifdef _REV_DEBUG_
-  std::cout << "building raw mem request for addr=0x" << std::hex << op->getAddr() << std::dec << "; Flags = 0x" << std::hex
-            << (StandardMem::Request::flags_t) TmpFlags << std::dec << std::endl;
-#endif
-
-  switch( memOp ) {
-  case MemOp::MemOpREAD:
-    addMemRqst( op, new Interfaces::StandardMem::Read( op->getAddr(), op->getSize(), flags ) );
-    recordStat( MemCtrlStats::ReadInFlight );
-    break;
-
-  case MemOp::MemOpWRITE:
-    addMemRqst( op, new Interfaces::StandardMem::Write( op->getAddr(), op->getSize(), op->getBuf(), flags ) );
-    recordStat( MemCtrlStats::WriteInFlight );
-    break;
-
-  case MemOp::MemOpFLUSH:
-    addMemRqst( op, new Interfaces::StandardMem::FlushAddr( op->getAddr(), op->getSize(), op->getInv(), op->getSize(), flags ) );
-    recordStat( MemCtrlStats::FlushInFlight );
-    break;
-
-  case MemOp::MemOpREADLOCK:
-    addMemRqst( op, new Interfaces::StandardMem::ReadLock( op->getAddr(), op->getSize(), flags ) );
-    recordStat( MemCtrlStats::ReadLockInFlight );
-    break;
-
-  case MemOp::MemOpWRITEUNLOCK:
-    addMemRqst( op, new Interfaces::StandardMem::WriteUnlock( op->getAddr(), op->getSize(), op->getBuf(), false, flags ) );
-    recordStat( MemCtrlStats::WriteUnlockInFlight );
-    break;
-
-  case MemOp::MemOpLOADLINK:
-    addMemRqst( op, new Interfaces::StandardMem::LoadLink( op->getAddr(), op->getSize(), flags ) );
-    recordStat( MemCtrlStats::LoadLinkInFlight );
-    break;
-
-  case MemOp::MemOpSTORECOND:
-    addMemRqst( op, new Interfaces::StandardMem::StoreConditional( op->getAddr(), op->getSize(), op->getBuf(), flags ) );
-    recordStat( MemCtrlStats::StoreCondInFlight );
-    break;
-
-  case MemOp::MemOpCUSTOM:
-    // TODO: need more support for custom memory ops
-    addMemRqst( op, new Interfaces::StandardMem::CustomReq( nullptr, flags ) );
-    recordStat( MemCtrlStats::CustomInFlight );
-    break;
-
-    // we should never get here with a FENCE operation
-    // the FENCE is handled locally and never dispatch on the memIface
-  case MemOp::MemOpFENCE:
-  default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
-  }
-
-  ++memOpNum[memOp];
-  return true;
-}
-
-bool RevBasicMemCtrl::buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op ) {
-
-#ifdef _REV_DEBUG_
-  std::cout << "building mem request for addr=0x" << std::hex << op->getAddr() << std::dec << "; flags = 0x" << std::hex
-            << flags_t( op->getFlags() ) << std::dec << std::endl;
-  if( !lineSize )
-    std::cout << "WARNING: lineSize == 0!" << std::endl;
-  else if( op->getAddr() % lineSize )
-    std::cout << "WARNING: address is not cache aligned!" << std::endl;
-  if( !isCacheable( op->getFlags() ) )
-    std::cout << "WARNING: operation is not cache-able!" << std::endl;
-#endif
-
-  // ---------------------------------------------------------
-  // Cache Handler Logic
-  // ---------------------------------------------------------
-  // There are five potential scenarios:
-  // 1. Caching is disabled (no L1 cache detected)
-  // 2. Addr = Cache Aligned && Size <= LineSize
-  // 3. Addr = Cache Aligned && Size > LineSize
-  // 4. Addr = !Cache Aligned && Size <= LineSize
-  // 5. Addr = !Cache Aligned && Size > LineSize
-  //
-  // We handle these by adjusting:
-  // 1. the number of cache lines to request
-  // 2. the base address of each request (cache aligned)
-  //
-  // If caching is disabled, then the number of cache lines is
-  // ALWAYS 1 and we dispatch a single memory requests per
-  // RevMemOp
-  // ---------------------------------------------------------
-  if( hasCache && isCacheable( op->getFlags() ) ) {
-    // cache is enabled and we want to cache the request
-    return buildCacheMemRqst( op );
-  } else {
-    return buildRawMemRqst( op, hasCache ? op->getStdFlags() : op->getNonCacheFlags() );
-  }
 }
 
 bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
@@ -512,9 +421,9 @@ bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
       // Determine if we have any AMOs that would prevent us from dispatching this request.
       // Note that we do this AFTER processing FENCE requests.
 
-      // If this request has atomic flags and the Release flag, delay it if any previous requests match the same hart
+      // If this request has the Release flag, delay it if any previous requests match the same hart
       // This implies that the same Hart has preceding memory ops in which case, we can't dispatch this release until they clear
-      if( RevFlagAtomic( Flags ) != RevFlag::F_NONE && RevFlagHas( Flags, RevFlag::F_RL ) && pastHartRequests.count( Hart ) )
+      if( RevFlagHas( Flags, RevFlag::F_RL ) && pastHartRequests.count( Hart ) )
         return false;
 
       // Delay if any past requests on the same hart were acquires
@@ -524,14 +433,14 @@ bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
 
       // build a StandardMem request
       if( buildStandardMemRqst( *Slot ) ) {
-        rqstQ.erase( Slot );          // Sent the request, remove it
+        rqstQ.erase( Slot );          // Sent the request; remove it
         ++memOps[memOp];              // Increment the number of this kind of memory request for this clock
         ++memOps[MemOp::MemOpTOTAL];  // Increment the total number of memory requests for this clock
         return true;
       } else {
         // stop processing any more memory requests for this clock
         // otherwise, this request will induce an infinite loop
-        // since we also leave the current (failed) request in the queue
+        // since we leave the current (failed) request in the queue
         return false;
       }
     }
@@ -539,8 +448,8 @@ bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
     // Record this hart as having been seen
     pastHartRequests.insert( Hart );
 
-    // Record this hart as having been seen if this is an atomic acquire request
-    if( RevFlagAtomic( Flags ) != RevFlag::F_NONE && RevFlagHas( Flags, RevFlag::F_AQ ) )
+    // Record this hart as having been seen if this is an acquire request
+    if( RevFlagHas( Flags, RevFlag::F_AQ ) )
       pastHartAcquires.insert( Hart );
   }
 

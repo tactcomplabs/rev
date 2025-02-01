@@ -290,7 +290,7 @@ public:
   RevLoader& operator=( const RevLoader& ) = delete;
 
   /// RevLoader: retrieves the address for the target symbol; 0x00ull if the symbol doesn't exist
-  uint64_t GetSymbolAddr( std::string Symbol );
+  uint64_t GetSymbolAddr( const std::string& Symbol );
 
   /// RevLoader: retrieves the elf info structure
   ElfInfo GetInfo() { return elfinfo; }
