@@ -246,19 +246,6 @@ void RevBasicMemCtrl::init( uint32_t phase ) {
   }
 }
 
-/// RevBasicMemCtrl: Add a new memory request
-void RevBasicMemCtrl::addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst ) {
-  // Map the request ID to a RevMemOp shared_ptr and iterator pointing to mapping from hart to op
-  if( !outstanding.try_emplace( rqst->getID(), op, hartOutstanding.emplace( op->getHart(), op ) ).second )
-    output->fatal( CALL_INFO, -1, "Error: Memory request with the same ID added twice\n" );
-
-  // Increment the request count of the RevMemOp
-  ++op->rqstCount();
-
-  // Send the request
-  memIface->send( rqst );
-}
-
 // -------------------------------------------------------------
 // Cache Handler Logic
 // -------------------------------------------------------------
@@ -484,6 +471,18 @@ void RevBasicMemCtrl::handleAMOResp( const std::shared_ptr<RevMemOp>& readOp ) {
   );
   ++memOpNum[MemOp::MemOpWRITE];
   recordStat( MemCtrlStats::WriteInFlight );
+}
+
+void RevBasicMemCtrl::addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst ) {
+  // Map the request ID to a RevMemOp shared_ptr and iterator pointing to mapping from hart to op
+  if( !outstanding.try_emplace( rqst->getID(), op, hartOutstanding.emplace( op->getHart(), op ) ).second )
+    output->fatal( CALL_INFO, -1, "Error: Memory request with the same ID added twice\n" );
+
+  // Increment the request count of the RevMemOp
+  ++op->rqstCount();
+
+  // Send the request
+  memIface->send( rqst );
 }
 
 template<typename RESP>
