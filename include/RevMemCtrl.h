@@ -119,9 +119,6 @@ public:
   /// RevMemOp: retrieve the flags for MemEventBase without caching enable
   RevFlag getNonCacheFlags() const { return RevFlag{ safe_static_cast<uint32_t>( flags ) & 0xFFFD }; }
 
-  /// RevMemOp: sets the number of split cache line requests
-  void setSplitRqst( uint32_t S ) { SplitRqst = S; }
-
   /// RevMemOp: set the invalidate flag
   void setInv( bool I ) { Inv = I; }
 
@@ -134,9 +131,6 @@ public:
   /// RevMemOp: retrieve the invalidate flag
   bool getInv() const { return Inv; }
 
-  /// RevMemOp: retrieve the number of split cache line requests
-  uint32_t getSplitRqst() const { return SplitRqst; }
-
   /// RevMemOp: retrieve the target address
   void* getTarget() const { return target; }
 
@@ -146,19 +140,22 @@ public:
   /// RevMemOp: Get the originating proc memory request
   const MemReq& getMemReq() const { return procReq; }
 
+  /// RqstCount: Get the number of requests referring to this op
+  auto& rqstCount() { return refCount; }
+
 private:
-  uint32_t             Hart{};         ///< RevMemOp: RISC-V Hart
-  uint64_t             Addr{};         ///< RevMemOp: address
-  uint64_t             PAddr{};        ///< RevMemOp: physical address (for RevMem I/O)
-  uint32_t             Size{};         ///< RevMemOp: size of the memory operation in bytes
-  bool                 Inv{};          ///< RevMemOp: flush operation invalidate flag
-  MemOp                Op{};           ///< RevMemOp: target memory operation
-  uint32_t             CustomOpc{};    ///< RevMemOp: custom memory opcode
-  uint32_t             SplitRqst = 1;  ///< RevMemOp: number of split cache line requests
-  std::vector<uint8_t> membuf{};       ///< RevMemOp: buffer
-  RevFlag              flags{};        ///< RevMemOp: request flags
-  void*                target{};       ///< RevMemOp: target register pointer
-  MemReq               procReq{};      ///< RevMemOp: original request from RevCore
+  uint32_t             Hart{};       ///< RevMemOp: RISC-V Hart
+  uint64_t             Addr{};       ///< RevMemOp: address
+  uint64_t             PAddr{};      ///< RevMemOp: physical address (for RevMem I/O)
+  uint32_t             Size{};       ///< RevMemOp: size of the memory operation in bytes
+  bool                 Inv{};        ///< RevMemOp: flush operation invalidate flag
+  MemOp                Op{};         ///< RevMemOp: target memory operation
+  uint32_t             CustomOpc{};  ///< RevMemOp: custom memory opcode
+  std::vector<uint8_t> membuf{};     ///< RevMemOp: buffer
+  RevFlag              flags{};      ///< RevMemOp: request flags
+  void*                target{};     ///< RevMemOp: target register pointer
+  MemReq               procReq{};    ///< RevMemOp: original request from RevCore
+  uint32_t             refCount{};   ///< RevMemOp: number of memory requests referring to this op
 };
 
 // ----------------------------------------
@@ -600,10 +597,7 @@ private:
   bool processNextRqst( MemOpParams& t );
 
   /// RevBasicMemCtrl: Add a new memory request
-  void addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst ) {
-    outstanding.insert_or_assign( rqst->getID(), op );
-    memIface->send( rqst );
-  };
+  void addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst );
 
   /// RevBasicMemCtrl: build a standard memory request
   bool buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op );

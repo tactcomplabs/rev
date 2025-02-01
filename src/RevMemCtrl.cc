@@ -264,6 +264,19 @@ void RevBasicMemCtrl::init( uint32_t phase ) {
   }
 }
 
+/// RevBasicMemCtrl: Add a new memory request
+void RevBasicMemCtrl::addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst ) {
+  // Map the request ID to a RevMemOp shared_ptr
+  if( !outstanding.try_emplace( rqst->getID(), op ).second )
+    output->fatal( CALL_INFO, -1, "Error: Memory request with the same ID added twice\n" );
+
+  // Increment the request count of the RevMemOp
+  ++op->rqstCount();
+
+  // Send the request
+  memIface->send( rqst );
+}
+
 // ---------------------------------------------------------
 // Cache Handler Logic
 // ---------------------------------------------------------
@@ -317,8 +330,6 @@ bool RevBasicMemCtrl::buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op 
 #ifdef _REV_DEBUG_
   std::cout << "Found sufficient request slots for " << NumLines << " cache lines" << std::endl;
 #endif
-
-  op->setSplitRqst( NumLines );
 
   auto flags   = safe_static_cast<flags_t>( hasCache ? op->getStdFlags() : op->getNonCacheFlags() );
   auto curByte = op->getBuf().begin();
@@ -614,42 +625,30 @@ void RevBasicMemCtrl::handleResp( RESP* ev, const char* name ) {
     output->fatal( CALL_INFO, -1, "Outstanding memory request not found in handle%s\n", name );
   const auto& op = node.mapped();
 
+  // For read requests, copy the read data to the portion of the Rev memory target
   if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
-    // determine if we have a split read request
-    if( op->getSplitRqst() > 1 ) {
-      // split request exists; determine how to handle it
-      memcpy( static_cast<uint8_t*>( op->getTarget() ) + ( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
-    } else {
-      // no split request exists; handle as normal
-      memcpy( op->getTarget(), &ev->data[0], op->getSize() );
-    }
+    memcpy( static_cast<uint8_t*>( op->getTarget() ) + ( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
   }
 
-  delete ev;  // delete the StandardMem request
+  delete ev;                  // delete the StandardMem request
+  if( !--op->rqstCount() ) {  // If there are no more requests associated with this RevMemOp
+    // handleReadResp
+    if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
+      // determine if we need to sign/zero extend or NaN-box the read value
+      RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
 
-  if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> || std::is_same_v<RESP, StandardMem::WriteResp> ) {
-    // determine if we have no more requests remaining with the same RevMemOp
-    if( std::none_of( outstanding.begin(), outstanding.end(), [&]( auto& x ) { return x.second == op; } ) ) {
-
-      // handleReadResp
-      if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
-        // determine if we need to sign/zero extend or NaN-box the read value
-        RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
-
-        // determine if we have an atomic request associated with this read operation
-        if( isAMO( op ) ) {
-          performAMOMemH( op );  // perform the atomic operation and generate a WRITE request
-        } else {
-          op->getMemReq().MarkLoadComplete();  // for non-atomic reads, mark load complete
-        }
+      // determine if we have an atomic request associated with this read operation
+      if( isAMO( op ) ) {
+        performAMOMemH( op );  // perform the atomic operation and generate a WRITE request
+      } else {
+        op->getMemReq().MarkLoadComplete();  // for non-atomic reads, mark load complete
       }
-
-      // handleWriteResp
-      if constexpr( std::is_same_v<RESP, StandardMem::WriteResp> ) {
-        // determine if we have an atomic request associated with this write operation
-        if( isAMO( op ) ) {
-          op->getMemReq().MarkLoadComplete();  // mark the original read complete after write is completed
-        }
+    }
+    // handleWriteResp
+    if constexpr( std::is_same_v<RESP, StandardMem::WriteResp> ) {
+      // determine if we have an atomic request associated with this write operation
+      if( isAMO( op ) ) {
+        op->getMemReq().MarkLoadComplete();  // mark the original read complete after write is completed
       }
     }
   }
