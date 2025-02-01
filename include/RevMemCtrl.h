@@ -632,9 +632,6 @@ private:
   /// RevBasicMemCtrl: Retrieve the base cache line request size
   uint32_t getBaseCacheLineSize( uint64_t Addr, uint32_t Size ) const;
 
-  /// RevBasicMemCtrl: retrieve the number of outstanding requests on the wire
-  uint32_t getNumSplitRqsts( const std::shared_ptr<RevMemOp>& op ) const;
-
   // -- private data members
   StandardMem* memIface{};  ///< StandardMem memory interface
   bool         hasCache{};  ///< detects whether cache layers are present

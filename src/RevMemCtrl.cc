@@ -595,10 +595,6 @@ void RevBasicMemCtrl::RevHandleFlagResp( void* target, size_t size, RevFlag flag
   }
 }
 
-uint32_t RevBasicMemCtrl::getNumSplitRqsts( const std::shared_ptr<RevMemOp>& op ) const {
-  return (uint32_t) std::count_if( outstanding.cbegin(), outstanding.cend(), [op]( auto& x ) { return x.second == op; } );
-}
-
 ///< Apply Atomic Memory Operation
 /// The operation described by "flags" is applied to memory "Target" with value "value"
 template<typename T>
@@ -704,25 +700,12 @@ bool RevBasicMemCtrl::isAMO( const std::shared_ptr<RevMemOp>& op ) {
 
 template<typename RESP>
 void RevBasicMemCtrl::handleResp( RESP* ev, const char* name ) {
-  auto it = outstanding.find( ev->getID() );
-  if( it == outstanding.end() )
+  auto node = outstanding.extract( ev->getID() );
+  if( node.empty() )
     output->fatal( CALL_INFO, -1, "Outstanding memory request not found in handle%s\n", name );
-  const auto& op = it->second;
+  const auto& op = node.mapped();
 
-#ifdef _REV_DEBUG_
-  std::cout << "handle" << name << " : id=" << ev->getID() << " @Addr= 0x" << std::hex << op->getAddr() << std::dec << std::endl;
-#endif
-
-  // For read responses, handle split requests
   if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
-
-#ifdef _REV_DEBUG_
-    for( uint32_t i = 0; i < op->getSize(); i++ )
-      std::cout << "               : data[" << i << "] = " << uint32_t( ev->data[i] ) << std::endl;
-    std::cout << "isOutstanding val = 0x" << std::hex << op->getMemReq().isOutstanding << std::dec << std::endl;
-    std::cout << "Address of the target register = 0x" << std::hex << op->getTarget() << std::dec << std::endl;
-#endif
-
     // determine if we have a split read request
     if( op->getSplitRqst() > 1 ) {
       // split request exists; determine how to handle it
@@ -733,35 +716,34 @@ void RevBasicMemCtrl::handleResp( RESP* ev, const char* name ) {
     }
   }
 
-  // determine if we have a split request
-  if( op->getSplitRqst() <= 1 || getNumSplitRqsts( op ) == 1 ) {
-    // if this was not a split request or it was the last request to service
+  delete ev;  // delete the StandardMem request
 
-    if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
+  if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> || std::is_same_v<RESP, StandardMem::WriteResp> ) {
+    // determine if we have no more requests remaining with the same RevMemOp
+    if( std::none_of( outstanding.begin(), outstanding.end(), [&]( auto& x ) { return x.second == op; } ) ) {
+
       // handleReadResp
+      if constexpr( std::is_same_v<RESP, StandardMem::ReadResp> ) {
+        // determine if we need to sign/zero extend or NaN-box the read value
+        RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
 
-      // determine if we need to sign/zero extend or NaN-box the read value
-      RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
-
-      // determine if we have an atomic request associated with this read operation
-      if( isAMO( op ) ) {
-        performAMOMemH( op );  // perform the atomic operation and generate a WRITE request
-      } else {
-        op->getMemReq().MarkLoadComplete();  // for non-atomic operations, mark load complete
+        // determine if we have an atomic request associated with this read operation
+        if( isAMO( op ) ) {
+          performAMOMemH( op );  // perform the atomic operation and generate a WRITE request
+        } else {
+          op->getMemReq().MarkLoadComplete();  // for non-atomic reads, mark load complete
+        }
       }
 
-    } else if constexpr( std::is_same_v<RESP, StandardMem::WriteResp> ) {
       // handleWriteResp
-
-      // determine if we have an atomic request associated with this write operation
-      if( isAMO( op ) ) {
-        op->getMemReq().MarkLoadComplete();  // mark the original load complete after write is completed
+      if constexpr( std::is_same_v<RESP, StandardMem::WriteResp> ) {
+        // determine if we have an atomic request associated with this write operation
+        if( isAMO( op ) ) {
+          op->getMemReq().MarkLoadComplete();  // mark the original read complete after write is completed
+        }
       }
     }
   }
-
-  outstanding.erase( it );
-  delete ev;
 }
 
 bool RevBasicMemCtrl::clockTick( Cycle_t cycle ) {
