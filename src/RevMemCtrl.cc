@@ -590,9 +590,10 @@ bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
   // process all the potential requests.  none exist
   // that can be dispatched at this time.
 #ifdef _REV_DEBUG_
-  for( uint32_t i = 0; i < rqstQ.size(); i++ ) {
-    std::cout << "rqstQ[" << i << "] = " << rqstQ[i]->getOp() << " @ 0x" << std::hex << rqstQ[i]->getAddr() << std::dec
-              << "; physAddr = 0x" << std::hex << rqstQ[i]->getPhysAddr() << std::dec << std::endl;
+  uint32_t i = 0;
+  for( auto it = rqstQ.begin(); it != rqstQ.end(); ++it, ++i ) {
+    std::cout << "rqstQ[" << i << "] = " << ( *it )->getOp() << " @ 0x" << std::hex << ( *it )->getAddr() << std::dec
+              << "; physAddr = 0x" << std::hex << ( *it )->getPhysAddr() << std::dec << std::endl;
   }
 #endif
 
