@@ -255,17 +255,15 @@ protected:
 // ----------------------------------------
 class RevBasicMemCtrl final : public RevMemCtrl {
 public:
-  // Memory operation parameters accessible with MemOp
+  // Memory operation parameters indexable with MemOp
   class MemOpParams {
     std::array<uint32_t, safe_static_cast<size_t>( MemOp::END )> paramVal{};
 
   public:
     // Access a memory operation parameter
     auto& operator[]( MemOp op ) {
-
       if( op == MemOp::MemOpSTORECOND )  // Combine LR+SC
         op = MemOp::MemOpLOADLINK;
-
       return paramVal.at( safe_static_cast<size_t>( op ) );
     }
 

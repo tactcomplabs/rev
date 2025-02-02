@@ -53,7 +53,7 @@ RevBasicMemCtrl::RevBasicMemCtrl( ComponentId_t id, const Params& params ) : Rev
   memOpMax[MemOp::MemOpREADLOCK]    = params.find<uint32_t>( "max_readlock", 64 );
   memOpMax[MemOp::MemOpWRITEUNLOCK] = params.find<uint32_t>( "max_writeunlock", 64 );
   memOpMax[MemOp::MemOpCUSTOM]      = params.find<uint32_t>( "max_custom", 64 );
-  memOpMax[MemOp::MemOpTOTAL]       = params.find<uint32_t>( "ops_per_cycle", 2 );
+  memOpMax[MemOp::MemOpPERCYCLE]    = params.find<uint32_t>( "ops_per_cycle", 2 );
 
   memIface                          = loadUserSubComponent<Interfaces::StandardMem>(
     "memIface",
@@ -572,9 +572,9 @@ bool RevBasicMemCtrl::processNextRqst( MemOpParams& memOps ) {
     if( memOps[memOp] < memOpMax[memOp] ) {
       // build a StandardMem request
       if( buildStandardMemRqst( *Slot ) ) {
-        rqstQ.erase( Slot );          // Sent the request; remove it
-        ++memOps[memOp];              // Increment the number of this kind of memory request for this clock
-        ++memOps[MemOp::MemOpTOTAL];  // Increment the total number of memory requests for this clock
+        rqstQ.erase( Slot );             // Sent the request; remove it
+        ++memOps[memOp];                 // Increment the number of this kind of memory request for this clock
+        ++memOps[MemOp::MemOpPERCYCLE];  // Increment the total number of memory requests for this clock
         return true;
       } else {
         // stop processing any more memory requests for this clock
@@ -614,7 +614,7 @@ bool RevBasicMemCtrl::clockTick( Cycle_t cycle ) {
 
   // process the memory queue
   MemOpParams memOps;
-  while( processNextRqst( memOps ) && memOps[MemOp::MemOpTOTAL] < memOpMax[MemOp::MemOpTOTAL] )
+  while( processNextRqst( memOps ) && memOps[MemOp::MemOpPERCYCLE] < memOpMax[MemOp::MemOpPERCYCLE] )
     ;
   return false;
 }
