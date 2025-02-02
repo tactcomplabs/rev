@@ -109,7 +109,7 @@ bool RevBasicMemCtrl::sendREADRequest(
 }
 
 bool RevBasicMemCtrl::sendWRITERequest(
-  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, uint8_t* buffer, RevFlag flags
 ) {
   if( Size ) {
     auto Op = std::make_shared<RevMemOp>( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITE, flags );
@@ -120,7 +120,7 @@ bool RevBasicMemCtrl::sendWRITERequest(
 }
 
 bool RevBasicMemCtrl::sendAMORequest(
-  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, void* target, const MemReq& req, RevFlag flags
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, uint8_t* buffer, void* target, const MemReq& req, RevFlag flags
 ) {
   // Check to see if our flags contain an atomic request
   if( RevFlagAtomic( flags ) == RevFlag::F_NONE ) {
@@ -165,7 +165,7 @@ bool RevBasicMemCtrl::sendREADLOCKRequest(
 }
 
 bool RevBasicMemCtrl::sendWRITELOCKRequest(
-  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, uint8_t* buffer, RevFlag flags
 ) {
   if( Size ) {
     auto Op = std::make_shared<RevMemOp>( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpWRITEUNLOCK, flags );
@@ -185,7 +185,7 @@ bool RevBasicMemCtrl::sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_
 }
 
 bool RevBasicMemCtrl::sendSTORECONDRequest(
-  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, uint8_t* buffer, RevFlag flags
 ) {
   if( Size ) {
     auto Op = std::make_shared<RevMemOp>( Hart, Addr, PAddr, Size, buffer, MemOp::MemOpSTORECOND, flags );
@@ -207,7 +207,7 @@ bool RevBasicMemCtrl::sendCUSTOMREADRequest(
 }
 
 bool RevBasicMemCtrl::sendCUSTOMWRITERequest(
-  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, uint32_t Opc, RevFlag flags
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, uint8_t* buffer, uint32_t Opc, RevFlag flags
 ) {
   if( Size ) {
     auto Op = std::make_shared<RevMemOp>( Hart, Addr, PAddr, Size, buffer, Opc, MemOp::MemOpCUSTOM, flags );
@@ -529,7 +529,7 @@ bool RevBasicMemCtrl::isPending( const std::shared_ptr<RevMemOp>& thisOp ) {
 
   // Go through all outstanding memory operations for this hart
   for( auto [it, end] = hartOutstanding.equal_range( thisOp->getHart() ); it != end; ++it ) {
-    // If this request has the Release flag, delay it if there are any outstanding requests in same hart
+    // If this request has the Release flag, delay it if there are any outstanding requests in the same hart
     if( is_release )
       return true;
 
