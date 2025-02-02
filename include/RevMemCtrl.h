@@ -159,13 +159,6 @@ public:
   /// RevMemCtrl: constructor
   RevMemCtrl( ComponentId_t id, const Params& params );
 
-  /// RevMemCtrl: destructor
-  virtual ~RevMemCtrl()                                                                                                 = default;
-
-  /// RevMemCtrl: disallow copying and assignment
-  RevMemCtrl( const RevMemCtrl& )                                                                                       = delete;
-  RevMemCtrl& operator=( const RevMemCtrl& )                                                                            = delete;
-
   /// RevMemCtrl: initialization function
   void init( uint32_t phase ) override                                                                                  = 0;
 
@@ -218,35 +211,20 @@ public:
   /// RevMemCtrl: send a custom write request
   virtual bool sendCUSTOMWRITERequest(
     uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, uint8_t* buffer, uint32_t Opc, RevFlag flags
-  )                                                            = 0;
+  )                                           = 0;
 
   /// RevMemCtrl: send a FENCE request
-  virtual bool sendFENCE( uint32_t Hart )                      = 0;
-
-  /// RevMemCtrl: handle a read response
-  virtual void handleReadResp( StandardMem::ReadResp* ev )     = 0;
-
-  /// RevMemCtrl: handle a write response
-  virtual void handleWriteResp( StandardMem::WriteResp* ev )   = 0;
-
-  /// RevMemCtrl: handle a flush response
-  virtual void handleFlushResp( StandardMem::FlushResp* ev )   = 0;
-
-  /// RevMemCtrl: handle a custom response
-  virtual void handleCustomResp( StandardMem::CustomResp* ev ) = 0;
-
-  /// RevMemCtrl: handle an invalidate response
-  virtual void handleInvResp( StandardMem::InvNotify* ev )     = 0;
+  virtual bool sendFENCE( uint32_t Hart )     = 0;
 
   /// RevMemCtrl: returns the cache line size
-  virtual uint32_t getLineSize() const                         = 0;
+  virtual uint32_t getLineSize() const        = 0;
 
   /// Assign processor tracer
-  virtual void setTracer( RevTracer* tracer )                  = 0;
+  virtual void setTracer( RevTracer* tracer ) = 0;
 
 protected:
-  std::unique_ptr<SST::Output> output{};  ///< RevMemCtrl: sst output object
-  RevTracer*                   Tracer{};  ///< RevMemCtrl: tracer pointer
+  const uint32_t                     verbose;  ///< RevMemCtrl: verbosity level
+  const std::unique_ptr<SST::Output> output;   ///< RevMemCtrl: sst output object
 
 };  // class RevMemCtrl
 
@@ -475,34 +453,7 @@ public:
 
   /// RevBasicMemCtrl: handle a response generally
   template<typename RESP>
-  void handleResp( RESP* ev, const char* name );
-
-  /// RevBasicMemCtrl: handle a read response
-  void handleReadResp( StandardMem::ReadResp* ev ) final {
-    handleResp( ev, "ReadResp" );
-    --memOpNum[MemOp::MemOpREAD];
-  }
-
-  /// RevBasicMemCtrl: handle a write response
-  void handleWriteResp( StandardMem::WriteResp* ev ) final {
-    handleResp( ev, "WriteResp" );
-    --memOpNum[MemOp::MemOpWRITE];
-  }
-
-  /// RevBasicMemCtrl: handle a flush response
-  void handleFlushResp( StandardMem::FlushResp* ev ) final {
-    handleResp( ev, "FlushResp" );
-    --memOpNum[MemOp::MemOpFLUSH];
-  }
-
-  /// RevBasicMemCtrl: handle a custom response
-  void handleCustomResp( StandardMem::CustomResp* ev ) final {
-    handleResp( ev, "CustomResp" );
-    --memOpNum[MemOp::MemOpCUSTOM];
-  }
-
-  /// RevBasicMemCtrl: handle an invalidate response
-  void handleInvResp( StandardMem::InvNotify* ev ) final { handleResp( ev, "InvResp" ); }
+  void handleResp( RESP* ev, const char* name, MemOp memOp );
 
   /// RevBasicMemCtrl: perform an AMO on local data
   static AMOData performAMO( RevFlag flags, uint32_t size, void* target, const void* data );
@@ -525,7 +476,7 @@ public:
     memcpy( target, &dest, sizeof( dest ) );
   }
 
-protected:
+private:
   // ----------------------------------------
   // RevStdMemHandlers
   // ----------------------------------------
@@ -533,8 +484,7 @@ protected:
     friend class RevBasicMemCtrl;
 
     /// RevStdMemHandlers: constructor
-    RevStdMemHandlers( RevBasicMemCtrl* Ctrl, SST::Output* output )
-      : Interfaces::StandardMem::RequestHandler( output ), Ctrl( Ctrl ) {}
+    RevStdMemHandlers( RevBasicMemCtrl* Ctrl ) : Interfaces::StandardMem::RequestHandler( Ctrl->output.get() ), Ctrl( Ctrl ) {}
 
     /// RevStdMemHandlers: destructor
     ~RevStdMemHandlers() final                               = default;
@@ -543,15 +493,15 @@ protected:
     RevStdMemHandlers( const RevStdMemHandlers& )            = delete;
     RevStdMemHandlers& operator=( const RevStdMemHandlers& ) = delete;
 
-    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleReadResp( ev ); }
+    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleResp( ev, "ReadResp", MemOp::MemOpREAD ); }
 
-    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleWriteResp( ev ); }
+    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleResp( ev, "WriteResp", MemOp::MemOpWRITE ); }
 
-    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleFlushResp( ev ); }
+    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleResp( ev, "FlushResp", MemOp::MemOpFLUSH ); }
 
-    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleCustomResp( ev ); }
+    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleResp( ev, "CustomResp", MemOp::MemOpCUSTOM ); }
 
-    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleInvResp( ev ); }
+    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleResp( ev, "InvResp", MemOp::MemOpINV ); }
 
     // ---------------------------------------------------------------
     // RevStdMemHandlers
@@ -562,7 +512,6 @@ protected:
 
   };  // class RevStdMemHandlers
 
-private:
   /// RevBasicMemCtrl: process the next memory request
   bool processNextRqst( MemOpParams& t );
 
@@ -571,12 +520,6 @@ private:
 
   /// RevBasicMemCtrl: build a standard memory request
   bool buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op );
-
-  /// RevBasicMemCtrl: build raw memory requests with a 1-to-1 mapping to RevMemOps'
-  bool buildRawMemRqst( const std::shared_ptr<RevMemOp>& op, RevFlag Flags );
-
-  /// RevBasicMemCtrl: build cache-aligned requests
-  bool buildCacheMemRqst( const std::shared_ptr<RevMemOp>& op );
 
   /// RevBasicMemCtrl: register statistics
   void registerStats();
@@ -604,6 +547,7 @@ private:
   MemOpParams                          memOpMax{};  ///< maximums allowable of memory parameters
   std::vector<Statistic<uint64_t>*>    stats{};     ///< statistics vector
   std::list<std::shared_ptr<RevMemOp>> rqstQ{};     ///< queued memory requests
+  RevTracer*                           Tracer{};    ///< tracer pointer
 
   ///< map of outstanding memory requests based on Request id
   std::unordered_map<
@@ -616,7 +560,7 @@ private:
   std::multimap<uint32_t, std::shared_ptr<RevMemOp>> hartOutstanding{};
 
   ///< StandardMem interface response handlers
-  const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this, output.get() ) };
+  const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this ) };
 
 };  // RevBasicMemCtrl
 

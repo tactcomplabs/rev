@@ -35,10 +35,9 @@ std::ostream& operator<<( std::ostream& os, MemOp op ) {
 // ---------------------------------------------------------------
 // RevMemCtrl
 // ---------------------------------------------------------------
-RevMemCtrl::RevMemCtrl( ComponentId_t id, const Params& params ) : SubComponent( id ) {
-  uint32_t verbosity = params.find<uint32_t>( "verbose" );
-  output             = std::make_unique<SST::Output>( "[RevMemCtrl @t]: ", verbosity, 0, SST::Output::STDOUT );
-}
+RevMemCtrl::RevMemCtrl( ComponentId_t id, const Params& params )
+  : SubComponent( id ), verbose( params.find<uint32_t>( "verbose" ) ),
+    output( new SST::Output( "[RevMemCtrl @t]: ", verbose, 0, SST::Output::STDOUT ) ) {}
 
 // ---------------------------------------------------------------
 // RevBasicMemCtrl
@@ -486,7 +485,7 @@ void RevBasicMemCtrl::addMemRqst( const std::shared_ptr<RevMemOp>& op, Interface
 }
 
 template<typename RESP>
-void RevBasicMemCtrl::handleResp( RESP* ev, const char* name ) {
+void RevBasicMemCtrl::handleResp( RESP* ev, const char* name, MemOp memOp ) {
   auto node = outstanding.extract( ev->getID() );
   if( node.empty() )
     output->fatal( CALL_INFO, -1, "Outstanding memory request not found in handle%s\n", name );
@@ -499,6 +498,7 @@ void RevBasicMemCtrl::handleResp( RESP* ev, const char* name ) {
 
   delete ev;                                      // delete the StandardMem request
   hartOutstanding.erase( hartOutstandingEntry );  // delete the entry mapping harts to outstanding requests
+  --memOpNum[memOp];                              // decrement the number of outstanding requests for this MemOp
 
   if( !--op->rqstCount() ) {  // If there are no more requests associated with this RevMemOp
     // handleReadResp

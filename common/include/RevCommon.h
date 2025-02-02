@@ -128,6 +128,7 @@ enum class MemOp : uint8_t {
   MemOpCUSTOM,
   MemOpFENCE,
   MemOpAMO,
+  MemOpINV,
   MemOpPERCYCLE,
   END
 };
