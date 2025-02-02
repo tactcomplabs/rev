@@ -453,7 +453,7 @@ public:
 
   /// RevBasicMemCtrl: handle a response generally
   template<typename RESP>
-  void handleResp( RESP* ev, const char* name, MemOp memOp );
+  void handleResp( RESP* ev, MemOp memOp, const char* name = "" );
 
   /// RevBasicMemCtrl: perform an AMO on local data
   static AMOData performAMO( RevFlag flags, uint32_t size, void* target, const void* data );
@@ -493,15 +493,15 @@ private:
     RevStdMemHandlers( const RevStdMemHandlers& )            = delete;
     RevStdMemHandlers& operator=( const RevStdMemHandlers& ) = delete;
 
-    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleResp( ev, "ReadResp", MemOp::MemOpREAD ); }
+    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleResp( ev, MemOp::MemOpREAD, "ReadResp" ); }
 
-    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleResp( ev, "WriteResp", MemOp::MemOpWRITE ); }
+    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleResp( ev, MemOp::MemOpWRITE, "WriteResp" ); }
 
-    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleResp( ev, "FlushResp", MemOp::MemOpFLUSH ); }
+    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleResp( ev, MemOp::MemOpFLUSH, "FlushResp" ); }
 
-    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleResp( ev, "CustomResp", MemOp::MemOpCUSTOM ); }
+    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleResp( ev, MemOp::MemOpCUSTOM, "CustomResp" ); }
 
-    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleResp( ev, "InvResp", MemOp::MemOpINV ); }
+    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleResp( ev, MemOp::MemOpINV, "InvResp" ); }
 
     // ---------------------------------------------------------------
     // RevStdMemHandlers
@@ -516,7 +516,7 @@ private:
   bool processNextRqst( MemOpParams& t );
 
   /// RevBasicMemCtrl: Add a new memory request
-  void addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst );
+  void addMemRqst( const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, Interfaces::StandardMem::Request* rqst );
 
   /// RevBasicMemCtrl: build a standard memory request
   bool buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op );

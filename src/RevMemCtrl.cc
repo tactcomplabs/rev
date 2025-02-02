@@ -27,6 +27,7 @@ std::ostream& operator<<( std::ostream& os, MemOp op ) {
     case MemOp::MemOpCUSTOM:      return os << "MemOpCUSTOM";
     case MemOp::MemOpFENCE:       return os << "MemOpFENCE";
     case MemOp::MemOpAMO:         return os << "MemOpAMO";
+    case MemOp::MemOpINV:         return os << "MemOpINV";
     default:                      return os;
   }
   // clang-format on
@@ -294,61 +295,39 @@ bool RevBasicMemCtrl::buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op 
   // starting with the end of the first cache line, then each cache line afterwards
   // this prevents us from sending requests that span multiple cache lines
   while( size ) {
+    // clang-format off
     switch( memOp ) {
     case MemOp::MemOpREAD:
-#ifdef _REV_DEBUG_
-      std::cout << "<<<< READ REQUEST >>>>" << std::endl;
-#endif
-      addMemRqst( op, new Interfaces::StandardMem::Read( base, size, flags ) );
-      recordStat( MemCtrlStats::ReadInFlight );
+      addMemRqst( op, memOp, MemCtrlStats::ReadInFlight,        new Interfaces::StandardMem::Read( base, size, flags ) );
       break;
-
     case MemOp::MemOpWRITE:
-#ifdef _REV_DEBUG_
-      std::cout << "<<<< WRITE REQUEST >>>>" << std::endl;
-#endif
-      addMemRqst( op, new Interfaces::StandardMem::Write( base, size, { curByte, curByte + size }, false, flags ) );
-      recordStat( MemCtrlStats::WriteInFlight );
+      addMemRqst( op, memOp, MemCtrlStats::WriteInFlight,       new Interfaces::StandardMem::Write( base, size, { curByte, curByte + size }, false, flags ) );
       break;
-
     case MemOp::MemOpFLUSH:
-      addMemRqst( op, new Interfaces::StandardMem::FlushAddr( base, size, op->getInv(), size, flags ) );
-      recordStat( MemCtrlStats::FlushInFlight );
+      addMemRqst( op, memOp, MemCtrlStats::FlushInFlight,       new Interfaces::StandardMem::FlushAddr( base, size, op->getInv(), size, flags ) );
       break;
-
     case MemOp::MemOpREADLOCK:
-      addMemRqst( op, new Interfaces::StandardMem::ReadLock( base, size, flags ) );
-      recordStat( MemCtrlStats::ReadLockInFlight );
+      addMemRqst( op, memOp, MemCtrlStats::ReadLockInFlight,    new Interfaces::StandardMem::ReadLock( base, size, flags ) );
       break;
-
     case MemOp::MemOpWRITEUNLOCK:
-      addMemRqst( op, new Interfaces::StandardMem::WriteUnlock( base, size, { curByte, curByte + size }, false, flags ) );
-      recordStat( MemCtrlStats::WriteUnlockInFlight );
+      addMemRqst( op, memOp, MemCtrlStats::WriteUnlockInFlight, new Interfaces::StandardMem::WriteUnlock( base, size, { curByte, curByte + size }, false, flags ) );
       break;
-
     case MemOp::MemOpLOADLINK:
-      addMemRqst( op, new Interfaces::StandardMem::LoadLink( base, size, flags ) );
-      recordStat( MemCtrlStats::LoadLinkInFlight );
+      addMemRqst( op, memOp, MemCtrlStats::LoadLinkInFlight,    new Interfaces::StandardMem::LoadLink( base, size, flags ) );
       break;
-
     case MemOp::MemOpSTORECOND:
-      addMemRqst( op, new Interfaces::StandardMem::StoreConditional( base, size, { curByte, curByte + size }, flags ) );
-      recordStat( MemCtrlStats::StoreCondInFlight );
+      addMemRqst( op, memOp, MemCtrlStats::StoreCondInFlight,   new Interfaces::StandardMem::StoreConditional( base, size, { curByte, curByte + size }, flags ) );
+      break;
+    case MemOp::MemOpCUSTOM:        // TODO: need more support for custom memory ops
+      addMemRqst( op, memOp, MemCtrlStats::CustomInFlight,      new Interfaces::StandardMem::CustomReq( nullptr, flags ) );
       break;
 
-    case MemOp::MemOpCUSTOM:
-      // TODO: need more support for custom memory ops
-      addMemRqst( op, new Interfaces::StandardMem::CustomReq( nullptr, flags ) );
-      recordStat( MemCtrlStats::CustomInFlight );
-      break;
-
-      // we should never get here with a FENCE operation
-      // the FENCE is handled locally and never dispatched on the memIface
-    case MemOp::MemOpFENCE:
+    // we should never get here with a FENCE operation
+    // the FENCE is handled locally and never dispatched on the memIface
     default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
     }
+    // clang-format on
 
-    ++memOpNum[memOp];
     base += size;
     curByte += size;
     bytesLeft -= size;
@@ -464,15 +443,17 @@ void RevBasicMemCtrl::handleAMOResp( const std::shared_ptr<RevMemOp>& readOp ) {
   // issuance of other memory requests.
   addMemRqst(
     writeOp,
+    MemOp::MemOpWRITE,
+    MemCtrlStats::WriteInFlight,
     new Interfaces::StandardMem::Write(
       writeOp->getAddr(), size, { newMem.uc, newMem.uc + size }, false, safe_static_cast<flags_t>( flags )
     )
   );
-  ++memOpNum[MemOp::MemOpWRITE];
-  recordStat( MemCtrlStats::WriteInFlight );
 }
 
-void RevBasicMemCtrl::addMemRqst( const std::shared_ptr<RevMemOp>& op, Interfaces::StandardMem::Request* rqst ) {
+void RevBasicMemCtrl::addMemRqst(
+  const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, Interfaces::StandardMem::Request* rqst
+) {
   // Map the request ID to a RevMemOp shared_ptr and iterator pointing to mapping from hart to op
   if( !outstanding.try_emplace( rqst->getID(), op, hartOutstanding.emplace( op->getHart(), op ) ).second )
     output->fatal( CALL_INFO, -1, "Error: Memory request with the same ID added twice\n" );
@@ -480,12 +461,18 @@ void RevBasicMemCtrl::addMemRqst( const std::shared_ptr<RevMemOp>& op, Interface
   // Increment the request count of the RevMemOp
   ++op->rqstCount();
 
+  // Incremement the number of outstanding requests for this MemOp
+  ++memOpNum[memOp];
+
   // Send the request
   memIface->send( rqst );
+
+  // Record the statistic
+  recordStat( stat );
 }
 
 template<typename RESP>
-void RevBasicMemCtrl::handleResp( RESP* ev, const char* name, MemOp memOp ) {
+void RevBasicMemCtrl::handleResp( RESP* ev, MemOp memOp, const char* name ) {
   auto node = outstanding.extract( ev->getID() );
   if( node.empty() )
     output->fatal( CALL_INFO, -1, "Outstanding memory request not found in handle%s\n", name );
