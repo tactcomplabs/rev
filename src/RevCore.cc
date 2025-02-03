@@ -64,7 +64,7 @@ RevCore::RevCore(
 
   // load the instruction tables
   if( !LoadInstructionTable() )
-    output->fatal( CALL_INFO, -1, "Error : failed to load instruction table for core=%" PRIu32 "\n", id );
+    output->fatal( CALL_INFO, -1, "Error: failed to load instruction table for core=%" PRIu32 "\n", id );
 
   // reset the core
   if( !Reset() )

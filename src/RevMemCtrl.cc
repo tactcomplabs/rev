@@ -55,7 +55,7 @@ RevBasicMemCtrl::RevBasicMemCtrl( ComponentId_t id, const Params& params ) : Rev
   memOpMax[MemOp::MemOpCUSTOM]      = params.find<uint32_t>( "max_custom", 64 );
   memOpMax[MemOp::MemOpPERCYCLE]    = params.find<uint32_t>( "ops_per_cycle", 2 );
 
-  memIface                          = loadUserSubComponent<Interfaces::StandardMem>(
+  memIface                          = loadUserSubComponent<StandardMem>(
     "memIface",
     ComponentInfo::SHARE_NONE,  //*/ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
     getTimeConverter( ClockFreq ),
@@ -63,7 +63,7 @@ RevBasicMemCtrl::RevBasicMemCtrl( ComponentId_t id, const Params& params ) : Rev
   );
 
   if( !memIface ) {
-    output->fatal( CALL_INFO, -1, "Error : memory interface is null\n" );
+    output->fatal( CALL_INFO, -1, "Error: memory interface is null\n" );
   }
 
   registerStats();
@@ -227,7 +227,7 @@ bool RevBasicMemCtrl::sendFENCE( uint32_t Hart ) {
 void RevBasicMemCtrl::processMemEvent( StandardMem::Request* ev ) {
   output->verbose( CALL_INFO, 15, 0, "Received memory request event\n" );
   if( ev == nullptr )
-    output->fatal( CALL_INFO, -1, "Error : Received null memory event\n" );
+    output->fatal( CALL_INFO, -1, "Error: Received null memory event\n" );
   ev->handle( stdMemHandlers.get() );
 }
 
@@ -298,33 +298,33 @@ bool RevBasicMemCtrl::buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op 
     // clang-format off
     switch( memOp ) {
     case MemOp::MemOpREAD:
-      addMemRqst( op, memOp, MemCtrlStats::ReadInFlight,        new Interfaces::StandardMem::Read( base, size, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::ReadInFlight,        new StandardMem::Read( base, size, flags ) );
       break;
     case MemOp::MemOpWRITE:
-      addMemRqst( op, memOp, MemCtrlStats::WriteInFlight,       new Interfaces::StandardMem::Write( base, size, { curByte, curByte + size }, false, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::WriteInFlight,       new StandardMem::Write( base, size, { curByte, curByte + size }, false, flags ) );
       break;
     case MemOp::MemOpFLUSH:
-      addMemRqst( op, memOp, MemCtrlStats::FlushInFlight,       new Interfaces::StandardMem::FlushAddr( base, size, op->getInv(), size, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::FlushInFlight,       new StandardMem::FlushAddr( base, size, op->getInv(), size, flags ) );
       break;
     case MemOp::MemOpREADLOCK:
-      addMemRqst( op, memOp, MemCtrlStats::ReadLockInFlight,    new Interfaces::StandardMem::ReadLock( base, size, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::ReadLockInFlight,    new StandardMem::ReadLock( base, size, flags ) );
       break;
     case MemOp::MemOpWRITEUNLOCK:
-      addMemRqst( op, memOp, MemCtrlStats::WriteUnlockInFlight, new Interfaces::StandardMem::WriteUnlock( base, size, { curByte, curByte + size }, false, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::WriteUnlockInFlight, new StandardMem::WriteUnlock( base, size, { curByte, curByte + size }, false, flags ) );
       break;
     case MemOp::MemOpLOADLINK:
-      addMemRqst( op, memOp, MemCtrlStats::LoadLinkInFlight,    new Interfaces::StandardMem::LoadLink( base, size, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::LoadLinkInFlight,    new StandardMem::LoadLink( base, size, flags ) );
       break;
     case MemOp::MemOpSTORECOND:
-      addMemRqst( op, memOp, MemCtrlStats::StoreCondInFlight,   new Interfaces::StandardMem::StoreConditional( base, size, { curByte, curByte + size }, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::StoreCondInFlight,   new StandardMem::StoreConditional( base, size, { curByte, curByte + size }, flags ) );
       break;
     case MemOp::MemOpCUSTOM:        // TODO: need more support for custom memory ops
-      addMemRqst( op, memOp, MemCtrlStats::CustomInFlight,      new Interfaces::StandardMem::CustomReq( nullptr, flags ) );
+      addMemRqst( op, memOp, MemCtrlStats::CustomInFlight,      new StandardMem::CustomReq( nullptr, flags ) );
       break;
 
     // we should never get here with a FENCE operation
     // the FENCE is handled locally and never dispatched on the memIface
-    default: output->fatal( CALL_INFO, -1, "Error : unknown memory operation type\n" );
+    default: output->fatal( CALL_INFO, -1, "Error: unknown memory operation type\n" );
     }
     // clang-format on
 
@@ -445,14 +445,12 @@ void RevBasicMemCtrl::handleAMOResp( const std::shared_ptr<RevMemOp>& readOp ) {
     writeOp,
     MemOp::MemOpWRITE,
     MemCtrlStats::WriteInFlight,
-    new Interfaces::StandardMem::Write(
-      writeOp->getAddr(), size, { newMem.uc, newMem.uc + size }, false, safe_static_cast<flags_t>( flags )
-    )
+    new StandardMem::Write( writeOp->getAddr(), size, { newMem.uc, newMem.uc + size }, false, safe_static_cast<flags_t>( flags ) )
   );
 }
 
 void RevBasicMemCtrl::addMemRqst(
-  const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, Interfaces::StandardMem::Request* rqst
+  const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, StandardMem::Request* rqst
 ) {
   // Map the request ID to a RevMemOp shared_ptr and iterator pointing to mapping from hart to op
   if( !outstanding.try_emplace( rqst->getID(), op, hartOutstanding.emplace( op->getHart(), op ) ).second )

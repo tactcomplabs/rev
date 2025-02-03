@@ -134,7 +134,7 @@ public:
   bool outstandingRqsts() const { return ctrl && ctrl->outstandingRqsts(); }
 
   /// RevMem: handle incoming memory event
-  void handleEvent( Interfaces::StandardMem::Request* ev ) {}
+  void handleEvent( StandardMem::Request* ev ) {}
 
   /// RevMem: handle memory injection
   void HandleMemFault( uint32_t width );

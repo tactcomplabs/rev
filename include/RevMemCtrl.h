@@ -235,26 +235,18 @@ class RevBasicMemCtrl final : public RevMemCtrl {
 public:
   // Memory operation parameters indexable with MemOp
   class MemOpParams {
-    std::array<uint32_t, safe_static_cast<size_t>( MemOp::END )> paramVal{};
+    std::array<uint32_t, safe_static_cast<size_t>( MemOp::END )> param{};
 
   public:
     // Access a memory operation parameter
     auto& operator[]( MemOp op ) {
       if( op == MemOp::MemOpSTORECOND )  // Combine LR+SC
         op = MemOp::MemOpLOADLINK;
-      return paramVal.at( safe_static_cast<size_t>( op ) );
+      return param.at( safe_static_cast<size_t>( op ) );
     }
 
     // const version
     const auto& operator[]( MemOp op ) const { return const_cast<MemOpParams&>( *this )[op]; }
-
-    // default non-aggregate constructors and assignment operators
-    explicit MemOpParams()                       = default;
-    ~MemOpParams()                               = default;
-    MemOpParams( const MemOpParams& )            = default;
-    MemOpParams( MemOpParams&& )                 = default;
-    MemOpParams& operator=( const MemOpParams& ) = default;
-    MemOpParams& operator=( MemOpParams&& )      = default;
   };
 
   SST_ELI_REGISTER_SUBCOMPONENT(
@@ -480,19 +472,11 @@ private:
   // ----------------------------------------
   // RevStdMemHandlers
   // ----------------------------------------
-  struct RevStdMemHandlers final : Interfaces::StandardMem::RequestHandler {
-    friend class RevBasicMemCtrl;
-
+  struct RevStdMemHandlers final : StandardMem::RequestHandler {
     /// RevStdMemHandlers: constructor
-    RevStdMemHandlers( RevBasicMemCtrl* Ctrl ) : Interfaces::StandardMem::RequestHandler( Ctrl->output.get() ), Ctrl( Ctrl ) {}
+    explicit RevStdMemHandlers( RevBasicMemCtrl* Ctrl ) : RequestHandler( Ctrl->output.get() ), Ctrl( Ctrl ) {}
 
-    /// RevStdMemHandlers: destructor
-    ~RevStdMemHandlers() final                               = default;
-
-    /// RevStdMemHandlers: disallow copying and assignment
-    RevStdMemHandlers( const RevStdMemHandlers& )            = delete;
-    RevStdMemHandlers& operator=( const RevStdMemHandlers& ) = delete;
-
+    /// RevStdMemHandlers: handlers
     void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleResp( ev, MemOp::MemOpREAD, "ReadResp" ); }
 
     void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleResp( ev, MemOp::MemOpWRITE, "WriteResp" ); }
@@ -508,7 +492,7 @@ private:
     // ---------------------------------------------------------------
 
   private:
-    RevBasicMemCtrl* Ctrl{};  ///< RevStdMemHandlers: memory controller object
+    RevBasicMemCtrl* const Ctrl;  ///< RevStdMemHandlers: memory controller object
 
   };  // class RevStdMemHandlers
 
@@ -516,7 +500,7 @@ private:
   bool processNextRqst( MemOpParams& t );
 
   /// RevBasicMemCtrl: Add a new memory request
-  void addMemRqst( const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, Interfaces::StandardMem::Request* rqst );
+  void addMemRqst( const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, StandardMem::Request* rqst );
 
   /// RevBasicMemCtrl: build a standard memory request
   bool buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op );
@@ -540,6 +524,7 @@ private:
   }
 
   // -- private data members
+  RevTracer*                           Tracer{};    ///< tracer pointer
   StandardMem*                         memIface{};  ///< StandardMem memory interface
   bool                                 hasCache{};  ///< detects whether cache layers are present
   uint32_t                             lineSize{};  ///< cache line size
@@ -547,7 +532,6 @@ private:
   MemOpParams                          memOpMax{};  ///< maximums allowable of memory parameters
   std::vector<Statistic<uint64_t>*>    stats{};     ///< statistics vector
   std::list<std::shared_ptr<RevMemOp>> rqstQ{};     ///< queued memory requests
-  RevTracer*                           Tracer{};    ///< tracer pointer
 
   ///< map of outstanding memory requests based on Request id
   std::unordered_map<

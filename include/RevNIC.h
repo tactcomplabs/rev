@@ -1,7 +1,7 @@
 //
 // _RevNIC_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -27,34 +27,31 @@ namespace SST::RevCPU {
 /**
  * nicEvent : inherited class to handle the individual network events for RevNIC
  */
-class nicEvent final : public SST::Event {
-public:
-  /// nicEvent: standard constructor
-  explicit nicEvent( std::string name ) : Event(), SrcName( std::move( name ) ) {}
+struct nicEvent final : SST::Event {
+  explicit nicEvent( std::string name ) : SrcName( std::move( name ) ) {}
 
   /// nicEvent: extended constructor
-  nicEvent( std::string name, std::vector<uint8_t> data ) : Event(), SrcName( std::move( name ) ), Data( std::move( data ) ) {}
+  nicEvent( std::string name, std::vector<uint8_t> data ) : SrcName( std::move( name ) ), Data( std::move( data ) ) {}
 
   /// nicEvent: retrieve the source name
-  std::string getSource() { return SrcName; }
+  std::string& getSource() { return SrcName; }
 
-  // nicEvent: retrieve the data payload
-  std::vector<uint8_t> getData() { return Data; }
+  const std::string& getSource() const { return SrcName; }
+
+  /// nicEvent: retrieve the data payload
+  std::vector<uint8_t>& getData() { return Data; }
+
+  const std::vector<uint8_t>& getData() const { return Data; }
 
   /// nicEvent: virtual function to clone an event
-  Event* clone() final {
-    nicEvent* ev = new nicEvent( *this );
-    return ev;
-  }
+  Event* clone() final { return new nicEvent( *this ); }
 
-private:
-  std::string          SrcName{};  ///< nicEvent: Name of the sending device
-  std::vector<uint8_t> Data{};     ///< nicEvent: Data payload
-
-public:
-  /// nicEvent: secondary constructor
-  nicEvent()        = default;
-  ~nicEvent() final = default;
+  nicEvent()                             = default;
+  nicEvent( const nicEvent& )            = default;
+  nicEvent( nicEvent&& )                 = default;
+  nicEvent& operator=( const nicEvent& ) = default;
+  nicEvent& operator=( nicEvent&& )      = default;
+  ~nicEvent() final                      = default;
 
   /// nicEvent: event serializer
   void serialize_order( SST::Core::Serialization::serializer& ser ) final {
@@ -65,7 +62,12 @@ public:
 
   /// nicEvent: implements the NIC serialization
   ImplementSerializable( SST::RevCPU::nicEvent );
-};  // end nicEvent
+
+private:
+  std::string          SrcName{};  ///< nicEvent: Name of the sending device
+  std::vector<uint8_t> Data{};     ///< nicEvent: Data payload
+
+};  // struct nicEvent
 
 /**
  * nicAPI : Handles the subcomponent NIC API
@@ -78,25 +80,25 @@ public:
   nicAPI( ComponentId_t id, Params& ) : SubComponent( id ) {}
 
   /// nicEvent: default destructor
-  ~nicAPI() override                                         = default;
+  ~nicAPI() override                                        = default;
 
   /// nicEvent: registers the event handler with the core
-  virtual void setMsgHandler( Event::HandlerBase* handler )  = 0;
+  virtual void setMsgHandler( Event::HandlerBase* handler ) = 0;
 
   /// nicEvent: initializes the network
-  void init( uint32_t phase ) override                       = 0;
+  void init( uint32_t phase ) override                      = 0;
 
   /// nicEvent: setup the network
-  void setup() override                                      = 0;
+  void setup() override                                     = 0;
 
   /// nicEvent: send a message on the network
-  virtual void send( nicEvent* ev, int dest )                = 0;
+  virtual void send( nicEvent* ev, int dest )               = 0;
 
   /// nicEvent: retrieve the number of potential destinations
-  virtual int getNumDestinations()                           = 0;
+  virtual int getNumDestinations()                          = 0;
 
   /// nicEvent: returns the NIC's network address
-  virtual SST::Interfaces::SimpleNetwork::nid_t getAddress() = 0;
+  virtual SimpleNetwork::nid_t getAddress()                 = 0;
 };  /// end nicAPI
 
 /**
@@ -144,7 +146,7 @@ public:
   int getNumDestinations() final;
 
   /// RevNIC: get the endpoint's network address
-  SST::Interfaces::SimpleNetwork::nid_t getAddress() final;
+  SimpleNetwork::nid_t getAddress() final;
 
   /// RevNIC: callback function for the SimpleNetwork interface
   bool msgNotify( int virtualNetwork );
@@ -153,13 +155,12 @@ public:
   virtual bool clockTick( Cycle_t cycle );
 
 protected:
-  SST::Output*                    output{};             ///< RevNIC: SST output object
-  SST::Interfaces::SimpleNetwork* iFace{};              ///< RevNIC: SST network interface
-  SST::Event::HandlerBase*        msgHandler{};         ///< RevNIC: SST message handler
-  bool                            initBroadcastSent{};  ///< RevNIC: has the init bcast been sent?
-  int                             numDest{};            ///< RevNIC: number of SST destinations
-
-  std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQ{};  ///< RevNIC: buffered send queue
+  SST::Output*                        output{};             ///< RevNIC: SST output object
+  SimpleNetwork*                      iFace{};              ///< RevNIC: SST network interface
+  SST::Event::HandlerBase*            msgHandler{};         ///< RevNIC: SST message handler
+  bool                                initBroadcastSent{};  ///< RevNIC: has the init bcast been sent?
+  int                                 numDest{};            ///< RevNIC: number of SST destinations
+  std::queue<SimpleNetwork::Request*> sendQ{};              ///< RevNIC: buffered send queue
 
   /// RevNIC: disallow copying and assignment
   RevNIC( const RevNIC& )            = delete;

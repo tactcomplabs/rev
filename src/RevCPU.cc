@@ -123,7 +123,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   } else {
     Ctrl = std::unique_ptr<RevMemCtrl>( loadUserSubComponent<RevMemCtrl>( "memory" ) );
     if( !Ctrl )
-      output.fatal( CALL_INFO, -1, "Error : failed to inintialize the memory controller subcomponent\n" );
+      output.fatal( CALL_INFO, -1, "Error: failed to inintialize the memory controller subcomponent\n" );
     Mem = std::make_unique<RevMem>( memSize, Opts.get(), Ctrl.get(), &output );
 
     if( EnableFaults )
@@ -153,7 +153,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
     for( uint32_t i = 0; i < numCores; i++ ) {
       RevCoProc* CoProc = loadUserSubComponent<RevCoProc>( "co_proc", SST::ComponentInfo::SHARE_NONE, Procs[i].get() );
       if( !CoProc ) {
-        output.fatal( CALL_INFO, -1, "Error : failed to inintialize the co-processor subcomponent\n" );
+        output.fatal( CALL_INFO, -1, "Error: failed to inintialize the co-processor subcomponent\n" );
       }
       Procs[i]->SetCoProc( CoProc );
       CoProcs.push_back( std::unique_ptr<RevCoProc>( CoProc ) );
