@@ -267,8 +267,18 @@ bool RevBasicMemCtrl::buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op 
   // if the cache is disabled, then 1; eg, there is a 1-to-1 mapping of CPU memops to memory requests
   uint32_t NumLines  = isCached ? uint32_t( ( base % lineSize + bytesLeft - 1 ) / lineSize + 1 ) : 1;
 
+  if( NumLines > 1 && RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE )
+    output->fatal(
+      CALL_INFO,
+      -1,
+      "Error: Atomic operation spans multiple cache lines\nAddr = 0x%" PRIx64 "; NumLines = %" PRIu32 "; Size = %" PRIu32 "\n",
+      base,
+      NumLines,
+      bytesLeft
+    );
+
 #ifdef _REV_DEBUG_
-  std::cout << "Building mem request for addr=0x" << std::hex << base << std::dec << "; NumLines = " << NumLines
+  std::cout << "Building mem request for Addr = 0x" << std::hex << base << std::dec << "; NumLines = " << NumLines
             << "; Size = " << bytesLeft << std::endl;
 #endif
 
