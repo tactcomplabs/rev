@@ -473,6 +473,9 @@ uint64_t RevMem::AllocMemAt( const uint64_t& BaseAddr, const uint64_t& SegSize )
 }
 
 bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, void* Target, const MemReq& req, RevFlag flags ) {
+  if( RevFlagAtomic( flags ) == RevFlag::F_NONE )
+    return false;
+
 #ifdef _REV_DEBUG_
   std::cout << "AMO of " << Len << " Bytes Starting at 0x" << std::hex << Addr << std::dec << std::endl;
 #endif
@@ -494,7 +497,10 @@ bool RevMem::AMOMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Data, voi
     auto newMem = RevBasicMemCtrl::performAMO( flags, Len, Target, &data );
 
     // Write new value to memory
-    WriteMem( Hart, Addr, Len, &newMem, flags );
+    WriteMem( Hart, Addr, Len, newMem.uc, flags );
+
+    // Handle flag response
+    RevBasicMemCtrl::RevHandleFlagResp( Target, Len, flags );
 
     // clear the hazard
     req.MarkLoadComplete();
@@ -576,12 +582,13 @@ bool RevMem::ReadMem( uint32_t Hart, uint64_t Addr, uint32_t Len, void* Target, 
     memcpy( DataMem, &physMem[physAddr], remainder );
     memcpy( DataMem + remainder, &physMem[adjPhysAddr], Len - remainder );
 
-    // Handle flag response
-    RevBasicMemCtrl::RevHandleFlagResp( Target, Len, flags );
+    if( RevFlagAtomic( flags ) == RevFlag::F_NONE ) {
+      // Handle flag response
+      RevBasicMemCtrl::RevHandleFlagResp( Target, Len, flags );
 
-    // clear the hazard - if this was an AMO operation then we will clear outside of this function in AMOMem()
-    if( MemOp::MemOpAMO != req.ReqType )
+      // clear the hazard
       req.MarkLoadComplete();
+    }
   }
   memStats.bytesRead += Len;
   return true;

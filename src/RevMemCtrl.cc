@@ -15,20 +15,21 @@ namespace SST::RevCPU {
 
 /// MemOp: Formatted Output
 const char* OpStr( MemOp op ) {
+  // clang-format off
   switch( op ) {
-  case MemOp::MemOpREAD: return "MemOpREAD";
-  case MemOp::MemOpWRITE: return "MemOpWRITE";
-  case MemOp::MemOpFLUSH: return "MemOpFLUSH";
-  case MemOp::MemOpREADLOCK: return "MemOpREADLOCK";
+  case MemOp::MemOpREAD:        return "MemOpREAD";
+  case MemOp::MemOpWRITE:       return "MemOpWRITE";
+  case MemOp::MemOpFLUSH:       return "MemOpFLUSH";
+  case MemOp::MemOpREADLOCK:    return "MemOpREADLOCK";
   case MemOp::MemOpWRITEUNLOCK: return "MemOpWRITEUNLOCK";
-  case MemOp::MemOpLOADLINK: return "MemOpLOADLINK";
-  case MemOp::MemOpSTORECOND: return "MemOpSTORECOND";
-  case MemOp::MemOpCUSTOM: return "MemOpCUSTOM";
-  case MemOp::MemOpFENCE: return "MemOpFENCE";
-  case MemOp::MemOpAMO: return "MemOpAMO";
-  case MemOp::MemOpINV: return "MemOpINV";
-  default: return "unknown";
+  case MemOp::MemOpLOADLINK:    return "MemOpLOADLINK";
+  case MemOp::MemOpSTORECOND:   return "MemOpSTORECOND";
+  case MemOp::MemOpCUSTOM:      return "MemOpCUSTOM";
+  case MemOp::MemOpFENCE:       return "MemOpFENCE";
+  case MemOp::MemOpINV:         return "MemOpINV";
+  default:                      return "unknown";
   }
+  // clang-format on
 }
 
 // ---------------------------------------------------------------
@@ -417,7 +418,7 @@ static std::enable_if_t<!std::is_floating_point_v<T>> ApplyAMO( RevFlag flags, v
 
 // Perform an atomic operation on target data which has been read
 // Return the value which should be written back to memory
-AMOData RevBasicMemCtrl::performAMO( RevFlag flags, uint32_t size, void* target, const void* data ) {
+AMOData RevBasicMemCtrl::performAMO( RevFlag flags, uint32_t size, const void* target, const void* data ) {
   AMOData src, newMem;
 
   // Copy the rs2 source register value
@@ -445,24 +446,14 @@ void RevBasicMemCtrl::handleAMOResp( const std::shared_ptr<RevMemOp>& readOp ) {
   // Perform the AMO operation on the already-loaded data
   auto newMem = performAMO( flags, size, readOp->getTarget(), &readOp->getBuf()[0] );
 
-  // Build the memory request that will write the modified value to memory
-  auto writeOp =
-    std::make_shared<RevMemOp>( readOp->getHart(), readOp->getAddr(), readOp->getPhysAddr(), size, MemOp::MemOpWRITE, flags );
-
-  // Move the memory request object, but DO NOT mark the load as complete.
-  // The actual write response from the read-modify-write process will mark the
-  // load as complete. At this point, move the MemReq object to the new request.
-  writeOp->setMemReq( std::move( readOp->getMemReq() ) );
-
-  // Immediately issue the Write request after the Read request finishes. The
-  // rqstQ only waits for the atomic Read to complete before it issues other
-  // memory requests. This ensures the Read-modify-Write is atomic w.r.t the
-  // issuance of other memory requests.
+  // Immediately issue the Write request after the Read request finishes. The rqstQ only
+  // waits for the atomic Read to complete before it issues other memory requests. This
+  // ensures the Read-modify-Write is atomic w.r.t the issuance of other memory requests.
   sendMemRqst(
-    writeOp,
+    std::make_shared<RevMemOp>( readOp->getHart(), readOp->getAddr(), readOp->getPhysAddr(), size, MemOp::MemOpWRITE, flags ),
     MemOp::MemOpWRITE,
     MemCtrlStats::WriteInFlight,
-    new StandardMem::Write( writeOp->getAddr(), size, { newMem.uc, newMem.uc + size }, false, safe_static_cast<flags_t>( flags ) )
+    new StandardMem::Write( readOp->getAddr(), size, { newMem.uc, newMem.uc + size }, false, safe_static_cast<flags_t>( flags ) )
   );
 }
 
@@ -514,34 +505,30 @@ void RevBasicMemCtrl::handleResp( RESP* ev ) {
 
   // Complete the RevMemOp if there are no more requests associated with this RevMemOp
   if constexpr( memOp == MemOp::MemOpREAD ) {  // handleReadResp
-    // determine if we need to sign/zero extend or NaN-box the read value
+    if( RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE )
+      handleAMOResp( op );  // perform an atomic operation and send a WRITE request
+
+    // Determine if we need to sign/zero extend or NaN-box the destination register
     RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
 
-    // determine if we have an atomic request associated with this read operation
-    if( RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE ) {
-      handleAMOResp( op );  // perform the atomic operation and generate a WRITE request
-    } else {
-      op->getMemReq().MarkLoadComplete();  // for non-atomic reads, mark load complete
-    }
-  }
-
-  if constexpr( memOp == MemOp::MemOpWRITE ) {  // handleWriteResp
-    // determine if we have an atomic request associated with this write operation
-    if( RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE ) {
-      op->getMemReq().MarkLoadComplete();  // mark the original read complete after write is completed
-    }
+    // Mark the load (read) as complete, even if the write of an atomic operation has
+    // not completed, because the read has completed, the destination register has been
+    // modified, and the write with the new data has been sent. Other memory operations
+    // on the same hart will wait for the write to finish only if the atomic operation
+    // has Acquire semantics or if the following memory operation has Release semantics.
+    op->getMemReq().MarkLoadComplete();
   }
 }
 
 // Determine whether a memory operation should be stalled based on its flags
 // and the state of outstanding memory operations
 bool RevBasicMemCtrl::isPendingAMO( const std::shared_ptr<RevMemOp>& thisOp ) {
-  bool is_release = RevFlagHas( thisOp->getFlags(), RevFlag::F_RL );
+  bool isRelease = RevFlagHas( thisOp->getFlags(), RevFlag::F_RL );
 
   // Go through all outstanding memory operations for this hart
   for( auto [it, end] = hartOutstanding.equal_range( thisOp->getHart() ); it != end; ++it ) {
-    // If this request has the Release flag, delay it if there are any outstanding requests in the same hart
-    if( is_release )
+    // If this is a release, stall if there are any outstanding requests in the same hart
+    if( isRelease )
       return true;
 
     const auto& op    = it->second;

@@ -448,7 +448,7 @@ public:
   void handleResp( RESP* ev );
 
   /// RevBasicMemCtrl: perform an AMO on local data
-  static AMOData performAMO( RevFlag flags, uint32_t size, void* target, const void* data );
+  static AMOData performAMO( RevFlag flags, uint32_t size, const void* target, const void* data );
 
   /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
   void handleAMOResp( const std::shared_ptr<RevMemOp>& readOp );
