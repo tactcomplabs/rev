@@ -133,8 +133,6 @@ enum class MemOp : uint8_t {
   END
 };
 
-std::ostream& operator<<( std::ostream& os, MemOp op );
-
 template<typename T>
 constexpr uint64_t LSQHash( T DestReg, RevRegClass RegType, unsigned Hart ) {
   return static_cast<uint64_t>( RegType ) << ( 16 + 8 ) | static_cast<uint64_t>( DestReg ) << 16 | Hart;
