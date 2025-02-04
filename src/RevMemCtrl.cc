@@ -428,7 +428,7 @@ static std::enable_if_t<!std::is_floating_point_v<T>> ApplyAMO( RevFlag flags, v
 
 // Perform an atomic operation on target data which has been read
 // Return the value which should be written back to memory
-AMOData RevBasicMemCtrl::performAMO( RevFlag flags, uint32_t size, const void* target, const void* data ) {
+AMOData RevBasicMemCtrl::performAMO( RevFlag flags, uint32_t size, void* target, const void* data ) {
   AMOData src, newMem;
 
   // Copy the rs2 source register value
