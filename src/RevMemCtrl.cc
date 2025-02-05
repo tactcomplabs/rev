@@ -382,14 +382,15 @@ void RevBasicMemCtrl::handleAMOResp( const std::shared_ptr<RevMemOp>& readOp ) {
 void RevBasicMemCtrl::sendMemRqst(
   const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, StandardMem::Request* rqst
 ) {
-  // Map the request ID to a RevMemOp shared_ptr and iterator pointing to mapping from hart to op
-  if( !outstanding.try_emplace( rqst->getID(), op, hartOutstanding.emplace( op->getHart(), op ) ).second )
+  ++op->rqstCount();  // Increment the request reference count of the RevMemOp
+  ++memOpNum[memOp];  // Increment the number of outstanding requests for this MemOp
+
+  // Map the request ID to an iterator pointing to mapping from hart to RevMemOp
+  if( !outstanding.try_emplace( rqst->getID(), hartOutstanding.emplace( op->getHart(), op ) ).second )
     output->fatal( CALL_INFO, -1, "Error: %s memory request with the same ID added twice\n", OpStr( memOp ) );
 
-  ++op->rqstCount();       // Increment the request reference count of the RevMemOp
-  ++memOpNum[memOp];       // Increment the number of outstanding requests for this MemOp
-  memIface->send( rqst );  // Send the request
   recordStat( stat );      // Record the statistic
+  memIface->send( rqst );  // Send the request
 }
 
 // Handle memory requests when they complete in SST.
@@ -398,45 +399,49 @@ void RevBasicMemCtrl::handleResp( RESP* ev ) {
   // Extract (remove) the request based on ID
   auto node = outstanding.extract( ev->getID() );
   if( node.empty() )
-    output->fatal( CALL_INFO, -1, "Outstanding memory request not found in handle%s\n", OpStr( memOp ) );
+    output->fatal( CALL_INFO, -1, "Internal Error: Outstanding memory request not found in %s handle\n", OpStr( memOp ) );
 
-  // A shared_ptr to the RevMemOp and an iterator to the Hart->RevMemOp mapping entry
-  const auto& [op, hartOutstandingEntry] = node.mapped();
+  // An iterator to the Hart --> RevMemOp mapping entry
+  auto hartOutstandingEntry           = node.mapped();
+
+  // A shared_ptr to the RevMemOp
+  const std::shared_ptr<RevMemOp>& op = hartOutstandingEntry->second;
 
   // For read requests, copy the read data to the portion of the Rev memory target
   if constexpr( memOp == MemOp::MemOpREAD ) {
     memcpy( static_cast<uint8_t*>( op->getTarget() ) + ( ev->pAddr - op->getAddr() ), &ev->data[0], ev->size );
   }
 
-  // Delete the StandardMem request
-  delete ev;
-
-  // Delete the entry mapping the hart to this request
-  hartOutstanding.erase( hartOutstandingEntry );
-
   // Decrement the number of outstanding requests for this MemOp
   if( !memOpNum[memOp]-- )
-    output->fatal( CALL_INFO, -1, "Error: Outstanding %s request count is zero during response handler\n", OpStr( memOp ) );
+    output->fatal(
+      CALL_INFO, -1, "Internal Error: Outstanding %s request count is zero during response handler\n", OpStr( memOp )
+    );
 
-  // Decrement the RevMemOp's request reference count and finish if other requests remain
-  if( --op->rqstCount() )
-    return;
-
+  // Decrement the RevMemOp's request reference count
   // Complete the RevMemOp if there are no more requests associated with this RevMemOp
-  if constexpr( memOp == MemOp::MemOpREAD ) {  // handleReadResp
-    if( RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE )
-      handleAMOResp( op );  // perform an atomic operation and send a WRITE request
+  if( !--op->rqstCount() ) {
+    if constexpr( memOp == MemOp::MemOpREAD ) {  // handleReadResp
+      if( RevFlagAtomic( op->getFlags() ) != RevFlag::F_NONE )
+        handleAMOResp( op );  // perform an atomic operation and send a WRITE request
 
-    // Determine if we need to sign/zero extend or NaN-box the destination register
-    RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
+      // Determine if we need to sign/zero extend or NaN-box the destination register
+      RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() );
 
-    // Mark the load (read) as complete, even if the write of an atomic operation has
-    // not completed, because the read has completed, the destination register has been
-    // modified, and the write with the new data has been sent. Other memory operations
-    // on the same hart will wait for the write to finish only if the atomic operation
-    // has Acquire semantics or if the following memory operation has Release semantics.
-    op->getMemReq().MarkLoadComplete();
+      // Mark the load (read) as complete, even if the write of an atomic operation has
+      // not completed, because the read has completed, the destination register has been
+      // modified, and the write with the new data has been sent. Other memory operations
+      // on the same hart will wait for the write to finish only if the atomic operation
+      // has Acquire semantics or if the following memory operation has Release semantics.
+      op->getMemReq().MarkLoadComplete();
+    }
   }
+
+  // Delete the entry mapping the hart to this request (invalidates op)
+  hartOutstanding.erase( hartOutstandingEntry );
+
+  // Delete the StandardMem request
+  delete ev;
 }
 
 // Determine whether a memory operation should be stalled based on its flags and the
@@ -482,8 +487,8 @@ bool RevBasicMemCtrl::processNextRqst() {
     return false;
 
   // Get the request at the front of the queue
-  const auto& op   = rqstQ.front();
-  auto        hart = op->getHart();
+  const std::shared_ptr<RevMemOp>& op   = rqstQ.front();
+  uint32_t                         hart = op->getHart();
 
   // If the front request is a memory fence, set the hart memory fence flag and continue
   if( op->getOp() == MemOp::MemOpFENCE ) {

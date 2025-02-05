@@ -512,6 +512,8 @@ private:
       stats[size_t( Stat )]->addData( Data );
   }
 
+  void rqstQpush( const std::shared_ptr<RevMemOp>& op );
+
   // -- private data members
   RevTracer*                            Tracer{};    ///< tracer pointer
   StandardMem*                          memIface{};  ///< StandardMem memory interface
@@ -520,17 +522,17 @@ private:
   MemOpParams                           memOpNum{};  ///< numbers in effect of memory parameters
   MemOpParams                           memOpMax{};  ///< maximums allowable of memory parameters
   std::vector<Statistic<uint64_t>*>     stats{};     ///< statistics vector
-  std::queue<std::shared_ptr<RevMemOp>> rqstQ{};     ///< queued memory requests
+  std::queue<std::shared_ptr<RevMemOp>> rqstQ;
 
-  ///< map of outstanding memory requests based on Request id
-  std::unordered_map<
-    StandardMem::Request::id_t,
-    std::pair<std::shared_ptr<RevMemOp>, std::multimap<uint32_t, std::shared_ptr<RevMemOp>>::iterator>>
-    outstanding{};
+  //  std::multimap<uint32_t, std::shared_ptr<RevMemOp>> rqstQ;
+  //  std::map<uint32_t, std::array<decltype(rqstQ)::iterator, 2>> rqstQit;
 
   ///< map of outstanding memory requests based on Hart id
   // note: std::multimap is used because it keeps iterators valid while std::unordered_multimap does not
   std::multimap<uint32_t, std::shared_ptr<RevMemOp>> hartOutstanding{};
+
+  ///< map of outstanding memory requests based on Request id
+  std::unordered_map<StandardMem::Request::id_t, decltype( hartOutstanding )::iterator> outstanding{};
 
   ///< StandardMem interface response handlers
   const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this ) };
