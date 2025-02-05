@@ -487,20 +487,14 @@ bool RevBasicMemCtrl::processNextRqst() {
 
   // If the front request is a memory fence, set the hart memory fence flag and continue
   if( op->getOp() == MemOp::MemOpFENCE ) {
-    hartFence.set( hart );
-    rqstQ.pop();
-    return true;
-  }
-
-  // check to see if there is a fence pending
-  if( hartFence.test( hart ) ) {
-    if( hartOutstanding.count( hart ) ) {
+    if( hartOutstanding.find( hart ) != hartOutstanding.end() ) {
       // wait for the outstanding ops to clear before processing any more memory requests
       recordStat( MemCtrlStats::FencePending );
       return false;
+    } else {
+      rqstQ.pop();
+      return true;
     }
-    // clear the memory fence flag and continue processing
-    hartFence.reset( hart );
   }
 
   // Determine if any Acquire/Release flags or atomic operations would prevent
