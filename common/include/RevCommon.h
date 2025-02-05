@@ -11,11 +11,11 @@
 #ifndef __REV_COMMON__
 #define __REV_COMMON__
 
+#include <array>
 #include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <ostream>
 #include <type_traits>
 #include <utility>
 
@@ -132,6 +132,22 @@ enum class MemOp : uint8_t {
   END
 };
 
+// Memory operation parameters indexable with MemOp
+class MemOpParams {
+  std::array<uint32_t, safe_static_cast<size_t>( MemOp::END )> param{};
+
+public:
+  // Access a memory operation parameter
+  auto& operator[]( MemOp op ) {
+    if( op == MemOp::MemOpSTORECOND )  // Combine LR+SC
+      op = MemOp::MemOpLOADLINK;
+    return param.at( safe_static_cast<size_t>( op ) );
+  }
+
+  // const version
+  const auto& operator[]( MemOp op ) const { return const_cast<MemOpParams&>( *this )[op]; }
+};
+
 template<typename T>
 constexpr uint64_t LSQHash( T DestReg, RevRegClass RegType, unsigned Hart ) {
   return static_cast<uint64_t>( RegType ) << ( 16 + 8 ) | static_cast<uint64_t>( DestReg ) << 16 | Hart;
@@ -164,14 +180,13 @@ struct MemReq {
 
   auto LSQHashPair() const { return std::make_pair( LSQHash(), *this ); }
 
-  uint64_t    Addr                                          = _INVALID_ADDR_;
-  uint16_t    DestReg                                       = 0;
-  RevRegClass RegType                                       = RevRegClass::RegUNKNOWN;
-  unsigned    Hart                                          = _REV_INVALID_HART_ID_;
-  MemOp       ReqType                                       = MemOp::MemOpCUSTOM;
-  bool        isOutstanding                                 = false;
-
-  std::function<void( const MemReq& )> MarkLoadCompleteFunc = nullptr;
+  uint64_t                             Addr          = _INVALID_ADDR_;
+  uint16_t                             DestReg       = 0;
+  RevRegClass                          RegType       = RevRegClass::RegUNKNOWN;
+  unsigned                             Hart          = _REV_INVALID_HART_ID_;
+  MemOp                                ReqType       = MemOp::MemOpCUSTOM;
+  bool                                 isOutstanding = false;
+  std::function<void( const MemReq& )> MarkLoadCompleteFunc;
 
 };  //struct MemReq
 

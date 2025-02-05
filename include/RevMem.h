@@ -174,12 +174,12 @@ public:
 
   /// RevMem: flush a cache line
   bool FlushLine( uint32_t Hart, uint64_t Addr ) {
-    return !ctrl || ctrl->sendFLUSHRequest( Hart, Addr, 0, getLineSize(), false, RevFlag::F_NONE );
+    return !ctrl || ctrl->sendFLUSHRequest( Hart, Addr, 0, getLineSize(), RevFlag::F_NONE, false );
   }
 
   /// RevMem: invalidate a cache line
   bool InvLine( uint32_t Hart, uint64_t Addr ) {
-    return !ctrl || ctrl->sendFLUSHRequest( Hart, Addr, 0, getLineSize(), true, RevFlag::F_NONE );
+    return !ctrl || ctrl->sendFLUSHRequest( Hart, Addr, 0, getLineSize(), RevFlag::F_NONE, true );
   }
 
   /// RevMem: clean a line
