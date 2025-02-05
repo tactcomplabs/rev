@@ -532,6 +532,9 @@ private:
   // note: std::multimap is used because it keeps iterators valid while std::unordered_multimap does not
   std::multimap<uint32_t, std::shared_ptr<RevMemOp>> hartOutstanding{};
 
+  // Whether a fence is in effect for a hart
+  std::bitset<_MAX_HARTS_> hartFence{};
+
   ///< StandardMem interface response handlers
   const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this ) };
 

@@ -475,30 +475,32 @@ bool RevBasicMemCtrl::isPendingAMO( const std::shared_ptr<RevMemOp>& thisOp ) {
 // Process the next request in the queue, returning true if further requests should be
 // considered in the same clock. If there a fence operation in progress, do not submit
 // any memory requests during the current clock as long as any requests are outstanding.
+// TODO: rqstQ should be made per-hart as an iterator to a multimap<hart, RevMemOp>
 bool RevBasicMemCtrl::processNextRqst() {
-  // check to see if there is a fence pending
-  if( memOpNum[MemOp::MemOpFENCE] ) {
-    if( !outstanding.empty() ) {
-      // wait for the outstanding ops to clear before processing any more memory requests
-      recordStat( MemCtrlStats::FencePending );
-      return false;
-    }
-    // clear the memory fence flag and continue processing
-    memOpNum[MemOp::MemOpFENCE] = false;
-  }
-
   // If there are no queued requests, stop processing this cycle
   if( rqstQ.empty() )
     return false;
 
   // Get the request at the front of the queue
-  const auto& op = rqstQ.front();
+  const auto& op   = rqstQ.front();
+  auto        hart = op->getHart();
 
-  // If the front request is a memory fence, set the memory fence flag and continue
+  // If the front request is a memory fence, set the hart memory fence flag and continue
   if( op->getOp() == MemOp::MemOpFENCE ) {
-    memOpNum[MemOp::MemOpFENCE] = true;
+    hartFence.set( hart );
     rqstQ.pop();
     return true;
+  }
+
+  // check to see if there is a fence pending
+  if( hartFence.test( hart ) ) {
+    if( hartOutstanding.count( hart ) ) {
+      // wait for the outstanding ops to clear before processing any more memory requests
+      recordStat( MemCtrlStats::FencePending );
+      return false;
+    }
+    // clear the memory fence flag and continue processing
+    hartFence.reset( hart );
   }
 
   // Determine if any Acquire/Release flags or atomic operations would prevent
