@@ -1,6 +1,5 @@
 //
-// _RevMemCtrl_h_
-//
+// _RevMemCtrl_h_//
 // Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
@@ -16,8 +15,12 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <iostream>
+#include <map>
 #include <memory>
+#include <queue>
 #include <random>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
