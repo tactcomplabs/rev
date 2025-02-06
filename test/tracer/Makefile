@@ -3,7 +3,7 @@
 #
 # makefile: tracer
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -19,6 +19,7 @@ ALLTESTS   += $(addprefix $(EXAMPLE),.mem.rv32.cpp .mem.rv64.cpp .memh.rv32.cpp 
 
 TLIST = $(ALLTESTS)
 # TLIST = $(filter-out %rv32.c %rv32.cpp,$(ALLTESTS))
+TLIST = $(filter-out %rv64.c %rv64.cpp,$(ALLTESTS))
 # TLIST = $(filter %.mem.rv64.cpp %.mem.rv32.cpp,$(ALLTESTS))
 
 EXES   = $(addsuffix .exe,$(TLIST))
