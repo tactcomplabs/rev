@@ -178,11 +178,6 @@ public:
   /// RevMemCtrl: send a write request
   virtual bool sendWRITERequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) = 0;
 
-  /// RevMemCtrl: send an AMO request
-  virtual bool sendAMORequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag Flags, uint8_t* Buffer, void* Target, MemReq Req
-  ) = 0;
-
   /// RevMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(
     uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flagvs, void* target, MemReq req
@@ -207,10 +202,15 @@ public:
   /// RevMemCtrl: send a custom write request
   virtual bool sendCUSTOMWRITERequest(
     uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer, uint32_t Opc
-  )                                           = 0;
+  )                                       = 0;
 
   /// RevMemCtrl: send a FENCE request
-  virtual bool sendFENCE( uint32_t Hart )     = 0;
+  virtual bool sendFENCE( uint32_t Hart ) = 0;
+
+  /// RevMemCtrl: send an AMO request
+  virtual bool sendAMORequest(
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag Flags, uint8_t* Buffer, void* Target, MemReq Req
+  )                                           = 0;
 
   /// RevMemCtrl: returns the cache line size
   virtual uint32_t getLineSize() const        = 0;
@@ -376,65 +376,45 @@ public:
   void processMemEvent( StandardMem::Request* ev );
 
   /// RevBasicMemCtrl: send a flush request
-  bool sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, bool Inv ) final {
-    return QRequest( MemCtrlStats::FlushPending, MemOp::MemOpFLUSH, Hart, Addr, PAddr, Size, flags, Inv );
-  }
+  bool sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, bool Inv ) final;
 
   /// RevBasicMemCtrl: send a read request
   bool
-    sendREADRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req ) final {
-    return QRequest( MemCtrlStats::ReadPending, MemOp::MemOpREAD, Hart, Addr, PAddr, Size, flags, target, std::move( req ) );
-  }
+    sendREADRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req ) final;
 
   /// RevBasicMemCtrl: send a write request
-  bool sendWRITERequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final {
-    return QRequest( MemCtrlStats::WritePending, MemOp::MemOpWRITE, Hart, Addr, PAddr, Size, flags, buffer );
-  }
+  bool sendWRITERequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
+
+  // RevBasicMemCtrl: send a readlock request
+  bool sendREADLOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req )
+    final;
+
+  // RevBasicMemCtrl: send a writelock request
+  bool sendWRITELOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
+
+  // RevBasicMemCtrl: send a loadlink request
+  bool sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags ) final;
+
+  // RevBasicMemCtrl: send a storecond request
+  bool sendSTORECONDRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
+
+  // RevBasicMemCtrl: send an void custom read memory request
+  bool sendCUSTOMREADRequest(
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, uint32_t Opc
+  ) final;
+
+  // RevBasicMemCtrl: send a custom write request
+  bool sendCUSTOMWRITERequest(
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer, uint32_t Opc
+  ) final;
+
+  // RevBasicMemCtrl: send a FENCE request
+  bool sendFENCE( uint32_t Hart ) final;
 
   /// RevBasicMemCtrl: send an AMO request
   bool sendAMORequest(
     uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* Buffer, void* Target, MemReq Req
   ) final;
-
-  // RevBasicMemCtrl: send a readlock request
-  bool sendREADLOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req )
-    final {
-    return QRequest(
-      MemCtrlStats::ReadLockPending, MemOp::MemOpREADLOCK, Hart, Addr, PAddr, Size, flags, target, std::move( req )
-    );
-  }
-
-  // RevBasicMemCtrl: send a writelock request
-  bool sendWRITELOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final {
-    return QRequest( MemCtrlStats::WriteUnlockPending, MemOp::MemOpWRITEUNLOCK, Hart, Addr, PAddr, Size, flags, buffer );
-  }
-
-  // RevBasicMemCtrl: send a loadlink request
-  bool sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags ) final {
-    return QRequest( MemCtrlStats::LoadLinkPending, MemOp::MemOpLOADLINK, Hart, Addr, PAddr, Size, flags );
-  }
-
-  // RevBasicMemCtrl: send a storecond request
-  bool sendSTORECONDRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final {
-    return QRequest( MemCtrlStats::StoreCondPending, MemOp::MemOpSTORECOND, Hart, Addr, PAddr, Size, flags, buffer );
-  }
-
-  // RevBasicMemCtrl: send an void custom read memory request
-  bool sendCUSTOMREADRequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, uint32_t Opc
-  ) final {
-    return QRequest( MemCtrlStats::CustomPending, MemOp::MemOpCUSTOM, Hart, Addr, PAddr, Size, flags, target, Opc );
-  }
-
-  // RevBasicMemCtrl: send a custom write request
-  bool sendCUSTOMWRITERequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer, uint32_t Opc
-  ) final {
-    return QRequest( MemCtrlStats::CustomPending, MemOp::MemOpCUSTOM, Hart, Addr, PAddr, Size, flags, buffer, Opc );
-  }
-
-  // RevBasicMemCtrl: send a FENCE request
-  bool sendFENCE( uint32_t Hart ) final;
 
   /// RevBasicMemCtrl: handle a response generally
   template<MemOp memOp, typename RESP>
@@ -491,8 +471,15 @@ private:
 
   /// RevBasicMemCtrl: Queue a memory request
   template<typename... Ts>
-  bool
-    QRequest( MemCtrlStats stat, MemOp memOp, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, Ts&&... );
+  bool QRequest(
+    MemCtrlStats stat, MemOp memOp, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, Ts&&... args
+  ) {
+    if( Size ) {
+      rqstQ.push( std::make_shared<RevMemOp>( memOp, Hart, Addr, PAddr, Size, flags, std::forward<Ts>( args )... ) );
+      recordStat( stat );
+    }
+    return true;
+  }
 
   /// RevBasicMemCtrl: process the next memory request
   bool processNextRqst();

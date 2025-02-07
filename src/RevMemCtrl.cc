@@ -85,15 +85,62 @@ void RevBasicMemCtrl::registerStats() {
   }
 }
 
-template<typename... Ts>
-bool RevBasicMemCtrl::QRequest(
-  MemCtrlStats stat, MemOp memOp, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, Ts&&... args
+/// RevBasicMemCtrl: send a flush request
+bool RevBasicMemCtrl::sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, bool Inv ) {
+  return QRequest( MemCtrlStats::FlushPending, MemOp::MemOpFLUSH, Hart, Addr, PAddr, Size, flags, Inv );
+}
+
+/// RevBasicMemCtrl: send a read request
+bool RevBasicMemCtrl::sendREADRequest(
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req
 ) {
-  if( Size ) {
-    rqstQ.push( std::make_shared<RevMemOp>( memOp, Hart, Addr, PAddr, Size, flags, std::forward<Ts>( args )... ) );
-    recordStat( stat );
-  }
-  return true;
+  return QRequest( MemCtrlStats::ReadPending, MemOp::MemOpREAD, Hart, Addr, PAddr, Size, flags, target, std::move( req ) );
+}
+
+/// RevBasicMemCtrl: send a write request
+bool RevBasicMemCtrl::sendWRITERequest(
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer
+) {
+  return QRequest( MemCtrlStats::WritePending, MemOp::MemOpWRITE, Hart, Addr, PAddr, Size, flags, buffer );
+}
+
+bool RevBasicMemCtrl::sendREADLOCKRequest(
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req
+) {
+  return QRequest( MemCtrlStats::ReadLockPending, MemOp::MemOpREADLOCK, Hart, Addr, PAddr, Size, flags, target, std::move( req ) );
+}
+
+// RevBasicMemCtrl: send a writelock request
+bool RevBasicMemCtrl::sendWRITELOCKRequest(
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer
+) {
+  return QRequest( MemCtrlStats::WriteUnlockPending, MemOp::MemOpWRITEUNLOCK, Hart, Addr, PAddr, Size, flags, buffer );
+}
+
+// RevBasicMemCtrl: send a loadlink request
+bool RevBasicMemCtrl::sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags ) {
+  return QRequest( MemCtrlStats::LoadLinkPending, MemOp::MemOpLOADLINK, Hart, Addr, PAddr, Size, flags );
+}
+
+// RevBasicMemCtrl: send a storecond request
+bool RevBasicMemCtrl::sendSTORECONDRequest(
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer
+) {
+  return QRequest( MemCtrlStats::StoreCondPending, MemOp::MemOpSTORECOND, Hart, Addr, PAddr, Size, flags, buffer );
+}
+
+// RevBasicMemCtrl: send an void custom read memory request
+bool RevBasicMemCtrl::sendCUSTOMREADRequest(
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, uint32_t Opc
+) {
+  return QRequest( MemCtrlStats::CustomPending, MemOp::MemOpCUSTOM, Hart, Addr, PAddr, Size, flags, target, Opc );
+}
+
+// RevBasicMemCtrl: send a custom write request
+bool RevBasicMemCtrl::sendCUSTOMWRITERequest(
+  uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer, uint32_t Opc
+) {
+  return QRequest( MemCtrlStats::CustomPending, MemOp::MemOpCUSTOM, Hart, Addr, PAddr, Size, flags, buffer, Opc );
 }
 
 bool RevBasicMemCtrl::sendFENCE( uint32_t Hart ) {
@@ -443,6 +490,12 @@ void RevBasicMemCtrl::handleResp( RESP* ev ) {
   // Delete the StandardMem request
   delete ev;
 }
+
+template void RevBasicMemCtrl::handleResp<MemOp::MemOpREAD>( StandardMem::ReadResp* );
+template void RevBasicMemCtrl::handleResp<MemOp::MemOpWRITE>( StandardMem::WriteResp* );
+template void RevBasicMemCtrl::handleResp<MemOp::MemOpFLUSH>( StandardMem::FlushResp* );
+template void RevBasicMemCtrl::handleResp<MemOp::MemOpCUSTOM>( StandardMem::CustomResp* );
+template void RevBasicMemCtrl::handleResp<MemOp::MemOpINV>( StandardMem::InvNotify* );
 
 // Determine whether a memory operation should be stalled based on its flags and the
 // state of outstanding memory operations on the same hart
