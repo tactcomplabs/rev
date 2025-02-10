@@ -11,11 +11,11 @@
 #ifndef __REV_COMMON__
 #define __REV_COMMON__
 
+#include <array>
 #include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <ostream>
 #include <type_traits>
 #include <utility>
 
@@ -109,28 +109,44 @@ constexpr auto BitShift( T x, int shift ) {
 }
 
 enum class RevRegClass : uint8_t {  ///< Rev CPU Register Classes
-  RegUNKNOWN = 0,                   ///< RevRegClass: Unknown register file
-  RegIMM     = 1,                   ///< RevRegClass: Treat the reg class like an immediate: S-Format
-  RegGPR     = 2,                   ///< RevRegClass: GPR reg file
-  RegCSR     = 3,                   ///< RevRegClass: CSR reg file
-  RegFLOAT   = 4,                   ///< RevRegClass: Float register file
-  RegVEC     = 5,                   ///< RevRegClass: Vector register file
+  RegUNKNOWN,                       ///< RevRegClass: Unknown register file
+  RegIMM,                           ///< RevRegClass: Treat the reg class like an immediate: S-Format
+  RegGPR,                           ///< RevRegClass: GPR reg file
+  RegCSR,                           ///< RevRegClass: CSR reg file
+  RegFLOAT,                         ///< RevRegClass: Float register file
+  RegVEC,                           ///< RevRegClass: Vector register file
 };
 
 enum class MemOp : uint8_t {
-  MemOpREAD        = 0,
-  MemOpWRITE       = 1,
-  MemOpFLUSH       = 2,
-  MemOpREADLOCK    = 3,
-  MemOpWRITEUNLOCK = 4,
-  MemOpLOADLINK    = 5,
-  MemOpSTORECOND   = 6,
-  MemOpCUSTOM      = 7,
-  MemOpFENCE       = 8,
-  MemOpAMO         = 9,
+  MemOpREAD,
+  MemOpWRITE,
+  MemOpFLUSH,
+  MemOpREADLOCK,
+  MemOpWRITEUNLOCK,
+  MemOpLOADLINK,
+  MemOpSTORECOND,
+  MemOpCUSTOM,
+  MemOpFENCE,
+  MemOpINV,
+  MemOpPERCYCLE,
+  END
 };
 
-std::ostream& operator<<( std::ostream& os, MemOp op );
+// Memory operation parameters indexable with MemOp
+class MemOpParams {
+  std::array<uint32_t, safe_static_cast<size_t>( MemOp::END )> param{};
+
+public:
+  // Access a memory operation parameter
+  auto& operator[]( MemOp op ) {
+    if( op == MemOp::MemOpSTORECOND )  // Combine LR+SC
+      op = MemOp::MemOpLOADLINK;
+    return param.at( safe_static_cast<size_t>( op ) );
+  }
+
+  // const version
+  const auto& operator[]( MemOp op ) const { return const_cast<MemOpParams&>( *this )[op]; }
+};
 
 template<typename T>
 constexpr uint64_t LSQHash( T DestReg, RevRegClass RegType, unsigned Hart ) {
@@ -164,14 +180,13 @@ struct MemReq {
 
   auto LSQHashPair() const { return std::make_pair( LSQHash(), *this ); }
 
-  uint64_t    Addr                                          = _INVALID_ADDR_;
-  uint16_t    DestReg                                       = 0;
-  RevRegClass RegType                                       = RevRegClass::RegUNKNOWN;
-  unsigned    Hart                                          = _REV_INVALID_HART_ID_;
-  MemOp       ReqType                                       = MemOp::MemOpCUSTOM;
-  bool        isOutstanding                                 = false;
-
-  std::function<void( const MemReq& )> MarkLoadCompleteFunc = nullptr;
+  uint64_t                             Addr          = _INVALID_ADDR_;
+  uint16_t                             DestReg       = 0;
+  RevRegClass                          RegType       = RevRegClass::RegUNKNOWN;
+  unsigned                             Hart          = _REV_INVALID_HART_ID_;
+  MemOp                                ReqType       = MemOp::MemOpCUSTOM;
+  bool                                 isOutstanding = false;
+  std::function<void( const MemReq& )> MarkLoadCompleteFunc;
 
 };  //struct MemReq
 

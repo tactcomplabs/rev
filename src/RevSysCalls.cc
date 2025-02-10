@@ -3435,7 +3435,7 @@ EcallStatus RevCore::ECALL_fast_printf() {
 /* System Call (ecall) Implementations Below */
 /* ========================================= */
 // clang-format off
-const std::unordered_map<uint32_t, EcallStatus(RevCore::*)()> RevCore::Ecalls = {
+decltype(RevCore::Ecalls) RevCore::Ecalls = {
     { 0,   &RevCore::ECALL_io_setup },                  //  rev_io_setup(unsigned nr_reqs, aio_context_t  *ctx)
     { 1,   &RevCore::ECALL_io_destroy },                //  rev_io_destroy(aio_context_t ctx)
     { 2,   &RevCore::ECALL_io_submit },                 //  rev_io_submit(aio_context_t, long, struct iocb  *  *)

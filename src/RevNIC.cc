@@ -1,7 +1,7 @@
 //
 // _RevNIC_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -21,7 +21,7 @@ RevNIC::RevNIC( ComponentId_t id, Params& params ) : nicAPI( id, params ) {
   registerClock( nicClock, new Clock::Handler<RevNIC>( this, &RevNIC::clockTick ) );
 
   // load the SimpleNetwork interfaces
-  iFace = loadUserSubComponent<SST::Interfaces::SimpleNetwork>( "iface", ComponentInfo::SHARE_NONE, 1 );
+  iFace = loadUserSubComponent<SimpleNetwork>( "iface", ComponentInfo::SHARE_NONE, 1 );
   if( !iFace ) {
     // load the anonymous nic
     Params netparams;
@@ -29,12 +29,12 @@ RevNIC::RevNIC( ComponentId_t id, Params& params ) : nicAPI( id, params ) {
     netparams.insert( "in_buf_size", "256B" );
     netparams.insert( "out_buf_size", "256B" );
     netparams.insert( "link_bw", "40GiB/s" );
-    iFace = loadAnonymousSubComponent<SST::Interfaces::SimpleNetwork>(
+    iFace = loadAnonymousSubComponent<SimpleNetwork>(
       "merlin.linkcontrol", "iface", 0, ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS, netparams, 1
     );
   }
 
-  iFace->setNotifyOnReceive( new SST::Interfaces::SimpleNetwork::Handler<RevNIC>( this, &RevNIC::msgNotify ) );
+  iFace->setNotifyOnReceive( new SimpleNetwork::Handler<RevNIC>( this, &RevNIC::msgNotify ) );
 
   initBroadcastSent = false;
 
@@ -56,20 +56,20 @@ void RevNIC::init( uint32_t phase ) {
 
   if( iFace->isNetworkInitialized() ) {
     if( !initBroadcastSent ) {
-      initBroadcastSent                            = true;
-      nicEvent* ev                                 = new nicEvent( getName() );
+      initBroadcastSent           = true;
+      nicEvent* ev                = new nicEvent( getName() );
 
-      SST::Interfaces::SimpleNetwork::Request* req = new SST::Interfaces::SimpleNetwork::Request();
-      req->dest                                    = SST::Interfaces::SimpleNetwork::INIT_BROADCAST_ADDR;
-      req->src                                     = iFace->getEndpointID();
+      SimpleNetwork::Request* req = new SimpleNetwork::Request();
+      req->dest                   = SimpleNetwork::INIT_BROADCAST_ADDR;
+      req->src                    = iFace->getEndpointID();
       req->givePayload( ev );
 
       //iFace->sendInitData( req );  // removed for SST 14.0.0
       iFace->sendUntimedData( req );
     }
   }
-  //while( SST::Interfaces::SimpleNetwork::Request* req = iFace->recvInitData() ) {
-  while( SST::Interfaces::SimpleNetwork::Request* req = iFace->recvUntimedData() ) {  // SST 14.0.0
+  //while( SimpleNetwork::Request* req = iFace->recvInitData() ) {
+  while( SimpleNetwork::Request* req = iFace->recvUntimedData() ) {  // SST 14.0.0
     nicEvent* ev = static_cast<nicEvent*>( req->takePayload() );
     numDest++;
     output->verbose( CALL_INFO, 1, 0, "%s received init message from %s\n", getName().c_str(), ev->getSource().c_str() );
@@ -89,7 +89,7 @@ void RevNIC::setup() {
 }
 
 bool RevNIC::msgNotify( int vn ) {
-  SST::Interfaces::SimpleNetwork::Request* req = iFace->recv( 0 );
+  SimpleNetwork::Request* req = iFace->recv( 0 );
   if( req != nullptr ) {
     if( req != nullptr ) {
       nicEvent* ev = static_cast<nicEvent*>( req->takePayload() );
@@ -101,9 +101,9 @@ bool RevNIC::msgNotify( int vn ) {
 }
 
 void RevNIC::send( nicEvent* event, int destination ) {
-  SST::Interfaces::SimpleNetwork::Request* req = new SST::Interfaces::SimpleNetwork::Request();
-  req->dest                                    = destination;
-  req->src                                     = iFace->getEndpointID();
+  SimpleNetwork::Request* req = new SimpleNetwork::Request();
+  req->dest                   = destination;
+  req->src                    = iFace->getEndpointID();
   req->givePayload( event );
   sendQ.push( req );
 }
@@ -112,7 +112,7 @@ int RevNIC::getNumDestinations() {
   return numDest;
 }
 
-SST::Interfaces::SimpleNetwork::nid_t RevNIC::getAddress() {
+SimpleNetwork::nid_t RevNIC::getAddress() {
   return iFace->getEndpointID();
 }
 

@@ -1,7 +1,7 @@
 //
 // _Zalrsc_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -25,7 +25,7 @@ class Zalrsc : public RevExt {
     auto addr = R->GetX<uint64_t>( Inst.rs1 );
 
     // Create the load request
-    MemReq req{ addr, Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete() };
+    MemReq req{ addr, Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpREAD, true, R->GetMarkLoadComplete() };
     R->LSQueue->insert( req.LSQHashPair() );
 
     // Flags for LR memory load

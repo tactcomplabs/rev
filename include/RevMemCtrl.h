@@ -1,6 +1,5 @@
 //
-// _RevMemCtrl_h_
-//
+// _RevMemCtrl_h_//
 // Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
@@ -13,16 +12,19 @@
 
 // -- C++ Headers
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
+#include <array>
+#include <cstddef>
 #include <functional>
-#include <list>
+#include <iostream>
 #include <map>
 #include <memory>
+#include <queue>
 #include <random>
+#include <string>
 #include <tuple>
 #include <type_traits>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 // -- SST Headers
@@ -30,100 +32,67 @@
 
 // -- RevCPU Headers
 #include "RevCommon.h"
-#include "RevOpts.h"
-#include "RevTracer.h"
+#include "RevFlag.h"
+#include "RevInstHelpers.h"
 
 namespace SST::RevCPU {
 
-using namespace SST::Interfaces;
-
-// ----------------------------------------
-// Extended StandardMem::Request::Flag enums
-// ----------------------------------------
-enum class RevFlag : uint32_t {
-  F_NONE         = 0,        /// no special operation
-  F_NONCACHEABLE = 1u << 1,  /// non cacheable
-
-  F_BOXNAN       = 1u << 16,  /// NaN-box the 32-bit float
-  F_SEXT32       = 1u << 17,  /// sign extend the 32bit result
-  F_SEXT64       = 1u << 18,  /// sign extend the 64bit result
-  F_ZEXT32       = 1u << 19,  /// zero extend the 32bit result
-  F_ZEXT64       = 1u << 20,  /// zero extend the 64bit result
-  F_RESP         = F_BOXNAN | F_SEXT32 | F_SEXT64 | F_ZEXT32 | F_ZEXT64,
-
-  F_AQ           = 1u << 21,  /// AMO AQ Flag
-  F_RL           = 1u << 22,  /// AMO RL Flag
-
-  F_AMOADD       = 1u << 23,  /// AMO Add
-  F_AMOXOR       = 2u << 23,  /// AMO Xor
-  F_AMOAND       = 3u << 23,  /// AMO And
-  F_AMOOR        = 4u << 23,  /// AMO Or
-  F_AMOMIN       = 5u << 23,  /// AMO Min
-  F_AMOMAX       = 6u << 23,  /// AMO Max
-  F_AMOMINU      = 7u << 23,  /// AMO Minu
-  F_AMOMAXU      = 8u << 23,  /// AMO Maxu
-  F_AMOSWAP      = 9u << 23,  /// AMO Swap
-  F_ATOMIC       = F_AMOADD | F_AMOXOR | F_AMOAND | F_AMOOR | F_AMOMIN | F_AMOMAX | F_AMOMINU | F_AMOMAXU | F_AMOSWAP,
-
+/// AMO data union
+union AMOData {
+  uint8_t       u8;
+  uint16_t      u16;
+  uint32_t      u32;
+  uint64_t      u64;
+  float         f;
+  double        d;
+  unsigned char uc[8];
 };
-
-// Ensure RevFlag is same underlying type as StandardMem::Request::flags_t
-static_assert( std::is_same_v<StandardMem::Request::flags_t, std::underlying_type_t<RevFlag>> );
-
-/// RevFlag: determine if the request has certain flags set
-constexpr bool RevFlagHas( RevFlag flag, RevFlag has ) {
-  return ( safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( has ) ) == safe_static_cast<uint32_t>( has );
-}
-
-/// RevFlag: set certain flags
-constexpr void RevFlagSet( RevFlag& flag, RevFlag set ) {
-  flag = RevFlag{ safe_static_cast<uint32_t>( flag ) | safe_static_cast<uint32_t>( set ) };
-}
-
-/// RevFlag: determine if the request is an AMO, and if so, return the operation; otherwise return 0
-constexpr RevFlag RevFlagAtomic( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_ATOMIC ) };
-}
-
-/// RevFlag: determine which response flags are present
-constexpr RevFlag RevFlagResp( RevFlag flag ) {
-  return RevFlag{ safe_static_cast<uint32_t>( flag ) & safe_static_cast<uint32_t>( RevFlag::F_RESP ) };
-}
-
-/// RevFlag: Handle flag response
-void RevHandleFlagResp( void* target, size_t size, RevFlag flags );
 
 // ----------------------------------------
 // RevMemOp
 // ----------------------------------------
 class RevMemOp {
+  uint32_t refCount = 0;  ///< RevMemOp: number of memory requests referring to this op
+
+  // Mandatory parameters
+  const MemOp    Op;     ///< RevMemOp: target memory operation
+  const uint32_t Hart;   ///< RevMemOp: RISC-V Hart
+  const uint64_t Addr;   ///< RevMemOp: address
+  const uint64_t PAddr;  ///< RevMemOp: physical address (for RevMem I/O)
+  const uint32_t Size;   ///< RevMemOp: size of the memory operation in bytes
+  const RevFlag  flags;  ///< RevMemOp: request flags
+
+  // Optional parameters
+  void* const                target{};     ///< RevMemOp: target register pointer
+  const std::vector<uint8_t> membuf{};     ///< RevMemOp: buffer
+  const bool                 Inv{};        ///< RevMemOp: flush operation invalidate flag
+  const uint32_t             CustomOpc{};  ///< RevMemOp: custom memory opcode
+  const MemReq               procReq{};    ///< RevMemOp: original request from RevCore
+
 public:
-  /// RevMemOp constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, MemOp Op, RevFlag flags );
+  // clang-format off
 
   /// RevMemOp constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, MemOp Op, RevFlag flags );
+  RevMemOp( MemOp Op, uint32_t Hart, uint64_t Addr = 0, uint64_t PAddr = 0, uint32_t Size = 0, RevFlag flags = RevFlag::F_NONE, bool Inv = false )
+    : Op( Op ), Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), flags( flags ), Inv( Inv ) {}
 
   /// RevMemOp overloaded constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, MemOp Op, RevFlag flags );
+  RevMemOp( MemOp Op, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, const uint8_t* buffer )
+    : Op( Op ), Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), flags( flags ), membuf( buffer, buffer + Size ) {}
+
+  /// RevMemOp constructor
+  RevMemOp( MemOp Op, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req = {} )
+    : Op( Op ), Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), flags( flags ), target( target ), procReq( std::move( req ) ) {}
+
+  /// RevMemOp constructor
+  RevMemOp( MemOp Op, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, const uint8_t* buffer, MemReq req )
+    : Op( Op ), Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), flags( flags ), target( target ), membuf( buffer, buffer + Size ), procReq( std::move( req ) ) {}
 
   /// RevMemOp overloaded constructor
-  RevMemOp(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, void* target, MemOp Op, RevFlag flags
-  );
+  RevMemOp( MemOp Op, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, uint32_t CustomOpc )
+    : Op( Op ), Hart( Hart ), Addr( Addr ), PAddr( PAddr ), Size( Size ), flags( flags ), target( target ), CustomOpc( CustomOpc ) {}
 
-  /// RevMemOp overloaded constructor
-  RevMemOp( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, std::vector<uint8_t> buffer, MemOp Op, RevFlag flags );
-
-  /// RevMemOp overloaded constructor
-  RevMemOp(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, uint32_t CustomOpc, MemOp Op, RevFlag flags
-  );
-
-  /// RevMemOp overloaded constructor
-  RevMemOp(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, uint32_t CustomOpc, MemOp Op, RevFlag flags
-  );
+  // clang-format on
 
   /// RevMemOp default destructor
   ~RevMemOp()                            = default;
@@ -133,84 +102,46 @@ public:
   RevMemOp& operator=( const RevMemOp& ) = delete;
 
   /// RevMemOp: retrieve the memory operation type
-  MemOp getOp() const { return Op; }
+  auto getOp() const { return Op; }
 
   /// RevMemOp: retrieve the custom opcode
-  uint32_t getCustomOpc() const { return CustomOpc; }
+  auto getCustomOpc() const { return CustomOpc; }
 
   /// RevMemOp: retrieve the target address
-  uint64_t getAddr() const { return Addr; }
+  auto getAddr() const { return Addr; }
 
   /// RevMemOp: retrieve the target physical address
-  uint64_t getPhysAddr() const { return PAddr; }
+  auto getPhysAddr() const { return PAddr; }
 
   /// RevMemOp: retrieve the size of the request
-  uint32_t getSize() const { return Size; }
+  auto getSize() const { return Size; }
 
   /// RevMemOp: retrieve the memory buffer
-  std::vector<uint8_t> getBuf() const { return membuf; }
-
-  /// RevMemOp: retrieve the temporary target buffer
-  std::vector<uint8_t> getTempT() const { return tempT; }
+  auto getBuf() const { return &membuf[0]; }
 
   /// RevMemOp: retrieve the memory operation flags
-  RevFlag getFlags() const { return flags; }
+  auto getFlags() const { return flags; }
 
   /// RevMemOp: retrieve the standard set of memory flags for MemEventBase
-  RevFlag getStdFlags() const { return RevFlag{ safe_static_cast<uint32_t>( flags ) & 0xFFFF }; }
+  auto getStdFlags() const { return RevFlag{ safe_static_cast<uint32_t>( flags ) & 0xFFFF }; }
 
   /// RevMemOp: retrieve the flags for MemEventBase without caching enable
-  RevFlag getNonCacheFlags() const { return RevFlag{ safe_static_cast<uint32_t>( flags ) & 0xFFFD }; }
-
-  /// RevMemOp: sets the number of split cache line requests
-  void setSplitRqst( uint32_t S ) { SplitRqst = S; }
-
-  /// RevMemOp: set the invalidate flag
-  void setInv( bool I ) { Inv = I; }
-
-  /// RevMemOp: set the hart
-  void setHart( uint32_t H ) { Hart = H; }
-
-  /// RevMemOp: set the originating memory request
-  void setMemReq( const MemReq& req ) { procReq = req; }
-
-  /// RevMemOp: set the temporary target buffer
-  void setTempT( std::vector<uint8_t> T );
+  auto getNonCacheFlags() const { return RevFlag{ safe_static_cast<uint32_t>( flags ) & 0xFFFD }; }
 
   /// RevMemOp: retrieve the invalidate flag
-  bool getInv() const { return Inv; }
-
-  /// RevMemOp: retrieve the number of split cache line requests
-  uint32_t getSplitRqst() const { return SplitRqst; }
+  auto getInv() const { return Inv; }
 
   /// RevMemOp: retrieve the target address
-  void* getTarget() const { return target; }
+  auto getTarget() const { return target; }
 
   /// RevMemOp: retrieve the hart
-  uint32_t getHart() const { return Hart; }
+  auto getHart() const { return Hart; }
 
   /// RevMemOp: Get the originating proc memory request
-  const MemReq& getMemReq() const { return procReq; }
+  auto& getMemReq() const { return procReq; }
 
-  // RevMemOp: determine if the request is cache-able
-  bool isCacheable() const {
-    return ( safe_static_cast<uint32_t>( flags ) & safe_static_cast<uint32_t>( RevFlag::F_NONCACHEABLE ) ) == 0;
-  }
-
-private:
-  uint32_t             Hart{};       ///< RevMemOp: RISC-V Hart
-  uint64_t             Addr{};       ///< RevMemOp: address
-  uint64_t             PAddr{};      ///< RevMemOp: physical address (for RevMem I/O)
-  uint32_t             Size{};       ///< RevMemOp: size of the memory operation in bytes
-  bool                 Inv{};        ///< RevMemOp: flush operation invalidate flag
-  MemOp                Op{};         ///< RevMemOp: target memory operation
-  uint32_t             CustomOpc{};  ///< RevMemOp: custom memory opcode
-  uint32_t             SplitRqst{};  ///< RevMemOp: number of split cache line requests
-  std::vector<uint8_t> membuf{};     ///< RevMemOp: buffer
-  std::vector<uint8_t> tempT{};      ///< RevMemOp: temporary target buffer for R-M-W ops
-  RevFlag              flags{};      ///< RevMemOp: request flags
-  void*                target{};     ///< RevMemOp: target register pointer
-  MemReq               procReq{};    ///< RevMemOp: original request from RevCore
+  /// RqstCount: Get the number of requests referring to this op
+  auto& rqstCount() { return refCount; }
 };
 
 // ----------------------------------------
@@ -225,13 +156,6 @@ public:
   /// RevMemCtrl: constructor
   RevMemCtrl( ComponentId_t id, const Params& params );
 
-  /// RevMemCtrl: destructor
-  virtual ~RevMemCtrl();
-
-  /// RevMemCtrl: disallow copying and assignment
-  RevMemCtrl( const RevMemCtrl& )                                                                                       = delete;
-  RevMemCtrl& operator=( const RevMemCtrl& )                                                                            = delete;
-
   /// RevMemCtrl: initialization function
   void init( uint32_t phase ) override                                                                                  = 0;
 
@@ -242,91 +166,61 @@ public:
   void finish() override                                                                                                = 0;
 
   /// RevMemCtrl: determines if outstanding requests exist
-  virtual bool outstandingRqsts()                                                                                       = 0;
+  virtual bool outstandingRqsts() const                                                                                 = 0;
 
   /// RevMemCtrl: send flush request
-  virtual bool sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, bool Inv, RevFlag flags ) = 0;
+  virtual bool sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, bool Inv ) = 0;
 
   /// RevMemCtrl: send a read request
-  virtual bool sendREADRequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, const MemReq& req, RevFlag flags
-  ) = 0;
+  virtual bool
+    sendREADRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req )    = 0;
 
   /// RevMemCtrl: send a write request
-  virtual bool
-    sendWRITERequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags ) = 0;
-
-  /// RevMemCtrl: send an AMO request
-  virtual bool sendAMORequest(
-    uint32_t       Hart,
-    uint64_t       Addr,
-    uint64_t       PAddr,
-    uint32_t       Size,
-    unsigned char* buffer,
-    void*          target,
-    const MemReq&  req,
-    RevFlag        flags
-  ) = 0;
+  virtual bool sendWRITERequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) = 0;
 
   /// RevMemCtrl: send a readlock request
   virtual bool sendREADLOCKRequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, const MemReq& req, RevFlag flags
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flagvs, void* target, MemReq req
   ) = 0;
 
   /// RevMemCtrl: send a writelock request
   virtual bool
-    sendWRITELOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags ) = 0;
+    sendWRITELOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) = 0;
 
   /// RevMemCtrl: send a loadlink request
-  virtual bool sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags )              = 0;
+  virtual bool sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags )        = 0;
 
   /// RevMemCtrl: send a storecond request
   virtual bool
-    sendSTORECONDRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags ) = 0;
+    sendSTORECONDRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) = 0;
 
   /// RevMemCtrl: send an void custom read memory request
   virtual bool sendCUSTOMREADRequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, uint32_t Opc, RevFlag flags
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, uint32_t Opc
   ) = 0;
 
   /// RevMemCtrl: send a custom write request
   virtual bool sendCUSTOMWRITERequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, uint32_t Opc, RevFlag flags
-  )                                                            = 0;
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer, uint32_t Opc
+  )                                       = 0;
 
   /// RevMemCtrl: send a FENCE request
-  virtual bool sendFENCE( uint32_t Hart )                      = 0;
+  virtual bool sendFENCE( uint32_t Hart ) = 0;
 
-  /// RevMemCtrl: handle a read response
-  virtual void handleReadResp( StandardMem::ReadResp* ev )     = 0;
-
-  /// RevMemCtrl: handle a write response
-  virtual void handleWriteResp( StandardMem::WriteResp* ev )   = 0;
-
-  /// RevMemCtrl: handle a flush response
-  virtual void handleFlushResp( StandardMem::FlushResp* ev )   = 0;
-
-  /// RevMemCtrl: handle a custom response
-  virtual void handleCustomResp( StandardMem::CustomResp* ev ) = 0;
-
-  /// RevMemCtrl: handle an invalidate response
-  virtual void handleInvResp( StandardMem::InvNotify* ev )     = 0;
-
-  /// RevMemCtrl: handle RevMemCtrl flags for write responses
-  virtual void handleFlagResp( RevMemOp* op )                  = 0;
-
-  /// RevMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
-  virtual void handleAMO( RevMemOp* op )                       = 0;
+  /// RevMemCtrl: send an AMO request
+  virtual bool sendAMORequest(
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag Flags, uint8_t* Buffer, void* Target, MemReq Req
+  )                                           = 0;
 
   /// RevMemCtrl: returns the cache line size
-  virtual uint32_t getLineSize()                               = 0;
+  virtual uint32_t getLineSize() const        = 0;
 
   /// Assign processor tracer
-  virtual void setTracer( RevTracer* tracer )                  = 0;
+  virtual void setTracer( RevTracer* tracer ) = 0;
 
 protected:
-  SST::Output* output{};  ///< RevMemCtrl: sst output object
-  RevTracer*   Tracer{};  ///< RevMemCtrl: tracer pointer
+  const uint32_t                     verbose;  ///< RevMemCtrl: verbosity level
+  const std::unique_ptr<SST::Output> output;   ///< RevMemCtrl: sst output object
 
 };  // class RevMemCtrl
 
@@ -406,54 +300,55 @@ public:
 
   // clang-format on
 
-  enum MemCtrlStats : uint32_t {
-    ReadInFlight        = 0,
-    ReadPending         = 1,
-    ReadBytes           = 2,
-    WriteInFlight       = 3,
-    WritePending        = 4,
-    WriteBytes          = 5,
-    FlushInFlight       = 6,
-    FlushPending        = 7,
-    ReadLockInFlight    = 8,
-    ReadLockPending     = 9,
-    ReadLockBytes       = 10,
-    WriteUnlockInFlight = 11,
-    WriteUnlockPending  = 12,
-    WriteUnlockBytes    = 13,
-    LoadLinkInFlight    = 14,
-    LoadLinkPending     = 15,
-    StoreCondInFlight   = 16,
-    StoreCondPending    = 17,
-    CustomInFlight      = 18,
-    CustomPending       = 19,
-    CustomBytes         = 20,
-    FencePending        = 21,
-    AMOAddBytes         = 22,
-    AMOAddPending       = 23,
-    AMOXorBytes         = 24,
-    AMOXorPending       = 25,
-    AMOAndBytes         = 26,
-    AMOAndPending       = 27,
-    AMOOrBytes          = 28,
-    AMOOrPending        = 29,
-    AMOMinBytes         = 30,
-    AMOMinPending       = 31,
-    AMOMaxBytes         = 32,
-    AMOMaxPending       = 33,
-    AMOMinuBytes        = 34,
-    AMOMinuPending      = 35,
-    AMOMaxuBytes        = 36,
-    AMOMaxuPending      = 37,
-    AMOSwapBytes        = 38,
-    AMOSwapPending      = 39,
+  enum class MemCtrlStats : uint32_t {
+    ReadInFlight,
+    ReadPending,
+    ReadBytes,
+    WriteInFlight,
+    WritePending,
+    WriteBytes,
+    FlushInFlight,
+    FlushPending,
+    ReadLockInFlight,
+    ReadLockPending,
+    ReadLockBytes,
+    WriteUnlockInFlight,
+    WriteUnlockPending,
+    WriteUnlockBytes,
+    LoadLinkInFlight,
+    LoadLinkPending,
+    StoreCondInFlight,
+    StoreCondPending,
+    CustomInFlight,
+    CustomPending,
+    CustomBytes,
+    FencePending,
+    AMOAddBytes,
+    AMOAddPending,
+    AMOXorBytes,
+    AMOXorPending,
+    AMOAndBytes,
+    AMOAndPending,
+    AMOOrBytes,
+    AMOOrPending,
+    AMOMinBytes,
+    AMOMinPending,
+    AMOMaxBytes,
+    AMOMaxPending,
+    AMOMinuBytes,
+    AMOMinuPending,
+    AMOMaxuBytes,
+    AMOMaxuPending,
+    AMOSwapBytes,
+    AMOSwapPending,
+    END
   };
 
   /// RevBasicMemCtrl: constructor
   RevBasicMemCtrl( ComponentId_t id, const Params& params );
 
   /// RevBasicMemCtrl: destructor
-  ~RevBasicMemCtrl() final;
+  ~RevBasicMemCtrl() final                             = default;
 
   /// RevBasicMemCtrl: disallow copying and assignment
   RevBasicMemCtrl( const RevBasicMemCtrl& )            = delete;
@@ -463,270 +358,176 @@ public:
   void init( uint32_t phase ) final;
 
   /// RevBasicMemCtrl: setup function
-  void setup() final;
+  void setup() final { memIface->setup(); }
 
   /// RevBasicMemCtrl: finish function
-  void finish() final;
+  void finish() final {}
 
   /// RevBasicMemCtrl: clock tick function
   virtual bool clockTick( Cycle_t cycle );
 
   /// RevBasicMemCtrl: determines if outstanding requests exist
-  bool outstandingRqsts() final;
+  bool outstandingRqsts() const final { return !outstanding.empty(); }
 
   /// RevBasicMemCtrl: returns the cache line size
-  uint32_t getLineSize() final { return lineSize; }
+  uint32_t getLineSize() const final { return lineSize; }
 
   /// RevBasicMemCtrl: memory event processing handler
   void processMemEvent( StandardMem::Request* ev );
 
   /// RevBasicMemCtrl: send a flush request
-  bool sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAdr, uint32_t Size, bool Inv, RevFlag flags ) final;
+  bool sendFLUSHRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, bool Inv ) final;
 
   /// RevBasicMemCtrl: send a read request
-  bool sendREADRequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, const MemReq& req, RevFlag flags
-  ) final;
+  bool
+    sendREADRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req ) final;
 
   /// RevBasicMemCtrl: send a write request
-  bool sendWRITERequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags = RevFlag::F_NONE
-  ) final;
-
-  /// RevBasicMemCtrl: send an AMO request
-  bool sendAMORequest(
-    uint32_t       Hart,
-    uint64_t       Addr,
-    uint64_t       PAddr,
-    uint32_t       Size,
-    unsigned char* buffer,
-    void*          target,
-    const MemReq&  req,
-    RevFlag        flags
-  ) final;
+  bool sendWRITERequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
 
   // RevBasicMemCtrl: send a readlock request
-  bool sendREADLOCKRequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, const MemReq& req, RevFlag flags
-  ) final;
+  bool sendREADLOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req )
+    final;
 
   // RevBasicMemCtrl: send a writelock request
-  bool
-    sendWRITELOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags ) final;
+  bool sendWRITELOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
 
   // RevBasicMemCtrl: send a loadlink request
   bool sendLOADLINKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags ) final;
 
   // RevBasicMemCtrl: send a storecond request
-  bool
-    sendSTORECONDRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, RevFlag flags ) final;
+  bool sendSTORECONDRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
 
   // RevBasicMemCtrl: send an void custom read memory request
   bool sendCUSTOMREADRequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, void* target, uint32_t Opc, RevFlag flags
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, uint32_t Opc
   ) final;
 
   // RevBasicMemCtrl: send a custom write request
   bool sendCUSTOMWRITERequest(
-    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, unsigned char* buffer, uint32_t Opc, RevFlag flags
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer, uint32_t Opc
   ) final;
 
   // RevBasicMemCtrl: send a FENCE request
   bool sendFENCE( uint32_t Hart ) final;
 
-  /// RevBasicMemCtrl: handle a read response
-  void handleReadResp( StandardMem::ReadResp* ev ) final;
+  /// RevBasicMemCtrl: send an AMO request
+  bool sendAMORequest(
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* Buffer, void* Target, MemReq Req
+  ) final;
 
-  /// RevBasicMemCtrl: handle a write response
-  void handleWriteResp( StandardMem::WriteResp* ev ) final;
+  /// RevBasicMemCtrl: handle a response generally
+  template<typename RESP>
+  void handleResp( RESP* ev );
 
-  /// RevBasicMemCtrl: handle a flush response
-  void handleFlushResp( StandardMem::FlushResp* ev ) final;
-
-  /// RevBasicMemCtrl: handle a custom response
-  void handleCustomResp( StandardMem::CustomResp* ev ) final;
-
-  /// RevBasicMemCtrl: handle an invalidate response
-  void handleInvResp( StandardMem::InvNotify* ev ) final;
-
-  /// RevBasicMemCtrl: handle RevMemCtrl flags for write responses
-  void handleFlagResp( RevMemOp* op ) final { RevHandleFlagResp( op->getTarget(), op->getSize(), op->getFlags() ); }
+  /// RevBasicMemCtrl: perform an AMO on local data
+  static AMOData performAMO( RevFlag flags, uint32_t size, void* target, const void* data );
 
   /// RevBasicMemCtrl: handle an AMO for the target READ+MODIFY+WRITE triplet
-  void handleAMO( RevMemOp* op ) final;
+  void handleAMOResp( const std::shared_ptr<RevMemOp>& readOp );
 
   /// RevBasicMemCtrl: assign tracer pointer
-  void setTracer( RevTracer* tracer ) final;
+  void setTracer( RevTracer* tracer ) final { Tracer = tracer; }
 
-protected:
+  /// RevBasicMemCtrl: handle flag response
+  static void RevHandleFlagResp( void* target, size_t size, RevFlag flags );
+
+  /// RevFlag: Perform an integer conversion
+  template<typename SRC, typename DEST>
+  static void RevConvertInt( void* target ) {
+    SRC src;
+    memcpy( &src, target, sizeof( src ) );
+    DEST dest{ src };
+    memcpy( target, &dest, sizeof( dest ) );
+  }
+
+private:
   // ----------------------------------------
   // RevStdMemHandlers
   // ----------------------------------------
-  class RevStdMemHandlers final : public Interfaces::StandardMem::RequestHandler {
-  public:
-    friend class RevBasicMemCtrl;
-
+  struct RevStdMemHandlers final : StandardMem::RequestHandler {
     /// RevStdMemHandlers: constructor
-    RevStdMemHandlers( RevBasicMemCtrl* Ctrl, SST::Output* output );
+    explicit RevStdMemHandlers( RevBasicMemCtrl* Ctrl ) : RequestHandler( Ctrl->output.get() ), Ctrl( Ctrl ) {}
 
-    /// RevStdMemHandlers: destructor
-    ~RevStdMemHandlers() final;
+    /// RevStdMemHandlers: handlers
+    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    /// RevStdMemHandlers: disallow copying and assignment
-    RevStdMemHandlers( const RevStdMemHandlers& )            = delete;
-    RevStdMemHandlers& operator=( const RevStdMemHandlers& ) = delete;
+    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    /// RevStdMemHandlers: handle read response
-    void handle( StandardMem::ReadResp* ev ) final;
+    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    /// RevStdMemhandlers: handle write response
-    void handle( StandardMem::WriteResp* ev ) final;
+    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    /// RevStdMemHandlers: handle flush response
-    void handle( StandardMem::FlushResp* ev ) final;
+    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleResp( ev ); }
 
-    /// RevStdMemHandlers: handle custom response
-    void handle( StandardMem::CustomResp* ev ) final;
-
-    /// RevStdMemHandlers: handle invalidate response
-    void handle( StandardMem::InvNotify* ev ) final;
+    // ---------------------------------------------------------------
+    // RevStdMemHandlers
+    // ---------------------------------------------------------------
 
   private:
-    RevBasicMemCtrl* Ctrl{};  ///< RevStdMemHandlers: memory controller object
+    RevBasicMemCtrl* const Ctrl;  ///< RevStdMemHandlers: memory controller object
 
   };  // class RevStdMemHandlers
 
-private:
-  /// RevBasicMemCtrl: process the next memory request
-  bool processNextRqst(
-    uint32_t& t_max_loads,
-    uint32_t& t_max_stores,
-    uint32_t& t_max_flush,
-    uint32_t& t_max_llsc,
-    uint32_t& t_max_readlock,
-    uint32_t& t_max_writeunlock,
-    uint32_t& t_max_custom,
-    uint32_t& t_max_ops
-  );
+  /// RevBasicMemCtrl: Queue a memory request
+  template<typename... Ts>
+  bool QRequest(
+    MemCtrlStats stat, MemOp memOp, uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, Ts&&... args
+  ) {
+    if( Size ) {
+      rqstQ.push( std::make_shared<RevMemOp>( memOp, Hart, Addr, PAddr, Size, flags, std::forward<Ts>( args )... ) );
+      recordStat( stat );
+    }
+    return true;
+  }
 
-  /// RevBasicMemCtrl: determine if we can instantiate the target memory operation
-  bool isMemOpAvail(
-    RevMemOp* Op,
-    uint32_t& t_max_loads,
-    uint32_t& t_max_stores,
-    uint32_t& t_max_flush,
-    uint32_t& t_max_llsc,
-    uint32_t& t_max_readlock,
-    uint32_t& t_max_writeunlock,
-    uint32_t& t_max_custom
-  );
+  /// RevBasicMemCtrl: process the next memory request
+  bool processNextRqst();
+
+  /// RevBasicMemCtrl: Add a new memory request
+  void sendMemRqst( const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, StandardMem::Request* rqst );
 
   /// RevBasicMemCtrl: build a standard memory request
-  bool buildStandardMemRqst( RevMemOp* op, bool& Success );
-
-  /// RevBasicMemCtrl: build raw memory requests with a 1-to-1 mapping to RevMemOps'
-  bool buildRawMemRqst( RevMemOp* op, RevFlag TmpFlags );
-
-  /// RevBasicMemCtrl: build cache-aligned requests
-  bool buildCacheMemRqst( RevMemOp* op, bool& Success );
-
-  /// RevBasicMemCtrl: determine if there are any pending AMOs that would prevent a request from dispatching
-  bool isPendingAMO( uint32_t Slot );
-
-  /// RevBasicMemCtrl: determine if we need to utilize AQ ordering semantics
-  bool isAQ( uint32_t Slot, uint32_t Hart );
-
-  /// RevBasicMemCtrl: determine if we need to utilize RL ordering semantics
-  bool isRL( uint32_t Slot, uint32_t Hart );
+  bool buildStandardMemRqst( const std::shared_ptr<RevMemOp>& op );
 
   /// RevBasicMemCtrl: register statistics
   void registerStats();
 
+  /// RevBasicMemCtrl: whether a memory operation is pending on previous memory operations
+  bool isPendingAMO( const std::shared_ptr<RevMemOp>& op );
+
   /// RevBasicMemCtrl: inject statistics data for the target metric
-  void recordStat( MemCtrlStats Stat, uint64_t Data );
+  void recordStat( MemCtrlStats Stat, uint64_t Data = 1 ) {
+    if( Stat < MemCtrlStats::END )
+      stats[size_t( Stat )]->addData( Data );
+  }
 
-  /// RevBasicMemCtrl: returns the total number of outstanding requests
-  uint64_t getTotalRqsts();
-
-  /// RevBasicMemCtrl: Determine the number of cache lines are required
-  uint32_t getNumCacheLines( uint64_t Addr, uint32_t Size );
-
-  /// RevBasicMemCtrl: Retrieve the base cache line request size
-  uint32_t getBaseCacheLineSize( uint64_t Addr, uint32_t Size );
-
-  /// RevBasicMemCtrl: retrieve the number of outstanding requests on the wire
-  uint32_t getNumSplitRqsts( RevMemOp* op );
-
-  /// RevBasicMemCtrl: perform the MODIFY portion of the AMO (READ+MODIFY+WRITE)
-  void performAMO( std::tuple<uint32_t, unsigned char*, void*, RevFlag, RevMemOp*, bool> Entry );
+  void rqstQpush( const std::shared_ptr<RevMemOp>& op );
 
   // -- private data members
-  StandardMem*       memIface{};         ///< StandardMem memory interface
-  RevStdMemHandlers* stdMemHandlers{};   ///< StandardMem interface response handlers
-  bool               hasCache{};         ///< detects whether cache layers are present
-  uint32_t           lineSize{};         ///< cache line size
-  uint32_t           max_loads{};        ///< maximum number of outstanding loads
-  uint32_t           max_stores{};       ///< maximum number of outstanding stores
-  uint32_t           max_flush{};        ///< maximum number of oustanding flush events
-  uint32_t           max_llsc{};         ///< maximum number of outstanding llsc events
-  uint32_t           max_readlock{};     ///< maximum number of oustanding readlock events
-  uint32_t           max_writeunlock{};  ///< maximum number of oustanding writelock events
-  uint32_t           max_custom{};       ///< maximum number of oustanding custom events
-  uint32_t           max_ops{};          ///< maximum number of ops to issue per cycle
+  RevTracer*                            Tracer{};    ///< tracer pointer
+  StandardMem*                          memIface{};  ///< StandardMem memory interface
+  bool                                  hasCache{};  ///< detects whether cache layers are present
+  uint32_t                              lineSize{};  ///< cache line size
+  MemOpParams                           memOpNum{};  ///< numbers in effect of memory parameters
+  MemOpParams                           memOpMax{};  ///< maximums allowable of memory parameters
+  std::vector<Statistic<uint64_t>*>     stats{};     ///< statistics vector
+  std::queue<std::shared_ptr<RevMemOp>> rqstQ;
 
-  uint32_t num_read{};         ///< number of outstanding read requests
-  uint32_t num_write{};        ///< number of outstanding write requests
-  uint32_t num_flush{};        ///< number of outstanding flush requests
-  uint32_t num_llsc{};         ///< number of outstanding LL/SC requests
-  uint32_t num_readlock{};     ///< number of oustanding readlock requests
-  uint32_t num_writeunlock{};  ///< number of oustanding writelock requests
-  uint32_t num_custom{};       ///< number of outstanding custom requests
-  uint32_t num_fence{};        ///< number of oustanding fence requests
+  //  std::multimap<uint32_t, std::shared_ptr<RevMemOp>> rqstQ;
+  //  std::map<uint32_t, std::array<decltype(rqstQ)::iterator, 2>> rqstQit;
 
-  std::vector<StandardMem::Request::id_t>         requests{};     ///< outstanding StandardMem requests
-  std::vector<RevMemOp*>                          rqstQ{};        ///< queued memory requests
-  std::map<StandardMem::Request::id_t, RevMemOp*> outstanding{};  ///< map of outstanding requests
+  ///< map of outstanding memory requests based on Hart id
+  // note: std::multimap is used because it keeps iterators valid while std::unordered_multimap does not
+  std::multimap<uint32_t, std::shared_ptr<RevMemOp>> hartOutstanding{};
 
-#define AMOTABLE_HART   0
-#define AMOTABLE_BUFFER 1
-#define AMOTABLE_TARGET 2
-#define AMOTABLE_FLAGS  3
-#define AMOTABLE_MEMOP  4
-#define AMOTABLE_IN     5
+  ///< map of outstanding memory requests based on Request id
+  std::unordered_map<StandardMem::Request::id_t, decltype( hartOutstanding )::iterator> outstanding{};
 
-  /// RevBasicMemCtrl: map of amo operations to memory addresses
-  std::multimap<uint64_t, std::tuple<uint32_t, unsigned char*, void*, RevFlag, RevMemOp*, bool>> AMOTable{};
-
-  std::vector<Statistic<uint64_t>*> stats{};  ///< statistics vector
+  ///< StandardMem interface response handlers
+  const std::unique_ptr<RevStdMemHandlers> stdMemHandlers{ new RevStdMemHandlers( this ) };
 
 };  // RevBasicMemCtrl
-
-///< Apply Atomic Memory Operation
-/// The operation described by "flags" is applied to memory "Target" with value "value"
-template<typename T>
-void ApplyAMO( RevFlag flags, void* Target, T value ) {
-  // Target and value cast to signed and uint32_t versions
-  auto* TmpTarget  = static_cast<std::make_signed_t<T>*>( Target );
-  auto* TmpTargetU = static_cast<std::make_unsigned_t<T>*>( Target );
-  auto  TmpBuf     = static_cast<std::make_signed_t<T>>( value );
-  auto  TmpBufU    = static_cast<std::make_unsigned_t<T>>( value );
-
-  // Table mapping atomic operations to executable code
-  // clang-format off
-  switch( RevFlagAtomic( flags ) ) {
-    case RevFlag::F_AMOADD:  *TmpTarget += TmpBuf; break;
-    case RevFlag::F_AMOXOR:  *TmpTarget ^= TmpBuf; break;
-    case RevFlag::F_AMOAND:  *TmpTarget &= TmpBuf; break;
-    case RevFlag::F_AMOOR:   *TmpTarget |= TmpBuf; break;
-    case RevFlag::F_AMOSWAP: *TmpTarget  = TmpBuf; break;
-    case RevFlag::F_AMOMIN:  *TmpTarget  = std::min(*TmpTarget,  TmpBuf); break;
-    case RevFlag::F_AMOMAX:  *TmpTarget  = std::max(*TmpTarget,  TmpBuf); break;
-    case RevFlag::F_AMOMINU: *TmpTargetU = std::min(*TmpTargetU, TmpBufU); break;
-    case RevFlag::F_AMOMAXU: *TmpTargetU = std::max(*TmpTargetU, TmpBufU); break;
-    default: break;
-  };
-  // clang-format on
-}
 
 }  // namespace SST::RevCPU
 

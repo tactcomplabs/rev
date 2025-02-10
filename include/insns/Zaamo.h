@@ -17,36 +17,37 @@
 namespace SST::RevCPU {
 
 class Zaamo : public RevExt {
-  template<typename XLEN, RevFlag F_AMO>
+  template<typename TYPE, RevFlag F_AMO>
   static bool amooper( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
-    static_assert( std::is_unsigned_v<XLEN>, "XLEN must be unsigned integral type" );
+    static_assert( std::is_unsigned_v<TYPE>, "TYPE must be unsigned integral type" );
 
     RevFlag flags{ F_AMO };
 
     if( Inst.aq ) {
       RevFlagSet( flags, RevFlag::F_AQ );
     }
+
     if( Inst.rl ) {
       RevFlagSet( flags, RevFlag::F_RL );
     }
 
     if( !F->IsRV64() ) {
       MemReq req(
-        R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete()
+        R->RV32[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpREAD, true, R->GetMarkLoadComplete()
       );
       R->LSQueue->insert( req.LSQHashPair() );
       M->AMOVal( F->GetHartToExecID(), R->RV32[Inst.rs1], &R->RV32[Inst.rs2], &R->RV32[Inst.rd], req, flags );
     } else {
-      flags = RevFlag{ uint32_t( flags ) | uint32_t( RevFlag::F_SEXT64 ) };
+      RevFlagSet( flags, RevFlag::F_SEXT64 );
       MemReq req(
-        R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpAMO, true, R->GetMarkLoadComplete()
+        R->RV64[Inst.rs1], Inst.rd, RevRegClass::RegGPR, F->GetHartToExecID(), MemOp::MemOpREAD, true, R->GetMarkLoadComplete()
       );
       R->LSQueue->insert( req.LSQHashPair() );
       M->AMOVal(
         F->GetHartToExecID(),
         R->RV64[Inst.rs1],
-        reinterpret_cast<std::make_signed_t<XLEN>*>( &R->RV64[Inst.rs2] ),
-        reinterpret_cast<std::make_signed_t<XLEN>*>( &R->RV64[Inst.rd] ),
+        reinterpret_cast<std::make_signed_t<TYPE>*>( &R->RV64[Inst.rs2] ),
+        reinterpret_cast<std::make_signed_t<TYPE>*>( &R->RV64[Inst.rd] ),
         req,
         flags
       );
