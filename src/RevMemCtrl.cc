@@ -377,7 +377,7 @@ static std::enable_if_t<!std::is_floating_point_v<T>> ApplyAMO( RevFlag flags, v
     case RevFlag::F_AMOMAX:   *TmpTarget  = std::max( *TmpTarget,  TmpBuf ); break;
     case RevFlag::F_AMOMINU:  *TmpTargetU = std::min( *TmpTargetU, TmpBufU ); break;
     case RevFlag::F_AMOMAXU:  *TmpTargetU = std::max( *TmpTargetU, TmpBufU ); break;
-    default: break;
+    default: throw std::invalid_argument("Error: unknown atomic operation type");
   }
   // clang-format on
 }
@@ -440,11 +440,26 @@ void RevBasicMemCtrl::sendMemRqst(
   memIface->send( rqst );  // Send the request
 }
 
+template<typename>
+MemOp getMemOp;
+template<>
+constexpr MemOp getMemOp<StandardMem::ReadResp> = MemOp::MemOpREAD;
+template<>
+constexpr MemOp getMemOp<StandardMem::WriteResp> = MemOp::MemOpWRITE;
+template<>
+constexpr MemOp getMemOp<StandardMem::FlushResp> = MemOp::MemOpFLUSH;
+template<>
+constexpr MemOp getMemOp<StandardMem::CustomResp> = MemOp::MemOpCUSTOM;
+template<>
+constexpr MemOp getMemOp<StandardMem::InvNotify> = MemOp::MemOpINV;
+
 // Handle memory requests when they complete in SST.
-template<MemOp memOp, typename RESP>
+template<typename RESP>
 void RevBasicMemCtrl::handleResp( RESP* ev ) {
+  constexpr MemOp memOp = getMemOp<RESP>;
+
   // Extract (remove) the request based on ID
-  auto node = outstanding.extract( ev->getID() );
+  auto node             = outstanding.extract( ev->getID() );
   if( node.empty() )
     output->fatal( CALL_INFO, -1, "Internal Error: Outstanding memory request not found in %s handle\n", OpStr( memOp ) );
 
@@ -491,11 +506,11 @@ void RevBasicMemCtrl::handleResp( RESP* ev ) {
   delete ev;
 }
 
-template void RevBasicMemCtrl::handleResp<MemOp::MemOpREAD>( StandardMem::ReadResp* );
-template void RevBasicMemCtrl::handleResp<MemOp::MemOpWRITE>( StandardMem::WriteResp* );
-template void RevBasicMemCtrl::handleResp<MemOp::MemOpFLUSH>( StandardMem::FlushResp* );
-template void RevBasicMemCtrl::handleResp<MemOp::MemOpCUSTOM>( StandardMem::CustomResp* );
-template void RevBasicMemCtrl::handleResp<MemOp::MemOpINV>( StandardMem::InvNotify* );
+template void RevBasicMemCtrl::handleResp( StandardMem::ReadResp* );
+template void RevBasicMemCtrl::handleResp( StandardMem::WriteResp* );
+template void RevBasicMemCtrl::handleResp( StandardMem::FlushResp* );
+template void RevBasicMemCtrl::handleResp( StandardMem::CustomResp* );
+template void RevBasicMemCtrl::handleResp( StandardMem::InvNotify* );
 
 // Determine whether a memory operation should be stalled based on its flags and the
 // state of outstanding memory operations on the same hart

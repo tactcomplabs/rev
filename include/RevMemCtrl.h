@@ -417,7 +417,7 @@ public:
   ) final;
 
   /// RevBasicMemCtrl: handle a response generally
-  template<MemOp memOp, typename RESP>
+  template<typename RESP>
   void handleResp( RESP* ev );
 
   /// RevBasicMemCtrl: perform an AMO on local data
@@ -450,15 +450,15 @@ private:
     explicit RevStdMemHandlers( RevBasicMemCtrl* Ctrl ) : RequestHandler( Ctrl->output.get() ), Ctrl( Ctrl ) {}
 
     /// RevStdMemHandlers: handlers
-    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleResp<MemOp::MemOpREAD>( ev ); }
+    void handle( StandardMem::ReadResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleResp<MemOp::MemOpWRITE>( ev ); }
+    void handle( StandardMem::WriteResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleResp<MemOp::MemOpFLUSH>( ev ); }
+    void handle( StandardMem::FlushResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleResp<MemOp::MemOpCUSTOM>( ev ); }
+    void handle( StandardMem::CustomResp* ev ) final { Ctrl->handleResp( ev ); }
 
-    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleResp<MemOp::MemOpINV>( ev ); }
+    void handle( StandardMem::InvNotify* ev ) final { Ctrl->handleResp( ev ); }
 
     // ---------------------------------------------------------------
     // RevStdMemHandlers
