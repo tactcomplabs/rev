@@ -8,7 +8,7 @@ int main() {
    *       chdir("/tmp") you will get garbage data.
    *       This is a known issue with Text data in assembly
   */
-  const char dir[5] = "/tmp";
+  const char dir[]  = "/tmp";
   int        result = rev_chdir( &dir[0] );
 
   if( result != 0 ) {
