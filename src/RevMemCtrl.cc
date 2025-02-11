@@ -144,7 +144,7 @@ bool RevBasicMemCtrl::sendCUSTOMWRITERequest(
 }
 
 bool RevBasicMemCtrl::sendFENCE( uint32_t Hart ) {
-  rqstQ.push( std::make_shared<RevMemOp>( MemOp::MemOpFENCE, Hart ) );
+  rqstQpush( std::make_shared<RevMemOp>( MemOp::MemOpFENCE, Hart ) );
   recordStat( MemCtrlStats::FencePending );
   return true;
 }
@@ -171,6 +171,24 @@ bool RevBasicMemCtrl::sendAMORequest(
   // Create a memory operation for the AMO read
   // Since this is a read-modify-write operation, the first RevMemOp is a MemOp::MemOpREAD.
   return QRequest( stat, MemOp::MemOpREAD, Hart, Addr, PAddr, Size, Flags, Target, Buffer, std::move( Req ) );
+}
+
+// Insert an entry in a multimap keyed by hart, updating the range of iterators of a hart's queued requests
+void RevBasicMemCtrl::rqstQpush( const std::shared_ptr<RevMemOp>& op ) {
+  uint32_t hart       = op->getHart();  // TODO: Get a Hart ID which is different across cores
+
+  // Get the current range of iterators in the multimap for the hart's queue
+  auto [lower, upper] = rqstQ.equal_range( hart );
+
+  // Insert the new op into the hart's multimap, getting its iterator
+  auto newit          = rqstQ.emplace_hint( upper, hart, op );
+
+  // If the original range was empty, set the lower iterator to the new entry
+  if( lower == upper )
+    lower = newit;
+
+  // Update the hart's queue of requests to have a range of [lower, ++newit)
+  rqstQit.insert_or_assign( hart, std::array{ lower, ++newit } );
 }
 
 void RevBasicMemCtrl::processMemEvent( StandardMem::Request* ev ) {
@@ -429,14 +447,12 @@ void RevBasicMemCtrl::handleAMOResp( const std::shared_ptr<RevMemOp>& readOp ) {
 void RevBasicMemCtrl::sendMemRqst(
   const std::shared_ptr<RevMemOp>& op, MemOp memOp, MemCtrlStats stat, StandardMem::Request* rqst
 ) {
-  ++op->rqstCount();  // Increment the request reference count of the RevMemOp
-  ++memOpNum[memOp];  // Increment the number of outstanding requests for this MemOp
-
+  ++op->rqstCount();   // Increment the request reference count of the RevMemOp
+  ++memOpNum[memOp];   // Increment the number of outstanding requests for this MemOp
+  recordStat( stat );  // Record the statistic
   // Map the request ID to an iterator pointing to mapping from hart to RevMemOp
   if( !outstanding.try_emplace( rqst->getID(), hartOutstanding.emplace( op->getHart(), op ) ).second )
     output->fatal( CALL_INFO, -1, "Error: %s memory request with the same ID added twice\n", OpStr( memOp ) );
-
-  recordStat( stat );      // Record the statistic
   memIface->send( rqst );  // Send the request
 }
 
@@ -550,48 +566,59 @@ bool RevBasicMemCtrl::isPendingAMO( const std::shared_ptr<RevMemOp>& thisOp ) {
 // any memory requests during the current clock as long as any requests are outstanding.
 // TODO: rqstQ should be made per-hart as an iterator to a multimap<hart, RevMemOp>
 bool RevBasicMemCtrl::processNextRqst() {
-  // If there are no queued requests, stop processing this cycle
-  if( rqstQ.empty() )
-    return false;
+  memOpNum[MemOp::MemOpPERCYCLE] = 0;
 
-  // Get the request at the front of the queue
-  const std::shared_ptr<RevMemOp>& op   = rqstQ.front();
-  uint32_t                         hart = op->getHart();
+  // Go through all harts which have queued requests
+  for( auto it = rqstQit.begin(), endit = rqstQit.end(); it != endit; ) {
+    auto& [hart, queue] = *it;
 
-  // If the front request is a memory fence, set the hart memory fence flag and continue
-  if( op->getOp() == MemOp::MemOpFENCE ) {
-    if( hartOutstanding.find( hart ) != hartOutstanding.end() ) {
-      // wait for the outstanding ops to clear before processing any more memory requests
-      recordStat( MemCtrlStats::FencePending );
-      return false;
+    // A range of iterators indicating all queued entries for the hart, in order of insertion
+    auto& [begin, end]  = queue;
+
+    if( begin == end )
+      output->fatal( CALL_INFO, -1, "Internal Error: Empty memory request queue encountered\n" );
+
+    // The RevMemOp of the first queued request for this hart
+    const std::shared_ptr<RevMemOp>& op = begin->second;
+
+    // If the first request is a memory fence, wait for any outstanding requests on the same hart
+    if( op->getOp() == MemOp::MemOpFENCE ) {
+      if( hartOutstanding.find( hart ) != hartOutstanding.end() ) {
+        recordStat( MemCtrlStats::FencePending );
+        ++it;
+        continue;  // in this cycle, go to the next hart with queued requests
+      }
     } else {
-      rqstQ.pop();
-      return true;
+      // Determine if any Acquire/Release flags or atomic operations would prevent
+      // us from dispatching this request. If not, try sending a StandardMem request.
+      if( isPendingAMO( op ) || !buildStandardMemRqst( op ) ) {
+        ++it;
+        continue;  // in this cycle, go to the next hart with queued requests
+      }
     }
+
+    // A fence was satisfied with no outstanding requests, or a new request was sent
+
+    // Erase the first queue entry in the multimap and update the table's begin iterator
+    rqstQ.erase( begin++ );
+
+    // If this was the last entry of the multimap queue for hart, erase hart queue entry
+    if( begin == end )
+      rqstQit.erase( it++ );
+    else
+      ++it;
+
+    // Stop if we have reached the limit for the number of operations per cycle
+    if( ++memOpNum[MemOp::MemOpPERCYCLE] >= memOpMax[MemOp::MemOpPERCYCLE] )
+      break;
   }
-
-  // Determine if any Acquire/Release flags or atomic operations would prevent
-  // us from dispatching this request.
-  if( isPendingAMO( op ) )
-    return false;
-
-  // Try sending a StandardMem request; if successful, remove it and continue
-  if( buildStandardMemRqst( op ) ) {
-    rqstQ.pop();
-    return true;
-  }
-
-  // If we reach this point, then no requests can be dispatched at this time.
   return false;
 }
 
 // For a clock cycle, process queued memory requests until they block or the
 // maximum number of requests per cycle is reached.
 bool RevBasicMemCtrl::clockTick( Cycle_t cycle ) {
-  // Dequeue requests until they block or the maximum number of requests per cycle is reached
-  memOpNum[MemOp::MemOpPERCYCLE] = 0;
-  while( processNextRqst() && ++memOpNum[MemOp::MemOpPERCYCLE] < memOpMax[MemOp::MemOpPERCYCLE] )
-    ;
+  processNextRqst();
   return false;
 }
 

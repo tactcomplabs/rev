@@ -47,7 +47,7 @@ RevCore::RevCore(
 
   // Create the Hart Objects
   for( uint32_t i = 0; i < numHarts; i++ ) {
-    Harts.emplace_back( new RevHart( i, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } ) );
+    Harts.emplace_back( new RevHart( i + id * numHarts, LSQueue, [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } ) );
     ValidHarts.set( i, true );
   }
 
