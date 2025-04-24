@@ -424,6 +424,7 @@ private:
   EcallStatus ECALL_fchownat();               // 54, rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag)
   EcallStatus ECALL_fchown();                 // 55, rev_fchown(unsigned int fd, uid_t user, gid_t group)
   EcallStatus ECALL_openat();                 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
+  EcallStatus ECALL_open();                   // 1024, rev_open(const char  *filename, int flags)
   EcallStatus ECALL_close();                  // 57, rev_close(unsigned int fd)
   EcallStatus ECALL_vhangup();                // 58, rev_vhangup(void)
   EcallStatus ECALL_pipe2();                  // 59, rev_pipe2(int  *fildes, int flags)
