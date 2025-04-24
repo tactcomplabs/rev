@@ -643,7 +643,8 @@ EcallStatus RevCore::ECALL_open() {
 
   auto action   = [&] {
     // Do the openat on the host
-    std::string const full_path = std::filesystem::current_path().append(EcallState.string);
+    std::string const full_path =
+      std::filesystem::current_path().append(EcallState.string).string();
     auto fd  = open( full_path.c_str(), flags);
 
     // Add the file descriptor to this thread
