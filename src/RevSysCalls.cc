@@ -620,6 +620,42 @@ EcallStatus RevCore::ECALL_openat() {
   return EcallLoadAndParseString( pathname, action );
 }
 
+// 1024, int rev_open(const char *filename, int flags)
+EcallStatus RevCore::ECALL_open() {
+  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  if( EcallState.bytesRead == 0 ) {
+    output->verbose(
+      CALL_INFO, 2, 0, "ECALL: openat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
+    );
+  }
+  auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
+
+  // commented out to remove warnings
+  auto flags = RegFile->GetX<int>(RevReg::a1);
+
+  /*
+   * NOTE: this is currently only opening files in the current directory
+   *       because of some oddities in parsing the arguments & flags
+   *       but this will be fixed in the near future
+   */
+
+  /* Read the filename from memory one character at a time until we find '\0' */
+
+  auto action   = [&] {
+    // Do the openat on the host
+    std::string const full_path = std::filesystem::current_path().append(EcallState.string);
+    auto fd  = open( full_path.c_str(), flags);
+
+    // Add the file descriptor to this thread
+    Harts.at( HartToExecID )->Thread->AddFD( fd );
+
+    // openat returns the file descriptor of the opened file
+    Harts.at( HartToExecID )->RegFile->SetX( RevReg::a0, fd );
+  };
+
+  return EcallLoadAndParseString( pathname, action );
+}
+
 // 57, rev_close(unsigned int fd)
 EcallStatus RevCore::ECALL_close() {
   output->verbose(
