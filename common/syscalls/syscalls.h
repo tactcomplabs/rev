@@ -656,6 +656,7 @@ REV_SYSCALL(  440, int rev_process_madvise(int pidfd, const struct iovec *vec, s
 
 REV_SYSCALL(  500, int rev_cpuinfo(struct rev_cpuinfo *info) );
 REV_SYSCALL(  501, int rev_perf_stats(struct rev_stats *stats) );
+REV_SYSCALL(  1024, int rev_open(const char *filename, int flags ) );
 
 // ==================== REV PTHREADS
 typedef unsigned long int rev_pthread_t;
