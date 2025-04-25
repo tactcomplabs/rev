@@ -2,8 +2,6 @@
 
 ![rev](documentation/imgs/rev_logo.png)
 
-## NOTICE: REV HAS MIGRATED THE PRIMARY BRANCH FROM `MASTER` TO `MAIN` ON FEBRUARY 05, 2024
-
 ## Getting Started
 
 The Rev SST component is designed to provide cycle-based simulation

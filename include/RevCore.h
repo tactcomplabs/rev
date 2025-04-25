@@ -424,7 +424,6 @@ private:
   EcallStatus ECALL_fchownat();               // 54, rev_fchownat(int dfd, const char  *filename, uid_t user, gid_t group, int flag)
   EcallStatus ECALL_fchown();                 // 55, rev_fchown(unsigned int fd, uid_t user, gid_t group)
   EcallStatus ECALL_openat();                 // 56, rev_openat(int dfd, const char  *filename, int flags, umode_t mode)
-  EcallStatus ECALL_open();                   // 1024, rev_open(const char  *filename, int flags)
   EcallStatus ECALL_close();                  // 57, rev_close(unsigned int fd)
   EcallStatus ECALL_vhangup();                // 58, rev_vhangup(void)
   EcallStatus ECALL_pipe2();                  // 59, rev_pipe2(int  *fildes, int flags)
@@ -689,6 +688,9 @@ private:
   EcallStatus ECALL_pthread_create();         // 1000, rev_pthread_create(pthread_t *thread, const pthread_attr_t  *attr, void  *(*start_routine)(void  *), void  *arg)
   EcallStatus ECALL_pthread_join();           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit();           // 1002, rev_pthread_exit(void* retval);
+
+  // =============== REV system call functions
+  EcallStatus ECALL_open();                   // 1024, rev_open(const char  *filename, int flags)
 
   EcallStatus ECALL_dump_mem_range();         // 9000, dump_mem_range(uint64_t addr, uint64_t size)
   EcallStatus ECALL_dump_mem_range_to_file(); // 9001, dump_mem_range_to_file(const unsigned char* outputFile, uint64_t addr, uint64_t size)

@@ -630,14 +630,7 @@ EcallStatus RevCore::ECALL_open() {
   }
   auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
 
-  // commented out to remove warnings
   auto flags = RegFile->GetX<int>(RevReg::a1);
-
-  /*
-   * NOTE: this is currently only opening files in the current directory
-   *       because of some oddities in parsing the arguments & flags
-   *       but this will be fixed in the near future
-   */
 
   /* Read the filename from memory one character at a time until we find '\0' */
 
