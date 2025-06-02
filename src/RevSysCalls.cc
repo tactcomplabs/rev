@@ -3782,6 +3782,7 @@ decltype(RevCore::Ecalls) RevCore::Ecalls = {
     { 501, &RevCore::ECALL_perf_stats },                //  rev_cpuinfo(struct rev_perf_stats *stats)
     { 1000, &RevCore::ECALL_pthread_create },           //
     { 1001, &RevCore::ECALL_pthread_join },             //
+    { 1024, &RevCore::ECALL_open },                     //
     { 9000, &RevCore::ECALL_dump_mem_range },           // rev_dump_mem_range(uint64_t addr, uint64_t size)
     { 9001, &RevCore::ECALL_dump_mem_range_to_file },   // rev_dump_mem_range_to_file(const unsigned char* outputFile, uint64_t addr, uint64_t size)
     { 9002, &RevCore::ECALL_dump_stack },               // rev_dump_stack()
