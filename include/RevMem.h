@@ -64,6 +64,9 @@ public:
   RevMem( const RevMem& )            = delete;
   RevMem& operator=( const RevMem& ) = delete;
 
+  /// RevMem: Force direct access of UpDown physical memory locations
+  void UpDownMemoryHolePunch();
+
   /* Virtual Memory Blocks  */
   class MemSegment {
   public:
@@ -411,7 +414,7 @@ private:
 
   std::vector<uint64_t>                                     FutureRes{};  ///< RevMem: future operation reservations
   std::unordered_map<uint32_t, std::pair<uint64_t, size_t>> LRSC{};       ///< RevMem: load reserve/store conditional set
-};                                                                        // class RevMem
+};  // class RevMem
 
 }  // namespace SST::RevCPU
 

@@ -1,7 +1,7 @@
 //
 // _SYSCALLS_H_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -678,6 +678,10 @@ REV_SYSCALL( 9007, void dump_thread_mem_to_file( const char* outputFile ) );
 
 // clang-format on
 
+// ================== REV Customizations DO NOT MERGE INTO MAIN BRANCH!
+
+REV_SYSCALL( 9101, int rev_dump_mem( void* vaddr, uint64_t size, const char* filename ) );
+
 // ==================== REV PRINT UTILITIES
 
 #ifdef __cplusplus
@@ -689,10 +693,28 @@ __attribute__( ( naked ) ) static int rev_fast_printf( const char* format, Ts...
   asm( " li a7, 9110; ecall; ret" );
 }
 
+template<typename... Ts>
+__attribute__( ( naked ) ) static int rev_fast_print( const char* format, Ts... args ) {
+  asm( " li a7, 9111; ecall; ret" );
+}
+
+template<typename... Ts>
+__attribute__( ( naked ) ) static int rev_udrt_print( const char* format, Ts... args ) {
+  asm( " li a7, 9112; ecall; ret" );
+}
+
 #else  // __cplusplus
 
 __attribute__( ( naked ) ) static int rev_fast_printf() {
   asm( " li a7, 9110; ecall; ret" );
+}
+
+__attribute__( ( naked ) ) static int rev_fast_print() {
+  asm( " li a7, 9111; ecall; ret" );
+}
+
+__attribute__( ( naked ) ) static int rev_udrt_print() {
+  asm( " li a7, 9112; ecall; ret" );
 }
 
 #endif  // __cplusplus

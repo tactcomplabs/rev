@@ -91,6 +91,7 @@ public:
     { "numCores",        "Number of RISC-V cores to instantiate",        "1" },
     { "numHarts",        "Number of harts (per core) to instantiate",    "1" },
     { "memSize",         "Main memory size in bytes",                    "1073741824" },
+    { "heapBuffer",      "Additional spacing for heap",                  "0"},
     { "startAddr",       "Starting PC of the target core",               "core:0x80000000" },
     { "startSymbol",     "Starting symbol name of the target core",      "core:symbol" },
     { "machine",         "RISC-V machine model of the target core",      "core:G" },

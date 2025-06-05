@@ -476,8 +476,7 @@ RevInst RevCore::DecodeCIInst( uint32_t Inst, uint32_t Entry ) const {
   //if c.addi, expands to addi %rd, %rd, $imm so set rs1 to rd -or-
   // c.slli, expands to slli %rd %rd $imm -or -
   // c.addiw. expands to addiw %rd %rd $imm
-  if( ( 0b01 == CompInst.opcode && 0b000 == CompInst.funct3 ) ||
-      ( 0b10 == CompInst.opcode && 0b000 == CompInst.funct3 ) ||
+  if( ( 0b01 == CompInst.opcode && 0b000 == CompInst.funct3 ) || ( 0b10 == CompInst.opcode && 0b000 == CompInst.funct3 ) ||
       ( 0b01 == CompInst.opcode && 0b001 == CompInst.funct3 ) ) {
     CompInst.rs1 = CompInst.rd;
   }
@@ -1536,7 +1535,8 @@ bool RevCore::DependencyCheck( uint32_t HartID, const RevInst* I ) const {
   // For ECALL, check for any outstanding dependencies on a0-a7
   if( I->opcode == 0b1110011 && I->imm == 0 && I->funct3 == 0 && I->rd == 0 && I->rs1 == 0 ) {
     for( RevReg reg : { RevReg::a7, RevReg::a0, RevReg::a1, RevReg::a2, RevReg::a3, RevReg::a4, RevReg::a5, RevReg::a6 } ) {
-      if( LSQCheck( HartToDecodeID, RegFile, safe_static_cast<uint16_t>( reg ), RevRegClass::RegGPR ) || ScoreboardCheck( RegFile, uint16_t( reg ), RevRegClass::RegGPR ) ) {
+      if( LSQCheck( HartToDecodeID, RegFile, safe_static_cast<uint16_t>( reg ), RevRegClass::RegGPR ) ||
+          ScoreboardCheck( RegFile, uint16_t( reg ), RevRegClass::RegGPR ) ) {
         return true;
       }
     }
@@ -1808,7 +1808,9 @@ bool RevCore::ClockTick( SST::Cycle_t currentCycle ) {
       RegFile->IncrementInstRet();
 
       // Only clear the dependency if there is no outstanding load
-      if( ( RegFile->GetLSQueue()->count( LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID ) ) ) == 0 ) {
+      if( ( RegFile->GetLSQueue()->count(
+            LSQHash( Pipeline.front().second.rd, InstTable[Pipeline.front().second.entry].rdClass, HartID )
+          ) ) == 0 ) {
         DependencyClear( HartID, &( Pipeline.front().second ) );
       }
       Pipeline.pop_front();
@@ -1980,6 +1982,9 @@ bool RevCore::ExecEcall() {
   if( completed ) {
     Harts[HartToDecodeID]->GetEcallState().clear();
     RegFile->SetSCAUSE( RevExceptionCause::NONE );
+  } else {
+    // Avoid recapturing register reads every cycle ecall is reissued
+    RegFile->SetTracer( nullptr );
   }
 
   return true;

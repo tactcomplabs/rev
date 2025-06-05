@@ -130,6 +130,14 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
       output.verbose( CALL_INFO, 1, 0, "Warning: memory faults cannot be enabled with memHierarchy support\n" );
   }
 
+//
+// punch holes for UD memory mapping
+// TODO: rt-malloc system call should do this for us?
+//
+#if 1
+  Mem->UpDownMemoryHolePunch();
+#endif
+
   // Set TLB Size
   auto tlbSize = params.find<uint32_t>( "tlbSize", 512 );
   Mem->SetTLBSize( tlbSize );
@@ -139,7 +147,8 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
   Mem->SetMaxHeapSize( maxHeapSize );
 
   // Load the binary into memory
-  Loader = std::make_unique<RevLoader>( Exe, Opts->GetArgv(), Mem.get(), &output );
+  const uint64_t heapBuffer = params.find<unsigned long>( "heapBuffer", 0 );
+  Loader                    = std::make_unique<RevLoader>( Exe, Opts->GetArgv(), Mem.get(), &output, heapBuffer );
 
   // Create the processor objects
   Procs.reserve( Procs.size() + numCores );

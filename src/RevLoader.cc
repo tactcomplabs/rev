@@ -277,7 +277,7 @@ bool RevLoader::LoadElf32( char* membuf, size_t sz ) {
   }
 
   // Initialize the heap
-  mem->InitHeap( StaticDataEnd );
+  mem->InitHeap( StaticDataEnd + heapBuffer );
 
   return true;
 }
@@ -432,7 +432,7 @@ bool RevLoader::LoadElf64( char* membuf, size_t sz ) {
   }
 
   // Initialize the heap
-  mem->InitHeap( StaticDataEnd );
+  mem->InitHeap( StaticDataEnd + heapBuffer );
 
   return true;
 }
