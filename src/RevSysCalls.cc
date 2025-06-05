@@ -625,7 +625,7 @@ EcallStatus RevCore::ECALL_open() {
   auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
   if( EcallState.bytesRead == 0 ) {
     output->verbose(
-      CALL_INFO, 2, 0, "ECALL: openat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
+      CALL_INFO, 2, 0, "ECALL: open called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
     );
   }
   auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
@@ -640,24 +640,17 @@ EcallStatus RevCore::ECALL_open() {
       std::filesystem::current_path().append(EcallState.string).string();
     auto fd  = open( full_path.c_str(), flags);
 
-    if(fd == -1) {
-       output->fatal(
-          CALL_INFO,
-          -1,
-          "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 " tried to close file descriptor %" PRIu32
-          " but did not have access to it\n",
-          id,
-          HartToExecID,
-          ActiveThreadID,
-          fd
-       );
-       return EcallStatus::ERROR;	    
+    if(fd != -1) {
+      // Add the file descriptor to this thread
+      Harts.at( HartToExecID )->Thread->AddFD( fd );
+    }
+    else {
+      output->verbose(
+        CALL_INFO, 2, 0, "ECALL: open called by thread %" PRIu32 " on hart %" PRIu32 "; file descriptor invalid (fd == -1)\n", ActiveThreadID, HartToExecID
+      );
     }
 
-    // Add the file descriptor to this thread
-    Harts.at( HartToExecID )->Thread->AddFD( fd );
-
-    // openat returns the file descriptor of the opened file
+    // open returns the file descriptor of the opened file
     Harts.at( HartToExecID )->RegFile->SetX( RevReg::a0, fd );
   };
 
