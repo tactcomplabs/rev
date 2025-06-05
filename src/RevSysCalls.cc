@@ -646,7 +646,7 @@ EcallStatus RevCore::ECALL_open() {
     }
     else {
       output->verbose(
-        CALL_INFO, 2, 0, "ECALL: open called by thread %" PRIu32 " on hart %" PRIu32 "; file descriptor invalid (fd == -1)\n", ActiveThreadID, HartToExecID
+        CALL_INFO, 2, 0, "ECALL: open called by thread %" PRIu32 " on hart %" PRIu32 " returned -1\n", ActiveThreadID, HartToExecID
       );
     }
 
