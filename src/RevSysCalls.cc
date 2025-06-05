@@ -635,10 +635,24 @@ EcallStatus RevCore::ECALL_open() {
   /* Read the filename from memory one character at a time until we find '\0' */
 
   auto action   = [&] {
-    // Do the openat on the host
+    // Do the open on the host
     std::string const full_path =
       std::filesystem::current_path().append(EcallState.string).string();
     auto fd  = open( full_path.c_str(), flags);
+
+    if(fd == -1) {
+       output->fatal(
+          CALL_INFO,
+          -1,
+          "Core %" PRIu32 "; Hart %" PRIu32 "; Thread %" PRIu32 " tried to close file descriptor %" PRIu32
+          " but did not have access to it\n",
+          id,
+          HartToExecID,
+          ActiveThreadID,
+          fd
+       );
+       return EcallStatus::ERROR;	    
+    }
 
     // Add the file descriptor to this thread
     Harts.at( HartToExecID )->Thread->AddFD( fd );
