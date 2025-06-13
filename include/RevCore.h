@@ -429,7 +429,7 @@ private:
   EcallStatus ECALL_pipe2();                  // 59, rev_pipe2(int  *fildes, int flags)
   EcallStatus ECALL_quotactl();               // 60, rev_quotactl(unsigned int cmd, const char  *special, qid_t id, void  *addr)
   EcallStatus ECALL_getdents64();             // 61, rev_getdents64(unsigned int fd, struct linux_dirent64  *dirent, unsigned int count)
-  EcallStatus ECALL_lseek();                  // 62, rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence)
+  EcallStatus ECALL_lseek();                  // 62, rev_lseek( int fd, off_t offset, int whence)
   EcallStatus ECALL_read();                   // 63, rev_read(unsigned int fd, char  *buf, size_t count)
   EcallStatus ECALL_write();                  // 64, rev_write(unsigned int fd, const char  *buf, size_t count)
   EcallStatus ECALL_readv();                  // 65, rev_readv(unsigned long fd, const struct iovec  *vec, unsigned long vlen)
@@ -689,6 +689,10 @@ private:
   EcallStatus ECALL_pthread_join();           // 1001, rev_pthread_join(pthread_t thread, void **retval);
   EcallStatus ECALL_pthread_exit();           // 1002, rev_pthread_exit(void* retval);
 
+  // =============== REV system calls starting at 1024 (riscv-pk)
+  EcallStatus ECALL_open();                   // 1024, rev_open(const char  *filename, int flags, /* int mode */ )
+
+  // =============== REV debug functions
   EcallStatus ECALL_dump_mem_range();         // 9000, dump_mem_range(uint64_t addr, uint64_t size)
   EcallStatus ECALL_dump_mem_range_to_file(); // 9001, dump_mem_range_to_file(const unsigned char* outputFile, uint64_t addr, uint64_t size)
   EcallStatus ECALL_dump_stack();             // 9002, dump_stack()
@@ -700,7 +704,6 @@ private:
   EcallStatus ECALL_dump_thread_mem();         // 9006, dump_thread_mem()
   EcallStatus ECALL_dump_thread_mem_to_file(); // 9007, dump_thread_mem_to_file(const unsigned char* outputFile)
 
-  // =============== REV print utilities
   EcallStatus ECALL_fast_printf();             // 9010, rev_fast_printf(const char *, ...)
 
   // clang-format on
@@ -710,6 +713,9 @@ private:
 
   /// RevCore: Execute the Ecall based on the code loaded in RegFile->GetSCAUSE()
   bool ExecEcall();
+
+  /// RevCore: Convert RV file status flags to Host output flags for use with system calls
+  int hostOFlags( int flags );
 
   /// RevCore: Get a pointer to the register file loaded into Hart w/ HartID
   RevRegFile* GetRegFile( uint32_t HartID ) const;

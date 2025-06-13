@@ -1,7 +1,7 @@
 //
 // _SYSCALLS_H_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -415,7 +415,7 @@ REV_SYSCALL(   58, int rev_vhangup(void) );
 REV_SYSCALL(   59, int rev_pipe2(int *fildes, int flags) );
 REV_SYSCALL(   60, int rev_quotactl(unsigned int cmd, const char *special, qid_t id, void *addr) );
 REV_SYSCALL(   61, ssize_t rev_getdents64(unsigned int fd, struct linux_dirent64 *dirent, unsigned int count) );
-REV_SYSCALL(   62, int rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t *result, unsigned int whence) );
+REV_SYSCALL(   62, off_t rev_lseek( int fd, off_t offset, int whence) );
 REV_SYSCALL(   63, ssize_t rev_read(unsigned int fd, char *buf, size_t count) );
 REV_SYSCALL(   64, ssize_t rev_write(unsigned int fd, const char *buf, size_t count) );
 REV_SYSCALL(   65, ssize_t rev_readv(unsigned long fd, const struct iovec *vec, unsigned long vlen) );
@@ -665,6 +665,10 @@ typedef unsigned long int rev_pthread_t;
 // void *restrict arg);
 REV_SYSCALL( 1000, int rev_pthread_create( rev_pthread_t* thread, void* attr, void* fn, void* arg ) );
 REV_SYSCALL( 1001, int rev_pthread_join( rev_pthread_t thread ) );
+
+// ===================== RV system calls beyond 1024 used in riscv-pk
+// --- ref: https://github.com/westerndigitalcorporation/RISC-V-Linux/blob/master/riscv-pk/pk/syscall.h
+REV_SYSCALL(  1024, int rev_open( const char *filename, int flags, int mode ) );
 
 // ==================== REV MEMDUMP
 REV_SYSCALL( 9000, void dump_mem_range( uint64_t addr, uint64_t size ) );

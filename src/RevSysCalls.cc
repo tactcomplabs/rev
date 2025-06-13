@@ -4,6 +4,7 @@
 #include "RevSysCalls.h"
 #include <bitset>
 #include <filesystem>
+#include <sys/fcntl.h>
 #include <sys/xattr.h>
 
 namespace SST::RevCPU {
@@ -44,7 +45,8 @@ EcallStatus RevCore::EcallLoadAndParseString( uint64_t straddr, std::function<vo
         HartToExecID,
         MemOp::MemOpREAD,
         true,
-        [=]( const MemReq& req ) { this->MarkLoadComplete( req ); } };
+        [=]( const MemReq& req ) { this->MarkLoadComplete( req ); }
+      };
       LSQueue->insert( req.LSQHashPair() );
       mem->ReadVal( HartToExecID, straddr + EcallState.string.size(), EcallState.buf.data(), req, RevFlag::F_NONE );
       EcallState.bytesRead = 1;
@@ -620,6 +622,55 @@ EcallStatus RevCore::ECALL_openat() {
   return EcallLoadAndParseString( pathname, action );
 }
 
+// 1024, int rev_open(const char *filename, int flags, /* int mode */)
+EcallStatus RevCore::ECALL_open() {
+  auto& EcallState = Harts.at( HartToExecID )->GetEcallState();
+  if( EcallState.bytesRead == 0 ) {
+    output->verbose(
+      CALL_INFO, 2, 0, "ECALL: open called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
+    );
+  }
+  auto pathname = RegFile->GetX<uint64_t>( RevReg::a0 );
+  auto flags    = RegFile->GetX<int>( RevReg::a1 );
+  auto mode     = RegFile->GetX<int>( RevReg::a2 );  // ignore unless O_CREAT is set
+
+  /* Read the filename from memory one character at a time until we find '\0' */
+  auto action   = [&] {
+    flags                       = hostOFlags( flags );
+    std::string const full_path = std::filesystem::current_path().append( EcallState.string ).string();
+    int               fd;
+    if( ( flags & O_CREAT ) != 0 ) {
+      output->verbose( CALL_INFO, 2, 0, "open( %s, 0x%" PRIx32 ", 0%o)\n", full_path.c_str(), flags, mode );
+      fd = open( full_path.c_str(), flags, mode );
+    } else {
+      output->verbose( CALL_INFO, 2, 0, "open( %s, 0x%" PRIx32 ")\n", full_path.c_str(), flags );
+      fd = open( full_path.c_str(), flags );
+    }
+
+    if( fd != -1 ) {
+      // Add the file descriptor to this thread
+      Harts.at( HartToExecID )->Thread->AddFD( fd );
+    } else {
+      output->verbose(
+        CALL_INFO,
+        2,
+        0,
+        "ECALL: open called by thread %" PRIu32 " on hart %" PRIu32 " returned fd=%" PRId32 " errno=%" PRId32 " (%s)\n",
+        ActiveThreadID,
+        HartToExecID,
+        fd,
+        errno,
+        strerror( errno )
+      );
+    }
+
+    // open returns the file descriptor of the opened file
+    Harts.at( HartToExecID )->RegFile->SetX( RevReg::a0, fd );
+  };
+
+  return EcallLoadAndParseString( pathname, action );
+}
+
 // 57, rev_close(unsigned int fd)
 EcallStatus RevCore::ECALL_close() {
   output->verbose(
@@ -686,11 +737,17 @@ EcallStatus RevCore::ECALL_getdents64() {
   return EcallStatus::SUCCESS;
 }
 
-// 62, rev_llseek(unsigned int fd, unsigned long offset_high, unsigned long offset_low, loff_t  *result, unsigned int whence)
+// https://man7.org/linux/man-pages/man2/lseek.2.html
+// 62, off_t rev_lseek( int fd, off_t offset, int whence)
 EcallStatus RevCore::ECALL_lseek() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: lseek called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
+  auto fd     = RegFile->GetX<int>( RevReg::a0 );
+  auto offset = RegFile->GetX<off_t>( RevReg::a1 );
+  auto whence = RegFile->GetX<int>( RevReg::a2 );
+  auto off    = lseek( fd, offset, whence );
+  RegFile->SetX( RevReg::a0, off );
   return EcallStatus::SUCCESS;
 }
 
@@ -3752,6 +3809,7 @@ decltype(RevCore::Ecalls) RevCore::Ecalls = {
     { 501, &RevCore::ECALL_perf_stats },                //  rev_cpuinfo(struct rev_perf_stats *stats)
     { 1000, &RevCore::ECALL_pthread_create },           //
     { 1001, &RevCore::ECALL_pthread_join },             //
+    { 1024, &RevCore::ECALL_open },                     //  rev_open(const char *filename, int flags, int mode)
     { 9000, &RevCore::ECALL_dump_mem_range },           // rev_dump_mem_range(uint64_t addr, uint64_t size)
     { 9001, &RevCore::ECALL_dump_mem_range_to_file },   // rev_dump_mem_range_to_file(const unsigned char* outputFile, uint64_t addr, uint64_t size)
     { 9002, &RevCore::ECALL_dump_stack },               // rev_dump_stack()
@@ -3763,5 +3821,39 @@ decltype(RevCore::Ecalls) RevCore::Ecalls = {
     { 9110, &RevCore::ECALL_fast_printf },              // rev_fast_printf(const char *, ...)
 };
 // clang-format on
+
+/// Convert RV flags to local host flags for open* ECALLS.
+int RevCore::hostOFlags( int flags ) {
+  // This algorithm assumes there is only 1 alternative fixed mapping
+  //                  RV  MACOS   UBUNTU
+  // O_RDONLY        0x0    0x0      0x0
+  // O_WRONLY        0x1    0x1      0x1
+  // O_RDWR          0x2    0x2      0x2
+  // O_CREAT       0x200  0x200     0x40*
+  // O_EXCL        0x800  0x800     0x80*
+  // O_TRUNC       0x400  0x400    0x200*
+  // O_APPEND        0x8    0x8    0x400*
+
+  // Broadly assuming compatability here
+  if( O_CREAT == 0x200 )
+    return flags;
+
+  // mask for source bits that will be moved
+  int rvmask = O_CREAT | O_EXCL | O_TRUNC | O_APPEND;
+
+  // extract old values
+  int val    = ( flags & 0x200 ) ? O_CREAT : 0;
+  val |= ( flags & 0x800 ) ? O_EXCL : 0;
+  val |= ( flags & 0x400 ) ? O_TRUNC : 0;
+  val |= ( flags & 0x8 ) ? O_APPEND : 0;
+
+  // clear out old positions then write values to new positions.
+  int mask     = O_CREAT | O_EXCL | O_TRUNC | O_APPEND;
+  int newflags = flags & ~rvmask;
+  newflags     = ( newflags & ~mask ) | ( val & mask );
+
+  output->verbose( CALL_INFO, 1, 0, "0x%x -> 0x%x\n", flags, newflags );
+  return newflags;
+};
 
 }  // namespace SST::RevCPU
