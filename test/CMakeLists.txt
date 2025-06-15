@@ -1,6 +1,6 @@
 # RevCPU test/CMakeLists.txt
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -283,5 +283,10 @@ add_subdirectory(syscalls)
 add_subdirectory(threading)
 add_subdirectory(cxx)
 add_subdirectory(fenv)
+
+# Common test environment variables to support external test libraries.
+set_tests_properties(${TEST_LIST} PROPERTIES
+  ENVIRONMENT "REVHOME=${CMAKE_SOURCE_DIR}"
+)
 
 # EOF
