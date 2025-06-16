@@ -8,7 +8,7 @@
 #include <sys/xattr.h>
 
 #ifndef _REV_ECALL_OVERRIDE
-#define UNIMPLEMENTED() output->verbose( CALL_INFO, 0, 0, "Error: unimplemented ecall" )
+#define UNIMPLEMENTED() output->verbose( CALL_INFO, 0, 0, "Error: unimplemented ecall\n" )
 #else
 #define UNIMPLEMENTED()
 #endif
