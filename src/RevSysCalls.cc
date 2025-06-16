@@ -8,9 +8,9 @@
 #include <sys/xattr.h>
 
 #ifndef _REV_ECALL_OVERRIDE
-#define UNIMPLEMENTED_BEHAVIOR output->verbose( CALL_INFO, 0, 0, "error: unimplemented ecall" );
+#define UNIMPLEMENTED() output->verbose( CALL_INFO, 0, 0, "Error: unimplemented ecall\n" )
 #else
-#define UNIMPLEMENTED_BEHAVIOR
+#define UNIMPLEMENTED()
 #endif
 
 namespace SST::RevCPU {
@@ -68,7 +68,7 @@ EcallStatus RevCore::ECALL_io_setup() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_setup called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -77,7 +77,7 @@ EcallStatus RevCore::ECALL_io_destroy() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_destroy called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -86,7 +86,7 @@ EcallStatus RevCore::ECALL_io_submit() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_submit called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -95,7 +95,7 @@ EcallStatus RevCore::ECALL_io_cancel() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_cancel called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -104,7 +104,7 @@ EcallStatus RevCore::ECALL_io_getevents() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_getevents called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -164,7 +164,7 @@ EcallStatus RevCore::ECALL_setxattr() {
     return EcallLoadAndParseString(name, action);
   }
 #else
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 #endif
 }
@@ -174,7 +174,7 @@ EcallStatus RevCore::ECALL_lsetxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: lsetxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -183,7 +183,7 @@ EcallStatus RevCore::ECALL_fsetxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fsetxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -192,7 +192,7 @@ EcallStatus RevCore::ECALL_getxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -201,7 +201,7 @@ EcallStatus RevCore::ECALL_lgetxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: lgetxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -210,7 +210,7 @@ EcallStatus RevCore::ECALL_fgetxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fgetxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -219,7 +219,7 @@ EcallStatus RevCore::ECALL_listxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: listxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -228,7 +228,7 @@ EcallStatus RevCore::ECALL_llistxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: llistxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -237,7 +237,7 @@ EcallStatus RevCore::ECALL_flistxattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: flistxattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -246,7 +246,7 @@ EcallStatus RevCore::ECALL_removexattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: removexattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -255,7 +255,7 @@ EcallStatus RevCore::ECALL_lremovexattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: lremovexattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -264,7 +264,7 @@ EcallStatus RevCore::ECALL_fremovexattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fremovexattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -287,7 +287,7 @@ EcallStatus RevCore::ECALL_lookup_dcookie() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: lookup_dcookie called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -296,7 +296,7 @@ EcallStatus RevCore::ECALL_eventfd2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: eventfd2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -305,7 +305,7 @@ EcallStatus RevCore::ECALL_epoll_create1() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: epoll_create1 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -314,7 +314,7 @@ EcallStatus RevCore::ECALL_epoll_ctl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: epoll_ctl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -323,13 +323,13 @@ EcallStatus RevCore::ECALL_epoll_pwait() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: epoll_pwait called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
 // 23, rev_dup(unsigned int fildes)
 EcallStatus RevCore::ECALL_dup() {
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   output->verbose( CALL_INFO, 2, 0, "ECALL: dup called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID );
   return EcallStatus::SUCCESS;
 }
@@ -339,7 +339,7 @@ EcallStatus RevCore::ECALL_dup3() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: dup3 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -348,7 +348,7 @@ EcallStatus RevCore::ECALL_fcntl64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fcntl64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -357,7 +357,7 @@ EcallStatus RevCore::ECALL_inotify_init1() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: inotify_init1 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -366,7 +366,7 @@ EcallStatus RevCore::ECALL_inotify_add_watch() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: inotify_add_watch called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -375,7 +375,7 @@ EcallStatus RevCore::ECALL_inotify_rm_watch() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: inotify_rm_watch called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -384,7 +384,7 @@ EcallStatus RevCore::ECALL_ioctl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: ioctl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -393,7 +393,7 @@ EcallStatus RevCore::ECALL_ioprio_set() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: ioprio_set called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -402,7 +402,7 @@ EcallStatus RevCore::ECALL_ioprio_get() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: ioprio_get called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -411,7 +411,7 @@ EcallStatus RevCore::ECALL_flock() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: flock called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -420,7 +420,7 @@ EcallStatus RevCore::ECALL_mknodat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mknodat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -451,7 +451,7 @@ EcallStatus RevCore::ECALL_unlinkat() {
     ActiveThreadID,
     HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -460,7 +460,7 @@ EcallStatus RevCore::ECALL_symlinkat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: symlinkat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -469,7 +469,7 @@ EcallStatus RevCore::ECALL_linkat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: linkat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -478,7 +478,7 @@ EcallStatus RevCore::ECALL_renameat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: renameat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -487,7 +487,7 @@ EcallStatus RevCore::ECALL_umount() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: umount called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -496,7 +496,7 @@ EcallStatus RevCore::ECALL_mount() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mount called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -505,7 +505,7 @@ EcallStatus RevCore::ECALL_pivot_root() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pivot_root called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -514,7 +514,7 @@ EcallStatus RevCore::ECALL_ni_syscall() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: ni_syscall called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -523,7 +523,7 @@ EcallStatus RevCore::ECALL_statfs64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: statfs64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -532,7 +532,7 @@ EcallStatus RevCore::ECALL_fstatfs64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fstatfs64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -541,7 +541,7 @@ EcallStatus RevCore::ECALL_truncate64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: truncate64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -550,7 +550,7 @@ EcallStatus RevCore::ECALL_ftruncate64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: ftruncate64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -559,7 +559,7 @@ EcallStatus RevCore::ECALL_fallocate() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fallocate called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -568,7 +568,7 @@ EcallStatus RevCore::ECALL_faccessat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: faccessat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -594,7 +594,7 @@ EcallStatus RevCore::ECALL_fchdir() {
     ActiveThreadID,
     HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -603,7 +603,7 @@ EcallStatus RevCore::ECALL_chroot() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: chroot called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -612,7 +612,7 @@ EcallStatus RevCore::ECALL_fchmod() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fchmod called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -621,7 +621,7 @@ EcallStatus RevCore::ECALL_fchmodat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fchmodat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -630,7 +630,7 @@ EcallStatus RevCore::ECALL_fchownat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fchownat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -639,7 +639,7 @@ EcallStatus RevCore::ECALL_fchown() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fchown called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -769,7 +769,7 @@ EcallStatus RevCore::ECALL_vhangup() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: vhangup called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -778,7 +778,7 @@ EcallStatus RevCore::ECALL_pipe2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pipe2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -787,7 +787,7 @@ EcallStatus RevCore::ECALL_quotactl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: quotactl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -796,7 +796,7 @@ EcallStatus RevCore::ECALL_getdents64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getdents64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -926,7 +926,7 @@ EcallStatus RevCore::ECALL_readv() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: readv called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -935,7 +935,7 @@ EcallStatus RevCore::ECALL_writev() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: writev called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -944,7 +944,7 @@ EcallStatus RevCore::ECALL_pread64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pread64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -953,7 +953,7 @@ EcallStatus RevCore::ECALL_pwrite64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pwrite64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -962,7 +962,7 @@ EcallStatus RevCore::ECALL_preadv() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: preadv called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -971,7 +971,7 @@ EcallStatus RevCore::ECALL_pwritev() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pwritev called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -980,7 +980,7 @@ EcallStatus RevCore::ECALL_sendfile64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sendfile64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -989,7 +989,7 @@ EcallStatus RevCore::ECALL_pselect6_time32() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pselect6_time32 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -998,7 +998,7 @@ EcallStatus RevCore::ECALL_ppoll_time32() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: ppoll_time32 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1007,7 +1007,7 @@ EcallStatus RevCore::ECALL_signalfd4() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: signalfd4 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1016,7 +1016,7 @@ EcallStatus RevCore::ECALL_vmsplice() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: vmsplice called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1025,14 +1025,14 @@ EcallStatus RevCore::ECALL_splice() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: splice called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
 // 77, rev_tee(int fdin, int fdout, size_t len, unsigned int flags)
 EcallStatus RevCore::ECALL_tee() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: tee called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1041,7 +1041,7 @@ EcallStatus RevCore::ECALL_readlinkat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: readlinkat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1050,7 +1050,7 @@ EcallStatus RevCore::ECALL_newfstatat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: newfstatat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1059,7 +1059,7 @@ EcallStatus RevCore::ECALL_newfstat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: newfstat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1068,7 +1068,7 @@ EcallStatus RevCore::ECALL_sync() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sync called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1077,7 +1077,7 @@ EcallStatus RevCore::ECALL_fsync() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fsync called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1086,7 +1086,7 @@ EcallStatus RevCore::ECALL_fdatasync() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fdatasync called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1095,7 +1095,7 @@ EcallStatus RevCore::ECALL_sync_file_range2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sync_file_range2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1104,7 +1104,7 @@ EcallStatus RevCore::ECALL_sync_file_range() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sync_file_range called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1113,7 +1113,7 @@ EcallStatus RevCore::ECALL_timerfd_create() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timerfd_create called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1122,7 +1122,7 @@ EcallStatus RevCore::ECALL_timerfd_settime() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timerfd_settime called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1131,7 +1131,7 @@ EcallStatus RevCore::ECALL_timerfd_gettime() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timerfd_gettime called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1140,7 +1140,7 @@ EcallStatus RevCore::ECALL_utimensat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: utimensat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1149,7 +1149,7 @@ EcallStatus RevCore::ECALL_acct() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: acct called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1158,7 +1158,7 @@ EcallStatus RevCore::ECALL_capget() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: capget called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1167,7 +1167,7 @@ EcallStatus RevCore::ECALL_capset() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: capset called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1176,7 +1176,7 @@ EcallStatus RevCore::ECALL_personality() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: personality called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1214,7 +1214,7 @@ EcallStatus RevCore::ECALL_exit_group() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: exit_group called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1223,7 +1223,7 @@ EcallStatus RevCore::ECALL_waitid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: waitid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1232,7 +1232,7 @@ EcallStatus RevCore::ECALL_set_tid_address() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: set_tid_address called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1241,7 +1241,7 @@ EcallStatus RevCore::ECALL_unshare() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: unshare called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1250,7 +1250,7 @@ EcallStatus RevCore::ECALL_futex() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: futex called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1259,7 +1259,7 @@ EcallStatus RevCore::ECALL_set_robust_list() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: set_robust_list called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1268,7 +1268,7 @@ EcallStatus RevCore::ECALL_get_robust_list() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: get_robust_list called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1277,7 +1277,7 @@ EcallStatus RevCore::ECALL_nanosleep() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: nanosleep called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1286,7 +1286,7 @@ EcallStatus RevCore::ECALL_getitimer() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getitimer called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1295,7 +1295,7 @@ EcallStatus RevCore::ECALL_setitimer() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setitimer called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1304,7 +1304,7 @@ EcallStatus RevCore::ECALL_kexec_load() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: kexec_load called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1313,7 +1313,7 @@ EcallStatus RevCore::ECALL_init_module() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: init_module called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1322,7 +1322,7 @@ EcallStatus RevCore::ECALL_delete_module() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: delete_module called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1331,7 +1331,7 @@ EcallStatus RevCore::ECALL_timer_create() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timer_create called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1340,7 +1340,7 @@ EcallStatus RevCore::ECALL_timer_gettime() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timer_gettime called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1349,7 +1349,7 @@ EcallStatus RevCore::ECALL_timer_getoverrun() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timer_getoverrun called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1358,7 +1358,7 @@ EcallStatus RevCore::ECALL_timer_settime() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timer_settime called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1367,7 +1367,7 @@ EcallStatus RevCore::ECALL_timer_delete() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: timer_delete called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1376,7 +1376,7 @@ EcallStatus RevCore::ECALL_clock_settime() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: clock_settime called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1405,7 +1405,7 @@ EcallStatus RevCore::ECALL_clock_getres() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: clock_getres called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1414,7 +1414,7 @@ EcallStatus RevCore::ECALL_clock_nanosleep() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: clock_nanosleep called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1423,7 +1423,7 @@ EcallStatus RevCore::ECALL_syslog() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: syslog called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1432,7 +1432,7 @@ EcallStatus RevCore::ECALL_ptrace() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: ptrace called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1441,7 +1441,7 @@ EcallStatus RevCore::ECALL_sched_setparam() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_setparam called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1450,7 +1450,7 @@ EcallStatus RevCore::ECALL_sched_setscheduler() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_setscheduler called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1459,7 +1459,7 @@ EcallStatus RevCore::ECALL_sched_getscheduler() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_getscheduler called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1468,7 +1468,7 @@ EcallStatus RevCore::ECALL_sched_getparam() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_getparam called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1477,7 +1477,7 @@ EcallStatus RevCore::ECALL_sched_setaffinity() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_setaffinity called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1486,7 +1486,7 @@ EcallStatus RevCore::ECALL_sched_getaffinity() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_getaffinity called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1495,7 +1495,7 @@ EcallStatus RevCore::ECALL_sched_yield() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_yield called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1509,7 +1509,7 @@ EcallStatus RevCore::ECALL_sched_get_priority_max() {
     ActiveThreadID,
     HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1523,7 +1523,7 @@ EcallStatus RevCore::ECALL_sched_get_priority_min() {
     ActiveThreadID,
     HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1532,7 +1532,7 @@ EcallStatus RevCore::ECALL_sched_rr_get_interval() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_rr_get_interval called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1541,7 +1541,7 @@ EcallStatus RevCore::ECALL_restart_syscall() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: restart_syscall called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1550,7 +1550,7 @@ EcallStatus RevCore::ECALL_kill() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: kill called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1559,7 +1559,7 @@ EcallStatus RevCore::ECALL_tkill() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: tkill called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1568,7 +1568,7 @@ EcallStatus RevCore::ECALL_tgkill() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: tgkill called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1577,7 +1577,7 @@ EcallStatus RevCore::ECALL_sigaltstack() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sigaltstack called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1586,7 +1586,7 @@ EcallStatus RevCore::ECALL_rt_sigsuspend() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: rt_sigsuspend called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1595,7 +1595,7 @@ EcallStatus RevCore::ECALL_rt_sigaction() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: rt_sigaction called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1604,7 +1604,7 @@ EcallStatus RevCore::ECALL_rt_sigprocmask() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: rt_sigprocmask called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1613,7 +1613,7 @@ EcallStatus RevCore::ECALL_rt_sigpending() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: rt_sigpending called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1627,7 +1627,7 @@ EcallStatus RevCore::ECALL_rt_sigtimedwait_time32() {
     ActiveThreadID,
     HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1636,7 +1636,7 @@ EcallStatus RevCore::ECALL_rt_sigqueueinfo() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: rt_sigqueueinfo called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1645,7 +1645,7 @@ EcallStatus RevCore::ECALL_setpriority() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setpriority called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1654,7 +1654,7 @@ EcallStatus RevCore::ECALL_getpriority() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getpriority called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1663,7 +1663,7 @@ EcallStatus RevCore::ECALL_reboot() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: reboot called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1672,7 +1672,7 @@ EcallStatus RevCore::ECALL_setregid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setregid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1681,7 +1681,7 @@ EcallStatus RevCore::ECALL_setgid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setgid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1690,7 +1690,7 @@ EcallStatus RevCore::ECALL_setreuid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setreuid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1699,7 +1699,7 @@ EcallStatus RevCore::ECALL_setuid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setuid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1708,7 +1708,7 @@ EcallStatus RevCore::ECALL_setresuid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setresuid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1717,7 +1717,7 @@ EcallStatus RevCore::ECALL_getresuid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getresuid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1726,7 +1726,7 @@ EcallStatus RevCore::ECALL_setresgid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setresgid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1735,7 +1735,7 @@ EcallStatus RevCore::ECALL_getresgid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getresgid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1744,7 +1744,7 @@ EcallStatus RevCore::ECALL_setfsuid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setfsuid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1753,7 +1753,7 @@ EcallStatus RevCore::ECALL_setfsgid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setfsgid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1762,7 +1762,7 @@ EcallStatus RevCore::ECALL_times() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: times called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1771,7 +1771,7 @@ EcallStatus RevCore::ECALL_setpgid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setpgid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1780,7 +1780,7 @@ EcallStatus RevCore::ECALL_getpgid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getpgid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1789,7 +1789,7 @@ EcallStatus RevCore::ECALL_getsid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getsid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1798,7 +1798,7 @@ EcallStatus RevCore::ECALL_setsid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setsid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1807,7 +1807,7 @@ EcallStatus RevCore::ECALL_getgroups() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getgroups called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1816,7 +1816,7 @@ EcallStatus RevCore::ECALL_setgroups() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setgroups called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1825,7 +1825,7 @@ EcallStatus RevCore::ECALL_newuname() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: newuname called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1834,7 +1834,7 @@ EcallStatus RevCore::ECALL_sethostname() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sethostname called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1843,7 +1843,7 @@ EcallStatus RevCore::ECALL_setdomainname() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setdomainname called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1852,7 +1852,7 @@ EcallStatus RevCore::ECALL_getrlimit() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getrlimit called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1861,7 +1861,7 @@ EcallStatus RevCore::ECALL_setrlimit() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setrlimit called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1870,7 +1870,7 @@ EcallStatus RevCore::ECALL_getrusage() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getrusage called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1879,7 +1879,7 @@ EcallStatus RevCore::ECALL_umask() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: umask called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1888,7 +1888,7 @@ EcallStatus RevCore::ECALL_prctl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: prctl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1897,7 +1897,7 @@ EcallStatus RevCore::ECALL_getcpu() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getcpu called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1906,7 +1906,7 @@ EcallStatus RevCore::ECALL_gettimeofday() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: gettimeofday called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1915,7 +1915,7 @@ EcallStatus RevCore::ECALL_settimeofday() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: settimeofday called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1924,14 +1924,14 @@ EcallStatus RevCore::ECALL_adjtimex() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: adjtimex called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
 // 172, rev_getpid(void)
 EcallStatus RevCore::ECALL_getpid() {
   output->verbose( CALL_INFO, 2, 0, "ECALL: getpid called (Rev only supports a single process)\n" );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1944,7 +1944,7 @@ EcallStatus RevCore::ECALL_getppid() {
 
     "ECALL: getppid called (Rev only supports a single process)\n"
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1959,7 +1959,7 @@ EcallStatus RevCore::ECALL_getuid() {
     ActiveThreadID,
     HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1968,7 +1968,7 @@ EcallStatus RevCore::ECALL_geteuid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: geteuid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1977,7 +1977,7 @@ EcallStatus RevCore::ECALL_getgid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getgid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -1986,7 +1986,7 @@ EcallStatus RevCore::ECALL_getegid() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getegid called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2006,7 +2006,7 @@ EcallStatus RevCore::ECALL_sysinfo() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sysinfo called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2015,7 +2015,7 @@ EcallStatus RevCore::ECALL_mq_open() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mq_open called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2024,7 +2024,7 @@ EcallStatus RevCore::ECALL_mq_unlink() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mq_unlink called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2033,7 +2033,7 @@ EcallStatus RevCore::ECALL_mq_timedsend() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mq_timedsend called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2042,7 +2042,7 @@ EcallStatus RevCore::ECALL_mq_timedreceive() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mq_timedreceive called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2051,7 +2051,7 @@ EcallStatus RevCore::ECALL_mq_notify() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mq_notify called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2060,7 +2060,7 @@ EcallStatus RevCore::ECALL_mq_getsetattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mq_getsetattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2069,7 +2069,7 @@ EcallStatus RevCore::ECALL_msgget() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: msgget called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2078,7 +2078,7 @@ EcallStatus RevCore::ECALL_msgctl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: msgctl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2087,7 +2087,7 @@ EcallStatus RevCore::ECALL_msgrcv() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: msgrcv called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2096,7 +2096,7 @@ EcallStatus RevCore::ECALL_msgsnd() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: msgsnd called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2105,7 +2105,7 @@ EcallStatus RevCore::ECALL_semget() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: semget called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2114,7 +2114,7 @@ EcallStatus RevCore::ECALL_semctl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: semctl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2123,7 +2123,7 @@ EcallStatus RevCore::ECALL_semtimedop() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: semtimedop called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2132,7 +2132,7 @@ EcallStatus RevCore::ECALL_semop() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: semop called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2141,7 +2141,7 @@ EcallStatus RevCore::ECALL_shmget() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: shmget called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2150,7 +2150,7 @@ EcallStatus RevCore::ECALL_shmctl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: shmctl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2159,7 +2159,7 @@ EcallStatus RevCore::ECALL_shmat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: shmat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2168,7 +2168,7 @@ EcallStatus RevCore::ECALL_shmdt() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: shmdt called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2177,7 +2177,7 @@ EcallStatus RevCore::ECALL_socket() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: socket called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2186,7 +2186,7 @@ EcallStatus RevCore::ECALL_socketpair() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: socketpair called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2195,7 +2195,7 @@ EcallStatus RevCore::ECALL_bind() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: bind called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2204,7 +2204,7 @@ EcallStatus RevCore::ECALL_listen() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: listen called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2213,7 +2213,7 @@ EcallStatus RevCore::ECALL_accept() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: accept called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2222,7 +2222,7 @@ EcallStatus RevCore::ECALL_connect() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: connect called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2231,7 +2231,7 @@ EcallStatus RevCore::ECALL_getsockname() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getsockname called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2240,7 +2240,7 @@ EcallStatus RevCore::ECALL_getpeername() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getpeername called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2249,7 +2249,7 @@ EcallStatus RevCore::ECALL_sendto() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sendto called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2258,7 +2258,7 @@ EcallStatus RevCore::ECALL_recvfrom() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: recvfrom called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2267,7 +2267,7 @@ EcallStatus RevCore::ECALL_setsockopt() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setsockopt called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2276,7 +2276,7 @@ EcallStatus RevCore::ECALL_getsockopt() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getsockopt called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2285,7 +2285,7 @@ EcallStatus RevCore::ECALL_shutdown() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: shutdown called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2294,7 +2294,7 @@ EcallStatus RevCore::ECALL_sendmsg() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sendmsg called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2303,7 +2303,7 @@ EcallStatus RevCore::ECALL_recvmsg() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: recvmsg called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2312,7 +2312,7 @@ EcallStatus RevCore::ECALL_readahead() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: readahead called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2363,7 +2363,7 @@ EcallStatus RevCore::ECALL_mremap() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mremap called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2372,7 +2372,7 @@ EcallStatus RevCore::ECALL_add_key() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: add_key called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2381,7 +2381,7 @@ EcallStatus RevCore::ECALL_request_key() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: request_key called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2390,7 +2390,7 @@ EcallStatus RevCore::ECALL_keyctl() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: keyctl called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2550,7 +2550,7 @@ EcallStatus RevCore::ECALL_execve() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: execve called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2587,7 +2587,7 @@ EcallStatus RevCore::ECALL_fadvise64_64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fadvise64_64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2596,7 +2596,7 @@ EcallStatus RevCore::ECALL_swapon() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: swapon called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2605,7 +2605,7 @@ EcallStatus RevCore::ECALL_swapoff() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: swapoff called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2614,7 +2614,7 @@ EcallStatus RevCore::ECALL_mprotect() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mprotect called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2623,7 +2623,7 @@ EcallStatus RevCore::ECALL_msync() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: msync called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2632,7 +2632,7 @@ EcallStatus RevCore::ECALL_mlock() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mlock called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2641,7 +2641,7 @@ EcallStatus RevCore::ECALL_munlock() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: munlock called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2650,7 +2650,7 @@ EcallStatus RevCore::ECALL_mlockall() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mlockall called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2659,7 +2659,7 @@ EcallStatus RevCore::ECALL_munlockall() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: munlockall called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2668,7 +2668,7 @@ EcallStatus RevCore::ECALL_mincore() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mincore called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2677,7 +2677,7 @@ EcallStatus RevCore::ECALL_madvise() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: madvise called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2686,7 +2686,7 @@ EcallStatus RevCore::ECALL_remap_file_pages() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: remap_file_pages called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2695,7 +2695,7 @@ EcallStatus RevCore::ECALL_mbind() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mbind called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2704,7 +2704,7 @@ EcallStatus RevCore::ECALL_get_mempolicy() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: get_mempolicy called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2713,7 +2713,7 @@ EcallStatus RevCore::ECALL_set_mempolicy() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: set_mempolicy called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2722,7 +2722,7 @@ EcallStatus RevCore::ECALL_migrate_pages() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: migrate_pages called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2731,7 +2731,7 @@ EcallStatus RevCore::ECALL_move_pages() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: move_pages called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2740,7 +2740,7 @@ EcallStatus RevCore::ECALL_rt_tgsigqueueinfo() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: rt_tgsigqueueinfo called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2749,7 +2749,7 @@ EcallStatus RevCore::ECALL_perf_event_open() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: perf_event_open called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2758,7 +2758,7 @@ EcallStatus RevCore::ECALL_accept4() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: accept4 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2767,7 +2767,7 @@ EcallStatus RevCore::ECALL_recvmmsg_time32() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: recvmmsg_time32 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2776,7 +2776,7 @@ EcallStatus RevCore::ECALL_wait4() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: wait4 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2785,7 +2785,7 @@ EcallStatus RevCore::ECALL_prlimit64() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: prlimit64 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2794,7 +2794,7 @@ EcallStatus RevCore::ECALL_fanotify_init() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fanotify_init called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2803,7 +2803,7 @@ EcallStatus RevCore::ECALL_fanotify_mark() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fanotify_mark called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2812,7 +2812,7 @@ EcallStatus RevCore::ECALL_name_to_handle_at() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: name_to_handle_at called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2821,7 +2821,7 @@ EcallStatus RevCore::ECALL_open_by_handle_at() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: open_by_handle_at called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2830,7 +2830,7 @@ EcallStatus RevCore::ECALL_clock_adjtime() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: clock_adjtime called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2839,7 +2839,7 @@ EcallStatus RevCore::ECALL_syncfs() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: syncfs called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2848,7 +2848,7 @@ EcallStatus RevCore::ECALL_setns() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: setns called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2857,7 +2857,7 @@ EcallStatus RevCore::ECALL_sendmmsg() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sendmmsg called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2866,7 +2866,7 @@ EcallStatus RevCore::ECALL_process_vm_readv() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: process_vm_readv called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2876,7 +2876,7 @@ EcallStatus RevCore::ECALL_process_vm_writev() {
     CALL_INFO, 2, 0, "ECALL: process_vm_writev called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
 
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2885,7 +2885,7 @@ EcallStatus RevCore::ECALL_kcmp() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: kcmp called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2894,7 +2894,7 @@ EcallStatus RevCore::ECALL_finit_module() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: finit_module called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2903,7 +2903,7 @@ EcallStatus RevCore::ECALL_sched_setattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_setattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2912,7 +2912,7 @@ EcallStatus RevCore::ECALL_sched_getattr() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: sched_getattr called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2921,7 +2921,7 @@ EcallStatus RevCore::ECALL_renameat2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: renameat2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2930,7 +2930,7 @@ EcallStatus RevCore::ECALL_seccomp() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: seccomp called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2939,7 +2939,7 @@ EcallStatus RevCore::ECALL_getrandom() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: getrandom called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2948,13 +2948,13 @@ EcallStatus RevCore::ECALL_memfd_create() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: memfd_create called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
 // 280, rev_bpf(int cmd, union bpf_attr *attr, unsigned int size)
 EcallStatus RevCore::ECALL_bpf() {
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   output->verbose( CALL_INFO, 2, 0, "ECALL: bpf called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID );
   return EcallStatus::SUCCESS;
 }
@@ -2964,7 +2964,7 @@ EcallStatus RevCore::ECALL_execveat() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: execveat called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2973,7 +2973,7 @@ EcallStatus RevCore::ECALL_userfaultfd() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: userfaultfd called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2982,7 +2982,7 @@ EcallStatus RevCore::ECALL_membarrier() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: membarrier called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -2991,7 +2991,7 @@ EcallStatus RevCore::ECALL_mlock2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: mlock2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3000,7 +3000,7 @@ EcallStatus RevCore::ECALL_copy_file_range() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: copy_file_range called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3009,7 +3009,7 @@ EcallStatus RevCore::ECALL_preadv2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: preadv2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3018,7 +3018,7 @@ EcallStatus RevCore::ECALL_pwritev2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pwritev2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3027,7 +3027,7 @@ EcallStatus RevCore::ECALL_pkey_mprotect() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pkey_mprotect called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3036,7 +3036,7 @@ EcallStatus RevCore::ECALL_pkey_alloc() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pkey_alloc called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3045,7 +3045,7 @@ EcallStatus RevCore::ECALL_pkey_free() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pkey_free called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3054,7 +3054,7 @@ EcallStatus RevCore::ECALL_statx() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: statx called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3063,7 +3063,7 @@ EcallStatus RevCore::ECALL_io_pgetevents() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_pgetevents called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3072,7 +3072,7 @@ EcallStatus RevCore::ECALL_rseq() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: rseq called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3081,7 +3081,7 @@ EcallStatus RevCore::ECALL_kexec_file_load() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: kexec_file_load called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3219,7 +3219,7 @@ EcallStatus RevCore::ECALL_pidfd_send_signal() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pidfd_send_signal called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3228,7 +3228,7 @@ EcallStatus RevCore::ECALL_io_uring_setup() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_uring_setup called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3237,7 +3237,7 @@ EcallStatus RevCore::ECALL_io_uring_enter() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_uring_enter called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3246,7 +3246,7 @@ EcallStatus RevCore::ECALL_io_uring_register() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: io_uring_register called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3255,7 +3255,7 @@ EcallStatus RevCore::ECALL_open_tree() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: open_tree called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3264,7 +3264,7 @@ EcallStatus RevCore::ECALL_move_mount() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: move_mount called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3273,7 +3273,7 @@ EcallStatus RevCore::ECALL_fsopen() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fsopen called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3282,7 +3282,7 @@ EcallStatus RevCore::ECALL_fsconfig() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fsconfig called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3291,7 +3291,7 @@ EcallStatus RevCore::ECALL_fsmount() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fsmount called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3300,7 +3300,7 @@ EcallStatus RevCore::ECALL_fspick() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: fspick called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3309,7 +3309,7 @@ EcallStatus RevCore::ECALL_pidfd_open() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pidfd_open called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3469,7 +3469,7 @@ EcallStatus RevCore::ECALL_close_range() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: close_range called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3478,7 +3478,7 @@ EcallStatus RevCore::ECALL_openat2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: openat2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3487,7 +3487,7 @@ EcallStatus RevCore::ECALL_pidfd_getfd() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: pidfd_getfd called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3496,7 +3496,7 @@ EcallStatus RevCore::ECALL_faccessat2() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: faccessat2 called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 
@@ -3505,7 +3505,7 @@ EcallStatus RevCore::ECALL_process_madvise() {
   output->verbose(
     CALL_INFO, 2, 0, "ECALL: process_madvise called by thread %" PRIu32 " on hart %" PRIu32 "\n", ActiveThreadID, HartToExecID
   );
-  UNIMPLEMENTED_BEHAVIOR;
+  UNIMPLEMENTED();
   return EcallStatus::SUCCESS;
 }
 

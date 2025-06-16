@@ -60,7 +60,7 @@ else()
 endif()
 
 set (passRegex "Simulation is complete")
-set (failRegex "[^_a-z][Ee][Rr][Rr][Oo][Rr][: ]")
+set (failRegex "[^A-Za-z_0-9][Ee][Rr][Rr][Oo][Rr][^A-Za-z_0-9]")
 
 #------- TESTS  ---------------
 message(STATUS "CTest Setup")
