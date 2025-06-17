@@ -29,7 +29,7 @@ CCOPTS += -I$(REVHOME)/test/include
 
 all: $(TESTNAME).exe
 
-# STATIC = -static
+STATIC = -static
 $(TESTNAME).exe: $(SOURCES)
 	$(CC) $(CCOPTS) -o $(TESTNAME).exe $^ $(STATIC)
 

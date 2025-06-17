@@ -1,5 +1,5 @@
 //
-// _revio_h_
+// _rev_printf_h_
 //
 // Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
@@ -8,18 +8,27 @@
 // See LICENSE in the top level directory for licensing details
 //
 
-#ifndef __REVIO_H__
+// Notes
+// - See $REVHOME/test/syscall/printf for example usage
+// - If the version of printf in stdio is called then rev
+//   should print an error message for an unimplemented ecall.
+
+#ifndef __REV_PRINTF_H__
 
 //clang-format off
+#include "rev-macros.h"
 #include "syscalls.h"
 #include <limits.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+// ensure we always use the rev version of printf
+#define printf( format, ... )       rev_printf( format, ##__VA_ARGS__ )
+#define sprintf( str, format, ... ) rev_sprintf( str, format, ##__VA_ARGS__ )
 //clang-format on
 
-#define SYS_write 64
+#define SYS_write                   64
 
 #undef strcmp
 
@@ -40,14 +49,14 @@ int putchar( int ch ) {
   static __thread char buf[64] __attribute__( ( aligned( 64 ) ) );
   static __thread int  buflen = 0;
 
+  int putcount                = buflen;
   buf[buflen++]               = ch;
-
   if( ch == '\n' || buflen == sizeof( buf ) ) {
     ssize_t bytes_written2 = rev_write( STDOUT_FILENO, buf, buflen );
     buflen                 = 0;
   }
 
-  return 0;
+  return putcount;
 }
 
 void printhex( uint64_t x ) {
@@ -235,7 +244,7 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
   }
 }
 
-int printf( const char* fmt, ... ) {
+int rev_printf( const char* fmt, ... ) {
   va_list ap;
   va_start( ap, fmt );
 
@@ -245,22 +254,14 @@ int printf( const char* fmt, ... ) {
   return 0;  // incorrect return value, but who cares, anyway?
 }
 
-int sprintf( char* str, const char* fmt, ... ) {
+int rev_sprintf( char* str, const char* fmt, ... ) {
   va_list ap;
   char*   str0 = str;
   va_start( ap, fmt );
-
-  void sprintf_putch( int ch, void** data ) {
-    char** pstr = (char**) data;
-    **pstr      = ch;
-    ( *pstr )++;
-  }
-
-  vprintfmt( sprintf_putch, (void**) &str, fmt, ap );
+  vprintfmt( (void*) putchar, (void**) &str, fmt, ap );
   *str = 0;
-
   va_end( ap );
   return str - str0;
 }
 
-#endif  // __REVIO_H__
+#endif  // __REV_PRINTF_H__
