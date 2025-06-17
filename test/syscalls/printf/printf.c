@@ -55,12 +55,13 @@ int main() {
   // sprintf
   char s128[128] = { 0 };
 
-  bytes          = sprintf( s128, "[sprintf] test %d", 1 );
-  // assert(bytes==16);
-  printf( "[printf] %s\n", s128 );
+  int sbytes     = sprintf( s128, "[sprintf] test %d\n", 1 );
+  printf( "sprinted %d bytes\n", sbytes );
+  assert( sbytes == 17 );
+  printf( "[printf] %s repeat %s\n", s128, s128 );
 
-  // sprintf(s128,"[sprintf] test 2");
-  // printf("[printf]%s\n",s128);
+  sprintf( s128, "[sprintf] test 2\n" );
+  printf( "[printf]%s\n", s128 );
 
   printf( "[printf]Completed normally\n" );
 

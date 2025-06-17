@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-// ensure we always use the rev version of printf
+// ensure we always use the rev version for these
 #define printf( format, ... )       rev_printf( format, ##__VA_ARGS__ )
 #define sprintf( str, format, ... ) rev_sprintf( str, format, ##__VA_ARGS__ )
 //clang-format on
@@ -52,17 +52,20 @@ void printstr( const char* s ) {
 
 #undef putchar
 
-int putchar( int ch ) {
+int rev_putchar( int ch, void** putdat ) {
   static __thread char buf[64] __attribute__( ( aligned( 64 ) ) );
-  static __thread int  buflen = 0;
-
-  int putcount                = buflen;
-  buf[buflen++]               = ch;
+  static __thread int  buflen   = 0;
+  int                  putcount = buflen;
+  buf[buflen]                   = ch;
+  if( putdat )
+    memcpy( *putdat + buflen, &ch, 1 );
+  buflen++;
   if( ch == '\n' || buflen == sizeof( buf ) ) {
-    ssize_t bytes_written2 = rev_write( STDOUT_FILENO, buf, buflen );
-    buflen                 = 0;
+    if( putdat == 0 )
+      rev_write( STDOUT_FILENO, buf, buflen );
+    buflen = 0;
+    dprintf( "rev_putchar wrote %d bytes. putdat = %x\n", putcount, putdat );
   }
-
   return putcount;
 }
 
@@ -128,7 +131,7 @@ static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const c
   char                 padc;
 
   int bytes = 0;
-  dprintf( "Entered rev_vprintfmt\n" );
+  dprintf( "Entered rev_vprintfmt. putdat is %x\n", putdat );
   bytes = 0;
   while( 1 ) {
     while( ( ch = *(unsigned char*) fmt ) != '%' ) {
@@ -282,19 +285,17 @@ static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const c
 int rev_printf( const char* fmt, ... ) {
   va_list ap;
   va_start( ap, fmt );
-  int bytes = rev_vprintfmt( (void*) putchar, 0, fmt, ap );
+  int bytes = rev_vprintfmt( (void*) rev_putchar, 0, fmt, ap );
   va_end( ap );
   return bytes;
 }
 
 int rev_sprintf( char* str, const char* fmt, ... ) {
   va_list ap;
-  char*   str0 = str;
   va_start( ap, fmt );
-  rev_vprintfmt( (void*) putchar, (void**) &str, fmt, ap );
-  *str = 0;
+  int bytes = rev_vprintfmt( (void*) rev_putchar, (void**) &str, fmt, ap );
   va_end( ap );
-  return str - str0;
+  return bytes;
 }
 
 #endif  // __REV_PRINTF_H__
