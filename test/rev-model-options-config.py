@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -29,7 +29,7 @@ parser.add_argument("--verbose", type=int, help="Verbosity level", default=2)
 parser.add_argument("--machine", help="Machine type/configuration", default="[CORES:RV64GC]")
 parser.add_argument("--args", help="Command line arguments to pass to the target executable", default="")
 parser.add_argument("--startSymbol", help="ELF Symbol Rev should begin execution at", default="[0:main]")
-parser.add_argument("--trcStartCycle", help="Starting cycle for rev tracer [default: 0 (off)]")
+parser.add_argument("--trcStartCycle", help="Starting cycle for rev tracer [default: 0 (off)]", default=0)
 parser.add_argument("--trcLimit", help="Max trace records per core [default: 0 (no limit)]", default=0)
 parser.add_argument("--statDir", help="Location for statistics files", default=".")
 

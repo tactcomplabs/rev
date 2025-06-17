@@ -60,7 +60,7 @@ else()
 endif()
 
 set (passRegex "Simulation is complete")
-
+set (failRegex "[^A-Za-z_0-9][Ee][Rr][Rr][Oo][Rr][^A-Za-z_0-9]")
 
 #------- TESTS  ---------------
 message(STATUS "CTest Setup")
@@ -174,6 +174,7 @@ macro(add_rev_test test_name test_dir timeout labels)
           ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
           TIMEOUT ${timeout}
           PASS_REGULAR_EXPRESSION "${passRegex}"
+	  FAIL_REGULAR_EXPRESSION "${failRegex}"
           LABELS "${labels}"
 	)
         if(add_memh_test)
@@ -182,6 +183,7 @@ macro(add_rev_test test_name test_dir timeout labels)
             ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
             TIMEOUT ${timeout}
             PASS_REGULAR_EXPRESSION "${passRegex}"
+	    FAIL_REGULAR_EXPRESSION "${failRegex}"
             LABELS "${labels}"
           )
         endif()
@@ -206,6 +208,7 @@ macro(add_rev_test test_name test_dir timeout labels)
       ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
       TIMEOUT ${timeout}
       PASS_REGULAR_EXPRESSION "${passRegex}"
+      FAIL_REGULAR_EXPRESSION "${failRegex}"
       LABELS "${labels}"
     )
     if(((NOT ${rv32_label_index} EQUAL -1) AND DEFINED RV32_DISABLED) OR test_level GREATER TEST_LEVEL)
