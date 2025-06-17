@@ -28,11 +28,14 @@ int main() {
 
   int bytes = 0;
   bytes     = printf( "[printf]Greetings with no formatted strings\n" );
-  // assert(bytes==44);
-  bytes     = printf( "[printf]Test: %s\n", msg2 );
-  // assert(bytes==89);
+  printf( "printed %d bytes\n", bytes );
+  assert( bytes == 44 );
 
-  int i     = 42;
+  bytes = printf( "[printf]Test: %s\n", msg2 );
+  printf( "printed %d bytes\n", bytes );
+  assert( bytes == 89 );
+
+  int i = 42;
   printf( "[printf]The meaning of life is %d\n", i );
 
   const char msg3[] = "[write]Greetings - this is a much longer message and some nice text, in fact, it is bigger than 64 bytes\n";

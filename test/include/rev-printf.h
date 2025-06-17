@@ -15,6 +15,13 @@
 
 #ifndef __REV_PRINTF_H__
 
+// #define REV_DEBUG
+#ifdef REV_DEBUG
+#define dprintf rev_fast_printf
+#else
+#define dprintf
+#endif
+
 //clang-format off
 #include "rev-macros.h"
 #include "syscalls.h"
@@ -71,10 +78,11 @@ void printhex( uint64_t x ) {
   printstr( str );
 }
 
-static inline void
+static inline int
   printnum( void ( *putch )( int, void** ), void** putdat, unsigned long long num, unsigned base, int width, int padc ) {
   unsigned digs[sizeof( num ) * CHAR_BIT];
-  int      pos = 0;
+  int      pos   = 0;
+  int      bytes = 0;
 
   while( 1 ) {
     digs[pos++] = num % base;
@@ -86,8 +94,11 @@ static inline void
   while( width-- > pos )
     putch( padc, putdat );
 
-  while( pos-- > 0 )
+  while( pos-- > 0 ) {
     putch( digs[pos] + ( digs[pos] >= 10 ? 'a' - 10 : '0' ), putdat );
+    bytes++;
+  }
+  return bytes;
 }
 
 static unsigned long long getuint( va_list* ap, int lflag ) {
@@ -108,7 +119,7 @@ static long long getint( va_list* ap, int lflag ) {
     return va_arg( *ap, int );
 }
 
-static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char* fmt, va_list ap ) {
+static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const char* fmt, va_list ap ) {
   register const char* p;
   const char*          last_fmt;
   register int         ch, err;
@@ -116,12 +127,18 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
   int                  base, lflag, width, precision, altflag;
   char                 padc;
 
+  int bytes = 0;
+  dprintf( "Entered rev_vprintfmt\n" );
+  bytes = 0;
   while( 1 ) {
     while( ( ch = *(unsigned char*) fmt ) != '%' ) {
-      if( ch == '\0' )
-        return;
+      if( ch == '\0' ) {
+        dprintf( "End of string. bytes=%d\n", bytes );
+        return bytes;
+      }
       fmt++;
       putch( ch, putdat );
+      bytes++;
     }
     fmt++;
 
@@ -179,21 +196,30 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
     case 'l': lflag++; goto reswitch;
 
     // character
-    case 'c': putch( va_arg( ap, int ), putdat ); break;
+    case 'c': {
+      putch( va_arg( ap, int ), putdat );
+      bytes++;
+      break;
+    }
 
     // string
     case 's':
       if( ( p = va_arg( ap, char* ) ) == NULL )
         p = "(null)";
       if( width > 0 && padc != '-' )
-        for( width -= strnlen( p, precision ); width > 0; width-- )
+        for( width -= strnlen( p, precision ); width > 0; width-- ) {
           putch( padc, putdat );
+          bytes++;
+        }
       for( ; ( ch = *p ) != '\0' && ( precision < 0 || --precision >= 0 ); width-- ) {
         putch( ch, putdat );
+        bytes++;
         p++;
       }
-      for( ; width > 0; width-- )
+      for( ; width > 0; width-- ) {
         putch( ' ', putdat );
+        bytes++;
+      }
       break;
 
     // (signed) decimal
@@ -201,6 +227,7 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
       num = getint( &ap, lflag );
       if( (long long) num < 0 ) {
         putch( '-', putdat );
+        bytes++;
         num = -(long long) num;
       }
       base = 10;
@@ -220,7 +247,9 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
       //static_assert(sizeof(long) == sizeof(void*));
       lflag = 1;
       putch( '0', putdat );
+      bytes++;
       putch( 'x', putdat );
+      bytes++;
       /* fall through to 'x' */
 
     // (unsigned) hexadecimal
@@ -229,36 +258,40 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
     unsigned_number:
       num = getuint( &ap, lflag );
     signed_number:
-      printnum( putch, putdat, num, base, width, padc );
+      bytes += printnum( putch, putdat, num, base, width, padc );
       break;
 
     // escaped '%' character
-    case '%': putch( ch, putdat ); break;
+    case '%': {
+      putch( ch, putdat );
+      bytes++;
+      break;
+    }
 
     // unrecognized escape sequence - just print it literally
     default:
       putch( '%', putdat );
+      bytes++;
       fmt = last_fmt;
       break;
     }
   }
+  return -1;
 }
 
 int rev_printf( const char* fmt, ... ) {
   va_list ap;
   va_start( ap, fmt );
-
-  vprintfmt( (void*) putchar, 0, fmt, ap );
-
+  int bytes = rev_vprintfmt( (void*) putchar, 0, fmt, ap );
   va_end( ap );
-  return 0;  // incorrect return value, but who cares, anyway?
+  return bytes;
 }
 
 int rev_sprintf( char* str, const char* fmt, ... ) {
   va_list ap;
   char*   str0 = str;
   va_start( ap, fmt );
-  vprintfmt( (void*) putchar, (void**) &str, fmt, ap );
+  rev_vprintfmt( (void*) putchar, (void**) &str, fmt, ap );
   *str = 0;
   va_end( ap );
   return str - str0;
