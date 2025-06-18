@@ -17,9 +17,9 @@
 
 // #define REV_DEBUG
 #ifdef REV_DEBUG
-#define dprintf rev_fast_printf
+#define debug_printf rev_fast_printf
 #else
-#define dprintf
+#define debug_printf
 #endif
 
 //clang-format off
@@ -35,15 +35,10 @@
 #define sprintf( str, format, ... ) rev_sprintf( str, format, ##__VA_ARGS__ )
 //clang-format on
 
-#define SYS_write                   64
+int rev_printf( const char* fmt, ... ) __attribute__( ( format( printf, 1, 2 ) ) );
+int rev_sprintf( char* str, const char* fmt, ... ) __attribute__( ( format( printf, 2, 3 ) ) );
+
 const char nullchar = '\0';
-
-extern volatile uint64_t tohost;
-extern volatile uint64_t fromhost;
-
-#define NUM_COUNTERS 2
-static uintptr_t counters[NUM_COUNTERS];
-static char*     counter_names[NUM_COUNTERS];
 
 void printstr( const char* s ) {
   ssize_t bytes_written2 = rev_write( STDOUT_FILENO, s, strlen( s ) );
@@ -55,17 +50,18 @@ int rev_putchar( int ch, void** putdat ) {
   int                  putcount = buflen;
   buf[buflen]                   = ch;
   buflen++;
+  // TODO this is not quite right. Revisit
   if( ch == '\n' || ch == '\0' || buflen == sizeof( buf ) ) {
     if( putdat == 0 ) {
-      dprintf( "stdout<-..." );
+      debug_printf( "stdout<-..." );
       rev_write( STDOUT_FILENO, buf, buflen );
     } else {
       void* p = putdat;
-      dprintf( "memcpy, 0x%x, %d\n", p, buf );
+      debug_printf( "memcpy, 0x%x, %d\n", p, buf );
       memcpy( p, buf, buflen );
     }
     buflen = 0;
-    dprintf( "rev_putchar wrote %d bytes\n", putcount );
+    debug_printf( "rev_putchar wrote %d bytes\n", putcount );
   }
   return putcount;
 }
@@ -132,12 +128,12 @@ static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const c
   char                 padc;
 
   int bytes = 0;
-  dprintf( "Entered rev_vprintfmt. putdat is %x\n", putdat );
+  debug_printf( "Entered rev_vprintfmt. putdat is %x\n", putdat );
   bytes = 0;
   while( 1 ) {
     while( ( ch = *(unsigned char*) fmt ) != '%' ) {
       if( ch == '\0' ) {
-        dprintf( "End of string. bytes=%d\n", bytes );
+        debug_printf( "End of string. bytes=%d\n", bytes );
         if( putdat ) {
           // sprintf writes null char
           putch( ch, putdat );
