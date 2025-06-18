@@ -12,6 +12,21 @@
 // - See $REVHOME/test/syscall/printf for example usage
 // - If the version of printf in stdio is called then rev
 //   should print an error message for an unimplemented ecall.
+// - Current support limited to the following formatting characters.
+//   -      : flag to pad on the right
+//   0      : flag to pad with 0's instead of spaces
+//   [0-9*] : width fields
+//   .      : precision field
+//   #      : convert to alternative form
+//   %      : escaped character
+//   l      : long
+//   c      : character
+//   s      : string
+//   d      : signed decimal
+//   u      : unsigned decimal
+//   o      : octal
+//   p      : pointer
+//   x      : hexadecimal
 
 #ifndef __REV_PRINTF_H__
 

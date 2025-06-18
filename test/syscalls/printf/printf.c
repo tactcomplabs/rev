@@ -49,14 +49,16 @@ int main() {
 
   const char shortstring[] = "string";
   printf( "[printf]Multiple strings and data: %s[%d] %s[%d] %s[%d]\n", shortstring, 0, shortstring, 1, shortstring, 2 );
+  printf( "[printf]hex(0x%x) octal(%o) pointer(%p)\n", 0xace, sizeof( shortstring ) );
 
+  printf( "[printf]Unsupported format strings will just be printed\n" );
   printf( "[printf]hex(0x%x) float(%4.2f) size_t(%zu)\n", 0xace, 3.1415, sizeof( shortstring ) );
 
-  printf( "multiple lines, one printf\n" );
-  printf( "line 1 of 3\nline 2 of 3\nline 3 of 3\n" );
+  printf( "[printf]multiple lines, one printf\n" );
+  printf( "[printf]line 1 of 3\nline 2 of 3\nline 3 of 3\n" );
 
-  printf( "same line, multiple printf\n" );
-  printf( "item 1 of 3, " );
+  printf( "[printf]same line, multiple printf\n" );
+  printf( "[printf]item 1 of 3, " );
   printf( "item 2 of 3, " );
   printf( "item 3 of 3\n" );
 
