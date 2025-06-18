@@ -1,33 +1,90 @@
-#include "../../../common/syscalls/syscalls.h"
-#include "printf.h"
+//clang-format off
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+
+#ifndef HOST_TARGET
+#include "rev-macros.h"
+#include "rev-printf.h"
+#undef assert
+#define assert TRACE_ASSERT
+#endif
+//clang-format on
 
 int main() {
 
-  const char msg[]         = "Greetings\n";
-  ssize_t    bytes_written = rev_write( STDOUT_FILENO, msg, sizeof( msg ) - 1 );
+  const char msg[]         = "[write]Greetings\n";
+  ssize_t    bytes_written = write( STDOUT_FILENO, msg, sizeof( msg ) - 1 );
 
-  if( bytes_written < 0 ) {
-    rev_exit( 1 );
-  }
-  const char msg2[]         = "Greetings - this is a much longer text string. Just larger than 64\n";
-  ssize_t    bytes_written2 = rev_write( STDOUT_FILENO, msg2, sizeof( msg2 ) - 1 );
+  if( bytes_written < 0 )
+    exit( 1 );
 
-  if( bytes_written2 < 0 ) {
-    rev_exit( 1 );
-  }
+  const char msg2[]         = "[write]Greetings - this is a much longer text string. Just larger than 64\n";
+  ssize_t    bytes_written2 = write( STDOUT_FILENO, msg2, sizeof( msg2 ) - 1 );
 
-  printf( "Test: %s\n", msg2 );
+  if( bytes_written2 < 0 )
+    exit( 2 );
+
+  int bytes = 0;
+  bytes     = printf( "[printf]Greetings with no formatted strings\n" );
+  printf( "printed %d bytes\n", bytes );
+  assert( bytes == 44 );
+
+  bytes = printf( "[printf]Test: %s\n", msg2 );
+  printf( "printed %d bytes\n", bytes );
+  assert( bytes == 89 );
 
   int i = 42;
-  printf( "The meaning of life is %d\n", i );
+  printf( "[printf]The meaning of life is %d\n", i );
 
-  //The test below fails - we are reaching into invalid address space, this appears unrealted to most recent changes
-  /*  const char msg3[] = "Greetings - this is a much longer message and some nice text, in fact, it is bigger than 64 bytes\n";
-  ssize_t bytes_written3 = rev_write(STDOUT_FILENO, msg3, sizeof(msg3) - 1);
+  const char msg3[] = "[write]Greetings - this is a much longer message and some nice text, in fact, it is bigger than 64 bytes\n";
+  ssize_t    bytes_written3 = write( STDOUT_FILENO, msg3, sizeof( msg3 ) - 1 );
+  if( bytes_written3 < 0 )
+    exit( 3 );
 
-  if( bytes_written3 < 0 ){
-    rev_exit(1);
-  }*/
+  const char msg4[] = "Greetings once again - this is a much much longer message and some even nicer yet more ambitious text, in "
+                      "fact, it is bigger than 128 bytes\n";
+  printf( "[printf]%s", msg4 );
+
+  const char shortstring[] = "string";
+  printf( "[printf]Multiple strings and data: %s[%d] %s[%d] %s[%d]\n", shortstring, 0, shortstring, 1, shortstring, 2 );
+
+  printf( "[printf]hex(0x%x) float(%4.2f) size_t(%zu)\n", 0xace, 3.1415, sizeof( shortstring ) );
+
+  printf( "multiple lines, one printf\n" );
+  printf( "line 1 of 3\nline 2 of 3\nline 3 of 3\n" );
+
+  printf( "same line, multiple printf\n" );
+  printf( "item 1 of 3, " );
+  printf( "item 2 of 3, " );
+  printf( "item 3 of 3\n" );
+
+  printf( "\nsprintf tests\n" );
+  char s128[128] = { 0 };
+  int  sbytes    = sprintf( s128, "[sprintf]test %d\n", 1 );
+  printf( "sprinted %d bytes\n", sbytes );
+  assert( sbytes == 16 );
+  printf( "[printf]%s repeat %s\n", s128, s128 );
+
+  sprintf( s128, "[sprintf]test 2\n" );
+  printf( "[printf]%s\n", s128 );
+
+  char s1[128] = { 0 };
+  char s2[32]  = { 0 };
+  char s3[32]  = { 0 };
+
+  sprintf( s1, "sprintf_1" );
+  sprintf( s2, "sprintf_%s", "2" );
+  sprintf( s3, "sprintf_%d", 3 );
+
+  printf( "[printf]s1=%s\n", s1 );
+  printf( "[printf]s2=%s\n", s2 );
+  printf( "[printf]s3=%s\n", s3 );
+
+  printf( "[printf]All three: %s %s %s\n", s1, s2, s3 );
+
+  printf( "[printf]Completed normally\n" );
+
   return 0;
 }

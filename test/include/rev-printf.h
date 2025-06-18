@@ -30,13 +30,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-//#include <sys/signal.h>
-//#include "util.h"
-#include "../../../common/syscalls/syscalls.h"
+// ensure we always use the rev version for these
+#define printf( format, ... )       rev_printf( format, ##__VA_ARGS__ )
+#define sprintf( str, format, ... ) rev_sprintf( str, format, ##__VA_ARGS__ )
+//clang-format on
 
-#define SYS_write 64
-
-#undef strcmp
+#define SYS_write                   64
+const char nullchar = '\0';
 
 extern volatile uint64_t tohost;
 extern volatile uint64_t fromhost;
@@ -49,20 +49,25 @@ void printstr( const char* s ) {
   ssize_t bytes_written2 = rev_write( STDOUT_FILENO, s, strlen( s ) );
 }
 
-#undef putchar
-
-int putchar( int ch ) {
+int rev_putchar( int ch, void** putdat ) {
   static __thread char buf[64] __attribute__( ( aligned( 64 ) ) );
-  static __thread int  buflen = 0;
-
-  buf[buflen++]               = ch;
-
-  if( ch == '\n' || buflen == sizeof( buf ) ) {
-    ssize_t bytes_written2 = rev_write( STDOUT_FILENO, buf, buflen );
-    buflen                 = 0;
+  static __thread int  buflen   = 0;
+  int                  putcount = buflen;
+  buf[buflen]                   = ch;
+  buflen++;
+  if( ch == '\n' || ch == '\0' || buflen == sizeof( buf ) ) {
+    if( putdat == 0 ) {
+      dprintf( "stdout<-..." );
+      rev_write( STDOUT_FILENO, buf, buflen );
+    } else {
+      void* p = putdat;
+      dprintf( "memcpy, 0x%x, %d\n", p, buf );
+      memcpy( p, buf, buflen );
+    }
+    buflen = 0;
+    dprintf( "rev_putchar wrote %d bytes\n", putcount );
   }
-
-  return 0;
+  return putcount;
 }
 
 void printhex( uint64_t x ) {
@@ -77,10 +82,11 @@ void printhex( uint64_t x ) {
   printstr( str );
 }
 
-static inline void
+static inline int
   printnum( void ( *putch )( int, void** ), void** putdat, unsigned long long num, unsigned base, int width, int padc ) {
   unsigned digs[sizeof( num ) * CHAR_BIT];
-  int      pos = 0;
+  int      pos   = 0;
+  int      bytes = 0;
 
   while( 1 ) {
     digs[pos++] = num % base;
@@ -92,8 +98,11 @@ static inline void
   while( width-- > pos )
     putch( padc, putdat );
 
-  while( pos-- > 0 )
+  while( pos-- > 0 ) {
     putch( digs[pos] + ( digs[pos] >= 10 ? 'a' - 10 : '0' ), putdat );
+    bytes++;
+  }
+  return bytes;
 }
 
 static unsigned long long getuint( va_list* ap, int lflag ) {
@@ -114,7 +123,7 @@ static long long getint( va_list* ap, int lflag ) {
     return va_arg( *ap, int );
 }
 
-static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char* fmt, va_list ap ) {
+static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const char* fmt, va_list ap ) {
   register const char* p;
   const char*          last_fmt;
   register int         ch, err;
@@ -122,12 +131,22 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
   int                  base, lflag, width, precision, altflag;
   char                 padc;
 
+  int bytes = 0;
+  dprintf( "Entered rev_vprintfmt. putdat is %x\n", putdat );
+  bytes = 0;
   while( 1 ) {
     while( ( ch = *(unsigned char*) fmt ) != '%' ) {
-      if( ch == '\0' )
-        return;
+      if( ch == '\0' ) {
+        dprintf( "End of string. bytes=%d\n", bytes );
+        if( putdat ) {
+          // sprintf writes null char
+          putch( ch, putdat );
+        }
+        return bytes;
+      }
       fmt++;
       putch( ch, putdat );
+      bytes++;
     }
     fmt++;
 
@@ -185,21 +204,30 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
     case 'l': lflag++; goto reswitch;
 
     // character
-    case 'c': putch( va_arg( ap, int ), putdat ); break;
+    case 'c': {
+      putch( va_arg( ap, int ), putdat );
+      bytes++;
+      break;
+    }
 
     // string
     case 's':
       if( ( p = va_arg( ap, char* ) ) == NULL )
         p = "(null)";
       if( width > 0 && padc != '-' )
-        for( width -= strnlen( p, precision ); width > 0; width-- )
+        for( width -= strnlen( p, precision ); width > 0; width-- ) {
           putch( padc, putdat );
+          bytes++;
+        }
       for( ; ( ch = *p ) != '\0' && ( precision < 0 || --precision >= 0 ); width-- ) {
         putch( ch, putdat );
+        bytes++;
         p++;
       }
-      for( ; width > 0; width-- )
+      for( ; width > 0; width-- ) {
         putch( ' ', putdat );
+        bytes++;
+      }
       break;
 
     // (signed) decimal
@@ -207,6 +235,7 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
       num = getint( &ap, lflag );
       if( (long long) num < 0 ) {
         putch( '-', putdat );
+        bytes++;
         num = -(long long) num;
       }
       base = 10;
@@ -226,7 +255,9 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
       //static_assert(sizeof(long) == sizeof(void*));
       lflag = 1;
       putch( '0', putdat );
+      bytes++;
       putch( 'x', putdat );
+      bytes++;
       /* fall through to 'x' */
 
     // (unsigned) hexadecimal
@@ -235,153 +266,41 @@ static void vprintfmt( void ( *putch )( int, void** ), void** putdat, const char
     unsigned_number:
       num = getuint( &ap, lflag );
     signed_number:
-      printnum( putch, putdat, num, base, width, padc );
+      bytes += printnum( putch, putdat, num, base, width, padc );
       break;
 
     // escaped '%' character
-    case '%': putch( ch, putdat ); break;
+    case '%': {
+      putch( ch, putdat );
+      bytes++;
+      break;
+    }
 
     // unrecognized escape sequence - just print it literally
     default:
       putch( '%', putdat );
+      bytes++;
       fmt = last_fmt;
       break;
     }
   }
+  return -1;
 }
 
-int printf( const char* fmt, ... ) {
+int rev_printf( const char* fmt, ... ) {
   va_list ap;
   va_start( ap, fmt );
-
-  vprintfmt( (void*) putchar, 0, fmt, ap );
-
+  int bytes = rev_vprintfmt( (void*) rev_putchar, 0, fmt, ap );
   va_end( ap );
-  return 0;  // incorrect return value, but who cares, anyway?
+  return bytes;
 }
 
-int sprintf( char* str, const char* fmt, ... ) {
+int rev_sprintf( char* str, const char* fmt, ... ) {
   va_list ap;
-  char*   str0 = str;
   va_start( ap, fmt );
-
-  void sprintf_putch( int ch, void** data ) {
-    char** pstr = (char**) data;
-    **pstr      = ch;
-    ( *pstr )++;
-  }
-
-  vprintfmt( sprintf_putch, (void**) &str, fmt, ap );
-  *str = 0;
-
+  int bytes = rev_vprintfmt( (void*) rev_putchar, (void**) str, fmt, ap );
   va_end( ap );
-  return str - str0;
+  return bytes;
 }
 
-/*
-void* memcpy(void* dest, const void* src, size_t len)
-{
-  if ((((uintptr_t)dest | (uintptr_t)src | len) & (sizeof(uintptr_t)-1)) == 0) {
-    const uintptr_t* s = src;
-    uintptr_t *d = dest;
-    uintptr_t *end = dest + len;
-    while (d + 8 < end) {
-      uintptr_t reg[8] = {s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]};
-      d[0] = reg[0];
-      d[1] = reg[1];
-      d[2] = reg[2];
-      d[3] = reg[3];
-      d[4] = reg[4];
-      d[5] = reg[5];
-      d[6] = reg[6];
-      d[7] = reg[7];
-      d += 8;
-      s += 8;
-    }
-    while (d < end)
-      *d++ = *s++;
-  } else {
-    const char* s = src;
-    char *d = dest;
-    while (d < (char*)(dest + len))
-      *d++ = *s++;
-  }
-  return dest;
-}
-
-void* memset(void* dest, int byte, size_t len)
-{
-  if ((((uintptr_t)dest | len) & (sizeof(uintptr_t)-1)) == 0) {
-    uintptr_t word = byte & 0xFF;
-    word |= word << 8;
-    word |= word << 16;
-    word |= word << 16 << 16;
-
-    uintptr_t *d = dest;
-    while (d < (uintptr_t*)(dest + len))
-      *d++ = word;
-  } else {
-    char *d = dest;
-    while (d < (char*)(dest + len))
-      *d++ = byte;
-  }
-  return dest;
-}
-
-size_t strlen(const char *s)
-{
-  const char *p = s;
-  while (*p)
-    p++;
-  return p - s;
-}
-
-size_t strnlen(const char *s, size_t n)
-{
-  const char *p = s;
-  while (n-- && *p)
-    p++;
-  return p - s;
-}
-
-int strcmp(const char* s1, const char* s2)
-{
-  unsigned char c1, c2;
-
-  do {
-    c1 = *s1++;
-    c2 = *s2++;
-  } while (c1 != 0 && c1 == c2);
-
-  return c1 - c2;
-}
-
-char* strcpy(char* dest, const char* src)
-{
-  char* d = dest;
-  while ((*d++ = *src++))
-    ;
-  return dest;
-}
-
-long atol(const char* str)
-{
-  long res = 0;
-  int sign = 0;
-
-  while (*str == ' ')
-    str++;
-
-  if (*str == '-' || *str == '+') {
-    sign = *str == '-';
-    str++;
-  }
-
-  while (*str) {
-    res *= 10;
-    res += *str++ - '0';
-  }
-
-  return sign ? -res : res;
-}
-*/
+#endif  // __REV_PRINTF_H__
