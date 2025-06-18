@@ -9,6 +9,7 @@
 //
 
 // Notes
+// - Reference: https://sourceware.org/newlib/libc.html#sprintf
 // - See $REVHOME/test/syscall/printf for example usage
 // - If the version of printf in stdio is called then rev
 //   should print an error message for an unimplemented ecall.
