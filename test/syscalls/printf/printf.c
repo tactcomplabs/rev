@@ -28,11 +28,11 @@ int main() {
 
   int bytes = 0;
   bytes     = printf( "[printf]Greetings with no formatted strings\n" );
-  printf( "printed %d bytes\n", bytes );
+  printf( "[printf]printed %d bytes\n", bytes );
   assert( bytes == 44 );
 
   bytes = printf( "[printf]Test: %s\n", msg2 );
-  printf( "printed %d bytes\n", bytes );
+  printf( "[printf]printed %d bytes\n", bytes );
   assert( bytes == 89 );
 
   int i = 42;
@@ -62,12 +62,12 @@ int main() {
   printf( "item 2 of 3, " );
   printf( "item 3 of 3\n" );
 
-  printf( "\nsprintf tests\n" );
+  printf( "[printf]sprintf tests\n" );
   char s128[128] = { 0 };
   int  sbytes    = sprintf( s128, "[sprintf]test %d\n", 1 );
-  printf( "sprinted %d bytes\n", sbytes );
+  printf( "[printf]sprinted %d bytes\n", sbytes );
   assert( sbytes == 16 );
-  printf( "[printf]%s repeat %s\n", s128, s128 );
+  printf( "[printf] ->%s<- repeat ->%s<-\n", s128, s128 );
 
   sprintf( s128, "[sprintf]test 2\n" );
   printf( "[printf]%s\n", s128 );

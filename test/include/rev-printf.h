@@ -65,8 +65,10 @@ int rev_putchar( int ch, void** putdat ) {
   int                  putcount = buflen;
   buf[buflen]                   = ch;
   buflen++;
-  // TODO this is not quite right. Revisit
-  if( ch == '\n' || ch == '\0' || buflen == sizeof( buf ) ) {
+  // TODO revisit the algorithms for sprintf and printf. Needs more testing
+  int wr_printf  = ( putdat == 0 ) && ( ch == '\n' );
+  int wr_sprintf = ( putdat != 0 ) && ( ch == '\0' );
+  if( wr_printf || wr_sprintf || buflen == sizeof( buf ) ) {
     if( putdat == 0 ) {
       debug_printf( "stdout<-..." );
       rev_write( STDOUT_FILENO, buf, buflen );
