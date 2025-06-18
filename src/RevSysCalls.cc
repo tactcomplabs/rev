@@ -1191,12 +1191,19 @@ EcallStatus RevCore::ECALL_exit() {
     CALL_INFO,
     0,
     0,
-    "thread %" PRIu32 " on hart %" PRIu32 "exiting with"
+    "thread %" PRIu32 " on hart %" PRIu32 " exiting with"
     " status %" PRIu64 "\n",
     ActiveThreadID,
     HartToExecID,
     status
   );
+  // TODO exit shuts down the sst process which circumvents the
+  //      component lifecycle and overrides sst status code. We
+  //      should instead indicate the simulated component is finished
+  //      and let sst shutdown cleanly. The status code from REV is
+  //      printed to the log file for post-processing. We can support
+  //      testing by providing on option to 'fatal' out when status
+  //      is not 0 (or a user desired value if non-zero is expected)
   exit( int( status ) );
   // return EcallStatus::SUCCESS;
 }
