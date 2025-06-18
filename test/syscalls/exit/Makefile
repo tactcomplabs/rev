@@ -11,11 +11,14 @@
 #
 
 TESTNAME=exit
+SOURCES = $(TESTNAME).c
+INCLUDES=
 CCOPTS = -O0 -g3
-TARG ?= rev
-REV_MACHINE = "CORES:RV64IMAFDC"
 
-include ../mkinc/common.mk
+TARG ?= rev
+REV_MACHINE = "[CORES:RV64IMAFDC]"
+
+include $(REVHOME)/test/syscalls/mkinc/common.mk
 
 .PHONY: clean
 clean:
