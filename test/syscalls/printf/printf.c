@@ -28,11 +28,11 @@ int main() {
 
   int bytes = 0;
   bytes     = printf( "[printf]Greetings with no formatted strings\n" );
-  printf( "printed %d bytes\n", bytes );
+  printf( "[printf]printed %d bytes\n", bytes );
   assert( bytes == 44 );
 
   bytes = printf( "[printf]Test: %s\n", msg2 );
-  printf( "printed %d bytes\n", bytes );
+  printf( "[printf]printed %d bytes\n", bytes );
   assert( bytes == 89 );
 
   int i = 42;
@@ -49,23 +49,25 @@ int main() {
 
   const char shortstring[] = "string";
   printf( "[printf]Multiple strings and data: %s[%d] %s[%d] %s[%d]\n", shortstring, 0, shortstring, 1, shortstring, 2 );
+  printf( "[printf]hex(0x%x) octal(%o) pointer(%p)\n", 0xace, sizeof( shortstring ) );
 
+  printf( "[printf]Unsupported format strings will just be printed\n" );
   printf( "[printf]hex(0x%x) float(%4.2f) size_t(%zu)\n", 0xace, 3.1415, sizeof( shortstring ) );
 
-  printf( "multiple lines, one printf\n" );
-  printf( "line 1 of 3\nline 2 of 3\nline 3 of 3\n" );
+  printf( "[printf]multiple lines, one printf\n" );
+  printf( "[printf]line 1 of 3\nline 2 of 3\nline 3 of 3\n" );
 
-  printf( "same line, multiple printf\n" );
-  printf( "item 1 of 3, " );
+  printf( "[printf]same line, multiple printf\n" );
+  printf( "[printf]item 1 of 3, " );
   printf( "item 2 of 3, " );
   printf( "item 3 of 3\n" );
 
-  printf( "\nsprintf tests\n" );
+  printf( "[printf]sprintf tests\n" );
   char s128[128] = { 0 };
   int  sbytes    = sprintf( s128, "[sprintf]test %d\n", 1 );
-  printf( "sprinted %d bytes\n", sbytes );
+  printf( "[printf]sprinted %d bytes\n", sbytes );
   assert( sbytes == 16 );
-  printf( "[printf]%s repeat %s\n", s128, s128 );
+  printf( "[printf] ->%s<- repeat ->%s<-\n", s128, s128 );
 
   sprintf( s128, "[sprintf]test 2\n" );
   printf( "[printf]%s\n", s128 );
@@ -84,7 +86,7 @@ int main() {
 
   printf( "[printf]All three: %s %s %s\n", s1, s2, s3 );
 
-  // printf( "[printf]Completed normally\n" );
+  printf( "[printf]Completed normally\n" );
 
   return 0;
 }
