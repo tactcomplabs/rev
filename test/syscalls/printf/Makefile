@@ -18,7 +18,7 @@ CCOPTS = -O0 -g3
 
 TARG ?= rev
 
-REV_VERBOSE?=2
+REV_VERBOSE?=0
 
 include $(REVHOME)/test/syscalls/mkinc/common.mk
 

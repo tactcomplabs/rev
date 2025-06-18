@@ -50,16 +50,16 @@ void printstr( const char* s ) {
 }
 
 int rev_putchar( int ch, void** putdat ) {
-  dprintf( "rev_putchar putdat=0x%x\n", putdat );
   static __thread char buf[64] __attribute__( ( aligned( 64 ) ) );
   static __thread int  buflen   = 0;
   int                  putcount = buflen;
   buf[buflen]                   = ch;
   buflen++;
-  if( ch == '\n' || buflen == sizeof( buf ) ) {
-    if( putdat == 0 )
+  if( ch == '\n' || ch == '\0' || buflen == sizeof( buf ) ) {
+    if( putdat == 0 ) {
+      dprintf( "stdout<-..." );
       rev_write( STDOUT_FILENO, buf, buflen );
-    else {
+    } else {
       void* p = putdat;
       dprintf( "memcpy, 0x%x, %d\n", p, buf );
       memcpy( p, buf, buflen );
@@ -138,11 +138,10 @@ static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const c
     while( ( ch = *(unsigned char*) fmt ) != '%' ) {
       if( ch == '\0' ) {
         dprintf( "End of string. bytes=%d\n", bytes );
-        // if (putdat) {
-        //   void* p = putdat + bytes;
-        //   dprintf("memcpy null to %x\n", p);
-        //   memcpy( p, &nullchar, 1 );
-        // }
+        if( putdat ) {
+          // sprintf writes null char
+          putch( ch, putdat );
+        }
         return bytes;
       }
       fmt++;
