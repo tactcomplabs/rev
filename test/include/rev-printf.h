@@ -36,8 +36,7 @@
 //clang-format on
 
 #define SYS_write                   64
-
-#undef strcmp
+const char nullchar = '\0';
 
 extern volatile uint64_t tohost;
 extern volatile uint64_t fromhost;
@@ -50,21 +49,23 @@ void printstr( const char* s ) {
   ssize_t bytes_written2 = rev_write( STDOUT_FILENO, s, strlen( s ) );
 }
 
-#undef putchar
-
 int rev_putchar( int ch, void** putdat ) {
+  dprintf( "rev_putchar putdat=0x%x\n", putdat );
   static __thread char buf[64] __attribute__( ( aligned( 64 ) ) );
   static __thread int  buflen   = 0;
   int                  putcount = buflen;
   buf[buflen]                   = ch;
-  if( putdat )
-    memcpy( *putdat + buflen, &ch, 1 );
   buflen++;
   if( ch == '\n' || buflen == sizeof( buf ) ) {
     if( putdat == 0 )
       rev_write( STDOUT_FILENO, buf, buflen );
+    else {
+      void* p = putdat;
+      dprintf( "memcpy, 0x%x, %d\n", p, buf );
+      memcpy( p, buf, buflen );
+    }
     buflen = 0;
-    dprintf( "rev_putchar wrote %d bytes. putdat = %x\n", putcount, putdat );
+    dprintf( "rev_putchar wrote %d bytes\n", putcount );
   }
   return putcount;
 }
@@ -137,6 +138,11 @@ static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const c
     while( ( ch = *(unsigned char*) fmt ) != '%' ) {
       if( ch == '\0' ) {
         dprintf( "End of string. bytes=%d\n", bytes );
+        // if (putdat) {
+        //   void* p = putdat + bytes;
+        //   dprintf("memcpy null to %x\n", p);
+        //   memcpy( p, &nullchar, 1 );
+        // }
         return bytes;
       }
       fmt++;
@@ -293,7 +299,7 @@ int rev_printf( const char* fmt, ... ) {
 int rev_sprintf( char* str, const char* fmt, ... ) {
   va_list ap;
   va_start( ap, fmt );
-  int bytes = rev_vprintfmt( (void*) rev_putchar, (void**) &str, fmt, ap );
+  int bytes = rev_vprintfmt( (void*) rev_putchar, (void**) str, fmt, ap );
   va_end( ap );
   return bytes;
 }

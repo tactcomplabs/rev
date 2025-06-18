@@ -52,10 +52,18 @@ int main() {
 
   printf( "[printf] hex(0x%x) float(%4.2f) size_t(%zu)\n", 0xace, 3.1415, sizeof( shortstring ) );
 
-  // sprintf
-  char s128[128] = { 0 };
+  printf( "multiple lines, one printf\n" );
+  printf( "line 1 of 3\nline 2 of 3\nline 3 of 3\n" );
 
-  int sbytes     = sprintf( s128, "[sprintf] test %d\n", 1 );
+  printf( "same line, multiple printf\n" );
+  printf( "item 1 of 3, " );
+  printf( "item 2 of 3, " );
+  printf( "item 3 of 3\n" );
+
+  // printf("\nsprintf tests\n");
+  char s128[128] = { 0 };
+  printf( "&s128=%x\n", s128 );
+  int sbytes = sprintf( s128, "[sprintf] test %d\n", 1 );
   printf( "sprinted %d bytes\n", sbytes );
   assert( sbytes == 17 );
   printf( "[printf] %s repeat %s\n", s128, s128 );
@@ -63,7 +71,24 @@ int main() {
   sprintf( s128, "[sprintf] test 2\n" );
   printf( "[printf]%s\n", s128 );
 
-  printf( "[printf]Completed normally\n" );
+  // char s1[128] = {0};
+  // // char s2[32] = {0};
+  // // char s3[32] = {0};
+
+  // // printf("&s1 %x\n", &s1);
+  // // printf("&s2 %x\n", &s2);
+  // // printf("&s3 %x\n", &s3);
+
+  // sprintf(s1, "sprintf_1\n");
+  // // printf("Got here\n");
+  // // sprintf(s2, "sprintf_%s","2");
+  // // sprintf(s3, "sprintf_%d",3);
+  // // // printf("[printf] %s %s %s\n", s1, s2, s3);
+  // printf("[printf] s1=%s\n", s1);
+  // // printf("[printf] s2=%s\n", s2);
+  // // printf("[printf] s3=%s\n", s3);
+
+  // printf( "[printf]Completed normally\n" );
 
   return 0;
 }
