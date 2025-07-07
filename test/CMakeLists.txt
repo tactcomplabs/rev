@@ -287,4 +287,9 @@ add_subdirectory(threading)
 add_subdirectory(cxx)
 add_subdirectory(fenv)
 
+# Common test environment variables to support external test libraries.
+set_tests_properties(${TEST_LIST} PROPERTIES
+  ENVIRONMENT "REVHOME=${CMAKE_SOURCE_DIR}"
+)
+
 # EOF

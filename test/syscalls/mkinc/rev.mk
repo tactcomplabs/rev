@@ -8,12 +8,20 @@
 # See LICENSE in the top level directory for licensing details
 #
 
-#CC=riscv64-unknown-elf-gcc
-CC="${RVCC}"
-#CCOPTS += -march=rv64g
-CCOPTS += -march=rv64imafdc
+ifndef REVHOME
+$(error REVHOME not defined)
+endif
 
-REVHOME := $(realpath ../../..)
+REV_ARCH ?= rv64imafdc
+REV_VERBOSE ?= 1
+REV_ENABLE_MEMH ?= 0
+REV_MACHINE ?= "[CORES:RV64GC]"
+
+REV_SDL ?= $(REVHOME)/test/rev-model-options-config.py
+REV_SDL_PARAMS = --verbose=$(REV_VERBOSE) --enableMemH=$(REV_ENABLE_MEMH) --machine=$(REV_MACHINE)
+
+CC="${RVCC}"
+CCOPTS += -march=$(REV_ARCH) $(INCLUDES)
 CCOPTS += -I$(REVHOME)/common/syscalls
 CCOPTS += -I$(REVHOME)/test/include
 
@@ -21,9 +29,9 @@ CCOPTS += -I$(REVHOME)/test/include
 
 all: $(TESTNAME).exe
 
-# STATIC = -static
-$(TESTNAME).exe: $(TESTNAME).c
-	$(CC) $(CCOPTS) -o $(TESTNAME).exe $(TESTNAME).c $(STATIC)
+STATIC = -static
+$(TESTNAME).exe: $(SOURCES)
+	$(CC) $(CCOPTS) -o $(TESTNAME).exe $^ $(STATIC)
 
 ifdef RVOBJDUMP
 all: $(TESTNAME).d
@@ -31,11 +39,11 @@ $(TESTNAME).d: $(TESTNAME).exe
 	$(RVOBJDUMP) -dC -Mno-aliases --source $< > $@
 endif
 
-MEMH=--enableMemH=1
+
 ifdef ARGS
  PROG_ARGS = --args="$(ARGS)"
 endif
 run: $(TESTNAME).exe
-	sst $(REVHOME)/test/rev-model-options-config.py -- --verbose=5 --trcStartCycle=0 $(MEMH) --program=$(TESTNAME).exe $(PROG_ARGS)
+	sst $(REV_SDL) -- $(REV_SDL_PARAMS) --program=$(TESTNAME).exe $(PROG_ARGS)
 
 #-- EOF

@@ -11,11 +11,11 @@
 #
 
 ifeq ($(TARG),host)
-include ../mkinc/host.mk
+include $(REVHOME)/test/syscalls/mkinc/host.mk
 else ifeq ($(TARG),spike)
-include ../mkinc/spike.mk
+include $(REVHOME)/test/syscalls/mkinc/spike.mk
 else ifeq ($(TARG),rev)
-include ../mkinc/rev.mk
+include $(REVHOME)/test/syscalls/mkinc/rev.mk
 else
 $(error unknown TARG $(TARG))
 endif
