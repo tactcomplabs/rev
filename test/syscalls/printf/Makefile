@@ -20,6 +20,12 @@ TARG ?= rev
 
 REV_VERBOSE?=0
 
+ifndef REVHOME
+$(error REVHOME is not defined)
+else
+$(info REVHOME is $(REVHOME))
+endif
+
 include $(REVHOME)/test/syscalls/mkinc/common.mk
 
 .PHONY: clean
