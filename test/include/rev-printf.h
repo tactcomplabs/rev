@@ -71,15 +71,15 @@ int rev_putchar( int ch, void** putdat ) {
   int wr_sprintf = ( putdat != 0 ) && ( ch == '\0' );
   if( wr_printf || wr_sprintf || buflen == sizeof( buf ) ) {
     if( putdat == 0 ) {
-      debug_printf( "stdout<-..." );
+      // debug_printf( "stdout<-..." );
       rev_write( STDOUT_FILENO, buf, buflen );
     } else {
       void* p = putdat;
-      debug_printf( "memcpy, 0x%x, %d\n", p, buf );
+      // debug_printf( "memcpy, 0x%x, %d\n", p, buf );
       memcpy( p, buf, buflen );
     }
     buflen = 0;
-    debug_printf( "rev_putchar wrote %d bytes\n", putcount );
+    // debug_printf( "rev_putchar wrote %d bytes\n", putcount );
   }
   return putcount;
 }
@@ -146,12 +146,12 @@ static int rev_vprintfmt( void ( *putch )( int, void** ), void** putdat, const c
   char                 padc;
 
   int bytes = 0;
-  debug_printf( "Entered rev_vprintfmt. putdat is %x\n", putdat );
-  bytes = 0;
+  // debug_printf( "Entered rev_vprintfmt. putdat is %x\n", putdat );
+  bytes     = 0;
   while( 1 ) {
     while( ( ch = *(unsigned char*) fmt ) != '%' ) {
       if( ch == '\0' ) {
-        debug_printf( "End of string. bytes=%d\n", bytes );
+        // debug_printf( "End of string. bytes=%d\n", bytes );
         if( putdat ) {
           // sprintf writes null char
           putch( ch, putdat );
