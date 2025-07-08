@@ -171,7 +171,7 @@ macro(add_rev_test test_name test_dir timeout labels)
 
         set_tests_properties(${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
           PROPERTIES
-          ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
+          ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX};REVHOME=${CMAKE_SOURCE_DIR}"
           TIMEOUT ${timeout}
           PASS_REGULAR_EXPRESSION "${passRegex}"
 	  FAIL_REGULAR_EXPRESSION "${failRegex}"
@@ -180,7 +180,7 @@ macro(add_rev_test test_name test_dir timeout labels)
         if(add_memh_test)
           set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
             PROPERTIES
-            ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
+            ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX};REVHOME=${CMAKE_SOURCE_DIR}"
             TIMEOUT ${timeout}
             PASS_REGULAR_EXPRESSION "${passRegex}"
 	    FAIL_REGULAR_EXPRESSION "${failRegex}"
@@ -205,7 +205,7 @@ macro(add_rev_test test_name test_dir timeout labels)
     # Set test properties for the script test
     set_tests_properties(${test_name_lower}_script
       PROPERTIES
-      ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
+      ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX};REVHOME=${CMAKE_SOURCE_DIR}"
       TIMEOUT ${timeout}
       PASS_REGULAR_EXPRESSION "${passRegex}"
       FAIL_REGULAR_EXPRESSION "${failRegex}"
@@ -286,10 +286,5 @@ add_subdirectory(syscalls)
 add_subdirectory(threading)
 add_subdirectory(cxx)
 add_subdirectory(fenv)
-
-# Common test environment variables to support external test libraries.
-set_tests_properties(${TEST_LIST} PROPERTIES
-  ENVIRONMENT "REVHOME=${CMAKE_SOURCE_DIR}"
-)
 
 # EOF

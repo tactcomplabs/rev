@@ -1,9 +1,8 @@
 add_rev_test(CHDIR chdir 30 "rv64;syscalls;memh")
 add_rev_test(WRITE write 30 "test_level=2;rv64;syscalls;memh")
 add_rev_test(FILE_IO file_io 30 "rv64;syscalls;memh")
-# these use REVHOME environment variable which is not set consistently by different versions of cmake
-# add_rev_test(OPEN open 30 "rv64;syscalls;memh")
-# add_rev_test(PRINTF printf 30 "rv64;syscalls;memh")
+add_rev_test(OPEN open 30 "rv64;syscalls;memh")
+add_rev_test(PRINTF printf 30 "rv64;syscalls;memh")
 add_rev_test(GETCWD getcwd 30 "rv64;syscalls;memh")
 add_rev_test(MUNMAP munmap 30 "rv64;syscalls;memh")
 add_rev_test(PERF_STATS perf_stats 30 "test_level=2;rv64;syscalls;memh")
