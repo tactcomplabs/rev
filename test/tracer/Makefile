@@ -3,7 +3,7 @@
 #
 # makefile: tracer
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -73,7 +73,7 @@ compile: $(EXES) $(DIASMS)
 %.memh.rv64.c.log %.memh.rv64.cpp.log: MEMH=1
 
 %.exe: $(EXAMPLE).c
-	$(GCC) -g -O2 -march=$(ARCH) $(OPTS) $(INCLUDE) -o  $@ $<
+	$(GCC) -g -O0 -march=$(ARCH) $(OPTS) $(INCLUDE) -o  $@ $<
 
 %.rv32.c.log %.rv32.cpp.log: ARCH=rv32g
 %.rv64.c.log %.rv64.cpp.log: ARCH=rv64gc
