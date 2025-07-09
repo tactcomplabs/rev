@@ -20,6 +20,10 @@ else
 $(error unknown TARG $(TARG))
 endif
 
+.PHONY: clean
+clean:
+	rm -f $(TESTNAME).exe $(TESTNAME).d StatisticOutput.csv $(TESTNAME).spike
+
 .PHONY: help
 help:
 	@echo "# REV defaults"
@@ -27,6 +31,6 @@ help:
 	@echo "make clean run"
 	@echo "# Alternate targets"
 	@echo "make TARG=host clean run"
-	@echo "TODO make TARG=spike clean run"
+	@echo "make TARG=spike clean run"
 
 #-- EOF
