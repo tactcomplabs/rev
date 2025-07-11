@@ -1,7 +1,7 @@
 //
 // _RevRegFile_h_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -268,6 +268,9 @@ public:
 
   /// Get the exception cause
   RevExceptionCause GetSCAUSE() const { return SCAUSE; }
+
+  /// Check if exception is active. Currently only ECALL_USER_MODE supported
+  bool isExceptionActive() const { return SCAUSE == RevExceptionCause::ECALL_USER_MODE; }
 
   /// GetX: Get the specifed X register cast to a specific integral type
   template<typename T, typename U>

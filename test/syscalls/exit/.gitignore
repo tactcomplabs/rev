@@ -1,0 +1,4 @@
+*.d
+log
+*.log
+*.bin
