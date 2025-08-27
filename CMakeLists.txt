@@ -14,7 +14,7 @@ cmake_minimum_required(VERSION 3.19)
 project(revcpu CXX)
 
 # Make sure Git hooks are set properly
-#execute_process(COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_git_hooks.sh)
+execute_process(COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_git_hooks.sh)
 
 # Options for enabling tests
 option(CTEST_BLAS_REQUIRED_TESTS "Enable tests which require BLAS headers" OFF)
