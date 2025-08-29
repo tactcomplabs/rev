@@ -3,7 +3,7 @@
  *
  * RISC-V ISA: RV32F, RV32D, RV64F, RV64D
  *
- * Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+ * Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
  * All Rights Reserved
  * contact@tactcomplabs.com
  *
@@ -54,11 +54,9 @@ void closefile() {
     out << R"(
 };
 
-size_t num_fenv_tests = sizeof( fenv_tests ) / sizeof( *fenv_tests );
-
 int main() {
-  for( size_t i = 0; i < num_fenv_tests; ++i )
-    fenv_tests[i]();
+  for( auto test : fenv_tests )
+    test();
 
 #if 0 // TODO: This code causes seg faults
   char fail[128], nfail[64];
@@ -94,8 +92,15 @@ void generate_test( const std::pair<T ( * )( Ts... ), const char*>& oper_pair, T
   std::fesetround( rounding );
   std::feholdexcept( &fenv );
 
-  volatile T result  = func( ops... );
-  int        excepts = std::fetestexcept( FE_ALL_EXCEPT );
+  volatile T result = func( ops... );
+
+  // On RISC-V, an Inexact exception is suppressed if an Invalid exception is
+  // raised, although whether an Inexact exception is raised when an Invalid
+  // exception is raised is optional on IEEE 754.
+  if( std::fetestexcept( FE_INVALID ) )
+    std::feclearexcept( FE_INEXACT );
+
+  int excepts = std::fetestexcept( FE_ALL_EXCEPT );
 
   out << "  []{\n";
   out << "    // Test " << testnum << "\n";
@@ -224,7 +229,7 @@ void generate_fcvt_tests() {
 
   using INT_FUNC1 = std::pair<INT ( * )( FP ), const char*>[];
   for( auto oper_pair : INT_FUNC1{
-         {[]( volatile auto x ) { return to_int<INT>( x ); }, test_src},
+         { []( volatile auto x ) { return to_int<INT>( x ); }, test_src },
   } ) {
     for( auto x : special_fcvt_values<FP, INT> ) {
       generate_test( oper_pair, x );
@@ -283,12 +288,12 @@ void generate_tests() {
   strcat( test_src, R"( %0, %1, %2, %3 " : "=f"(res) : "f"(x), "f"(y), "f"(z) ); return res; } )" );
 
   for( auto oper_pair : FUNC3{
-         {[]( volatile auto x, volatile auto y, volatile auto z )
- -> std::common_type_t<decltype( x ), decltype( y ), decltype( z )> {
- using namespace std;
- using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
- return revFMA( T( x ), T( y ), T( z ) );
- }, test_src},
+         { []( volatile auto x, volatile auto y, volatile auto z )
+             -> std::common_type_t<decltype( x ), decltype( y ), decltype( z )> {
+            using namespace std;
+            using T = common_type_t<decltype( x ), decltype( y ), decltype( z )>;
+            return revFMA( T( x ), T( y ), T( z ) );
+          }, test_src },
   } ) {
     for( auto x : special_fp_values<FP> ) {
       for( auto y : special_fp_values<FP> ) {
