@@ -9,7 +9,7 @@
 #
 
 ifndef REVHOME
-$(error REVHOME not defined)
+ $(error REVHOME not defined)
 endif
 
 REV_ARCH ?= rv64imafdc
@@ -24,6 +24,7 @@ CC="${RVCC}"
 CCOPTS += -march=$(REV_ARCH) $(INCLUDES)
 CCOPTS += -I$(REVHOME)/common/syscalls
 CCOPTS += -I$(REVHOME)/test/include
+CCOPTS += -DREV_TARGET
 
 .PHONY: run
 
