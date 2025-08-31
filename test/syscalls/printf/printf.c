@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#ifndef HOST_TARGET
+#ifdef REV_TARGET
 #include "rev-macros.h"
 #include "rev-printf.h"
 #undef assert

@@ -38,7 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifndef HOST_TARGET
+#ifdef REV_TARGET
 // REV fast printf and tracing macros
 #include "rev-macros.h"
 #include "syscalls.h"
