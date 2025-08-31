@@ -1,4 +1,6 @@
 #!/bin/sh
+#shellcheck enable=all
+#shellcheck disable=2059
 
 exec >&2
 
@@ -10,9 +12,10 @@ else
   END=
 fi
 
-if [ "$(id -nu)" = builduser ]; then
-    exit 0
-fi
+case $(id -nu) in
+    builduser|devuser) exit 0 ;;
+    *)
+esac
 
 hooks=$(git config core.hooksPath)
 if [ "${hooks}" != .githooks ]; then

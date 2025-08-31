@@ -67,15 +67,24 @@ inline constexpr double fpmin<double, uint64_t> = 0x0p+0;
 /// at the integer type's numerical limits, whether signed or uint32_t.
 template<typename INT, typename FP>
 bool fcvtif( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) {
+  // Get whether inexact exception existed before
+  int inexact = std::fetestexcept( FE_INEXACT );
+
   // Read the FP register. Round to integer according to current rounding mode.
-  FP fp = std::rint( R->GetFP<FP>( Inst.rs1 ) );
+  FP fp       = std::rint( R->GetFP<FP>( Inst.rs1 ) );
 
   // Convert to integer type
   INT res;
   if( std::isnan( fp ) || fp > fpmax<FP, INT> ) {
+    // If no inexact exception existed before rint, clear the inexact exception when raising invalid
+    if( !inexact )
+      std::feclearexcept( FE_INEXACT );
     std::feraiseexcept( FE_INVALID );
     res = std::numeric_limits<INT>::max();
   } else if( fp < fpmin<FP, INT> ) {
+    // If no inexact exception existed before rint, clear the inexact exception when raising invalid
+    if( !inexact )
+      std::feclearexcept( FE_INEXACT );
     std::feraiseexcept( FE_INVALID );
     res = std::numeric_limits<INT>::min();
   } else {
@@ -144,7 +153,8 @@ bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete() };
+      R->GetMarkLoadComplete()
+    };
     R->LSQueue->insert( req.LSQHashPair() );
     make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(),
@@ -164,7 +174,8 @@ bool load( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst ) 
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete() };
+      R->GetMarkLoadComplete()
+    };
     R->LSQueue->insert( req.LSQHashPair() );
     make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(),
@@ -204,7 +215,8 @@ bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete() };
+      R->GetMarkLoadComplete()
+    };
     R->LSQueue->insert( req.LSQHashPair() );
     make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(),
@@ -222,7 +234,8 @@ bool fload( const RevFeature* F, RevRegFile* R, RevMem* M, const RevInst& Inst )
       F->GetHartToExecID(),
       MemOp::MemOpREAD,
       true,
-      R->GetMarkLoadComplete() };
+      R->GetMarkLoadComplete()
+    };
     R->LSQueue->insert( req.LSQHashPair() );
     make_dependent<T>( M )->ReadVal(
       F->GetHartToExecID(), rs1 + uint64_t( Inst.ImmSignExt( 12 ) ), &R->SPF[Inst.rd], std::move( req ), RevFlag::F_NONE
