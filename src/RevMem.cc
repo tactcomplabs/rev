@@ -183,7 +183,7 @@ void RevMem::AddToTLB( uint64_t vAddr, uint64_t physAddr ) {
     // Insert the vAddr and physAddr into the TLB and LRU list
     LRUQueue.push_front( vAddr );
     TLB.insert( {
-      vAddr, {physAddr, LRUQueue.begin()}
+      vAddr, { physAddr, LRUQueue.begin() }
     } );
   }
 }
@@ -749,26 +749,30 @@ uint64_t RevMem::ExpandHeap( uint64_t Size ) {
 }
 
 void RevMem::DumpMem( const uint64_t startAddr, const uint64_t numBytes, const uint64_t bytesPerRow, std::ostream& outputStream ) {
-  uint64_t       translatedStartAddr = startAddr;             //CalcPhysAddr( 0, startAddr );
-  const uint64_t endAddr             = startAddr + numBytes;  //translatedStartAddr + numBytes;
 
-  for( uint64_t addr = translatedStartAddr; addr < endAddr; addr += bytesPerRow ) {
-    outputStream << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex << addr << ": ";
+  auto [remainder, physAddr, adjPhysAddr] = AdjPageAddr( startAddr, numBytes );
+  uint8_t* printMem                       = new uint8_t[numBytes];
+  memcpy( printMem, &physMem[physAddr], remainder );
+  memcpy( printMem + remainder, &physMem[adjPhysAddr], numBytes - remainder );
+
+  uint64_t virtAddr = startAddr;
+
+  for( uint64_t addr = 0; addr < numBytes; addr += bytesPerRow ) {
+    virtAddr += addr;
+    outputStream << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex << virtAddr << ": ";
 
     for( uint64_t i = 0; i < bytesPerRow; ++i ) {
-      if( addr + i < endAddr ) {
-        uint8_t byte = physMem[addr + i];
+      if( addr + i < numBytes ) {
+        uint8_t byte = printMem[addr + i];
         outputStream << std::setw( 2 ) << std::setfill( '0' ) << std::hex << uint32_t{ byte } << " ";
       } else {
         outputStream << "   ";
       }
     }
-
     outputStream << " ";
-
     for( uint64_t i = 0; i < bytesPerRow; ++i ) {
-      if( addr + i < endAddr ) {
-        uint8_t byte = physMem[addr + i];
+      if( addr + i < numBytes ) {
+        uint8_t byte = printMem[addr + i];
         if( std::isprint( byte ) ) {
           outputStream << static_cast<char>( byte );
         } else {
