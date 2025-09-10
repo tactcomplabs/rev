@@ -750,40 +750,44 @@ uint64_t RevMem::ExpandHeap( uint64_t Size ) {
 
 void RevMem::DumpMem( const uint64_t startAddr, const uint64_t numBytes, const uint64_t bytesPerRow, std::ostream& outputStream ) {
 
-  auto [remainder, physAddr, adjPhysAddr] = AdjPageAddr( startAddr, numBytes );
-  uint8_t* printMem                       = new uint8_t[numBytes];
-  memcpy( printMem, &physMem[physAddr], remainder );
-  memcpy( printMem + remainder, &physMem[adjPhysAddr], numBytes - remainder );
+  if( ctrl ) {
+    outputStream << "WARNING: DumpMem() unsupported when MemHierarchy in use" << std::endl;
+  } else {
+    auto [remainder, physAddr, adjPhysAddr] = AdjPageAddr( startAddr, numBytes );
+    uint8_t* printMem                       = new uint8_t[numBytes];
+    memcpy( printMem, &physMem[physAddr], remainder );
+    memcpy( printMem + remainder, &physMem[adjPhysAddr], numBytes - remainder );
 
-  uint64_t virtAddr = startAddr;
+    uint64_t virtAddr = startAddr;
 
-  for( uint64_t addr = 0; addr < numBytes; addr += bytesPerRow ) {
-    virtAddr += addr;
-    outputStream << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex << virtAddr << ": ";
+    for( uint64_t addr = 0; addr < numBytes; addr += bytesPerRow ) {
+      virtAddr += addr;
+      outputStream << "0x" << std::setw( 16 ) << std::setfill( '0' ) << std::hex << virtAddr << ": ";
 
-    for( uint64_t i = 0; i < bytesPerRow; ++i ) {
-      if( addr + i < numBytes ) {
-        uint8_t byte = printMem[addr + i];
-        outputStream << std::setw( 2 ) << std::setfill( '0' ) << std::hex << uint32_t{ byte } << " ";
-      } else {
-        outputStream << "   ";
-      }
-    }
-    outputStream << " ";
-    for( uint64_t i = 0; i < bytesPerRow; ++i ) {
-      if( addr + i < numBytes ) {
-        uint8_t byte = printMem[addr + i];
-        if( std::isprint( byte ) ) {
-          outputStream << static_cast<char>( byte );
+      for( uint64_t i = 0; i < bytesPerRow; ++i ) {
+        if( addr + i < numBytes ) {
+          uint8_t byte = printMem[addr + i];
+          outputStream << std::setw( 2 ) << std::setfill( '0' ) << std::hex << uint32_t{ byte } << " ";
         } else {
-          outputStream << ".";
+          outputStream << "   ";
         }
       }
+      outputStream << " ";
+      for( uint64_t i = 0; i < bytesPerRow; ++i ) {
+        if( addr + i < numBytes ) {
+          uint8_t byte = printMem[addr + i];
+          if( std::isprint( byte ) ) {
+            outputStream << static_cast<char>( byte );
+          } else {
+            outputStream << ".";
+          }
+        }
+      }
+      outputStream << std::endl;
     }
-    outputStream << std::endl;
+    delete[] printMem;
+    printMem = NULL;
   }
-  delete[] printMem;
-  printMem = NULL;
 }
 
 void RevMem::DumpMemSeg( const std::shared_ptr<MemSegment>& MemSeg, const uint64_t bytesPerRow, std::ostream& outputStream ) {
