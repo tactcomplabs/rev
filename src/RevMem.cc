@@ -782,6 +782,8 @@ void RevMem::DumpMem( const uint64_t startAddr, const uint64_t numBytes, const u
     }
     outputStream << std::endl;
   }
+  delete[] printMem;
+  printMem = NULL;
 }
 
 void RevMem::DumpMemSeg( const std::shared_ptr<MemSegment>& MemSeg, const uint64_t bytesPerRow, std::ostream& outputStream ) {
