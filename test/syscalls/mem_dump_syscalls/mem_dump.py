@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -76,10 +76,10 @@ comp_cpu.addParams(
         "args": args.args,
         "splash": 1,
         "memDumpRanges": ["range1", "range2"],
-        "range1.startAddr": 0x010000,
-        "range1.size": 0x100000,
-        "range2.startAddr": 0x090000,
-        "range2.size": 0x100,
+        "range1.startAddr": 0x11218,
+        "range1.size": 0x40,
+        "range2.startAddr": 0x10116,
+        "range2.size": 0x30,
     }
 )
 
