@@ -36,15 +36,16 @@ enum RevFeatureType : uint32_t {
   RV_H        = 1 << 10,  ///< RevFeatureType: H-extension
   RV_ZICBOM   = 1 << 11,  ///< RevFeatureType: Zicbom-extension
   RV_ZICNTR   = 1 << 12,  ///< RevFeatureType: Zicntr-extension
-  RV_ZICSR    = 1 << 13,  ///< RevFEatureType: Zicsr-extension
-  RV_ZIFENCEI = 1 << 14,  ///< RevFeatureType: Zifencei-extension
-  RV_ZMMUL    = 1 << 15,  ///< RevFeatureType: Zmmul-extension
-  RV_ZAAMO    = 1 << 16,  ///< RevFeatureType: Zaamo-extension
-  RV_ZALRSC   = 1 << 17,  ///< RevFeatureType: Zalrsc-extension
-  RV_ZFA      = 1 << 18,  ///< RevFeatureType: Zfa-extension
-  RV_ZFH      = 1 << 19,  ///< RevFeatureType: H-extension
-  RV_ZFHMIN   = 1 << 20,  ///< RevFeatureRtpe: Zfhmin extension
-  RV_ZTSO     = 1 << 21,  ///< RevFeatureType: Ztso-extension
+  RV_ZICOND   = 1 << 13,  ///< RevFeatureType: Zicond-extension
+  RV_ZICSR    = 1 << 14,  ///< RevFEatureType: Zicsr-extension
+  RV_ZIFENCEI = 1 << 15,  ///< RevFeatureType: Zifencei-extension
+  RV_ZMMUL    = 1 << 16,  ///< RevFeatureType: Zmmul-extension
+  RV_ZAAMO    = 1 << 17,  ///< RevFeatureType: Zaamo-extension
+  RV_ZALRSC   = 1 << 18,  ///< RevFeatureType: Zalrsc-extension
+  RV_ZFA      = 1 << 19,  ///< RevFeatureType: Zfa-extension
+  RV_ZFH      = 1 << 20,  ///< RevFeatureType: H-extension
+  RV_ZFHMIN   = 1 << 21,  ///< RevFeatureRtpe: Zfhmin extension
+  RV_ZTSO     = 1 << 22,  ///< RevFeatureType: Ztso-extension
 };
 
 class RevFeature {
