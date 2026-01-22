@@ -1,6 +1,6 @@
 # RevCPU test/CMakeLists.txt
 #
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -146,7 +146,7 @@ macro(add_rev_test test_name test_dir timeout labels)
 
         # Define revmem target with the new naming convention
         add_custom_target(run_${test_name_lower}_revmem_${numHarts}_harts_${numCores}_cores
-          COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --startSymbol "${startSymbol}"
+          COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_BINARY_DIR}/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --startSymbol "${startSymbol}"
           DEPENDS build_${test_name_lower}
           COMMENT "Running ${test_name_lower} test with revmem, numHarts=${numHarts}, numCores=${numCores}"
         )
@@ -159,7 +159,7 @@ macro(add_rev_test test_name test_dir timeout labels)
         # If 'memh' label found, add a memHierarchy test
         if(add_memh_test)
           add_custom_target(run_${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
-            COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_SOURCE_DIR}/build/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --enableMemH=1 --startSymbol "${startSymbol}"
+            COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/${test_name_lower} && sst --add-lib-path=${CMAKE_BINARY_DIR}/src/ ${CMAKE_SOURCE_DIR}/test/rev-model-options-config.py -- --program="${test_name_lower}.exe" --numHarts=${numHarts} --numCores=${numCores} --machine "${machine_args}" --enableMemH=1 --startSymbol "${startSymbol}"
             DEPENDS build_${test_name_lower}
             COMMENT "Running ${test_name_lower} test with memHierarchy enabled, numHarts=${numHarts}, numCores=${numCores}"
           )
@@ -179,7 +179,7 @@ macro(add_rev_test test_name test_dir timeout labels)
         if(add_memh_test)
           set_tests_properties(${test_name_lower}_memh_${numHarts}_harts_${numCores}_cores
             PROPERTIES
-            ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
+            ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX};BUILDDIR=${CMAKE_BINARY_DIR}"
             TIMEOUT ${timeout}
             PASS_REGULAR_EXPRESSION "${passRegex}"
             LABELS "${labels}"
@@ -203,7 +203,7 @@ macro(add_rev_test test_name test_dir timeout labels)
     # Set test properties for the script test
     set_tests_properties(${test_name_lower}_script
       PROPERTIES
-      ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX}"
+      ENVIRONMENT "RVCC=${RVCC};RVCXX=${RVCXX};BUILDDIR=${CMAKE_BINARY_DIR}"
       TIMEOUT ${timeout}
       PASS_REGULAR_EXPRESSION "${passRegex}"
       LABELS "${labels}"

@@ -16,9 +16,9 @@ IFS=
 # Check that the exec was built...
 if [[ -x argv_limit.exe ]]; then
         set -e
-	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argv_limit.exe" --enableMemH=0 --args "$argstr"
+	sst --add-lib-path="$BUILDDIR"/src/ ../rev-model-options-config.py -- --program "argv_limit.exe" --enableMemH=0 --args "$argstr"
 	echo "Test ARGV_LIMIT_REVMEM: Completed"
-	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argv_limit.exe" --enableMemH=1 --args "$argstr"
+	sst --add-lib-path="$BUILDDIR"/src/ ../rev-model-options-config.py -- --program "argv_limit.exe" --enableMemH=1 --args "$argstr"
 	echo "Test ARGV_LIMIT_MEMH: Completed"
 else
 	echo "Test ARGV_LIMIT: argv_limit.exe not Found - likely build failed"

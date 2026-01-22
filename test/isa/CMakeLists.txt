@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+# Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 # All Rights Reserved
 # contact@tactcomplabs.com
 #
@@ -33,7 +33,7 @@ foreach(testSrc ${TEST_SRCS})
     COMMAND ./run_asm_test.sh)
   set_tests_properties( ${testName}
     PROPERTIES
-    ENVIRONMENT "RVASM=${testName}; RVCC=${RVCC}"
+    ENVIRONMENT "RVASM=${testName};RVCC=${RVCC};BUILDDIR=${CMAKE_BINARY_DIR}"
     TIMEOUT 30
     LABELS "rv64;isa"
     PASS_REGULAR_EXPRESSION "${passRegex}")

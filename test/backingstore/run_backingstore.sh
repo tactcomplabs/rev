@@ -9,7 +9,7 @@ make clean && make
 if [[ -x backingstore.exe ]]; then
         dd if=/dev/zero of=$STORE bs=64M count=16
         SHA1BEFORE=$(sha1sum $STORE | awk '{print $1}')
-	sst --add-lib-path=../../build/src/ ./rev-backingstore.py
+	sst --add-lib-path="$BUILDDIR"/src/ ./rev-backingstore.py
         SHA1AFTER=$(sha1sum $STORE | awk '{print $1}')
         if test "$SHA1BEFORE" = "$SHA1AFTER"
         then

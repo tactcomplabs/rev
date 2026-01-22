@@ -6,9 +6,9 @@ make clean && make
 # Check that the exec was built...
 if [[ -x argc.exe ]]; then
         set -e
-	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one two three" --enableMemH=0
+	sst --add-lib-path="$BUILDDIR"/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one two three" --enableMemH=0
 	echo "Test ARGC_REVMEM: Completed"
-	sst --add-lib-path=../../build/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one two three" --enableMemH=1
+	sst --add-lib-path="$BUILDDIR"/src/ ../rev-model-options-config.py -- --program "argc.exe" --args "one two three" --enableMemH=1
 	echo "Test ARGC_MEMH: Completed"
 else
 	echo "Test ARGC: argc.exe not Found - likely build failed"
