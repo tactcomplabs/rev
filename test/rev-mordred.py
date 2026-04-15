@@ -30,7 +30,7 @@ link_latency = UnitAlgebra(0.8) * clk_pd
 flit_size = UnitAlgebra("16b")
 
 FixedRtrParams = {
-    "verbose": 0,
+    "verbose": 5,
     "clock": clk,
     "num_vcs": "1",
     "num_vns": "1",
@@ -117,7 +117,6 @@ if args.enableMemH:
     })
 
     # fill subcomponent in iface
-    # iface_nic = iface.setSubComponent("lowlink", "mordred.mordredNIC")
     iface_nic = iface.setSubComponent("lowlink", "memHierarchy.MemNIC")
     iface_nic.addParams({
         "group": 2,  # Here's the miracle setting to make this work.
