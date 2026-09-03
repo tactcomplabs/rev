@@ -1,7 +1,7 @@
 //
 // _RevSysCalls_cc_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -1397,12 +1397,12 @@ EcallStatus RevCore::ECALL_clock_gettime() {
   );
   struct timespec src, *tp = (struct timespec*) RegFile->GetX<uint64_t>( RevReg::a1 );
 
-  if( timeConverter == nullptr ) {
+  if( !timeConverter.isInitialized() ) {
     RegFile->SetX( RevReg::a0, EINVAL );
     return EcallStatus::SUCCESS;
   }
   memset( &src, 0, sizeof( *tp ) );
-  SimTime_t x = timeConverter->convertToCoreTime( Stats.totalCycles );
+  SimTime_t x = timeConverter.convertToCoreTime( Stats.totalCycles );
   src.tv_sec  = time_t( x / 1000000000000 );
   src.tv_nsec = long( ( x / 1000 ) % 1000000000 );
   mem->WriteMem( HartToExecID, (size_t) tp, sizeof( *tp ), &src );

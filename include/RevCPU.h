@@ -1,7 +1,7 @@
 //
 // _RevCPU_h_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -286,7 +286,7 @@ private:
 
   bool DisableCoprocClock{};  ///< RevCPU: Disables manual coproc clocking
 
-  TimeConverter* timeConverter{};  ///< RevCPU: SST time conversion handler
+  TimeConverter  timeConverter{};  ///< RevCPU: SST time conversion handler
   SST::Output    output{};         ///< RevCPU: SST output handler
 
   nicAPI*                     Nic{};  ///< RevCPU: Network interface controller
@@ -294,7 +294,7 @@ private:
 
   std::vector<std::unique_ptr<RevCoProc>> CoProcs;  ///< RevCPU: CoProcessor attached to Rev
 
-  SST::Clock::Handler<RevCPU>* ClockHandler{};  ///< RevCPU: Clock Handler
+  SST::Clock::HandlerBase* ClockHandler{};  ///< RevCPU: Clock Handler
 
   std::queue<std::pair<uint32_t, char*>> ZeroRqst{};   ///< RevCPU: tracks incoming zero address put requests; pair<Size, Data>
   std::list<std::pair<uint8_t, int>>     TrackTags{};  ///< RevCPU: tracks the outgoing messages; pair<Tag, Dest>

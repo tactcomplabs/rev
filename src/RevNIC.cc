@@ -1,7 +1,7 @@
 //
 // _RevNIC_cc_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -18,7 +18,7 @@ RevNIC::RevNIC( ComponentId_t id, Params& params ) : nicAPI( id, params ) {
   output                     = new SST::Output( "", verbosity, 0, SST::Output::STDOUT );
 
   const std::string nicClock = params.find<std::string>( "clock", "1GHz" );
-  registerClock( nicClock, new Clock::Handler<RevNIC>( this, &RevNIC::clockTick ) );
+  registerClock( nicClock, new Clock::Handler<RevNIC, &RevNIC::clockTick>( this ) );
 
   // load the SimpleNetwork interfaces
   iFace = loadUserSubComponent<SimpleNetwork>( "iface", ComponentInfo::SHARE_NONE, 1 );
@@ -34,7 +34,7 @@ RevNIC::RevNIC( ComponentId_t id, Params& params ) : nicAPI( id, params ) {
     );
   }
 
-  iFace->setNotifyOnReceive( new SimpleNetwork::Handler<RevNIC>( this, &RevNIC::msgNotify ) );
+  iFace->setNotifyOnReceive( new SimpleNetwork::Handler<RevNIC, &RevNIC::msgNotify>( this ) );
 
   initBroadcastSent = false;
 

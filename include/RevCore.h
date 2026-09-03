@@ -1,7 +1,7 @@
 //
 // _RevCore_h_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -97,7 +97,7 @@ public:
   uint64_t GetPC() const { return RegFile->GetPC(); }
 
   /// RevCore: set time converter for RTC
-  void SetTimeConverter( TimeConverter* tc ) { timeConverter = tc; }
+  void SetTimeConverter( TimeConverter tc ) { timeConverter = tc; }
 
   /// RevCore: Debug mode read a register
   bool DebugReadReg( uint32_t Idx, uint64_t* Value ) const;
@@ -347,7 +347,7 @@ private:
 
   std::shared_ptr<std::unordered_multimap<uint64_t, MemReq>>
     LSQueue{};  ///< RevCore: Load / Store queue used to track memory operations. Currently only tracks outstanding loads.
-  TimeConverter* timeConverter{};  ///< RevCore: Time converter for RTC
+  TimeConverter timeConverter{};  ///< RevCore: Time converter for RTC
 
   RevRegFile* RegFile        = nullptr;        ///< RevCore: Initial pointer to HartToDecodeID RegFile
   uint32_t    ActiveThreadID = _INVALID_TID_;  ///< Software ThreadID (Not the Hart) that belongs to the Hart currently decoding
