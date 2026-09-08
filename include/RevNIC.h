@@ -152,7 +152,7 @@ public:
   bool msgNotify( int virtualNetwork );
 
   /// RevNIC: clock function
-  virtual bool clockTick( Cycle_t cycle );
+  bool clockTick( Cycle_t cycle );
 
 protected:
   SST::Output*                        output{};             ///< RevNIC: SST output object

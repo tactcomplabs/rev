@@ -1,6 +1,6 @@
 //
 // _RevMemCtrl_h_//
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -364,7 +364,7 @@ public:
   void finish() final {}
 
   /// RevBasicMemCtrl: clock tick function
-  virtual bool clockTick( Cycle_t cycle );
+  bool clockTick( Cycle_t cycle );
 
   /// RevBasicMemCtrl: determines if outstanding requests exist
   bool outstandingRqsts() const final { return !outstanding.empty(); }
@@ -386,8 +386,9 @@ public:
   bool sendWRITERequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
 
   // RevBasicMemCtrl: send a readlock request
-  bool sendREADLOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req )
-    final;
+  bool sendREADLOCKRequest(
+    uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, void* target, MemReq req
+  ) final;
 
   // RevBasicMemCtrl: send a writelock request
   bool sendWRITELOCKRequest( uint32_t Hart, uint64_t Addr, uint64_t PAddr, uint32_t Size, RevFlag flags, uint8_t* buffer ) final;
