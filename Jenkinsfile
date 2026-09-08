@@ -13,26 +13,17 @@ pipeline {
 #-- setup the workspace
 cd $WORKSPACE
 
-#-- setup the SST 9.1.0 environment
-export OLD_PATH=$PATH
-export PATH=$PATH:/rev/sst/sst-9.1.0/bin:/rev/riscv/bin
+#-- setup the SST 16.0.0 environment
+#   NOTE: confirm the SST 16.0.0 install prefix on the CI node.
+export PATH=$PATH:/rev/sst/sst-16.0.0/bin:/rev/riscv/bin
+export RISCV=/rev/riscv
 
-#-- build & install the SST 9.1.0 version
-make
-make doc
-make install
-make clean
-
-# --------------- DONE WITH SST 9.1.0
-# --------------- BEGIN SST 10.0.0
-export PATH=$OLD_PATH
-cd $WORKSPACE
-export PATH=$PATH:/rev/sst/sst-10.0.0/bin:/rev/riscv/bin
-
-#-- build & install the SST 10.0.0 version
-make
-make doc
-make install'''
+#-- build, test & install against SST 16.0.0 (CMake build)
+rm -rf build
+cmake -S . -B build
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+cmake --build build --target install'''
       }
     }
 

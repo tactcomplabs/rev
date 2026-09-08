@@ -1,7 +1,7 @@
 //
 // _RevCoProc_cc_
 //
-// Copyright (C) 2017-2024 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -39,7 +39,7 @@ RevSimpleCoProc::RevSimpleCoProc( ComponentId_t id, Params& params, RevCore* par
 
   //This would be used ot register the clock with SST Core
   /*registerClock( ClockFreq,
-    new Clock::Handler<RevSimpleCoProc>(this, &RevSimpleCoProc::ClockTick));
+    new Clock::Handler<RevSimpleCoProc, &RevSimpleCoProc::ClockTick>(this));
     output->output("Registering subcomponent RevSimpleCoProc with frequency=%s\n", ClockFreq.c_str());*/
 }
 

@@ -1,7 +1,7 @@
 //
 // _RevCPU_cc_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -39,7 +39,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
 
   // Register a new clock handler
   const std::string cpuClock = params.find<std::string>( "clock", "1GHz" );
-  ClockHandler               = new SST::Clock::Handler<RevCPU>( this, &RevCPU::clockTick );
+  ClockHandler               = new SST::Clock::Handler<RevCPU, &RevCPU::clockTick>( this );
   timeConverter              = registerClock( cpuClock, ClockHandler );
 
   // Inform SST to wait until we authorize it to exit
@@ -95,7 +95,7 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params ) : SST::Compon
     if( !Nic )
       output.fatal( CALL_INFO, -1, "Error: no NIC object loaded into RevCPU\n" );
 
-    Nic->setMsgHandler( new Event::Handler<RevCPU>( this, &RevCPU::handleMessage ) );
+    Nic->setMsgHandler( new Event::Handler<RevCPU, &RevCPU::handleMessage>( this ) );
 
     // record the number of injected messages per cycle
     msgPerCycle = params.find<uint32_t>( "msgPerCycle", 1 );

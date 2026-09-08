@@ -1,7 +1,7 @@
 //
 // _SST_h_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -33,6 +33,7 @@
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/event.h>
+#include <sst/core/serialization/serialize.h>
 #include <sst/core/interfaces/simpleNetwork.h>
 #include <sst/core/interfaces/stdMem.h>
 #include <sst/core/link.h>

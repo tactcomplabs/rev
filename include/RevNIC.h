@@ -1,7 +1,7 @@
 //
 // _RevNIC_h_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -56,8 +56,8 @@ struct nicEvent final : SST::Event {
   /// nicEvent: event serializer
   void serialize_order( SST::Core::Serialization::serializer& ser ) final {
     Event::serialize_order( ser );
-    ser& SrcName;
-    ser& Data;
+    SST_SER( SrcName );
+    SST_SER( Data );
   }
 
   /// nicEvent: implements the NIC serialization
@@ -152,7 +152,7 @@ public:
   bool msgNotify( int virtualNetwork );
 
   /// RevNIC: clock function
-  virtual bool clockTick( Cycle_t cycle );
+  bool clockTick( Cycle_t cycle );
 
 protected:
   SST::Output*                        output{};             ///< RevNIC: SST output object

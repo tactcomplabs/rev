@@ -1,7 +1,7 @@
 //
 // _RevMemCtrl_cc_
 //
-// Copyright (C) 2017-2025 Tactical Computing Laboratories, LLC
+// Copyright (C) 2017-2026 Tactical Computing Laboratories, LLC
 // All Rights Reserved
 // contact@tactcomplabs.com
 //
@@ -58,7 +58,7 @@ RevBasicMemCtrl::RevBasicMemCtrl( ComponentId_t id, const Params& params ) : Rev
     "memIface",
     ComponentInfo::SHARE_NONE,  //*/ComponentInfo::SHARE_PORTS | ComponentInfo::INSERT_STATS,
     getTimeConverter( ClockFreq ),
-    new StandardMem::Handler<RevBasicMemCtrl>( this, &RevBasicMemCtrl::processMemEvent )
+    new StandardMem::Handler<RevBasicMemCtrl, &RevBasicMemCtrl::processMemEvent>( this )
   );
 
   if( !memIface ) {
@@ -67,7 +67,7 @@ RevBasicMemCtrl::RevBasicMemCtrl( ComponentId_t id, const Params& params ) : Rev
 
   registerStats();
 
-  registerClock( ClockFreq, new Clock::Handler<RevBasicMemCtrl>( this, &RevBasicMemCtrl::clockTick ) );
+  registerClock( ClockFreq, new Clock::Handler<RevBasicMemCtrl, &RevBasicMemCtrl::clockTick>( this ) );
 }
 
 void RevBasicMemCtrl::registerStats() {
