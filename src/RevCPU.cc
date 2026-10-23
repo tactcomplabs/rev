@@ -429,15 +429,25 @@ void RevCPU::setup() {
   if( EnableMemH ) {
     Ctrl->setup();
   }
+  // SST calls setup() only on components; a coprocessor is a subcomponent of this one
+  for( auto& coproc : CoProcs )
+    coproc->setup();
 }
 
-void RevCPU::finish() {}
+void RevCPU::finish() {
+  for( auto& coproc : CoProcs )
+    coproc->finish();
+}
 
 void RevCPU::init( uint32_t phase ) {
   if( EnableNIC )
     Nic->init( phase );
   if( EnableMemH )
     Ctrl->init( phase );
+  // SST calls init() only on components; a coprocessor that owns a subcomponent which takes part
+  // in the init phases (for example a memHierarchy StandardMem interface) needs it forwarded
+  for( auto& coproc : CoProcs )
+    coproc->init( phase );
 }
 
 void RevCPU::handleMessage( Event* ev ) {
