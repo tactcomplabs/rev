@@ -450,6 +450,13 @@ void RevCPU::init( uint32_t phase ) {
     coproc->init( phase );
 }
 
+// SST calls complete() only on components, like init(): forward it to the coprocessors, so an
+// interface they own (for example memHierarchy's StandardMem) takes part in the complete phases.
+void RevCPU::complete( uint32_t phase ) {
+  for( auto& coproc : CoProcs )
+    coproc->complete( phase );
+}
+
 void RevCPU::handleMessage( Event* ev ) {
   nicEvent* event = static_cast<nicEvent*>( ev );
   // -- RevNIC: This is where you can unpack and handle the data payload

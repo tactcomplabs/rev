@@ -63,6 +63,9 @@ public:
   /// RevCPU: standard SST component 'init' function
   void init( uint32_t phase ) final;
 
+  /// RevCPU: end-of-simulation untimed phase; forwarded to the coprocessors
+  void complete( uint32_t phase ) final;
+
   /// RevCPU: standard SST component clock function
   bool clockTick( SST::Cycle_t currentCycle );
 
