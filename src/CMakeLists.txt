@@ -20,6 +20,7 @@ set(RevCPUSrcs
   librevcpu.cc
   RevPrefetcher.cc
   RevCoProc.cc
+  RevMemCoProc.cc
   RevRegFile.cc
   RevThread.cc
   )
