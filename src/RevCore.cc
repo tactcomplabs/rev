@@ -101,6 +101,18 @@ bool RevCore::SingleStepHart() {
   }
 }
 
+bool XcoprocForward( RevRegFile* R, const RevCoProcCmd& cmd, uint64_t& result ) {
+  return R->GetCore()->CoProcCommand( cmd, result );
+}
+
+bool RevCore::CoProcCommand( const RevCoProcCmd& cmd, uint64_t& result ) {
+  if( !coProc )
+    output->fatal(
+      CALL_INFO, -1, "Error: custom-%u instruction at PC=0x%" PRIx64 " but the core has no co-processor\n", cmd.custom, GetPC()
+    );
+  return coProc->Command( cmd, result );
+}
+
 void RevCore::SetCoProc( RevCoProc* coproc ) {
   if( coProc == nullptr ) {
     coProc = coproc;
@@ -192,6 +204,11 @@ bool RevCore::SeedInstTable() try {
     if( feature->IsRV64() ) {
       EnableExt( new RV64D( feature, mem, output ) );
     }
+  }
+
+  // Xcoproc Extension
+  if( feature->IsModeEnabled( RV_XCOPROC ) ) {
+    EnableExt( new Xcoproc( feature, mem, output ) );
   }
 
   // Zicbom Extension
@@ -1408,6 +1425,13 @@ RevInst RevCore::DecodeInst( uint32_t Inst ) const {
   Enc |= Imm12 << 18;
   Enc |= rs2fcvtOp << 30;
 
+  // Xcoproc: custom-0..3 have one table entry each; funct3 (xd, xs1, xs2) and funct7 (the command)
+  // are the program's, and are put back in the decoded instruction in stage 8
+  const bool isCustom = feature->IsModeEnabled( RV_XCOPROC ) &&
+                        ( Opcode == 0b0001011 || Opcode == 0b0101011 || Opcode == 0b1011011 || Opcode == 0b1111011 );
+  if( isCustom )
+    Enc = Opcode;
+
   // Stage 7: Look up the value in the table
   auto it = matchInst( EncToEntry, Enc, InstTable, Inst );
 
@@ -1478,6 +1502,10 @@ RevInst RevCore::DecodeInst( uint32_t Inst ) const {
 
   ret.entry        = Entry;
   ret.isCoProcInst = isCoProcInst;
+  if( isCustom ) {
+    ret.funct3    = uint8_t( DECODE_FUNCT3( Inst ) );
+    ret.funct2or7 = uint8_t( DECODE_FUNCT7( Inst ) );
+  }
   return ret;
 }
 

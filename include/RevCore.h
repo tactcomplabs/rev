@@ -38,6 +38,7 @@
 
 // -- RevCPU Headers
 #include "RevCoProc.h"
+#include "RevCoProcCmd.h"
 #include "RevCorePasskey.h"
 #include "RevFeature.h"
 #include "RevHart.h"
@@ -182,6 +183,9 @@ public:
 
   ///< RevCore: Add a co-processor to the RevCore
   void SetCoProc( RevCoProc* coproc );
+
+  /// RevCore: hand a command of the Xcoproc extension to the attached co-processor
+  bool CoProcCommand( const RevCoProcCmd& cmd, uint64_t& result );
 
   /// GetHartToExecID: Retrieve the current executing Hart
   uint32_t GetHartToExecID() const { return HartToExecID; }

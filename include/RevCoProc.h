@@ -23,6 +23,7 @@
 #include "SST.h"
 
 // -- RevCPU Headers
+#include "RevCoProcCmd.h"
 #include "RevCore.h"
 #include "RevCorePasskey.h"
 #include "RevFeature.h"
@@ -65,6 +66,12 @@ public:
     // inserting code to quiesce warnings
     return {};
   }
+
+  /// RevCoProc: a command from the Xcoproc extension (custom-0..3). The core has read the source
+  /// registers the command uses; set `result` for rd (used if cmd.xd) and return true, or return
+  /// false if the co-processor does not handle the command (a fatal error). The result is taken
+  /// when the instruction executes.
+  virtual bool Command( const RevCoProcCmd& cmd, uint64_t& result ) { return false; }
 
   // --------------------
   // Pure virtual methods
