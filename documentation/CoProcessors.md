@@ -56,6 +56,10 @@ protected:
 };
 ```
 
+A complete, working example (a coprocessor that sums an array in the program's memory, with its
+program and Python configuration) is `examples/rev_memcoproc` in the `soda-sst-system` repository;
+`BambuKernelRevCoProc` in the same repository is a larger one.
+
 In the Python configuration the co-processor's interface is a `memHierarchy.standardInterface`
 whose `lowlink` goes to the same bus or cache as the core's (see the bambu example in
 `soda-sst-system`, `configs/bambu_rev.py`).
