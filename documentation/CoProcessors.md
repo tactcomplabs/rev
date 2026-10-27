@@ -20,6 +20,13 @@ There are two ways, and a co-processor may use either.
   `Command()` returns false for a command it does not handle, which stops the simulation. The
   extension is in `include/insns/Xcoproc.h`; what a command means is up to the co-processor.
 
+  `Command()` is reached only when `Xcoproc` is in the `machine` string. Without it the custom-0..3
+  instructions are not decoded: the core stops with "failed to decode instruction" and the
+  co-processor is never called (`IssueInst()` is the only route then, and only for instructions
+  the core cannot decode, so a pure `Command()` co-processor needs `Xcoproc`). With it, custom-0..3
+  are no longer offered to `IssueInst()`. A program using `rdcycle` also needs `Zicntr`, as in
+  `RV64GC_Zicntr_Xcoproc`.
+
 ## A co-processor with its own memory port: `RevMemCoProc`
 
 A co-processor that reads and writes memory (an accelerator working on the program's arrays) has
